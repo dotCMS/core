@@ -321,7 +321,7 @@ public class CompilerOptions implements Serializable {
         }
 
         /**
-         * Creates an instance of the {@link CompilerOptions} class witht the specified or default configuration
+         * Creates an instance of the {@link CompilerOptions} class with the specified or default configuration
          * parameters for the Dart SASS Compiler.
          *
          * @return The {@link CompilerOptions} object.

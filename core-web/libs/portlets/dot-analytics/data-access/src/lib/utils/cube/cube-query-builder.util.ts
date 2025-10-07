@@ -9,7 +9,7 @@ import {
     MeasureField,
     OrderField,
     SortDirection,
-    TimeRangeInput
+    TimeRangeCubeJS
 } from '../../types';
 
 /**
@@ -122,7 +122,7 @@ export class CubeQueryBuilder {
      */
     timeRange(
         dimension: DimensionField,
-        timeRangeInput: TimeRangeInput,
+        timeRangeInput: TimeRangeCubeJS,
         granularity?: Granularity
     ): CubeQueryBuilder {
         const prefixedDimension = dimension.startsWith('request.')

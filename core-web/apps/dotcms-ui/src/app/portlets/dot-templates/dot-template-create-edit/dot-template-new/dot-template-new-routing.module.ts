@@ -2,9 +2,9 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { CanDeactivateGuardService } from '@dotcms/data-access';
-import { DotTemplateGuard } from '@portlets/dot-templates/dot-template-create-edit/dot-template-new/guards/dot-template.guard';
 
 import { DotTemplateNewComponent } from './dot-template-new.component';
+import { DotTemplateGuard } from './guards/dot-template.guard';
 
 const routes: Routes = [
     {
@@ -14,9 +14,7 @@ const routes: Routes = [
     {
         path: ':type',
         loadChildren: () =>
-            import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module'
-            ).then((m) => m.DotTemplateCreateEditModule),
+            import('../dot-template-create-edit.module').then((m) => m.DotTemplateCreateEditModule),
         canDeactivate: [CanDeactivateGuardService],
         canLoad: [DotTemplateGuard]
     }

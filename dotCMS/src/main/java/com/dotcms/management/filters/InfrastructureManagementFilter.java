@@ -45,9 +45,10 @@ public class InfrastructureManagementFilter implements Filter {
             Logger.debug(this, "Management endpoint detected: " + requestURI);
             
             if (isManagementAccessAuthorized(httpRequest)) {
-                Logger.debug(this, "Port validation passed - continuing to servlet mapping");
-                // Continue to servlet mapping - the servlet mappings will handle routing
-                chain.doFilter(request, response);
+                Logger.debug(this, "Port validation passed - forwarding directly to servlet (bypassing remaining filters)");
+                // CRITICAL: Forward directly to servlet, bypassing all remaining expensive filters
+                // This prevents database hangs, CDI delays, and other expensive processing
+                forwardToManagementServlet(httpRequest, httpResponse);
             } else {
                 Logger.debug(this, "Port validation failed - blocking access");
                 sendManagementAccessDenied(httpResponse);
@@ -136,6 +137,44 @@ public class InfrastructureManagementFilter implements Filter {
             Logger.warn(this, "Invalid CMS_MANAGEMENT_PORT configuration: " + e.getMessage() + 
                       ", using default: " + InfrastructureConstants.Ports.DEFAULT_MANAGEMENT_PORT);
             return InfrastructureConstants.Ports.DEFAULT_MANAGEMENT_PORT;
+        }
+    }
+
+    /**
+     * Forward management requests directly to the appropriate servlet, bypassing all remaining filters.
+     * This is CRITICAL for preventing hangs when external dependencies (database, etc.) are unavailable.
+     */
+    private void forwardToManagementServlet(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        String requestURI = request.getRequestURI();
+        String servletPath;
+        
+        // Determine the correct servlet path based on the management endpoint
+        if (requestURI.startsWith("/dotmgt/livez") || 
+            requestURI.startsWith("/dotmgt/readyz") || 
+            requestURI.startsWith("/dotmgt/health")) {
+            // Health endpoints → HealthProbeServlet
+            servletPath = requestURI; // Direct mapping
+        } else if (requestURI.startsWith("/dotmgt/metrics")) {
+            // Metrics endpoints → ManagementMetricsServlet  
+            servletPath = requestURI; // Direct mapping
+        } else {
+            // Unknown management endpoint - return 404
+            Logger.warn(this, "Unknown management endpoint: " + requestURI);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, 
+                "Management endpoint not found: " + requestURI);
+            return;
+        }
+        
+        // Forward directly to the servlet, bypassing remaining filter chain
+        try {
+            Logger.debug(this, "Forwarding " + requestURI + " directly to servlet at " + servletPath);
+            request.getRequestDispatcher(servletPath).forward(request, response);
+        } catch (Exception e) {
+            Logger.error(this, "Failed to forward management request to servlet: " + e.getMessage(), e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
+                "Failed to process management request");
         }
     }
 

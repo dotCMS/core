@@ -2,8 +2,6 @@ import { CommonModule } from '@angular/common';
 import { ModuleWithProviders, NgModule } from '@angular/core';
 
 // Common Modules
-import { MainNavigationModule } from '@components/dot-navigation/dot-navigation.module';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotEventsService } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -15,10 +13,12 @@ import {
     DotEventsSocketURL,
     LoggerService,
     LoginService,
-    SiteService,
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+
+import { MainNavigationModule } from '../view/components/dot-navigation/dot-navigation.module';
+import { DotNavigationService } from '../view/components/dot-navigation/services/dot-navigation.service';
 
 const dotEventSocketURLFactory = () => {
     return new DotEventsSocketURL(
@@ -50,7 +50,6 @@ export class SharedModule {
                 DotcmsEventsService,
                 LoggerService,
                 LoginService,
-                SiteService,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotEventsSocket,
                 StringUtils,

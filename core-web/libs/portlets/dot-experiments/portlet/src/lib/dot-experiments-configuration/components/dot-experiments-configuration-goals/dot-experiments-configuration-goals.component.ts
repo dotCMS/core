@@ -32,14 +32,11 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
  */
 @Component({
     selector: 'dot-experiments-configuration-goals',
-    standalone: true,
     imports: [
         CommonModule,
-
         DotMessagePipe,
         DotDynamicDirective,
         DotIconModule,
-
         DotExperimentsDetailsTableComponent,
         // PrimeNg
         ButtonModule,

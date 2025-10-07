@@ -147,11 +147,6 @@ public class InitServlet extends HttpServlet {
         registerEarlyShutdownHook();
         Logger.info(InitServlet.class, "Startup completed - early shutdown hook registered");
 
-        /*
-         * Delete the files out of the temp dir (this gets huge)
-         */
-
-        deleteFiles(new File(SystemUtils.JAVA_IO_TMPDIR));
 
         // runs the InitThread
 
@@ -275,16 +270,6 @@ public class InitServlet extends HttpServlet {
 
     }
 
-    protected void deleteFiles(java.io.File directory) {
-        if (directory.isDirectory()) {
-            // get all files for this directory
-            java.io.File[] files = directory.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                // deletes all files on the directory
-                ((java.io.File) files[i]).delete();
-            }
-        }
-    }
 
     public static Date getStartupDate() {
         return startupDate;

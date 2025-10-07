@@ -5,11 +5,12 @@ import { of as observableOf, of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotLicenseService } from '@dotcms/data-access';
 
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
 import { appsResponse, AppsServicesMock } from './dot-apps-list.component.spec';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 class DotLicenseServicesMock {
     canAccessEnterprisePortlet(_url: string) {
@@ -17,14 +18,11 @@ class DotLicenseServicesMock {
     }
 }
 
-const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-    'ActivatedRouteSnapshot',
-    ['toString']
-);
-
-const routerStateSnapshotMock = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
+const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
 ]);
+
+const routerStateSnapshotMock = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
 routerStateSnapshotMock.url = '/apps';
 
 describe('DotAppsListResolver', () => {
@@ -50,8 +48,10 @@ describe('DotAppsListResolver', () => {
     });
 
     it('should get if portlet can be accessed', () => {
-        spyOn(dotLicenseServices, 'canAccessEnterprisePortlet').and.returnValue(observableOf(true));
-        spyOn(dotAppsService, 'get').and.returnValue(of(appsResponse));
+        jest.spyOn(dotLicenseServices, 'canAccessEnterprisePortlet').mockReturnValue(
+            observableOf(true)
+        );
+        jest.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
 
         dotAppsListResolver
             .resolve(activatedRouteSnapshotMock, routerStateSnapshotMock)
@@ -62,5 +62,6 @@ describe('DotAppsListResolver', () => {
                 });
             });
         expect(dotLicenseServices.canAccessEnterprisePortlet).toHaveBeenCalledWith('/apps');
+        expect(dotLicenseServices.canAccessEnterprisePortlet).toHaveBeenCalledTimes(1);
     });
 });

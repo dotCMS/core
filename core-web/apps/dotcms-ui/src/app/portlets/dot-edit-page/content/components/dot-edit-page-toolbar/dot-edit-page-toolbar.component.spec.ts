@@ -17,9 +17,6 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotESContentService,
@@ -71,12 +68,15 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
-import { dotVariantDataMock } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component.spec';
-import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 
+import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
+import { DotWizardModule } from '../../../../../view/components/_common/dot-wizard/dot-wizard.module';
+import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
+import { DotExperimentClassDirective } from '../../../../shared/directives/dot-experiment-class.directive';
+import { DotEditPageInfoModule } from '../../../components/dot-edit-page-info/dot-edit-page-info.module';
+import { dotVariantDataMock } from '../../../seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component.spec';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -87,7 +87,8 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
         <dot-edit-page-toolbar
             [pageState]="pageState"
             [runningExperiment]="runningExperiment"></dot-edit-page-toolbar>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() pageState: DotPageRenderState = mockDotRenderedPageState;
@@ -96,7 +97,8 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-icon-button',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIconButtonComponent {
     @Input() icon: string;
@@ -104,7 +106,8 @@ class MockDotIconButtonComponent {
 
 @Component({
     selector: 'dot-global-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockGlobalMessageComponent {}
 
@@ -307,7 +310,7 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         it('should emit on click', () => {
-            spyOn(component.actionFired, 'emit');
+            jest.spyOn(component.actionFired, 'emit');
             fixtureHost.detectChanges();
             const dotEditWorkflowActions = de.query(By.css('dot-edit-page-workflows-actions'));
             dotEditWorkflowActions.triggerEventHandler('fired', {});
@@ -334,7 +337,7 @@ describe('DotEditPageToolbarComponent', () => {
     describe("what's change", () => {
         describe('no license', () => {
             beforeEach(() => {
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 fixtureHost.detectChanges();
             });
 
@@ -435,10 +438,10 @@ describe('DotEditPageToolbarComponent', () => {
     describe('events', () => {
         let whatsChangedElem: DebugElement;
         beforeEach(() => {
-            spyOn(component.whatschange, 'emit');
-            spyOn(dotMessageDisplayService, 'push');
-            spyOn(dotDialogService, 'open');
-            spyOn(component.favoritePage, 'emit');
+            jest.spyOn(component.whatschange, 'emit');
+            jest.spyOn(dotMessageDisplayService, 'push');
+            jest.spyOn(dotDialogService, 'open');
+            jest.spyOn(component.favoritePage, 'emit');
 
             componentHost.pageState.state.mode = DotPageMode.PREVIEW;
             delete componentHost.pageState.viewAs.persona;
@@ -462,12 +465,14 @@ describe('DotEditPageToolbarComponent', () => {
             whatsChangedElem.triggerEventHandler('onChange', { checked: true });
             expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             expect(component.whatschange.emit).toHaveBeenCalledWith(true);
+            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
         });
 
         it("should emit what's change in false", () => {
             whatsChangedElem.triggerEventHandler('onChange', { checked: false });
             expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
         });
 
         describe('whats change on state change', () => {
@@ -478,6 +483,7 @@ describe('DotEditPageToolbarComponent', () => {
                 dotEditPageState.triggerEventHandler('modeChange', DotPageMode.EDIT);
 
                 expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+                expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             });
 
             it('should not emit when showWhatsChanged is false', () => {

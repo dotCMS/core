@@ -3,9 +3,6 @@ import { TitleStrategy } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     CanDeactivateGuardService,
     DotAlertConfirmService,
@@ -20,6 +17,8 @@ import {
     DotMessageService,
     DotRouterService,
     DotSessionStorageService,
+    DotSystemConfigService,
+    DotUiColorsService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     EmaAppConfigurationService,
@@ -27,11 +26,10 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
 import { DotAppsService } from './api/services/dot-apps/dot-apps.service';
-import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotMenuService } from './api/services/dot-menu.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
@@ -42,7 +40,10 @@ import { NotificationsService } from './api/services/notifications-service';
 import { ColorUtil } from './api/util/ColorUtil';
 import { StringFormat } from './api/util/stringFormat';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
+import { DotTitleStrategy } from './shared/services/dot-title-strategy.service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
+import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
+import { DotLoginPageStateService } from './view/components/login/shared/services/dot-login-page-state.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
@@ -88,7 +89,8 @@ const PROVIDERS: Provider[] = [
         provide: TitleStrategy,
         useClass: DotTitleStrategy
     },
-    GlobalStore
+    GlobalStore,
+    DotSystemConfigService
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];

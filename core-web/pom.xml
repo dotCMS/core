@@ -94,8 +94,6 @@
                         </configuration>
                     </execution>
 
-
-
                     <execution>
                         <id>lint-test</id>
                         <goals>
@@ -105,7 +103,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <skip>${skip.validate}</skip>
-                            <arguments>nx affected -t lint --exclude='tag:skip:lint'</arguments>
+                            <arguments>nx affected -t lint --base=origin/main --exclude='tag:skip:lint'</arguments>
                         </configuration>
                     </execution>
 
@@ -123,63 +121,32 @@
                     </execution>
 
                     <execution>
-                        <id>build dotcms-ui</id>
+                        <id>build-test</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
-
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>compile</phase>
-
                         <configuration>
-                            <arguments>run nx --verbose build dotcms-ui  ${nx.build.options}</arguments>
+                            <arguments>nx run-many -t build --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
                         </configuration>
                     </execution>
 
                     <execution>
-                        <id>build dotcms-block-editor</id>
+                        <id>build-analytics</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
-
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>compile</phase>
-
                         <configuration>
-                            <arguments>run nx run dotcms-block-editor:build</arguments>
+                            <arguments>nx run sdk-analytics:build:standalone</arguments>
                         </configuration>
                     </execution>
 
-                    <execution>
-                        <id>build dotcms-binary-field-builder</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-
-                        <!-- optional: the default phase is "generate-resources" -->
-                        <phase>compile</phase>
-
-                        <configuration>
-                            <arguments>run nx run dotcms-binary-field-builder:build</arguments>
-                        </configuration>
-                    </execution>
 
                     <execution>
-                        <id>build edit-content-bridge</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-
-                        <!-- optional: the default phase is "generate-resources" -->
-                        <phase>compile</phase>
-
-                        <configuration>
-                            <arguments>run nx run edit-content-bridge:build</arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>test</id>
+                        <id>unit-test</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
@@ -189,7 +156,7 @@
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <arguments>run nx run-many -t test --exclude='tag:skip:test'</arguments>
+                            <arguments>nx affected -t test --base=origin/main --exclude='tag:skip:test'</arguments>
                         </configuration>
                     </execution>
 
@@ -238,6 +205,14 @@
                             <targetPath>dotcms-block-editor</targetPath>
                         </resource>
 
+                        <resource>
+                            <directory>${project.basedir}/dist/libs/sdk/analytics-standalone</directory>
+                            <filtering>false</filtering>
+                            <targetPath>ext/analytics</targetPath>
+                            <includes>
+                                <include>**/*.js</include>
+                            </includes>
+                        </resource>
                         <resource>
                             <directory>${project.basedir}/dist/libs/edit-content-bridge</directory>
                             <filtering>false</filtering>

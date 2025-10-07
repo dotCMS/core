@@ -5,7 +5,8 @@ export const LABEL_IMPORTANT_ICON = 'label_important';
 // the 'label_important' icon is not supported as a valid icon, instead the system will randomly assign a new icon
 // The reference of the icon comes from this file: Task210316UpdateLayoutIcons.java
 @Pipe({
-    name: 'dotRandomIcon'
+    name: 'dotRandomIcon',
+    standalone: false
 })
 export class DotRandomIconPipe implements PipeTransform {
     iconsArray = [

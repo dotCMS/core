@@ -1,115 +1,53 @@
 name: Task
-description: I just need to create a simple to-do for someone on the team.
-labels: ['Type : Task',Triage]
-projects: ["dotCMS/7"]
+description: Technical task or improvement that needs to be completed
+title: "[TASK] "
+labels: ["Triage"]
+type: task
+assignees: []
 
 body:
-
   - type: markdown
     attributes:
       value: |
-        If you have any questions about how to use this form, check out [How dotCMS uses GitHub](https://docs.google.com/presentation/d/1C1oCESIL9Z84xXo1DPWQZh48c4BSGlVRAn1DYGEFMUw).
-      
+        **Note: This template is intended for Engineering team use.**
+
   - type: textarea
-    id: task-body
+    id: description
     attributes:
-      label: "Task"
-      description: "What's this issue meant to track?"
-      placeholder: "Maintenance on XYZ... Refactoring ABC... Library updates... etc."
-      value: 
-    validations:
-      required: true
-
-  - type: dropdown
-    id: proposed-objective
-    attributes:
-      label: "Proposed Objective"
-      description: 
-      options:
-        - "Please Select"
-        - "Same as Parent Issue"
-        - "Application Performance"
-        - "Cloud Engineering"
-        - "Code Maintenance"
-        - "Core Features"
-        - "Customer Success"
-        - "Customer Support"
-        - "Documentation"
-        - "Integrations"
-        - "Marketing"
-        - "Quality Assurance"
-        - "Reliability"
-        - "Sales"
-        - "Security & Privacy"
-        - "Technical User Experience"
-        - "User Experience"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: proposed-prioritiy
-    attributes:
-      label: "Proposed Priority"
-      description: 
-      options:
-        - "Please Select"
-        - "Same as Parent Issue"
-        - "Priority 1 - Show Stopper"
-        - "Priority 2 - Important"
-        - "Priority 3 - Average"
-        - "Priority 4 - Trivial"
+      label: Description
+      description: Detailed description of what needs to be done
+      placeholder: "Describe the task, including context and rationale..."
     validations:
       required: true
 
   - type: textarea
-    id: acceptance-criteria 
+    id: acceptance-criteria
     attributes:
-      label: "Acceptance Criteria"
-      description: "What objective needs to be met in order to resolve this?"
-      placeholder: 
-      value: 
-    validations:
-      required: false
-
-  - type: textarea
-    id: external-links 
-    attributes:
-      label: "External Links... Slack Conversations, Support Tickets, Figma Designs, etc."
-      description: "Provide links to any support tickets or Slack conversations that help explain the problem or desired outcome."
-      placeholder: 
-      value: 
-    validations:
-      required: false
-
-  - type: textarea
-    id: assumptions
-    attributes:
-      label: "Assumptions & Initiation Needs"
-      description: "List relevant assumptions, pre-requisite steps, or issues that need to be completed before this issue can be worked on."
-      placeholder:
-      value: 
-    validations:
-      required: false
-
-  - type: textarea
-    id: qa-note
-    attributes:
-      label: "Quality Assurance Notes & Workarounds"
-      description: "Add any additional notes for QA you would like; this field is also for use by the QA Team once the issue is in progress."
-      placeholder:
-      value:
-    validations:
-      required: false
-
-  - type: textarea
-    id: sub-tasks
-    attributes:
-      label: "Sub-Tasks & Estimates"
-      description: "Use a task-list format, and feel free to @ people responsible for completion."
+      label: Acceptance Criteria
+      description: Specific criteria that must be met for this task to be considered complete
       placeholder: |
-        - [ ] Some Task Related to this Issue (4 points)
-        - [ ] Some Task for Damen (2 points) @damen-dotcms
-      value:
+        - [ ] Criteria 1
+        - [ ] Criteria 2
+        - [ ] Criteria 3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Priority level for this task
+      options:
+        - High
+        - Medium
+        - Low
     validations:
       required: false
 
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any additional information that might be helpful
+    validations:
+      required: false

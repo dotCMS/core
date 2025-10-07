@@ -14,7 +14,8 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 @Component({
     selector: 'dot-add-contentlet',
     templateUrl: './dot-add-contentlet.component.html',
-    styleUrls: ['./dot-add-contentlet.component.scss']
+    styleUrls: ['./dot-add-contentlet.component.scss'],
+    standalone: false
 })
 export class DotAddContentletComponent implements OnInit {
     private dotContentletEditorService = inject(DotContentletEditorService);

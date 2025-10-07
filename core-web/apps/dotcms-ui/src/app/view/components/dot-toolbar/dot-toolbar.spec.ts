@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -10,11 +10,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
-import { DotCrumbtrailComponent } from '@components/dot-crumbtrail/dot-crumbtrail.component';
-import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotEventsService, DotRouterService, DotPropertiesService } from '@dotcms/data-access';
+import { DotEventsService, DotPropertiesService, DotRouterService } from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -22,8 +18,8 @@ import {
     DotcmsEventsService,
     DotEventsSocket,
     DotEventsSocketURL,
-    SiteService,
     LoggerService,
+    SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
 import { MockDotRouterService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
@@ -33,7 +29,11 @@ import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notif
 import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
 import { DotToolbarComponent } from './dot-toolbar.component';
 
+import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Injectable()
@@ -47,19 +47,22 @@ class MockDotNavigationService {
 
 @Component({
     selector: 'dot-toolbar-user',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockToolbarUsersComponent {}
 
 @Component({
     selector: 'dot-toolbar-notifications',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockToolbarNotificationsComponent {}
 
 @Component({
     selector: 'dot-toolbar-announcements',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockToolbarAnnouncementsComponent {}
 
@@ -90,7 +93,7 @@ describe('DotToolbarComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jasmine.createSpy().and.returnValue(of(true))
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
             }),
             { provide: DotNavigationService, useClass: MockDotNavigationService },
             { provide: SiteService, useValue: siteServiceMock },
@@ -124,7 +127,7 @@ describe('DotToolbarComponent', () => {
         spectator = createComponent();
         dotRouterService = spectator.inject(DotRouterService);
         dotPropertiesService = spectator.inject(DotPropertiesService);
-        spyOn(spectator.component, 'siteChange').and.callThrough();
+        jest.spyOn(spectator.component, 'siteChange');
     });
 
     it(`should has a dot-crumbtrail`, () => {
@@ -149,7 +152,7 @@ describe('DotToolbarComponent', () => {
     });
 
     it(`should has a dot-toolbar-announcements`, () => {
-        dotPropertiesService.getFeatureFlag.and.returnValue(of(true));
+        dotPropertiesService.getFeatureFlag.mockReturnValue(of(true));
         spectator.detectChanges();
 
         const dotToolbarAnnouncements = spectator.query('dot-toolbar-announcements');
@@ -157,7 +160,7 @@ describe('DotToolbarComponent', () => {
     });
 
     it(`should has not a dot-toolbar-announcements with feature flag disabled`, () => {
-        dotPropertiesService.getFeatureFlag.and.returnValue(of(false));
+        dotPropertiesService.getFeatureFlag.mockReturnValue(of(false));
         spectator.detectChanges();
 
         const dotToolbarAnnouncements = spectator.query('dot-toolbar-announcements');
@@ -165,7 +168,7 @@ describe('DotToolbarComponent', () => {
     });
 
     it(`should NOT go to site browser when site change in any portlet but edit page`, () => {
-        spyOn(dotRouterService, 'isEditPage').and.returnValue(false);
+        jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
         spectator.detectChanges();
         spectator.triggerEventHandler('dot-site-selector', 'switch', { value: siteMock });
         expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
@@ -173,11 +176,14 @@ describe('DotToolbarComponent', () => {
     });
 
     it(`should go to site-browser when site change on edit page url`, () => {
-        spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
-            id: 'edit-page',
-            url: ''
+        Object.defineProperty(dotRouterService, 'currentPortlet', {
+            value: {
+                id: 'edit-page',
+                url: ''
+            },
+            writable: true
         });
-        spyOn(dotRouterService, 'isEditPage').and.returnValue(true);
+        jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
         spectator.detectChanges();
         spectator.triggerEventHandler('dot-site-selector', 'switch', { value: siteMock });
 

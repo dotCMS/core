@@ -6,6 +6,8 @@ import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
+import com.dotmarketing.business.web.HostWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -14,6 +16,7 @@ import com.liferay.portal.model.User;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -28,11 +31,15 @@ public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
 
     private final AnalyticsQueryParser queryParser;
     private final CubeJSClientFactory cubeJSClientFactory;
+    private final HostWebAPI hostWebAPI;
 
     @Inject
-    public ContentAnalyticsFactoryImpl(final AnalyticsQueryParser queryParser, final CubeJSClientFactory cubeJSClientFactory) {
+    public ContentAnalyticsFactoryImpl(final AnalyticsQueryParser queryParser,
+                                       final CubeJSClientFactory cubeJSClientFactory,
+                                       final HostWebAPI hostWebAPI) {
         this.queryParser = queryParser;
         this.cubeJSClientFactory = cubeJSClientFactory;
+        this.hostWebAPI = hostWebAPI;
     }
 
     @Override
@@ -70,12 +77,17 @@ public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
         try {
 
             Logger.debug(this, ()-> "Getting the report for the raw query: " + cubeJsQueryJson);
-            final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
+
+            final String siteId = CubeJSQuery.extractSiteId(cubeJsQueryJson)
+                    .orElse( hostWebAPI.getCurrentHost().getIdentifier());
+
+            final CubeJSClient cubeClient = cubeJSClientFactory.create(user, siteId);
+
             return toReportResponse(cubeClient.send(cubeJsQueryJson));
         } catch (DotDataException| DotSecurityException e) {
 
             Logger.error(this, e.getMessage(), e);
-            throw new DotRuntimeException(e);
+            throw new AnalyticsAppNotConfiguredException(e);
         }
     }
 
@@ -83,5 +95,7 @@ public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
 
         return new ReportResponse(StreamSupport.stream(cubeJSResultSet.spliterator(), false).collect(Collectors.toList()));
     }
+
+
 
 }

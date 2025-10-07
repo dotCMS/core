@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -830,6 +831,51 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertFalse(contentletList.isEmpty());
         assertEquals(1, contentletList.size());
         assertEquals(contentletList.get(0).getInode(),contentlet1.getInode());
+
+    }
+
+
+    @Test
+    public void testThatSearchingForContentWithinAFolderWorks() throws DotDataException, DotSecurityException, IOException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        String shorty = UUIDGenerator.shorty();
+        final String[] tags = {"tag1" + shorty, "tag2" + shorty};
+        final File file1 = FileUtil.createTemporaryFile("lol", ".txt", "lol");
+        final Contentlet dotAsset = new DotAssetDataGen(host,folder,file1).tags(tags).nextPersisted();
+
+
+        // searching by a tag
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+            .withUser(APILocator.systemUser())
+            .maxResults(1)
+            .withHostOrFolderId(folder.getIdentifier())
+            .withFilter("tag1" + shorty)
+            .showWorking(true)
+            .showArchived(false)
+            .showFolders(false)
+            .showFiles(true)
+            .showContent(true)
+            .withLanguageId(1)
+            .showDotAssets(true)
+            .build();
+
+
+        List<String> appliedTags = new DotConnect("select tagname from tag, tag_inode where tag.tag_id=tag_inode.tag_id and inode = ?")
+            .addParam(dotAsset.getInode())
+            .loadStringArray("tagname");
+
+
+        final List<Contentlet> contentletList = this.browserAPI.getContentUnderParentFromDB(browserQuery);
+        assertFalse(contentletList.isEmpty());
+        assertEquals(1, contentletList.size());
+        assertEquals(contentletList.get(0).getInode(),dotAsset.getInode());
+
+
+
+
+
 
     }
 

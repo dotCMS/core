@@ -32,7 +32,6 @@ import {
 
 @Component({
     selector: 'dot-experiments-configuration-traffic-split-add',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,

@@ -117,7 +117,7 @@ public class StartupTasksExecutor {
     private int currentDbVersion() {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             DotConnect db =  new DotConnect().setSQL(SELECT);
-            return  db.loadInt("test");
+            return  db.loadInt("test",conn);
 
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -131,7 +131,7 @@ public class StartupTasksExecutor {
     int currentDataVersion() {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             DotConnect db = new DotConnect().setSQL(SELECT_DATA_VERSION);
-            return db.loadInt("test");
+            return db.loadInt("test",conn);
 
         } catch (Exception e) {
             throw new DotRuntimeException(e);

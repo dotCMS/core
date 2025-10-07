@@ -8,7 +8,8 @@ import { DEFAULT_LANG_ID } from '../../shared/utils';
     selector: 'dot-asset-form',
     templateUrl: './asset-form.component.html',
     styleUrls: ['./asset-form.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class AssetFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;

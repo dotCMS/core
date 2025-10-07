@@ -23,7 +23,8 @@ const dispatchKeydownEvent = (comp: HTMLBaseElement, key: string, meta = false, 
 @Component({
     template: `
         <dot-form-dialog><form>Hello World</form></dot-form-dialog>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {}
 

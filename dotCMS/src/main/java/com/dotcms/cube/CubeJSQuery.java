@@ -7,21 +7,16 @@ import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -64,6 +59,7 @@ import java.util.stream.Collectors;
  * href="https://cube.dev/docs/query-format">official CubeJS Query format documentation.</a>
  */
 public class CubeJSQuery {
+    final static ObjectMapper jsonMapper = new ObjectMapper();
 
     private final String[] dimensions;
     private final String[] measures;
@@ -460,4 +456,37 @@ public class CubeJSQuery {
         }
     }
 
+    public static Optional<String> extractSiteId(final String cubeJsQueryJson) {
+
+        if (!cubeJsQueryJson.contains("\"request.siteId\"")) {
+            return Optional.empty();
+        }
+
+        final JsonNode root;
+        try {
+            root = jsonMapper.readTree(cubeJsQueryJson);
+
+            final JsonNode filters = root.path("filters");
+
+            if (filters.isArray()) {
+
+                for (JsonNode filter : filters) {
+                    JsonNode member = filter.get("member");
+
+                    if (member != null && "request.siteId".equals(member.asText())) {
+                        JsonNode values = filter.get("values");
+
+                        if (values != null && values.isArray() && values.size() > 0) {
+                            return Optional.ofNullable(values.get(0).asText());
+                        }
+                    }
+                }
+            }
+            return Optional.empty();
+        } catch (JsonProcessingException e) {
+            Logger.debug(CubeJSQuery.class,
+                    () -> "Error trying to extract the Site Id from a CubeJS query: " + e.getMessage());
+            return Optional.empty();
+        }
+    }
 }

@@ -4,16 +4,18 @@ import { Component, DebugElement, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotEditPageService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
 
 import { DotWhatsChangedComponent, SHOW_DIFF_STYLES } from './dot-whats-changed.component';
 
+import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotDOMHtmlUtilService } from '../../services/html/dot-dom-html-util.service';
+
 @Component({
     selector: 'dot-test',
-    template: '<dot-whats-changed [pageId]="pageId" [languageId]="languageId"></dot-whats-changed>'
+    template: '<dot-whats-changed [pageId]="pageId" [languageId]="languageId"></dot-whats-changed>',
+    standalone: false
 })
 class TestHostComponent {
     languageId: string;
@@ -22,7 +24,8 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-iframe',
-    template: '<iframe #iframeElement></iframe>'
+    template: '<iframe #iframeElement></iframe>',
+    standalone: false
 })
 class TestDotIframeComponent {
     @ViewChild('iframeElement') iframeElement: ElementRef;
@@ -42,9 +45,9 @@ describe('DotWhatsChangedComponent', () => {
                 {
                     provide: DotEditPageService,
                     useValue: {
-                        whatChange: jasmine
-                            .createSpy()
-                            .and.returnValue(
+                        whatChange: jest
+                            .fn()
+                            .mockReturnValue(
                                 of({ diff: true, renderLive: 'ABC', renderWorking: 'ABC DEF' })
                             )
                     }
@@ -52,15 +55,15 @@ describe('DotWhatsChangedComponent', () => {
                 {
                     provide: DotDOMHtmlUtilService,
                     useValue: {
-                        createStyleElement: jasmine
-                            .createSpy()
-                            .and.returnValue(document.createElement('style'))
+                        createStyleElement: jest
+                            .fn()
+                            .mockReturnValue(document.createElement('style'))
                     }
                 },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy()
+                        handle: jest.fn()
                     }
                 }
             ],
@@ -81,8 +84,11 @@ describe('DotWhatsChangedComponent', () => {
     });
 
     it('should load content based on the pageId and URL', () => {
-        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledOnceWith(SHOW_DIFF_STYLES);
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledWith(SHOW_DIFF_STYLES);
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledTimes(1);
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledTimes(1);
         expect(dotEditPageService.whatChange).toHaveBeenCalledWith('123', '1');
+        expect(dotEditPageService.whatChange).toHaveBeenCalledTimes(1);
         expect(dotIframe.iframeElement.nativeElement.contentDocument.body.innerHTML).toContain(
             'ABC<ins class="diffins">&nbsp;DEF</ins>'
         );
@@ -93,6 +99,8 @@ describe('DotWhatsChangedComponent', () => {
         fixture.detectChanges();
 
         expect(dotEditPageService.whatChange).toHaveBeenCalledWith('123', '2');
+        // The service is called twice: once in ngOnInit and once when languageId changes
+        expect(dotEditPageService.whatChange).toHaveBeenCalledTimes(2);
     });
 
     it('should load content when pageId is change', () => {
@@ -100,5 +108,7 @@ describe('DotWhatsChangedComponent', () => {
         fixture.detectChanges();
 
         expect(dotEditPageService.whatChange).toHaveBeenCalledWith('abc-123', '1');
+        // The service is called twice: once in ngOnInit and once when pageId changes
+        expect(dotEditPageService.whatChange).toHaveBeenCalledTimes(2);
     });
 });

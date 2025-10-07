@@ -28,7 +28,8 @@ const fakeContentType: DotCMSContentType = {
             [velocityVar]="velocityVar"
             [contentType]="contentType"
             [isParentField]="isParentField"></dot-relationship-tree>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     velocityVar = 'Parent.Children';
@@ -77,8 +78,8 @@ describe('DotRelationshipTreeComponent', () => {
         it('should set child correctly', () => {
             const children = de.query(By.css('[data-testId="dot-tree-nested-text"]'));
             const parent = de.query(By.css('[data-testId="dot-tree-upper-text"]'));
-            expect(children.nativeElement.innerText).toBe('ContentTypeName');
-            expect(parent.nativeElement.innerText).toBe('Parent');
+            expect(children.nativeElement.textContent).toBe('ContentTypeName');
+            expect(parent.nativeElement.textContent).toBe('Parent');
         });
     });
 
@@ -119,8 +120,8 @@ describe('DotRelationshipTreeComponent', () => {
             const child = de.query(By.css('[data-testId="dot-tree-upper-text"]'));
             const currentContentType = de.query(By.css('[data-testId="dot-tree-nested-text"]'));
 
-            expect(child.nativeElement.innerText).toBe('ContentTypeName');
-            expect(currentContentType.nativeElement.innerText).toBe('Parent');
+            expect(child.nativeElement.textContent).toBe('ContentTypeName');
+            expect(currentContentType.nativeElement.textContent).toBe('Parent');
         });
 
         it('should have dot-icon and its active class', () => {

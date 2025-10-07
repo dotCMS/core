@@ -18,8 +18,6 @@ import {
     withLatestFrom
 } from 'rxjs/operators';
 
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -28,6 +26,9 @@ import {
 } from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 import { isEqual } from '@dotcms/utils';
+
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
 
 type DotTemplateType = 'design' | 'advanced';
 

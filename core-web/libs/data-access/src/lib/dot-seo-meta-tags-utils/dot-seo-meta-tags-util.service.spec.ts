@@ -1,10 +1,11 @@
 import { expect, it } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { SEO_RULES_COLORS, SEO_RULES_ICONS } from '@dotcms/dotcms-models';
 
 import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
+
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 describe('DotSeoMetaTagsUtilService', () => {
     let spectator: SpectatorService<DotSeoMetaTagsUtilService>;

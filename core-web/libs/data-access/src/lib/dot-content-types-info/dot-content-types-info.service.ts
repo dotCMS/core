@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 
+import { DotCMSClazz } from '@dotcms/dotcms-models';
+
 /**
  * Provide data for the content types items
  * @DotContentTypesInfoService
@@ -125,8 +127,8 @@ export class DotContentTypesInfoService {
      * @returns string
      * @memberof ContentTypesInfoService
      */
-    getClazz(type: string): string {
-        return this.getItem(type, 'clazz');
+    getClazz(type: string): DotCMSClazz {
+        return this.getItem(type, 'clazz') as DotCMSClazz;
     }
 
     /**

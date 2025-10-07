@@ -26,7 +26,6 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-expe
 
 @Component({
     selector: 'dot-experiments-configuration-traffic',
-    standalone: true,
     imports: [
         CommonModule,
         DotMessagePipe,

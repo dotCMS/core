@@ -8,7 +8,6 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
     selector: 'dot-asset-card',
     templateUrl: './dot-asset-card.component.html',
     styleUrls: ['./dot-asset-card.component.scss'],
-    standalone: true,
     imports: [CardModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]

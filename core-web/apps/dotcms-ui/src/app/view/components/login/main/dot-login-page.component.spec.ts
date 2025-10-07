@@ -9,14 +9,16 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { mockLoginFormResponse } from '@dotcms/utils-testing';
 
+import { DotLoginPageComponent } from './dot-login-page.component';
+
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
+
 @Injectable()
 class MockLoginPageStateService {
-    get = jasmine.createSpy('get').and.returnValue(of(mockLoginFormResponse));
+    get = jest.fn().mockReturnValue(of(mockLoginFormResponse));
 }
 
 describe('DotLoginPageComponent', () => {
@@ -48,7 +50,7 @@ describe('DotLoginPageComponent', () => {
     it('should set the background Image and background color', () => {
         expect(document.body.style.backgroundColor).toEqual('rgb(58, 56, 71)');
         expect(document.body.style.backgroundImage).toEqual(
-            'url("/html/images/backgrounds/bg-11.jpg")'
+            'url(/html/images/backgrounds/bg-11.jpg)'
         );
     });
 });

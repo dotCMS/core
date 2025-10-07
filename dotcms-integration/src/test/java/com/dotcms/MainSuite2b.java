@@ -11,6 +11,8 @@ import com.dotcms.ai.viewtool.EmbeddingsToolTest;
 import com.dotcms.ai.viewtool.SearchToolTest;
 import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionletTest;
+import com.dotcms.analytics.attributes.CustomAttributeAPIImplTest;
+import com.dotcms.analytics.attributes.CustomAttributeFactoryTest;
 import com.dotcms.analytics.bayesian.BayesianAPIImplIT;
 import com.dotcms.analytics.track.collectors.AsyncVanitiesCollectorTest;
 import com.dotcms.analytics.track.collectors.BasicProfileCollectorTest;
@@ -487,7 +489,10 @@ import org.junit.runners.Suite.SuiteClasses;
         GoogleTranslationServiceIntegrationTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
         PushedAssetUtilTest.class,
-        OpenAIAutoTagActionletTest.class
+        OpenAIAutoTagActionletTest.class,
+        Task250828CreateCustomAttributeTableTest.class,
+        CustomAttributeAPIImplTest.class,
+        CustomAttributeFactoryTest.class
 })
 
 public class MainSuite2b {

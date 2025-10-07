@@ -4,7 +4,6 @@ import { of } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import {
     DotMessageService,
     DotThemesService,
@@ -16,6 +15,8 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
+
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.themes': 'Select Themes',

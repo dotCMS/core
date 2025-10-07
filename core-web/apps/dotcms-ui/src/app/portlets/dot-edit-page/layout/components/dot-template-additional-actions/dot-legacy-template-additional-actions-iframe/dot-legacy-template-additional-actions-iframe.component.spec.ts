@@ -4,14 +4,15 @@ import { Component, Input } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-
 import { DotLegacyTemplateAdditionalActionsComponent } from './dot-legacy-template-additional-actions-iframe.component';
+
+import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIframeComponent {
     @Input()
@@ -43,12 +44,13 @@ describe('DotLegacyAdditionalActionsComponent', () => {
     it('should set additionalPropertiesURL right', () => {
         let urlResult;
         const dotMenuService: DotMenuService = fixture.debugElement.injector.get(DotMenuService);
-        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('2'));
+        jest.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('2'));
 
         fixture.detectChanges();
 
         component.url.subscribe((url) => (urlResult = url));
         expect(dotMenuService.getDotMenuId).toHaveBeenCalledWith('templates');
+        expect(dotMenuService.getDotMenuId).toHaveBeenCalledTimes(1);
         expect(urlResult).toEqual(
             // tslint:disable-next-line:max-line-length
             `c/portal/layout?p_l_id=2&p_p_id=templates&p_p_action=1&p_p_state=maximized&p_p_mode=view&_templates_struts_action=%2Fext%2Ftemplates%2Fedit_template&_templates_cmd=edit&inode=1&drawed=false&selectedTab=properties`

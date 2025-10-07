@@ -6,7 +6,6 @@ import { BlockEditorNode } from '@dotcms/types';
 import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item.component';
 @Component({
     selector: 'dotcms-block-editor-renderer-table',
-    standalone: true,
     imports: [NgComponentOutlet],
     template: `
         <table>

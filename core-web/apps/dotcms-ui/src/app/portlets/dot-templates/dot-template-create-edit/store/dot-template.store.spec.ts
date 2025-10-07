@@ -6,13 +6,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotRouterService,
-    DotGlobalMessageService
+    DotRouterService
 } from '@dotcms/data-access';
 import {
     MockDotMessageService,
@@ -21,6 +19,9 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotTemplateItem, DotTemplateStore } from './dot-template.store';
+
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.message.saved': 'saved',
@@ -68,20 +69,20 @@ function getTemplate({ identifier, name, body }) {
     };
 }
 
-const cacheSetSpy = jasmine.createSpy();
+const cacheSetSpy = jest.fn();
 
 const BASIC_PROVIDERS = [
     DotTemplateStore,
     {
         provide: DotHttpErrorManagerService,
         useValue: {
-            handle: jasmine.createSpy().and.returnValue(of({}))
+            handle: jest.fn().mockReturnValue(of({}))
         }
     },
     {
         provide: DotTemplatesService,
         useValue: {
-            create: jasmine.createSpy().and.returnValue(
+            create: jest.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -90,7 +91,7 @@ const BASIC_PROVIDERS = [
                     })
                 )
             ),
-            update: jasmine.createSpy().and.returnValue(
+            update: jest.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -99,7 +100,7 @@ const BASIC_PROVIDERS = [
                     })
                 )
             ),
-            saveAndPublish: jasmine.createSpy().and.returnValue(
+            saveAndPublish: jest.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -127,9 +128,9 @@ const BASIC_PROVIDERS = [
     {
         provide: DotGlobalMessageService,
         useValue: {
-            loading: jasmine.createSpy(),
-            success: jasmine.createSpy(),
-            error: jasmine.createSpy()
+            loading: jest.fn(),
+            success: jest.fn(),
+            error: jest.fn()
         }
     }
 ];
@@ -143,7 +144,7 @@ describe('DotTemplateStore', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     afterEach(() => {
-        cacheSetSpy.calls.reset();
+        cacheSetSpy.mockClear();
     });
 
     describe('create', () => {
@@ -170,7 +171,7 @@ describe('DotTemplateStore', () => {
             dotRouterService = TestBed.inject(DotRouterService);
             dotTemplatesService = TestBed.inject(DotTemplatesService);
             dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-            dotTemplatesService.update = jasmine.createSpy().and.returnValue(
+            dotTemplatesService.update = jest.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -216,6 +217,7 @@ describe('DotTemplateStore', () => {
 
         it('should call set in DotTemplateContainersCacheService', () => {
             expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({});
+            expect(dotTemplateContainersCacheService.set).toHaveBeenCalledTimes(1);
         });
 
         describe('effects', () => {
@@ -272,7 +274,7 @@ describe('DotTemplateStore', () => {
             dotTemplatesService = TestBed.inject(DotTemplatesService);
             dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
             dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-            dotTemplatesService.update = jasmine.createSpy().and.returnValue(
+            dotTemplatesService.update = jest.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -314,6 +316,8 @@ describe('DotTemplateStore', () => {
         it('should redirect to edit template', () => {
             service.goToEditTemplate('1', '2');
             expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith('1', '2');
+            // goToEditTemplate is called multiple times during initialization
+            expect(dotRouterService.goToEditTemplate).toHaveBeenCalledTimes(2);
         });
         describe('selectors', () => {
             it('should update the didTemplateChanged$', () => {
@@ -474,7 +478,9 @@ describe('DotTemplateStore', () => {
                 });
 
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('saving');
+                expect(dotGlobalMessageService.loading).toHaveBeenCalledTimes(1);
                 expect(dotGlobalMessageService.success).toHaveBeenCalledWith('saved');
+                expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
                 expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith(
                     '222-3000-333---30303-394'
                 );
@@ -525,7 +531,9 @@ describe('DotTemplateStore', () => {
                 });
 
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('saving');
+                expect(dotGlobalMessageService.loading).toHaveBeenCalledTimes(2);
                 expect(dotGlobalMessageService.success).toHaveBeenCalledWith('saved');
+                expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(2);
                 expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith(
                     '222-3000-333---30303-394'
                 );
@@ -571,7 +579,9 @@ describe('DotTemplateStore', () => {
                 });
 
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('publishing');
+                expect(dotGlobalMessageService.loading).toHaveBeenCalledTimes(3);
                 expect(dotGlobalMessageService.success).toHaveBeenCalledWith('published');
+                expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(3);
                 expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith(
                     '222-3000-333---30303-394'
                 );
@@ -602,8 +612,8 @@ describe('DotTemplateStore', () => {
             });
 
             it('should call updateWorkingTemplate and call saveTemplateDebounce when is a design template', () => {
-                spyOn(service, 'updateWorkingTemplate');
-                spyOn(service, 'saveTemplateDebounce');
+                jest.spyOn(service, 'updateWorkingTemplate');
+                jest.spyOn(service, 'saveTemplateDebounce');
                 service.saveWorkingTemplate({
                     type: 'design',
                     layout: {
@@ -624,8 +634,8 @@ describe('DotTemplateStore', () => {
                 expect(service.saveTemplateDebounce).toHaveBeenCalled();
             });
             it('should call updateWorkingTemplate and not call saveTemplateDebounce when is a advanced template', () => {
-                spyOn(service, 'updateWorkingTemplate');
-                spyOn(service, 'saveTemplateDebounce');
+                jest.spyOn(service, 'updateWorkingTemplate');
+                jest.spyOn(service, 'saveTemplateDebounce');
                 service.saveWorkingTemplate({
                     type: 'advanced',
                     body: '',
@@ -640,7 +650,7 @@ describe('DotTemplateStore', () => {
 
             it('should handle error on update template', (done) => {
                 const error = throwError(new HttpErrorResponse(mockResponseView(400)));
-                dotTemplatesService.update = jasmine.createSpy().and.returnValue(error);
+                dotTemplatesService.update = jest.fn().mockReturnValue(error);
                 service.saveTemplate({
                     body: 'string',
                     friendlyName: 'string',
@@ -648,6 +658,7 @@ describe('DotTemplateStore', () => {
                     title: 'string'
                 });
                 expect(dotGlobalMessageService.error).toHaveBeenCalledWith('Unknown Error');
+                expect(dotGlobalMessageService.error).toHaveBeenCalledTimes(1);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
                 dotRouterService.canDeactivateRoute$.subscribe((resp) => {
                     expect(resp).toBeTruthy();
@@ -723,6 +734,7 @@ describe('DotTemplateStore', () => {
 
         it('Should redirect to templates listing when trying to edit a SYSTEM_TEMPALTE', () => {
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
     });
 });

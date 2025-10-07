@@ -11,9 +11,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
-import { ResetPasswordComponent } from '@components/login/reset-password-component/reset-password.component';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotFieldValidationMessageComponent } from '@dotcms/ui';
@@ -22,6 +19,11 @@ import {
     MockDotMessageService,
     MockDotRouterService
 } from '@dotcms/utils-testing';
+
+import { ResetPasswordComponent } from './reset-password.component';
+
+import { MockDotLoginPageStateService } from '../dot-login-page-resolver.service.spec';
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 const messageServiceMock = new MockDotMessageService({
     required: 'Required'
@@ -61,7 +63,7 @@ describe('ResetPasswordComponent', () => {
         activatedRoute = TestBed.inject(ActivatedRoute);
         loginService = TestBed.inject(LoginService);
         dotRouterService = TestBed.inject(DotRouterService);
-        spyOn(activatedRoute.snapshot.paramMap, 'get').and.returnValue('test@test.com');
+        jest.spyOn(activatedRoute.snapshot.paramMap, 'get').mockReturnValue('test@test.com');
 
         fixture.detectChanges();
     });
@@ -85,7 +87,7 @@ describe('ResetPasswordComponent', () => {
 
     it('should display message if passwords do not match', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
-        spyOn(loginService, 'changePassword').and.callThrough();
+        jest.spyOn(loginService, 'changePassword');
         component.resetPasswordForm.setValue({
             password: 'test',
             confirmPassword: 'test2'
@@ -95,20 +97,21 @@ describe('ResetPasswordComponent', () => {
         fixture.detectChanges();
         const errorMessage = de.query(By.css('[data-testid="errorMessage"]'));
 
-        expect(errorMessage.nativeElement.innerText).toBe('password do not match');
+        expect(errorMessage.nativeElement.textContent).toBe('password do not match');
         expect(loginService.changePassword).not.toHaveBeenCalled();
     });
 
     it('should call the change password service and redirect to loging page', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
-        spyOn(loginService, 'changePassword').and.callThrough();
+        jest.spyOn(loginService, 'changePassword');
         component.resetPasswordForm.setValue({
             password: 'test',
             confirmPassword: 'test'
         });
         changePasswordButton.triggerEventHandler('click', {});
         expect(loginService.changePassword).toHaveBeenCalledWith('test', 'test@test.com');
+        expect(loginService.changePassword).toHaveBeenCalledTimes(1);
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
             queryParams: {
                 changedPassword: true
@@ -119,7 +122,7 @@ describe('ResetPasswordComponent', () => {
     it('should show error message form the service', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
-        spyOn(loginService, 'changePassword').and.returnValue(
+        jest.spyOn(loginService, 'changePassword').mockReturnValue(
             throwError({ error: { errors: [{ message: 'error message' }] } })
         );
         component.resetPasswordForm.setValue({
@@ -129,7 +132,7 @@ describe('ResetPasswordComponent', () => {
         changePasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
         const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
-            .innerText;
+            .textContent;
 
         expect(errorMessage).toEqual('error message');
     });
@@ -146,7 +149,7 @@ describe('ResetPasswordComponent', () => {
         fixture.detectChanges();
 
         const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
-            .innerText;
+            .textContent;
 
         expect(errorMessage).toEqual('password do not match');
     });

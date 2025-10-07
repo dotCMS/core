@@ -1,9 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService, DotUiColorsService } from '@dotcms/data-access';
 import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
@@ -12,7 +11,8 @@ import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.serv
 @Component({
     selector: 'dot-root',
     templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss']
+    styleUrls: ['./app.component.scss'],
+    standalone: false
 })
 export class AppComponent implements OnInit {
     private dotCmsConfigService = inject(DotcmsConfigService);

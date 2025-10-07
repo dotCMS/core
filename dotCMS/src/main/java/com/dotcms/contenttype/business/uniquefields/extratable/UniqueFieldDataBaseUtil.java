@@ -1,156 +1,86 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
-
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.liferay.util.StringPool;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
-
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.*;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.DELETE_UNIQUE_FIELDS;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.DELETE_UNIQUE_FIELDS_BY_CONTENTLET;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.DELETE_UNIQUE_FIELDS_BY_CONTENT_TYPE;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.DELETE_UNIQUE_FIELDS_BY_FIELD;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.FIX_DUPLICATE_ENTRY;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.GET_RECORDS_WITH_SAME_HASH;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.GET_UNIQUE_FIELDS_BY_CONTENTLET;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_LANGUAGE;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_VARIANT;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.GET_UNIQUE_FIELDS_BY_HASH;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.GET_UNIQUE_FIELDS_BY_UNIQUE_FIELD_CRITERIA;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.INSERT_SQL;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.POPULATE_UNIQUE_FIELDS_VALUES_QUERY;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.RECALCULATE_UNIQUE_KEY_VAL;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.SET_LIVE_BY_CONTENTLET;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.UPDATE_CONTENT_LIST;
+import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.UPDATE_CONTENT_LIST_WITH_HASH;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENT_TYPE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VARIABLE_NAME_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LIVE_ATTR;
 import static com.dotcms.util.CollectionsUtils.list;
-
+import static com.liferay.util.StringPool.BLANK;
 
 /**
- * Util class to handle QL statement related with the unique_fiedls table
+ * This class allows developers to perform CRUD operations on the {@code unique_fields} table. It
+ * also exposes methods that enforce uniqueness and data integrity for dotCMS to be able to validate
+ * unique values as expected.
+ *
+ * @author Freddy Rodriguez
+ * @since Oct 30th, 2024
  */
 @ApplicationScoped
 public class UniqueFieldDataBaseUtil {
 
-    private static final String INSERT_SQL = "INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (encode(sha256(convert_to(?::text, 'UTF8')), 'hex'), ?)";
+    private static final String AUDIT_FILE_NAME = "unique_field_data_conflicts.log";
 
-    private static final String RECALCULATE_UNIQUE_KEY_VAL = "UPDATE unique_fields\n" +
-            "SET unique_key_val = encode(sha256(" +
-                "convert_to(\n" +
-                    "CONCAT(" +
-                        "    jsonb_extract_path_text(supporting_values, '" + CONTENT_TYPE_ID_ATTR + "')::text || \n" +
-                        "    jsonb_extract_path_text(supporting_values, '" + FIELD_VARIABLE_NAME_ATTR + "')::text || \n" +
-                        "    jsonb_extract_path_text(supporting_values, '" + LANGUAGE_ID_ATTR + "')::text || \n" +
-                        "    jsonb_extract_path_text(supporting_values, '" + FIELD_VALUE_ATTR + "')::text\n" +
-                        "    %s \n" +
-                    "),'UTF8'\n" +
-                ")\n" +
-            "), 'hex'), \n" +
-            "supporting_values = jsonb_set(supporting_values, '{" + UNIQUE_PER_SITE_ATTR + "}', '%s') \n" +
-            "WHERE supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ?\n" +
-            "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
-
-    private static final String UPDATE_CONTENT_LIST ="UPDATE unique_fields " +
-            "SET supporting_values = jsonb_set(supporting_values, '{" + CONTENTLET_IDS_ATTR + "}', ?::jsonb) " +
-            "WHERE unique_key_val = encode(sha256(convert_to(?::text, 'UTF8')), 'hex')";
-
-    private static final String UPDATE_CONTENT_LIST_WITH_HASH ="UPDATE unique_fields " +
-            "SET supporting_values = jsonb_set(supporting_values, '{" + CONTENTLET_IDS_ATTR + "}', ?::jsonb) " +
-            "WHERE unique_key_val = ?";
-
-    private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET = "SELECT * FROM unique_fields " +
-            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
-            "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
-            "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::BIGINT = ? " +
-            "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
-
-    private final static String DELETE_UNIQUE_FIELDS_BY_CONTENTLET = "DELETE FROM unique_fields " +
-            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
-            "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::BIGINT = ? " +
-            "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ?";
-
-    private final static String SET_LIVE_BY_CONTENTLET = "UPDATE unique_fields " +
-            "SET supporting_values = jsonb_set(supporting_values, '{" + LIVE_ATTR +  "}', ?::jsonb) " +
-            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
-                "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
-                "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::BIGINT = ? " +
-                "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = false";
-
-
-    private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_LANGUAGE = "SELECT * FROM unique_fields " +
-            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND (supporting_values->>'" + LANGUAGE_ID_ATTR +"')::BIGINT = ?";
-
-    private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_VARIANT= "SELECT * FROM unique_fields " +
-            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ?";
-
-    private final String DELETE_UNIQUE_FIELDS = "DELETE FROM unique_fields WHERE unique_key_val = ?";
-
-    private final String GET_UNIQUE_FIELDS_BY_HASH = "SELECT * FROM unique_fields " +
-            "WHERE unique_key_val = encode(sha256(convert_to(?::text, 'UTF8')), 'hex')";
-
-    private final static String DELETE_UNIQUE_FIELDS_BY_FIELD = "DELETE FROM unique_fields " +
-            "WHERE supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
-
-    private final static String DELETE_UNIQUE_FIELDS_BY_CONTENT_TYPE = "DELETE FROM unique_fields " +
-            "WHERE supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ?";
-
-
-    private final static String POPULATE_UNIQUE_FIELDS_VALUES_QUERY = "INSERT INTO unique_fields (unique_key_val, supporting_values) " +
-            "SELECT  encode(" +
-            "            sha256(" +
-            "                    convert_to(" +
-            "                            CONCAT(" +
-            "                                    content_type_id::text," +
-            "                                    field_var_name::text," +
-            "                                    language_id::text," +
-            "                                    LOWER(field_value)::text," +
-            "                                    CASE WHEN uniquePerSite = 'true' THEN COALESCE(host_id::text, '') ELSE '' END" +
-            "                            )," +
-            "                            'UTF8'" +
-            "                    )" +
-            "            )," +
-            "            'hex'" +
-            "       ) AS unique_key_val, " +
-            "       json_build_object('" + CONTENT_TYPE_ID_ATTR + "', content_type_id, " +
-                                    "'" + FIELD_VARIABLE_NAME_ATTR + "', field_var_name, " +
-                                    "'" + LANGUAGE_ID_ATTR + "', language_id, " +
-                                    "'" + FIELD_VALUE_ATTR +"', LOWER(field_value), " +
-                                    "'" + SITE_ID_ATTR + "', host_id, " +
-                                    "'" + VARIANT_ATTR + "', variant_id, " +
-                                    "'" + UNIQUE_PER_SITE_ATTR + "', " + "uniquePerSite, " +
-                                    "'" + LIVE_ATTR + "', live, " +
-                                    "'" + CONTENTLET_IDS_ATTR + "', contentlet_identifier) AS supporting_values " +
-            "FROM (" +
-            "        SELECT structure.inode                                       AS content_type_id," +
-            "               field.velocity_var_name                               AS field_var_name," +
-            "               contentlet.language_id                                AS language_id," +
-            "               (CASE WHEN field_variable.variable_value = 'true' THEN identifier.host_inode ELSE '' END) AS host_id," +
-            "               jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value' AS field_value," +
-            "               ARRAY_AGG(DISTINCT contentlet.identifier)                      AS contentlet_identifier," +
-            "               (CASE WHEN COUNT(DISTINCT contentlet_version_info.variant_id) > 1 THEN 'DEFAULT' ELSE MAX(contentlet_version_info.variant_id) END) AS variant_id, " +
-            "               ((CASE WHEN COUNT(*) > 1 AND COUNT(DISTINCT contentlet_version_info.live_inode = contentlet.inode) > 1 THEN 0 " +
-            "                   ELSE MAX((CASE WHEN contentlet_version_info.live_inode = contentlet.inode THEN 1 ELSE 0 END)::int) " +
-            "                   END) = 1) AS live," +
-            "               (MAX(CASE WHEN field_variable.variable_value = 'true' THEN 1 ELSE 0 END)) = 1 AS uniquePerSite" +
-            "        FROM contentlet" +
-            "                 INNER JOIN structure ON structure.inode = contentlet.structure_inode" +
-            "                 INNER JOIN field ON structure.inode = field.structure_inode" +
-            "                 INNER JOIN identifier ON contentlet.identifier = identifier.id" +
-            "                 INNER JOIN contentlet_version_info ON contentlet_version_info.live_inode = contentlet.inode OR" +
-            "                                                       contentlet_version_info.working_inode = contentlet.inode" +
-            "                 LEFT JOIN field_variable ON field_variable.field_id = field.inode AND field_variable.variable_key = '" + UNIQUE_PER_SITE_FIELD_VARIABLE_NAME + "'" +
-            "        WHERE jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name) IS NOT NULL" +
-            "          AND field.unique_ = true" +
-            "        GROUP BY structure.inode," +
-            "                 field.velocity_var_name," +
-            "                 contentlet.language_id," +
-            "                 (CASE WHEN field_variable.variable_value = 'true' THEN identifier.host_inode ELSE '' END)," +
-            "                 jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value') as data_to_populate";
-
+    private static final Lazy<String> AUDIT_FILE_PATH = Lazy.of(() -> Config.getStringProperty(
+            "TAIL_LOG_LOG_FOLDER", "./dotsecure/logs") + File.separator + AUDIT_FILE_NAME);
 
     @WrapInTransaction
     public void insert(final String key, final Map<String, Object> supportingValues) throws DotDataException {
-
         new DotConnect()
                 .setSQL(INSERT_SQL)
                 .addParam(key)
@@ -227,37 +157,40 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Return a register filtering by the unique_key_value field
+     * Returns the unique field record that matches a specific Hash.
      *
-     * @param uniqueFieldCriteria to calculate the unique_key_value
-     * @return
-     * @throws DotDataException
+     * @param uniqueFieldCriteria The {@link UniqueFieldCriteria} containing the criteria to
+     *                            retrieve the record.
+     *
+     * @return An {@link Optional} containing the unique field record if it exists, or an empty
+     * optional otherwise.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @CloseDBIfOpened
     public Optional<UniqueFieldValue> get(final UniqueFieldCriteria uniqueFieldCriteria) throws DotDataException {
-
-        return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_HASH)
+        return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_UNIQUE_FIELD_CRITERIA)
                 .addParam(uniqueFieldCriteria.criteria())
                 .loadObjectResults()
                 .stream().findFirst()
                 .map(item ->
                         new UniqueFieldValue(item.get("unique_key_val").toString(), getSupportingValues(item) ));
-
     }
 
     /**
-     * Return the supporting_values from a unique_field table register also turn the supporting_values from a
-     * {@link org.postgresql.util.PGobject} to a Map.
+     * Returns the supporting_values for a specific unique value entry. Also, this method transforms
+     * the {@code supporting_values} from a {@link org.postgresql.util.PGobject} into a Map.
      *
-     * @param uniqueFieldRegister
-     * @return
+     * @param uniqueFieldValues The {@link Map} containing the unique field attributes.
+     *
+     * @return A {@link Map} containing the supporting values.
      */
-    private static Map<String, Object> getSupportingValues(final Map<String, Object> uniqueFieldRegister) {
+    private static Map<String, Object> getSupportingValues(final Map<String, Object> uniqueFieldValues) {
         try {
-            return com.dotcms.util.JsonUtil.getJsonFromString(uniqueFieldRegister.get("supporting_values").toString());
-        } catch (IOException e) {
-            Logger.error(UniqueFieldDataBaseUtil.class.getName(), "Error getting supporting values", e);
-            throw new RuntimeException(e);
+            return JsonUtil.getJsonFromString(uniqueFieldValues.get("supporting_values").toString());
+        } catch (final IOException e) {
+            Logger.error(UniqueFieldDataBaseUtil.class, "Error getting supporting values", e);
+            throw new DotRuntimeException(e);
         }
     }
 
@@ -291,10 +224,20 @@ public class UniqueFieldDataBaseUtil {
     private static String getUniqueRecalculationQuery(final boolean uniquePerSite) {
         return String.format(RECALCULATE_UNIQUE_KEY_VAL, uniquePerSite
                 ? " || jsonb_extract_path_text(supporting_values, '" + UniqueFieldCriteria.SITE_ID_ATTR + "')::bytea"
-                : StringPool.BLANK,
+                : BLANK,
                 uniquePerSite);
     }
 
+    /**
+     * Returns a list of unique values that match a specific Contentlet ID and Language ID.
+     *
+     * @param contentId  The Contentlet ID.
+     * @param languageId The Language ID.
+     *
+     * @return A list of unique values that match the specified criteria.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
     @CloseDBIfOpened
     public List<Map<String, Object>> get(final String contentId, final long languageId) throws DotDataException {
         return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_LANGUAGE)
@@ -304,12 +247,14 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Find Unique Field Values by {@link Contentlet} and {@link  com.dotcms.variant.model.Variant}
+     * Returns a list of unique values that match a specific Contentlet ID and Variant ID.
      *
-     * @param contentId
-     * @param variantId
-     * @return
-     * @throws DotDataException
+     * @param contentId The Contentlet ID.
+     * @param variantId The Variant ID.
+     *
+     * @return A list of unique values that match the specified criteria.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @CloseDBIfOpened
     public List<Map<String, Object>> get(final String contentId, final String variantId) throws DotDataException {
@@ -320,10 +265,11 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Delete a Unique Field Value by hash
+     * Deletes a Unique Field Value by its unique hash.
      *
-     * @param hash
-     * @throws DotDataException
+     * @param hash The unique hash of the Unique Field Value to delete.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
     public void delete(final String hash) throws DotDataException {
@@ -333,10 +279,11 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Delete all the unique values for a Field
+     * Deletes all the unique values for a given Contentlet field.
      *
-     * @param field
-     * @throws DotDataException
+     * @param field The {@link Field} to delete the unique values from.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
     public void delete(final Field field) throws DotDataException {
@@ -346,10 +293,11 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Delete all the unique values for a {@link ContentType}
+     * Deletes all the unique values for a given Content Type.
      *
-     * @param contentType
-     * @throws DotDataException
+     * @param contentType The {@link ContentType} to delete the unique values from.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
     public void delete(final ContentType contentType) throws DotDataException {
@@ -359,14 +307,16 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Set the supporting_value->live attribute to true to any register with the same Content's id, variant and language
+     * Sets the {@code supporting_value->live} attribute to {@code true} to any record with the same
+     * Contentlet id, variant and language.
      *
-     * @param contentlet
-     * @param liveValue
-     * @throws DotDataException
+     * @param contentlet The {@link Contentlet} whose attributes will be updated.
+     * @param liveValue  The new value of the {@code live} attribute.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
-    public void setLive(Contentlet contentlet, final boolean liveValue) throws DotDataException {
+    public void setLive(final Contentlet contentlet, final boolean liveValue) throws DotDataException {
 
          new DotConnect().setSQL(SET_LIVE_BY_CONTENTLET)
                  .addParam(String.valueOf(liveValue))
@@ -378,14 +328,15 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Remove any register with supporting_value->live set to true and the same Content's id, variant and language
+     * Removes any record with {@code supporting_value->live} set to {@code true} and the same
+     * Contentlet's id, variant and language.
      *
-     * @param contentlet
+     * @param contentlet The {@link Contentlet} whose record will be removed.
      *
-     * @throws DotDataException
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
-    public void removeLive(Contentlet contentlet) throws DotDataException {
+    public void removeLive(final Contentlet contentlet) throws DotDataException {
 
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_CONTENTLET)
                 .addParam("\"" + contentlet.getIdentifier() + "\"")
@@ -396,9 +347,9 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Create the {@code unique_fields} table for the new Unique Field Data base
-     * Validation mechanism. The new {@code unique_fields} table will be used to validate fields that must be
-     * unique, and what parameters were used to defined such a uniqueness feature.
+     * Create the {@code unique_fields} table for the new Unique Field Database Validation
+     * mechanism. This new table will be used to validate fields that must be unique, and will store
+     * what parameters were used to defined such a uniqueness feature.
      *
      * <h4>Table Definition:</h4>
      * <pre>
@@ -410,7 +361,8 @@ public class UniqueFieldDataBaseUtil {
      * }
      * </pre>
      * <h4>Columns:</h4>
-     * The {@code unique_key_val} column will store a hash created from a combination of the following:
+     * The {@code unique_key_val} column will store a hash created from a combination of the
+     * following:
      * <ul>
      *     <li>Content type ID.</li>
      *     <li>Field variable name.</li>
@@ -431,7 +383,7 @@ public class UniqueFieldDataBaseUtil {
      *     "uniquePerSite": true|false,
      *     "contentletsId": [...],
      *     "variant": "",
-     *     "live": true|fsle
+     *     "live": true|false
      * }
      * }
      * </pre>
@@ -452,47 +404,334 @@ public class UniqueFieldDataBaseUtil {
     @WrapInTransaction
     public void createUniqueFieldsValidationTable() throws DotDataException {
         new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
-                    "unique_key_val VARCHAR(64) PRIMARY KEY," +
-                    "supporting_values JSONB" +
-                " )").loadObjectResults();
-    }
-
-    @WrapInTransaction
-    public void createTableAndPopulate() throws DotDataException {
-            createUniqueFieldsValidationTable();
-            populateUniqueFieldsTable();
+                    "unique_key_val VARCHAR(64)," +
+                    "supporting_values JSONB)").loadObjectResults();
+        new DotConnect().setSQL("CREATE INDEX IF NOT EXISTS idx_unique_key_val ON unique_fields(unique_key_val)")
+                .loadObjectResults();
     }
 
     /**
-     * Drop the {@code unique_fields} table for the new Unique Field Data base validation mechanism.
+     * Creates and populates the {@code unique_fields} table with unique field values extracted from
+     * the {@code contentlet} table.
      *
-     * @see UniqueFieldDataBaseUtil#createUniqueFieldsValidationTable()
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    public void createTableAndPopulate() throws DotDataException {
+        Logger.info(this, "---> Creating the unique_fields table");
+        createUniqueFieldsValidationTable();
+        Logger.info(this, "---> Populating the unique_fields table");
+        populateUniqueFieldsTable();
+        Logger.info(this, "---> Fixing and reporting records with the same hash, if any");
+        this.handleDuplicateRecords();
+        Logger.info(this, "---> Bringing primary key constraints back");
+        this.addPrimaryKeyConstraintsBack();
+        Logger.info(this, "---> Create table indexes for performance improvement");
+        this.addTableIndexes();
+    }
+
+    /**
+     * Locates records that have the exact same hash, but referenced by different Contentlet IDs,
+     * and updates their unique values so that they don't conflict anymore. This involves:
+     * <ul>
+     *     <li>Locating at least two records with the same hash value.</li>
+     *     <li>Setting an updated unique value in the form of:
+     *     {@code legacy*support*<RANDOM-NUMBER>{<ORIGINAL-UNIQUE-VALUE>}}.</li>
+     *     <li>Re-generating its hash so that it won't match any other entry.</li>
+     * </ul>
+     * Additionally, a JSON file containing the affected records will be created under the
+     * following path: {@link #AUDIT_FILE_PATH} . It will be available for download from the
+     * back-end so that users can be notified of the changes and inspect what Contentlets must be
+     * manually updated.
      *
-     * @throws DotDataException
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @CloseDBIfOpened
+    public void handleDuplicateRecords() throws DotDataException {
+        final DotConnect dotConnect = new DotConnect().setSQL(GET_RECORDS_WITH_SAME_HASH);
+        final List<Map<String, Object>> duplicateRecords = dotConnect.loadObjectResults();
+        Logger.info(this, String.format("A total of %d records with the same hash value were found",
+                duplicateRecords.size()));
+        if (!duplicateRecords.isEmpty()) {
+            final List<UniqueFieldConflict> duplicateEntriesReport = new ArrayList<>();
+            duplicateRecords.forEach(record -> {
+                final String uniqueKeyVal = Try.of(() -> record.get("unique_key_val").toString()).getOrNull();
+                duplicateEntriesReport.add(this.updateDuplicates(uniqueKeyVal));
+            });
+            this.reportDuplicateRecords(duplicateEntriesReport);
+        }
+        // Dropping the previous temporary index, which will be replaced by the Unique Index created
+        // by the Primary Key
+        new DotConnect().setSQL("DROP INDEX IF EXISTS idx_unique_key_val").loadObjectResults();
+    }
+
+    /**
+     * Takes the list of conflicting entries in the {@code unique_fields} table and writes them to
+     * the following path: {@link #AUDIT_FILE_PATH}. Moreover, it notifies the user via the static
+     * Notifications System in the back-end so that the audit file is available for download.
+     *
+     * @param duplicateEntriesReport The list of {@link UniqueFieldConflict} objects containing the
+     *                               information of the Contentlets whose specific unique value must
+     *                               be fixed.
+     */
+    private void reportDuplicateRecords(final List<UniqueFieldConflict> duplicateEntriesReport) {
+        final String jsonString = JsonUtil.getPrettyJsonStringFromObject(Map.of("duplicates", duplicateEntriesReport));
+        try {
+            FileUtil.write(new File(AUDIT_FILE_PATH.get()), jsonString);
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
+            final Role cmsAdminRole = APILocator.getRoleAPI().loadCMSAdminRole();
+            APILocator.getNotificationAPI().generateNotification(
+                    new I18NMessage("uniquefields.notification.duplicatevalues.title"),
+                    new I18NMessage("uniquefields.notification.duplicatevalues.message"),
+                    null,
+                    NotificationLevel.WARNING, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(),
+                    systemUser.getUserId(),
+                    systemUser.getLocale());
+        } catch (final IOException e) {
+            Logger.error(this, String.format("An error occurred while trying to write the " +
+                    "'%s' audit file: %s", AUDIT_FILE_PATH.get(), ExceptionUtil.getErrorMessage(e)), e);
+        } catch (final DotDataException e) {
+            Logger.error(this, String.format("An error occurred while trying to generate the notification: " +
+                    "%s", ExceptionUtil.getErrorMessage(e)), e);
+        }
+    }
+
+    /**
+     * Once the {@code unique_fields} table has been cleared of any duplicate entries -- i.e.;
+     * entries with the same hash -- this method will add the primary key constraint back to the
+     * table.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
-    public void dropUniqueFieldsValidationTable() throws DotDataException {
+    public void addPrimaryKeyConstraintsBack() throws DotDataException {
         try {
-            new DotConnect().setSQL("DROP TABLE unique_fields").loadObjectResults();
-        } catch (DotDataException e) {
-            final Throwable cause = e.getCause();
+            String sqlQuery = "ALTER TABLE unique_fields ALTER COLUMN unique_key_val SET NOT NULL";
+            new DotConnect().setSQL(sqlQuery).loadObjectResults();
+            sqlQuery = "ALTER TABLE unique_fields ADD PRIMARY KEY (unique_key_val)";
+            new DotConnect().setSQL(sqlQuery).loadObjectResults();
+        } catch (final DotDataException e) {
+            Logger.error(this, "Failed to bring primary key constraints back. There may be an unhandled unique value scenario");
+            throw e;
+        }
+    }
 
-            if (!SQLException.class.isInstance(cause) ||
-                    !"ERROR: table \"unique_fields\" does not exist".equals(cause.getMessage())) {
-                throw e;
+    /**
+     * Adds the necessary Indexes to the {@code unique_fields} table in order to improve its
+     * performance as much as possible.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @ExternalTransaction
+    public void addTableIndexes() throws DotDataException {
+        boolean defaultAutoCommit = false;
+        Connection connection = null;
+        try {
+            connection = DbConnectionFactory.getConnection();
+            defaultAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(true);
+            Logger.info(this, "(1/6) Adding GIN Index for the supporting_values->'contentletIds' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_contentlet_ids_gin ON unique_fields USING GIN ((supporting_values->'contentletIds'))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(2/6) Adding Functional Index for the supporting_values->'languageId' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_language_id ON unique_fields (((supporting_values->>'languageId')::BIGINT))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(3/6) Adding Functional Index for the supporting_values->'contentTypeId' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_content_type_id ON unique_fields (((supporting_values->>'contentTypeId')))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(4/6) Adding Functional Index for the supporting_values->'fieldVariableName' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_field_variable_name ON unique_fields (((supporting_values->>'fieldVariableName')))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(5/6) Adding Functional Index for the supporting_values->'variant' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_variant ON unique_fields (((supporting_values->>'variant')))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(6/6) Adding Functional Index for the supporting_values->'live' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_live ON unique_fields (((supporting_values->>'live')::BOOLEAN))")
+                    .loadResult(connection);
+        } catch (final SQLException e) {
+            throw new DotRuntimeException(String.format("An error occurred when creating indexes on the 'unique_fields' table: " +
+                    "%s", ExceptionUtil.getErrorMessage(e)), e);
+        } finally {
+            if (null != connection) {
+                try {
+                    connection.setAutoCommit(defaultAutoCommit);
+                } catch (final SQLException e) {
+                    Logger.warn(this, String.format("Failed to set autocommit value back to its original value: " +
+                            "%s", ExceptionUtil.getErrorMessage(e)), e);
+                }
             }
         }
     }
 
     /**
-     * Populates the {@code unique_fields} table with unique field values extracted from the {@code contentlet} table.
+     * Updates the unique values of the records that have the same hash, but are referenced by
+     * different Contentlet IDs. During this process, the first record found in the list of
+     * duplicates will be considered as the source of truth. The remaining ones will have their
+     * unique values updated so that they don't conflict anymore.
      *
-     * The process involves:
-     * - Identifying all {@link com.dotcms.contenttype.model.type.ContentType} objects with unique fields.
-     * - Retrieving all {@link Contentlet} entries and their corresponding values for both LIVE and Working versions.
-     * - Storing these unique field values into the {@code unique_fields} table with all this data.
+     * @param uniqueKeyVal The hash value that is present in the table more than once.
+     */
+    @CloseDBIfOpened
+    private UniqueFieldConflict updateDuplicates(final String uniqueKeyVal) {
+        final DotConnect dotConnect = new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_HASH).addParam(uniqueKeyVal);
+        try {
+            final List<Map<String, Object>> uniqueFieldsData = dotConnect.loadObjectResults();
+            final List<String> supportingValuesToUpdate = new ArrayList<>();
+            // Always skip the first record, as it will be the source of truth
+            for (int i = 1; i < uniqueFieldsData.size(); i++) {
+                final String supportingValues = uniqueFieldsData.get(i).get("supporting_values").toString();
+                supportingValuesToUpdate.add(supportingValues);
+            }
+            this.updateUniqueValues(uniqueKeyVal, supportingValuesToUpdate);
+            return this.buildConflict(uniqueFieldsData);
+        } catch (final DotDataException e) {
+            final String errorMsg = String.format("An error occurred while trying to update the unique values for hash " +
+                    "'%s': %s'", uniqueKeyVal, ExceptionUtil.getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+    }
+
+    /**
+     * Takes the list of records that have the same hash -- a.k.a. unique key value -- and builds
+     * the {@link UniqueFieldConflict} object that will be used to keep track of the specific
+     * conflicting Contentlets via the audit file.
      *
-     * @throws DotDataException
+     * @param conflictingData The list of Maps containing the raw conflicting data from the
+     *                        database.
+     *
+     * @return The {@link UniqueFieldConflict} tracking object.
+     */
+    private UniqueFieldConflict buildConflict(final List<Map<String, Object>> conflictingData) {
+        try {
+            UniqueFieldConflict.Builder conflictBuilder = new UniqueFieldConflict.Builder();
+            for (final Map<String, Object> rawConflict : conflictingData) {
+                if (null == rawConflict.get("supporting_values")) {
+                    return null;
+                }
+                final Map<String, Object> supportingValuesAsMap = JsonUtil
+                        .getJsonFromString(rawConflict.get("supporting_values").toString());
+                // Set these initial values only once
+                if (UtilMethods.isNotSet(conflictBuilder.fieldName())) {
+                    conflictBuilder = new UniqueFieldConflict.Builder()
+                            .fieldName(supportingValuesAsMap.get(FIELD_VARIABLE_NAME_ATTR).toString())
+                            .contentTypeId(supportingValuesAsMap.get(CONTENT_TYPE_ID_ATTR).toString())
+                            .originalValue(supportingValuesAsMap.get(FIELD_VALUE_ATTR).toString());
+                }
+                conflictBuilder = conflictBuilder.conflictingData(Map.of(
+                        "contentletId", supportingValuesAsMap.get(CONTENTLET_IDS_ATTR).toString(),
+                        "languageId", supportingValuesAsMap.get(LANGUAGE_ID_ATTR)));
+            }
+            return conflictBuilder.build();
+        } catch (final IOException e) {
+            final String errorMsg = String.format("Failed to parse supporting values as JSON into Java map: " +
+                    "%s", ExceptionUtil.getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+    }
+
+    /**
+     * For a given hash -- a.k.a. unique key value -- takes the list of unique field criteria of the
+     * conflicting entries in the {@code unique_fields} table and updates the corresponding unique
+     * value. This way, a new hash will be generated, and it won't collide with the original one.
+     * <p>There are specific properties that are used to make up the unique field criteria. For
+     * more details, you can refer to: {@link UniqueFieldCriteria#criteria()} .</p>
+     *
+     * @param uniqueKeyVal   The hash value that is present in the table more than once.
+     * @param valuesToUpdate The list of unique field criteria of the conflicting entries.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @WrapInTransaction
+    private void updateUniqueValues(final String uniqueKeyVal, final List<String> valuesToUpdate) throws DotDataException {
+        valuesToUpdate.forEach(supportingValues -> {
+
+            try {
+                final Map<String, Object> supportingValuesAsMap = JsonUtil.getJsonFromString(supportingValues);
+                Logger.info(this, String.format("Fixing conflict for Content IDs '%s' with duplicate unique value '%s'",
+                        supportingValuesAsMap.get(CONTENTLET_IDS_ATTR), supportingValuesAsMap.get(FIELD_VALUE_ATTR)));
+                final String updatedFieldValue =
+                        this.generateUniqueName(supportingValuesAsMap.getOrDefault(FIELD_VALUE_ATTR, BLANK).toString());
+                final boolean isLive = Try.of(() -> Boolean.parseBoolean(supportingValuesAsMap.get(LIVE_ATTR).toString()))
+                        .getOrNull();
+                supportingValuesAsMap.put(FIELD_VALUE_ATTR, updatedFieldValue);
+                final String updatedCriteria = UniqueFieldCriteria.criteria(supportingValuesAsMap);
+                final DotConnect dotConnect = new DotConnect().setSQL(FIX_DUPLICATE_ENTRY)
+                        .addParam(updatedCriteria)
+                        .addJSONParam(supportingValuesAsMap)
+                        .addParam(uniqueKeyVal)
+                        .addJSONParam(supportingValuesAsMap.get(CONTENTLET_IDS_ATTR))
+                        .addParam(isLive);
+                dotConnect.loadObjectResults();
+            } catch (final IOException e) {
+                final String errorMsg = String.format("Failed to transform support values [ %s ] into JSON Map for key " +
+                        "'%s': %s", supportingValues, uniqueKeyVal, ExceptionUtil.getErrorMessage(e));
+                throw new DotRuntimeException(errorMsg, e);
+            } catch (final DotDataException e) {
+                final String errorMsg = String.format("Failed to update Unique Field entry with key " +
+                        "'%s' and support values [ %s ]: %s", uniqueKeyVal, supportingValues,
+                        ExceptionUtil.getErrorMessage(e));
+                throw new DotRuntimeException(errorMsg, e);
+            }
+
+        });
+    }
+
+    /**
+     * Generates a new unique value based on the original one, using a specific format that can also
+     * be used to look for conflicting entries that were fixed. This new value is composed of:
+     * <ol>
+     *     <li>The {@code legacy*support*} prefix.</li>
+     *     <li>A random number between 1 and 100,000, which is required in case there are more than
+     *     two Contentlets with the exact same unique value so that values don't conflict with each
+     *     other.</li>
+     *     <li>The original unique value enclosed in curly braces.</li>
+     * </ol>
+     *
+     * @param originalUniqueValue The original unique value.
+     *
+     * @return The new unique value.
+     */
+    private String generateUniqueName(final String originalUniqueValue) {
+        int randomNumber = new Random().nextInt(100000) + 1;
+        return "legacy*support*" + randomNumber + "{" + originalUniqueValue + "}";
+    }
+
+    /**
+     * Drops the {@code unique_fields} table.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     * @see UniqueFieldDataBaseUtil#createUniqueFieldsValidationTable()
+     */
+    @WrapInTransaction
+    public void dropUniqueFieldsValidationTable() throws DotDataException {
+        new DotConnect().setSQL("DROP TABLE IF EXISTS unique_fields").loadObjectResults();
+    }
+
+    /**
+     * Populates the {@code unique_fields} table with the unique values extracted from the
+     * {@code contentlet} table. This process involves:
+     * <ul>
+     *     <li>Identifying all {@link com.dotcms.contenttype.model.type.ContentType} objects with
+     *     unique fields.</li>
+     *     <li>Retrieving all {@link Contentlet} entries and their corresponding values for both
+     *     LIVE and Working versions.</li>
+     *     <li>Storing these unique field values into the {@code unique_fields} table with all
+     *     this data.</li>
+     * </ul>
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
     public void populateUniqueFieldsTable() throws DotDataException {
@@ -500,14 +739,21 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Represents a register in the unique_fields table
+     * Represents a record in the {@code unique_fields} table. It consists of:
+     * <ul>
+     *     <li>A unique hash acting as the entry identifier. This is an encoded SHA-256 of the
+     *     unique field criteria</li>
+     *     <li>The supporting values, a.k.a. the unique criteria, which provides information on the
+     *     Contentlet or Contentlets that are using the same unique value. For more details, please
+     *     refer to: {@link UniqueFieldCriteria} .</li>
+     * </ul>
      */
     public static class UniqueFieldValue {
+
         private final String uniqueKeyVal;
         private final Map<String, Object> supportingValues;
 
         public UniqueFieldValue(final String uniqueKeyVal, final Map<String, Object> supportingValues) {
-
             this.uniqueKeyVal = uniqueKeyVal;
             this.supportingValues = supportingValues;
         }
@@ -519,5 +765,7 @@ public class UniqueFieldDataBaseUtil {
         public Map<String, Object> getSupportingValues() {
             return supportingValues;
         }
+
     }
+
 }

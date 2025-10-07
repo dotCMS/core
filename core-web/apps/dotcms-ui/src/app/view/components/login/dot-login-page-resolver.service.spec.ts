@@ -3,9 +3,10 @@ import { of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { mockLoginFormResponse } from '@dotcms/utils-testing';
+
+import { DotLoginPageResolver } from './dot-login-page-resolver.service';
+import { DotLoginPageStateService } from './shared/services/dot-login-page-state.service';
 
 @Injectable()
 export class MockDotLoginPageStateService {
@@ -17,9 +18,9 @@ export class MockDotLoginPageStateService {
         }
     });
 
-    set = jasmine.createSpy('set').and.returnValue(this.mockLoginInfo);
-    get = jasmine.createSpy('get').and.returnValue(this.mockLoginInfo);
-    update = jasmine.createSpy('update');
+    set = jest.fn().mockReturnValue(this.mockLoginInfo);
+    get = jest.fn().mockReturnValue(this.mockLoginInfo);
+    update = jest.fn();
 }
 
 describe('DotLoginPageResolver', () => {
@@ -44,5 +45,6 @@ describe('DotLoginPageResolver', () => {
     it('should set the dotLoginPageStateService with the correct values ', () => {
         dotLoginPageResolver.resolve();
         expect(dotLoginPageStateService.set).toHaveBeenCalledWith('');
+        expect(dotLoginPageStateService.set).toHaveBeenCalledTimes(1);
     });
 });

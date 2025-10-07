@@ -92,6 +92,7 @@ public final class ESMappingConstants {
 
     public static final String DOT_INDEX_PATTERN = "dotIndexPattern";
     public static final String PERMISSIONS = "permissions";
+    public static final String CATEGORY_PERMISSIONS = "categoryperms";
     public static final String OWNER_CAN_READ = "ownerCanRead";
     public static final String OWNER_CAN_WRITE = "ownerCanWrite";
     public static final String OWNER_CAN_PUBLISH = "ownerCanPublish";
@@ -110,5 +111,9 @@ public final class ESMappingConstants {
     @Deprecated
     public static final String SUFFIX_ORDER = "-order";
 
-
+    public enum MAPPED_PERMISSIONS {
+        cms_anon_role,
+        none,
+        cms_admin_role,
+    }
 }

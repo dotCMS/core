@@ -31,7 +31,6 @@ export interface DotThumbnailOptions {
 
 @Component({
     selector: 'dot-temp-file-thumbnail',
-    standalone: true,
     imports: [CommonModule],
     templateUrl: './dot-temp-file-thumbnail.component.html',
     styleUrls: ['./dot-temp-file-thumbnail.component.scss'],

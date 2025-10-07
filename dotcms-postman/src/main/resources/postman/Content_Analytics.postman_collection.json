@@ -1,407 +1,12 @@
 {
 	"info": {
-		"_postman_id": "2b8667b2-5708-4cf7-9577-9513b5cdfadf",
+		"_postman_id": "6496517b-8250-414a-9539-600f9f9c007a",
 		"name": "Content Analytics",
 		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "30436704"
 	},
 	"item": [
-		{
-			"name": "Data Query",
-			"item": [
-				{
-					"name": "Using Simple Strings",
-					"item": [
-						{
-							"name": "No User Authentication",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be unauthorized\", function () {",
-											"    pm.response.to.have.status(401);",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"measures\": \"count,totalSessions\",\n    \"dimensions\": \"host,whatAmI,url\",\n    \"timeDimensions\": \"createdAt,day:Last month\",\n    \"filters\": \"totalRequest gt 0,whatAmI contains PAGE||FILE\",\n    \"order\": \"count asc,createdAt asc\",\n    \"limit\": 5,\n    \"offset\": 0\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Missing Required Parameters",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be Bad Request\", function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test(\"Check that minimum required parameters are NOT present\", function () {",
-											"    pm.expect(pm.response.json().message).to.equal(\"The 'form' JSON data cannot be null\");",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content"
-									]
-								},
-								"description": "As the error message states, the CubeJS Query should contain either measures, dimensions or timeDimensions with granularities in order to be valid."
-							},
-							"response": []
-						},
-						{
-							"name": "Unsupported Media Type",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"// Validate the response status is 415",
-											"pm.test(\"Response status is 415\", function () {",
-											"    pm.response.to.have.status(415);",
-											"});",
-											"",
-											"// Validate that the response body contains the 'message' property and it is not empty",
-											"pm.test(\"Response should have an error message\", function () {",
-											"    const responseBody = pm.response.json();",
-											"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
-											"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disabledSystemHeaders": {
-									"content-type": true
-								}
-							},
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/x-www-form-urlencoded",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"query\": {}\n}\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content"
-									]
-								}
-							},
-							"response": []
-						}
-					],
-					"description": "This test group verifies that the Endpoint that receives simple String parameters for the Content Analytics query works as expected. This endpoint takes a JSON body with parameters such as the following:\n\n`{`\n\n`\"measures\": \"count,totalSessions\",`\n\n`\"dimensions\": \"host,whatAmI,url\",`\n\n`\"timeDimensions\": \"createdAt,day:Last month\",`\n\n`\"filters\": \"totalRequest gt 0,whatAmI contains PAGE,FILE\",`\n\n`\"order\": \"count asc,createdAt asc\",`\n\n`\"limit\": 5,`\n\n`\"offset\": 0`\n\n`}`\n\nThe schema prefix for the appropriate terms is appended automatically by the service."
-				},
-				{
-					"name": "Using the JSON query",
-					"item": [
-						{
-							"name": "No User Authentication",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be unauthorized\", function () {",
-											"    pm.response.to.have.status(401);",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [],
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/_query",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"_query"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "No Query Form",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"query\": {}\n}\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/_query",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"_query"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Unsupported Media Type _Query",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"// Validate the response status is 415",
-											"pm.test(\"Response status is 415\", function () {",
-											"    pm.response.to.have.status(415);",
-											"});",
-											"",
-											"// Validate that the response body contains the 'message' property and it is not empty",
-											"pm.test(\"Response should have an error message\", function () {",
-											"    const responseBody = pm.response.json();",
-											"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
-											"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disabledSystemHeaders": {
-									"content-type": true
-								}
-							},
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/x-www-form-urlencoded",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"query\": {}\n}\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/_query",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"_query"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Unsupported Media Type _Query Cube",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"// Validate the response status is 415",
-											"pm.test(\"Response status is 415\", function () {",
-											"    pm.response.to.have.status(415);",
-											"});",
-											"",
-											"// Validate that the response body contains the 'message' property and it is not empty",
-											"pm.test(\"Response should have an error message\", function () {",
-											"    const responseBody = pm.response.json();",
-											"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
-											"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disabledSystemHeaders": {
-									"content-type": true
-								}
-							},
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/x-www-form-urlencoded",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"query\": {}\n}\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/_query/cube",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"_query",
-										"cube"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				}
-			]
-		},
 		{
 			"name": "Events",
 			"item": [
@@ -481,13 +86,13 @@
 									"response": []
 								},
 								{
-									"name": "Add App Config for Site Copy",
+									"name": "Add App Config for Site",
 									"event": [
 										{
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"pm.collectionVariables.set(\"testSiteKey\", \"DOT.48190c8c-42c4-46af-8d1a-0cd5db894797.8N9Oq3uD311V8YN2L6-BoINgX\")",
+													"pm.collectionVariables.set(\"testSiteAuth\", \"DOT.48190c8c-42c4-46af-8d1a-0cd5db894797.8N9Oq3uD311V8YN2L6-BoINgX\")",
 													"pm.collectionVariables.set(\"appKey\", \"dotContentAnalytics-config\");"
 												],
 												"type": "text/javascript",
@@ -525,7 +130,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"siteKey\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteKey}}\"\n    }\n}",
+											"raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    }\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -738,8 +343,8 @@
 											"    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
 											"",
 											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.site_key\");",
-											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.site_key\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.site_auth\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.site_auth\");",
 											"});"
 										],
 										"type": "text/javascript",
@@ -855,7 +460,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    }\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -937,7 +542,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1019,7 +624,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\"\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\"\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1075,7 +680,8 @@
 											"});"
 										],
 										"type": "text/javascript",
-										"packages": {}
+										"packages": {},
+										"requests": {}
 									}
 								}
 							],
@@ -1105,7 +711,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n           \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        },\n        {\n            \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1226,7 +832,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1327,7 +933,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"extra\": \"extra\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\",\n                    \"extra\": \"extra\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\",\n                    \"extra\": \"extra\"\n                },\n                \"extra\": \"extra\"\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"extra\": \"extra\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\",\n                    \"extra\": \"extra\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\",\n                    \"extra\": \"extra\"\n                },\n                \"extra\": \"extra\"\n            }\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1456,7 +1062,7 @@
 									"raw": ""
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/sitekey/generate/SYSTEM_HOST",
+									"raw": "{{serverURL}}/api/v1/analytics/content/siteauth/generate/SYSTEM_HOST",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1465,12 +1071,12 @@
 										"v1",
 										"analytics",
 										"content",
-										"sitekey",
+										"siteauth",
 										"generate",
 										"SYSTEM_HOST"
 									]
 								},
-								"description": "## Endpoint: Generate Site Key for CA Authentication for System Host\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the System Host configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/sitekey/generate/SYSTEM_HOST`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body contains a unique identifier for the system host configuration. The format of the response body is a plain text string, which represents the generated identifier. For example:\n\n```\nDOT.SYSTEM_HOST.xIUpL_9NXGDhoA_JykjWgEQHX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the system host configuration identifier is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current system host configuration settings. Ensure that the server is running and accessible to get a successful response. The generated identifier can be utilized for tracking or referencing the specific system host configuration in subsequent requests or operations."
+								"description": "## Endpoint: Generate Site Key for CA Authentication for System Host\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the System Host configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/siteauth/generate/SYSTEM_HOST`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body contains a unique identifier for the system host configuration. The format of the response body is a plain text string, which represents the generated identifier. For example:\n\n```\nDOT.SYSTEM_HOST.xIUpL_9NXGDhoA_JykjWgEQHX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the system host configuration identifier is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current system host configuration settings. Ensure that the server is running and accessible to get a successful response. The generated identifier can be utilized for tracking or referencing the specific system host configuration in subsequent requests or operations."
 							},
 							"response": []
 						},
@@ -1517,7 +1123,7 @@
 									"raw": ""
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/sitekey/generate/{{siteId}}",
+									"raw": "{{serverURL}}/api/v1/analytics/content/siteauth/generate/{{siteId}}",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1526,12 +1132,12 @@
 										"v1",
 										"analytics",
 										"content",
-										"sitekey",
+										"siteauth",
 										"generate",
 										"{{siteId}}"
 									]
 								},
-								"description": "## Endpoint: Generate Site Key for CA Authentication for Test Site\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the Test Site configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/sitekey/generate/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body will contain a string representing the CA Authentication Object. For example, the response might look like:\n\n```\nDOT.3ac45bec0907840d1f12dc78e2642d8f.DlaM8q76AOZGimRLAj80Zy_wX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the CA Authentication Object is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response. The returned CA Authentication Object is essential for further interactions with the Test Site."
+								"description": "## Endpoint: Generate Site Key for CA Authentication for Test Site\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the Test Site configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/siteauth/generate/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body will contain a string representing the CA Authentication Object. For example, the response might look like:\n\n```\nDOT.3ac45bec0907840d1f12dc78e2642d8f.DlaM8q76AOZGimRLAj80Zy_wX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the CA Authentication Object is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response. The returned CA Authentication Object is essential for further interactions with the Test Site."
 							},
 							"response": []
 						},
@@ -1579,7 +1185,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{ \n\t  \"siteKey\": {\n\t\t \"value\": \"{{customKeyValue}}\"\n      }\n}\n"
+									"raw": "{ \n\t  \"siteAuth\": {\n\t\t \"value\": \"{{customKeyValue}}\"\n      }\n}\n"
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/v1/apps/{{appKey}}/{{siteId}}",
@@ -1594,7 +1200,7 @@
 										"{{siteId}}"
 									]
 								},
-								"description": "## HTTP POST Request to Save Content Analytics App Secrets\n\n### Endpoint\n\n`POST {{serverURL}}/api/v1/apps/{{key}}/{{siteId}}`\n\n### Request Parameters\n\n- **Request Body** (Raw JSON):\n    \n    - `siteKey` (object): Contains the following property:\n        \n        - `value` (string): The custom key value to identify the site.\n            \n\n### Expected Response\n\n- **Status Code**: `200 OK`\n    \n- **Content-Type**: `application/json`\n    \n- **Response Body**:\n    \n    - `entity` (string): Represents the entity returned.\n        \n    - `errors` (array): A list of any errors encountered during the request.\n        \n    - `i18nMessagesMap` (object): A map for internationalization messages.\n        \n    - `messages` (array): A list of messages related to the request.\n        \n    - `pagination` (null): Indicates if there is any pagination data.\n        \n    - `permissions` (array): A list of permissions associated with the request.\n        \n\nThis request is designed to save Content Analytics App data using the provided app key and site ID."
+								"description": "## HTTP POST Request to Save Content Analytics App Secrets\n\n### Endpoint\n\n`POST {{serverURL}}/api/v1/apps/{{key}}/{{siteId}}`\n\n### Request Parameters\n\n- **Request Body** (Raw JSON):\n    \n    - `siteAuth` (object): Contains the following property:\n        \n        - `value` (string): The custom key value to identify the site.\n            \n\n### Expected Response\n\n- **Status Code**: `200 OK`\n    \n- **Content-Type**: `application/json`\n    \n- **Response Body**:\n    \n    - `entity` (string): Represents the entity returned.\n        \n    - `errors` (array): A list of any errors encountered during the request.\n        \n    - `i18nMessagesMap` (object): A map for internationalization messages.\n        \n    - `messages` (array): A list of messages related to the request.\n        \n    - `pagination` (null): Indicates if there is any pagination data.\n        \n    - `permissions` (array): A list of permissions associated with the request.\n        \n\nThis request is designed to save Content Analytics App data using the provided app key and site ID."
 							},
 							"response": []
 						},
@@ -1758,6 +1364,24 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "testSiteAuth",
+			"value": ""
+		},
+		{
+			"key": "appKey",
+			"value": ""
+		},
+		{
+			"key": "testSiteName",
+			"value": ""
+		},
+		{
+			"key": "testSiteId",
+			"value": ""
 		}
 	]
 }

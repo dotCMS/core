@@ -36,22 +36,22 @@ The example above is a Next.js front end for the [dotCMS demo site](https://demo
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
-  - [System Requirements](#system-requirements)
-  - [dotCMS Requirements](#dotcms-requirements)
-  - [Knowledge Prerequisites](#knowledge-prerequisites)
+    - [System Requirements](#system-requirements)
+    - [dotCMS Requirements](#dotcms-requirements)
+    - [Knowledge Prerequisites](#knowledge-prerequisites)
 - [dotCMS SDK Dependencies](#dotcms-sdk-dependencies)
 - [Setup Guide](#setup-guide)
-  - [Step 1: Create the Next.js Application](#step-1-create-the-nextjs-application)
-  - [Step 2: Configure dotCMS Access](#step-2-configure-dotcms-access)
-  - [Step 3: Configure the Next.js Application](#step-3-configure-the-nextjs-application)
-  - [Step 4: Run the Application](#step-4-run-the-application)
+    - [Step 1: Create the Next.js Application](#step-1-create-the-nextjs-application)
+    - [Step 2: Configure dotCMS Access](#step-2-configure-dotcms-access)
+    - [Step 3: Configure the Next.js Application](#step-3-configure-the-nextjs-application)
+    - [Step 4: Run the Application](#step-4-run-the-application)
 - [Edit your page in the Universal Visual Editor](#edit-your-page-in-the-universal-visual-editor)
 - [Advanced: Next.js + dotCMS Architecture](#advanced-nextjs--dotcms-architecture)
-  - [Integration Overview](#integration-overview)
-  - [File Structure](#file-structure)
-  - [Understanding the Structure](#understanding-the-structure)
-  - [How to Fetch Content from dotCMS](#how-to-fetch-content-from-dotcms)
-  - [How to Render Your Page](#how-to-render-your-page)
+    - [Integration Overview](#integration-overview)
+    - [File Structure](#file-structure)
+    - [Understanding the Structure](#understanding-the-structure)
+    - [How to Fetch Content from dotCMS](#how-to-fetch-content-from-dotcms)
+    - [How to Render Your Page](#how-to-render-your-page)
 - [Conclusion](#conclusion)
 - [Learn More](#learn-more)
 
@@ -60,19 +60,22 @@ The example above is a Next.js front end for the [dotCMS demo site](https://demo
 Before you begin, make sure you have:
 
 ### System Requirements
+
 - **Node.js**: v18.20.8 (LTS) or later (v22+ recommended)
 - **NPM**, **Yarn**, or **pnpm** package manager
 - **Git** for version control
 - A code editor (VS Code, WebStorm, etc.)
 
 ### dotCMS Requirements
+
 - **dotCMS instance**: Access to a dotCMS instance (v25.05 or Evergreen recommended)
-  - For testing: You can use [the dotCMS demo site](https://dev.dotcms.com/docs/demo-site)
-  - For production: [Sign up for a dotCMS instance](https://www.dotcms.com/pricing)
+    - For testing: You can use [the dotCMS demo site](https://dev.dotcms.com/docs/demo-site)
+    - For production: [Sign up for a dotCMS instance](https://www.dotcms.com/pricing)
 - **Administrator access**: To create API tokens and configure the Universal Visual Editor
 - **API token**: With appropriate read permissions for your Next.js app
 
 ### Knowledge Prerequisites
+
 - Basic understanding of React and Next.js concepts
 - Familiarity with content management systems (prior dotCMS experience helpful but not required)
 
@@ -83,12 +86,12 @@ Before you begin, make sure you have:
 
 This example uses the following npm packages from dotCMS:
 
-| Package | Purpose | Description |
-|---------|---------|-------------|
-| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client/) | API Communication | Core API client for fetching content from dotCMS |
-| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/) | UI Components | React components and hooks for rendering dotCMS content |
-| [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve) | Visual Editing | Universal Visual Editor integration |
-| [@dotcms/types](https://www.npmjs.com/package/@dotcms/types) | Type Safety | TypeScript type definitions for dotCMS |
+| Package                                                         | Purpose           | Description                                             |
+| --------------------------------------------------------------- | ----------------- | ------------------------------------------------------- |
+| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client/) | API Communication | Core API client for fetching content from dotCMS        |
+| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/)   | UI Components     | React components and hooks for rendering dotCMS content |
+| [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve)        | Visual Editing    | Universal Visual Editor integration                     |
+| [@dotcms/types](https://www.npmjs.com/package/@dotcms/types)    | Type Safety       | TypeScript type definitions for dotCMS                  |
 
 ## Setup Guide
 
@@ -119,9 +122,9 @@ First, get a [dotCMS Site](https://www.dotcms.com/pricing). If you want to test 
 
 If using the demo site, you can log in with these credentials:
 
-| User Name | Password |
-|-----------|----------|
-| admin@dotcms.com | admin |
+| User Name        | Password |
+| ---------------- | -------- |
+| admin@dotcms.com | admin    |
 
 Once you have a site, you can log in with the credentials and start creating content.
 
@@ -152,10 +155,10 @@ To set up the Universal Visual Editor:
 
 ```json
 {
-    "config":[
+    "config": [
         {
-            "pattern":"(.*)",
-            "url":"http://localhost:3000"
+            "pattern": "(.*)",
+            "url": "http://localhost:3000"
         }
     ]
 }
@@ -202,7 +205,6 @@ pnpm dev
 ```
 
 You should see a message in your terminal indicating that the Next.js app is running at `http://localhost:3000`. Open this URL in your browser to see your dotCMS-powered Next.js site.
-
 
 ## Edit your page in the Universal Visual Editor
 
@@ -256,10 +258,10 @@ This project uses Next.js with App Router for server-side rendering, but with so
 1. **App Router (src/app/)**: Contains all server-side rendered pages and routes. These components don't use React hooks directly due to Next.js 13+ restrictions. Learn more about the App Router [here](https://nextjs.org/docs/app).
 
 2. **Components (src/components/)**:
-   - The `content-type/` folder contains React components that render dotCMS content.
-   - In dotCMS, a "Content Type" is like a data model (e.g., "Product", "BlogPost"), while a "Contentlet" is an actual content instance.
-   - For each Content Type in dotCMS, you need a corresponding React component to render it.
-   - For example, if you have a `MyCustomContent` content type in dotCMS, you would create a matching component in this folder to render it.
+    - The `content-type/` folder contains React components that render dotCMS content.
+    - In dotCMS, a "Content Type" is like a data model (e.g., "Product", "BlogPost"), while a "Contentlet" is an actual content instance.
+    - For each Content Type in dotCMS, you need a corresponding React component to render it.
+    - For example, if you have a `MyCustomContent` content type in dotCMS, you would create a matching component in this folder to render it.
 
 3. **Pages (src/pages/)**: Contains client-side page templates that can use React hooks. Since Next.js App Router components can't directly use hooks, these components handle client-side logic.
 
@@ -279,14 +281,14 @@ The process works as follows:
 Here's how the client is configured:
 
 ```js
-import { createDotCMSClient } from "@dotcms/client";
+import { createDotCMSClient } from '@dotcms/client';
 
 export const dotCMSClient = createDotCMSClient({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
     authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
     siteId: process.env.NEXT_PUBLIC_DOTCMS_SITE_ID,
     requestOptions: {
-        cache: "no-cache",
+        cache: 'no-cache'
     }
 });
 ```
@@ -298,7 +300,7 @@ export const getDotCMSPage = async (path, searchParams) => {
     try {
         return await dotCMSClient.page.get(path, searchParams);
     } catch (e) {
-        console.error("ERROR FETCHING PAGE: ", e.message);
+        console.error('ERROR FETCHING PAGE: ', e.message);
         return null;
     }
 };
@@ -307,6 +309,7 @@ export const getDotCMSPage = async (path, searchParams) => {
 Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/).
 
 ### How dotCMS Routes Pages
+
 dotCMS allows a single page to be accessed via multiple URL paths (e.g., / and /index for the same "Home" page). This flexibility means your Next.js application needs to handle these variations.
 
 To ensure all paths to the same content are properly managed and to prevent 404/500 errors, we recommend using a catch-all route strategy in Next.js.
@@ -322,47 +325,46 @@ You can learn more about Next.js routing strategies [here](https://nextjs.org/do
 The rendering process for dotCMS content in Next.js involves several key components working together:
 
 1. **Page Templates**: Define the overall layout and structure
-2. **DotCMSBodyLayout**: A component that renders the page content structure
+2. **DotCMSLayoutBody**: A component that renders the page content structure
 3. **Content Type Components**: Custom React components that render specific Content Types from dotCMS
 4. **useEditableDotCMSPage**: A hook that makes the page editable in the UVE
 
 When a page is rendered:
+
 - The page data is fetched from dotCMS
 - The `useEditableDotCMSPage` hook prepares it for potential editing
-- The `DotCMSBodyLayout` component renders the page structure
+- The `DotCMSLayoutBody` component renders the page structure
 - Each content item is rendered by its corresponding React component
 
 Here's how this looks in code:
 
 ```js
-"use client";
+'use client';
 
-import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react";
+import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react';
 
 // Define custom components for specific Content Types
 // The key is the Content Type variable name in dotCMS
 const pageComponents = {
     dotCMSProductContent: MyCustomDotCMSProductComponent,
     dotCMSBlogPost: BlogPostComponent
-}
+};
 
 export function MyPage({ page }) {
     const { pageAsset, content } = useEditableDotCMSPage(page);
 
     return (
         <div>
-            <DotCMSBodyLayout
-                page={pageAsset}
-                components={pageComponents}
-            />
+            <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
         </div>
     );
 }
 ```
 
 > [!IMPORTANT]
+>
 > - The `useEditableDotCMSPage` hook will not modify the `page` object outside the editor
-> - The `DotCMSBodyLayout` component renders both the page structure and content
+> - The `DotCMSLayoutBody` component renders both the page structure and content
 > - Custom components defined in `pageComponents` will be used to render Content Types
 
 Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react/v/next).
@@ -380,18 +382,18 @@ One of the key concepts in this integration is mapping dotCMS Content Types to R
 ```js
 // Example of mapping dotCMS Content Types to React components
 const pageComponents = {
-  // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
-  DotCMSProduct: ProductComponent,
-  // The key "DotCMSBlogPost" must match a Content Type variable name in dotCMS
-  DotCMSBlogPost: BlogPostComponent
-}
+    // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
+    DotCMSProduct: ProductComponent,
+    // The key "DotCMSBlogPost" must match a Content Type variable name in dotCMS
+    DotCMSBlogPost: BlogPostComponent
+};
 ```
 
 **What happens at runtime:**
 
 1. When dotCMS content of type "DotCMSProduct" is encountered on a page:
-   - The `ProductComponent` is rendered
-   - The contentlet data is passed as props to `ProductComponent`
+    - The `ProductComponent` is rendered
+    - The contentlet data is passed as props to `ProductComponent`
 2. Your component then has access to all fields defined in that Content Type
 
 Example of a component receiving contentlet data:
@@ -399,25 +401,26 @@ Example of a component receiving contentlet data:
 ```jsx
 // The props passed to this component will be the contentlet data from dotCMS
 function ProductComponent(props) {
-  // Access fields defined in the DotCMSProduct Content Type
-  const { title, price, description, image } = props;
+    // Access fields defined in the DotCMSProduct Content Type
+    const { title, price, description, image } = props;
 
-  return (
-    <div className="product">
-      <h2>{title}</h2>
-      <img src={image.url} alt={title} />
-      <p className="price">${price}</p>
-      <p>{description}</p>
-    </div>
-  );
+    return (
+        <div className="product">
+            <h2>{title}</h2>
+            <img src={image.url} alt={title} />
+            <p className="price">${price}</p>
+            <p>{description}</p>
+        </div>
+    );
 }
 ```
 
 This pattern allows you to create custom rendering for each type of content in your dotCMS instance, while maintaining a clean separation between content and presentation.
 
-This mapping should be passed to the `DotCMSBodyLayout` component as shown in the previous section.
+This mapping should be passed to the `DotCMSLayoutBody` component as shown in the previous section.
 
 **Learn more about dotCMS Content and Components:**
+
 - [Understanding Content Types in dotCMS](https://dev.dotcms.com/docs/content-types) - In-depth explanation of content types and their structure
 - [Contentlets in dotCMS](https://dev.dotcms.com/docs/content#Contentlets) - Learn how individual content items (contentlets) work
 - [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react/) - Complete reference for the React components library
@@ -443,5 +446,6 @@ To deepen your understanding of this integration, explore these official dotCMS 
 - [Content in dotCMS](https://dev.dotcms.com/docs/content) - Understanding content types and content management in dotCMS
 
 Additional resources:
+
 - [dotCMS Developer Documentation](https://dev.dotcms.com/)
 - [Next.js Documentation](https://nextjs.org/docs)

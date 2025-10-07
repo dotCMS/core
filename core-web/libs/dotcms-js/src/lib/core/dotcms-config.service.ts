@@ -1,8 +1,8 @@
-import { Observable, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, filter, map, take } from 'rxjs/operators';
+import { filter, map, pluck, take } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { LoggerService } from './logger.service';
@@ -14,6 +14,8 @@ import { Menu } from './routing.service';
  * Wraps the configuration properties for dotCMS in order to provide an
  * easier way to access the information.
  *
+ * @deprecated Use DotSystemConfigService from @dotcms/data-access instead.
+ * This service uses the deprecated CoreWebService and will be removed in a future version.
  */
 const DOTCMS_WEBSOCKET_RECONNECT_TIME = 'dotcms.websocket.reconnect.time';
 const DOTCMS_DISABLE_WEBSOCKET_PROTOCOL = 'dotcms.websocket.disable';
@@ -25,6 +27,12 @@ export interface DotUiColors {
     primary: string;
     secondary: string;
     background: string;
+}
+
+export interface SystemTimezone {
+    id: string;
+    label: string;
+    offset: string;
 }
 
 export interface ConfigParams {
@@ -48,6 +56,7 @@ export interface ConfigParams {
         version: string;
     };
     websocket: WebSocketConfigParams;
+    systemTimezone: SystemTimezone;
 }
 
 export interface WebSocketConfigParams {
@@ -61,7 +70,22 @@ export interface DotTimeZone {
     offset: string;
 }
 
-@Injectable()
+/**
+ * @deprecated Use DotSystemConfigService from @dotcms/data-access instead.
+ * This service uses the deprecated CoreWebService and will be removed in a future version.
+ *
+ * @example
+ * ```typescript
+ * // Old way (deprecated)
+ * private dotcmsConfigService = inject(DotcmsConfigService);
+ *
+ * // New way (recommended)
+ * private systemConfigService = inject(DotSystemConfigService);
+ * ```
+ */
+@Injectable({
+    providedIn: 'root'
+})
 export class DotcmsConfigService {
     private coreWebService = inject(CoreWebService);
     private loggerService = inject(LoggerService);
@@ -112,7 +136,8 @@ export class DotcmsConfigService {
                         websocketReconnectTime:
                             res.config.websocket[DOTCMS_WEBSOCKET_RECONNECT_TIME],
                         disabledWebsockets: res.config.websocket[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL]
-                    }
+                    },
+                    systemTimezone: res.config.systemTimezone
                 };
 
                 this.configParamsSubject.next(configParams);

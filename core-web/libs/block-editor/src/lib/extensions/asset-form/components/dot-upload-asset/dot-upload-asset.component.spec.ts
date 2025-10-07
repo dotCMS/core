@@ -14,7 +14,7 @@ import { DotUploadFileService } from '../../../../shared';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'p-fileUpload',
+    selector: 'p-fileupload',
     template: '<input type="file">'
 })
 class FileUploadMockComponent {
@@ -84,10 +84,10 @@ describe('DotUploadAssetComponent', () => {
     });
 
     describe('Select File', () => {
-        test('should show the p-fileUpload when status is "SELECT"', () => {
+        test('should show the p-fileupload when status is "SELECT"', () => {
             component.status = STATUS.SELECT;
             fixture.detectChanges();
-            const element = de.query(By.css('p-fileUpload'));
+            const element = de.query(By.css('p-fileupload'));
 
             expect(element).toBeTruthy();
         });
@@ -99,7 +99,7 @@ describe('DotUploadAssetComponent', () => {
             jest.spyOn(component, 'onSelectFile');
 
             fixture.detectChanges();
-            const element = de.query(By.css('p-fileUpload'));
+            const element = de.query(By.css('p-fileupload'));
             element.triggerEventHandler('onSelect', { files: [fileMock] });
 
             fixture.detectChanges();
@@ -132,7 +132,7 @@ describe('DotUploadAssetComponent', () => {
 
             fixture.detectChanges();
 
-            const element = de.query(By.css('p-fileUpload'));
+            const element = de.query(By.css('p-fileupload'));
 
             expect(component.file).toBeNull();
             expect(component.status).toEqual(STATUS.SELECT);

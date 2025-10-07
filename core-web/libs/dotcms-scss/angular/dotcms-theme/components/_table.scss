@@ -39,7 +39,7 @@ $dot-table-cell-height: 1.25rem;
         > .p-datatable-wrapper {
             border-radius: $border-radius-md;
             border: 1px solid $color-palette-gray-400;
-            border-width: 0 1px 1px 1px;
+            border-width: 1px;
         }
 
         .p-paginator-top,
@@ -55,7 +55,7 @@ $dot-table-cell-height: 1.25rem;
         }
 
         .p-datatable-thead tr > th {
-            background-color: $color-palette-gray-200;
+            background-color: $color-palette-gray-100;
             border: 1px solid $color-palette-gray-300;
             border-width: 0 0 1px 0;
             color: $black;
@@ -152,7 +152,6 @@ $dot-table-cell-height: 1.25rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-width: 0;
                 line-height: $dot-table-cell-height;
 
                 span {
@@ -182,7 +181,7 @@ $dot-table-cell-height: 1.25rem;
                 }
 
                 .container-thumbnail {
-                    width: 100%;
+                    width: 85%;
                     height: 3rem;
                     max-height: 3rem;
                     overflow: hidden;

@@ -1,31 +1,33 @@
-<p-treeSelect
-    (onNodeSelect)="store.chooseNode($event)"
-    (onNodeExpand)="store.loadChildren($event)"
-    [formControl]="pathControl"
-    [filter]="true"
-    [options]="store.tree()"
-    [attr.aria-labelledby]="'field-' + $field().variable"
-    [virtualScroll]="true"
-    [virtualScrollItemSize]="50"
-    [scrollHeight]="'450px'"
-    [virtualScrollOptions]="{
-        autoSize: true,
-        style: {
-            width: '100%',
-            height: '450px',
-            minHeight: '200px'
+@let field = $field();
+@let showLabel = $showLabel();
+
+<dot-card-field [hasError]="hasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
+    <dot-card-field-content>
+        <dot-host-folder-field
+            [formControlName]="field.variable"
+            [hasError]="hasError"
+            [isRequired]="isRequired" />
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (hasError) {
+            <div class="error-message">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                }
+            </div>
         }
-    }"
-    filterBy="label"
-    filterMode="lenient"
-    selectionMode="single">
-    <ng-template let-node pTemplate="default">
-        <span>{{ node.label | truncatePath }}</span>
-    </ng-template>
-    <ng-template let-item pTemplate="value">
-        <span>//{{ item?.label }}</span>
-    </ng-template>
-    <ng-template pTemplate="triggericon">
-        <i [ngClass]="store.iconClasses()" class="pi"></i>
-    </ng-template>
-</p-treeSelect>
+
+        @if (!hasError && field.hint) {
+            <div class="hint-message">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
+        }
+    </dot-card-field-footer>
+</dot-card-field>

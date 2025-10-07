@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
  * Verifies that the {@link AnalyticsValidatorUtil} class is able to properly validate the most
  * important attributes that are passed down when a CA Event is fired.
  * <p><b>NOTE:</b> This class was moved from the Unit Test suite to the Integration Test suite
- * because the Site Key Validator uses dotCMS APIs to work as expected.</p>
+ * because the Site Auth Validator uses dotCMS APIs to work as expected.</p>
  *
  * @author Freddy Rodriguez
  * @since Jun 23rd, 2025
@@ -51,8 +51,8 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
 
     private static final String TEST_SITE_NAME = "www.test-ca-site.com";
     private static final String TEST_SITE_ALIAS = "www.alias-test-ca-site.com";
-    // Test random Site Key
-    private static final String TEST_SITE_KEY = "DOT.48190c8c-42c4-46af-8d1a-0cd5db894797.8N9Oq3uD311V8YN2L6-BoINgX";
+    // Test random Site Auth
+    private static final String TEST_SITE_AUTH = "DOT.48190c8c-42c4-46af-8d1a-0cd5db894797.8N9Oq3uD311V8YN2L6-BoINgX";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -63,7 +63,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         testSite = new SiteDataGen().name(TEST_SITE_NAME).aliases(TEST_SITE_ALIAS).nextPersisted(true);
         final AppSecrets.Builder builder = new AppSecrets.Builder();
         final AppSecrets secrets = builder.withKey(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY)
-                .withSecret("siteKey", TEST_SITE_KEY)
+                .withSecret("siteAuth", TEST_SITE_AUTH)
                 .build();
         final AppsAPI appsAPI = APILocator.getAppsAPI();
         appsAPI.saveSecrets(secrets, testSite, APILocator.systemUser());
@@ -89,22 +89,22 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}}
-     * When: The site_key is a number
+     * When: The site_auth is a number
      * Should: return this error
      * <pre>
      *     {
-     *         "field": "context.site_key",
+     *         "field": "context.site_auth",
      *         "code": "INVALID_STRING_TYPE",
      *         "message": "value is not a string: 123"
      *     }
      * </pre>
      */
     @Test
-    public void stringSiteKeyInvalidType() {
+    public void stringSiteAuthInvalidType() {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": 123," +
+                        "\"site_auth\": 123," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -117,25 +117,25 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
 
         assertEquals(1, errors.size());
 
-        assertEquals("context.site_key", errors.get(0).getField());
+        assertEquals("context.site_auth", errors.get(0).getField());
         assertEquals("INVALID_STRING_TYPE", errors.get(0).getCode().toString());
         assertEquals("Field value is not a String: 123", errors.get(0).getMessage());
     }
 
     /**
      * Method to test: {@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}
-     * When: The site_key is missing
+     * When: The site_auth is missing
      * Should: return this error
      * <pre>
      *     {
-     *         "field": "context.site_key",
+     *         "field": "context.site_auth",
      *         "code": "REQUIRED_FIELD_MISSING",
-     *         "message": "Required field is missing: context.site_key"
+     *         "message": "Required field is missing: context.site_auth"
      *     }
      * </pre>
      */
     @Test
-    public void requiredSiteKey() {
+    public void requiredSiteAuth() {
         final String json =
                 "{" +
                     "\"context\": {" +
@@ -151,36 +151,36 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
 
         assertEquals(1, errors.size());
 
-        assertEquals("context.site_key", errors.get(0).getField());
+        assertEquals("context.site_auth", errors.get(0).getField());
         assertEquals("REQUIRED_FIELD_MISSING", errors.get(0).getCode().toString());
-        assertEquals("Required field is missing: context.site_key", errors.get(0).getMessage());
+        assertEquals("Required field is missing: context.site_auth", errors.get(0).getMessage());
     }
 
     /**
      * <ul>
      *     <li><b>Method to test:
      *     </b>{@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}</li>
-     *     <li><b>Given Scenario: </b>The site_key does not match the value in the Content
+     *     <li><b>Given Scenario: </b>The site_auth does not match the value in the Content
      *     Analytics App.</li>
      *     <li><b>Expected Result: </b>The following error must be returned:</li>
      * </ul>
      * <pre>
      *     {
-     *         "field": "context.site_key",
-     *         "code": "INVALID_SITE_KEY",
-     *         "message": "Invalid Site Key"
+     *         "field": "context.site_auth",
+     *         "code": "INVALID_SITE_AUTH",
+     *         "message": "Invalid Site Auth"
      *     }
      * </pre>
      */
     @Test
-    public void invalidSiteKey() {
+    public void invalidSiteAuth() {
         // ╔══════════════════╗
         // ║  Initialization  ║
         // ╚══════════════════╝
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"invalid-key\"," +
+                        "\"site_auth\": \"invalid-auth\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -197,9 +197,9 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         // ║  Assertions  ║
         // ╚══════════════╝
         assertEquals(1, errors.size());
-        assertEquals("context.site_key", errors.get(0).getField());
-        assertEquals("INVALID_SITE_KEY", errors.get(0).getCode().toString());
-        assertEquals("Invalid Site Key", errors.get(0).getMessage());
+        assertEquals("context.site_auth", errors.get(0).getField());
+        assertEquals("INVALID_SITE_AUTH", errors.get(0).getCode().toString());
+        assertEquals("Invalid Site Auth", errors.get(0).getMessage());
     }
 
     /**
@@ -212,21 +212,21 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
      * </ul>
      * <pre>
      *     {
-     *         "field": "context.site_key",
-     *         "code": "INVALID_SITE_KEY",
+     *         "field": "context.site_auth",
+     *         "code": "INVALID_SITE_AUTH",
      *         "message": "Site with name/alias '{{invalidSiteName}}' was not found"
      *     }
      * </pre>
      */
     @Test
-    public void invalidOriginAndRefererHeadersForSiteKey() {
+    public void invalidOriginAndRefererHeadersForSiteAuth() {
         // ╔══════════════════╗
         // ║  Initialization  ║
         // ╚══════════════════╝
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -251,8 +251,8 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
             // ║  Assertions  ║
             // ╚══════════════╝
             assertEquals(1, errors.size());
-            assertEquals("context.site_key", errors.get(0).getField());
-            assertEquals("INVALID_SITE_KEY", errors.get(0).getCode().toString());
+            assertEquals("context.site_auth", errors.get(0).getField());
+            assertEquals("INVALID_SITE_AUTH", errors.get(0).getCode().toString());
             assertEquals("Site with name/alias '" + invalidSiteName + "' was not found", errors.get(0).getMessage());
         } finally {
             // ╔═══════════╗
@@ -272,21 +272,21 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
      * </ul>
      * <pre>
      *     {
-     *         "field": "context.site_key",
-     *         "code": "INVALID_SITE_KEY",
+     *         "field": "context.site_auth",
+     *         "code": "INVALID_SITE_AUTH",
      *         "message": "Site could not be retrieved from Origin or Referer HTTP Headers"
      *     }
      * </pre>
      */
     @Test
-    public void missingOriginAndRefererHeadersForSiteKey() {
+    public void missingOriginAndRefererHeadersForSiteAuth() {
         // ╔══════════════════╗
         // ║  Initialization  ║
         // ╚══════════════════╝
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -310,8 +310,8 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
             // ║  Assertions  ║
             // ╚══════════════╝
             assertEquals(1, errors.size());
-            assertEquals("context.site_key", errors.get(0).getField());
-            assertEquals("INVALID_SITE_KEY", errors.get(0).getCode().toString());
+            assertEquals("context.site_auth", errors.get(0).getField());
+            assertEquals("INVALID_SITE_AUTH", errors.get(0).getCode().toString());
             assertEquals("Site could not be retrieved from Origin or Referer HTTP Headers", errors.get(0).getMessage());
         } finally {
             // ╔═══════════╗
@@ -338,7 +338,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": 456," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -373,7 +373,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
                     "\"events\":[{}]" +
@@ -407,7 +407,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": 789" +
                     "}," +
@@ -442,7 +442,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"" +
                     "}," +
                     "\"events\":[{}]" +
@@ -474,7 +474,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
     public void requiredContext() {
         final String json =
                 "{" +
-                    "\"site_key\": 123," +
+                    "\"site_auth\": 123," +
                     "\"session_id\": \"abc\"," +
                     "\"user_id\": \"abc\"," +
                     "\"events\":[{}]" +
@@ -488,19 +488,19 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final List<String> errorFields =
                 errors.stream().map(AnalyticsValidatorUtil.Error::getField).collect(Collectors.toList());
 
-        assertTrue(errorFields.contains("context.site_key"));
+        assertTrue(errorFields.contains("context.site_auth"));
         assertTrue(errorFields.contains("context.session_id"));
         assertTrue(errorFields.contains("context.user_id"));
         assertTrue(errorFields.contains("context"));
-        assertTrue(errorFields.contains("site_key"));
+        assertTrue(errorFields.contains("site_auth"));
         assertTrue(errorFields.contains("session_id"));
         assertTrue(errorFields.contains("user_id"));
 
         for (AnalyticsValidatorUtil.Error error : errors) {
-            if (error.getField().equals("context.site_key")) {
-                assertEquals("context.site_key", error.getField());
+            if (error.getField().equals("context.site_auth")) {
+                assertEquals("context.site_auth", error.getField());
                 assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
-                assertEquals("Required field is missing: context.site_key", error.getMessage());
+                assertEquals("Required field is missing: context.site_auth", error.getMessage());
             } else if (error.getField().equals("context.session_id")) {
                 assertEquals("context.session_id", error.getField());
                 assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
@@ -513,10 +513,10 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 assertEquals("context", error.getField());
                 assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
                 assertEquals("Required field is missing: context", error.getMessage());
-            } else  if (error.getField().equals("site_key")){
-                assertEquals("site_key", error.getField());
+            } else  if (error.getField().equals("site_auth")){
+                assertEquals("site_auth", error.getField());
                 assertEquals("UNKNOWN_FIELD", error.getCode().toString());
-                assertEquals("Unknown field 'site_key'", error.getMessage());
+                assertEquals("Unknown field 'site_auth'", error.getMessage());
             } else  if (error.getField().equals("session_id")){
                 assertEquals("session_id", error.getField());
                 assertEquals("UNKNOWN_FIELD", error.getCode().toString());
@@ -559,16 +559,16 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final List<String> errorFields =
                 errors.stream().map(AnalyticsValidatorUtil.Error::getField).collect(Collectors.toList());
 
-        assertTrue(errorFields.contains("context.site_key"));
+        assertTrue(errorFields.contains("context.site_auth"));
         assertTrue(errorFields.contains("context.session_id"));
         assertTrue(errorFields.contains("context.user_id"));
         assertTrue(errorFields.contains("context"));
 
         for (AnalyticsValidatorUtil.Error error : errors) {
-            if (error.getField().equals("context.site_key")) {
-                assertEquals("context.site_key", error.getField());
+            if (error.getField().equals("context.site_auth")) {
+                assertEquals("context.site_auth", error.getField());
                 assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
-                assertEquals("Required field is missing: context.site_key", error.getMessage());
+                assertEquals("Required field is missing: context.site_auth", error.getMessage());
             } else if (error.getField().equals("context.session_id")) {
                 assertEquals("context.session_id", error.getField());
                 assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
@@ -587,11 +587,11 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}}
-     * When: The site_key is a number
+     * When: The site_auth is a number
      * Should: return this error
      * <pre>
      *     {
-     *         "field": "context.site_key",
+     *         "field": "context.site_auth",
      *         "code": "INVALID_STRING_TYPE",
      *         "message": "value is not a string: 123"
      *     }
@@ -603,7 +603,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -641,13 +641,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"xyz\"," +
+                        "\"site_auth\": \"xyz\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
                     "\"events\":[" +
                         "{" +
-                        "\"data\": {}" +
+                            "\"data\": {}" +
                         "}" +
                     "]" +
                 "}";
@@ -655,11 +655,23 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
                 .validateEvents((JSONArray) new JSONObject(json).get("events"));
 
-        assertEquals(1, errors.size());
+        assertEquals(2, errors.size());
 
-        assertEquals("events[0].event_type", errors.get(0).getField());
-        assertEquals("REQUIRED_FIELD_MISSING", errors.get(0).getCode().toString());
-        assertEquals("Required field is missing: event_type", errors.get(0).getMessage());
+        final List<String> errorsField = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getField)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertTrue(errorsField.contains("events[0].event_type"));
+        assertTrue(errorsField.contains("events[0].local_time"));
+
+        final List<ValidationErrorCode> errorsCode = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getCode)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsCode.size());
+        assertEquals("REQUIRED_FIELD_MISSING", errorsCode.get(0).name());
     }
 
     /**
@@ -676,11 +688,11 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
      */
     @Test
     public void dataIsRequired() {
-        final int errorsCountExpected = 11;
+        final int errorsCountExpected = 10;
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -702,7 +714,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 .collect(Collectors.toList());
 
         assertEquals(errorsCountExpected, errorsField.size());
-        assertTrue(errorsField.contains("events[0].data"));
         assertTrue(errorsField.contains("events[0].data.page"));
         assertTrue(errorsField.contains("events[0].data.page.url"));
         assertTrue(errorsField.contains("events[0].data.page.title"));
@@ -729,7 +740,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
 
         assertEquals(errorsCountExpected, errorsField.size());
         assertTrue(errorsMessages.contains("Required field is missing: data.page"));
-        assertTrue(errorsMessages.contains("Required field is missing: data"));
         assertTrue(errorsMessages.contains("Required field is missing: data.page.url"));
         assertTrue(errorsMessages.contains("Required field is missing: data.page.title"));
         assertTrue(errorsMessages.contains("Required field is missing: data.device"));
@@ -750,7 +760,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY +"\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH +"\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -791,7 +801,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -836,7 +846,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -902,5 +912,149 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final HttpServletRequestThreadLocal requestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
         requestThreadLocal.setRequest(req);
     }
+
+    /**
+     * Method to test: {@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}}
+     * When: We are going to send a event without event_type
+     * Should: return this error
+     * <pre>
+     *     {
+     *         "field": "events[0].event_type",
+     *         "code": "REQUIRED_FIELD_MISSING",
+     *         "message": "Required field is missing: events.event_type"
+     *     }
+     * </pre>
+     */
+    @Test
+    public void eventsRequiredFields() {
+        final String json =
+                "{" +
+                        "\"context\": {" +
+                            "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
+                            "\"session_id\": \"abc\"," +
+                            "\"user_id\": \"abc\"" +
+                        "}," +
+                        "\"events\":[{}]" +
+                "}";
+
+        final JSONObject jsonObject = new JSONObject(json);
+
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
+                .validateEvents(jsonObject.getJSONArray("events"));
+
+        assertEquals(2, errors.size());
+
+        final List<String> errorsField = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getField)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertTrue(errorsField.contains("events[0].event_type"));
+        assertTrue(errorsField.contains("events[0].local_time"));
+
+        final List<ValidationErrorCode> errorsCode = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getCode)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsCode.size());
+        assertEquals("REQUIRED_FIELD_MISSING", errorsCode.get(0).name());
+
+    }
+
+    /**
+     * Method to test: {@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}}
+     * When: I sent a vent just with the event_type for a custom_event
+     * Should: return this error
+     * <pre>
+     *     {
+     *         "field": "events[0].local_time",
+     *         "code": "REQUIRED_FIELD_MISSING",
+     *         "message": "Required field is missing: events.local_time"
+     *     }
+     * </pre>
+     */
+    @Test
+    public void eventsRequiredFieldsLocalTimeAndData() {
+        final String json =
+                "{" +
+                    "\"context\": {" +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
+                        "\"session_id\": \"abc\"," +
+                        "\"user_id\": \"abc\"" +
+                    "}," +
+                    "\"events\":[{" +
+                        "\"event_type\": \"custom_event\"," +
+                    "}]" +
+                "}";
+
+        final JSONObject jsonObject = new JSONObject(json);
+
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
+                .validateEvents(jsonObject.getJSONArray("events"));
+
+        assertEquals(1, errors.size());
+
+        final List<String> errorsField = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getField)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsField.size());
+        assertTrue(errorsField.contains("events[0].local_time"));
+
+
+        final List<ValidationErrorCode> errorsCode = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getCode)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsCode.size());
+        assertEquals("REQUIRED_FIELD_MISSING", errorsCode.get(0).name());
+
+        final List<String> errorsMessages = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getMessage)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsField.size());
+        assertTrue(errorsMessages.contains("Required field is missing: local_time"));
+    }
+
+    /**
+     * Method to test: {@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}}
+     * When: Send a custom section
+     * Should: it is ok, no errors must be trigger
+     */
+    @Test
+    public void eventsWithCustomSection() {
+        final String json =
+                "{" +
+                    "\"context\": {" +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
+                        "\"session_id\": \"abc\"," +
+                        "\"user_id\": \"abc\"" +
+                    "}," +
+                    "\"events\":[{" +
+                        "\"event_type\": \"custom_event\"," +
+                        "\"local_time\": \"2025-06-09T14:30:00+02:00\"," +
+                        "\"data\": {" +
+                            "\"custom\": {" +
+                                 "\"key1\": \"value1\"," +
+                                 "\"key2\": \"value2\"" +
+                            "}" +
+                        "}" +
+                    "}]" +
+                "}";
+
+        final JSONObject jsonObject = new JSONObject(json);
+
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
+                .validateEvents(jsonObject.getJSONArray("events"));
+
+        assertTrue( errors.isEmpty());
+
+    }
+
 
 }

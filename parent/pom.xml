@@ -61,7 +61,7 @@
         </java.module.args>
 
         <maven.deploy.skip>false</maven.deploy.skip>
-        <tomcat.version>9.0.85</tomcat.version>
+        <tomcat.version>9.0.108</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
         <!--suppress UnresolvedMavenProperty -->
         <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>
@@ -76,7 +76,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20250714</starter.deploy.version>
+        <starter.deploy.version>empty_20251006</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>

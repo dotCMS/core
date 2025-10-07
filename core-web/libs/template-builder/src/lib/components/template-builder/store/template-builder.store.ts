@@ -11,8 +11,7 @@ import {
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
-    DotTemplateLayoutProperties,
-    SYSTEM_CONTAINER_IDENTIFIER
+    DotTemplateLayoutProperties
 } from '../models/models';
 import {
     getIndexRowInItems,
@@ -47,14 +46,15 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     }));
 
     // Rows Updaters
-
     /**
      * @description This Method adds a new row to the grid
      *
      * @memberof DotTemplateBuilderStore
      */
     readonly addRow = this.updater((state, newRow: DotGridStackWidget) => {
-        const { rows } = state;
+        const { rows, defaultContainer } = state;
+        const identifier = defaultContainer?.path ?? defaultContainer?.identifier;
+        const containers = identifier ? [{ identifier }] : [];
 
         return {
             ...state,
@@ -75,11 +75,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                                 h: 1,
                                 x: 0,
                                 y: 0,
-                                containers: [
-                                    {
-                                        identifier: SYSTEM_CONTAINER_IDENTIFIER
-                                    }
-                                ],
+                                containers,
                                 parentId: newRow.id,
                                 styleClass: null
                             }
@@ -158,7 +154,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly addColumn = this.updater((state, column: DotGridStackNode) => {
         const { rows } = state;
-        const newColumn = createDotGridStackWidgetFromNode(column);
+        const newColumn = createDotGridStackWidgetFromNode(column, state.defaultContainer);
 
         return {
             ...state,
@@ -236,7 +232,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly updateColumnGridStackData = this.updater(
         (state, affectedColumns: DotGridStackNode[]) => {
             const { rows } = state;
-            affectedColumns = createDotGridStackWidgets(affectedColumns);
+            affectedColumns = createDotGridStackWidgets(affectedColumns, state.defaultContainer);
 
             return {
                 ...state,
@@ -554,6 +550,19 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         themeId,
         shouldEmit: true
     }));
+
+    /**
+     * @description This method updates the defaultContainer
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly updateDefaultContainer = this.updater(
+        (state, defaultContainer: DotContainer | null) => ({
+            ...state,
+            defaultContainer,
+            shouldEmit: true
+        })
+    );
 
     // Utils methods
 

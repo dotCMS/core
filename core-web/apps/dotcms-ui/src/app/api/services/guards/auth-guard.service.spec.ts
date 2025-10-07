@@ -4,11 +4,12 @@ import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 
 import { AuthGuardService } from './auth-guard.service';
+
+import { DOTTestBed } from '../../../test/dot-test-bed';
 
 @Injectable()
 class MockLoginService {
@@ -33,18 +34,18 @@ describe('ValidAuthGuardService', () => {
         authGuardService = TestBed.inject(AuthGuardService);
         dotRouterService = TestBed.inject(DotRouterService);
         loginService = TestBed.inject(LoginService);
-        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
+        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
+        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
             'toString'
         ]);
-        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-            'ActivatedRouteSnapshot',
-            ['toString']
-        );
     });
 
     it('should allow access to the requested route, User is logged in', () => {
         let result: boolean;
-        spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(observableOf(true));
+        Object.defineProperty(loginService, 'isLogin$', {
+            value: observableOf(true),
+            writable: true
+        });
         authGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -53,7 +54,10 @@ describe('ValidAuthGuardService', () => {
 
     it('should denied access to the requested route, User is NOT logged in', () => {
         let result: boolean;
-        spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(observableOf(false));
+        Object.defineProperty(loginService, 'isLogin$', {
+            value: observableOf(false),
+            writable: true
+        });
         authGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));

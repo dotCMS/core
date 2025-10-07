@@ -93,7 +93,7 @@ public class StructureFactory {
 	public static Structure getStructureByType(String type)
 	{
 		type = SQLUtil.sanitizeParameter(type);
-		String condition = " name = '" + type + "'";
+		String condition = " structure.name = '" + type + "'";
 		try {
 			return new StructureTransformer(typeAPI.search(condition, "mod_date desc", 1, 0)).asStructure();
 		} catch (DotStateException | DotDataException e) {
@@ -327,22 +327,17 @@ public class StructureFactory {
 		}
 	}
 
-	public static List<Structure> getStructuresByWFScheme(WorkflowScheme scheme, User user, boolean respectFrontendRoles) throws DotDataException
-	{
+    public static List<Structure> getStructuresByWFScheme(WorkflowScheme scheme, User user, boolean respectFrontendRoles) throws DotDataException {
 
-		try{
-			String condition = " structure.inode exists (select structure_id from workflow_scheme_x_structure where workflow_scheme_x_structure.scheme_id = ' "  + scheme.getId() + "')";
-			int limit = -1;
-			List<ContentType> types = APILocator.getContentTypeAPI(user,respectFrontendRoles).search(condition, "mod_date desc", limit, 0);
-			return new StructureTransformer(types).asStructureList();
-		}
-		catch(Exception e){
-			Logger.error(StructureFactory.class, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(),e);
-
-		}
-		
-	}
+        try {
+            // Use WorkflowAPI to fetch content types associated with the given scheme
+            final List<ContentType> types = APILocator.getWorkflowAPI().findContentTypesForScheme(scheme);
+            return new StructureTransformer(types).asStructureList();
+        } catch (Exception e) {
+            Logger.error(StructureFactory.class, e.getMessage(), e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
 
 	public static List getStructures(int limit)
 	{
@@ -364,15 +359,8 @@ public class StructureFactory {
 
 	public static List<Structure> getStructures(String condition, String orderBy,int limit,int offset,String direction) {
 
-        //Forms are an enterprise feature...
-        if ( LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level ) {
-            if ( !UtilMethods.isSet(condition) ) {
-                condition  = " structuretype not in(" + BaseContentType.FORM.getType() + ","+BaseContentType.PERSONA.getType() +") ";
-            }
-            else{
-            	condition += " and structuretype not in(" + BaseContentType.FORM.getType() + ","+BaseContentType.PERSONA.getType() +") ";
-            }            
-        }
+        // Community edition filtering is now enforced at the ContentTypeFactory layer.
+        // Remove legacy NOT IN condition appends to keep queries within the simplified safe grammar.
 
 		try{
 			List<ContentType> types = typeAPI.search(condition, orderBy + " " +direction, limit, offset);

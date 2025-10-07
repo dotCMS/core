@@ -16,8 +16,6 @@
             [ngModel]="content"
             data-testid="tiptap-editor" />
     </div>
-
-    <dot-bubble-menu [editor]="editor" />
     <div
         dotDragHandle
         [editor]="editor"
@@ -34,4 +32,8 @@
             [readingTime]="readingTime"
             data-testid="editor-count-bar" />
     }
+
+    <dot-editor-context-menu [editor]="editor" />
+    <dot-add-button [editor]="editor" />
+    <dot-bubble-menu [editor]="editor" />
 }

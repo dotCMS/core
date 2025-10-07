@@ -2,9 +2,10 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotFeatureFlagResolver } from '@portlets/shared/resolvers';
 
 import { DotContentTypesEditComponent } from '.';
+
+import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.service';
 
 const routes: Routes = [
     {

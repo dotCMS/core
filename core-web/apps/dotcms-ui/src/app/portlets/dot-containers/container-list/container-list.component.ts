@@ -13,9 +13,8 @@ import {
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu } from 'primeng/menu';
 
-import { skip, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
-import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
@@ -28,13 +27,17 @@ import {
     DotMessageType,
     DotActionMenuItem
 } from '@dotcms/dotcms-models';
-import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
+
+import { DotContainerListStore } from './store/dot-container-list.store';
+
+import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 
 @Component({
     selector: 'dot-container-list',
     templateUrl: './container-list.component.html',
     styleUrls: ['./container-list.component.scss'],
-    providers: [DotContainerListStore]
+    providers: [DotContainerListStore],
+    standalone: false
 })
 export class ContainerListComponent implements OnDestroy {
     private dotMessageService = inject(DotMessageService);
@@ -62,9 +65,9 @@ export class ContainerListComponent implements OnDestroy {
             this.selectedContainers = [];
         });
 
-        this.siteService.switchSite$
-            .pipe(skip(1)) // Skip initialization
-            .subscribe(({ identifier }) => this.#store.getContainersByHost(identifier));
+        this.siteService.switchSite$.subscribe(({ identifier }) =>
+            this.#store.getContainersByHost(identifier)
+        );
     }
 
     ngOnDestroy(): void {

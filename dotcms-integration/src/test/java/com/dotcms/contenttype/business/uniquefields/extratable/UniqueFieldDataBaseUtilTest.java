@@ -27,9 +27,9 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import graphql.AssertException;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -39,8 +39,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
@@ -52,6 +54,8 @@ import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFiel
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LIVE_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.SITE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.VARIANT_ATTR;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -75,33 +79,39 @@ public class UniqueFieldDataBaseUtilTest {
     }
 
     /**
-     * Method to test: {@link UniqueFieldDataBaseUtil#createUniqueFieldsValidationTable()}
-     * When: call this method
-     * Should: create the unique_fields table with the right columns
+     * <ul>
+     *     <li><b>Method to test:</b>
+     *     {@link UniqueFieldDataBaseUtil#createUniqueFieldsValidationTable()}</li>
+     *     <li><b>Given Scenario:</b> Create the unique_fields table which, by default, has no
+     *     primary key set. This is because there might be situations in which several Contentlets
+     *     may have the same unique value, and that's not correct. Temporarily allowing duplicates
+     *     allows us to find them and fix them appropriately.</li>
+     *     <li><b>Expected Result:</b> The unique_fields table must exist, with the right columns
+     *     .</li>
+     * </ul>
      *
-     * @throws SQLException
-     * @throws DotDataException
+     * @throws SQLException     An error occurred when checking the DBMS metadata.
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @Test
     public void createUniqueFieldsTable() throws SQLException, DotDataException {
         final Connection connection = DbConnectionFactory.getConnection();
         final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
         dotDatabaseMetaData.dropTable(connection, "unique_fields");
-        assertFalse(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
+
+        assertFalse("The 'unique_fields' table was just dropped, and should NOT exist",
+                dotDatabaseMetaData.tableExists(connection, "unique_fields"));
 
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
 
-        assertTrue(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
+        assertTrue("The 'unique_fields' table must exist now",
+                dotDatabaseMetaData.tableExists(connection, "unique_fields"));
 
         final ResultSet uniqueFieldsColumns = DotDatabaseMetaData.getColumnsMetaData(connection,
                 "unique_fields");
-
-
         while (uniqueFieldsColumns.next()) {
-
             final String columnName = uniqueFieldsColumns.getString("COLUMN_NAME");
-
             final String columnType = uniqueFieldsColumns.getString("TYPE_NAME");
             final String columnSize = uniqueFieldsColumns.getString("COLUMN_SIZE");
 
@@ -111,15 +121,9 @@ public class UniqueFieldDataBaseUtilTest {
             } else if (columnName.equals("supporting_values")) {
                 assertEquals("jsonb", columnType);
             } else {
-                throw new AssertException("Column no valid");
+                throw new AssertException("Unexpected column name: " + columnName);
             }
         }
-
-
-        final List<String> primaryKeysFields = DotDatabaseMetaData.getPrimaryKeysFields("unique_fields");
-        assertEquals(1, primaryKeysFields.size());
-        assertTrue(primaryKeysFields.contains("unique_key_val"));
-
     }
 
     /**
@@ -141,6 +145,7 @@ public class UniqueFieldDataBaseUtilTest {
             assertFalse(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
 
             uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+            uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
 
             assertTrue(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
 
@@ -211,12 +216,13 @@ public class UniqueFieldDataBaseUtilTest {
 
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
 
-        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+        assertTrue(getUniqueFieldRecords(contentType).isEmpty());
 
         uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
 
-        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldRecords(contentType);
         assertEquals(3, uniqueFieldsRegisters.size());
 
         for (Map<String, Object> uniqueFieldsRegister : uniqueFieldsRegisters) {
@@ -292,12 +298,13 @@ public class UniqueFieldDataBaseUtilTest {
 
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
 
-        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+        assertTrue(getUniqueFieldRecords(contentType).isEmpty());
 
         uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
 
-        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldRecords(contentType);
         assertEquals(1, uniqueFieldsRegisters.size());
 
         final Map<String, Object> uniqueFieldsRegister = uniqueFieldsRegisters.get(0);
@@ -393,12 +400,13 @@ public class UniqueFieldDataBaseUtilTest {
 
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
 
-        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+        assertTrue(getUniqueFieldRecords(contentType).isEmpty());
 
         uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
 
-        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldRecords(contentType);
         assertEquals(3, uniqueFieldsRegisters.size());
 
         for (Map<String, Object> uniqueFieldsRegister : uniqueFieldsRegisters) {
@@ -491,12 +499,13 @@ public class UniqueFieldDataBaseUtilTest {
 
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
 
-        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+        assertTrue(getUniqueFieldRecords(contentType).isEmpty());
 
         uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
 
-        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldRecords(contentType);
         assertEquals(1, uniqueFieldsRegisters.size());
 
         final Map<String, Object> uniqueFieldsRegister = uniqueFieldsRegisters.get(0);
@@ -569,12 +578,13 @@ public class UniqueFieldDataBaseUtilTest {
 
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
 
-        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+        assertTrue(getUniqueFieldRecords(contentType).isEmpty());
 
         uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
 
-        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldRecords(contentType);
         assertEquals(1, uniqueFieldsRegisters.size());
 
         final Map<String, Object> uniqueFieldsRegister = uniqueFieldsRegisters.get(0);
@@ -654,10 +664,11 @@ public class UniqueFieldDataBaseUtilTest {
         dotDatabaseMetaData.dropTable(connection, "unique_fields");
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
-        assertTrue("There must be NO records after dropping the unique fields table", getUniqueFieldsRegisters(contentType).isEmpty());
+        uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
+        assertTrue("There must be NO records after dropping the unique fields table", getUniqueFieldRecords(contentType).isEmpty());
 
         uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
-        final List<Map<String, Object>> uniqueFieldRecords = getUniqueFieldsRegisters(contentType);
+        final List<Map<String, Object>> uniqueFieldRecords = getUniqueFieldRecords(contentType);
         assertEquals("There must be exactly 2 records after populating the unique fields table", 2, uniqueFieldRecords.size());
 
         final List<String> contentletIds = uniqueFieldRecords.stream()
@@ -698,7 +709,6 @@ public class UniqueFieldDataBaseUtilTest {
     @SuppressWarnings("unchecked")
     //TODO: WE'RE TEMPORARILY IGNORING THIS TEST BECAUSE IT DEPENDS ON THE CODE FIX
     // FOM TICKET https://github.com/dotCMS/core/issues/32309
-    @Ignore
     public void populateUniqueFieldsTableWithVariantWithSameValues() throws SQLException, DotDataException {
         final Variant variant = new VariantDataGen().nextPersisted();
 
@@ -723,6 +733,7 @@ public class UniqueFieldDataBaseUtilTest {
         final Contentlet defaultContentlet = new ContentletDataGen(contentType)
                 .host(site)
                 .languageId(language.getId())
+                .variant(VariantAPI.DEFAULT_VARIANT)
                 .setProperty(uniqueTextField.variable(), uniqueValue)
                 .nextPersisted();
 
@@ -734,11 +745,12 @@ public class UniqueFieldDataBaseUtilTest {
         dotDatabaseMetaData.dropTable(connection, "unique_fields");
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
-        assertTrue("There must be NO records after dropping the unique fields table", getUniqueFieldsRegisters(contentType).isEmpty());
+        uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
+        assertTrue("There must be NO records after dropping the unique fields table", getUniqueFieldRecords(contentType).isEmpty());
 
         uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
 
-        final List<Map<String, Object>> uniqueFieldRecords = getUniqueFieldsRegisters(contentType);
+        final List<Map<String, Object>> uniqueFieldRecords = getUniqueFieldRecords(contentType);
         assertEquals("There must be exactly 1 record after populating the unique fields table", 1, uniqueFieldRecords.size());
 
         final Map<String, Object> uniqueFieldRecord = uniqueFieldRecords.get(0);
@@ -804,12 +816,13 @@ public class UniqueFieldDataBaseUtilTest {
 
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
 
-        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+        assertTrue(getUniqueFieldRecords(contentType).isEmpty());
 
         uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
 
-        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldRecords(contentType);
         assertEquals(2, uniqueFieldsRegisters.size());
 
         for (Map<String, Object> uniqueFieldsRegister : uniqueFieldsRegisters) {
@@ -837,10 +850,19 @@ public class UniqueFieldDataBaseUtilTest {
         }
     }
 
-
-    private List<Map<String, Object>> getUniqueFieldsRegisters(ContentType contentType) throws DotDataException {
+    /**
+     *
+     * @param contentType
+     * @return
+     * @throws DotDataException
+     */
+    private List<Map<String, Object>> getUniqueFieldRecords(final ContentType contentType) throws DotDataException {
         return new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeId' = ?")
                 .addParam(contentType.id()).loadObjectResults();
+    }
+
+    private List<Map<String, Object>> getUniqueFieldRecordsWithSameHash() throws DotDataException {
+        return new DotConnect().setSQL(SqlQueries.GET_RECORDS_WITH_SAME_HASH).loadObjectResults();
     }
 
     /**
@@ -1120,7 +1142,7 @@ public class UniqueFieldDataBaseUtilTest {
      * @throws DotDataException
      */
     @Test()
-    public void popualteUniqueDtaMustbeCaseInsensitive() throws  DotDataException {
+    public void populatedUniqueDataMustBeCaseInsensitive() throws  DotDataException {
         final String uniqueValue =  "A";
 
         final Language language = new LanguageDataGen().nextPersisted();
@@ -1146,7 +1168,7 @@ public class UniqueFieldDataBaseUtilTest {
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
         uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
-
+        uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
         uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
 
         try {
@@ -1161,6 +1183,201 @@ public class UniqueFieldDataBaseUtilTest {
             if (!(e.getCause() instanceof DotContentletValidationException)) {
                 throw new AssertionError("DotContentletValidationException expected");
             }
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UniqueFieldDataBaseUtil#handleDuplicateRecords()}</li>
+     *     <li><b>Given Scenario:</b> Manually insert four records in the {@code unique_fields}
+     *     table having the exact same hash, but point to different Contentlet Identifiers. This
+     *     simulates the scenario in which different contents have the same unique value, which
+     *     should NEVER happen but was being allowed by race conditions with Elasticsearch.</li>
+     *     <li><b>Expected Result:</b> The method to test will detect the duplicates and manually
+     *     fixes the conflicts. It leaves only one of the duplicates, updates the unique value of
+     *     the remaining ones, and re-generates their hashes so they can be inserted in the table
+     *     without problems. This error is NOT supposed to happen anymore.</li>
+     * </ul>
+     *
+     * @throws SQLException     An error occurred when checking the DBMS metadata.
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @Test
+    public void fixDuplicateEntriesWithDifferentContentIdentifiers() throws DotDataException, DotSecurityException, SQLException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+        final Connection connection = DbConnectionFactory.getConnection();
+        final String uniqueValue = "duplicate_unique_value";
+        final String siteId = UUIDGenerator.generateUuid();
+        final String testContentIdOne = UUIDGenerator.generateUuid();
+        final String testContentIdTwo = UUIDGenerator.generateUuid();
+        final String testContentIdThree = UUIDGenerator.generateUuid();
+        final String testContentIdFour = UUIDGenerator.generateUuid();
+        final long languageId = 1;
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Host site = new SiteDataGen().nextPersisted();
+        final Field uniqueTextField = new FieldDataGen()
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(site)
+                .fields(list(uniqueTextField))
+                .nextPersisted();
+
+        final ImmutableTextField uniqueFieldUpdated = ImmutableTextField.builder()
+                .from(uniqueTextField)
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .build();
+        APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        try {
+            dotDatabaseMetaData.dropTable(connection, "unique_fields");
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+            // Generating the duplicate hash key
+            final String uniqueKeyValue = contentType.id() + uniqueTextField.variable() + languageId + uniqueValue;
+
+            // Generating the duplicate record for the first Contentlet
+            assertNotNull(VariantAPI.DEFAULT_VARIANT.name());
+            final Map<String, Object> supportingValues = new HashMap<>(Map.of(
+                    CONTENTLET_IDS_ATTR, List.of(testContentIdOne),
+                    CONTENT_TYPE_ID_ATTR, Objects.requireNonNull(contentType.id()),
+                    FIELD_VARIABLE_NAME_ATTR, Objects.requireNonNull(uniqueTextField.variable()),
+                    FIELD_VALUE_ATTR, uniqueValue,
+                    LANGUAGE_ID_ATTR, languageId,
+                    UNIQUE_PER_SITE_ATTR, false,
+                    VARIANT_ATTR, VariantAPI.DEFAULT_VARIANT.name(),
+                    LIVE_ATTR, true,
+                    SITE_ID_ATTR, siteId
+            ));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+
+            // Generating the duplicate unique value record for the second Contentlet
+            supportingValues.put(CONTENTLET_IDS_ATTR, List.of(testContentIdTwo));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+            // Generating the duplicate unique value record for the third Contentlet
+            supportingValues.put(CONTENTLET_IDS_ATTR, List.of(testContentIdThree));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+            // Generating the duplicate unique value record for the fourth Contentlet
+            supportingValues.put(CONTENTLET_IDS_ATTR, List.of(testContentIdFour));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+
+            // ╔══════════════╗
+            // ║  Assertions  ║
+            // ╚══════════════╝
+            List<Map<String, Object>> recordCountWithSameHash = this.getUniqueFieldRecordsWithSameHash();
+            assertEquals("There must be exactly 4 duplicate records", 4,
+                    Integer.parseInt(recordCountWithSameHash.get(0).get("count").toString()));
+
+            uniqueFieldDataBaseUtil.handleDuplicateRecords();
+
+            recordCountWithSameHash = this.getUniqueFieldRecordsWithSameHash();
+            assertEquals("There must be NO duplicate records as they all should've been fixed",
+                    0, recordCountWithSameHash.size());
+        } finally {
+            dotDatabaseMetaData.dropTable(connection, "unique_fields");
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+            uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UniqueFieldDataBaseUtil#handleDuplicateRecords()}</li>
+     *     <li><b>Given Scenario:</b> Manually insert two records in the {@code unique_fields} table
+     *     having the exact same hash because a single Contentlet can have both a live and a working
+     *     version. This duplicate record handling just applies the first time the table is being
+     *     populated. The API already handles this situation correctly.</li>
+     *     <li><b>Expected Result:</b> The method to test will detect the duplicates and manually
+     *     fixes the conflicts. It leaves only one of the duplicates, updates the unique value of
+     *     the remaining ones, and re-generates their hashes so they can be inserted in the table
+     *     without problems. This error is NOT supposed to happen anymore</li>
+     * </ul>
+     *
+     * @throws SQLException     An error occurred when checking the DBMS metadata.
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @Test
+    public void fixDuplicateEntriesWithSameContentInLiveAndWorking() throws DotDataException, DotSecurityException, SQLException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+        final Connection connection = DbConnectionFactory.getConnection();
+        final String uniqueValue = "duplicate_unique_value";
+        final String siteId = UUIDGenerator.generateUuid();
+        final String testContentIdOne = UUIDGenerator.generateUuid();
+        final long languageId = 1;
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Host site = new SiteDataGen().nextPersisted();
+        final Field uniqueTextField = new FieldDataGen()
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(site)
+                .fields(list(uniqueTextField))
+                .nextPersisted();
+
+        final ImmutableTextField uniqueFieldUpdated = ImmutableTextField.builder()
+                .from(uniqueTextField)
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .build();
+        APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        try {
+            dotDatabaseMetaData.dropTable(connection, "unique_fields");
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+            // Generating the duplicate hash key
+            final String uniqueKeyValue = contentType.id() + uniqueTextField.variable() + languageId + uniqueValue;
+
+            // Generating the duplicate record for the first Contentlet
+            assertNotNull(VariantAPI.DEFAULT_VARIANT.name());
+            final Map<String, Object> supportingValues = new HashMap<>(Map.of(
+                    CONTENTLET_IDS_ATTR, List.of(testContentIdOne),
+                    CONTENT_TYPE_ID_ATTR, Objects.requireNonNull(contentType.id()),
+                    FIELD_VARIABLE_NAME_ATTR, Objects.requireNonNull(uniqueTextField.variable()),
+                    FIELD_VALUE_ATTR, uniqueValue,
+                    LANGUAGE_ID_ATTR, languageId,
+                    UNIQUE_PER_SITE_ATTR, false,
+                    VARIANT_ATTR, VariantAPI.DEFAULT_VARIANT.name(),
+                    LIVE_ATTR, true,
+                    SITE_ID_ATTR, siteId
+            ));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+
+            // Generating the duplicate record for the same Contentlet as a working version
+            supportingValues.put(LIVE_ATTR, false);
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+
+            // ╔══════════════╗
+            // ║  Assertions  ║
+            // ╚══════════════╝
+            List<Map<String, Object>> recordCountWithSameHash = this.getUniqueFieldRecordsWithSameHash();
+            assertEquals("There must be exactly 2 duplicate records", 2,
+                    Integer.parseInt(recordCountWithSameHash.get(0).get("count").toString()));
+
+            uniqueFieldDataBaseUtil.handleDuplicateRecords();
+
+            recordCountWithSameHash = this.getUniqueFieldRecordsWithSameHash();
+            assertEquals("There must be NO duplicate records as they all should've been fixed",
+                    0, recordCountWithSameHash.size());
+        } finally {
+            dotDatabaseMetaData.dropTable(connection, "unique_fields");
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+            uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
         }
     }
 

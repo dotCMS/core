@@ -27,13 +27,15 @@ class PushPublishServiceMock {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-push-publish-dialog></dot-push-publish-dialog>'
+    template: '<dot-push-publish-dialog></dot-push-publish-dialog>',
+    standalone: false
 })
 class TestHostComponent {}
 
 @Component({
     selector: 'dot-push-publish-form',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestDotPushPublishFormComponent {
     @Input() data: DotPushPublishDialogData;
@@ -88,7 +90,7 @@ describe('DotPushPublishDialogComponent', () => {
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         pushPublishService = TestBed.inject(PushPublishService);
         fixture.detectChanges();
-        spyOn(comp.cancel, 'emit');
+        jest.spyOn(comp.cancel, 'emit');
     });
 
     describe('dot-dialog', () => {
@@ -173,7 +175,7 @@ describe('DotPushPublishDialogComponent', () => {
 
         describe('on success pushPublishContent', () => {
             beforeEach(() => {
-                spyOn<any>(pushPublishService, 'pushPublishContent').and.returnValue(of(null));
+                jest.spyOn<any>(pushPublishService, 'pushPublishContent').mockReturnValue(of(null));
             });
 
             xit('should submit on accept and hide dialog', () => {
@@ -216,7 +218,7 @@ describe('DotPushPublishDialogComponent', () => {
         describe('on error pushPublishContent', () => {
             const errors = ['Error 1', 'Error 2'];
             beforeEach(() => {
-                spyOn<any>(pushPublishService, 'pushPublishContent').and.returnValue(
+                jest.spyOn<any>(pushPublishService, 'pushPublishContent').mockReturnValue(
                     of({ errors: errors })
                 );
             });

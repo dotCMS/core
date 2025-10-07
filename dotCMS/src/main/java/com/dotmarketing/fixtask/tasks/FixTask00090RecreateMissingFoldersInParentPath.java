@@ -116,13 +116,13 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 
     @VisibleForTesting
     protected boolean isFolderIdentifierMissing(LiteFolder folder) throws SQLException {
-        String sql = "SELECT COUNT(1) FROM identifier WHERE parent_path = ? AND asset_name = ? AND asset_type = ? and host_inode = ?";
+        String sql = "SELECT COUNT(1) FROM identifier WHERE lower(parent_path) = ? AND lower(asset_name) = ? AND asset_type = ? and host_inode = ?";
 
         boolean missing = false;
 
         try (PreparedStatement stmt = DbConnectionFactory.getConnection().prepareStatement(sql)) {
-            stmt.setObject(1, folder.parentPath);
-            stmt.setObject(2, folder.name);
+            stmt.setObject(1, folder.parentPath.toLowerCase());
+            stmt.setObject(2, folder.name.toLowerCase());
             stmt.setObject(3, LiteFolder.type);
             stmt.setObject(4, folder.hostId);
 
@@ -140,7 +140,8 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
     @VisibleForTesting
     protected void createFolder(LiteFolder folder)
             throws DotDataException, DotSecurityException, SQLException {
-        LocalTransaction.wrap(() -> {
+        try {
+            DbConnectionFactory.getConnection().setAutoCommit(false);
             Folder f = new Folder();
             f.setName(folder.name);
             f.setTitle(folder.name);
@@ -154,7 +155,13 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
             Identifier identifier = createIdentifier(folder);
             f.setIdentifier(identifier.getId());
             APILocator.getFolderAPI().save(f, APILocator.getUserAPI().getSystemUser(), false);
-        });
+            DbConnectionFactory.getConnection().commit();
+        } catch (Exception e) {
+            DbConnectionFactory.getConnection().rollback();
+            throw e;
+        } finally {
+            DbConnectionFactory.getConnection().setAutoCommit(true);
+        }
     }
 
     private Identifier createIdentifier(LiteFolder folder) throws DotDataException {

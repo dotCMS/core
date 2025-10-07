@@ -28,6 +28,11 @@
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>
+		<filter-name>RequestTrackingFilter</filter-name>
+		<filter-class>com.dotcms.filters.RequestTrackingFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
 		<filter-name>InterceptorFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -102,6 +107,7 @@
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
+	
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
@@ -116,6 +122,11 @@
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
 		<async-supported>true</async-supported>
     </filter>
+	<filter>
+		<filter-name>ScssQueryParamFilter</filter-name>
+		<filter-class>com.dotcms.csspreproc.ScssQueryParamFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
 	
@@ -131,6 +142,17 @@
 	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Request tracking filter runs early to capture all requests for metrics and shutdown coordination -->
+	<filter-mapping>
+		<filter-name>RequestTrackingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>ScssQueryParamFilter</filter-name>
+		<url-pattern>*.scss</url-pattern>
 	</filter-mapping>
 
 	<filter-mapping>
@@ -182,22 +204,27 @@
         <filter-name>VanityURLFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-    <filter-mapping>
-        <filter-name>VisitorFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+
+	<filter-mapping>
+		<filter-name>VisitorFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
 	<filter-mapping>
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+
 	<filter-mapping>
 		<filter-name>LoginRequiredFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
@@ -386,6 +413,7 @@
         <servlet-name>SassPreProcessServlet</servlet-name>
         <servlet-class>com.dotcms.csspreproc.SassPreProcessServlet</servlet-class>
     </servlet>
+
     <!-- REST -->
   <servlet>
 		<servlet-name>RESTAPI</servlet-name>
@@ -406,6 +434,12 @@
 	<servlet>
 		<servlet-name>HealthProbeServlet</servlet-name>
 		<servlet-class>com.dotcms.health.servlet.HealthProbeServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet>
+		<servlet-name>ManagementMetricsServlet</servlet-name>
+		<servlet-class>com.dotcms.metrics.servlet.ManagementMetricsServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 
@@ -441,10 +475,16 @@
       <servlet-name>SassPreProcessServlet</servlet-name>
       <url-pattern>*.dotsass</url-pattern>
     </servlet-mapping>
+
     
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTSASS/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+      <servlet-name>CSSPreProcessServlet</servlet-name>
+      <url-pattern>*.scss</url-pattern>
     </servlet-mapping>
     
     <servlet-mapping>
@@ -562,6 +602,16 @@
 		<url-pattern>/dotmgt/health</url-pattern>
 	</servlet-mapping>
 
+	<!-- Metrics service endpoint mappings
+	     These paths must match MetricsEndpointConstants.Endpoints values:
+	     - METRICS = /dotmgt/metrics (Prometheus metrics scraping)
+	     
+	     See: com.dotcms.metrics.config.MetricsEndpointConstants for validation -->
+	<servlet-mapping>
+		<servlet-name>ManagementMetricsServlet</servlet-name>
+		<url-pattern>/dotmgt/metrics</url-pattern>
+	</servlet-mapping>
+
 
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
@@ -608,31 +658,10 @@
 	</welcome-file-list>
 	
 	<error-page>
-	   <error-code>404</error-code>
 	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
-	
-	<error-page>
-	   <error-code>401</error-code>
-	   <location>/html/error/custom-error-page.jsp</location>
-	</error-page>
-	
-	<error-page>
-	   <error-code>403</error-code>
-	   <location>/html/error/custom-error-page.jsp</location>
-	</error-page>
-	
-	<error-page>
-	   <error-code>500</error-code>
-	   <location>/html/error/custom-error-page.jsp</location>
-	</error-page>
-	
-	<error-page>
-	   <error-code>503</error-code>
-	   <location>/html/error/custom-error-page.jsp</location>
-	</error-page>
-	
-	<jsp-config>
+
+    <jsp-config>
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>
 			<el-ignored>true</el-ignored>

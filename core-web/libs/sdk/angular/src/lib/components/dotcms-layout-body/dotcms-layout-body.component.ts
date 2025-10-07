@@ -29,14 +29,13 @@ import { DotCMSStore } from '../../store/dotcms.store';
  */
 @Component({
     selector: 'dotcms-layout-body',
-    standalone: true,
     imports: [PageErrorMessageComponent, RowComponent],
     providers: [DotCMSStore],
     template: `
         @if ($isEmpty() && $isDevMode()) {
             <dotcms-page-error-message />
         } @else {
-            @for (row of $rows(); track row.identifier) {
+            @for (row of $rows(); track $index) {
                 <dotcms-row [row]="row" />
             }
         }

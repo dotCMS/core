@@ -4,6 +4,8 @@ import { Injector } from '@angular/core';
 
 import { Node, NodeViewRenderer } from '@tiptap/core';
 
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 import { ContentletBlockComponent } from './contentlet-block.component';
 
 import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
@@ -40,15 +42,29 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
 
         renderHTML({ HTMLAttributes }): DOMOutputSpec {
             const { data } = HTMLAttributes;
-            const img = data.hasTitleImage ? ['img', { src: data.image }] : ['span', {}];
+            const rawData: DotCMSContentlet = data;
 
-            return [
-                'div',
-                ['h3', data.title],
-                ['div', data.identifier],
-                img,
-                ['div', {}, data.language]
+            if (!rawData) {
+                return ['div', { 'data-dotCMS-contentlet': 'true' }];
+            }
+
+            const titleText = rawData.title ?? '';
+            const identifierText = rawData.identifier ?? '';
+            const languageText = rawData.language ?? rawData.languageId ?? '';
+            const hasImage = Boolean(rawData.titleImage || rawData.image);
+            const image = `/dA/${rawData.inode}`;
+
+            const children: DOMOutputSpec[] = [
+                ['h3', String(titleText)],
+                ['div', String(identifierText)],
+                ['div', {}, String(languageText)]
             ];
+
+            if (hasImage) {
+                children.splice(2, 0, ['img', { src: String(image) }]);
+            }
+
+            return ['div', { 'data-dotCMS-contentlet': 'true' }, ...children];
         },
 
         addNodeView(): NodeViewRenderer {

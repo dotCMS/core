@@ -4,6 +4,7 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotPage,
     DotPageContainer,
@@ -17,6 +18,7 @@ describe('DotContainerContentletService', () => {
     let injector: TestBed;
     let dotContainerContentletService: DotContainerContentletService;
     let httpMock: HttpTestingController;
+    let dotSessionStorageService: DotSessionStorageService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -30,6 +32,7 @@ describe('DotContainerContentletService', () => {
         injector = getTestBed();
         dotContainerContentletService = injector.get(DotContainerContentletService);
         httpMock = injector.get(HttpTestingController);
+        dotSessionStorageService = injector.get(DotSessionStorageService);
     });
 
     it('should do a request for get the contentlet html code', () => {
@@ -80,7 +83,7 @@ describe('DotContainerContentletService', () => {
 
         const form: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
-            clazz: 'clazz',
+            clazz: DotCMSClazzes.TEXT,
             defaultType: true,
             fixed: true,
             folder: 'folder',
@@ -97,7 +100,8 @@ describe('DotContainerContentletService', () => {
     });
 
     it('should do a request for get the contentlet html code in a specific variant', () => {
-        window.sessionStorage.setItem('variantName', 'Testing');
+        // Mock the DotSessionStorageService to return the Testing variant
+        jest.spyOn(dotSessionStorageService, 'getVariationId').mockReturnValue('Testing');
 
         const pageContainer: DotPageContainer = {
             identifier: '1',
@@ -139,6 +143,6 @@ describe('DotContainerContentletService', () => {
 
     afterEach(() => {
         httpMock.verify();
-        window.sessionStorage.removeItem('variantName');
+        jest.clearAllMocks();
     });
 });

@@ -1,9 +1,12 @@
+import { startOfDay, endOfDay, addHours, format } from 'date-fns';
+
 import {
     determineGranularityForTimeRange,
     extractPageTitle,
     extractPageViews,
     extractSessions,
     extractTopPageValue,
+    getDateRange,
     transformDeviceBrowsersData,
     transformPageViewTimeLineData,
     transformTopPagesTableData
@@ -38,11 +41,11 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(0);
             });
 
-            it('should return NaN when totalRequest is missing', () => {
+            it('should return 0 when totalRequest is missing', () => {
                 const mockData: Partial<TotalPageViewsEntity> = {};
 
                 const result = extractPageViews(mockData as TotalPageViewsEntity);
-                expect(result).toBeNaN();
+                expect(result).toBe(0);
             });
 
             it('should handle string numbers correctly', () => {
@@ -240,6 +243,7 @@ describe('Analytics Data Utils', () => {
                     'analytics.charts.pageviews-timeline.dataset-label'
                 );
                 expect(result.datasets[0].borderColor).toBe('#3B82F6');
+                expect(result.datasets[0].cubicInterpolationMode).toBe('monotone');
             });
 
             it('should return empty chart data when data is null', () => {
@@ -296,6 +300,250 @@ describe('Analytics Data Utils', () => {
                 const result = transformPageViewTimeLineData(mockData as PageViewTimeLineEntity[]);
 
                 expect(result.datasets[0].data).toEqual([0]);
+            });
+
+            describe('Date and Time Formatting', () => {
+                it('should format labels as hours when all data is from the same day', () => {
+                    // Use local dates to ensure same day detection works properly
+                    const baseDate = new Date('2023-12-01T12:00:00'); // Local time, midday
+                    const mockData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() - 3 * 60 * 60 * 1000
+                            ).toISOString(), // 9 AM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 2 * 60 * 60 * 1000
+                            ).toISOString(), // 2 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '150'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 6 * 60 * 60 * 1000
+                            ).toISOString(), // 6 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '200'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(mockData);
+
+                    // Should format as hours (HH:mm format) when all data is from same day
+                    expect(result.labels).toHaveLength(3);
+                    // Check that labels contain time format with HH:mm (24-hour format)
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
+                    });
+                });
+
+                it('should format labels as short date when data spans multiple days', () => {
+                    const mockData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': '2023-12-01T12:00:00',
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': '2023-12-02T12:00:00',
+                            'request.createdAt.day': '2023-12-02',
+                            'request.totalRequest': '150'
+                        },
+                        {
+                            'request.createdAt': '2023-12-03T12:00:00',
+                            'request.createdAt.day': '2023-12-03',
+                            'request.totalRequest': '200'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(mockData);
+
+                    // Should format as day + month when data spans multiple days
+                    expect(result.labels).toHaveLength(3);
+                    // Check that labels contain date format (MMM dd)
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/^[A-Za-z]{3}\s+\d{1,2}$/);
+                    });
+                });
+
+                it('should handle same day detection correctly for edge cases', () => {
+                    // Test data with same date but different times - use local time
+                    const baseDate = new Date('2023-12-01T12:00:00');
+
+                    const sameDayData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': startOfDay(baseDate).toISOString(), // startOfDay
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '50'
+                        },
+                        {
+                            'request.createdAt': endOfDay(baseDate).toISOString(), // endOfDay
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '75'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(sameDayData);
+
+                    // Should still format as hours since it's the same day
+                    expect(result.labels).toHaveLength(2);
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
+                    });
+                });
+
+                it('should handle data spanning just two different days', () => {
+                    // Use dates that will definitely be different days even after timezone conversion
+                    const twoDayData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': '2023-12-01T12:00:00.000', // Noon UTC - safe for most timezones
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': '2023-12-03T12:00:00.000', // Two days later at noon UTC
+                            'request.createdAt.day': '2023-12-03',
+                            'request.totalRequest': '120'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(twoDayData);
+
+                    // Should format as dates since data spans multiple days in any timezone
+                    expect(result.labels).toHaveLength(2);
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        // Should use date format (MMM dd)
+                        expect(label as string).toMatch(/^[A-Za-z]{3}\s+\d{1,2}$/);
+                    });
+                });
+
+                it('should maintain chronological order when formatting hours', () => {
+                    const baseDate = startOfDay(new Date('2023-12-01T12:00:00'));
+                    const unorderedSameDayData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': addHours(baseDate, 7).toISOString(), // 7am
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '200'
+                        },
+                        {
+                            'request.createdAt': addHours(baseDate, 1).toISOString(), // 1am
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': addHours(baseDate, 13).toISOString(), // 3pm
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '150'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(unorderedSameDayData);
+
+                    // Should be sorted chronologically: 1am, 7am, 3pm
+                    expect(result.datasets[0].data).toEqual([100, 200, 150]);
+                    expect(result.labels).toHaveLength(3);
+
+                    // Verify hour format is used (HH:mm)
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
+                    });
+                });
+
+                it('should convert UTC dates to user local timezone for labels', () => {
+                    // Mock UTC dates in the format that comes from the endpoint (without Z)
+                    // These should be converted to user's local timezone
+                    const mockData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': '2023-12-01T14:00:00.000', // 2 PM UTC (from endpoint format)
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': '2023-12-01T18:30:00.000', // 6:30 PM UTC (from endpoint format)
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '150'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(mockData);
+
+                    // The dates should be formatted using user's locale and timezone
+                    // We can't predict the exact output since it depends on user's timezone,
+                    // but we can verify the format is correct for local time
+                    expect(result.labels).toHaveLength(2);
+                    expect(result.datasets[0].data).toEqual([100, 150]);
+
+                    // Check that labels are formatted as local time (HH:mm format)
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
+                    });
+                });
+
+                it('should handle dates across different days in local timezone', () => {
+                    const mockData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': '2023-12-01T22:00:00.000', // 10 PM UTC (endpoint format)
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': '2023-12-02T02:00:00.000', // 2 AM UTC next day (endpoint format)
+                            'request.createdAt.day': '2023-12-02',
+                            'request.totalRequest': '150'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(mockData);
+
+                    expect(result.labels).toHaveLength(2);
+                    expect(result.datasets[0].data).toEqual([100, 150]);
+
+                    // Should have date format since they're different days in local time
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        // Either time format (HH:mm) or date format (MMM dd) depending on timezone
+                        expect(label as string).toMatch(
+                            /^(\d{1,2}:\d{2})|([A-Za-z]{3}\s+\d{1,2})$/
+                        );
+                    });
+                });
+
+                it('should handle endpoint date format without Z suffix', () => {
+                    // Test with the exact format that comes from the endpoint
+                    const mockData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': '2025-08-05T16:00:00.000', // Endpoint format (no Z)
+                            'request.createdAt.day': '2025-08-05',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': '2025-08-05T17:00:00.000', // Endpoint format (no Z)
+                            'request.createdAt.day': '2025-08-05',
+                            'request.totalRequest': '150'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(mockData);
+
+                    // Should parse correctly and convert to local timezone
+                    expect(result.labels).toHaveLength(2);
+                    expect(result.datasets[0].data).toEqual([100, 150]);
+
+                    // Should format as time (same day) - HH:mm format
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
+                    });
+                });
             });
         });
 
@@ -473,6 +721,114 @@ describe('Analytics Data Utils', () => {
                     const result = determineGranularityForTimeRange(timeRange as TimeRange);
                     expect(result).toBe('day' as Granularity);
                 });
+            });
+        });
+
+        describe('custom date range', () => {
+            it('should return day granularity for custom date range on the same month', () => {
+                const result = determineGranularityForTimeRange(['2024-01-01', '2024-01-31']);
+                expect(result).toBe('day');
+            });
+
+            it('should return hour granularity for custom date range on the same day', () => {
+                const result = determineGranularityForTimeRange(['2024-01-01', '2024-01-01']);
+                expect(result).toBe('hour');
+            });
+
+            it('should return month granularity for custom date range', () => {
+                const result = determineGranularityForTimeRange(['2024-01-01', '2024-04-31']);
+                expect(result).toBe('month');
+            });
+        });
+    });
+
+    describe('getDateRange', () => {
+        beforeEach(() => {
+            jest.useFakeTimers();
+            jest.setSystemTime(new Date('2024-01-15T04:00:00.000'));
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        describe('success cases', () => {
+            it('should return today range correctly', () => {
+                const result = getDateRange('today');
+                const [startDate, endDate] = result;
+
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
+            });
+
+            it('should return yesterday range correctly', () => {
+                const result = getDateRange('yesterday');
+                const [startDate, endDate] = result;
+
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 23:59:59');
+            });
+
+            it('should return last 7 days range correctly', () => {
+                const result = getDateRange('last7days');
+                const [startDate, endDate] = result;
+
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-09 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
+            });
+
+            it('should return last 30 days range correctly', () => {
+                const result = getDateRange('last30days');
+                const [startDate, endDate] = result;
+
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-17 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
+            });
+
+            it('should handle custom date range array correctly', () => {
+                const result = getDateRange(['2024-01-01', '2024-01-31']);
+                const [startDate, endDate] = result;
+
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-01 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-31 23:59:59');
+            });
+
+            it('should handle single day custom range correctly', () => {
+                const result = getDateRange(['2024-01-15', '2024-01-15']);
+                const [startDate, endDate] = result;
+
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
+            });
+
+            it('should handle leap year dates correctly', () => {
+                jest.setSystemTime(new Date('2024-02-15T12:00:00.000Z'));
+
+                const result = getDateRange('yesterday');
+                const [startDate, endDate] = result;
+
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-02-14 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-02-14 23:59:59');
+            });
+
+            it('should handle month boundary dates correctly', () => {
+                jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
+
+                const result = getDateRange('yesterday');
+                const [startDate, endDate] = result;
+
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 23:59:59');
+            });
+
+            it('should handle year boundary dates correctly', () => {
+                jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
+
+                const result = getDateRange('yesterday');
+                const [startDate, endDate] = result;
+
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 23:59:59');
             });
         });
     });

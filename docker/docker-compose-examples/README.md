@@ -11,6 +11,7 @@ The following examples are provided:
 - **single-node:** basic dotcms instance running with postgres database
 - **single-node-debug-mode:** basic dotcms instance running with postgres database and debug mode enabled
 - **single-node-demo-site:** basic dotcms instance running demo site
+- **single-node-metrics-monitoring:** ⭐ **NEW** - Complete monitoring stack with Prometheus & Grafana showcasing dotCMS metrics
 - **with-kibana:** basic dotcms instance running with postgres database and kibana
 - **with-mssql:** basic dotcms instance running with MSSQL database
 - **with-oracle:** basic dotcms instance running with oracle database

@@ -52,7 +52,6 @@ export const WORKFLOW_STEP_MAP: { [key in DotWizardComponentEnum]: boolean } = {
     commentAndAssign: true,
     pushPublish: true
 };
-
 @Injectable()
 export class DotWorkflowEventHandlerService {
     private pushPublishService = inject(PushPublishService);

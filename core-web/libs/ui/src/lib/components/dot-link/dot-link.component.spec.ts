@@ -11,6 +11,7 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { DotApiLinkComponent } from '../dot-api-link/dot-api-link.component';
 
 @Component({
+    standalone: false,
     template: `
         <dot-link [href]="href" [icon]="icon" [label]="label"></dot-link>
     `

@@ -2,11 +2,27 @@
 
 :host {
     display: grid;
+    position: relative;
     grid-template-columns: min-content 1fr min-content;
 
     /* This is the height according to figma for the first row */
-    grid-template-rows: 4.375rem 1fr;
+    grid-template-rows: min-content 7.125rem 1fr; //114px 1fr
+    grid-template-areas:
+        "messages messages messages"
+        "tree toolbar detail"
+        "tree list    detail";
     height: 100%;
+}
+::ng-deep {
+    .p-dialog.content-drive-dialog {
+        .p-dialog-content {
+            width: 43.75rem; //700px
+
+            // Let the content to set the desired padding to not mess with overlaps and overflows
+            padding: $spacing-4 0;
+            padding-top: 0;
+        }
+    }
 }
 
 /* The styles below are just for the placeholders. */
@@ -21,34 +37,36 @@
     font-weight: $font-weight-medium-bold;
 }
 
-.toolbar {
-    background-color: lightgoldenrodyellow;
+dot-content-drive-toolbar {
+    grid-area: toolbar;
+}
 
-    grid-column: 1 / -1;
-    grid-row: 1/1;
+p-messages {
+    grid-area: messages;
 }
 
 .tree-selector {
-    background-color: lightblue;
-
-    grid-column: 1 / 2;
-    grid-row-start: 2;
-
-    /* This is the width according to figma */
-    // width: 16.5rem;
+    grid-area: tree;
+    overflow: hidden;
+    transition: all $content-drive-animation-speed $content-drive-animation-ease;
+    visibility: hidden;
     width: 0;
+    border-right: 1px solid $color-palette-gray-300;
+
+    &.expanded {
+        /* This is the width according to figma */
+        width: 16.5rem;
+        visibility: visible;
+    }
 }
 
-dot-folder-list-view {
-    grid-column: 2 / 3;
-    grid-row-start: 2;
+dot-content-drive-dropzone {
+    grid-area: list;
 }
 
 .detail-view {
     background-color: lightcoral;
-
-    grid-column: 3 / 4;
-    grid-row-start: 2;
+    grid-area: detail;
 
     /* This is the width according to figma */
     // width: 21.875rem;

@@ -1,13 +1,18 @@
 package com.dotcms.jitsu.validators;
 
+import com.dotcms.analytics.attributes.MaxCustomAttributesReachedException;
 import com.dotcms.analytics.metrics.EventType;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.CUSTOM_ATTRIBUTE_NAME;
+import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.DATA_ATTRIBUTE_NAME;
 
 /**
  * Utility class for analytics validation.
@@ -18,6 +23,7 @@ public class AnalyticsValidatorUtil {
     public final static AnalyticsValidatorUtil INSTANCE = new AnalyticsValidatorUtil();
 
     private final Validators globalValidators;
+    private final List<Validators.JSONPathValidators> eventsGlobalValidators;
     private final Map<EventType, Validators> eventsValidators;
 
 
@@ -26,8 +32,28 @@ public class AnalyticsValidatorUtil {
      * It delegates to AnalyticsValidatorProcessor for the actual processing.
      */
     private AnalyticsValidatorUtil() {
-        globalValidators = AnalyticsValidatorProcessor.INSTANCE.getGlobalValidators();
-        eventsValidators = AnalyticsValidatorProcessor.INSTANCE.getEventTypeValidators();
+        final Validators allJsonvalidators = AnalyticsValidatorProcessor.INSTANCE.getGlobalValidators();
+
+        globalValidators = new Validators(getGlobalValidators(allJsonvalidators));
+        eventsGlobalValidators = getEventsGlobalValidators(allJsonvalidators);
+
+        eventsValidators = AnalyticsValidatorProcessor.INSTANCE.getEventTypeValidators(eventsGlobalValidators);
+    }
+
+    private List<Validators.JSONPathValidators> getEventsGlobalValidators(final Validators allJsonvalidators) {
+        return allJsonvalidators.getValidators().entrySet().stream()
+                .filter(entrySet -> entrySet.getKey().startsWith("events."))
+                .map(entrySet -> new Validators.JSONPathValidators(
+                        entrySet.getKey().replace("events.", ""), entrySet.getValue()))
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    private static List<Validators.JSONPathValidators> getGlobalValidators(Validators allJsonvalidators) {
+        return allJsonvalidators.getValidators().entrySet().stream()
+                    .filter(entrySet -> !entrySet.getKey().startsWith("events."))
+                    .map(entrySet -> new Validators.JSONPathValidators(
+                            entrySet.getKey(), entrySet.getValue()))
+                    .collect(Collectors.toUnmodifiableList());
     }
 
     /**
@@ -51,16 +77,15 @@ public class AnalyticsValidatorUtil {
         final List<JsonValues> jsonValues = extractJsonValues(jsonObject);
 
         for (final JsonValues jsonValue : jsonValues) {
-            final List<AnalyticsValidator> pathValidators = validators.getValidators(jsonValue.path);
+            final List<AnalyticsValidator> pathValidators = validators.getValidators(jsonValue.path)
+                    .orElse(Collections.emptyList());
 
-            if (pathValidators != null) {
-                for (final AnalyticsValidator validator : pathValidators) {
-                    try {
-                        validator.validate(jsonValue.value);
-                    } catch (AnalyticsValidator.AnalyticsValidationException e) {
-                        errors.add(new Error(jsonValue.path, e.getCode(), e.getMessage()));
-                        break;
-                    }
+            for (final AnalyticsValidator validator : pathValidators) {
+                try {
+                    validator.validate(jsonValue.value);
+                } catch (AnalyticsValidator.AnalyticsValidationException e) {
+                    errors.add(new Error(jsonValue.path, e.getCode(), e.getMessage()));
+                    break;
                 }
             }
         }
@@ -143,18 +168,19 @@ public class AnalyticsValidatorUtil {
      * @param events The JSON array of events to validate
      * @return A list of validation errors, empty if no errors are found
      */
-    public List<Error> validateEvents(final JSONArray events) {
+    public List<Error> validateEvents(final JSONArray events)  {
         final List<Error> errors = new ArrayList<>();
 
         for (int i = 0; i < events.length(); i++) {
             final JSONObject event = events.optJSONObject(i);
 
-            final Optional<String> eventTypeStr = checkEventObject(event, errors, i);
+            final Validators validators =  Optional.ofNullable(event.optString("event_type"))
+                    .map(AnalyticsValidatorUtil::getEventType)
+                    .map(eventsValidators::get)
+                    .orElse(new Validators(eventsGlobalValidators));
 
-            if (eventTypeStr.isPresent()) {
-                final Validators validators = getEventType(eventTypeStr.get())
-                        .map(eventsValidators::get)
-                        .orElse(new Validators(Collections.emptyList()));
+            try {
+                checkCustomSection(event, event.optString("event_type"));
 
                 final List<Error> eventErrors = validate(event, validators);
 
@@ -162,6 +188,9 @@ public class AnalyticsValidatorUtil {
                     errors.add(new Error("events[" + i + "]." + error.getField(),
                             error.getCode(), error.getMessage(), i));
                 }
+            } catch (MaxCustomAttributesReachedException e) {
+                errors.add(new Error("events[" + i + "].custom: ",
+                        ValidationErrorCode.MAX_LIMIT_OF_CUSTOM_ATTRIBUTE_REACHED, e.getMessage(), i));
             }
         }
 
@@ -169,44 +198,59 @@ public class AnalyticsValidatorUtil {
     }
 
     /**
-     * Checks if the event object is valid by verifying:
-     * 1. The event is not null
-     * 2. The event has an "event_type" field
-     * 3. The "event_type" field is a non-empty string
-     * 
-     * If any validation fails, appropriate errors are added to the errors list.
+     * Validates and persists custom attribute mappings for an event, if present.
+     * <p>
+     * This method extracts the data.custom section (if any), and invokes the
+     * Analytics Custom Attribute API to check that adding any new custom attributes for the
+     * given event type does not exceed the allowed limit. It may create or update mappings.
+     * Any persistence error is wrapped in a DotRuntimeException.
      *
-     * @param event The JSON object representing the event to validate
-     * @param errors The list to which validation errors will be added
-     * @param index The index of the event in the events array, used for error reporting
-     * @return The event_type string value from the event object if it is set in the payload
+     * @param event        The event JSON object that may contain data.custom
+     * @param eventTypeStr The event type name used to validate custom attributes
      */
-    private static Optional<String> checkEventObject(final JSONObject event, final List<Error> errors, final  int index) {
-        if (event == null) {
-            errors.add(new Error("events[" + index + "]", ValidationErrorCode.INVALID_JSON_OBJECT_TYPE,
-                    "Event is not a JSON object", index));
-            return Optional.empty();
-        }
+    private static void checkCustomSection(final JSONObject event, String eventTypeStr) {
+        final Optional<JSONObject> customSection = removeCustomSection(event);
 
-        if (!event.has("event_type")) {
-            errors.add(new Error("events[" + index + "].event_type", ValidationErrorCode.REQUIRED_FIELD_MISSING,
-                    "Required field is missing: event_type", index));
-            return Optional.empty();
+        if (customSection.isPresent()) {
+            try {
+                APILocator.getAnalyticsCustomAttribute()
+                        .checkCustomPayloadValidation(eventTypeStr, customSection.get());
+            } catch (DotDataException e) {
+                throw new DotRuntimeException(e);
+            }
         }
-
-        final String eventTypeStr = event.optString("event_type");
-        if (eventTypeStr == null || eventTypeStr.isEmpty()) {
-            errors.add(new Error("events[" + index + "].event_type", ValidationErrorCode.INVALID_STRING_TYPE,
-                    "Event type is empty or not a string", index));
-        }
-        return Optional.of(eventTypeStr);
     }
 
-    private static Optional<EventType> getEventType(String eventTypeStr) {
+    /**
+     * Removes and returns the data.custom JSON object from the event if present.
+     * <p>
+     * This is used prior to validation so the custom section can be processed separately and
+     * does not interfere with the standard validators.
+     *
+     * @param event The event JSON object
+     * @return An Optional containing the removed custom object if it existed; otherwise Optional.empty()
+     */
+    private static Optional<JSONObject> removeCustomSection(JSONObject event) {
+        if (event.has(DATA_ATTRIBUTE_NAME)) {
+            final JSONObject data = event.getJSONObject(DATA_ATTRIBUTE_NAME);
+
+            if (data.has(CUSTOM_ATTRIBUTE_NAME)) {
+                final JSONObject custom = data.getJSONObject(CUSTOM_ATTRIBUTE_NAME);
+
+                event.getJSONObject(DATA_ATTRIBUTE_NAME).remove(CUSTOM_ATTRIBUTE_NAME);
+                return Optional.ofNullable(custom);
+            }
+
+        }
+
+        return Optional.empty();
+    }
+
+    private static EventType getEventType(String eventTypeStr) {
         try {
-            return Optional.of(EventType.get(eventTypeStr));
+            return EventType.get(eventTypeStr);
         } catch (IllegalArgumentException e) {
-            return Optional.empty();
+            return null;
         }
     }
 
@@ -215,15 +259,20 @@ public class AnalyticsValidatorUtil {
      * This method examines all validators for the given event type and identifies fields that are validated
      * using a DateValidator.
      *
-     * @param eventType The event type for which to find date fields
+     * @param eventTypeName The event type name for which to find date fields
      * @return A list of paths (in dot notation) to fields that are validated as dates
      */
-    public List<String> getDateField(final EventType eventType) {
+    public List<String> getDateField(final String eventTypeName) {
         final List<String> paths = new ArrayList<>();
-        final Validators validators = eventsValidators.get(eventType);
+        final EventType eventType = getEventType(eventTypeName);
+
+        final Validators validators = eventType != null ? eventsValidators.get(eventType) :
+                new Validators(eventsGlobalValidators);
 
         for (String path : validators.getPaths()) {
+
             final boolean isDate = validators.getValidators(path).stream()
+                    .flatMap(Collection::stream)
                     .anyMatch(validator -> DateValidator.class.isAssignableFrom(validator.getClass()));
 
             if (isDate) {

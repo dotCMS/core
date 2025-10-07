@@ -26,14 +26,14 @@ import { map, take, takeUntil, tap } from 'rxjs/operators';
 import { AddToBundleService, DotCurrentUserService, DotMessageService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotBundle, DotDialogActions } from '@dotcms/dotcms-models';
-import { DotDialogModule, DotFieldValidationMessageComponent } from '@dotcms/ui';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import { DotDialogModule } from '../../modules/dot-dialog/dot-dialog.module';
+import { DotFieldValidationMessageComponent } from '../dot-field-validation-message/dot-field-validation-message.component';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
 
 @Component({
-    standalone: true,
     selector: 'dot-add-to-bundle',
     templateUrl: 'dot-add-to-bundle.component.html',
     imports: [

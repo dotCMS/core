@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "2babf651-0ad5-44b7-a423-3462ffc3d080",
+		"_postman_id": "8698b68f-df47-47ff-84cc-d9ddd787f2a6",
 		"name": "User Resource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1228,6 +1228,616 @@
 								"v1",
 								"users",
 								"{{userID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CreateUserReturnRoleId",
+			"item": [
+				{
+					"name": "CreateUserWithRoleId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verifica que el status de la respuesta sea 200",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verifica que la respuesta sea un JSON válido",
+									"pm.test(\"Response is a valid JSON\", function () {",
+									"    pm.response.to.be.withBody;",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"// Parsear el body de la respuesta",
+									"let jsonData = pm.response.json();",
+									"",
+									"// Verifica que el objeto entity existe",
+									"pm.test(\"Entity object is present\", function () {",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"});",
+									"",
+									"// Verifica que el user object existe dentro de entity",
+									"pm.test(\"User object is present\", function () {",
+									"    pm.expect(jsonData.entity).to.have.property(\"user\");",
+									"});",
+									"",
+									"// Verifica que el user tiene un email válido",
+									"pm.test(\"User has a valid email\", function () {",
+									"    let email = jsonData.entity.user.emailAddress || \"\";",
+									"    pm.expect(email).to.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);",
+									"});",
+									"",
+									"// Verifica que el user está activo",
+									"pm.test(\"User is active\", function () {",
+									"    pm.expect(jsonData.entity.user.active).to.be.true;",
+									"});",
+									"",
+									"// Verifica que el ID del usuario esté presente y tenga formato",
+									"pm.test(\"User ID is present\", function () {",
+									"    let userId = jsonData.entity.user.id;",
+									"    pm.expect(userId).to.be.a(\"string\");",
+									"    pm.expect(userId).to.match(/^userid-/);",
+									"});",
+									"",
+									"// Verifica que el roleId tenga un UUID válido",
+									"pm.test(\"Role ID is a valid UUID\", function () {",
+									"    let roleId = jsonData.entity.roleId;",
+									"    pm.expect(roleId).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+									"});",
+									"",
+									"// Verifica que no hay errores",
+									"pm.test(\"No errors present\", function () {",
+									"    pm.expect(jsonData.errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									"",
+									"// Verifica que la propiedad frontendUser sea true",
+									"pm.test(\"User is a frontendUser\", function () {",
+									"    pm.expect(jsonData.entity.user.frontendUser).to.be.true;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"saad\",\n    \"lastName\": \"sher\",\n    \"email\": \"saadsher2@dotcms.com\",\n    \"password\": \"victory123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "UpdateUserWhenNullRolesAndPass",
+			"item": [
+				{
+					"name": "CreateTestUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Postman Tests: User Creation/Assignment Success",
+									"",
+									"// 1. Check for a successful status code (e.g., 200 OK or 201 Created)",
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// 2. Check if the response is valid JSON",
+									"pm.test(\"Response is valid JSON\", function () {",
+									"    pm.response.to.have.json;",
+									"});",
+									"",
+									"// Get the JSON data for further checks",
+									"const responseData = pm.response.json();",
+									"",
+									"// 3. Verify core structure and top-level fields",
+									"pm.test(\"Response has the 'entity' object\", function () {",
+									"    pm.expect(responseData).to.have.property('entity');",
+									"    pm.expect(responseData.entity).to.be.an('object');",
+									"});",
+									"",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    pm.expect(responseData).to.have.property('errors').that.is.an('array').and.is.empty;",
+									"});",
+									"",
+									"// 4. Verify fields within the 'entity' object",
+									"pm.test(\"'entity' contains roleId, userID, and user object\", function () {",
+									"    pm.expect(responseData.entity).to.have.property('roleId').that.is.a('string');",
+									"    pm.expect(responseData.entity).to.have.property('userID').that.is.a('string');",
+									"    pm.expect(responseData.entity).to.have.property('user').that.is.an('object');",
+									"});",
+									"",
+									"// 5. Verify key user attributes and types",
+									"pm.test(\"User object has required fields and types\", function () {",
+									"    const user = responseData.entity.user;",
+									"    pm.expect(user).to.have.property('id').that.is.a('string');",
+									"    pm.expect(user).to.have.property('firstName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('lastName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('emailAddress').that.is.a('string');",
+									"    pm.expect(user).to.have.property('active').that.is.a('boolean');",
+									"    pm.expect(user.active).to.be.true; // Assuming a newly created/assigned user is active",
+									"});",
+									"",
+									"// 6. Capture the userID for subsequent requests (e.g., GET, PUT, DELETE)",
+									"// This sets a collection or environment variable named 'new_user_id'",
+									"pm.test(\"Set 'new_user_id' environment variable\", function () {",
+									"    const userId = responseData.entity.userID;",
+									"",
+									"    // Use pm.environment.set() or pm.collectionVariables.set() as needed",
+									"    pm.environment.set(\"new_user_id\", userId);",
+									"",
+									"    console.log(\"Captured new_user_id: \" + userId);",
+									"    pm.expect(userId).to.be.a('string').and.to.have.length.above(0);",
+									"});",
+									"",
+									"pm.environment.set(\"usertestid\", responseData.entity.userID)"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n    \"active\": true,\n    \"firstName\": \"TestUserUpdateName\",\n    \"lastName\": \"TestUserUpdateLastName\",\n    \"email\": \"allsitesv3@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\"],\n    \"roles\": [\"DOTCMS_FRONT_END_USER\", \"Scripting Developer\"]\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateWithoutPasswordAndLessRoles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Postman Tests: User Creation/Assignment Success",
+									"",
+									"// 1. Check for a successful status code (e.g., 200 OK or 201 Created)",
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// 2. Check if the response is valid JSON",
+									"pm.test(\"Response is valid JSON\", function () {",
+									"    pm.response.to.have.json;",
+									"});",
+									"",
+									"// Get the JSON data for further checks",
+									"const responseData = pm.response.json();",
+									"",
+									"// 3. Verify core structure and top-level fields",
+									"pm.test(\"Response has the 'entity' object\", function () {",
+									"    pm.expect(responseData).to.have.property('entity');",
+									"    pm.expect(responseData.entity).to.be.an('object');",
+									"});",
+									"",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    pm.expect(responseData).to.have.property('errors').that.is.an('array').and.is.empty;",
+									"});",
+									"",
+									"// 4. Verify fields within the 'entity' object",
+									"pm.test(\"'entity' contains roleId, userID, and user object\", function () {",
+									"    pm.expect(responseData.entity).to.have.property('userID').that.is.a('string');",
+									"    pm.expect(responseData.entity).to.have.property('user').that.is.an('object');",
+									"});",
+									"",
+									"// 5. Verify key user attributes and types",
+									"pm.test(\"User object has required fields and types\", function () {",
+									"    const user = responseData.entity.user;",
+									"    pm.expect(user).to.have.property('id').that.is.a('string');",
+									"    pm.expect(user).to.have.property('firstName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('lastName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('emailAddress').that.is.a('string');",
+									"    pm.expect(user).to.have.property('active').that.is.a('boolean');",
+									"    pm.expect(user.active).to.be.true; // Assuming a newly created/assigned user is active",
+									"});",
+									"",
+									"// 6. Capture the userID for subsequent requests (e.g., GET, PUT, DELETE)",
+									"// This sets a collection or environment variable named 'new_user_id'",
+									"pm.test(\"Set 'new_user_id' environment variable\", function () {",
+									"    const userId = responseData.entity.userID;",
+									"",
+									"    // Use pm.environment.set() or pm.collectionVariables.set() as needed",
+									"    pm.environment.set(\"new_user_id\", userId);",
+									"",
+									"    console.log(\"Captured new_user_id: \" + userId);",
+									"    pm.expect(userId).to.be.a('string').and.to.have.length.above(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{usertestid}}\",\n    \"active\": true,\n    \"firstName\": \"TestUserUpdateName2\",\n    \"lastName\": \"TestUserUpdateLastName2\",\n    \"email\": \"allsitesv3@dotcms.com\",\n    \"roles\": [\"DOTCMS_BACK_END_USER\"]\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateUserWithoutAnyRolesAndPasswordSent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Postman Tests: User Creation/Assignment Success",
+									"",
+									"// 1. Check for a successful status code (e.g., 200 OK or 201 Created)",
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// 2. Check if the response is valid JSON",
+									"pm.test(\"Response is valid JSON\", function () {",
+									"    pm.response.to.have.json;",
+									"});",
+									"",
+									"// Get the JSON data for further checks",
+									"const responseData = pm.response.json();",
+									"",
+									"// 3. Verify core structure and top-level fields",
+									"pm.test(\"Response has the 'entity' object\", function () {",
+									"    pm.expect(responseData).to.have.property('entity');",
+									"    pm.expect(responseData.entity).to.be.an('object');",
+									"});",
+									"",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    pm.expect(responseData).to.have.property('errors').that.is.an('array').and.is.empty;",
+									"});",
+									"",
+									"// 4. Verify fields within the 'entity' object",
+									"pm.test(\"'entity' contains roleId, userID, and user object\", function () {",
+									"    pm.expect(responseData.entity).to.have.property('userID').that.is.a('string');",
+									"    pm.expect(responseData.entity).to.have.property('user').that.is.an('object');",
+									"});",
+									"",
+									"// 5. Verify key user attributes and types",
+									"pm.test(\"User object has required fields and types\", function () {",
+									"    const user = responseData.entity.user;",
+									"    pm.expect(user).to.have.property('id').that.is.a('string');",
+									"    pm.expect(user).to.have.property('firstName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('lastName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('emailAddress').that.is.a('string');",
+									"    pm.expect(user).to.have.property('active').that.is.a('boolean');",
+									"    pm.expect(user.active).to.be.true; // Assuming a newly created/assigned user is active",
+									"});",
+									"",
+									"// 6. Capture the userID for subsequent requests (e.g., GET, PUT, DELETE)",
+									"// This sets a collection or environment variable named 'new_user_id'",
+									"pm.test(\"Set 'new_user_id' environment variable\", function () {",
+									"    const userId = responseData.entity.userID;",
+									"",
+									"    // Use pm.environment.set() or pm.collectionVariables.set() as needed",
+									"    pm.environment.set(\"new_user_id\", userId);",
+									"",
+									"    console.log(\"Captured new_user_id: \" + userId);",
+									"    pm.expect(userId).to.be.a('string').and.to.have.length.above(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{usertestid}}\",\n    \"active\": true,\n    \"firstName\": \"TestUserUpdateName3\",\n    \"lastName\": \"TestUserUpdateLastName3\",\n    \"email\": \"allsitesv3@dotcms.com\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "FindUsers",
+			"item": [
+				{
+					"name": "FindUserByIdNotFound",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Parse the JSON response and set up variables",
+									"const responseJson = pm.response.json();",
+									"const entity = responseJson.entity;",
+									"const user = entity ? entity.user : null;",
+									"",
+									"// ===========================================",
+									"// STRUCTURAL AND SUCCESS TESTS",
+									"// ===========================================",
+									"",
+									"pm.test(\"Status code is 404 OK\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/dotcmsxxxx",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"dotcmsxxxx"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FindUserById",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Parse the JSON response and set up variables",
+									"const responseJson = pm.response.json();",
+									"const entity = responseJson.entity;",
+									"const user = entity ? entity.user : null;",
+									"",
+									"// ===========================================",
+									"// STRUCTURAL AND SUCCESS TESTS",
+									"// ===========================================",
+									"",
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response structure is valid and contains no errors\", function () {",
+									"    pm.expect(responseJson).to.be.an('object');",
+									"    // Asserting the presence and type of the main 'entity' object",
+									"    pm.expect(responseJson).to.have.property('entity').that.is.an('object');",
+									"    // Asserting the 'errors' array is present and empty (success state)",
+									"    pm.expect(responseJson.errors, \"Errors array should be empty\").to.be.an('array').and.is.empty;",
+									"});",
+									"",
+									"// ===========================================",
+									"// STATIC ASSERTIONS FOR ENTITY LEVEL",
+									"// ===========================================",
+									"",
+									"pm.test(\"Entity: 'roleId' and 'userID' have expected static values\", function () {",
+									"    // Verifying the main IDs in the entity block",
+									"    pm.expect(entity.userID, \"Entity userID must be dotcms.org.1\").to.equal('dotcms.org.1');",
+									"    pm.expect(entity.roleId, \"Entity roleId must be e7d4e34e-5127-45fc-8123-d48b62d510e3\").to.equal('e7d4e34e-5127-45fc-8123-d48b62d510e3');",
+									"});",
+									"",
+									"// ===========================================",
+									"// STATIC ASSERTIONS FOR USER OBJECT (user)",
+									"// ===========================================",
+									"",
+									"pm.test(\"User Info: Name and Email fields are correct\", function () {",
+									"    // Asserting name consistency",
+									"    pm.expect(user.firstName, \"User firstName must be Admin\").to.equal('Admin');",
+									"    pm.expect(user.lastName, \"User lastName must be User\").to.equal('User');",
+									"    pm.expect(user.fullName, \"User fullName must be Admin User\").to.equal('Admin User');",
+									"    ",
+									"    // Asserting email consistency (checking both keys provided in the response)",
+									"    pm.expect(user.emailAddress, \"User emailAddress must be admin@dotcms.com\").to.equal('admin@dotcms.com');",
+									"    pm.expect(user.emailaddress, \"User emailaddress (lowercase) must be admin@dotcms.com\").to.equal('admin@dotcms.com');",
+									"});",
+									"",
+									"pm.test(\"User IDs and Type are correct\", function () {",
+									"    // Asserting all user ID fields",
+									"    pm.expect(user.id, \"User 'id' must be dotcms.org.1\").to.equal('dotcms.org.1');",
+									"    pm.expect(user.userId, \"User 'userId' must be dotcms.org.1\").to.equal('dotcms.org.1');",
+									"    pm.expect(user.type, \"User 'type' must be user\").to.equal('user');",
+									"});",
+									"",
+									"",
+									"pm.test(\"User Company and Localization fields are correct\", function () {",
+									"    // Asserting organization and location data",
+									"    pm.expect(user.companyId, \"CompanyId must be dotcms.org\").to.equal('dotcms.org');",
+									"    pm.expect(user.actualCompanyId, \"ActualCompanyId must be dotcms.org\").to.equal('dotcms.org');",
+									"});",
+									"",
+									"// ===========================================",
+									"// DYNAMIC/PRESENCE TESTS (Dates and Nulls)",
+									"// ===========================================",
+									"",
+									"pm.test(\"Dynamic fields (Dates) are present and numeric\", function () {",
+									"    // Dates validation (checking they are valid timestamps)",
+									"    pm.expect(user.createDate, \"createDate must be a number\").to.be.a('number');",
+									"    pm.expect(user.lastLoginDate, \"lastLoginDate must be a number\").to.be.a('number');",
+									"    pm.expect(user.modificationDate, \"modificationDate must be a number\").to.be.a('number');",
+									"    ",
+									"    // Gravitar hash length check",
+									"    pm.expect(user.gravitar, \"Gravitar hash must be 32 characters long\").to.be.a('string').and.to.have.lengthOf(32);",
+									"    ",
+									"    // Checking fields that should be null",
+									"    pm.expect(user.birthday, \"Birthday should be null\").to.be.null;",
+									"    pm.expect(user.deleteDate, \"deleteDate should be null\").to.be.null;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"dotcms.org.1"
 							]
 						}
 					},

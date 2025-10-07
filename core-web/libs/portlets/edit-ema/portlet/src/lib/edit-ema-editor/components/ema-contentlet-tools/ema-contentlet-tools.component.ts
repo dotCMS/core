@@ -34,7 +34,6 @@ const INITIAL_ACTIONS_CONTAINER_WIDTH = 128;
 
 @Component({
     selector: 'dot-ema-contentlet-tools',
-    standalone: true,
     imports: [NgStyle, ButtonModule, MenuModule, JsonPipe, TooltipModule, DotMessagePipe],
     templateUrl: './ema-contentlet-tools.component.html',
     styleUrls: ['./ema-contentlet-tools.component.scss'],

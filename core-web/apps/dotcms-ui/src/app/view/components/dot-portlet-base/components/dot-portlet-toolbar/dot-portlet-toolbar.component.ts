@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { DotPortletToolbarActions } from '@shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
+import { DotPortletToolbarActions } from '../../../../../shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 
 @Component({
     selector: 'dot-portlet-toolbar',
     templateUrl: './dot-portlet-toolbar.component.html',
     styleUrls: ['./dot-portlet-toolbar.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotPortletToolbarComponent {
     @Input() title: string;

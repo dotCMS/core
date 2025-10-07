@@ -10,11 +10,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
-import {
-    PaginationEvent,
-    SearchableDropdownComponent
-} from '@components/_common/searchable-dropdown/component';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -30,7 +25,12 @@ import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing
 
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 
+import { DotTemplateContainersCacheService } from '../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import {
+    PaginationEvent,
+    SearchableDropdownComponent
+} from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
 describe('ContainerSelectorComponent', () => {
@@ -109,7 +109,7 @@ describe('ContainerSelectorComponent', () => {
     });
 
     it('should set onInit Pagination Service with right values', () => {
-        spyOn(paginatorService, 'setExtraParams');
+        jest.spyOn(paginatorService, 'setExtraParams');
         comp.ngOnInit();
         expect(paginatorService.setExtraParams).toHaveBeenCalled();
     });
@@ -118,7 +118,7 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
         const searchable = de.query(By.css('[data-testId="searchableDropdown"]'));
         expect(searchable.attributes).toEqual(
-            jasmine.objectContaining({
+            expect.objectContaining({
                 'ng-reflect-label-property-name': 'name,parentPermissionable.host',
                 'ng-reflect-multiple': 'true',
                 'ng-reflect-page-link-size': '5',
@@ -141,7 +141,7 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
 
         fixture.detectChanges();
 
@@ -155,6 +155,7 @@ describe('ContainerSelectorComponent', () => {
 
         tick();
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
     }));
 
     it('should paginate when the filter change', fakeAsync(() => {
@@ -163,7 +164,7 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
 
         fixture.detectChanges();
 
@@ -171,12 +172,13 @@ describe('ContainerSelectorComponent', () => {
 
         tick();
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
         expect(paginatorService.filter).toEqual(filter);
     }));
 
     it('should set container list replacing the identifier for the path, if needed', () => {
         fixture.detectChanges();
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(containers));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
         const searchable: SearchableDropdownComponent = de.query(
             By.css('[data-testId="searchableDropdown"]')
         ).componentInstance;

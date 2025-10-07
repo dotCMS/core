@@ -1,5 +1,11 @@
-import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
+import {
+    DotCMSClientConfig,
+    DotRequestOptions,
+    DotHttpClient,
+    DotCMSNavigationItem
+} from '@dotcms/types';
 
+import { FetchHttpClient } from './adapters/fetch-http-client';
 import { createDotCMSClient } from './client';
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
@@ -36,7 +42,7 @@ describe('DotCMSClient', () => {
     it('should initialize sub-clients with correct parameters', () => {
         createDotCMSClient(validConfig);
 
-        const expectedRequestOptions: RequestOptions = {
+        const expectedRequestOptions: DotRequestOptions = {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: 'Bearer test-token'
@@ -44,15 +50,16 @@ describe('DotCMSClient', () => {
         };
 
         expect(PageClient).toHaveBeenCalledWith(
-            expect.objectContaining({
-                dotcmsUrl: 'https://demo.dotcms.com',
-                authToken: 'test-token',
-                siteId: 'test-site'
-            }),
-            expectedRequestOptions
+            expect.objectContaining(validConfig),
+            expectedRequestOptions,
+            expect.any(FetchHttpClient)
         );
 
-        expect(Content).toHaveBeenCalledWith(expectedRequestOptions, 'https://demo.dotcms.com');
+        expect(Content).toHaveBeenCalledWith(
+            validConfig,
+            expectedRequestOptions,
+            expect.any(FetchHttpClient)
+        );
 
         expect(NavigationClient).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -60,7 +67,8 @@ describe('DotCMSClient', () => {
                 authToken: 'test-token',
                 siteId: 'test-site'
             }),
-            expectedRequestOptions
+            expectedRequestOptions,
+            expect.any(FetchHttpClient) // httpClient
         );
     });
 
@@ -78,7 +86,8 @@ describe('DotCMSClient', () => {
                 headers: {
                     Authorization: 'Bearer test-token'
                 }
-            })
+            }),
+            expect.any(FetchHttpClient) // httpClient
         );
     });
 
@@ -92,7 +101,8 @@ describe('DotCMSClient', () => {
                     'Content-Type': 'application/json',
                     Authorization: 'Bearer test-token'
                 }
-            })
+            }),
+            expect.any(FetchHttpClient) // httpClient
         );
     });
 
@@ -106,7 +116,7 @@ describe('DotCMSClient', () => {
             try {
                 createDotCMSClient(invalidConfig);
                 fail('Expected TypeError to be thrown');
-            } catch (error) {
+            } catch {
                 // This is expected, verify the error
             }
 
@@ -124,7 +134,7 @@ describe('DotCMSClient', () => {
             try {
                 createDotCMSClient(invalidConfig);
                 fail('Expected TypeError to be thrown');
-            } catch (error) {
+            } catch {
                 // This is expected, verify the error
             }
 
@@ -141,7 +151,41 @@ describe('DotCMSClient', () => {
 
             createDotCMSClient(configWithPath);
 
-            expect(Content).toHaveBeenCalledWith(expect.anything(), 'https://demo.dotcms.com');
+            expect(Content).toHaveBeenCalledWith(
+                validConfig,
+                expect.anything(),
+                expect.any(FetchHttpClient)
+            );
         });
+    });
+});
+
+describe('DotCMSClient with custom HTTP client', () => {
+    it('should use custom HTTP client when provided', async () => {
+        const mockHttpClient: DotHttpClient = {
+            request: jest.fn().mockResolvedValue({ entity: [{ name: 'test' }] })
+        };
+
+        // Create a spy on the NavigationClient prototype to intercept the get method
+        const getSpy = jest
+            .spyOn(NavigationClient.prototype, 'get')
+            .mockImplementation(async (path: string) => {
+                // Call the real HTTP client to verify it's being used
+                await mockHttpClient.request(`${path}-test`, {});
+
+                return [] as DotCMSNavigationItem[];
+            });
+
+        const client = createDotCMSClient({
+            dotcmsUrl: 'https://demo.dotcms.com',
+            authToken: 'token',
+            httpClient: mockHttpClient
+        });
+
+        await client.nav.get('/test');
+
+        expect(mockHttpClient.request).toHaveBeenCalledWith('/test-test', {});
+
+        getSpy.mockRestore();
     });
 });

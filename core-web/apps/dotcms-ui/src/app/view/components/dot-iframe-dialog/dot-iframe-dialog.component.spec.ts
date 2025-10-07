@@ -7,13 +7,13 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotDialogComponent, DotDialogModule } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 
+import { DOTTestBed } from '../../../test/dot-test-bed';
 import { IFrameModule } from '../_common/iframe';
 import { IframeComponent } from '../_common/iframe/iframe-component';
 
@@ -40,7 +40,8 @@ const getTestConfig = (hostComponent) => {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-iframe-dialog [url]="url" [header]="header"></dot-iframe-dialog>'
+    template: '<dot-iframe-dialog [url]="url" [header]="header"></dot-iframe-dialog>',
+    standalone: false
 })
 class TestHostComponent {
     url: string;
@@ -50,7 +51,8 @@ class TestHostComponent {
 @Component({
     selector: 'dot-test-host2-component',
     template:
-        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose()"></dot-iframe-dialog>'
+        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose()"></dot-iframe-dialog>',
+    standalone: false
 })
 class TestHost2Component {
     url: string;
@@ -63,7 +65,7 @@ const fakeEvent = () => {
     return {
         target: {
             contentWindow: {
-                focus: jasmine.createSpy('focus')
+                focus: jest.fn()
             }
         }
     };
@@ -158,12 +160,12 @@ describe('DotIframeDialogComponent', () => {
 
             describe('events', () => {
                 beforeEach(() => {
-                    spyOn(component.beforeClose, 'emit');
-                    spyOn(component.shutdown, 'emit');
-                    spyOn(component.custom, 'emit');
-                    spyOn(component.keyWasDown, 'emit');
-                    spyOn(component.charge, 'emit');
-                    spyOn(dialog.componentInstance, 'close');
+                    jest.spyOn(component.beforeClose, 'emit');
+                    jest.spyOn(component.shutdown, 'emit');
+                    jest.spyOn(component.custom, 'emit');
+                    jest.spyOn(component.keyWasDown, 'emit');
+                    jest.spyOn(component.charge, 'emit');
+                    jest.spyOn(dialog.componentInstance, 'close');
                 });
 
                 describe('dot-iframe', () => {
@@ -180,6 +182,7 @@ describe('DotIframeDialogComponent', () => {
                         });
 
                         expect(component.charge.emit).toHaveBeenCalledWith(mockEvent);
+                        expect(component.charge.emit).toHaveBeenCalledTimes(1);
                         expect<any>(component.keyWasDown.emit).toHaveBeenCalledWith({
                             hello: 'world'
                         });
@@ -241,7 +244,7 @@ describe('DotIframeDialogComponent', () => {
             hostFixture.detectChanges();
             dialog = de.query(By.css('dot-dialog'));
             dialogComponent = dialog.componentInstance;
-            spyOn(component.beforeClose, 'emit');
+            jest.spyOn(component.beforeClose, 'emit');
         });
 
         it('should emit beforeClose when a observer is set', () => {

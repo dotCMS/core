@@ -32,7 +32,7 @@ describe('DotAnalyticsStateMessageComponent', () => {
         expect(iconElement).toHaveClass('pi');
         expect(iconElement).toHaveClass('pi-info-circle');
         expect(iconElement).toHaveClass('text-gray-400');
-        expect(iconElement).toHaveClass('text-2xl');
+        expect(iconElement).toHaveClass('text-4xl');
     });
 
     it('should render the message element', () => {

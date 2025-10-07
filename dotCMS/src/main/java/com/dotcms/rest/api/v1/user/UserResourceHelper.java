@@ -417,4 +417,14 @@ public class UserResourceHelper implements Serializable {
 
 		return userToSave;
 	}
+
+    /**
+     * Remove the roles associated to the user
+     * @param user User
+     */
+    public void removeRoles(User user) throws DotDataException {
+
+        Logger.debug(this, ()-> "removing the roles for the user:" + user.getUserId());
+        APILocator.getRoleAPI().removeAllRolesFromUser(user);
+    }
 }

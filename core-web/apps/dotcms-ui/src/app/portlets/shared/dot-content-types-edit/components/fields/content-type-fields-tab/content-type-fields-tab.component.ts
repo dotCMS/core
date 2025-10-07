@@ -12,7 +12,8 @@ import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotc
 @Component({
     selector: 'dot-content-type-fields-tab',
     styleUrls: ['./content-type-fields-tab.component.scss'],
-    templateUrl: './content-type-fields-tab.component.html'
+    templateUrl: './content-type-fields-tab.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsTabComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

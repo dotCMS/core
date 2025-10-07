@@ -7,15 +7,14 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ConfirmationService } from 'primeng/api';
 import { Paginator } from 'primeng/paginator';
 
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import { EditEmaPersonaSelectorComponent } from './edit-ema-persona-selector.component';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../../../shared/consts';
 
-export const CUSTOM_PERSONA: DotPersona = {
-    hostFolder: 'CUSTOM_HOST',
+export const CUSTOM_PERSONA: DotCMSViewAsPersona = {
     inode: 'unique-inode-id',
     host: 'CUSTOM_HOST',
     locked: true,
@@ -44,9 +43,9 @@ export const CUSTOM_PERSONA: DotPersona = {
     modUser: 'customAdmin'
 };
 
-const TEST_DEFAULT_PERSONA: DotPersona = {
+const TEST_DEFAULT_PERSONA: DotCMSViewAsPersona = {
     ...DEFAULT_PERSONA,
-    photo: '/dA/198-23423-234',
+    photo: { versionPath: '/dA/198-23423-234' },
     url: 'example.defaultsite.com'
 };
 

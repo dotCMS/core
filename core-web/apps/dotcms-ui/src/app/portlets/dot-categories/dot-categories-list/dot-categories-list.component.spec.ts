@@ -18,9 +18,6 @@ import { MenuModule } from 'primeng/menu';
 import { PaginatorModule } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
 
-import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCategory } from '@dotcms/dotcms-models';
@@ -34,11 +31,16 @@ import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing
 
 import { DotCategoriesListComponent } from './dot-categories-list.component';
 
+import { DotCategoriesService } from '../../../api/services/dot-categories/dot-categories.service';
+import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
+import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+
 @Component({
     selector: 'dot-test-host-component',
     template: `
         <dot-categories-list></dot-categories-list>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {}
 
@@ -171,11 +173,11 @@ xdescribe('DotCategoriesListingTableComponent', () => {
         hostFixture.detectChanges();
         de = hostFixture.debugElement.query(By.css('p-table'));
         const emptyState = de.query(By.css('[data-testid="title"]'));
-        expect(emptyState.nativeElement.innerText).toBe('Your category list is empty');
+        expect(emptyState.nativeElement.textContent).toBe('Your category list is empty');
     }));
 
     function setRequestSpy(response: any): void {
-        spyOn<any>(coreWebService, 'requestView').and.returnValue(
+        jest.spyOn<any>(coreWebService, 'requestView').mockReturnValue(
             of({
                 entity: response,
                 header: (type) => (type === 'Link' ? 'test;test=test' : '40')

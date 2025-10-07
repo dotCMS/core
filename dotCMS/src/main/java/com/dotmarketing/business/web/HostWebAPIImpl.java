@@ -24,6 +24,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.RenderRequestImpl;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Optional;
@@ -33,6 +34,7 @@ import java.util.Optional;
  * @author david torres
  *
  */
+@ApplicationScoped
 public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
 	public Host getCurrentHost(RenderRequest req) throws DotDataException, DotSecurityException, PortalException, SystemException {

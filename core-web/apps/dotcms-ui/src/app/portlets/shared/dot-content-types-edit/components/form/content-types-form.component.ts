@@ -34,8 +34,7 @@ import {
     DotCMSWorkflow,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { isEqual } from '@dotcms/utils';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { isEqual, FieldUtil } from '@dotcms/utils';
 
 /**
  * Form component to create or edit content types
@@ -48,7 +47,8 @@ import { FieldUtil } from '@dotcms/utils-testing';
     providers: [],
     selector: 'dot-content-types-form',
     styleUrls: ['./content-types-form.component.scss'],
-    templateUrl: 'content-types-form.component.html'
+    templateUrl: 'content-types-form.component.html',
+    standalone: false
 })
 export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);

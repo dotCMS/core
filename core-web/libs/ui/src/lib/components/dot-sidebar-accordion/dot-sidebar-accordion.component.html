@@ -1,0 +1,34 @@
+<!-- Sidebar Accordion Component -->
+<div
+    class="dot-sidebar-accordion"
+    [class.dot-sidebar-accordion--has-active]="$hasActiveTab()"
+    [class.dot-sidebar-accordion--transitioning]="$isTransitioning()">
+    @for (tab of $tabs(); track tab.$id()) {
+        <div
+            class="accordion-tab"
+            [class.active]="isTabActive(tab.$id())"
+            [class.accordion-tab--disabled]="isTabDisabled(tab.$id())">
+            <div
+                class="accordion-header"
+                (click)="toggleTab(tab.$id())"
+                [class.accordion-header--disabled]="$isTransitioning() || isTabDisabled(tab.$id())">
+                <div class="accordion-header__left">
+                    <i class="pi pi-chevron-down"></i>
+                    <span>{{ tab.$label() }}</span>
+                </div>
+                <div class="accordion-header__right" (click)="$event.stopPropagation()">
+                    <ng-container *ngTemplateOutlet="tab.headerContent"></ng-container>
+                </div>
+            </div>
+            <div
+                class="accordion-content"
+                [@accordionContent]="getAnimationState(tab.$id())"
+                (@accordionContent.done)="onAnimationDone($event, tab.$id())"
+                [class.accordion-content--expanded]="isTabActive(tab.$id())"
+                [class.accordion-content--collapsed]="!isTabActive(tab.$id())">
+                <!-- Project tab content using ngTemplateOutlet -->
+                <ng-container *ngTemplateOutlet="tab.tabContent"></ng-container>
+            </div>
+        </div>
+    }
+</div>

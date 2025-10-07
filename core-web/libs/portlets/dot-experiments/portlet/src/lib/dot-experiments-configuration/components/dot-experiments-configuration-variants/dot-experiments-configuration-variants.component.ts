@@ -44,16 +44,13 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
-    standalone: true,
     imports: [
         CommonModule,
         DotMessagePipe,
         DotIconModule,
-        DotExperimentsConfigurationVariantsAddComponent,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,
-
         //PrimeNg
         CardModule,
         InplaceModule,
@@ -221,8 +218,11 @@ export class DotExperimentsConfigurationVariantsComponent {
             );
         } catch {
             // Fallback to relative URL using window.location.origin
+            const cleanProcessedUrl = processedUrl.startsWith('/')
+                ? processedUrl.substring(1)
+                : processedUrl;
             url = new URL(
-                `${window.location.origin}/${processedUrl}${
+                `${window.location.origin}/${cleanProcessedUrl}${
                     processedUrl.indexOf('?') != -1 ? '&' : '?'
                 }disabledNavigateMode=true&mode=LIVE`
             );

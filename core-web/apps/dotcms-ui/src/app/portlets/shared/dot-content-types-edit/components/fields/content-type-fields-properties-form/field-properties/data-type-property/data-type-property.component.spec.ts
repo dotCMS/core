@@ -3,12 +3,13 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DataTypePropertyComponent } from '.';
+
+import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
 
 describe('DataTypePropertyComponent', () => {
     let comp: DataTypePropertyComponent;
@@ -64,7 +65,7 @@ describe('DataTypePropertyComponent', () => {
     it('should have 4 values for Radio Field', () => {
         fixture.detectChanges();
 
-        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radioButton'));
+        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radiobutton'));
 
         expect(4).toEqual(pRadioButtons.length);
         expect('Text').toBe(pRadioButtons[0].componentInstance.label);
@@ -81,7 +82,7 @@ describe('DataTypePropertyComponent', () => {
         comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableSelectField';
         fixture.detectChanges();
 
-        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radioButton'));
+        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radiobutton'));
 
         expect(4).toEqual(pRadioButtons.length);
         expect('Text').toBe(pRadioButtons[0].componentInstance.label);
@@ -98,7 +99,7 @@ describe('DataTypePropertyComponent', () => {
         comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableTextField';
         fixture.detectChanges();
 
-        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radioButton'));
+        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radiobutton'));
 
         expect(3).toEqual(pRadioButtons.length);
         expect('Text').toBe(pRadioButtons[0].componentInstance.label);

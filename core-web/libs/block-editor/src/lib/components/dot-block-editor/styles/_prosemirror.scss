@@ -41,26 +41,12 @@ tiptap-editor ::ng-deep .ProseMirror {
         pointer-events: none;
     }
 
+    pre.is-empty::before {
+        position: unset;
+    }
+
     .is-empty {
         position: relative;
-        .add-button {
-            font-size: $font-size-xl;
-            cursor: pointer;
-            border: solid 1px $color-palette-gray-500;
-            width: $spacing-4;
-            height: $spacing-4;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: $color-palette-gray-500;
-            background: $white;
-            border-radius: $border-radius-sm;
-            position: absolute;
-            z-index: 10;
-            top: 50%;
-            transform: translateY(-50%);
-            left: -$spacing-6;
-        }
     }
 
     .ai-loading {

@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -1250,6 +1251,7 @@ public class HealthStateManager {
     private HealthResponse createRfcCompliantHealthResponse(HealthStatus status, List<HealthCheckResult> checks) {
         String version = ReleaseInfo.getVersion();
         String buildNumber = ReleaseInfo.getBuildNumber();
+        String buildDate = ReleaseInfo.getBuildDateString();
         
         return HealthResponse.builder()
             .status(status)
@@ -1259,6 +1261,7 @@ public class HealthStateManager {
             .releaseId("0".equals(buildNumber) ? Optional.empty() : Optional.of(buildNumber))
             .serviceId(Optional.of("dotcms-health"))
             .description(Optional.of("dotCMS Application Health Status"))
+            .links(Optional.of(Map.of("buildDate", buildDate)))
             .build();
     }
     

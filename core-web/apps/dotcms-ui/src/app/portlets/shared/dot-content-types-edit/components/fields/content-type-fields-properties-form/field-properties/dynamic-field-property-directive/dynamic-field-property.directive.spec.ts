@@ -3,12 +3,12 @@ import {
     mockProvider,
     SpectatorDirective,
     SpyObject
-} from '@ngneat/spectator';
+} from '@ngneat/spectator/jest';
 
 import { Component, ViewContainerRef } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DynamicFieldPropertyDirective } from './dynamic-field-property.directive';
 
@@ -25,7 +25,7 @@ class CustomHostComponent {
     group = new UntypedFormGroup({});
     field: DotCMSContentTypeField = {
         name: 'FieldName',
-        clazz: 'testClazz',
+        clazz: DotCMSClazzes.TEXT,
         contentTypeId: '123',
         dataType: 'text',
         fieldType: 'text',
@@ -66,8 +66,8 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         host: CustomHostComponent,
         providers: [
             mockProvider(FieldPropertyService, {
-                getComponent: jasmine.createSpy('getComponent').and.returnValue(DynamicComponent),
-                getFieldType: jasmine.createSpy('getFieldType').and.returnValue({
+                getComponent: jest.fn().mockReturnValue(DynamicComponent),
+                getFieldType: jest.fn().mockReturnValue({
                     helpText: 'helpText'
                 })
             }),
@@ -89,6 +89,7 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
     it('Should set component properties', () => {
         hostSpectator.detectChanges();
         expect(fieldPropertyService.getComponent).toHaveBeenCalledWith('name');
+        expect(fieldPropertyService.getComponent).toHaveBeenCalledTimes(1);
 
         expect(hostSpectator.query('dot-test')).toContainText('Dynamic Component');
 

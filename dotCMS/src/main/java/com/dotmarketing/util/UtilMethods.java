@@ -28,6 +28,7 @@ import com.liferay.util.StringPool;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.Base64;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.Term;
@@ -3848,7 +3849,7 @@ public class UtilMethods {
     *  Additionally the method includes a check to ensure that a simple term query (just a simple string) is not considered valid
     *  @param query String to be checked
     */
-    public static final boolean isLuceneQuery(String query) {
+    public static boolean isLuceneQuery(String query) {
         try {
             final QueryParser parser = new QueryParser("defaultField", new StandardAnalyzer());
             // Allow wildcards in the query
@@ -3866,5 +3867,20 @@ public class UtilMethods {
             return false; // If parsing fails, it's not a valid Lucene query
         }
     }
+
+
+   public static String base64Encode(String incomingString){
+      if(incomingString == null){
+         return null;
+      }
+      return Base64.getEncoder().encodeToString(incomingString.getBytes());
+   }
+
+   public static String base64Decode(String incomingString){
+      if(incomingString == null){
+         return null;
+      }
+      return new String(Base64.getDecoder().decode(incomingString));
+   }
 
 }

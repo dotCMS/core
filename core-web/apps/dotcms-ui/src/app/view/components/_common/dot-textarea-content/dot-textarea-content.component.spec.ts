@@ -26,7 +26,8 @@ function cleanOptionText(option) {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => MonacoEditorMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 class MonacoEditorMockComponent {
     @Input() options: any;
@@ -167,7 +168,7 @@ describe('DotTextareaContentComponent', () => {
     });
 
     it('should not propagate enter keyboard event', async () => {
-        const spy = jasmine.createSpy('stopPropagation');
+        const spy = jest.fn();
         component.show = ['plain', 'code'];
         component.selected = 'plain';
 
@@ -194,7 +195,7 @@ describe('DotTextareaContentComponent', () => {
     it('should init editor with the correct value', () => {
         const mockEditor = { test: 'editor' };
         component.editorName = 'testName';
-        spyOn(component.monacoInit, 'emit');
+        jest.spyOn(component.monacoInit, 'emit');
         fixture.detectChanges();
         component.onInit(mockEditor);
         expect(component.monacoInit.emit).toHaveBeenCalledWith({

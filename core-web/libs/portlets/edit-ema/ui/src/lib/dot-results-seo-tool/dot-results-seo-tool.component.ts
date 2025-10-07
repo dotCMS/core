@@ -2,7 +2,6 @@ import { Observable } from 'rxjs';
 
 import {
     AsyncPipe,
-    JsonPipe,
     NgClass,
     NgFor,
     NgIf,
@@ -39,14 +38,12 @@ import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo
 import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-image-preview.component';
 @Component({
     selector: 'dot-results-seo-tool',
-    standalone: true,
     imports: [
         NgClass,
         CardModule,
         NgFor,
         TitleCasePipe,
         NgIf,
-        JsonPipe,
         NgSwitch,
         NgSwitchCase,
         NgSwitchDefault,

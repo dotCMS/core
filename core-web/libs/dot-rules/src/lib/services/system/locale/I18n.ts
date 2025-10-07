@@ -30,7 +30,7 @@ export class TreeNode {
     $addAllFromJson(key: string, childJson: any): void {
         const cNode = this.$child(key);
         if (Verify.isString(childJson)) {
-            cNode._value = childJson;
+            cNode._value = childJson.toString();
         } else {
             Object.keys(childJson).forEach((cKey) => {
                 cNode.$addAllFromJson(cKey, childJson[cKey]);

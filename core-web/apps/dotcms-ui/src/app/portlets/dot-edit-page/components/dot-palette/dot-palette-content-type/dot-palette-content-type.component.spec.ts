@@ -6,14 +6,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
 
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type.component';
 
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotFilterPipeModule } from '../../../../../view/pipes/dot-filter/dot-filter-pipe.module';
 import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
 
 export const contentTypeDataMock = [
@@ -62,7 +62,8 @@ export const contentTypeDataMock = [
             [items]="items"
             [loading]="loading"
             [viewContentlet]="viewContentlet"></dot-palette-content-type>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() items: any[];
@@ -73,7 +74,7 @@ class TestHostComponent {
 
 @Injectable()
 class MockDotContentletEditorService {
-    setDraggedContentType = jasmine.createSpy('setDraggedContentType');
+    setDraggedContentType = jest.fn();
 }
 
 describe('DotPaletteContentTypeComponent', () => {
@@ -149,7 +150,7 @@ describe('DotPaletteContentTypeComponent', () => {
     });
 
     it('should filter items on search', async () => {
-        spyOn(comp.filter, 'emit').and.callThrough();
+        jest.spyOn(comp.filter, 'emit');
         fixtureHost.detectChanges();
         await fixtureHost.whenStable();
 
@@ -159,6 +160,7 @@ describe('DotPaletteContentTypeComponent', () => {
         fixtureHost.detectChanges();
 
         expect(comp.filter.emit).toHaveBeenCalledWith('test');
+        expect(comp.filter.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should set Dragged ContentType on dragStart', () => {
@@ -166,19 +168,20 @@ describe('DotPaletteContentTypeComponent', () => {
         fixtureHost.detectChanges();
         const content = fixtureHost.debugElement.query(By.css('[data-testId="paletteItem"]'));
         content.triggerEventHandler('dragstart', contentTypeDataMock[0]);
-        expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledOnceWith(
+        expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledWith(
             contentTypeDataMock[0] as DotCMSContentType
         );
     });
 
     it('should emit event to show a specific contentlet', () => {
         componentHost.items = contentTypeDataMock;
-        spyOn(comp.selected, 'emit').and.callThrough();
+        jest.spyOn(comp.selected, 'emit');
         fixtureHost.detectChanges();
         const buttons = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
-        const label = buttons[0].nativeElement.querySelector('p').innerText.trim();
+        const label = buttons[0].nativeElement.querySelector('p').textContent.trim();
         buttons[0].nativeElement.click();
         expect(comp.items).toEqual(contentTypeDataMock as DotCMSContentType[]);
         expect(comp.selected.emit).toHaveBeenCalledWith(label);
+        expect(comp.selected.emit).toHaveBeenCalledTimes(1);
     });
 });

@@ -17,7 +17,7 @@
             </span>
         </ng-template>
         @if (vm.favoritePages?.items?.length !== 0) {
-            @for (item of vm.favoritePages.items; track item; let i = $index) {
+            @for (item of vm.favoritePages.items; track $index) {
                 <dot-pages-card
                     (edit)="editFavoritePage(item)"
                     (goTo)="goToUrl.emit(item.url)"

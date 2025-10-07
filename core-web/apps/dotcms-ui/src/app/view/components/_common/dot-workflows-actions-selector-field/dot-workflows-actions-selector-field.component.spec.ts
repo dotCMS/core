@@ -8,7 +8,6 @@ import { By } from '@angular/platform-browser';
 import { SelectItemGroup } from 'primeng/api';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -16,6 +15,8 @@ import { MockDotMessageService, mockWorkflows } from '@dotcms/utils-testing';
 
 import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-fake-form',
@@ -26,7 +27,8 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
                 formControlName="action"></dot-workflows-actions-selector-field>
             {{ form.value | json }}
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent implements OnInit {
     private fb = inject(UntypedFormBuilder);
@@ -117,8 +119,8 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
             DotWorkflowsActionsSelectorFieldService
         );
 
-        spyOn(dotWorkflowsActionsSelectorFieldService, 'get').and.callThrough();
-        spyOn(dotWorkflowsActionsSelectorFieldService, 'load').and.callThrough();
+        jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'get');
+        jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'load');
     });
 
     describe('initialization', () => {
@@ -129,6 +131,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
         it('should load actions', () => {
             expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledTimes(1);
             expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledWith([]);
+            expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledTimes(1);
         });
 
         it('should subscribe to actions', () => {
@@ -241,7 +244,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                 componentHost.workfows = mock;
                 fixtureHost.detectChanges();
                 expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledWith(
-                    jasmine.arrayContaining(mock)
+                    expect.arrayContaining(mock)
                 );
             });
         });

@@ -21,7 +21,8 @@ import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-passwo
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-generate-secure-password></dot-generate-secure-password>'
+    template: '<dot-generate-secure-password></dot-generate-secure-password>',
+    standalone: false
 })
 class TestHostComponent {}
 
@@ -71,7 +72,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
     describe('dot-dialog', () => {
         let dialog: DotDialogComponent;
         beforeEach(() => {
-            spyOn(dotClipboardUtil, 'copy');
+            jest.spyOn(dotClipboardUtil, 'copy');
             dialog = fixture.debugElement.query(By.css('dot-dialog')).componentInstance;
             dotGenerateSecurePasswordService.open(passwordGenerateData);
             fixture.detectChanges();
@@ -89,10 +90,11 @@ describe('DotGenerateSecurePasswordComponent', () => {
             copyButton.nativeElement.click();
             fixture.detectChanges();
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith(comp.value);
-            expect(copyButton.nativeElement.innerText).toBe('Copied');
+            expect(dotClipboardUtil.copy).toHaveBeenCalledTimes(1);
+            expect(copyButton.nativeElement.textContent).toBe('Copied');
             tick(2000);
             fixture.detectChanges();
-            expect(copyButton.nativeElement.innerText).toBe('Copy');
+            expect(copyButton.nativeElement.textContent).toBe('Copy');
         }));
 
         it('should Reveal password', () => {

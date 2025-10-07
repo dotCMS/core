@@ -7,9 +7,9 @@ import { map, switchMap, tap } from 'rxjs/operators';
 
 import { DotUploadFileService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
-import { UploadedFile, UPLOAD_TYPE } from '@dotcms/edit-content/models/dot-edit-content-file.model';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
+import { UploadedFile, UPLOAD_TYPE } from '../../../../models/dot-edit-content-file.model';
+import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { getFileMetadata, getFileVersion, checkMimeType } from '../../utils';
 
 export type UploadFileProps = {

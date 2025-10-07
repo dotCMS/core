@@ -1,0 +1,67 @@
+@use "variables" as *;
+
+// Custom styling for context menu
+::ng-deep {
+    .p-contextmenu {
+        min-width: 15rem;
+        border: 1px solid $color-palette-black-op-10;
+        border-radius: $border-radius-lg;
+        box-shadow: $shadow-l;
+        padding: $spacing-0;
+        background: $white;
+
+        .p-menuitem-content {
+            margin: 0;
+        }
+
+        .p-separator {
+            margin: $spacing-0 0;
+            border-top: 1px solid $color-palette-black-op-10;
+        }
+    }
+
+    .p-contextmenu .p-menuitem-link {
+        padding: $spacing-2 $spacing-2;
+        color: $black;
+        transition: background-color $basic-speed ease;
+        border-radius: $border-radius-md;
+
+        &:hover {
+            background-color: $bg-hover;
+
+            .menu-item-shortcut {
+                color: $text-color-hover;
+            }
+        }
+
+        &:focus {
+            outline: none;
+            box-shadow: none;
+        }
+    }
+
+    .p-contextmenu ul {
+        outline: none;
+        margin: 0;
+    }
+
+    .p-contextmenu .p-disabled {
+        .p-menuitem-link {
+            background-color: $color-palette-gray-200;
+            color: $color-palette-gray-600;
+            border-radius: unset;
+        }
+    }
+
+    .menu-item-label {
+        font-size: $font-size-md;
+        line-height: 1.2;
+    }
+
+    .menu-item-shortcut {
+        font-size: $font-size-sm;
+        color: $color-palette-black-op-20;
+        font-weight: $font-weight-regular-bold;
+        letter-spacing: 0.5px;
+    }
+}

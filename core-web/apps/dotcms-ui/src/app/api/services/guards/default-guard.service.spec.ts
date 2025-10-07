@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotRouterService } from '@dotcms/data-access';
 
 import { DefaultGuardService } from './default-guard.service';
+
+import { DOTTestBed } from '../../../test/dot-test-bed';
 
 describe('ValidDefaultGuardService', () => {
     let defaultGuardService: DefaultGuardService;

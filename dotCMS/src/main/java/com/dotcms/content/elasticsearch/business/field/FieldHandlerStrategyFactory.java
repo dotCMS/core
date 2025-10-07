@@ -1,22 +1,22 @@
 package com.dotcms.content.elasticsearch.business.field;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
+import com.dotmarketing.portlets.contentlet.business.DotBinaryFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotDateFieldException;
+import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
+import com.dotmarketing.portlets.contentlet.business.DotNumericFieldException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -24,9 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
+import javax.servlet.http.HttpServletRequest;
+
+import static org.apache.commons.lang3.BooleanUtils.toBoolean;
 
 /**
  * Factory to get the FieldHandlerStrategy
@@ -41,6 +45,14 @@ public class FieldHandlerStrategyFactory {
         initStrategies();
     }
 
+    private static final Set<String> TEXT_STRATEGY_EXCLUSIONS_TYPES = Set.of(
+            LegacyFieldTypes.JSON_FIELD.legacyValue()
+    );
+
+    private boolean isExcludedTextField(Field field) {
+        return TEXT_STRATEGY_EXCLUSIONS_TYPES.contains(LegacyFieldTypes.getLegacyName(field.getClass()));
+    }
+
     private void initStrategies () {
 
         addFieldStrategy(LegacyFieldTypes.CATEGORY.legacyValue(), this::doNothingStrategy);
@@ -51,7 +63,7 @@ public class FieldHandlerStrategyFactory {
 
         addMatchingFieldStrategy(field ->
                 field.dbColumn().startsWith("text") &&
-                        !LegacyFieldTypes.JSON_FIELD.legacyValue().equals(LegacyFieldTypes.getLegacyName(field.getClass()))
+                        !isExcludedTextField(field)
                         , this::textStrategy);
 
         addMatchingFieldStrategy(field ->
@@ -99,19 +111,8 @@ public class FieldHandlerStrategyFactory {
     }
 
     /**
-     * Adds a new field strategy associated to a starts with text
-     * @param strategy
-     */
-    public void addStartsWithFieldStrategy (final String fieldTypeText, final FieldHandlerStrategy strategy) {
-
-        if (Objects.nonNull(fieldTypeText) && Objects.nonNull(strategy)) {
-
-            addMatchingFieldStrategy(field -> field.dbColumn().startsWith(fieldTypeText), strategy);
-        }
-    }
-
-    /**
      * Adds a new field strategy associated to a predicate
+     * @param fieldTypePredicate
      * @param strategy
      */
     public void addMatchingFieldStrategy (final Predicate<Field> fieldTypePredicate, final FieldHandlerStrategy strategy) {
@@ -147,6 +148,13 @@ public class FieldHandlerStrategyFactory {
                 "No strategy to set contentlet field value on field type" + field.getClass().getName() + " with value: " + value);
     }
 
+    /**
+     * If you're changing this strategy have a look at jsonStrategy
+     * @param contentlet
+     * @param field
+     * @param value
+     * @throws DotContentletStateException
+     */
     private void keyValueStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
 
         if (value instanceof String) {
@@ -156,7 +164,7 @@ public class FieldHandlerStrategyFactory {
                 contentlet.setStringProperty(field.variable(), validationResult.node.toString());
             } else {
                 // Throw a backwards compatible but detailed exception
-                throw new DotJsonFieldException(
+                throw DotJsonFieldException.keyValueJsonException(
                         field.variable(),
                         (String) value,
                         validationResult.line,
@@ -173,6 +181,42 @@ public class FieldHandlerStrategyFactory {
 
             throw new DotContentletStateException(
                     "Invalid JSON field provided. Key Value Field variable: " +
+                            field.variable());
+        }
+    }
+
+    /**
+     * If you're changing this strategy have a look at keyValueStrategy
+     * @param contentlet
+     * @param field
+     * @param value
+     * @throws DotContentletStateException
+     */
+    private void jsonStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
+        if (value instanceof String) {
+            JsonUtil.JSONValidationResult validationResult = JsonUtil.validateJSON((String) value);
+
+            if (validationResult.isValid()) {
+                contentlet.setStringProperty(field.variable(), validationResult.node.toString());
+            } else {
+                // Throw a backwards compatible but detailed exception
+                throw DotJsonFieldException.jsonFieldException(
+                        field.variable(),
+                        (String) value,
+                        validationResult.line,
+                        validationResult.column,
+                        validationResult.errorMessage
+                );
+            }
+
+        } else if (value instanceof Map) {
+            contentlet.setStringProperty(field.variable(),
+                    Try.of(() -> JsonUtil.getJsonAsString((Map<String, Object>) value))
+                            .getOrElse("{}"));
+        } else {
+
+            throw new DotContentletStateException(
+                    "Invalid JSON field provided. Field variable: " +
                             field.variable());
         }
     }
@@ -196,13 +240,21 @@ public class FieldHandlerStrategyFactory {
                     contentlet.setBinary(field.variable(),
                             tempFileOptional.get().file);
                 } else {
-                    throw new DotStateException("Invalid Temp File provided, for the field: " + field.variable());
+                    throw DotBinaryFieldException.invalidTempFileBuilder(field.variable(), value)
+                            .fieldType(field.typeName())
+                            .expectedFormat("Valid temporary file")
+                            .addContext("tempFileResource", value.toString())
+                            .build();
                 }
 
             }
         } catch (IOException e) {
-            throw new DotContentletStateException(
-                    "Unable to set binary file Object: " + e.getMessage(), e);
+            throw DotBinaryFieldException.ioErrorBuilder(field.variable(), value)
+                    .fieldType(field.typeName())
+                    .expectedFormat("File or temporary file resource")
+                    .addContext("providedType", value != null ? value.getClass().getSimpleName() : "null")
+                    .cause(e)
+                    .build();
         }
     }
 
@@ -246,16 +298,18 @@ public class FieldHandlerStrategyFactory {
         } else if (value instanceof Date) {
             contentlet.setDateProperty(field.variable(), (Date) value);
         } else if (value instanceof String) {
-            if (((String) value).trim().length() > 0) {
+            final String trimmedValue = ((String) value).trim();
+            if (!trimmedValue.isEmpty()) {
                 try {
-                    final String trimmedValue = ((String) value).trim();
                     contentlet.setDateProperty(field.variable(),
                             DateUtil.convertDate(trimmedValue, dateFormats));
                 } catch (Exception e) {
 
-                    throw new DotContentletStateException(
-                            "Unable to convert string to date " + value + ", field: " +
-                                    field.variable());
+                    throw DotDateFieldException.conversionErrorBuilder(field.variable(), value)
+                            .fieldType(field.typeName())
+                            .acceptedFormats(dateFormats)
+                            .addContext("errorMessage", e.getMessage())
+                            .build();
                 }
             } else {
 
@@ -263,9 +317,11 @@ public class FieldHandlerStrategyFactory {
             }
         } else if (field.required() && value == null) {
 
-            throw new DotContentletStateException(
-                    "Date fields must either be of type String or Date, field: " +
-                            field.variable());
+            throw DotDateFieldException.invalidTypeBuilder(field.variable(), value)
+                    .fieldType(field.typeName())
+                    .expectedFormat("String or Date")
+                    .addContext("providedType", value != null ? value.getClass().getSimpleName() : "null")
+                    .build();
         }
     }
 
@@ -273,17 +329,16 @@ public class FieldHandlerStrategyFactory {
     private void booleanStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
 
         if (value instanceof Boolean) {
-
             contentlet.setBoolProperty(field.variable(), (Boolean) value);
         } else if (value instanceof String) {
             try {
                 final String auxValue = (String) value;
-                final Boolean auxBoolean =
-                        (auxValue.equalsIgnoreCase("1") || auxValue.equalsIgnoreCase("true")
-                                || auxValue.equalsIgnoreCase("t")) ? Boolean.TRUE
-                                : Boolean.FALSE;
+                //toBoolean deals with ("true","yes","1","t","on")
+                final boolean auxBoolean = toBoolean(auxValue);
                 contentlet.setBoolProperty(field.variable(), auxBoolean);
             } catch (Exception e) {
+                //This exception isn't really ever thrown
+                // As anything outside the range of values accepted as true will be set as false
                 throw new DotContentletStateException(
                         "Unable to set string value as a Boolean for the field: " +
                                 field.variable());
@@ -300,14 +355,17 @@ public class FieldHandlerStrategyFactory {
             contentlet.setFloatProperty(field.variable(),
                     ((Number) value).floatValue());
         } else if (value instanceof String) {
+            final String stringValue = value.toString();
             try {
                 contentlet.setFloatProperty(field.variable(),
-                        Float.valueOf((String)value));
+                        Float.parseFloat(stringValue));
             } catch (Exception e) {
-                if (value != null && value.toString().length() != 0) {
-                    contentlet.getMap().put(field.variable(), (String) value);
+                if (!stringValue.isEmpty()) {
+                    contentlet.getMap().put(field.variable(), stringValue);
                 }
-                throw new DotContentletStateException("Unable to set string value as a Float for the field: " + field.variable());
+                throw DotNumericFieldException.floatFieldBuilder(field.variable(), value)
+                        .fieldType(field.typeName())
+                        .build();
             }
         }
     }
@@ -332,27 +390,14 @@ public class FieldHandlerStrategyFactory {
         } else if (value instanceof String) {
             try {
                 contentlet.setLongProperty(field.variable(),
-                        Long.valueOf((String)value));
+                        Long.parseLong((String)value));
             } catch (Exception e) {
-                //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
-                throw new DotContentletStateException("Unable to set string value as a Long for the field: " + field.variable() + ", msg: " + e.getMessage());
+                //If we throw this exception here... the contentlet will never get to the validateContentlet Method
+                throw DotNumericFieldException.longFieldBuilder(field.variable(), value)
+                        .fieldType(field.typeName())
+                        .build();
             }
         }
     }
 
-    private void jsonStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
-        if ((value instanceof String) && (JsonUtil.isValidJSON((String) value))) {
-            contentlet.setStringProperty(field.variable(), Try.of(
-                            () -> JsonUtil.JSON_MAPPER.readTree((String) value).toString())
-                    .getOrElse("{}"));
-        } else if (value instanceof Map) {
-            contentlet.setStringProperty(field.variable(),
-                    Try.of(() -> JsonUtil.getJsonAsString((Map<String, Object>) value))
-                            .getOrElse("{}"));
-        } else {
-            throw new DotContentletStateException(
-                    "Invalid JSON field provided. Field variable: " +
-                            field.variable());
-        }
-    }
 }

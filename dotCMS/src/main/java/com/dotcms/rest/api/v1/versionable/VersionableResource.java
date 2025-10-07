@@ -125,7 +125,6 @@ public class VersionableResource {
     @Path("/{versionableInodeOrIdentifier}")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response findVersionable(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,

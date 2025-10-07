@@ -14,9 +14,9 @@ import { ConfirmationService } from 'primeng/api';
 import {
     DotAlertConfirmService,
     DotEventsService,
-    DotRouterService,
+    DotFormatDateService,
     DotIframeService,
-    DotFormatDateService
+    DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
@@ -34,7 +34,8 @@ class DotContentletEditorServiceMock {
 
 @Component({
     selector: 'dot-iframe-dialog',
-    template: ``
+    template: ``,
+    standalone: false
 })
 class DotIframeMockComponent {
     @Input() url;
@@ -102,9 +103,9 @@ describe('DotCreateContentletComponent', () => {
         routeService = TestBed.inject(ActivatedRoute);
         routerService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
-        spyOn(component.shutdown, 'emit');
-        spyOn(component.custom, 'emit');
-        spyOn(dotIframeService, 'reloadData');
+        jest.spyOn(component.shutdown, 'emit');
+        jest.spyOn(component.custom, 'emit');
+        jest.spyOn(dotIframeService, 'reloadData');
     });
 
     it('should have dot-contentlet-wrapper', () => {
@@ -113,18 +114,20 @@ describe('DotCreateContentletComponent', () => {
 
     it('should emit shutdown and redirect to Content page when coming from starter', () => {
         routerService.currentSavedURL = '/c/content/new/';
-        dotCreateContentletWrapper.triggerEventHandler('shutdown', {});
+        component.onClose({});
         expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.goToContent).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should emit shutdown and redirect to Pages page when shutdown from pages', () => {
         routerService.currentSavedURL = '/pages/new/';
-        dotCreateContentletWrapper.triggerEventHandler('shutdown', {});
+        component.onClose({});
         expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should emit custom', () => {
@@ -137,15 +140,19 @@ describe('DotCreateContentletComponent', () => {
     });
 
     it('should set url from service', () => {
-        spyOnProperty(dotContentletEditorServiceMock, 'createUrl$', 'get').and.returnValue(
-            of('hello.world.com')
-        );
+        Object.defineProperty(dotContentletEditorServiceMock, 'createUrl$', {
+            value: of('hello.world.com'),
+            writable: true
+        });
         fixture.detectChanges();
         expect(dotCreateContentletWrapperComponent.url).toEqual('hello.world.com');
     });
 
     it('should set url from resolver', () => {
-        spyOnProperty<any>(routeService, 'data').and.returnValue(of({ url: 'url.from.resolver' }));
+        Object.defineProperty(routeService, 'data', {
+            get: jest.fn().mockReturnValue(of({ url: 'url.from.resolver' })),
+            configurable: true
+        });
         fixture.detectChanges();
         expect(dotCreateContentletWrapperComponent.url).toEqual('url.from.resolver');
     });

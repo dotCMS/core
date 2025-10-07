@@ -5,9 +5,9 @@ import { of } from 'rxjs';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 class AppsServicesMock {
     getConfigurationList(_serviceKey: string) {
@@ -15,10 +15,9 @@ class AppsServicesMock {
     }
 }
 
-const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-    'ActivatedRouteSnapshot',
-    ['toString']
-);
+const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
+    'toString'
+]);
 activatedRouteSnapshotMock.paramMap = {};
 
 describe('DotAppsConfigurationListResolver', () => {
@@ -62,7 +61,7 @@ describe('DotAppsConfigurationListResolver', () => {
         };
 
         activatedRouteSnapshotMock.paramMap.get = () => '123';
-        spyOn<any>(dotAppsServices, 'getConfigurationList').and.returnValue(of(response));
+        jest.spyOn<any>(dotAppsServices, 'getConfigurationList').mockReturnValue(of(response));
 
         dotAppsConfigurationListResolver
             .resolve(activatedRouteSnapshotMock)
@@ -70,5 +69,6 @@ describe('DotAppsConfigurationListResolver', () => {
                 expect(fakeContentType).toEqual(response);
             });
         expect(dotAppsServices.getConfigurationList).toHaveBeenCalledWith('123');
+        expect(dotAppsServices.getConfigurationList).toHaveBeenCalledTimes(1);
     });
 });

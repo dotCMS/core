@@ -1,9 +1,9 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
     Spectator,
-    createComponentFactory,
     SpyObject,
     byTestId,
+    createComponentFactory,
     mockProvider
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
@@ -22,13 +22,14 @@ import {
     DotHttpErrorManagerService,
     DotIframeService,
     DotMessageService,
+    DotUiColorsService,
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
+import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction } from '@dotcms/types';
 import {
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,
@@ -140,7 +141,8 @@ describe('DotEmaDialogComponent', () => {
             mockProvider(DotContentTypeService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotAlertConfirmService),
-            mockProvider(DotIframeService)
+            mockProvider(DotIframeService),
+            mockProvider(DotUiColorsService)
         ]
     });
 
@@ -413,7 +415,9 @@ describe('DotEmaDialogComponent', () => {
         it('should trigger editContentlet in the store for url Map', () => {
             const editContentletSpy = jest.spyOn(storeSpy, 'editUrlContentMapContentlet');
 
-            component.editUrlContentMapContentlet(PAYLOAD_MOCK.contentlet as DotCMSContentlet);
+            component.editUrlContentMapContentlet(
+                PAYLOAD_MOCK.contentlet as unknown as DotCMSURLContentMap
+            );
 
             expect(editContentletSpy).toHaveBeenCalledWith({
                 inode: PAYLOAD_MOCK.contentlet.inode,
@@ -489,6 +493,52 @@ describe('DotEmaDialogComponent', () => {
             component.resetActionPayload();
 
             expect(resetActionPayloadSpy).toHaveBeenCalled();
+        });
+
+        it('should inject CSS variables to iframe when loaded', () => {
+            const dotUiColorsService = spectator.inject(DotUiColorsService);
+            const setColorsSpy = jest.spyOn(dotUiColorsService, 'setColors');
+
+            component.addContentlet(PAYLOAD_MOCK); // This opens the dialog
+            spectator.detectChanges();
+
+            // Create a real iframe with proper structure
+            const iframe = document.createElement('iframe');
+            iframe.src = 'about:blank';
+            document.body.appendChild(iframe);
+
+            // Set the component's iframe reference to our real iframe
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            component.iframe = { nativeElement: iframe } as any;
+
+            // Manually call onIframeLoad to test the behavior directly
+            component['onIframeLoad']();
+
+            // Verify setColors was called with the html element from the iframe
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            expect(setColorsSpy).toHaveBeenCalledWith(iframe.contentDocument!.documentElement);
+
+            // Clean up
+            document.body.removeChild(iframe);
+        });
+
+        it('should not inject CSS variables when iframe has no document', () => {
+            const dotUiColorsService = spectator.inject(DotUiColorsService);
+            const setColorsSpy = jest.spyOn(dotUiColorsService, 'setColors');
+
+            component.addContentlet(PAYLOAD_MOCK); // This opens the dialog
+            spectator.detectChanges();
+
+            // Create a broken iframe without contentWindow
+            const brokenIframe = { contentWindow: null } as HTMLIFrameElement;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            component.iframe = { nativeElement: brokenIframe } as any;
+
+            // Manually call onIframeLoad to test the behavior directly
+            component['onIframeLoad']();
+
+            // Verify setColors was NOT called
+            expect(setColorsSpy).not.toHaveBeenCalled();
         });
     });
 

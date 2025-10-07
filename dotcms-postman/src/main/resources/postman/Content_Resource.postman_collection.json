@@ -3626,7 +3626,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											""
+											"pm.test(\"HTTP Status code must be 201 for tag creation\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -3644,18 +3646,17 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"{{testTagOne}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      },\n      \"{{testTagTwo}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
+									"raw": "[\n   {\n      \"name\":\"{{testTagOne}}\",\n      \"siteId\":\"{{defaultSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"{{testTagTwo}}\",\n      \"siteId\":\"{{defaultSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   }\n]"
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v2/tags/",
+									"raw": "{{serverURL}}/api/v2/tags",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"v2",
-										"tags",
-										""
+										"tags"
 									]
 								},
 								"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -4068,9 +4069,12 @@
 								"type": "text/javascript",
 								"packages": {},
 								"exec": [
-									"pm.test(\"HTTP Status code must be successful\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
+									"// Skip status check for Tags endpoint since it correctly returns 201",
+									"if (!pm.request.url.toString().includes('/api/v2/tags')) {",
+									"    pm.test(\"HTTP Status code must be successful\", function () {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"}",
 									""
 								]
 							}

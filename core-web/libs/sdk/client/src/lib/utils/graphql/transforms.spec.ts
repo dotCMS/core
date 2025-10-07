@@ -1,4 +1,4 @@
-import { DotCMSGraphQLPageResponse } from '@dotcms/types';
+import { DotCMSGraphQLPage } from '@dotcms/types';
 
 import { graphqlToPageEntity } from './transforms';
 
@@ -160,7 +160,7 @@ const MOCK_PAGE_ENTITY = {
 describe('GraphQL Parser', () => {
     it('should return the correct page entity', () => {
         const pageEntity = graphqlToPageEntity(
-            GRAPHQL_RESPONSE_MOCK as unknown as DotCMSGraphQLPageResponse
+            GRAPHQL_RESPONSE_MOCK.page as unknown as DotCMSGraphQLPage
         );
 
         expect(pageEntity).toEqual(MOCK_PAGE_ENTITY);
@@ -238,7 +238,7 @@ describe('GraphQL Parser', () => {
         };
 
         const pageEntity = graphqlToPageEntity(
-            graphqlResponse as unknown as DotCMSGraphQLPageResponse
+            graphqlResponse.page as unknown as DotCMSGraphQLPage
         );
 
         expect(pageEntity?.page).toEqual(expectedResult.page);
@@ -246,5 +246,30 @@ describe('GraphQL Parser', () => {
         expect(pageEntity?.containers['//test/container/'].contentlets['test-uuid'][0]).toEqual(
             expectedResult.containers['//test/container/'].contentlets['test-uuid'][0]
         );
+    });
+
+    it('should merge urlContentMap keys into _map', () => {
+        const graphqlResponse = {
+            ...GRAPHQL_RESPONSE_MOCK,
+            page: {
+                ...GRAPHQL_RESPONSE_MOCK.page,
+                urlContentMap: {
+                    _map: {
+                        customField: 'custom value',
+                        someOtherField: 'empty'
+                    },
+                    someOtherField: 'some other value by relationship'
+                }
+            }
+        };
+
+        const pageEntity = graphqlToPageEntity(
+            graphqlResponse.page as unknown as DotCMSGraphQLPage
+        );
+
+        expect(pageEntity?.urlContentMap).toEqual({
+            customField: 'custom value',
+            someOtherField: 'some other value by relationship'
+        });
     });
 });

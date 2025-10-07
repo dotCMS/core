@@ -1,11 +1,9 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { COMMENT_TINYMCE } from '../dot-edit-content-wysiwyg-field.constant';
-
 export const WYSIWYG_VARIABLE_NAME = 'variable';
 
 export const WYSIWYG_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
     dataType: 'TEXT',
     fieldType: 'WYSIWYG',
@@ -62,7 +60,7 @@ export const WYSIWYG_FIELD_CONTENTLET_MOCK_WITH_WYSIWYG_CONTENT: DotCMSContentle
     baseType: 'CONTENT',
     contentType: 'Test2',
     creationDate: 1727121715503,
-    [WYSIWYG_VARIABLE_NAME]: `${COMMENT_TINYMCE}<p>contenido</p>`,
+    [WYSIWYG_VARIABLE_NAME]: '<p>contenido</p>',
     folder: 'SYSTEM_FOLDER',
     hasLiveVersion: false,
     hasTitleImage: false,

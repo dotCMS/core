@@ -310,7 +310,7 @@ export class RuleService {
             }
         );
 
-        this.siteService.switchSite$.subscribe((site) => {
+        this.siteService.currentSite$.subscribe((site) => {
             const siteId = this.loadRulesSiteId();
             if (siteId === site.identifier) {
                 this.sendLoadRulesRequest(site.identifier);

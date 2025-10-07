@@ -13,7 +13,6 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
  */
 @Component({
     selector: 'dotcms-empty-container',
-    standalone: true,
     imports: [NgStyle],
     template: `
         @if ($isDevMode()) {

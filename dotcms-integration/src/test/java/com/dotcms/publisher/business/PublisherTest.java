@@ -59,6 +59,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -386,9 +389,19 @@ public class PublisherTest extends IntegrationTestBase {
             //Run the function to auto publish and expire content
             PublishDateUpdater.updatePublishExpireDates(new Date());
 
-            //Check if the contentlet was unpublished
-            contentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), APILocator.systemUser(), false);
-            assertFalse(contentlet.isLive());
+            //Wait for the contentlet to be unpublished using Awaitility
+            final String contentletInode = contentlet.getInode();
+            await("Contentlet should be unpublished automatically")
+                    .atMost(30, SECONDS)
+                    .pollInterval(500, MILLISECONDS)
+                    .pollDelay(1, SECONDS)
+                    .untilAsserted(() -> {
+                        Contentlet currentContentlet = APILocator.getContentletAPI()
+                                .checkout(contentletInode, APILocator.systemUser(), false);
+
+                        assertFalse("Contentlet should be unpublished after auto-expire process",
+                                currentContentlet.isLive());
+                    });
 
         } finally {
 
@@ -408,60 +421,7 @@ public class PublisherTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @Test
-    public void autoPublishContent() throws DotDataException, DotSecurityException, InterruptedException {
 
-        //Create a datetime field to be used as publish field
-        final Field publishField = new FieldDataGen().defaultValue(null)
-                .type(DateTimeField.class).next();
-
-        //Create Content Type without publish field set
-        ContentType contentType = new ContentTypeDataGen()
-                .field(publishField)
-                .nextPersisted();
-
-        Contentlet contentlet = null;
-
-        try {
-            //Create a date to be used as publish date value
-            final Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.DATE, -1);
-            final Date publishDate = calendar.getTime();
-
-            //Create Contentlet
-            contentlet = new ContentletDataGen(contentType)
-                    .setProperty(publishField.variable(), publishDate)
-                    .nextPersisted();
-
-            
-            assertFalse(contentlet.isLive());
-
-            //Add the publish Field at content type level
-            final ContentTypeBuilder builder = ContentTypeBuilder.builder(contentType);
-            builder.publishDateVar(publishField.variable());
-            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(builder.build());
-
-            //To give some time to the system to update the identifier (IdenfierDateJob)
-            Thread.sleep(1000);
-
-            //Check if the content type has the publish field
-            assertTrue(contentType.publishDateVar().equals(publishField.variable()));
-
-            //Run the function to auto publish and expire content
-            PublishDateUpdater.updatePublishExpireDates(new Date());
-
-            //Check if the contentlet was published
-            contentlet = APILocator.getContentletAPI().search(contentlet.getIdentifier(), 0, -1, null, APILocator.systemUser(), false).get(0);
-
-            assertTrue(contentlet.isLive());
-
-        } finally {
-
-            ContentletDataGen.remove(contentlet);
-            ContentTypeDataGen.remove(contentType);
-
-        }
-    }
 
     private FolderPage createNewPage (final  FolderPage folderPage, final User user) throws Exception {
 

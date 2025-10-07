@@ -1,11 +1,12 @@
 import { format } from 'date-fns';
+import { enUS } from 'date-fns/locale';
 
 import { DotLocaleOptions } from '@dotcms/dotcms-models';
 
 export class DotFormatDateServiceMock {
     private _localeOptions?: DotLocaleOptions;
     get localeOptions(): DotLocaleOptions {
-        return this._localeOptions || { locale: {} };
+        return this._localeOptions ?? { locale: enUS };
     }
 
     set localeOptions(locale: DotLocaleOptions) {

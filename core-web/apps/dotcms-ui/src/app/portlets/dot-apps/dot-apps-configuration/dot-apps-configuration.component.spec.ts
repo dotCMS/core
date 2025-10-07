@@ -15,8 +15,6 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -35,6 +33,8 @@ import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/do
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
 
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotActionButtonModule } from '../../../view/components/_common/dot-action-button/dot-action-button.module';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 
@@ -159,11 +159,23 @@ describe('DotAppsConfigurationComponent', () => {
     }));
 
     describe('With integrations count', () => {
+        let setExtraParamsSpy: jest.SpyInstance;
+        let getWithOffsetSpy: jest.SpyInstance;
+        let focusSpy: jest.SpyInstance;
+
         beforeEach(() => {
-            spyOn(paginationService, 'setExtraParams');
-            spyOn<any>(paginationService, 'getWithOffset').and.returnValue(of(appData));
-            spyOn(component.searchInput.nativeElement, 'focus');
+            setExtraParamsSpy = jest.spyOn(paginationService, 'setExtraParams');
+            getWithOffsetSpy = jest
+                .spyOn<any>(paginationService, 'getWithOffset')
+                .mockReturnValue(of(appData));
+            focusSpy = jest.spyOn(component.searchInput.nativeElement, 'focus');
             fixture.detectChanges();
+        });
+
+        afterEach(() => {
+            setExtraParamsSpy.mockClear();
+            getWithOffsetSpy.mockClear();
+            focusSpy.mockClear();
         });
 
         it('should set App from resolver', () => {
@@ -183,15 +195,17 @@ describe('DotAppsConfigurationComponent', () => {
             expect(paginationService.paginationPerPage).toBe(component.paginationPerPage);
             expect(paginationService.sortField).toBe('name');
             expect(paginationService.sortOrder).toBe(1);
-            expect(paginationService.setExtraParams).toHaveBeenCalledWith('filter', '');
+            expect(setExtraParamsSpy).toHaveBeenCalledWith('filter', '');
+            expect(setExtraParamsSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should call first pagination call onInit', () => {
-            expect(paginationService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(getWithOffsetSpy).toHaveBeenCalledWith(0);
+            expect(getWithOffsetSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should input search be focused on init', () => {
-            expect(component.searchInput.nativeElement.focus).toHaveBeenCalledTimes(1);
+            expect(focusSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should set messages/values in DOM correctly', () => {
@@ -203,13 +217,13 @@ describe('DotAppsConfigurationComponent', () => {
             expect(
                 fixture.debugElement.queryAll(
                     By.css('.dot-apps-configuration__action_header button')
-                )[0].nativeElement.innerText
+                )[0].nativeElement.textContent
             ).toContain(messageServiceMock.get('apps.confirmation.export.all.button'));
 
             expect(
                 fixture.debugElement.queryAll(
                     By.css('.dot-apps-configuration__action_header button')
-                )[1].nativeElement.innerText
+                )[1].nativeElement.textContent
             ).toContain(messageServiceMock.get('apps.confirmation.delete.all.button'));
         });
 
@@ -224,11 +238,15 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should dot-apps-configuration-list emit action to load more data', () => {
+            // Clear the spy to only count calls from this specific test
+            getWithOffsetSpy.mockClear();
+
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
             listComp.loadData.emit({ first: 10 });
-            expect(paginationService.getWithOffset).toHaveBeenCalledWith(10);
+            expect(getWithOffsetSpy).toHaveBeenCalledWith(10);
+            expect(getWithOffsetSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should redirect to goto configuration page action', () => {
@@ -256,15 +274,16 @@ describe('DotAppsConfigurationComponent', () => {
                 By.css('.dot-apps-configuration__action_header button')
             )[1];
 
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
-            spyOn(appsServices, 'deleteAllConfigurations').and.returnValue(of(null));
+            jest.spyOn(appsServices, 'deleteAllConfigurations').mockReturnValue(of(null));
 
             deleteAllBtn.triggerEventHandler('click', null);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(appsServices.deleteAllConfigurations).toHaveBeenCalledWith(component.apps.key);
+            expect(appsServices.deleteAllConfigurations).toHaveBeenCalledTimes(1);
         });
 
         it('should export a specific configuration', () => {
@@ -277,7 +296,7 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should delete a specific configuration', () => {
-            spyOn(appsServices, 'deleteConfiguration').and.returnValue(of(null));
+            jest.spyOn(appsServices, 'deleteConfiguration').mockReturnValue(of(null));
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
@@ -290,11 +309,15 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should call App filter on search', fakeAsync(() => {
+            // Clear the spy to only count calls from this specific test
+            setExtraParamsSpy.mockClear();
+
             component.searchInput.nativeElement.value = 'test';
             component.searchInput.nativeElement.dispatchEvent(new Event('keyup'));
             tick(550);
-            expect(paginationService.setExtraParams).toHaveBeenCalledWith('filter', 'test');
-            expect(paginationService.getWithOffset).toHaveBeenCalled();
+            expect(setExtraParamsSpy).toHaveBeenCalledWith('filter', 'test');
+            expect(setExtraParamsSpy).toHaveBeenCalledTimes(1);
+            expect(getWithOffsetSpy).toHaveBeenCalled();
         }));
     });
 });

@@ -5,16 +5,18 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 
+import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
+
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input()
@@ -25,7 +27,8 @@ class TestFieldValidationMessageComponent {
 
 @Component({
     selector: 'dot-new-relationships',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestNewRelationshipsComponent {
     @Input()
@@ -43,7 +46,8 @@ class TestNewRelationshipsComponent {
 
 @Component({
     selector: 'dot-edit-relationships',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestEditRelationshipsComponent {
     @Output()
@@ -97,7 +101,7 @@ describe('DotRelationshipsPropertyComponent', () => {
         });
 
         it('should have existing and new radio button', () => {
-            const radios = de.queryAll(By.css('p-radioButton'));
+            const radios = de.queryAll(By.css('p-radiobutton'));
 
             expect(radios.length).toBe(2);
             expect(radios.map((radio) => radio.componentInstance.label)).toEqual([
@@ -132,7 +136,7 @@ describe('DotRelationshipsPropertyComponent', () => {
                 })
             });
 
-            const radio = de.query(By.css('p-radioButton'));
+            const radio = de.query(By.css('p-radiobutton'));
             radio.triggerEventHandler('click', {});
 
             expect(comp.group.get('relationship').value).toEqual('');
@@ -160,7 +164,7 @@ describe('DotRelationshipsPropertyComponent', () => {
         it('should not have existing and new radio buttonand should show dot-new-relationships', () => {
             fixture.detectChanges();
 
-            const radios = de.queryAll(By.css('p-radioButton'));
+            const radios = de.queryAll(By.css('p-radiobutton'));
 
             const dotNewRelationships = de.query(By.css('dot-new-relationships'));
 
@@ -178,7 +182,7 @@ describe('DotRelationshipsPropertyComponent', () => {
 
                 fixture.detectChanges();
 
-                const radios = de.queryAll(By.css('p-radioButton'));
+                const radios = de.queryAll(By.css('p-radiobutton'));
                 const dotNewRelationships = de.query(By.css('dot-new-relationships'));
 
                 expect(radios.length).toBe(0);

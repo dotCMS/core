@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator';
+import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -7,7 +7,6 @@ import { ActivatedRoute } from '@angular/router';
 
 import { CheckboxModule, Checkbox } from 'primeng/checkbox';
 
-import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -19,6 +18,8 @@ import {
 
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
+
+import { DotAccountService } from '../../api/services/dot-account-service';
 
 const messages = {
     'starter.title': 'Welcome!',
@@ -117,8 +118,8 @@ describe('DotStarterComponent', () => {
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 DotStarterResolver,
                 mockProvider(DotAccountService, {
-                    addStarterPage: jasmine.createSpy().and.returnValue(of(true)),
-                    removeStarterPage: jasmine.createSpy().and.returnValue(of(true))
+                    addStarterPage: jest.fn().mockReturnValue(of(true)),
+                    removeStarterPage: jest.fn().mockReturnValue(of(true))
                 })
             ]
         });
@@ -302,8 +303,8 @@ describe('DotStarterComponent', () => {
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 DotStarterResolver,
                 mockProvider(DotAccountService, {
-                    addStarterPage: jasmine.createSpy().and.returnValue(of(true)),
-                    removeStarterPage: jasmine.createSpy().and.returnValue(of(true))
+                    addStarterPage: jest.fn().mockReturnValue(of(true)),
+                    removeStarterPage: jest.fn().mockReturnValue(of(true))
                 })
             ]
         });

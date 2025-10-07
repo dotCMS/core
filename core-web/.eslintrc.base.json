@@ -1,7 +1,7 @@
 {
     "root": true,
     "ignorePatterns": ["**/*"],
-    "plugins": ["@nx", "eslint-plugin-import", "ban"],
+    "plugins": ["@nx", "eslint-plugin-import", "ban", "@stylistic"],
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
@@ -9,7 +9,7 @@
                 "@nx/enforce-module-boundaries": [
                     "error",
                     {
-                        "allowCircularSelfDependency": true,
+                        "allowCircularSelfDependency": false,
                         "enforceBuildableLibDependency": true,
                         "allow": [],
                         "depConstraints": [
@@ -32,30 +32,17 @@
                         "ignoredFiles": ["{projectRoot}/rollup.config.{js,ts,mjs,mts}"]
                     }
                 ],
-                "@typescript-eslint/keyword-spacing": [
-                    "error",
-                    {
-                        "after": true
-                    }
-                ],
-                "@typescript-eslint/padding-line-between-statements": [
-                    "error",
-                    {
-                        "blankLine": "always",
-                        "prev": "*",
-                        "next": "return"
-                    },
-                    {
-                        "blankLine": "always",
-                        "prev": ["case", "default", "block-like", "export", "for", "function"],
-                        "next": "*"
-                    }
-                ],
                 "@typescript-eslint/no-explicit-any": ["error"],
                 "@typescript-eslint/no-unused-vars": [
                     "error",
                     {
                         "argsIgnorePattern": "^_"
+                    }
+                ],
+                "@typescript-eslint/no-unused-expressions": [
+                    "error",
+                    {
+                        "allowTernary": true
                     }
                 ],
                 "one-var": [
@@ -73,6 +60,14 @@
                     }
                 ],
                 "no-duplicate-imports": "error",
+                "import/no-cycle": [
+                    "error",
+                    {
+                        "maxDepth": 10,
+                        "ignoreExternal": true
+                    }
+                ],
+                "import/no-self-import": "error",
                 "ban/ban": [
                     2,
                     {
@@ -181,6 +176,17 @@
                             "order": "asc",
                             "caseInsensitive": true
                         }
+                    }
+                ]
+            }
+        },
+        {
+            "files": ["*.ts", "*.tsx"],
+            "rules": {
+                "@stylistic/keyword-spacing": [
+                    "error",
+                    {
+                        "after": true
                     }
                 ]
             }

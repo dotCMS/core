@@ -49,7 +49,7 @@ export interface DotFormData {
  * Represents the form field value.
  * @type FormFieldValue
  */
-type FormFieldValue = string | string[] | Date;
+type FormFieldValue = string | string[] | Date | number;
 
 /**
  * Represents the form values.

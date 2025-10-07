@@ -5,7 +5,6 @@ import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
-import com.dotcms.filters.interceptor.dotcms.RequestTrackingInterceptor;
 import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
 import com.dotcms.graphql.GraphqlCacheWebInterceptor;
 import com.dotcms.jitsu.EventLogWebInterceptor;
@@ -48,8 +47,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
                 this.getDelegate(config.getServletContext());
 
         final AnalyticsTrackWebInterceptor analyticsTrackWebInterceptor = new AnalyticsTrackWebInterceptor();
-        // Add RequestTrackingInterceptor first to ensure all requests are tracked for graceful shutdown
-        delegate.add(new RequestTrackingInterceptor());
+        // Note: RequestTrackingInterceptor replaced by RequestTrackingFilter for better performance and accuracy
         delegate.add(new MultiPartRequestSecurityWebInterceptor());
         delegate.add(new PreRenderSEOWebInterceptor());
         delegate.add(new EMAWebInterceptor());

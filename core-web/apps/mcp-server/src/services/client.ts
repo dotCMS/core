@@ -84,7 +84,7 @@ export class AgnosticClient {
                     } catch {
                         rawData = errorData;
                     }
-                } catch (e) {
+                } catch {
                     errorDetails = 'Could not read error response';
                 }
 

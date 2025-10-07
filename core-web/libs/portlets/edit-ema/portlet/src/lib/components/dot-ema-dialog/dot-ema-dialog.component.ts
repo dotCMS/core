@@ -20,15 +20,14 @@ import { DialogModule } from 'primeng/dialog';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotUiColorsService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
     DotCMSWorkflowActionEvent,
     DotContentCompareEvent
 } from '@dotcms/dotcms-models';
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
-import { DotCMSPage } from '@dotcms/types';
+import { DotCMSPage, DotCMSURLContentMap } from '@dotcms/types';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
@@ -47,7 +46,6 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
 
 @Component({
     selector: 'dot-edit-ema-dialog',
-    standalone: true,
     templateUrl: './dot-ema-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
@@ -75,6 +73,7 @@ export class DotEmaDialogComponent {
     private readonly ngZone = inject(NgZone);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly messageService = inject(MessageService);
+    private readonly dotUiColorsService = inject(DotUiColorsService);
 
     protected readonly dialogState = toSignal(this.store.dialogState$);
     protected readonly dialogStatus = DialogStatus;
@@ -171,10 +170,10 @@ export class DotEmaDialogComponent {
     /**
      * Edit URL Content Map Contentlet
      *
-     * @param {DotCMSContentlet} { inode, title }
+     * @param {DotCMSURLContentMap} { inode, title }
      * @memberof DotEmaDialogComponent
      */
-    editUrlContentMapContentlet({ inode, title }: DotCMSContentlet) {
+    editUrlContentMapContentlet({ inode, title }: DotCMSURLContentMap) {
         this.store.editUrlContentMapContentlet({
             inode,
             title
@@ -314,11 +313,17 @@ export class DotEmaDialogComponent {
      */
     protected onIframeLoad() {
         this.store.setStatus(this.dialogStatus.INIT);
-        // This event is destroyed when you close the dialog
 
+        // Inject CSS variables into iframe
+        const iframeDoc = this.getIframeDocument();
+        if (iframeDoc) {
+            this.dotUiColorsService.setColors(iframeDoc.querySelector('html'));
+        }
+
+        // This event is destroyed when you close the dialog
         fromEvent(
             // The events are getting sended to the document
-            this.iframe.nativeElement.contentWindow.document,
+            iframeDoc,
             'ng-event'
         )
             .pipe(takeUntilDestroyed(this.destroyRef$))
@@ -416,5 +421,16 @@ export class DotEmaDialogComponent {
         const { actionPayload, form, clientAction } = this.dialogState();
 
         this.action.emit({ event, actionPayload, form, clientAction });
+    }
+
+    /**
+     * Get iframe document
+     *
+     * @protected
+     * @returns {Document | null}
+     * @memberof DotEmaDialogComponent
+     */
+    protected getIframeDocument(): Document | null {
+        return this.iframe?.nativeElement?.contentWindow?.document || null;
     }
 }

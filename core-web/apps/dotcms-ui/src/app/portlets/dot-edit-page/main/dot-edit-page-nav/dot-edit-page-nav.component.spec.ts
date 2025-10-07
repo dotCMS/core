@@ -8,7 +8,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
@@ -20,6 +19,8 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
+
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 class ActivatedRouteMock {
     get snapshot() {
@@ -44,7 +45,7 @@ class ActivatedRouteMock {
 
 @Injectable()
 class MockDotContentletEditorService {
-    edit = jasmine.createSpy('edit');
+    edit = jest.fn();
 }
 
 @Injectable()
@@ -69,7 +70,8 @@ export class MockDotPropertiesService {
     selector: 'dot-test-host-component',
     template: `
         <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input()
@@ -144,7 +146,8 @@ describe('DotEditPageNavComponent', () => {
         it('should have correct item active', () => {
             fixture.detectChanges();
             const activeItem = fixture.debugElement.query(By.css('.edit-page-nav__item--active'));
-            expect(activeItem.nativeElement.innerText).toContain('CONTENT');
+            const textElement = activeItem.query(By.css('.edit-page-nav__item-text'));
+            expect(textElement.nativeElement.textContent.trim()).toBe('Content');
         });
 
         it('should call the ContentletEditorService Edit when clicked on Properties button', () => {
@@ -183,7 +186,7 @@ describe('DotEditPageNavComponent', () => {
                 new DotPageRender(noLayoutPage)
             );
             component.model = undefined;
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(observableOf(true));
             fixture.detectChanges();
             const menuListItemsUpdated = fixture.debugElement.queryAll(
                 By.css('.edit-page-nav__item')
@@ -232,7 +235,7 @@ describe('DotEditPageNavComponent', () => {
 
         describe('disabled option', () => {
             it('should have layout option disabled and cant edit message when template is advance and license is enterprise', () => {
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(observableOf(true));
 
                 component.model = undefined;
                 fixture.componentInstance.pageState = new DotPageRenderState(
@@ -251,7 +254,7 @@ describe('DotEditPageNavComponent', () => {
             });
 
             it('should have layout option disabled when is on a variant of a running experiment', () => {
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(observableOf(true));
 
                 component.model = undefined;
 
@@ -345,7 +348,7 @@ describe('DotEditPageNavComponent', () => {
         describe('license enterprise', () => {
             beforeEach(() => {
                 dotLicenseService = de.injector.get(DotLicenseService);
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(observableOf(true));
                 fixture.detectChanges();
             });
 
@@ -360,19 +363,22 @@ describe('DotEditPageNavComponent', () => {
         it('should has Experiments nav item', () => {
             const MATERIAL_ICON_NAME = 'science';
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
-                firstChild: {
-                    url: [
-                        {
-                            path: 'content'
+            Object.defineProperty(route, 'snapshot', {
+                value: {
+                    firstChild: {
+                        url: [
+                            {
+                                path: 'content'
+                            }
+                        ]
+                    },
+                    data: {
+                        featuredFlags: {
+                            [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: true
                         }
-                    ]
-                },
-                data: {
-                    featuredFlags: {
-                        [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: true
                     }
-                }
+                },
+                writable: true
             });
             fixture.detectChanges();
 
@@ -391,15 +397,18 @@ describe('DotEditPageNavComponent', () => {
     describe('experiments feature flag false', () => {
         it('should not has Experiments item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
-                firstChild: {
-                    url: [
-                        {
-                            path: 'content'
-                        }
-                    ]
+            Object.defineProperty(route, 'snapshot', {
+                value: {
+                    firstChild: {
+                        url: [
+                            {
+                                path: 'content'
+                            }
+                        ]
+                    },
+                    data: { featuredFlags: { [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: false } }
                 },
-                data: { featuredFlags: { [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: false } }
+                writable: true
             });
             fixture.detectChanges();
 
@@ -411,15 +420,18 @@ describe('DotEditPageNavComponent', () => {
     describe('Page tools feature flag', () => {
         it('Should has Page Tools item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
-                firstChild: {
-                    url: [
-                        {
-                            path: 'content'
-                        }
-                    ]
+            Object.defineProperty(route, 'snapshot', {
+                value: {
+                    firstChild: {
+                        url: [
+                            {
+                                path: 'content'
+                            }
+                        ]
+                    },
+                    data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: true } }
                 },
-                data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: true } }
+                writable: true
             });
             fixture.detectChanges();
 
@@ -429,15 +441,18 @@ describe('DotEditPageNavComponent', () => {
 
         it('Should not have Page Tools item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
-                firstChild: {
-                    url: [
-                        {
-                            path: 'content'
-                        }
-                    ]
+            Object.defineProperty(route, 'snapshot', {
+                value: {
+                    firstChild: {
+                        url: [
+                            {
+                                path: 'content'
+                            }
+                        ]
+                    },
+                    data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: false } }
                 },
-                data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: false } }
+                writable: true
             });
             fixture.detectChanges();
 

@@ -2,11 +2,12 @@ import { Component, Input, OnChanges, OnInit, ViewChild, inject } from '@angular
 
 import { catchError, take } from 'rxjs/operators';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotEditPageService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotWhatChanged } from '@dotcms/dotcms-models';
 import { DotDiffPipe } from '@dotcms/ui';
-import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
+
+import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotDOMHtmlUtilService } from '../../services/html/dot-dom-html-util.service';
 
 export const SHOW_DIFF_STYLES =
     'del{text-decoration: line-through; background-color:#fdb8c0 } ins{ text-decoration: underline; background-color: #ddffdd}';
@@ -14,7 +15,8 @@ export const SHOW_DIFF_STYLES =
 @Component({
     selector: 'dot-whats-changed',
     templateUrl: './dot-whats-changed.component.html',
-    styleUrls: ['./dot-whats-changed.component.scss']
+    styleUrls: ['./dot-whats-changed.component.scss'],
+    standalone: false
 })
 export class DotWhatsChangedComponent implements OnInit, OnChanges {
     private dotEditPageService = inject(DotEditPageService);

@@ -4,16 +4,15 @@ Lightweight JavaScript SDK for tracking content-aware events in dotCMS. Works in
 
 ## 🚀 Quick Start
 
-### Vanilla JavaScript
-
-**CDN (Script Tag - Auto Page View)**
+### Standalone (Script Tag)
 
 ```html
 <script
     src="ca.min.js"
     data-analytics-server="https://demo.dotcms.com"
-    data-analytics-key="SITE_KEY"
-    data-analytics-auto-page-view></script>
+    data-analytics-auth="SITE_AUTH"
+    data-analytics-auto-page-view="true"
+    data-analytics-debug="false"></script>
 ```
 
 **npm (ES Module)**
@@ -26,7 +25,7 @@ npm install @dotcms/analytics
 import { initializeContentAnalytics } from '@dotcms/analytics';
 
 const analytics = initializeContentAnalytics({
-    siteKey: 'SITE_KEY',
+    siteAuth: 'SITE_AUTH',
     server: 'https://demo.dotcms.com'
 });
 
@@ -40,17 +39,17 @@ npm install @dotcms/analytics
 ```
 
 ```tsx
-import { DotContentAnalyticsProvider } from '@dotcms/analytics/react';
+import { DotContentAnalytics } from '@dotcms/analytics/react';
 
 const config = {
-    siteKey: 'SITE_KEY',
+    siteAuth: 'SITE_AUTH',
     server: 'https://demo.dotcms.com',
-    autoPageView: true // Optional, default is true
+    autoPageView: true // Optional, default is true in React
 };
 
-<DotContentAnalyticsProvider config={config}>
-    <App />
-</DotContentAnalyticsProvider>;
+export function AppRoot() {
+    return <DotContentAnalytics config={config} />;
+}
 ```
 
 ## 📘 Core Concepts
@@ -61,7 +60,8 @@ Track any user action as an event using `track('event-name', { payload })`.
 
 ### Page Views
 
-Tracked automatically (or manually) on route changes.
+-   React: Automatically tracked on route changes when using `DotContentAnalytics`.
+-   Standalone: Auto-tracked only if `data-analytics-auto-page-view="true"`; otherwise call `window.dotAnalytics.pageView()`.
 
 ### Sessions
 
@@ -76,13 +76,12 @@ Tracked automatically (or manually) on route changes.
 
 ## ⚙️ Configuration Options
 
-| Option         | Type       | Required | Default | Description                            |
-| -------------- | ---------- | -------- | ------- | -------------------------------------- |
-| `siteKey`      | `string`   | ✅       | -       | Site key from dotCMS Analytics app     |
-| `server`       | `string`   | ✅       | -       | Your dotCMS server URL                 |
-| `debug`        | `boolean`  | ❌       | `false` | Enable verbose logging                 |
-| `autoPageView` | `boolean`  | ❌       | `true`  | Auto track page views on route changes |
-| `redirectFn`   | `function` | ❌       | -       | Custom handler for redirects           |
+| Option         | Type      | Required | Default                             | Description                            |
+| -------------- | --------- | -------- | ----------------------------------- | -------------------------------------- |
+| `siteAuth`     | `string`  | ✅       | -                                   | Site auth from dotCMS Analytics app    |
+| `server`       | `string`  | ✅       | -                                   | Your dotCMS server URL                 |
+| `debug`        | `boolean` | ❌       | `false`                             | Enable verbose logging                 |
+| `autoPageView` | `boolean` | ❌       | React: `true` / Standalone: `false` | Auto track page views on route changes |
 
 ## 🛠️ Usage Examples
 
@@ -100,7 +99,7 @@ window.dotAnalytics.pageView();
 
 ```javascript
 const analytics = initializeContentAnalytics({
-    siteKey: 'abc123',
+    siteAuth: 'abc123',
     server: 'https://your-dotcms.com',
     debug: true,
     autoPageView: false
@@ -119,14 +118,25 @@ analytics.pageView();
 **Track Events**
 
 ```tsx
-const { track } = useContentAnalytics();
+import { useContentAnalytics } from '@dotcms/analytics/react';
+
+const { track } = useContentAnalytics({
+    siteAuth: 'SITE_AUTH',
+    server: 'https://demo.dotcms.com'
+});
+
 track('cta-click', { label: 'Download PDF' });
 ```
 
 **Manual Page View**
 
 ```tsx
-const { pageView } = useContentAnalytics();
+import { useContentAnalytics } from '@dotcms/analytics/react';
+
+const { pageView } = useContentAnalytics({
+    siteAuth: 'SITE_AUTH',
+    server: 'https://demo.dotcms.com'
+});
 useEffect(() => {
     pageView();
 }, []);
@@ -135,8 +145,15 @@ useEffect(() => {
 **Advanced: Manual Tracking with Router**
 
 ```tsx
+// Next.js App Router is automatically tracked by <DotContentAnalytics />
+// For other routers, you can call pageView on location change
 import { useLocation } from 'react-router-dom';
-const { pageView } = useContentAnalytics();
+import { useContentAnalytics } from '@dotcms/analytics/react';
+
+const { pageView } = useContentAnalytics({
+    siteAuth: 'SITE_AUTH',
+    server: 'https://demo.dotcms.com'
+});
 const location = useLocation();
 
 useEffect(() => {
@@ -181,6 +198,13 @@ Analytics are disabled when inside the dotCMS editor.
 -   Enable debug mode
 -   Check network requests to: `https://your-server/api/v1/analytics/content/event`
 -   Avoid using inside dotCMS editor (auto-disabled)
+
+Standalone attributes to verify:
+
+-   `data-analytics-auth` (required)
+-   `data-analytics-server` (optional, defaults to current origin)
+-   `data-analytics-auto-page-view` (`true` to enable)
+-   `data-analytics-debug` (`true` to enable)
 
 ## Roadmap
 
