@@ -41,6 +41,23 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
       }
       return; // empty response is better than an HTML response to a REST API call
     }
+
+    if (status == 401) {
+
+        final String referrer = (null != session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN))
+                ? (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)
+                : (null != request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI))
+                ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) : request.getRequestURI();
+
+        // Preserve query string from forwarded request
+        final String forwardQueryString = (String) request.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
+        final String referrerWithParams = (UtilMethods.isSet(forwardQueryString) && !referrer.contains("?"))
+            ? referrer + "?" + forwardQueryString
+            : referrer;
+
+        request.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, referrerWithParams);
+    }
+
     final String errorPage = "/cms" + status + "Page";
     final Host site = WebAPILocator.getHostWebAPI().getCurrentHost(request);
     final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
