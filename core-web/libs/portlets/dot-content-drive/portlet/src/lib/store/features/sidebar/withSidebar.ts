@@ -12,7 +12,7 @@ import { inject, effect, EffectRef } from '@angular/core';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
-import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveState } from '../../../shared/models';
 import { getFolderHierarchyByPath, getFolderNodesByPath } from '../../../utils/functions';
@@ -20,8 +20,8 @@ import { ALL_FOLDER, buildTreeFolderNodes } from '../../../utils/tree-folder.uti
 
 interface WithSidebarState {
     sidebarLoading: boolean;
-    folders: TreeNodeItem[];
-    selectedNode: TreeNodeItem;
+    folders: DotFolderTreeNodeItem[];
+    selectedNode: DotFolderTreeNodeItem;
 }
 
 export function withSidebar() {
@@ -44,7 +44,7 @@ export function withSidebar() {
                     return;
                 }
 
-                const realAllFolder: TreeNodeItem = {
+                const realAllFolder: DotFolderTreeNodeItem = {
                     ...ALL_FOLDER,
                     data: {
                         hostname: currentSite.hostname,
@@ -77,20 +77,20 @@ export function withSidebar() {
              */
             loadChildFolders: (
                 path: string
-            ): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> => {
+            ): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> => {
                 return getFolderNodesByPath(path, dotFolderService);
             },
             /**
              * Sets the selected node
              */
-            setSelectedNode: (node: TreeNodeItem) => {
+            setSelectedNode: (node: DotFolderTreeNodeItem) => {
                 patchState(store, { selectedNode: node });
             },
 
             /**
              * Updates the folders array
              */
-            updateFolders: (folders: TreeNodeItem[]) => {
+            updateFolders: (folders: DotFolderTreeNodeItem[]) => {
                 patchState(store, { folders: [...folders] });
             }
         })),

@@ -25,10 +25,10 @@ export interface DotContentDriveUploadFiles {
 
 /**
  * @export
- * @interface TreeNodeData
+ * @interface DotFolderTreeNodeData
  * @description Tree node data
  */
-export type TreeNodeData = {
+export type DotFolderTreeNodeData = {
     type: 'site' | 'folder';
     path: string;
     hostname: string;
@@ -37,7 +37,7 @@ export type TreeNodeData = {
 
 /**
  * @export
- * @type TreeNodeItem
+ * @type DotFolderTreeNodeItem
  * @description Tree node item
  */
-export type TreeNodeItem = TreeNode<TreeNodeData>;
+export type DotFolderTreeNodeItem = TreeNode<DotFolderTreeNodeData>;

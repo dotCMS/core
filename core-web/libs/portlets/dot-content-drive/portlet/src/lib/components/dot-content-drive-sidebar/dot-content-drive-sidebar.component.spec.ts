@@ -12,7 +12,7 @@ import { DotFolder } from '@dotcms/dotcms-models';
 import {
     DotContentDriveUploadFiles,
     DotTreeFolderComponent,
-    TreeNodeItem
+    DotFolderTreeNodeItem
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -32,7 +32,7 @@ describe('DotContentDriveSidebarComponent', () => {
         siteName: 'Demo Site'
     };
 
-    const realAllFolder: TreeNodeItem = {
+    const realAllFolder: DotFolderTreeNodeItem = {
         ...ALL_FOLDER,
         data: {
             hostname: mockSiteDetails.hostname,
@@ -63,7 +63,7 @@ describe('DotContentDriveSidebarComponent', () => {
         }
     ];
 
-    const mockTreeNodes: TreeNodeItem[] = [
+    const mockTreeNodes: DotFolderTreeNodeItem[] = [
         {
             ...realAllFolder,
             data: {
@@ -176,7 +176,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should update dot-tree-folder inputs when signals change', () => {
-            const newTreeNodes: TreeNodeItem[] = [
+            const newTreeNodes: DotFolderTreeNodeItem[] = [
                 {
                     key: 'new-folder',
                     label: '/new-folder/',
@@ -218,7 +218,7 @@ describe('DotContentDriveSidebarComponent', () => {
             });
 
             it('should extract path from node data correctly', () => {
-                const customNode: TreeNodeItem = {
+                const customNode: DotFolderTreeNodeItem = {
                     key: 'custom-folder',
                     label: 'Custom',
                     data: {
@@ -243,7 +243,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
         describe('onNodeExpand', () => {
             it('should handle onNodeExpand event when node has no children', () => {
-                const nodeWithoutChildren: TreeNodeItem = {
+                const nodeWithoutChildren: DotFolderTreeNodeItem = {
                     key: 'expandable-folder',
                     label: '/expandable/',
                     data: {
@@ -272,7 +272,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 // Reset the mock to clear any calls from component initialization
                 jest.clearAllMocks();
 
-                const nodeWithChildren: TreeNodeItem = {
+                const nodeWithChildren: DotFolderTreeNodeItem = {
                     key: 'parent-folder',
                     label: '/parent/',
                     data: {
@@ -302,7 +302,7 @@ describe('DotContentDriveSidebarComponent', () => {
                     of({ parent: mockFolders[0], folders: [] }).pipe(delay(500))
                 );
 
-                const nodeWithoutChildren: TreeNodeItem = {
+                const nodeWithoutChildren: DotFolderTreeNodeItem = {
                     key: 'loading-folder',
                     label: '/loading/',
                     data: {
@@ -329,7 +329,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
         describe('onNodeCollapse', () => {
             it('should handle onNodeCollapse event for regular nodes', () => {
-                const regularNode: TreeNodeItem = {
+                const regularNode: DotFolderTreeNodeItem = {
                     key: 'regular-folder',
                     label: '/regular/',
                     data: {
@@ -354,7 +354,7 @@ describe('DotContentDriveSidebarComponent', () => {
             });
 
             it('should prevent root from collapsing', () => {
-                const allFolderNode: TreeNodeItem = {
+                const allFolderNode: DotFolderTreeNodeItem = {
                     ...realAllFolder,
                     expanded: true
                 };
@@ -418,7 +418,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should trigger events in correct sequence during node interaction', () => {
-            const testNode: TreeNodeItem = {
+            const testNode: DotFolderTreeNodeItem = {
                 key: 'test-node',
                 label: '/test/',
                 data: {

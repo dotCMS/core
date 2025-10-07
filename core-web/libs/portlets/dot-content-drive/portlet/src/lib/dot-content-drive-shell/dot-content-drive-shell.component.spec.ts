@@ -25,7 +25,10 @@ import {
     DotLocalstorageService
 } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotFolderListViewComponent, TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotFolderListViewComponent,
+    DotFolderTreeNodeItem
+} from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
@@ -477,7 +480,7 @@ describe('DotContentDriveShellComponent', () => {
 
             const addSpy = jest.spyOn(messageService, 'add');
 
-            const mockNode: TreeNodeItem = {
+            const mockNode: DotFolderTreeNodeItem = {
                 data: {
                     id: 'folder-123',
                     hostname: 'localhost',
@@ -487,7 +490,7 @@ describe('DotContentDriveShellComponent', () => {
                 key: 'folder-123',
                 label: 'folder-123'
             };
-            store.selectedNode.mockReturnValue(mockNode as TreeNodeItem);
+            store.selectedNode.mockReturnValue(mockNode as DotFolderTreeNodeItem);
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
             Object.defineProperty(fileInput, 'files', {
@@ -510,7 +513,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should sent the folder id when the selected node is not the all folder', () => {
-            const mockNode: TreeNodeItem = {
+            const mockNode: DotFolderTreeNodeItem = {
                 data: {
                     id: 'folder-123',
                     hostname: 'localhost',
@@ -627,7 +630,7 @@ describe('DotContentDriveShellComponent', () => {
             const mockFile2 = new File(['test content 2'], 'test2.jpg', { type: 'image/jpeg' });
             const mockFile3 = new File(['test content 3'], 'test3.jpg', { type: 'image/jpeg' });
 
-            const mockNode: TreeNodeItem = {
+            const mockNode: DotFolderTreeNodeItem = {
                 data: {
                     id: 'folder-123',
                     hostname: 'localhost',
@@ -679,7 +682,7 @@ describe('DotContentDriveShellComponent', () => {
                 item: (index: number) => (index === 0 ? mockFile : null)
             } as unknown as FileList;
 
-            const mockNode: TreeNodeItem = {
+            const mockNode: DotFolderTreeNodeItem = {
                 data: {
                     id: 'folder-123',
                     hostname: 'localhost',
@@ -721,7 +724,7 @@ describe('DotContentDriveShellComponent', () => {
                 }
             } as unknown as FileList;
 
-            const mockNode: TreeNodeItem = {
+            const mockNode: DotFolderTreeNodeItem = {
                 data: {
                     id: 'folder-456',
                     hostname: 'localhost',
@@ -826,7 +829,7 @@ describe('DotContentDriveShellComponent', () => {
                 item: (index: number) => (index === 0 ? mockFile : null)
             } as unknown as FileList;
 
-            const mockNode: TreeNodeItem = {
+            const mockNode: DotFolderTreeNodeItem = {
                 data: {
                     id: 'folder-123',
                     hostname: 'localhost',
@@ -868,7 +871,7 @@ describe('DotContentDriveShellComponent', () => {
                 }
             } as unknown as FileList;
 
-            const mockNode: TreeNodeItem = {
+            const mockNode: DotFolderTreeNodeItem = {
                 data: {
                     id: 'folder-123',
                     hostname: 'localhost',

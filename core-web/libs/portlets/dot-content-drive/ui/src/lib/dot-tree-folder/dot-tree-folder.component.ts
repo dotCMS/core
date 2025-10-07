@@ -17,7 +17,7 @@ import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/
 
 import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
-import { TreeNodeData, DotContentDriveUploadFiles } from '../shared/models';
+import { DotFolderTreeNodeData, DotContentDriveUploadFiles } from '../shared/models';
 
 @Component({
     selector: 'dot-tree-folder',
@@ -103,7 +103,7 @@ export class DotTreeFolderComponent {
 
     readonly elementRef = inject(ElementRef);
 
-    readonly $activeDropNode = signal<TreeNodeData | null>(null);
+    readonly $activeDropNode = signal<DotFolderTreeNodeData | null>(null);
 
     /**
      * Computed style classes for the underlying p-tree component.

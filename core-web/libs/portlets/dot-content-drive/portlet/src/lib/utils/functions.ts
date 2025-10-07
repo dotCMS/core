@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder, SiteEntity } from '@dotcms/dotcms-models';
-import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { QueryBuilder } from '@dotcms/query-builder';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
@@ -266,12 +266,12 @@ export function getFolderHierarchyByPath(
  *
  * @param {string} path - The path to fetch folders from
  * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<{ parent: DotFolder; folders: TreeNodeItem[] }>}
+ * @returns {Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }>}
  */
 export function getFolderNodesByPath(
     path: string,
     dotFolderService: DotFolderService
-): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> {
+): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> {
     return dotFolderService.getFolders(path).pipe(
         map((folders) => {
             const [parent, ...childFolders] = folders;

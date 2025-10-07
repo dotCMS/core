@@ -1,5 +1,5 @@
 import { DotContentDriveItem, DotFolder, SiteEntity } from '@dotcms/dotcms-models';
-import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { DIALOG_TYPE } from './constants';
 
@@ -133,5 +133,5 @@ export type DotContentDriveDecodeFunction = (value: string) => string | string[]
 export interface BuildTreeFolderNodesParams {
     folderHierarchyLevels: DotFolder[][];
     targetPath: string;
-    rootNode: TreeNodeItem;
+    rootNode: DotFolderTreeNodeItem;
 }

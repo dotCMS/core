@@ -1,5 +1,5 @@
 import { DotFolder } from '@dotcms/dotcms-models';
-import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import {
     ALL_FOLDER,
@@ -110,7 +110,7 @@ describe('Sidebar Utils', () => {
         });
 
         it('should create a tree node with parent', () => {
-            const parentNode: TreeNodeItem = {
+            const parentNode: DotFolderTreeNodeItem = {
                 key: 'parent-123',
                 label: 'Parent',
                 data: {
@@ -188,7 +188,7 @@ describe('Sidebar Utils', () => {
         });
 
         it('should maintain parent reference correctly', () => {
-            const parentNode: TreeNodeItem = {
+            const parentNode: DotFolderTreeNodeItem = {
                 key: 'parent-456',
                 label: 'Parent Folder',
                 data: {
@@ -596,7 +596,7 @@ describe('Sidebar Utils', () => {
                 //     return { rootNodes: [], selectedNode: rootNode };
                 // }
 
-                const customRootNode: TreeNodeItem = {
+                const customRootNode: DotFolderTreeNodeItem = {
                     key: 'custom-root',
                     label: 'Custom Root',
                     loading: false,
@@ -627,7 +627,7 @@ describe('Sidebar Utils', () => {
                 // When activeParents[folderHierarchyLevels.length - 1] is undefined,
                 // the || operator returns rootNode
 
-                const customRootNode: TreeNodeItem = {
+                const customRootNode: DotFolderTreeNodeItem = {
                     key: 'fallback-root',
                     label: 'Fallback Root',
                     loading: false,
@@ -689,7 +689,7 @@ describe('Sidebar Utils', () => {
                 // Empty target path means generateAllParentPaths returns [],
                 // so no folder will ever be on the target path
 
-                const customRootNode: TreeNodeItem = {
+                const customRootNode: DotFolderTreeNodeItem = {
                     key: 'empty-path-root',
                     label: 'Empty Path Root',
                     loading: false,

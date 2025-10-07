@@ -4,7 +4,7 @@ import { signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';
@@ -39,7 +39,7 @@ const mockFolders = [
     })
 ];
 
-const mockTreeNodes: TreeNodeItem[] = [
+const mockTreeNodes: DotFolderTreeNodeItem[] = [
     {
         key: 'folder-1',
         label: '/documents/',
@@ -86,7 +86,7 @@ describe('withSidebar', () => {
     let store: InstanceType<typeof sidebarStoreMock>;
     let folderService: jest.Mocked<DotFolderService>;
 
-    const realAllFolder: TreeNodeItem = {
+    const realAllFolder: DotFolderTreeNodeItem = {
         ...ALL_FOLDER,
         data: {
             hostname: mockSite.hostname,
