@@ -1,3 +1,4 @@
+import { DotCMSPredefinedEventType } from '../../shared/constants/dot-content-analytics.constants';
 import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
 import {
     AnalyticsBasePayloadWithContext,
@@ -38,7 +39,7 @@ export const dotAnalyticsEnricherPlugin = () => {
                 context,
                 events: [
                     {
-                        event_type: 'pageview',
+                        event_type: DotCMSPredefinedEventType.PAGEVIEW,
                         local_time,
                         data: {
                             page,

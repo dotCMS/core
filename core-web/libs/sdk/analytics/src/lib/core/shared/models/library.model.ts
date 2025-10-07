@@ -12,6 +12,8 @@ import {
 import { JsonObject } from './event.model';
 import { DotCMSAnalyticsRequestBody } from './request.model';
 
+import { DotCMSCustomEventType } from '../constants';
+
 /**
  * Main interface for the DotCMS Analytics SDK.
  * Provides the core methods for tracking page views and custom events.
@@ -63,8 +65,8 @@ export interface DotCMSAnalyticsConfig {
  * Used in the track:dot-analytics enricher plugin.
  */
 export interface AnalyticsTrackPayloadWithContext extends AnalyticsBasePayload {
-    /** The event name or identifier */
-    event: string;
+    /** The custom event name (any string except 'pageview') */
+    event: DotCMSCustomEventType;
     /** Analytics context added by identity plugin */
     context: DotCMSAnalyticsEventContext;
 }
@@ -80,6 +82,8 @@ export interface DotCMSAnalyticsParams {
     payload: DotCMSAnalyticsRequestBody;
 }
 
+type AnalyticsBasePayloadType = 'page' | 'track';
+
 /**
  * Analytics.js hook parameter types for DotCMS.
  * Represents the payload structure used by Analytics.js lifecycle hooks
@@ -87,7 +91,7 @@ export interface DotCMSAnalyticsParams {
  */
 export interface AnalyticsBasePayload {
     /** The type of analytics event */
-    type: string;
+    type: AnalyticsBasePayloadType;
     /** Properties associated with the event */
     properties: {
         /** Page title */
