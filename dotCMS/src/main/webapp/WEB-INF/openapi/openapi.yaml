@@ -13361,7 +13361,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityUserUpdateView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: User created successfully
         "400":
           content:
@@ -13443,26 +13443,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseUserMapEntityView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: If success returns a map with the user + user id.
         "400":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseUserMapEntityView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: If the user information is not valid
         "403":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseUserMapEntityView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: "If the user is not an admin or access to the role + user layouts\
             \ or does have permission, it will return a 403."
         "404":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseUserMapEntityView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: If the user to update does not exist
       summary: Active an existing user.
       tags:
@@ -13538,26 +13538,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseUserMapEntityView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: If success returns a map with the user + user id.
         "400":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseUserMapEntityView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: If the user information is not valid
         "403":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseUserMapEntityView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: "If the user is not an admin or access to the role + user layouts\
             \ or does have permission, it will return a 403."
         "404":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseUserMapEntityView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: If the user to update does not exist
       summary: Deactivate an existing user.
       tags:
@@ -13640,7 +13640,7 @@ paths:
     post:
       description: Returns a list of dotCMS users based on specified search criteria
         with pagination support
-      operationId: filterUsers_1
+      operationId: filterUsersByPredicate
       parameters:
       - description: Page number for pagination
         in: query
@@ -13847,7 +13847,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseUserMapEntityView"
+                $ref: "#/components/schemas/ResponseUserEntityView"
           description: User retrieved successfully
         "401":
           content:
@@ -25254,7 +25254,7 @@ components:
           type: array
           items:
             type: string
-    ResponseUserMapEntityView:
+    ResponseUserEntityView:
       type: object
       properties:
         entity:

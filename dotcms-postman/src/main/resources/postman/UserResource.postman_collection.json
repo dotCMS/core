@@ -1849,7 +1849,7 @@
 			"name": "FilteringByPredicate",
 			"item": [
 				{
-					"name": "RetrieveActiveUsers",
+					"name": "RetrieveFEUsers",
 					"event": [
 						{
 							"listen": "test",
@@ -1901,7 +1901,7 @@
 							"raw": "return user.isFrontendUser();",
 							"options": {
 								"raw": {
-									"language": "javascript"
+									"language": "text"
 								}
 							}
 						},
@@ -1962,10 +1962,10 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "return !user.isActive();",
+							"raw": "return user.isActive();",
 							"options": {
 								"raw": {
-									"language": "javascript"
+									"language": "text"
 								}
 							}
 						},
@@ -2037,7 +2037,7 @@
 							"raw": "const name = user.getFirstName();\n\nreturn (typeof name === 'string' && name.startsWith('Adm'));",
 							"options": {
 								"raw": {
-									"language": "javascript"
+									"language": "text"
 								}
 							}
 						},
@@ -2109,7 +2109,7 @@
 							"raw": "const roles = rolesFetcher.asArray();\nconst arrayLength = roles.length;\n\nlet isScriptingUserRole = 0;\nfor (let i = 0; i < arrayLength; i++) {\n    const role = roles[i]; \n    const roleKey = role.getRoleKey();\n    isScriptingUserRole |= typeof roleKey === 'string' && roleKey === 'Scripting Developer';\n}\n\nreturn isScriptingUserRole === 1;",
 							"options": {
 								"raw": {
-									"language": "javascript"
+									"language": "text"
 								}
 							}
 						},

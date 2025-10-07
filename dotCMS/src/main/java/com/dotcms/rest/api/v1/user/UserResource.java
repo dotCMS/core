@@ -4,8 +4,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.engine.ScriptEngineFactory;
-import com.dotcms.rendering.js.JsEngine;
-import com.dotcms.rendering.js.proxy.JsRole;
 import com.dotcms.rendering.js.proxy.JsRolesFetcherByUser;
 import com.dotcms.rendering.js.proxy.JsUser;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -92,7 +90,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -485,7 +482,7 @@ public class UserResource implements Serializable {
 	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
 	 */
 	@Operation(
-		operationId = "filterUsers",
+		operationId = "filterUsersByPredicate",
 		summary = "Filter users",
 		description = "Returns a list of dotCMS users based on specified search criteria with pagination support"
 	)
@@ -505,7 +502,7 @@ public class UserResource implements Serializable {
 	@JSONP
     @Path("/filter")
 	@NoCache
-    @Consumes("application/javascript")
+    @Consumes(MediaType.TEXT_PLAIN) //("application/javascript") is a javascript
     @Produces({ MediaType.APPLICATION_JSON })
 	public ResponseEntityListUserView filterByPredicate(@Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
@@ -594,7 +591,7 @@ public class UserResource implements Serializable {
      * @param response         The current instance of the {@link HttpServletResponse}.
      * @param userId           id of the user to retrieve
      *
-     * @return A {@link ResponseUserMapEntityView} User View
+     * @return A {@link ResponseUserEntityView} User View
      */
     @Operation(
             operationId = "findUser",
@@ -605,7 +602,7 @@ public class UserResource implements Serializable {
             @ApiResponse(responseCode = "200",
                     description = "User retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseUserMapEntityView.class))),
+                            schema = @Schema(implementation = ResponseUserEntityView.class))),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -621,9 +618,9 @@ public class UserResource implements Serializable {
     @Path("/{userId}")
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON })
-    public ResponseUserMapEntityView findUserById(@Context final HttpServletRequest request,
-                           @Context final HttpServletResponse response,
-                           @PathParam("userId") @Parameter(
+    public ResponseUserEntityView findUserById(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response,
+                                               @PathParam("userId") @Parameter(
                                    required = true,
                                    description = "Identifier of user to retrieve",
                                    schema = @Schema(type = "string")
@@ -650,7 +647,7 @@ public class UserResource implements Serializable {
                 final User user = this.userAPI.loadUserById(userId);
                 final Role role = APILocator.getRoleAPI().getUserRole(user);
 
-                return new ResponseUserMapEntityView(new UserView(user, role)); // 200
+                return new ResponseUserEntityView(new UserView(user, role)); // 200
             } catch (NoSuchUserException e) {
 
                 throw new DoesNotExistException("User " + userId + " does not exist", e);
@@ -989,7 +986,7 @@ public class UserResource implements Serializable {
 	    @ApiResponse(responseCode = "200",
 	                description = "User created successfully",
 	                content = @Content(mediaType = "application/json",
-	                                  schema = @Schema(implementation = ResponseEntityUserUpdateView.class))),
+	                                  schema = @Schema(implementation = ResponseUserEntityView.class))),
 	    @ApiResponse(responseCode = "400",
 	                description = "Bad request - missing required fields or invalid data",
 	                content = @Content(mediaType = "application/json")),
@@ -1011,7 +1008,7 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public final Response create(@Context final HttpServletRequest httpServletRequest,
+	public final ResponseUserEntityView create(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
 								 @io.swagger.v3.oas.annotations.parameters.RequestBody(
 								     description = "User creation data",
@@ -1039,8 +1036,7 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
 			final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
-			return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
-					"user", userToUpdated.toMap()))).build(); // 200
+			return new ResponseUserEntityView(new UserView(userToUpdated, role));
 		}
 
 		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
@@ -1206,25 +1202,25 @@ public class UserResource implements Serializable {
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If success returns a map with the user + user id."),
                     @ApiResponse(
                             responseCode = "403",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
                     @ApiResponse(
                             responseCode = "404",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user to update does not exist"),
                     @ApiResponse(
                             responseCode = "400",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user information is not valid"),
             })
     @PATCH
@@ -1232,9 +1228,9 @@ public class UserResource implements Serializable {
     @JSONP
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public final ResponseUserMapEntityView active(@Context final HttpServletRequest httpServletRequest,
-                                 @Context final HttpServletResponse httpServletResponse,
-                                 @PathParam("userId") @Parameter(
+    public final ResponseUserEntityView active(@Context final HttpServletRequest httpServletRequest,
+                                               @Context final HttpServletResponse httpServletResponse,
+                                               @PathParam("userId") @Parameter(
                                          required = true,
                                          description = "Identifier of an user.\n\n" +
                                                  "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
@@ -1268,7 +1264,7 @@ public class UserResource implements Serializable {
             this.userAPI.save(userToUpdated, modUser, false);
 
             final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
-            return new ResponseUserMapEntityView(new UserView(userToUpdated, role)); // 200
+            return new ResponseUserEntityView(new UserView(userToUpdated, role)); // 200
         }
 
         throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
@@ -1289,25 +1285,25 @@ public class UserResource implements Serializable {
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If success returns a map with the user + user id."),
                     @ApiResponse(
                             responseCode = "403",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
                     @ApiResponse(
                             responseCode = "404",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user to update does not exist"),
                     @ApiResponse(
                             responseCode = "400",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user information is not valid"),
             })
     @PATCH
@@ -1315,9 +1311,9 @@ public class UserResource implements Serializable {
     @JSONP
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public final ResponseUserMapEntityView deactivate(@Context final HttpServletRequest httpServletRequest,
-                                                  @Context final HttpServletResponse httpServletResponse,
-                                                  @PathParam("userId") @Parameter(
+    public final ResponseUserEntityView deactivate(@Context final HttpServletRequest httpServletRequest,
+                                                   @Context final HttpServletResponse httpServletResponse,
+                                                   @PathParam("userId") @Parameter(
                                                           required = true,
                                                           description = "Identifier of an user.\n\n" +
                                                                   "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
@@ -1351,7 +1347,7 @@ public class UserResource implements Serializable {
             this.userAPI.save(userToUpdated, modUser, false);
             final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
 
-            return new ResponseUserMapEntityView(new UserView(userToUpdated, role)); // 200
+            return new ResponseUserEntityView(new UserView(userToUpdated, role)); // 200
         }
 
         throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
