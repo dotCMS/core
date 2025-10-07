@@ -4,9 +4,10 @@ import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder, SiteEntity } from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { QueryBuilder } from '@dotcms/query-builder';
 
-import { createTreeNode, generateAllParentPaths, TreeNodeItem } from './tree-folder.utils';
+import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
 import { BASE_QUERY, SYSTEM_HOST } from '../shared/constants';
 import {
@@ -193,10 +194,16 @@ export function buildContentDriveQuery({
         modifiedQuery = modifiedQuery.field('parentPath').equals(path);
     }
 
-    // Add site and working/variant filters
-    modifiedQuery = modifiedQuery.raw(
-        `+(conhost:${currentSite?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-    );
+    if (currentSite) {
+        // Add site and working/variant filters
+        modifiedQuery = modifiedQuery.raw(
+            `+(conhost:${currentSite?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+        );
+    } else {
+        modifiedQuery = modifiedQuery.raw(
+            `+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`
+        );
+    }
 
     // Apply custom filters
     filtersEntries
@@ -259,12 +266,12 @@ export function getFolderHierarchyByPath(
  *
  * @param {string} path - The path to fetch folders from
  * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<{ parent: DotFolder; folders: TreeNodeItem[] }>}
+ * @returns {Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }>}
  */
 export function getFolderNodesByPath(
     path: string,
     dotFolderService: DotFolderService
-): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> {
+): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> {
     return dotFolderService.getFolders(path).pipe(
         map((folders) => {
             const [parent, ...childFolders] = folders;
