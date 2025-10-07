@@ -846,8 +846,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           int remainingLimit = (limit < 0) ? -1 : (limit - returnTypes.size());
 
           // Perform paginated search
-//          final List<ContentType> searchResults = performSearch(condition, base, offset,
-//                  orderBy, limit, returnTypes, remainingLimit, resolvedSiteIds, includedIds);
           final List<ContentType> searchResults = performSearch(resolvedSiteIds, condition, base,
                   orderBy, remainingLimit, offset, includedIds);
 
