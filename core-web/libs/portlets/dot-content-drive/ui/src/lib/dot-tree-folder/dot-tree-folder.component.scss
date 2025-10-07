@@ -14,7 +14,7 @@
 
     .p-treenode-content:has(span.active) {
         pointer-events: none;
-        background-color: $bg-hover;
+        background-color: $color-palette-primary-200;
     }
 
     .p-treenode-content .p-tree-toggler {
