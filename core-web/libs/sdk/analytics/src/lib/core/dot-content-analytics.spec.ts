@@ -102,7 +102,7 @@ describe('initializeContentAnalytics', () => {
 
         expect(analytics).toBeNull();
         expect(consoleSpy).toHaveBeenCalledWith(
-            'DotContentAnalytics: Missing "siteAuth" in configuration'
+            'DotCMS Analytics: Missing "siteAuth" in configuration'
         );
 
         consoleSpy.mockRestore();

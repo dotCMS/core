@@ -108,7 +108,7 @@ describe('useContentAnalytics', () => {
         expect(mockInitializeAnalytics).toHaveBeenCalledTimes(2);
     });
 
-    it('re-initializes when siteKey changes', () => {
+    it('re-initializes when siteAuth changes', () => {
         const { rerender } = renderHook((config) => useContentAnalytics(config), {
             initialProps: mockConfig
         });
@@ -116,7 +116,7 @@ describe('useContentAnalytics', () => {
         expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
 
         // Change siteKey
-        rerender({ ...mockConfig, siteKey: 'new-site-key' });
+        rerender({ ...mockConfig, siteAuth: 'new-site-key' });
         expect(mockInitializeAnalytics).toHaveBeenCalledTimes(2);
     });
 
