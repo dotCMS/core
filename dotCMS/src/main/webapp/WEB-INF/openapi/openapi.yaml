@@ -13637,6 +13637,43 @@ paths:
       summary: Filter users
       tags:
       - Users
+    post:
+      description: Returns a list of dotCMS users based on specified search criteria
+        with pagination support
+      operationId: filterUsers_1
+      parameters:
+      - description: Page number for pagination
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Number of items per page
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 40
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListUserView"
+          description: Users retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Filter users
+      tags:
+      - Users
   /v1/users/loginAsData:
     get:
       description: Returns a paginated list of users that can be impersonated (excludes
@@ -13820,6 +13857,10 @@ paths:
           content:
             application/json: {}
           description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: NotFound - User not found
       summary: Find an user
       tags:
       - Users
@@ -23814,7 +23855,7 @@ components:
         entity:
           type: array
           items:
-            $ref: "#/components/schemas/User"
+            $ref: "#/components/schemas/UserView"
         errors:
           type: array
           items:
@@ -25217,9 +25258,7 @@ components:
       type: object
       properties:
         entity:
-          type: object
-          additionalProperties:
-            type: object
+          $ref: "#/components/schemas/UserView"
         errors:
           type: array
           items:
@@ -25486,6 +25525,10 @@ components:
           type: string
         parent:
           type: string
+        roleChildren:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleView"
         roleKey:
           type: string
         system:
@@ -26989,6 +27032,17 @@ components:
       - email
       - firstName
       - lastName
+    UserView:
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/RoleView"
+        user:
+          type: object
+          additionalProperties:
+            type: object
+        userID:
+          type: string
     VanityUrlContentType:
       type: object
       allOf:

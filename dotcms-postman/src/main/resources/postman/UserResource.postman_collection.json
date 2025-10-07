@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8698b68f-df47-47ff-84cc-d9ddd787f2a6",
+		"_postman_id": "da9e8700-f415-487d-a44b-f3a05a4b38d7",
 		"name": "User Resource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1838,6 +1838,291 @@
 								"v1",
 								"users",
 								"dotcms.org.1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "FilteringByPredicate",
+			"item": [
+				{
+					"name": "RetrieveActiveUsers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Parse the JSON response body",
+									"const responseJson = pm.response.json();",
+									"const entity = responseJson.entity;",
+									"",
+									"// ===========================================",
+									"// STRUCTURAL AND SUCCESS TESTS",
+									"// ===========================================",
+									"",
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    // Assert the HTTP status code is 200",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is successful and contains no errors\", function () {",
+									"    // Assert the response is an object",
+									"    pm.expect(responseJson).to.be.an('object', \"Response should be a JSON object.\");",
+									"    // Assert the 'errors' array is present and empty",
+									"    pm.expect(responseJson.errors, \"Errors array should be empty on successful response\").to.be.an('array').and.is.empty;",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "return user.isFrontendUser();",
+							"options": {
+								"raw": {
+									"language": "javascript"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RetrieveInActiveUsers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Parse the JSON response body",
+									"const responseJson = pm.response.json();",
+									"const entity = responseJson.entity;",
+									"",
+									"// ===========================================",
+									"// STRUCTURAL AND SUCCESS TESTS",
+									"// ===========================================",
+									"",
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    // Assert the HTTP status code is 200",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "return !user.isActive();",
+							"options": {
+								"raw": {
+									"language": "javascript"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RetrieveStartWith",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Parse the JSON response body",
+									"const responseJson = pm.response.json();",
+									"const entity = responseJson.entity;",
+									"",
+									"// ===========================================",
+									"// STRUCTURAL AND SUCCESS TESTS",
+									"// ===========================================",
+									"",
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    // Assert the HTTP status code is 200",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is successful and contains no errors\", function () {",
+									"    // Assert the response is an object",
+									"    pm.expect(responseJson).to.be.an('object', \"Response should be a JSON object.\");",
+									"    // Assert the 'errors' array is present and empty",
+									"    pm.expect(responseJson.errors, \"Errors array should be empty on successful response\").to.be.an('array').and.is.empty;",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "const name = user.getFirstName();\n\nreturn (typeof name === 'string' && name.startsWith('Adm'));",
+							"options": {
+								"raw": {
+									"language": "javascript"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filtering by role 'Scripting Developer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Parse the JSON response body",
+									"const responseJson = pm.response.json();",
+									"const entity = responseJson.entity;",
+									"",
+									"// ===========================================",
+									"// STRUCTURAL AND SUCCESS TESTS",
+									"// ===========================================",
+									"",
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    // Assert the HTTP status code is 200",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is successful and contains no errors\", function () {",
+									"    // Assert the response is an object",
+									"    pm.expect(responseJson).to.be.an('object', \"Response should be a JSON object.\");",
+									"    // Assert the 'errors' array is present and empty",
+									"    pm.expect(responseJson.errors, \"Errors array should be empty on successful response\").to.be.an('array').and.is.empty;",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "const roles = rolesFetcher.asArray();\nconst arrayLength = roles.length;\n\nlet isScriptingUserRole = 0;\nfor (let i = 0; i < arrayLength; i++) {\n    const role = roles[i]; \n    const roleKey = role.getRoleKey();\n    isScriptingUserRole |= typeof roleKey === 'string' && roleKey === 'Scripting Developer';\n}\n\nreturn isScriptingUserRole === 1;",
+							"options": {
+								"raw": {
+									"language": "javascript"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
 							]
 						}
 					},
