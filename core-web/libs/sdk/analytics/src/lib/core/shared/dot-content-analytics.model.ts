@@ -28,9 +28,9 @@ export interface DotCMSAnalyticsConfig {
     autoPageView?: boolean;
 
     /**
-     * The site key for authenticating with the Analytics service.
+     * The site auth for authenticating with the Analytics service.
      */
-    siteKey: string;
+    siteAuth: string;
 }
 
 /**
@@ -221,8 +221,8 @@ export interface DotCMSAnalytics {
  * continuity across multiple analytics events.
  */
 export interface DotCMSAnalyticsContext {
-    /** The site key for the DotCMS instance */
-    site_key: string;
+    /** The site auth for the DotCMS instance */
+    site_auth: string;
     /** Unique session identifier */
     session_id: string;
     /** Unique user identifier */
