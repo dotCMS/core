@@ -18,8 +18,8 @@ import {
 export const initializeContentAnalytics = (
     config: DotCMSAnalyticsConfig
 ): DotCMSAnalytics | null => {
-    if (!config.siteKey) {
-        console.error('DotContentAnalytics: Missing "siteKey" in configuration');
+    if (!config.siteAuth) {
+        console.error('DotContentAnalytics: Missing "siteAuth" in configuration');
 
         return null;
     }
