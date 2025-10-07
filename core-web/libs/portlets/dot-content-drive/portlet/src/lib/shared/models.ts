@@ -122,3 +122,8 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
  * @interface DotContentDriveDecodeFunction
  */
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
+
+export type DotContentDriveUploadFiles = {
+    files: FileList;
+    hostFolder: string;
+};

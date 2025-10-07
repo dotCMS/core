@@ -409,7 +409,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             query: expect.any(String),
             limit: DEFAULT_PAGINATION.limit,
             offset: DEFAULT_PAGINATION.offset,
-            sort: 'score,baseType desc'
+            sort: 'baseType desc'
         });
     });
 

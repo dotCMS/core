@@ -12,10 +12,11 @@ import { inject, effect, EffectRef } from '@angular/core';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
+import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveState } from '../../../shared/models';
 import { getFolderHierarchyByPath, getFolderNodesByPath } from '../../../utils/functions';
-import { ALL_FOLDER, buildTreeFolderNodes, TreeNodeItem } from '../../../utils/tree-folder.utils';
+import { ALL_FOLDER, buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
 
 interface WithSidebarState {
     sidebarLoading: boolean;

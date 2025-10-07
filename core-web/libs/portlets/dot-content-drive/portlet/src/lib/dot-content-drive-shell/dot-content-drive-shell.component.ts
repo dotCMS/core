@@ -24,7 +24,10 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotFolderListViewComponent,
+    DotContentDriveUploadFiles
+} from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
@@ -210,20 +213,27 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        this.resolveFilesUpload(files);
+        this.resolveFilesUpload({ files });
     }
 
     /**
      * Resolves the upload of multiple files or a single file
      * @param files The files to upload
      */
-    protected resolveFilesUpload(files: FileList) {
+    protected resolveFilesUpload({ files, hostFolder }: DotContentDriveUploadFiles) {
+        if (!hostFolder) {
+            hostFolder =
+                this.#store.selectedNode() === ALL_FOLDER
+                    ? this.#store.currentSite()?.identifier
+                    : this.#store.selectedNode()?.data.id;
+        }
+
         if (files.length > 1) {
-            this.uploadFiles(files);
+            this.uploadFiles({ files, hostFolder });
 
             return;
         }
-        this.uploadFile(files[0]);
+        this.uploadFile({ files, hostFolder });
     }
 
     /**
@@ -233,7 +243,7 @@ export class DotContentDriveShellComponent {
      * @param {FileList} files
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadFiles(files: FileList) {
+    protected uploadFiles({ files, hostFolder }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
@@ -241,25 +251,32 @@ export class DotContentDriveShellComponent {
             life: WARNING_MESSAGE_LIFE
         });
 
-        this.uploadFile(files[0]);
+        this.uploadFile({ files, hostFolder });
     }
 
     /**
      * Uploads a file to the content drive
      * @param file The file to upload
      */
-    protected uploadFile(file: File) {
+    protected uploadFile({ files, hostFolder }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'info',
             summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
             detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
         });
 
-        const hostFolder =
-            this.#store.selectedNode() === ALL_FOLDER
-                ? this.#store.currentSite()?.identifier
-                : this.#store.selectedNode()?.data.id;
+        this.uploadDotAsset(files[0], hostFolder);
+    }
 
+    /**
+     * Uploads a file to the content drive
+     *
+     * @protected
+     * @param {File} file
+     * @param {string} hostFolder
+     * @memberof DotContentDriveShellComponent
+     */
+    protected uploadDotAsset(file: File, hostFolder: string) {
         this.#fileService
             .uploadDotAsset(file, {
                 baseType: 'dotAsset',
@@ -291,7 +308,6 @@ export class DotContentDriveShellComponent {
                         ),
                         life: ERROR_MESSAGE_LIFE
                     });
-                    this.#store.setStatus(DotContentDriveStatus.LOADED);
                 }
             });
     }

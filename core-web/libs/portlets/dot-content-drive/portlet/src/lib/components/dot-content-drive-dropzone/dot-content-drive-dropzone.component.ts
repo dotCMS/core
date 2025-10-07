@@ -9,6 +9,7 @@ import {
     signal
 } from '@angular/core';
 
+import { DotContentDriveUploadFiles } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
@@ -21,7 +22,7 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentDriveDropzoneComponent {
-    readonly uploadFiles = output<FileList>();
+    readonly uploadFiles = output<DotContentDriveUploadFiles>();
 
     readonly elementRef = inject(ElementRef);
 
@@ -110,7 +111,7 @@ export class DotContentDriveDropzoneComponent {
         this.$isActive.set(false);
 
         if (files?.length) {
-            this.uploadFiles.emit(files);
+            this.uploadFiles.emit({ files });
         }
     }
 }

@@ -9,14 +9,14 @@ import { delay } from 'rxjs/operators';
 
 import { DotFolderService, DotMessageService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
-import { DotTreeFolderComponent } from '@dotcms/portlets/content-drive/ui';
+import { DotTreeFolderComponent, TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { ALL_FOLDER, TreeNodeItem } from '../../utils/tree-folder.utils';
+import { ALL_FOLDER } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;

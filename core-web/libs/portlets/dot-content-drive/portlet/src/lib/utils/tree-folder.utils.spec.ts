@@ -1,11 +1,11 @@
 import { DotFolder } from '@dotcms/dotcms-models';
+import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import {
     ALL_FOLDER,
     buildTreeFolderNodes,
     createTreeNode,
-    generateAllParentPaths,
-    TreeNodeItem
+    generateAllParentPaths
 } from './tree-folder.utils';
 
 describe('Sidebar Utils', () => {

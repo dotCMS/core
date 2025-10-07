@@ -4,6 +4,7 @@ import { signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
+import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';
@@ -13,7 +14,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../../../shared/models';
-import { ALL_FOLDER, TreeNodeItem } from '../../../utils/tree-folder.utils';
+import { ALL_FOLDER } from '../../../utils/tree-folder.utils';
 
 const mockSite = createFakeSite();
 

@@ -1,15 +1,5 @@
-import { TreeNode } from 'primeng/api';
-
 import { DotFolder } from '@dotcms/dotcms-models';
-
-export type TreeNodeData = {
-    type: 'site' | 'folder';
-    path: string;
-    hostname: string;
-    id: string;
-};
-
-export type TreeNodeItem = TreeNode<TreeNodeData>;
+import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 export const ALL_FOLDER: TreeNodeItem = {
     key: 'ALL_FOLDER',

@@ -12,7 +12,14 @@
         white-space: nowrap;
     }
 
+    .p-treenode-content:has(span.active) {
+        pointer-events: none;
+        background-color: $bg-hover;
+    }
+
     .p-treenode-content .p-tree-toggler {
+        pointer-events: all;
+
         .arrow-icon {
             color: $color-palette-gray-600;
         }

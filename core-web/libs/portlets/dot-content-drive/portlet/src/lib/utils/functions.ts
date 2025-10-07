@@ -4,9 +4,10 @@ import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder, SiteEntity } from '@dotcms/dotcms-models';
+import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { QueryBuilder } from '@dotcms/query-builder';
 
-import { createTreeNode, generateAllParentPaths, TreeNodeItem } from './tree-folder.utils';
+import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
 import { BASE_QUERY, SYSTEM_HOST } from '../shared/constants';
 import {

@@ -25,7 +25,7 @@ import {
     DotLocalstorageService
 } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderListViewComponent, TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
@@ -47,7 +47,7 @@ import {
 } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { ALL_FOLDER, TreeNodeItem } from '../utils/tree-folder.utils';
+import { ALL_FOLDER } from '../utils/tree-folder.utils';
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
