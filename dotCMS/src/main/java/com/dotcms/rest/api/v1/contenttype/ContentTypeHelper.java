@@ -774,7 +774,6 @@ public class ContentTypeHelper implements Serializable {
      * @return List of Content Types names in lowercase (e.g. [video, content]).
      */
     public List<String> getEnsuredContentTypes(final String ensuredContentTypes) {
-        System.out.println("Ensured content types params: " + ensuredContentTypes);
         return ensuredContentTypes == null || ensuredContentTypes.isBlank()
                 ? Collections.emptyList()
                 : Arrays.stream(ensuredContentTypes.split("\\s*,\\s*"))
