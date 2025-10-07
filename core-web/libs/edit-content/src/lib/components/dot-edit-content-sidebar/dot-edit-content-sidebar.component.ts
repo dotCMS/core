@@ -74,6 +74,7 @@ export class DotEditContentSidebarComponent {
     readonly $versionsItems = this.$store.versions; // All accumulated versions for infinite scroll
     readonly $versionsPagination = this.$store.versionsPagination;
     readonly $historyStatus = computed(() => this.$store.versionsStatus().status);
+    readonly $pushPublishHistoryItems = this.$store.pushPublishHistory; // All accumulated push publish history items
 
     /**
      * Computed property that returns the workflow state of the content.

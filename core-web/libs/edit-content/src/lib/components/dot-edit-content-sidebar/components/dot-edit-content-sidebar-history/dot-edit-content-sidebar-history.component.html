@@ -64,10 +64,30 @@
         <!-- Push Publish Tab -->
         <dot-sidebar-accordion-tab
             id="push-publish"
-            [disabled]="true"
+            [disabled]="false"
             [label]="'edit.content.sidebar.history.push.publish' | dm">
             <div class="dot-edit-content-sidebar-history__push-publish">
-                <!-- TODO: Add Push Publish content here -->
+                @if ($pushPublishHistoryItems().length === 0) {
+                    <!-- Empty state for push publish -->
+                    <dot-empty-container
+                        [configuration]="{
+                            title: '',
+                            subtitle:
+                                'edit.content.sidebar.history.push.publish.empty.message' | dm,
+                            icon: 'pi-folder-open'
+                        }"
+                        [hideContactUsLink]="true"></dot-empty-container>
+                } @else {
+                    <!-- Push Publish History content -->
+                    <div class="dot-edit-content-sidebar-history__push-publish-content">
+                        @for (item of $pushPublishHistoryItems(); track item.bundleId) {
+                            <dot-pushpublish-timeline-item
+                                [item]="item"
+                                [itemIndex]="$index"
+                                data-testid="pushpublish-timeline-item"></dot-pushpublish-timeline-item>
+                        }
+                    </div>
+                }
             </div>
         </dot-sidebar-accordion-tab>
     </dot-sidebar-accordion>

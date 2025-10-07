@@ -14,8 +14,12 @@ import {
 } from '@dotcms/ui';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
+import { DotPushpublishTimelineItemComponent } from './components/dot-pushpublish-timeline-item/dot-pushpublish-timeline-item.component';
 
-import { DotHistoryTimelineItemAction } from '../../../../models/dot-edit-content.model';
+import {
+    DotHistoryTimelineItemAction,
+    DotPushPublishHistoryItem
+} from '../../../../models/dot-edit-content.model';
 
 /**
  * Component that displays content version history in the sidebar.
@@ -32,7 +36,8 @@ import { DotHistoryTimelineItemAction } from '../../../../models/dot-edit-conten
         DotMessagePipe,
         DotSidebarAccordionComponent,
         DotSidebarAccordionTabComponent,
-        DotHistoryTimelineItemComponent
+        DotHistoryTimelineItemComponent,
+        DotPushpublishTimelineItemComponent
     ],
     providers: [DatePipe, DotMessagePipe],
     templateUrl: './dot-edit-content-sidebar-history.component.html',
@@ -72,6 +77,14 @@ export class DotEditContentSidebarHistoryComponent {
      * @readonly
      */
     $historicalVersionInode = input<string | null>(null, { alias: 'historicalVersionInode' });
+
+    /**
+     * List of push publish history items to display (accumulated items from store)
+     * @readonly
+     */
+    $pushPublishHistoryItems = input<DotPushPublishHistoryItem[]>([], {
+        alias: 'pushPublishHistoryItems'
+    });
 
     /**
      * Event emitted when page changes

@@ -159,7 +159,7 @@ describe('DotEditContentService', () => {
                     languageId: 1,
                     live: true,
                     modDate: 1756414525995,
-                    modUser: 'dotcms.org.1',
+                    modUserName: 'dotcms.org.1',
                     title: 'Test Version',
                     working: true
                 }
@@ -205,7 +205,7 @@ describe('DotEditContentService', () => {
                     languageId: 1,
                     live: true,
                     modDate: 1756414525995,
-                    modUser: 'dotcms.org.1',
+                    modUserName: 'dotcms.org.1',
                     title: 'Test Version',
                     working: true
                 }
@@ -246,7 +246,7 @@ describe('DotEditContentService', () => {
                     languageId: 1,
                     live: true,
                     modDate: 1756414525995,
-                    modUser: 'dotcms.org.1',
+                    modUserName: 'dotcms.org.1',
                     title: 'Test Version',
                     working: true
                 }

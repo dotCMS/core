@@ -78,6 +78,7 @@
                     [contentIdentifier]="$store.contentlet()?.identifier || ''"
                     [pagination]="$versionsPagination()"
                     [historicalVersionInode]="$store.historicalVersionInode()"
+                    [pushPublishHistoryItems]="$pushPublishHistoryItems()"
                     (pageChange)="onVersionsPageChange($event)"
                     (timelineItemAction)="onTimelineItemAction($event)"
                     data-testId="history" />

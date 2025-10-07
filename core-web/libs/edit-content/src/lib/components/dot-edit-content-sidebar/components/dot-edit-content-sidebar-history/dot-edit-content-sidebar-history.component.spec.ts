@@ -38,7 +38,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             languageId: 1,
             live: true,
             modDate: Date.now() - 86400000,
-            modUser: 'admin',
+            modUserName: 'admin',
             title: 'Test Content v1',
             working: true
         },
@@ -55,7 +55,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             languageId: 1,
             live: false,
             modDate: Date.now() - 172800000,
-            modUser: 'editor',
+            modUserName: 'editor',
             title: 'Test Content v2',
             working: true
         }
