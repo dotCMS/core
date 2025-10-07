@@ -459,6 +459,20 @@ describe('utils functions', () => {
             expect(sanitizeURL('//index////')).toEqual('/index/');
         });
 
+        it('should clean query params from the url', () => {
+            expect(sanitizeURL('hello-there/general-kenobi?test=1&test2=2')).toEqual(
+                'hello-there/general-kenobi'
+            );
+
+            expect(sanitizeURL('/hello-there/general-kenobi?test=1&test2=2')).toEqual(
+                '/hello-there/general-kenobi'
+            );
+
+            expect(sanitizeURL('/hello-there/general-kenobi/?test=1&test2=2')).toEqual(
+                '/hello-there/general-kenobi/'
+            );
+        });
+
         describe('nested url', () => {
             it('should leave as it is for a nested valid url', () => {
                 expect(sanitizeURL('hello-there/general-kenobi/')).toEqual(
