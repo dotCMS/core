@@ -20,6 +20,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
@@ -82,7 +83,8 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         MessagesModule,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        DotContentCompareModule
     ],
     providers: [
         DotWorkflowsActionsService,
@@ -127,7 +129,7 @@ export class DotEditContentLayoutComponent {
      * The store instance for managing component state.
      * Each component instance gets its own isolated store for complete state independence.
      */
-    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly $store = inject(DotEditContentStore);
 
     constructor() {
         // Initialize component based on input parameters

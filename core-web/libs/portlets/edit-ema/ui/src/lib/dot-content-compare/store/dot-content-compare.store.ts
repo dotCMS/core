@@ -93,6 +93,8 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                             return this.httpErrorManagerService.handle(err);
                         }),
                         switchMap((contents: DotCMSContentlet[]) => {
+                            console.log('contents', contents);
+
                             return this.dotContentTypeService
                                 .getContentType(contents[0].contentType)
                                 .pipe(

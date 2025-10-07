@@ -1,9 +1,10 @@
-<ng-container *ngIf="vm$ | async as vm">
-    <dot-content-compare-table
-        *ngIf="vm.data"
-        (changeDiff)="store.updateShowDiff($event)"
-        (changeVersion)="store.updateCompare($event)"
-        (bringBack)="bringBack($event)"
-        [data]="vm.data"
-        [showDiff]="vm.showDiff"></dot-content-compare-table>
-</ng-container>
+@if (vm$ | async; as vm) {
+    @if (vm.data) {
+        <dot-content-compare-table
+            (changeDiff)="store.updateShowDiff($event)"
+            (changeVersion)="store.updateCompare($event)"
+            (bringBack)="bringBack($event)"
+            [data]="vm.data"
+            [showDiff]="vm.showDiff" />
+    }
+}
