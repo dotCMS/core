@@ -22,13 +22,14 @@ import java.io.IOException;
 import java.time.Instant;
 
 /**
- * Encapsulates the configuration for the Object Mapper on the Resources. 
+ * Encapsulates the configuration for the Object Mapper on the Resources.
  * @author jsanca
  */
 public class DotObjectMapperProvider {
+
     final static Lazy<Boolean> ALPHA_KEYS = Lazy.of(()->Config.getBooleanProperty("dotcms.rest.sort.json.properties", true));
     final static Lazy<Boolean> USE_BLACKBIRD = Lazy.of(()->Config.getBooleanProperty("jackson.module.blackbird.enable", true));
-
+    final static Lazy<Boolean> USE_JDK8_MODULE = Lazy.of(()->Config.getBooleanProperty("jackson.module.jdk8module.enable", false));
     private final ObjectMapper defaultObjectMapper;
 
     /**
@@ -38,7 +39,6 @@ public class DotObjectMapperProvider {
     public ObjectMapper getDefaultObjectMapper() {
         return defaultObjectMapper;
     }
-
 
     private DotObjectMapperProvider() {
         this(createDefaultMapper());
@@ -51,23 +51,19 @@ public class DotObjectMapperProvider {
 
     public static ObjectMapper createDefaultMapper() {
 
-        final Boolean alphaKeys = Config.getBooleanProperty("dotcms.rest.sort.json.properties", true);
-        final Boolean useBlackbird = Config.getBooleanProperty("jackson.module.blackbird.enable", true);
-        final Boolean supportJava18 = Config.getBooleanProperty("jackson.module.jdk8module.enable", false);
         final ObjectMapper result = new ObjectMapper();
         result.disable(DeserializationFeature.WRAP_EXCEPTIONS);
 
-        result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, alphaKeys);
-        result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, alphaKeys);
-        if(useBlackbird) {
+        result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, ALPHA_KEYS.get());
+        result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, ALPHA_KEYS.get());
+        if(USE_BLACKBIRD.get()) {
             result.registerModule(new BlackbirdModule());
         }
-        if(supportJava18){
+        if(USE_JDK8_MODULE.get()){
             result.registerModule(new Jdk8Module());
         }
-        final JavaTimeModule javaTimeModule = createJavaTimeModule();
 
-        result.registerModule(javaTimeModule);
+        result.registerModule(createJavaTimeModule());
         result.registerModule(new GuavaModule());
 
         return result;
