@@ -111,7 +111,7 @@ export class DotContentDriveDropzoneComponent {
         this.$isActive.set(false);
 
         if (files?.length) {
-            this.uploadFiles.emit({ files });
+            this.uploadFiles.emit({ files, targetFolder: this.#store.selectedNode()?.data.id });
         }
     }
 }

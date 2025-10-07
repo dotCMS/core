@@ -194,10 +194,16 @@ export function buildContentDriveQuery({
         modifiedQuery = modifiedQuery.field('parentPath').equals(path);
     }
 
-    // Add site and working/variant filters
-    modifiedQuery = modifiedQuery.raw(
-        `+(conhost:${currentSite?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-    );
+    if (currentSite) {
+        // Add site and working/variant filters
+        modifiedQuery = modifiedQuery.raw(
+            `+(conhost:${currentSite?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+        );
+    } else {
+        modifiedQuery = modifiedQuery.raw(
+            `+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`
+        );
+    }
 
     // Apply custom filters
     filtersEntries

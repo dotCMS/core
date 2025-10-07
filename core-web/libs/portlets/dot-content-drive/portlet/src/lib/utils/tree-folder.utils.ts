@@ -1,6 +1,8 @@
 import { DotFolder } from '@dotcms/dotcms-models';
 import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
+import { BuildTreeFolderNodesParams } from '../shared/models';
+
 export const ALL_FOLDER: TreeNodeItem = {
     key: 'ALL_FOLDER',
     label: 'All',
@@ -68,12 +70,13 @@ export const createTreeNode = (folder: DotFolder, parent?: TreeNodeItem): TreeNo
  * @returns {TreeNodeItem[]} The tree folder nodes
  * @returns {TreeNodeItem} The selected node
  */
-export const buildTreeFolderNodes = (
-    folderHierarchyLevels: DotFolder[][],
-    targetPath: string
-): { rootNodes: TreeNodeItem[]; selectedNode?: TreeNodeItem } => {
+export const buildTreeFolderNodes = ({
+    folderHierarchyLevels,
+    targetPath,
+    rootNode
+}: BuildTreeFolderNodesParams): { rootNodes: TreeNodeItem[]; selectedNode: TreeNodeItem } => {
     if (folderHierarchyLevels.length === 0) {
-        return { rootNodes: [], selectedNode: ALL_FOLDER };
+        return { rootNodes: [], selectedNode: rootNode };
     }
 
     const rootNodes: TreeNodeItem[] = [];
@@ -120,7 +123,7 @@ export const buildTreeFolderNodes = (
     });
 
     // The last expanded parent is the "selected" node
-    const selectedNode = activeParents[folderHierarchyLevels.length - 1] || ALL_FOLDER;
+    const selectedNode = activeParents[folderHierarchyLevels.length - 1] || rootNode;
 
     return { rootNodes, selectedNode };
 };

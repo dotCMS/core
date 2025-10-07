@@ -178,14 +178,14 @@ export class DotTreeFolderComponent {
         event.stopPropagation();
         event.preventDefault();
 
-        const hostFolder = this.$activeDropNode().id;
+        const targetFolder = this.$activeDropNode().id;
 
         this.$activeDropNode.set(null);
 
         const files = event.dataTransfer?.files ?? undefined;
 
         if (files?.length) {
-            this.uploadFiles.emit({ files, hostFolder });
+            this.uploadFiles.emit({ files, targetFolder });
         }
     }
 }

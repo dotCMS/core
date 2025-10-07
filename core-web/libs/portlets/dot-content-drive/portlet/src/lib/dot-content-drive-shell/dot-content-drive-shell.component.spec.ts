@@ -604,7 +604,6 @@ describe('DotContentDriveShellComponent', () => {
                 detail: expect.any(String),
                 life: ERROR_MESSAGE_LIFE
             });
-            expect(store.setStatus).toHaveBeenCalledWith(DotContentDriveStatus.LOADED);
         });
 
         it('should not upload when no files are selected', () => {
@@ -690,14 +689,16 @@ describe('DotContentDriveShellComponent', () => {
                 key: 'folder-123',
                 label: 'folder-123'
             };
-            store.selectedNode.mockReturnValue(mockNode);
 
             const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
-            spectator.triggerEventHandler(dropzone, 'uploadFiles', mockFileList);
+            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
+                files: mockFileList,
+                targetFolder: mockNode.data.id
+            });
 
             expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
                 baseType: 'dotAsset',
-                hostFolder: 'folder-123',
+                hostFolder: mockNode.data.id,
                 indexPolicy: 'WAIT_FOR'
             });
         });
@@ -733,7 +734,10 @@ describe('DotContentDriveShellComponent', () => {
             store.selectedNode.mockReturnValue(mockNode);
 
             const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
-            spectator.triggerEventHandler(dropzone, 'uploadFiles', mockFileList);
+            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
+                files: mockFileList,
+                targetFolder: 'folder-123'
+            });
 
             // Should show warning message for multiple files
             expect(addSpy).toHaveBeenCalledWith({

@@ -47,7 +47,6 @@ import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/model
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
-import { ALL_FOLDER } from '../utils/tree-folder.utils';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -213,27 +212,21 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        this.resolveFilesUpload({ files });
+        this.resolveFilesUpload({ files, targetFolder: this.#store.selectedNode()?.data.id });
     }
 
     /**
      * Resolves the upload of multiple files or a single file
      * @param files The files to upload
      */
-    protected resolveFilesUpload({ files, hostFolder }: DotContentDriveUploadFiles) {
-        if (!hostFolder) {
-            hostFolder =
-                this.#store.selectedNode() === ALL_FOLDER
-                    ? this.#store.currentSite()?.identifier
-                    : this.#store.selectedNode()?.data.id;
-        }
-
+    protected resolveFilesUpload({ files, targetFolder: hostFolder }: DotContentDriveUploadFiles) {
         if (files.length > 1) {
-            this.uploadFiles({ files, hostFolder });
+            this.uploadFiles({ files, targetFolder: hostFolder });
 
             return;
         }
-        this.uploadFile({ files, hostFolder });
+
+        this.uploadFile({ files, targetFolder: hostFolder });
     }
 
     /**
@@ -243,7 +236,7 @@ export class DotContentDriveShellComponent {
      * @param {FileList} files
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadFiles({ files, hostFolder }: DotContentDriveUploadFiles) {
+    protected uploadFiles({ files, targetFolder: hostFolder }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
@@ -251,14 +244,14 @@ export class DotContentDriveShellComponent {
             life: WARNING_MESSAGE_LIFE
         });
 
-        this.uploadFile({ files, hostFolder });
+        this.uploadFile({ files, targetFolder: hostFolder });
     }
 
     /**
      * Uploads a file to the content drive
      * @param file The file to upload
      */
-    protected uploadFile({ files, hostFolder }: DotContentDriveUploadFiles) {
+    protected uploadFile({ files, targetFolder: hostFolder }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'info',
             summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),

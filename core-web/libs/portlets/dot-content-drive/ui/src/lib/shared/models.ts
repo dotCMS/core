@@ -20,7 +20,7 @@ export interface DotFolderListViewColumn {
  */
 export interface DotContentDriveUploadFiles {
     files: FileList;
-    hostFolder?: string;
+    targetFolder: string;
 }
 
 /**

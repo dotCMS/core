@@ -44,19 +44,30 @@ export function withSidebar() {
                     return;
                 }
 
+                const realAllFolder: TreeNodeItem = {
+                    ...ALL_FOLDER,
+                    data: {
+                        hostname: currentSite.hostname,
+                        path: '',
+                        type: 'folder',
+                        id: currentSite.identifier
+                    }
+                };
+
                 const urlFolderPath = store.path() || '';
                 const fullPath = `${currentSite.hostname}${urlFolderPath}`;
 
                 getFolderHierarchyByPath(fullPath, dotFolderService).subscribe((folders) => {
-                    const { rootNodes, selectedNode } = buildTreeFolderNodes(
-                        folders,
-                        urlFolderPath || '/'
-                    );
+                    const { rootNodes, selectedNode } = buildTreeFolderNodes({
+                        folderHierarchyLevels: folders,
+                        targetPath: urlFolderPath || '/',
+                        rootNode: realAllFolder
+                    });
 
                     patchState(store, {
                         sidebarLoading: false,
-                        folders: [ALL_FOLDER, ...rootNodes],
-                        selectedNode: selectedNode || ALL_FOLDER
+                        folders: [realAllFolder, ...rootNodes],
+                        selectedNode: selectedNode
                     });
                 });
             },

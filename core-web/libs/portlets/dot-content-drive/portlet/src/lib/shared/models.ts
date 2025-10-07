@@ -1,4 +1,5 @@
-import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, DotFolder, SiteEntity } from '@dotcms/dotcms-models';
+import { TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { DIALOG_TYPE } from './constants';
 
@@ -123,7 +124,14 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
  */
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
 
-export type DotContentDriveUploadFiles = {
-    files: FileList;
-    hostFolder: string;
-};
+/**
+ * The parameters for the buildTreeFolderNodes function.
+ *
+ * @export
+ * @interface buildTreeFolderNodesParams
+ */
+export interface BuildTreeFolderNodesParams {
+    folderHierarchyLevels: DotFolder[][];
+    targetPath: string;
+    rootNode: TreeNodeItem;
+}

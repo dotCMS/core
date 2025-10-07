@@ -28,6 +28,16 @@ describe('DotContentDriveSidebarComponent', () => {
         siteName: 'Demo Site'
     };
 
+    const realAllFolder: TreeNodeItem = {
+        ...ALL_FOLDER,
+        data: {
+            hostname: mockSiteDetails.hostname,
+            path: '',
+            type: 'folder',
+            id: mockSiteDetails.identifier
+        }
+    };
+
     const mockFolders: DotFolder[] = [
         {
             id: 'parent-folder',
@@ -50,7 +60,15 @@ describe('DotContentDriveSidebarComponent', () => {
     ];
 
     const mockTreeNodes: TreeNodeItem[] = [
-        ALL_FOLDER,
+        {
+            ...realAllFolder,
+            data: {
+                hostname: mockSiteDetails.hostname,
+                path: '',
+                type: 'folder',
+                id: mockSiteDetails.identifier
+            }
+        },
         {
             key: 'folder-1',
             label: '/documents/',
@@ -331,9 +349,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 expect(regularNode.expanded).toBe(true); // No change for regular nodes
             });
 
-            it('should prevent ALL_FOLDER from collapsing', () => {
+            it('should prevent root from collapsing', () => {
                 const allFolderNode: TreeNodeItem = {
-                    ...ALL_FOLDER,
+                    ...realAllFolder,
                     expanded: true
                 };
 

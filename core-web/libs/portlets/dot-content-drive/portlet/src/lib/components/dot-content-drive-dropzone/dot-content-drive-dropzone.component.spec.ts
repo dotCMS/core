@@ -55,7 +55,8 @@ describe('DotContentDriveDropzoneComponent', () => {
         component: DotContentDriveDropzoneComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                resetContextMenu: jest.fn()
+                resetContextMenu: jest.fn(),
+                selectedNode: jest.fn().mockReturnValue({ data: { id: 'test-id' } })
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Drag and drop files here')
@@ -305,7 +306,10 @@ describe('DotContentDriveDropzoneComponent', () => {
             // Wait for effect to run
             await spectator.fixture.whenStable();
 
-            expect(uploadFilesSpyEmitter).toHaveBeenCalledWith(mockFiles);
+            expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
+                files: mockFiles,
+                targetFolder: 'test-id'
+            });
         });
 
         it('should not trigger upload when no files are set', async () => {
@@ -380,7 +384,10 @@ describe('DotContentDriveDropzoneComponent', () => {
 
             await spectator.fixture.whenStable();
 
-            expect(uploadFilesSpyEmitter).toHaveBeenCalledWith(mockFiles);
+            expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
+                files: mockFiles,
+                targetFolder: 'test-id'
+            });
 
             expect(spectator.component.active).toBe(false);
             expect(spectator.element.classList.contains('active')).toBe(false);
