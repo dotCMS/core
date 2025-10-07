@@ -143,12 +143,19 @@ export class DotTreeFolderComponent {
             activeNodeSpan = target.querySelector('[data-testid="tree-node-label"]');
         }
 
-        if (activeNodeSpan) {
-            const nodeData = activeNodeSpan.getAttribute('data-json-node');
-            if (nodeData) {
-                this.$activeDropNode.set(JSON.parse(nodeData));
-            }
+        if (!activeNodeSpan) {
+            console.warn('Content drive tree folder: No active node span found');
+            return;
         }
+
+        const nodeData = activeNodeSpan.getAttribute('data-json-node');
+
+        if (!nodeData) {
+            console.warn('Content drive tree folder: No node data found');
+            return;
+        }
+
+        this.$activeDropNode.set(JSON.parse(nodeData));
     }
 
     /**
