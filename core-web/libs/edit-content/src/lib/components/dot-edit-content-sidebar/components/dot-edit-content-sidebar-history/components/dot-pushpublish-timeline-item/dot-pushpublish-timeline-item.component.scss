@@ -109,6 +109,11 @@
 ::ng-deep .dot-pushpublish-timeline-item__avatar.p-avatar {
     width: 21px;
     height: 21px;
+    border-radius: 50%;
+
+    .p-avatar-text {
+        font-size: $font-size-md;
+    }
 }
 
 .dot-pushpublish-timeline-item__user-name {

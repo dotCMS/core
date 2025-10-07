@@ -75,6 +75,10 @@ export class DotEditContentSidebarComponent {
     readonly $versionsPagination = this.$store.versionsPagination;
     readonly $historyStatus = computed(() => this.$store.versionsStatus().status);
     readonly $pushPublishHistoryItems = this.$store.pushPublishHistory; // All accumulated push publish history items
+    readonly $pushPublishHistoryPagination = this.$store.pushPublishHistoryPagination;
+    readonly $pushPublishHistoryStatus = computed(
+        () => this.$store.pushPublishHistoryStatus().status
+    );
 
     /**
      * Computed property that returns the workflow state of the content.
@@ -162,6 +166,17 @@ export class DotEditContentSidebarComponent {
         const identifier = this.$identifier();
         if (identifier) {
             this.$store.loadVersions({ identifier, page });
+        }
+    }
+
+    /**
+     * Handles pagination navigation for push publish history (automatically detects initial vs accumulation)
+     * @param page - The page number to navigate to
+     */
+    onPushPublishPageChange(page: number) {
+        const identifier = this.$identifier();
+        if (identifier) {
+            this.$store.loadPushPublishHistory({ identifier, page });
         }
     }
 

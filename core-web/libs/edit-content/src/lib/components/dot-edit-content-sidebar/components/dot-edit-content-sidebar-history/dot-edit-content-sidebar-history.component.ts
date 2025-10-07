@@ -73,6 +73,14 @@ export class DotEditContentSidebarHistoryComponent {
     $pagination = input<DotPagination | null>(null, { alias: 'pagination' });
 
     /**
+     * Pagination data for push publish history items
+     * @readonly
+     */
+    $pushPublishHistoryPagination = input<DotPagination | null>(null, {
+        alias: 'pushPublishHistoryPagination'
+    });
+
+    /**
      * Current historical version inode being viewed
      * @readonly
      */
@@ -90,6 +98,11 @@ export class DotEditContentSidebarHistoryComponent {
      * Event emitted when page changes
      */
     pageChange = output<number>();
+
+    /**
+     * Event emitted when push publish history page changes
+     */
+    pushPublishPageChange = output<number>();
 
     /**
      * Event emitted when a timeline item action is triggered
@@ -115,11 +128,35 @@ export class DotEditContentSidebarHistoryComponent {
     });
 
     /**
+     * Determines if there are push publish history items to display
+     */
+    readonly $hasPushPublishHistoryItems = computed(
+        () => this.$pushPublishHistoryItems().length > 0
+    );
+
+    /**
+     * Determines if there are more push publish history items to load for infinite scroll
+     */
+    readonly $hasMorePushPublishItems = computed(() => {
+        const pagination = this.$pushPublishHistoryPagination();
+        return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
+    });
+
+    /**
      * Handle infinite scroll when user scrolls near the end
      */
     onScrollIndexChange(event: ScrollerLazyLoadEvent): void {
         if (this.shouldLoadMore(event) && !this.$isLoading()) {
             this.loadNextPage();
+        }
+    }
+
+    /**
+     * Handle infinite scroll for push publish history when user scrolls near the end
+     */
+    onPushPublishScrollIndexChange(event: ScrollerLazyLoadEvent): void {
+        if (this.shouldLoadMorePushPublish(event) && !this.$isLoading()) {
+            this.loadNextPushPublishPage();
         }
     }
 
@@ -135,6 +172,17 @@ export class DotEditContentSidebarHistoryComponent {
     }
 
     /**
+     * Determine if we should load more push publish items based on scroll position
+     */
+    private shouldLoadMorePushPublish(event: ScrollerLazyLoadEvent): boolean {
+        const { last } = event;
+        const totalItems = this.$pushPublishHistoryItems().length;
+        const threshold = 5; // Load when 5 items remaining
+
+        return totalItems - last <= threshold && this.$hasMorePushPublishItems();
+    }
+
+    /**
      * Load the next page of history items
      */
     private loadNextPage(): void {
@@ -145,11 +193,29 @@ export class DotEditContentSidebarHistoryComponent {
     }
 
     /**
+     * Load the next page of push publish history items
+     */
+    private loadNextPushPublishPage(): void {
+        const pagination = this.$pushPublishHistoryPagination();
+        if (pagination && this.$hasMorePushPublishItems()) {
+            this.pushPublishPageChange.emit(pagination.currentPage + 1);
+        }
+    }
+
+    /**
      * Get the real index of an item in the history array
      * This is needed because p-scroller's template index is virtual
      */
     getRealIndex(item: DotCMSContentletVersion): number {
         return this.$historyItems().indexOf(item);
+    }
+
+    /**
+     * Get the real index of a push publish item in the push publish history array
+     * This is needed because p-scroller's template index is virtual
+     */
+    getPushPublishRealIndex(item: DotPushPublishHistoryItem): number {
+        return this.$pushPublishHistoryItems().indexOf(item);
     }
 
     /**

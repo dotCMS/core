@@ -79,7 +79,9 @@
                     [pagination]="$versionsPagination()"
                     [historicalVersionInode]="$store.historicalVersionInode()"
                     [pushPublishHistoryItems]="$pushPublishHistoryItems()"
+                    [pushPublishHistoryPagination]="$pushPublishHistoryPagination()"
                     (pageChange)="onVersionsPageChange($event)"
+                    (pushPublishPageChange)="onPushPublishPageChange($event)"
                     (timelineItemAction)="onTimelineItemAction($event)"
                     data-testId="history" />
             </ng-template>
