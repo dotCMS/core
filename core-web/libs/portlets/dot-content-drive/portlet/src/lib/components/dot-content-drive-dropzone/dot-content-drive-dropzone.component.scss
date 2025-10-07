@@ -22,7 +22,7 @@
         z-index: 1000;
         border: 1px dashed $color-palette-primary-500;
         border-radius: $border-radius-xl;
-        background-color: $content-drive-dropzone-background-color;
+        background-color: rgba(246, 249, 252, 0.8);
         opacity: 0;
         visibility: visible;
         transition: all $content-drive-animation-speed $content-drive-animation-ease;
