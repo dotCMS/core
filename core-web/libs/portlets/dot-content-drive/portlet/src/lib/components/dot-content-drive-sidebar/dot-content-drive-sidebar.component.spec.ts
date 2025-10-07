@@ -9,7 +9,11 @@ import { delay } from 'rxjs/operators';
 
 import { DotFolderService, DotMessageService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
-import { DotTreeFolderComponent, TreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotContentDriveUploadFiles,
+    DotTreeFolderComponent,
+    TreeNodeItem
+} from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -363,6 +367,40 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeCollapse', mockEvent);
 
                 expect(allFolderNode.expanded).toBe(true);
+            });
+        });
+
+        describe('uploadFiles', () => {
+            it('should emit uploadFiles event when dot-tree-folder emits uploadFiles', () => {
+                const mockFileList = {
+                    length: 2,
+                    item: (_index: number) => null,
+                    [Symbol.iterator]: function* () {
+                        yield new File(['content1'], 'file1.txt');
+                        yield new File(['content2'], 'file2.txt');
+                    }
+                } as FileList;
+
+                const mockUploadEvent: DotContentDriveUploadFiles = {
+                    files: mockFileList,
+                    targetFolderId: 'folder-1'
+                };
+
+                let emittedValue: DotContentDriveUploadFiles | undefined;
+
+                spectator.component.uploadFiles.subscribe((event) => {
+                    emittedValue = event;
+                });
+
+                spectator.triggerEventHandler(
+                    DotTreeFolderComponent,
+                    'uploadFiles',
+                    mockUploadEvent
+                );
+
+                expect(emittedValue).toBeDefined();
+                expect(emittedValue?.files).toBe(mockFileList);
+                expect(emittedValue?.targetFolderId).toBe('folder-1');
             });
         });
     });

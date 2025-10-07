@@ -212,23 +212,23 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        const targetFolder = this.#store.selectedNode()?.data.id;
+        const targetFolderId = this.#store.selectedNode()?.data.id;
 
-        this.resolveFilesUpload({ files, targetFolder });
+        this.resolveFilesUpload({ files, targetFolderId });
     }
 
     /**
      * Resolves the upload of multiple files or a single file
      * @param files The files to upload
      */
-    protected resolveFilesUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
+    protected resolveFilesUpload({ files, targetFolderId }: DotContentDriveUploadFiles) {
         if (files.length > 1) {
-            this.uploadFiles({ files, targetFolder });
+            this.uploadFiles({ files, targetFolderId });
 
             return;
         }
 
-        this.uploadFile({ files, targetFolder });
+        this.uploadFile({ files, targetFolderId });
     }
 
     /**
@@ -238,7 +238,7 @@ export class DotContentDriveShellComponent {
      * @param {FileList} files
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadFiles({ files, targetFolder }: DotContentDriveUploadFiles) {
+    protected uploadFiles({ files, targetFolderId }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
@@ -246,21 +246,21 @@ export class DotContentDriveShellComponent {
             life: WARNING_MESSAGE_LIFE
         });
 
-        this.uploadFile({ files, targetFolder });
+        this.uploadFile({ files, targetFolderId });
     }
 
     /**
      * Uploads a file to the content drive
      * @param file The file to upload
      */
-    protected uploadFile({ files, targetFolder }: DotContentDriveUploadFiles) {
+    protected uploadFile({ files, targetFolderId }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'info',
             summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
             detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
         });
 
-        this.uploadDotAsset(files[0], targetFolder);
+        this.uploadDotAsset(files[0], targetFolderId);
     }
 
     /**

@@ -308,7 +308,7 @@ describe('DotContentDriveDropzoneComponent', () => {
 
             expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
                 files: mockFiles,
-                targetFolder: 'test-id'
+                targetFolderId: 'test-id'
             });
         });
 
@@ -386,7 +386,7 @@ describe('DotContentDriveDropzoneComponent', () => {
 
             expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
                 files: mockFiles,
-                targetFolder: 'test-id'
+                targetFolderId: 'test-id'
             });
 
             expect(spectator.component.active).toBe(false);
