@@ -246,6 +246,65 @@ describe('DotFolderListViewContextMenuComponent', () => {
         });
     });
 
+    describe('closeOnContextMenuReset', () => {
+        it('should hide context menu when contentlet is null and menu is visible', () => {
+            const mockContextMenu = {
+                hide: jest.fn(),
+                visible: jest.fn().mockReturnValue(true)
+            } as unknown as ContextMenu;
+
+            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+            store.patchContextMenu({
+                contentlet: null,
+                triggeredEvent: null,
+                showAddToBundle: false
+            });
+
+            spectator.detectChanges();
+
+            expect(mockContextMenu.hide).toHaveBeenCalled();
+        });
+
+        it('should not hide context menu when contentlet is null and menu is not visible', () => {
+            const mockContextMenu = {
+                hide: jest.fn(),
+                visible: jest.fn().mockReturnValue(false)
+            } as unknown as ContextMenu;
+
+            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+            store.patchContextMenu({
+                contentlet: null,
+                triggeredEvent: null,
+                showAddToBundle: false
+            });
+
+            spectator.detectChanges();
+
+            expect(mockContextMenu.hide).not.toHaveBeenCalled();
+        });
+
+        it('should not hide context menu when contentlet exists', () => {
+            const mockContextMenu = {
+                hide: jest.fn(),
+                visible: jest.fn().mockReturnValue(true)
+            } as unknown as ContextMenu;
+
+            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+            store.patchContextMenu({
+                contentlet: mockContentlet,
+                triggeredEvent: null,
+                showAddToBundle: false
+            });
+
+            spectator.detectChanges();
+
+            expect(mockContextMenu.hide).not.toHaveBeenCalled();
+        });
+    });
+
     describe('wizard', () => {
         const mockEvent = new MouseEvent('contextmenu');
         it('should open the wizard', async () => {

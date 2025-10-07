@@ -2869,11 +2869,11 @@ paths:
       summary: Fire an user custom event **(Beta)**.
       tags:
       - Content Analytics
-  /v1/analytics/content/sitekey/generate/{siteId}:
+  /v1/analytics/content/siteauth/generate/{siteId}:
     get:
       description: Generates and returns a Site Key that must be used by the client-side
         JS code to send custom Content Analytics Events
-      operationId: generateSiteKey
+      operationId: generateSiteAuth
       parameters:
       - in: path
         name: siteId
@@ -2893,7 +2893,7 @@ paths:
           description: Method Not Allowed
         "500":
           description: Internal Server Error
-      summary: Generate Site Key
+      summary: Generate Site Auth
       tags:
       - Content Analytics
   /v1/announcements:
@@ -6077,6 +6077,51 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityViewListExistingLanguagesForContentletView"
           description: default response
+      tags:
+      - Content
+  /v1/content/{identifier}/push/history:
+    get:
+      description: Returns the push history of a contentlet
+      operationId: getPushHistory
+      parameters:
+      - description: ID of the Contentlet whose push history will be retrieved.
+        in: path
+        name: identifier
+        required: true
+        schema:
+          type: string
+      - description: "Maximum number or results being returned, for pagination purposes."
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      - description: "Page number of the results being returned, for pagination purposes."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: History data retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required.
+        "404":
+          content:
+            application/json: {}
+          description: The specified identifier does not match any contentlet.
+        "500":
+          content:
+            application/json: {}
+          description: An internal dotCMS error has occurred.
+      summary: Contentlet Push History
       tags:
       - Content
   /v1/content/{identifier}/references/count:
@@ -16723,6 +16768,36 @@ paths:
       summary: Find default system actions by workflow action id
       tags:
       - Workflow
+  /v1/workflow/tasks:
+    post:
+      description: "Retrieve the workflow tasks that matchedhttps://www2.dotcms.com/docs/latest/workflow-tasks,\
+        \ [workflow task]"
+      operationId: getWorkflowTasks
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/WorkflowSearcherForm"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityWorkflowTasksView"
+          description: Action(s) returned successfully
+        "400":
+          description: Bad Request
+        "401":
+          description: Invalid User
+        "403":
+          description: Forbidden
+        "406":
+          description: Not Acceptable
+        "500":
+          description: Internal Server Error
+      summary: Find workflow tasks based on the filter parameters on the request body
+      tags:
+      - Workflow
   /v1/workflow/tasks/history/comments/{contentletIdentifier}:
     get:
       description: |-
@@ -25016,6 +25091,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityWorkflowTasksView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/WorkflowSearchResultsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseHostVariableEntityView:
       type: object
       properties:
@@ -27548,6 +27646,46 @@ components:
           uniqueItems: true
       required:
       - schemes
+    WorkflowSearchResultsView:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        workflowTasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowTaskView"
+    WorkflowSearcherForm:
+      type: object
+      properties:
+        assignedTo:
+          type: string
+        closed:
+          type: boolean
+        count:
+          type: integer
+          format: int32
+        createdBy:
+          type: string
+        daysOld:
+          type: integer
+          format: int32
+        keywords:
+          type: string
+        open:
+          type: boolean
+        orderBy:
+          type: string
+        page:
+          type: integer
+          format: int32
+        schemeId:
+          type: string
+        show4all:
+          type: boolean
+        stepId:
+          type: string
     WorkflowStep:
       type: object
       properties:
@@ -27673,6 +27811,37 @@ components:
         title:
           type: string
         webasset:
+          type: string
+    WorkflowTaskView:
+      type: object
+      properties:
+        assignedTo:
+          type: string
+        assignedUserName:
+          type: string
+        belongsTo:
+          type: string
+        createdBy:
+          type: string
+        creationDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        id:
+          type: string
+        languageId:
+          type: integer
+          format: int64
+        modDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+        title:
           type: string
     WorkflowTimelineItemView:
       type: object
