@@ -449,51 +449,38 @@ public class UserResource implements Serializable {
     }
 
 	/**
-	 * Returns a list of dotCMS users based on the specified search criteria. Depending on the filtering values, 2
-	 * types of results can be returned:
-	 * <ol>
-	 * 		<li>If both the {@code assetInode} and {@code permission} parameters <b>ARE specified</b>, this method will
-	 * 		return a list of users that have the specified permission type on the specified asset Inode, and match the
-	 * 		remaining filtering parameters as well.</li>
-	 * 		<li>If either the {@code assetInode} or {@code permission} parameters <b>ARE NOT specified</b>, this method
-	 * 		will return a list of users based on the remaining filtering parameters.</li>
-	 * </ol>
+	 * Returns a list of dotCMS users based on the specified predicate in js search criteria.
 	 * <p>
-	 * The parameters for this REST call are optional -- they have their respective fallback values -- and are as
-	 * follows:
-	 * <ul>
-	 * 		<li>{@code assetInode}</li>
-	 * 		<li>{@code permission}</li>
-	 * 		<li>{@code query}</li>
-	 * 		<li>{@code page}</li>
-	 * 		<li>{@code per_page}</li>
-	 * 		<li>{@code includeAnonymous}</li>
-	 * 		<li>{@code includeDefault}</li>
-	 * </ul>
 	 * <p>
-	 * Example #1:
+	 * Example (the body is an application/javascript):
 	 * <pre>
-	 * http://localhost:8080/api/v1/users/filter?page=0&per_page=30&includeAnonymous=true&includeDefault=true
+	 * http://localhost:8080/api/v1/users/filter?page=0&per_page=30
+     * const roles = rolesFetcher.asArray();
+     * const arrayLength = roles.length;
+     *
+     * let isScriptingUserRole = 0;
+     * for (let i = 0; i < arrayLength; i++) {
+     *     const role = roles[i];
+     *     const roleKey = role.getRoleKey();
+     *     isScriptingUserRole |= typeof roleKey === '\''string'\'' && roleKey === '\''Scripting Developer'\'';
+     * }
+     *
+     * return isScriptingUserRole === 1;
+     *
 	 * </pre>
 	 * <p>
-	 * Example #2:
-	 * <pre>
-	 * http://localhost:8080/api/v1/users/filter?assetInode=6e13c345-4599-49d0-aa47-6a7e59245247&permission=1&query=John&page=0&per_page=10&includeAnonymous=false
-	 * </pre>
 	 *
+     * In this example the list of users is being filtered by the ones with the role Scripting Developer
+     * user and rolesFetcher are the arguments implicit on the context.
+     * user is the actual user
+     * and rolesFetches is such as a view tool to retrieve the user roles lazy.
+     *
+     * if returns a boolean as a true, the user will be included in the results, otherwise will be filtered
+     *
 	 * @param request          The current instance of the {@link HttpServletRequest}.
 	 * @param response         The current instance of the {@link HttpServletResponse}.
-	 * @param filter           Allows you to filter Users by their full name or parts of it.
 	 * @param page             The results page or offset, for pagination purposes.
 	 * @param perPage          The size of the results page, for pagination purposes.
-	 * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
-	 *                         check {@link SQLUtil #ORDERBY_WHITELIST(private method in SQLUtil)}.
-	 * @param direction        The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
-	 * @param includeAnonymous If the Anonymous User must be included in the results, set this to {@code true}.
-	 * @param includeDefault   If the Default User must be included in the results, set this to {@code true}.
-	 * @param assetInode       The Inode of a specific asset, if you're querying Users that have a specific permission
-	 *                         on it.
-	 * @param permission       The permission type that Users may have on the previous asset.
 	 *
 	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
 	 */
@@ -569,7 +556,6 @@ public class UserResource implements Serializable {
         }
 
         throw new ForbiddenException(USER_MSG + loggedInUser.getUserId() + " does not have permissions to retrieve users");
-
     }
 
     /**

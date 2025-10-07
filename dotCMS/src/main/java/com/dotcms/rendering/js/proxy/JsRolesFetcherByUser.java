@@ -9,6 +9,10 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * View tool to retrieve on the execute function the roles in a lazy approach
+ * @author jsanca
+ */
 public class JsRolesFetcherByUser  implements Serializable {
 
     private final String userId;

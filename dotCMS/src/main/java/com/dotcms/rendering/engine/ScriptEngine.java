@@ -45,9 +45,10 @@ public interface ScriptEngine {
 
     /**
      * Execute a single function (does not include any context rather than the bindings)
-     * @param functionName
-     * @param script
-     * @param bindings
+     * @param functionName function name to execute
+     * @param script actual js script
+     * @param bindings binding for the context
+     * @param args arguments for the function
      * @return Object
      */
     Object executeFunction(String functionName, String script, Map<String, Object> bindings, final Object... args);
