@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.rest.api.v1.system.role.RoleView;
 import com.dotmarketing.business.Role;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.liferay.portal.model.User;
@@ -29,8 +30,8 @@ public class UserView {
         return Try.of(()->user.toMap()).getOrElse(new HashMap<>());
     }
 
-    @JsonProperty("roleId")
-    public String getRole() {
-        return role.getId();
+    @JsonProperty("role")
+    public RoleView getRole() {
+        return new RoleView(role, null);
     }
 }

@@ -25472,6 +25472,10 @@ components:
           type: string
         parent:
           type: string
+        roleChildren:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleView"
         roleKey:
           type: string
         system:
@@ -26978,8 +26982,8 @@ components:
     UserView:
       type: object
       properties:
-        roleId:
-          type: string
+        role:
+          $ref: "#/components/schemas/RoleView"
         user:
           type: object
           additionalProperties:
