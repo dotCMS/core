@@ -3,6 +3,7 @@
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
     @let lockWarningMessage = $store.lockWarningMessage();
     @let showBetaMessage = $store.isBetaMessageVisible();
+    @let showInvalidMessage = $store.formStatus() === 'invalid';
 
     @let isEnabledNewContentEditor = $store.isEnabledNewContentEditor();
 
@@ -94,9 +95,25 @@
                 </ng-template>
             </p-messages>
         }
+
+        @if (showInvalidMessage) {
+            <p-messages severity="error" data-testId="edit-content-layout__lock-warning">
+                <ng-template pTemplate>
+                    <div class="flex w-full gap-1">
+                        <i class="pi pi-times-circle"></i>
+                        <div
+                            class="flex align-items-center mr-auto gap-1"
+                            data-testId="edit-content-layout__lock-warning-content">
+                            {{ 'edit.content.layout.invalid.message' | dm }}
+                        </div>
+                    </div>
+                </ng-template>
+            </p-messages>
+        }
     </div>
 
     <dot-edit-content-form
+        #formComponent
         data-testId="edit-content-layout__body"
         (changeValue)="onFormChange($event)"
         class="edit-content-layout__body" />

@@ -309,6 +309,7 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
             this.changeDetectorRef.detectChanges();
+            this.$store.setFormIsValid('invalid');
             requestAnimationFrame(() => {
                 this.scrollToFirstError();
             });
