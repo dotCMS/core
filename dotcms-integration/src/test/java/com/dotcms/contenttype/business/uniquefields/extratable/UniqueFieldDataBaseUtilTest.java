@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
@@ -1188,20 +1189,21 @@ public class UniqueFieldDataBaseUtilTest {
     /**
      * <ul>
      *     <li><b>Method to test:</b> {@link UniqueFieldDataBaseUtil#handleDuplicateRecords()}</li>
-     *     <li><b>Given Scenario:</b> Manually insert two records in the {@code unique_fields} table
-     *     having the exact same hash. This simulates a situation in an old version of the feature
-     *     that allowed having case-sensitive unique values, which is NOT correct.</li>
+     *     <li><b>Given Scenario:</b> Manually insert four records in the {@code unique_fields}
+     *     table having the exact same hash, but point to different Contentlet Identifiers. This
+     *     simulates the scenario in which different contents have the same unique value, which
+     *     should NEVER happen but was being allowed by race conditions with Elasticsearch.</li>
      *     <li><b>Expected Result:</b> The method to test will detect the duplicates and manually
      *     fixes the conflicts. It leaves only one of the duplicates, updates the unique value of
      *     the remaining ones, and re-generates their hashes so they can be inserted in the table
-     *     without problems. This error is NOT supposed to happen anymore</li>
+     *     without problems. This error is NOT supposed to happen anymore.</li>
      * </ul>
      *
      * @throws SQLException     An error occurred when checking the DBMS metadata.
      * @throws DotDataException An error occurred when interacting with the database.
      */
     @Test
-    public void fixDuplicateEntries() throws DotDataException, DotSecurityException, SQLException {
+    public void fixDuplicateEntriesWithDifferentContentIdentifiers() throws DotDataException, DotSecurityException, SQLException {
         // ╔══════════════════╗
         // ║  Initialization  ║
         // ╚══════════════════╝
@@ -1211,6 +1213,8 @@ public class UniqueFieldDataBaseUtilTest {
         final String siteId = UUIDGenerator.generateUuid();
         final String testContentIdOne = UUIDGenerator.generateUuid();
         final String testContentIdTwo = UUIDGenerator.generateUuid();
+        final String testContentIdThree = UUIDGenerator.generateUuid();
+        final String testContentIdFour = UUIDGenerator.generateUuid();
         final long languageId = 1;
 
         // ╔════════════════════════╗
@@ -1241,10 +1245,11 @@ public class UniqueFieldDataBaseUtilTest {
             final String uniqueKeyValue = contentType.id() + uniqueTextField.variable() + languageId + uniqueValue;
 
             // Generating the duplicate record for the first Contentlet
+            assertNotNull(VariantAPI.DEFAULT_VARIANT.name());
             final Map<String, Object> supportingValues = new HashMap<>(Map.of(
                     CONTENTLET_IDS_ATTR, List.of(testContentIdOne),
-                    CONTENT_TYPE_ID_ATTR, contentType.id(),
-                    FIELD_VARIABLE_NAME_ATTR, uniqueTextField.variable(),
+                    CONTENT_TYPE_ID_ATTR, Objects.requireNonNull(contentType.id()),
+                    FIELD_VARIABLE_NAME_ATTR, Objects.requireNonNull(uniqueTextField.variable()),
                     FIELD_VALUE_ATTR, uniqueValue,
                     LANGUAGE_ID_ATTR, languageId,
                     UNIQUE_PER_SITE_ATTR, false,
@@ -1254,8 +1259,107 @@ public class UniqueFieldDataBaseUtilTest {
             ));
             uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
 
-            // Generating the duplicate record for the second Contentlet
+            // Generating the duplicate unique value record for the second Contentlet
             supportingValues.put(CONTENTLET_IDS_ATTR, List.of(testContentIdTwo));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+            // Generating the duplicate unique value record for the third Contentlet
+            supportingValues.put(CONTENTLET_IDS_ATTR, List.of(testContentIdThree));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+            // Generating the duplicate unique value record for the fourth Contentlet
+            supportingValues.put(CONTENTLET_IDS_ATTR, List.of(testContentIdFour));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+
+            // ╔══════════════╗
+            // ║  Assertions  ║
+            // ╚══════════════╝
+            List<Map<String, Object>> recordCountWithSameHash = this.getUniqueFieldRecordsWithSameHash();
+            assertEquals("There must be exactly 4 duplicate records", 4,
+                    Integer.parseInt(recordCountWithSameHash.get(0).get("count").toString()));
+
+            uniqueFieldDataBaseUtil.handleDuplicateRecords();
+
+            recordCountWithSameHash = this.getUniqueFieldRecordsWithSameHash();
+            assertEquals("There must be NO duplicate records as they all should've been fixed",
+                    0, recordCountWithSameHash.size());
+        } finally {
+            dotDatabaseMetaData.dropTable(connection, "unique_fields");
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+            uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UniqueFieldDataBaseUtil#handleDuplicateRecords()}</li>
+     *     <li><b>Given Scenario:</b> Manually insert two records in the {@code unique_fields} table
+     *     having the exact same hash because a single Contentlet can have both a live and a working
+     *     version. This duplicate record handling just applies the first time the table is being
+     *     populated. The API already handles this situation correctly.</li>
+     *     <li><b>Expected Result:</b> The method to test will detect the duplicates and manually
+     *     fixes the conflicts. It leaves only one of the duplicates, updates the unique value of
+     *     the remaining ones, and re-generates their hashes so they can be inserted in the table
+     *     without problems. This error is NOT supposed to happen anymore</li>
+     * </ul>
+     *
+     * @throws SQLException     An error occurred when checking the DBMS metadata.
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @Test
+    public void fixDuplicateEntriesWithSameContentInLiveAndWorking() throws DotDataException, DotSecurityException, SQLException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+        final Connection connection = DbConnectionFactory.getConnection();
+        final String uniqueValue = "duplicate_unique_value";
+        final String siteId = UUIDGenerator.generateUuid();
+        final String testContentIdOne = UUIDGenerator.generateUuid();
+        final long languageId = 1;
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Host site = new SiteDataGen().nextPersisted();
+        final Field uniqueTextField = new FieldDataGen()
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(site)
+                .fields(list(uniqueTextField))
+                .nextPersisted();
+
+        final ImmutableTextField uniqueFieldUpdated = ImmutableTextField.builder()
+                .from(uniqueTextField)
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .build();
+        APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        try {
+            dotDatabaseMetaData.dropTable(connection, "unique_fields");
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+            // Generating the duplicate hash key
+            final String uniqueKeyValue = contentType.id() + uniqueTextField.variable() + languageId + uniqueValue;
+
+            // Generating the duplicate record for the first Contentlet
+            assertNotNull(VariantAPI.DEFAULT_VARIANT.name());
+            final Map<String, Object> supportingValues = new HashMap<>(Map.of(
+                    CONTENTLET_IDS_ATTR, List.of(testContentIdOne),
+                    CONTENT_TYPE_ID_ATTR, Objects.requireNonNull(contentType.id()),
+                    FIELD_VARIABLE_NAME_ATTR, Objects.requireNonNull(uniqueTextField.variable()),
+                    FIELD_VALUE_ATTR, uniqueValue,
+                    LANGUAGE_ID_ATTR, languageId,
+                    UNIQUE_PER_SITE_ATTR, false,
+                    VARIANT_ATTR, VariantAPI.DEFAULT_VARIANT.name(),
+                    LIVE_ATTR, true,
+                    SITE_ID_ATTR, siteId
+            ));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+
+            // Generating the duplicate record for the same Contentlet as a working version
+            supportingValues.put(LIVE_ATTR, false);
             uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
 
             // ╔══════════════╗

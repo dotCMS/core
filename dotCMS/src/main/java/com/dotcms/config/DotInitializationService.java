@@ -1,6 +1,7 @@
 package com.dotcms.config;
 
 import com.dotcms.ai.api.EmbeddingsInitializer;
+import com.dotcms.ai.listener.AIVisionInitializer;
 import com.dotcms.analytics.init.AnalyticsInitializer;
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
@@ -136,10 +137,12 @@ public class DotInitializationService implements Serializable {
                 new DefaultVariantInitializer(),
                 new SystemTableInitializer(),
                 new EmbeddingsInitializer(),
+                new AIVisionInitializer(),
                 CDIUtils.getBeanThrows(UniqueFieldsTableCleanerInitializer.class),
                 CDIUtils.getBeanThrows(UniqueFieldsValidationInitializer.class),
                 new AnalyticsInitializer(),
                 new FolderInitializer()
+
         );
     } // getInternalInitializers.
 

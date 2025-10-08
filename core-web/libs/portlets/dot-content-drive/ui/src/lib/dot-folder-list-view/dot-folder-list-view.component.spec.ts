@@ -104,8 +104,8 @@ describe('DotFolderListViewComponent', () => {
                 const sortableColumns = spectator.queryAll(byTestId('header-column-sortable'));
                 const sortIcons = spectator.queryAll(byTestId('sort-icon'));
 
-                expect(sortableColumns.length).toBe(2);
-                expect(sortIcons.length).toBe(2);
+                expect(sortableColumns.length).toBe(4);
+                expect(sortIcons.length).toBe(4);
             });
 
             it('should show 3 not sortable columns', () => {
@@ -113,7 +113,7 @@ describe('DotFolderListViewComponent', () => {
                     byTestId('header-column-not-sortable')
                 );
 
-                expect(notSortableColumns.length).toBe(3);
+                expect(notSortableColumns.length).toBe(2);
             });
 
             it('should have one checkbox column', () => {

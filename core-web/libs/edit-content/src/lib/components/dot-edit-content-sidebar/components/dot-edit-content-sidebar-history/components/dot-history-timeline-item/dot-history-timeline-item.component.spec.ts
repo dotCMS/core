@@ -1,7 +1,6 @@
 import { createComponentFactory, Spectator, mockProvider, byTestId } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
-import { Pipe, PipeTransform } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -11,20 +10,12 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
-import { DotGravatarDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotHistoryTimelineItemComponent } from './dot-history-timeline-item.component';
 
 import { DotHistoryTimelineItemActionType } from '../../../../../../models/dot-edit-content.model';
-
-// Mock pipe for DotRelativeDatePipe
-@Pipe({ name: 'dotRelativeDate' })
-class MockDotRelativeDatePipe implements PipeTransform {
-    transform(_value: unknown): string {
-        return '1 day ago';
-    }
-}
 
 describe('DotHistoryTimelineItemComponent', () => {
     let spectator: Spectator<DotHistoryTimelineItemComponent>;
@@ -57,7 +48,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             TooltipModule,
             DotGravatarDirective,
             DotMessagePipe,
-            MockDotRelativeDatePipe
+            DotRelativeDatePipe
         ],
         providers: [
             DatePipe,
@@ -70,6 +61,7 @@ describe('DotHistoryTimelineItemComponent', () => {
                     'edit.content.sidebar.history.menu.restore': 'Restore',
                     'edit.content.sidebar.history.menu.compare': 'Compare',
                     'edit.content.sidebar.history.menu.delete': 'Delete',
+                    'edit.content.sidebar.history.menu.current': 'Current',
                     'edit.content.sidebar.history.published': 'Published',
                     'edit.content.sidebar.history.draft': 'Draft'
                 })
@@ -143,6 +135,48 @@ describe('DotHistoryTimelineItemComponent', () => {
         it('should hide variant chip when experimentVariant is false', () => {
             expect(spectator.query(byTestId('state-variant'))).toBeFalsy();
         });
+
+        it('should show "Current" text for working items', () => {
+            spectator.setInput('item', { ...mockVersionItem, working: true, live: false });
+            spectator.detectChanges();
+
+            const timeDisplay = spectator.query(byTestId('time-display'));
+            expect(timeDisplay.textContent?.trim()).toBe('Current');
+        });
+
+        it('should show relative date for non-working items', () => {
+            spectator.setInput('item', { ...mockVersionItem, working: false, live: true });
+            spectator.detectChanges();
+
+            const timeDisplay = spectator.query(byTestId('time-display'));
+            expect(timeDisplay.textContent?.trim()).not.toBe('Current');
+        });
+
+        it('should disable delete action for live items', () => {
+            // Item is live by default
+            const menuItems = spectator.component.$menuItems();
+            expect(menuItems[0].disabled).toBe(true); // Delete should be disabled for live items
+        });
+
+        it('should disable delete action for working items', () => {
+            // Set item to working
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+            const deleteItem = menuItems.find((item) => item.label === 'Delete');
+            expect(deleteItem?.disabled).toBe(true); // Delete should be disabled for working items
+        });
+
+        it('should enable delete action for archived items', () => {
+            // Set item to archived (neither live nor working)
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+            const deleteItem = menuItems.find((item) => item.label === 'Delete');
+            expect(deleteItem?.disabled).toBe(false); // Delete should be enabled for archived items
+        });
     });
 
     describe('Computed Signals', () => {
@@ -163,26 +197,145 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(spectator.component.$timelineMarkerClass()).toBe('');
         });
 
-        it('should compute menu items with correct actions', () => {
+        it('should compute menu items with correct actions for live item', () => {
+            // Item is live by default
             const menuItems = spectator.component.$menuItems();
 
-            expect(menuItems).toHaveLength(1);
-            expect(menuItems.every((item) => item.disabled)).toBe(true);
-            expect(menuItems[0].label).toBe('Delete');
+            expect(menuItems).toHaveLength(2);
+            expect(menuItems[0].label).toBe('Restore');
+            expect(menuItems[1].label).toBe('Delete');
+            expect(menuItems[1].disabled).toBe(true); // Live item should have delete disabled
+        });
+
+        it('should compute menu items with correct actions for archived item', () => {
+            // Set item to archived (neither live nor working)
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+
+            expect(menuItems).toHaveLength(2);
+            expect(menuItems[0].label).toBe('Restore');
+            expect(menuItems[1].label).toBe('Delete');
+            expect(menuItems[1].disabled).toBe(false); // Archived item should have delete enabled
         });
     });
 
     describe('Event Emission', () => {
         it('should emit actionTriggered when menu actions are triggered', () => {
+            // Set item to archived to enable delete action
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+
             const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
             const menuItems = spectator.component.$menuItems();
 
-            // Test delete action (only available action)
-            menuItems[0].command();
+            // Test delete action (enabled for archived items) - Delete is the second item
+            const deleteMenuItem = menuItems.find((item) => item.label === 'Delete');
+            deleteMenuItem?.command();
             expect(actionSpy).toHaveBeenCalledWith({
                 type: DotHistoryTimelineItemActionType.DELETE,
-                item: mockVersionItem
+                item: { ...mockVersionItem, live: false, working: false }
             });
+        });
+
+        it('should emit RESTORE action when restore menu item is triggered', () => {
+            // Set item to archived to enable restore action
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+
+            const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
+            const menuItems = spectator.component.$menuItems();
+
+            // Find and trigger restore action (first menu item)
+            const restoreMenuItem = menuItems.find((item) => item.label === 'Restore');
+            expect(restoreMenuItem).toBeDefined();
+            restoreMenuItem?.command();
+
+            expect(actionSpy).toHaveBeenCalledWith({
+                type: DotHistoryTimelineItemActionType.RESTORE,
+                item: { ...mockVersionItem, live: false, working: false }
+            });
+        });
+    });
+
+    describe('Active State', () => {
+        it('should apply active CSS class when isActive is true', () => {
+            spectator.setInput('isActive', true);
+            spectator.detectChanges();
+
+            const historyItem = spectator.query(byTestId('history-item'));
+            const contentWrapper = spectator.query(byTestId('content-wrapper'));
+
+            expect(historyItem).toHaveClass('dot-history-timeline-item--active');
+            expect(contentWrapper).toHaveClass(
+                'dot-history-timeline-item__content-wrapper--active'
+            );
+        });
+
+        it('should not apply active CSS class when isActive is false', () => {
+            spectator.setInput('isActive', false);
+            spectator.detectChanges();
+
+            const historyItem = spectator.query(byTestId('history-item'));
+            const contentWrapper = spectator.query(byTestId('content-wrapper'));
+
+            expect(historyItem).not.toHaveClass('dot-history-timeline-item--active');
+            expect(contentWrapper).not.toHaveClass(
+                'dot-history-timeline-item__content-wrapper--active'
+            );
+        });
+    });
+
+    describe('Menu Items Configuration', () => {
+        it('should disable restore action for live items', () => {
+            spectator.setInput('item', { ...mockVersionItem, live: true });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+            const restoreItem = menuItems.find((item) => item.label === 'Restore');
+
+            expect(restoreItem?.disabled).toBe(true);
+        });
+    });
+
+    describe('Working Version Handling', () => {
+        it('should show "Current" text for working version regardless of itemIndex', () => {
+            spectator.setInput('item', { ...mockVersionItem, working: true, live: false });
+            spectator.setInput('itemIndex', 5); // Set to any index other than 0 to confirm it doesn't matter
+            spectator.detectChanges();
+
+            const timeDisplay = spectator.query(byTestId('time-display'));
+            expect(timeDisplay.textContent?.trim()).toBe('Current');
+        });
+
+        it('should disable delete action for working versions', () => {
+            spectator.setInput('item', { ...mockVersionItem, working: true, live: false });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+            const deleteItem = menuItems.find((item) => item.label === 'Delete');
+
+            expect(deleteItem?.disabled).toBe(true);
+        });
+
+        it('should apply draft marker class for working versions', () => {
+            spectator.setInput('item', { ...mockVersionItem, working: true, live: false });
+            spectator.detectChanges();
+
+            expect(spectator.component.$timelineMarkerClass()).toBe(
+                'dot-history-timeline-item__marker--draft'
+            );
+        });
+
+        it('should show relative date for non-working versions', () => {
+            spectator.setInput('item', { ...mockVersionItem, working: false, live: false });
+            spectator.detectChanges();
+
+            const timeDisplay = spectator.query(byTestId('time-display'));
+            expect(timeDisplay.textContent?.trim()).not.toBe('Current');
+            // The pipe might not render in test environment, but we verify it's not "Current"
+            expect(timeDisplay).toBeTruthy();
         });
     });
 });

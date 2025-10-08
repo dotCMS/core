@@ -13,15 +13,6 @@ body:
         
         Features are specific groupings of functionality within an EPIC that provide particular value.
 
-  - type: input
-    id: feature-title
-    attributes:
-      label: Feature Title
-      description: Concise, action-based title that reflects user value
-      placeholder: "e.g., Drag and Drop File Upload Interface"
-    validations:
-      required: true
-
   - type: textarea
     id: problem
     attributes:

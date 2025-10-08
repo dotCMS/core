@@ -184,7 +184,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     let fixture: ComponentFixture<ContentTypeFieldsDropZoneComponent>;
     let de: DebugElement;
     const mockRouter = {
-        navigate: jasmine.createSpy('navigate')
+        navigate: jest.fn()
     };
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
@@ -297,7 +297,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         comp.displayDialog = true;
         comp.activeTab = 1;
-        spyOn(comp, 'setDialogOkButtonState');
+        jest.spyOn(comp, 'setDialogOkButtonState');
 
         fixture.detectChanges();
 
@@ -311,6 +311,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.currentField).toBe(null);
         expect(comp.activeTab).toBe(0);
         expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
+        expect(comp.setDialogOkButtonState).toHaveBeenCalledTimes(1);
     });
 
     it('should emit removeFields event', () => {
@@ -357,7 +358,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         fieldRow1.divider.id = 'test';
         comp.fieldRows = [fieldRow1, fieldRow2];
 
-        spyOn(comp.removeFields, 'emit');
+        jest.spyOn(comp.removeFields, 'emit');
         comp.removeFieldRow(fieldRow2, 1);
 
         expect(comp.removeFields.emit).toHaveBeenCalledTimes(0);
@@ -462,7 +463,7 @@ describe('Load fields and drag and drop', () => {
     let scrollIntoViewSpy;
 
     const mockRouter = {
-        navigate: jasmine.createSpy('navigate')
+        navigate: jest.fn()
     };
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
@@ -566,9 +567,9 @@ describe('Load fields and drag and drop', () => {
         de = hostDe.query(By.css('dot-content-type-fields-drop-zone'));
         comp = de.componentInstance;
         const rendered = de.injector.get(Renderer2);
-        scrollIntoViewSpy = jasmine.createSpy();
+        scrollIntoViewSpy = jest.fn();
 
-        spyOn(rendered, 'selectRootElement').and.callFake(() => {
+        jest.spyOn(rendered, 'selectRootElement').mockImplementation(() => {
             return {
                 scrollIntoView: scrollIntoViewSpy
             };
@@ -699,10 +700,11 @@ describe('Load fields and drag and drop', () => {
 
     it('should handler editField event', () => {
         const field = {
-            clazz: 'classField',
-            name: 'nameField'
+            id: '5',
+            clazz: DotCMSClazzes.TEXT,
+            name: 'field 5'
         };
-        const spy = spyOn(comp, 'editFieldHandler');
+        const spy = jest.spyOn(comp, 'editFieldHandler');
 
         fixture.detectChanges();
 
@@ -713,7 +715,7 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should save all updated fields', fakeAsync(() => {
-        spyOn(testFieldDragDropService, 'isDraggedEventStarted').and.returnValue(false);
+        jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(false);
 
         const updatedField = fakeFields[2].columns[0].fields[0];
 
@@ -722,7 +724,7 @@ describe('Load fields and drag and drop', () => {
         tick(100);
         comp.editFieldHandler(updatedField);
 
-        spyOn(comp.editField, 'emit');
+        jest.spyOn(comp.editField, 'emit');
 
         const fieldUpdated = {
             ...dotcmsContentTypeFieldBasicMock,
@@ -743,7 +745,7 @@ describe('Load fields and drag and drop', () => {
 
     it('should not save any fields', fakeAsync(() => {
         comp.currentField = null;
-        spyOn(testFieldDragDropService, 'isDraggedEventStarted').and.returnValue(true);
+        jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(true);
 
         const updatedField = fakeFields[2].columns[0].fields[0];
 
@@ -752,13 +754,13 @@ describe('Load fields and drag and drop', () => {
         tick(100);
         comp.editFieldHandler(updatedField);
 
-        spyOn(comp.editField, 'emit');
+        jest.spyOn(comp.editField, 'emit');
 
         expect(comp.currentField).toBeNull();
     }));
 
     it('should emit and create 2 columns', () => {
-        spyOn(comp, 'addRow');
+        jest.spyOn(comp, 'addRow');
         fixture.detectChanges();
         const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
         addRowsContainer.selectColums.emit(2);
@@ -896,7 +898,7 @@ describe('Load fields and drag and drop', () => {
             name: 'nameField'
         };
 
-        const spy = spyOn(comp, 'removeField');
+        const spy = jest.spyOn(comp, 'removeField');
 
         fixture.detectChanges();
 
@@ -1027,14 +1029,14 @@ describe('Load fields and drag and drop', () => {
             });
 
             it('should show convert to block box and trigger convert', () => {
-                spyOn(comp.editField, 'emit');
+                jest.spyOn(comp.editField, 'emit');
 
                 const convertBox = de.query(By.css('dot-convert-wysiwyg-to-block'));
 
                 convertBox.triggerEventHandler('convert', {});
 
                 expect(comp.editField.emit).toHaveBeenCalledWith(
-                    jasmine.objectContaining({
+                    expect.objectContaining({
                         contentTypeId: '3b',
                         fieldType: 'Story-Block',
                         id: '3',
@@ -1061,7 +1063,7 @@ describe('Load fields and drag and drop', () => {
             });
 
             it('should create dot-block-editor-settings', () => {
-                const panels = de.queryAll(By.css('p-tabPanel'));
+                const panels = de.queryAll(By.css('p-tabpanel'));
                 expect(BLOCK_EDITOR_SETTINGS).toBeTruthy();
                 expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD);
                 expect(panels.length).toBe(3);
@@ -1161,7 +1163,7 @@ describe('Load fields and drag and drop', () => {
             });
 
             fixture.detectChanges();
-            const tabView = de.query(By.css('p-tabView'));
+            const tabView = de.query(By.css('p-tabview'));
             tabView.triggerEventHandler('onChange', { index: 1 });
 
             fixture.detectChanges();
@@ -1180,7 +1182,7 @@ describe('Load fields and drag and drop', () => {
 
         it('Should show dot-loading-indicator when loading is set to true', () => {
             hostComp.loading = true;
-            spyOn(dotLoadingIndicatorServiceMock, 'show');
+            jest.spyOn(dotLoadingIndicatorServiceMock, 'show');
             fixture.detectChanges();
 
             expect(dotLoadingIndicatorServiceMock.show).toHaveBeenCalled();
@@ -1188,7 +1190,7 @@ describe('Load fields and drag and drop', () => {
 
         it('Should hide dot-loading-indicator when loading is set to true', () => {
             hostComp.loading = false;
-            spyOn(dotLoadingIndicatorServiceMock, 'hide');
+            jest.spyOn(dotLoadingIndicatorServiceMock, 'hide');
             fixture.detectChanges();
 
             expect(dotLoadingIndicatorServiceMock.hide).toHaveBeenCalled();

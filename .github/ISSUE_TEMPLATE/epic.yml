@@ -13,21 +13,21 @@ body:
         
         EPICs represent wide areas of functionality that solve specific problems and deliver significant value.
 
-  - type: input
-    id: epic-title
-    attributes:
-      label: EPIC Title
-      description: Concise, action-based title that reflects user value
-      placeholder: "e.g., Universal Visual Editor Enhancements"
-    validations:
-      required: true
-
   - type: textarea
     id: description
     attributes:
       label: Description
       description: Explain the problem this EPIC solves and how it will benefit customers
       placeholder: "Describe the user problem, proposed solution, and customer value..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired-outcome
+    attributes:
+      label: Desired Outcome  
+      description: How will we would know that this featured is successful?  This will be used to determine if a feature "Landed" or not
+      placeholder: "Describe what data or behaviour would result in a successful landing of this feature."
     validations:
       required: true
 

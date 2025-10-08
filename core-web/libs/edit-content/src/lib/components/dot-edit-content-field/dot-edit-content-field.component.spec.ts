@@ -15,11 +15,10 @@ import {
     FormGroupDirective,
     ReactiveFormsModule
 } from '@angular/forms';
-import { By } from '@angular/platform-browser';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import { BlockEditorModule } from '@dotcms/block-editor';
 import {
     DotHttpErrorManagerService,
     DotLicenseService,
@@ -35,7 +34,8 @@ import { monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
+import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
+import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
@@ -135,9 +135,16 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
     [FIELD_TYPES.BLOCK_EDITOR]: {
-        component: DotBlockEditorComponent,
-        declarations: [MockComponent(DotBlockEditorComponent)],
+        component: DotEditContentBlockEditorComponent,
         imports: [BlockEditorModule],
+        providers: [
+            {
+                provide: DotEditContentStore,
+                useValue: {
+                    currentLocale: signal({ id: 1, language: 'English', country: 'US' })
+                }
+            }
+        ],
         outsideFormControl: true
     },
     [FIELD_TYPES.CUSTOM_FIELD]: {
@@ -153,7 +160,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         ]
     },
     [FIELD_TYPES.BINARY]: {
-        component: DotEditContentBinaryFieldComponent,
+        component: DotBinaryFieldWrapperComponent,
         providers: [
             {
                 provide: DotLicenseService,
@@ -307,7 +314,12 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     });
 
     describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
-        if (fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD) {
+        if (
+            fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD &&
+            fieldMock.fieldType !== FIELD_TYPES.DATE &&
+            fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
+            fieldMock.fieldType !== FIELD_TYPES.TIME
+        ) {
             it('should render the label', () => {
                 spectator.detectChanges();
                 const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
@@ -315,7 +327,11 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             });
         }
 
-        if (fieldMock.fieldType !== FIELD_TYPES.RELATIONSHIP) {
+        if (
+            fieldMock.fieldType !== FIELD_TYPES.DATE &&
+            fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
+            fieldMock.fieldType !== FIELD_TYPES.TIME
+        ) {
             it('should render the hint if present', () => {
                 spectator.detectChanges();
                 const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
@@ -331,30 +347,6 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             expect(component).toBeTruthy();
             expect(component instanceof FIELD_TYPE).toBeTruthy();
         });
-
-        if (fieldTestBed.outsideFormControl) {
-            it('should have a formControlName', () => {
-                spectator.detectChanges();
-                const field = spectator.debugElement.query(
-                    By.css(`[data-testId="field-${fieldMock.variable}"]`)
-                );
-                expect(field.attributes['ng-reflect-name']).toBe(fieldMock.variable);
-            });
-        }
-
-        if (fieldTestBed.props) {
-            describe('With props', () => {
-                fieldTestBed.props.forEach((prop) => {
-                    it(`should have ${prop.key} property`, () => {
-                        spectator.detectChanges();
-                        const field = spectator.debugElement.query(
-                            By.css(`[data-testId="field-${fieldMock.variable}"]`)
-                        );
-                        expect(field.componentInstance[prop.key]).toEqual(prop.valueExpected);
-                    });
-                });
-            });
-        }
     });
 });
 

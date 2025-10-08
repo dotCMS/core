@@ -2,12 +2,13 @@ import {
     DotCMSClazzes,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotCMSDataTypes
 } from '@dotcms/dotcms-models';
 
 export const EMPTY_FIELD: DotCMSContentTypeField = {
     contentTypeId: '',
-    dataType: '',
+    dataType: null,
     fieldType: '',
     fieldTypeLabel: '',
     fieldVariables: [],
@@ -31,18 +32,23 @@ export const EMPTY_FIELD: DotCMSContentTypeField = {
     values: null
 };
 
-const COLUMN_FIELD = {
+export const EMPTY_SYSTEM_FIELD: DotCMSContentTypeField = {
     ...EMPTY_FIELD,
+    dataType: DotCMSDataTypes.SYSTEM
+};
+
+const COLUMN_FIELD = {
+    ...EMPTY_SYSTEM_FIELD,
     clazz: DotCMSClazzes.COLUMN
 };
 
 const ROW_FIELD = {
-    ...EMPTY_FIELD,
+    ...EMPTY_SYSTEM_FIELD,
     clazz: DotCMSClazzes.ROW
 };
 
 const TAB_FIELD = {
-    ...EMPTY_FIELD,
+    ...EMPTY_SYSTEM_FIELD,
     clazz: DotCMSClazzes.TAB_DIVIDER
 };
 

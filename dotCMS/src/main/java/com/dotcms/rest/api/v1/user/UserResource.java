@@ -31,6 +31,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -59,12 +60,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
-import javax.ws.rs.Consumes;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -434,6 +435,89 @@ public class UserResource implements Serializable {
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
 	}
 
+    /**
+     * Returns a single user
+     * Only admin user can retrieve someone else user
+     * @param request          The current instance of the {@link HttpServletRequest}.
+     * @param response         The current instance of the {@link HttpServletResponse}.
+     * @param filter           Allows you to filter Users by their full name or parts of it.
+     * @param page             The results page or offset, for pagination purposes.
+     * @param perPage          The size of the results page, for pagination purposes.
+     * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
+     *                         check {@link SQLUtil #ORDERBY_WHITELIST(private method in SQLUtil)}.
+     * @param direction        The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
+     * @param includeAnonymous If the Anonymous User must be included in the results, set this to {@code true}.
+     * @param includeDefault   If the Default User must be included in the results, set this to {@code true}.
+     * @param assetInode       The Inode of a specific asset, if you're querying Users that have a specific permission
+     *                         on it.
+     * @param permission       The permission type that Users may have on the previous asset.
+     *
+     * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
+     */
+    @Operation(
+            operationId = "findUser",
+            summary = "Find an user",
+            description = "Returns an user"
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "User retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseUserMapEntityView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @JSONP
+    @Path("/{userId}")
+    @NoCache
+    @Produces({ MediaType.APPLICATION_JSON })
+    public ResponseUserMapEntityView findUserById(@Context final HttpServletRequest request,
+                           @Context final HttpServletResponse response,
+                           @PathParam("userId") @Parameter(
+                                   required = true,
+                                   description = "Identifier of user to retrieve",
+                                   schema = @Schema(type = "string")
+                           ) final String userId
+        ) throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final User modUser = initData.getUser();
+
+        Logger.debug(this, ()-> "Finding the user by id: " + userId);
+        final boolean isRoleAdministrator = modUser.isAdmin() ||
+                (
+                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+                );
+
+        if (isRoleAdministrator) {
+
+            try {
+                final User user = this.userAPI.loadUserById(userId);
+                final Role role = APILocator.getRoleAPI().getUserRole(user);
+
+                return new ResponseUserMapEntityView(Map.of(USER_ID, user.getUserId(),
+                        "user", user.toMap(), "roleId", role.getId())); // 200
+            } catch (NoSuchUserException e) {
+
+                throw new DoesNotExistException("User " + userId + " does not exist", e);
+            }
+        }
+
+        final String message = USER_MSG + modUser.getUserId() + " does not have permissions to retrieve users";
+        Logger.error(this, message);
+        throw new ForbiddenException(message);
+    }
+
 	@Operation(
 	    operationId = "loginAsUser",
 	    summary = "Login as user",
@@ -802,6 +886,10 @@ public class UserResource implements Serializable {
 						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
 				);
 
+        if (!UtilMethods.isSet(createUserForm.getPassword())) {
+            throw new IllegalArgumentException("Password can not be null");
+        }
+
 		if (isRoleAdministrator) {
 
 			final User userToUpdated = this.createNewUser(
@@ -937,7 +1025,6 @@ public class UserResource implements Serializable {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
-				.requiredFrontendUser(false)
 				.requestAndResponse(httpServletRequest, httpServletResponse)
 				.rejectWhenNoUser(true)
 				.init().getUser();
@@ -1013,7 +1100,6 @@ public class UserResource implements Serializable {
 
         final User modUser = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true)
                 .init().getUser();
@@ -1097,7 +1183,6 @@ public class UserResource implements Serializable {
 
         final User modUser = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true)
                 .init().getUser();
@@ -1187,7 +1272,11 @@ public class UserResource implements Serializable {
 		}
 
 		// Password has changed, so it has to be validated
-		userToSave.setPassword(new String(updateUserForm.getPassword()));
+        if(UtilMethods.isSet(updateUserForm.getPassword())){
+
+            userToSave.setPassword(new String(updateUserForm.getPassword()));
+        }
+
 
 		if (APILocator.getPermissionAPI().doesUserHavePermission
 				(APILocator.getUserProxyAPI().getUserProxy(userToSave, modUser, false),
@@ -1198,15 +1287,9 @@ public class UserResource implements Serializable {
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
-			final List<String> roleKeys = UtilMethods.isSet(updateUserForm.getRoles())?
-					updateUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
+            this.processRoles(updateUserForm, userToSave);
 
-			for (final String roleKey : roleKeys) {
-
-				UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
-			}
-
-			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
+            Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' , the roles have been updated.");
 
 		} else {
@@ -1217,7 +1300,25 @@ public class UserResource implements Serializable {
 		return userToSave;
 	}
 
-	/**
+    private void processRoles(final UserForm updateUserForm, final User userToSave) throws DotDataException {
+
+        if (UtilMethods.isSet(updateUserForm.getRoles())) {
+
+            final List<String> roleKeys = updateUserForm.getRoles();
+
+            this.helper.removeRoles(userToSave);  // the source of true is whatever is coming from the payload
+
+            for (final String roleKey : roleKeys) {
+
+                UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
+            }
+        } else {
+
+            Logger.debug(this, ()-> "Not roles sent at all, nothing has been modified in terms of roles");
+        }
+    }
+
+    /**
 	 * Deletes an existing user.
 	 *
 	 * Only Admin User or have access to Users and Roles Portlets can update an existing user
@@ -1282,7 +1383,6 @@ public class UserResource implements Serializable {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
-				.requiredFrontendUser(false)
 				.requestAndResponse(httpServletRequest, new EmptyHttpResponse())
 				.rejectWhenNoUser(true)
 				.init().getUser();
@@ -1334,4 +1434,5 @@ public class UserResource implements Serializable {
 			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 		}
 	} // delete.
+
 }

@@ -58,8 +58,8 @@ describe('DotPagesCardComponent', () => {
             component.url = '/index';
             component.ownerPage = true;
 
-            spyOn(component.goTo, 'emit').and.callThrough();
-            spyOn(component.edit, 'emit').and.callThrough();
+            jest.spyOn(component.goTo, 'emit');
+            jest.spyOn(component.edit, 'emit');
 
             fixture.detectChanges();
         });
@@ -69,12 +69,12 @@ describe('DotPagesCardComponent', () => {
                 fixture.debugElement
                     .query(By.css('[data-testid="favoriteCardImageContainer"]'))
                     .nativeElement.style['background-image'].includes(component.imageUri)
-            ).toBeTrue();
+            ).toBe(true);
             expect(
                 fixture.debugElement
                     .query(By.css('.dot-pages-favorite-card-content__image img'))
                     .nativeElement.src.includes(component.imageUri)
-            ).toBeTrue();
+            ).toBe(true);
         });
 
         it('should set title and url as content', () => {
@@ -97,6 +97,7 @@ describe('DotPagesCardComponent', () => {
             });
 
             expect(component.goTo.emit).toHaveBeenCalledWith(true);
+            expect(component.goTo.emit).toHaveBeenCalledTimes(1);
             expect(component.edit.emit).not.toHaveBeenCalledWith(true);
         });
     });

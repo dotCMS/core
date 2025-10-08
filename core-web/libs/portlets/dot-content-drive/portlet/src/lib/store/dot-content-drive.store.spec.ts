@@ -1,8 +1,11 @@
-import { describe } from '@jest/globals';
+import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
+import { DotContentSearchService, DotFolderService } from '@dotcms/data-access';
 import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
@@ -11,12 +14,13 @@ import { DotContentDriveStore } from './dot-content-drive.store';
 
 import {
     BASE_QUERY,
+    DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     SYSTEM_HOST
 } from '../shared/constants';
-import { MOCK_ITEMS, MOCK_SITES } from '../shared/mocks';
+import { MOCK_ITEMS, MOCK_SEARCH_RESPONSE, MOCK_SITES } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 
 describe('DotContentDriveStore', () => {
@@ -33,7 +37,12 @@ describe('DotContentDriveStore', () => {
             }),
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
-            })
+            }),
+            mockProvider(DotContentSearchService),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            provideHttpClient()
         ]
     });
 
@@ -44,7 +53,7 @@ describe('DotContentDriveStore', () => {
 
     describe('Initial State', () => {
         it('should have the correct initial state', () => {
-            expect(store.currentSite()).toEqual(SYSTEM_HOST);
+            expect(store.currentSite()).toEqual(undefined);
             expect(store.path()).toBe(DEFAULT_PATH);
             expect(store.filters()).toEqual({});
             expect(store.items()).toEqual([]);
@@ -59,12 +68,10 @@ describe('DotContentDriveStore', () => {
             it('should build base query when no path or filters are provided', () => {
                 const baseQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    )
+                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
                     .build();
 
-                expect(store.$query()).toEqual(baseQuery);
+                expect(store.$searchParams().query).toEqual(baseQuery);
             });
 
             it('should include path in query when provided', () => {
@@ -85,7 +92,7 @@ describe('DotContentDriveStore', () => {
                     )
                     .build();
 
-                expect(store.$query()).toEqual(expectedQuery);
+                expect(store.$searchParams().query).toEqual(expectedQuery);
             });
 
             it('should include custom site in query when provided', () => {
@@ -105,7 +112,7 @@ describe('DotContentDriveStore', () => {
                     )
                     .build();
 
-                expect(store.$query()).toEqual(expectedQuery);
+                expect(store.$searchParams().query).toEqual(expectedQuery);
             });
 
             it('should include filters in query when provided', () => {
@@ -132,7 +139,7 @@ describe('DotContentDriveStore', () => {
                     .equals('published')
                     .build();
 
-                expect(store.$query()).toEqual(expectedQuery);
+                expect(store.$searchParams().query).toEqual(expectedQuery);
             });
 
             it('should include title filter in query when provided', () => {
@@ -155,7 +162,7 @@ describe('DotContentDriveStore', () => {
                     .raw(`+catchall:*Blog* title_dotraw:*Blog*^5 title:'Blog'^15 title:Blog^5`)
                     .build();
 
-                expect(store.$query()).toEqual(expectedQuery);
+                expect(store.$searchParams().query).toEqual(expectedQuery);
             });
 
             it('should include title filter in query when provided with multiple words', () => {
@@ -180,7 +187,7 @@ describe('DotContentDriveStore', () => {
                     )
                     .build();
 
-                expect(store.$query()).toEqual(expectedQuery);
+                expect(store.$searchParams().query).toEqual(expectedQuery);
             });
         });
     });
@@ -306,7 +313,14 @@ describe('DotContentDriveStore - onInit', () => {
             }),
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(MOCK_SITES[2])
-            })
+            }),
+            mockProvider(DotContentSearchService, {
+                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            provideHttpClient()
         ]
     });
 
@@ -324,5 +338,90 @@ describe('DotContentDriveStore - onInit', () => {
         });
         expect(store.isTreeExpanded()).toBe(true);
         expect(store.currentSite()).toBe(MOCK_SITES[2]);
+    });
+});
+
+describe('DotContentDriveStore - Content Loading Effect', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let contentSearchService: jest.Mocked<DotContentSearchService>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, {
+                snapshot: {
+                    queryParams: {}
+                }
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            mockProvider(DotContentSearchService, {
+                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        contentSearchService = spectator.inject(DotContentSearchService);
+    });
+
+    beforeEach(() => {
+        jest.restoreAllMocks();
+    });
+
+    it('should fetch content when store has a non-SYSTEM_HOST site', () => {
+        spectator.flushEffects();
+
+        expect(contentSearchService.get).toHaveBeenCalled();
+        expect(store.items()).toEqual(MOCK_ITEMS);
+        expect(store.totalItems()).toBe(MOCK_ITEMS.length);
+        expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+    });
+
+    it('should handle errors from content search service', () => {
+        // Mock error from content search
+        contentSearchService.get.mockReturnValue(
+            throwError(() => new Error('Failed to get content'))
+        );
+
+        spectator.flushEffects();
+
+        expect(store.status()).toBe(DotContentDriveStatus.ERROR);
+    });
+
+    it('should handle sorting', () => {
+        // Set sort in store
+        store.setSort({ field: 'baseType', order: DotContentDriveSortOrder.DESC });
+
+        spectator.flushEffects();
+
+        expect(contentSearchService.get).toHaveBeenCalledWith({
+            query: expect.any(String),
+            limit: DEFAULT_PAGINATION.limit,
+            offset: DEFAULT_PAGINATION.offset,
+            sort: 'baseType desc'
+        });
+    });
+
+    it('should handle pagination', () => {
+        // Set pagination in store
+        store.setPagination({ limit: 10, offset: 0 });
+
+        spectator.flushEffects();
+
+        expect(contentSearchService.get).toHaveBeenCalledWith({
+            query: expect.any(String),
+            limit: 10,
+            offset: 0,
+            sort: expect.any(String)
+        });
     });
 });

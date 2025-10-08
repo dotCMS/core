@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator';
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';

@@ -1,4 +1,7 @@
-<div class="dot-history-timeline-item" data-testid="history-item">
+<div
+    class="dot-history-timeline-item"
+    [class.dot-history-timeline-item--active]="$isActive()"
+    data-testid="history-item">
     <!-- Timeline Marker Column -->
     <div class="dot-history-timeline-item__marker-column">
         <!-- Top connector line -->
@@ -19,6 +22,7 @@
     <!-- Timeline Item Content Wrapper -->
     <div
         class="dot-history-timeline-item__content-wrapper"
+        [class.dot-history-timeline-item__content-wrapper--active]="$isActive()"
         data-testid="content-wrapper"
         [pTooltip]="tooltipContent"
         tooltipPosition="bottom"
@@ -58,7 +62,11 @@
             <!-- Timeline Item Header -->
             <div class="dot-history-timeline-item__header">
                 <span class="dot-history-timeline-item__time-relative" data-testid="time-display">
-                    {{ $item().modDate | dotRelativeDate }}
+                    @if ($item().working) {
+                        {{ 'edit.content.sidebar.history.menu.current' | dm }}
+                    } @else {
+                        {{ $item().modDate | dotRelativeDate }}
+                    }
                 </span>
 
                 <div class="dot-history-timeline-item__time-section">
@@ -97,13 +105,19 @@
         </div>
 
         <!-- Actions Button - Positioned independently -->
-        <div class="dot-history-timeline-item__actions">
-            <p-button
-                icon="pi pi-ellipsis-v"
-                styleClass="p-button-rounded p-button-sm p-button-text dot-history-timeline-item__menu-button p-button-tertiary"
-                (click)="versionMenu.toggle($event)"
-                data-testid="version-menu-button"></p-button>
-            <p-menu #versionMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true"></p-menu>
-        </div>
+        @if ($menuItems().length > 0) {
+            <div class="dot-history-timeline-item__actions">
+                <p-button
+                    icon="pi pi-ellipsis-v"
+                    styleClass="p-button-rounded p-button-sm p-button-text dot-history-timeline-item__menu-button p-button-tertiary"
+                    (click)="versionMenu.toggle($event); $event.stopPropagation()"
+                    data-testid="version-menu-button"></p-button>
+                <p-menu
+                    #versionMenu
+                    [appendTo]="'body'"
+                    [model]="$menuItems()"
+                    [popup]="true"></p-menu>
+            </div>
+        }
     </div>
 </div>

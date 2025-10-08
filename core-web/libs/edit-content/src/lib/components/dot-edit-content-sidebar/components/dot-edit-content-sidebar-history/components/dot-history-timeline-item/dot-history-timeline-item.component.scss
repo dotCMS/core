@@ -86,6 +86,14 @@
             visibility: visible;
         }
     }
+
+    &--active {
+        background: $color-palette-primary-op-30 !important;
+
+        .dot-history-timeline-item__actions {
+            visibility: visible;
+        }
+    }
 }
 
 .dot-history-timeline-item__content {

@@ -77,6 +77,9 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     }
 
     readonly vm$ = this.select((state) => state);
+    readonly isContentTypeView$ = this.select(
+        (state) => state.currentPaletteType === PALETTE_TYPES.CONTENTTYPE
+    );
 
     readonly setStatus = this.updater((state, status: EditEmaPaletteStoreStatus) => ({
         ...state,
@@ -155,39 +158,36 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 switchMap(({ filter, contenttypeName, languageId, variantId, page = 0 }) => {
                     this.setCurrentContentType(contenttypeName);
 
-                    const variantTerm = variantId
-                        ? `+variant:(${DEFAULT_VARIANT_ID} OR ${variantId})`
-                        : `+variant:${DEFAULT_VARIANT_ID}`;
+                    return this.fetchContentlets(
+                        filter,
+                        contenttypeName,
+                        languageId,
+                        variantId,
+                        page
+                    );
+                })
+            );
+        }
+    );
 
-                    return this.dotESContentService
-                        .get({
-                            itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE,
-                            lang: languageId || '1',
-                            filter: filter || '',
-                            offset: (page * PALETTE_PAGINATOR_ITEMS_PER_PAGE).toString(),
-                            query: `+contentType:${contenttypeName} +deleted:false ${variantTerm}`.trim()
-                        })
-                        .pipe(
-                            tapResponse(
-                                (contentlets) => {
-                                    this.patchState({
-                                        contentlets: {
-                                            items: contentlets.jsonObjectView.contentlets,
-                                            filter: {
-                                                query: filter,
-                                                contentTypeVarName: contenttypeName
-                                            },
-                                            totalRecords: contentlets.resultsSize,
-                                            itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
-                                        },
-                                        status: EditEmaPaletteStoreStatus.LOADED,
-                                        currentPaletteType: PALETTE_TYPES.CONTENTLET
-                                    });
-                                },
-                                // eslint-disable-next-line no-console
-                                (err) => console.log(err)
-                            )
-                        );
+    /**
+     * Refreshes the contentlets when the language or variant changes.
+     * @param data$ - The observable that emits the language and variant.
+     * @returns An Observable that emits the contentlets.
+     */
+    readonly refreshContentlets = this.effect(
+        (data$: Observable<{ languageId: number; variantId: string }>) => {
+            return data$.pipe(
+                tap(() => this.setStatus(EditEmaPaletteStoreStatus.LOADING)),
+                switchMap(({ languageId, variantId }) => {
+                    const { query, contentTypeVarName } = this.state().contentlets.filter;
+                    return this.fetchContentlets(
+                        query,
+                        contentTypeVarName,
+                        languageId.toString(),
+                        variantId,
+                        0
+                    );
                 })
             );
         }
@@ -298,5 +298,56 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             currentPaletteType: PALETTE_TYPES.CONTENTTYPE,
             allowedTypes: []
         });
+    }
+
+    /**
+     * Fetches the contentlets from the ES.
+     * @param filter - The filter to apply to the contentlets.
+     * @param contenttypeName - The name of the content type.
+     * @param languageId - The id of the language.
+     * @param variantId - The id of the variant.
+     * @param page - The page number.
+     * @returns An Observable that emits the contentlets.
+     */
+    private fetchContentlets(
+        filter: string,
+        contenttypeName: string,
+        languageId: string,
+        variantId: string,
+        page: number
+    ) {
+        const variantTerm = variantId
+            ? `+variant:(${DEFAULT_VARIANT_ID} OR ${variantId})`
+            : `+variant:${DEFAULT_VARIANT_ID}`;
+
+        return this.dotESContentService
+            .get({
+                itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE,
+                lang: languageId || '1',
+                filter: filter || '',
+                offset: (page * PALETTE_PAGINATOR_ITEMS_PER_PAGE).toString(),
+                query: `+contentType:${contenttypeName} +deleted:false ${variantTerm}`.trim()
+            })
+            .pipe(
+                tapResponse(
+                    (contentlets) => {
+                        this.patchState({
+                            contentlets: {
+                                items: contentlets.jsonObjectView.contentlets,
+                                filter: {
+                                    query: filter,
+                                    contentTypeVarName: contenttypeName
+                                },
+                                totalRecords: contentlets.resultsSize,
+                                itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
+                            },
+                            status: EditEmaPaletteStoreStatus.LOADED,
+                            currentPaletteType: PALETTE_TYPES.CONTENTLET
+                        });
+                    },
+                    // eslint-disable-next-line no-console
+                    (err) => console.log(err)
+                )
+            );
     }
 }

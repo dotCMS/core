@@ -1,6 +1,11 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 /**
@@ -44,27 +49,60 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
         ? (contentlet[field.variable] ?? field.defaultValue)
         : field.defaultValue;
 
-    // TODO: Remove this once we have a proper solution for the text field from Backend (URL case)
-    // Remove leading "/" if present
-    return typeof value === 'string' && value.startsWith('/') ? value.substring(1) : value;
+    const shouldRemoveLeadingSlash =
+        contentlet?.baseType === 'HTMLPAGE' &&
+        field.variable === 'url' &&
+        typeof value === 'string' &&
+        value.startsWith('/');
+
+    return shouldRemoveLeadingSlash ? value.substring(1) : value;
 };
 
 /**
- * A function that provides a default resolution value for a contentlet field.
+ * Resolves the host folder path for a contentlet based on its type and URL structure.
  *
- * @param {Object} contentlet - The contentlet object.
- * @param {Object} field - The field object.
- * @returns {*} The resolved value for the field.
+ * For file assets, it extracts the directory path by removing the filename.
+ * For other content types, it extracts the path up to the '/content' segment.
+ *
+ * @param contentlet - The contentlet object containing hostName, url, and type
+ * @param field - The field object containing the default value
+ * @returns The resolved host folder path or the field's default value
  */
 const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
-    if (contentlet?.hostName && contentlet?.url) {
-        const path = `${contentlet?.hostName}${contentlet?.url}`;
-        const finalPath = path.slice(0, path.indexOf('/content'));
-
-        return `${finalPath}`;
+    // Early return if contentlet is invalid or missing required properties
+    if (!contentlet?.hostName || !contentlet?.url) {
+        return field?.defaultValue || '';
     }
 
-    return field.defaultValue || '';
+    const { hostName, url, baseType } = contentlet;
+
+    // Ensure hostName and url are strings
+    if (typeof hostName !== 'string' || typeof url !== 'string') {
+        return field?.defaultValue || '';
+    }
+
+    const fullPath = `${hostName}${url}`;
+
+    try {
+        if (baseType === DotCMSBaseTypesContentTypes.FILEASSET) {
+            // For file assets, remove the filename to get the directory path
+            const pathSegments = fullPath.split('/');
+            if (pathSegments.length > 1) {
+                return pathSegments.slice(0, -1).join('/');
+            }
+            return fullPath;
+        } else {
+            // For other content types, extract path up to '/content'
+            const contentIndex = fullPath.indexOf('/content');
+            if (contentIndex !== -1) {
+                return fullPath.slice(0, contentIndex);
+            }
+            return fullPath;
+        }
+    } catch (error) {
+        console.warn('Error processing host folder path:', error);
+        return field?.defaultValue || '';
+    }
 };
 
 /**
@@ -167,6 +205,17 @@ const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) 
     return relationship.map((item) => item.identifier).join(',');
 };
 
+const selectResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
+    const value = contentlet
+        ? (contentlet[field.variable] ?? field.defaultValue)
+        : field.defaultValue;
+    if (value === null || value === undefined || value === '') {
+        const options = getSingleSelectableFieldOptions(field?.values || '', field.dataType);
+        return options[0]?.value;
+    }
+    return value;
+};
+
 /**
  * The resolutionValue variable is a record that is responsible for mapping and transforming the
  * saved value in the contentlet to its corresponding form representation, based on the field type.
@@ -193,7 +242,7 @@ export const resolutionValue: Record<
     [FIELD_TYPES.KEY_VALUE]: defaultResolutionFn,
     [FIELD_TYPES.MULTI_SELECT]: defaultResolutionFn,
     [FIELD_TYPES.RADIO]: defaultResolutionFn,
-    [FIELD_TYPES.SELECT]: defaultResolutionFn,
+    [FIELD_TYPES.SELECT]: selectResolutionFn,
     [FIELD_TYPES.TAG]: defaultResolutionFn,
     [FIELD_TYPES.TEXT]: textFieldResolutionFn,
     [FIELD_TYPES.TEXTAREA]: defaultResolutionFn,

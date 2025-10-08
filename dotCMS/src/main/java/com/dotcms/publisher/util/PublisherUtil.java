@@ -11,8 +11,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
-
 import com.dotmarketing.util.UtilMethods;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -122,6 +122,24 @@ public class PublisherUtil {
 
 		return b;
 	}
+
+    /**
+     * Transforms the raw data from the database into a list of PushedAsset objects
+     *
+     * @param rows The raw records from the database.
+     *
+     * @return A list of {@link PushedAsset} objects.
+     */
+    public static List<PushedAsset> getPushedAssetByMapList(final List<Map<String, Object>> rows) {
+        if (UtilMethods.isNotSet(rows)) {
+            return List.of();
+        }
+        final List<PushedAsset> list = new ArrayList<>();
+        for (final Map<String, Object> row : rows) {
+            list.add(getPushedAssetByMap(row));
+        }
+        return list;
+    }
 
     /**
      * Returns the identifiers for given lucene queries

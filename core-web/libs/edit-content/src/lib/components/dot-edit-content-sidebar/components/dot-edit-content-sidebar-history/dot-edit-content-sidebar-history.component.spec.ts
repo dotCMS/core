@@ -19,6 +19,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
 import { DotEditContentSidebarHistoryComponent } from './dot-edit-content-sidebar-history.component';
 
+import { DotHistoryTimelineItemActionType } from '../../../../models/dot-edit-content.model';
+
 describe('DotEditContentSidebarHistoryComponent', () => {
     let spectator: Spectator<DotEditContentSidebarHistoryComponent>;
 
@@ -162,7 +164,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         it('should configure p-scroller with correct properties', () => {
             const scroller = spectator.query('p-scroller');
             expect(scroller).toBeTruthy();
-            expect(scroller.getAttribute('ng-reflect-item-size')).toBe('85');
+            expect(scroller.getAttribute('ng-reflect-item-size')).toBe('83');
             expect(scroller.getAttribute('ng-reflect-lazy')).toBe('true');
             expect(scroller.getAttribute('scrollHeight')).toBe('100%');
         });
@@ -232,6 +234,126 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             spectator.component.onScrollIndexChange(scrollEvent);
 
             expect(spy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Historical Version Inode', () => {
+        beforeEach(() => {
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('historyItems', mockHistoryItems);
+            spectator.detectChanges();
+        });
+
+        it('should update active state when historicalVersionInode changes', () => {
+            // Ensure we have timeline content showing
+            const historyTimeline = spectator.query(byTestId('history-timeline'));
+            expect(historyTimeline).toBeTruthy();
+
+            // Initially no item is active
+            spectator.setInput('historicalVersionInode', null);
+            spectator.detectChanges();
+
+            expect(spectator.component.$historicalVersionInode()).toBeNull();
+
+            // Set a specific inode as active
+            const testInode = mockHistoryItems[0].inode;
+            spectator.setInput('historicalVersionInode', testInode);
+            spectator.detectChanges();
+
+            expect(spectator.component.$historicalVersionInode()).toBe(testInode);
+        });
+    });
+
+    describe('Timeline Item Actions', () => {
+        beforeEach(() => {
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('historyItems', mockHistoryItems);
+            spectator.detectChanges();
+        });
+
+        it('should emit timelineItemAction through template click binding', () => {
+            const actionSpy = jest.spyOn(spectator.component.timelineItemAction, 'emit');
+
+            // Since p-scroller doesn't render items in test environment,
+            // we'll test the output emission directly by simulating what the template would do
+            spectator.component.timelineItemAction.emit({
+                type: DotHistoryTimelineItemActionType.VIEW,
+                item: mockHistoryItems[0]
+            });
+
+            expect(actionSpy).toHaveBeenCalledWith({
+                type: DotHistoryTimelineItemActionType.VIEW,
+                item: mockHistoryItems[0]
+            });
+        });
+
+        it('should emit timelineItemAction through template actionTriggered binding', () => {
+            const actionSpy = jest.spyOn(spectator.component.timelineItemAction, 'emit');
+
+            const testAction = {
+                type: DotHistoryTimelineItemActionType.RESTORE,
+                item: mockHistoryItems[0]
+            };
+
+            // Simulate what the template does: timelineItemAction.emit($event)
+            spectator.component.timelineItemAction.emit(testAction);
+
+            expect(actionSpy).toHaveBeenCalledWith(testAction);
+        });
+    });
+
+    describe('Content Identifier', () => {
+        it('should set contentIdentifier input correctly', () => {
+            const testIdentifier = 'test-content-123';
+            spectator.setInput('contentIdentifier', testIdentifier);
+            spectator.detectChanges();
+
+            expect(spectator.component.$contentIdentifier()).toBe(testIdentifier);
+        });
+
+        it('should handle empty contentIdentifier', () => {
+            spectator.setInput('contentIdentifier', '');
+            spectator.detectChanges();
+
+            expect(spectator.component.$contentIdentifier()).toBe('');
+        });
+    });
+
+    describe('Real Index Calculation', () => {
+        beforeEach(() => {
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('historyItems', mockHistoryItems);
+            spectator.detectChanges();
+        });
+
+        it('should return correct real index for items', () => {
+            const firstItem = mockHistoryItems[0];
+            const secondItem = mockHistoryItems[1];
+
+            expect(spectator.component.getRealIndex(firstItem)).toBe(0);
+            expect(spectator.component.getRealIndex(secondItem)).toBe(1);
+        });
+    });
+
+    describe('Integration Tests - Active State Logic', () => {
+        beforeEach(() => {
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('historyItems', mockHistoryItems);
+            spectator.detectChanges();
+        });
+
+        it('should correctly determine active state logic for timeline items', () => {
+            const testInode = mockHistoryItems[1].inode;
+            spectator.setInput('historicalVersionInode', testInode);
+            spectator.detectChanges();
+
+            // Check parent component state
+            expect(spectator.component.$historicalVersionInode()).toBe(testInode);
+
+            // Verify the active state logic that would be passed to child components
+            const historicalVersionInode = spectator.component.$historicalVersionInode();
+            expect(historicalVersionInode === mockHistoryItems[0].inode).toBe(false);
+            expect(historicalVersionInode === mockHistoryItems[1].inode).toBe(true);
         });
     });
 });

@@ -2,6 +2,8 @@ import { DotCMSBaseTypesContentTypes, SiteEntity } from '@dotcms/dotcms-models';
 
 import { DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
+export const HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY = 'content-drive-hide-message-banner';
+
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
 export const SYSTEM_HOST: SiteEntity = {
     aliases: '',
@@ -91,3 +93,33 @@ export const MAP_NUMBERS_TO_BASE_TYPES = {
 export const DEBOUNCE_TIME = 500;
 
 export const PANEL_SCROLL_HEIGHT = '25rem';
+
+// Dialog type
+export const DIALOG_TYPE = {
+    FOLDER: 'FOLDER'
+} as const;
+
+export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
+
+export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
+    '*.jpg',
+    '*.jpeg',
+    '*.png',
+    '*.gif',
+    '*.png',
+    '*.csv',
+    '*.xls',
+    '*.xlsx',
+    '*.pdf',
+    '*.doc',
+    '*.docx',
+    '*.txt',
+    '*.zip',
+    '*.rar',
+    '*.tar',
+    '*.gz'
+];
+
+export const SUCCESS_MESSAGE_LIFE = 4500;
+export const WARNING_MESSAGE_LIFE = 4200;
+export const ERROR_MESSAGE_LIFE = 4500;

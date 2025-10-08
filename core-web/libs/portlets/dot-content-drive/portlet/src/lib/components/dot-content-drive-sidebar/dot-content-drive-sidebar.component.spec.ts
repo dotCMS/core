@@ -7,26 +7,39 @@ import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 
 
 import { delay } from 'rxjs/operators';
 
-import { DotFolder, DotFolderService, DotMessageService } from '@dotcms/data-access';
+import { DotFolderService, DotMessageService } from '@dotcms/data-access';
+import { DotFolder } from '@dotcms/dotcms-models';
+import {
+    DotContentDriveUploadFiles,
+    DotTreeFolderComponent,
+    DotFolderTreeNodeItem
+} from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
-import { DotTreeFolderComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { ALL_FOLDER, TreeNodeItem } from '../../utils/tree-folder.utils';
+import { ALL_FOLDER } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;
-    let component: DotContentDriveSidebarComponent;
     let contentDriveStore: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
-    let folderService: jest.Mocked<DotFolderService>;
 
     const mockSiteDetails = {
         hostname: 'demo.dotcms.com',
         identifier: 'site-123',
         siteName: 'Demo Site'
+    };
+
+    const realAllFolder: DotFolderTreeNodeItem = {
+        ...ALL_FOLDER,
+        data: {
+            hostname: mockSiteDetails.hostname,
+            path: '',
+            type: 'folder',
+            id: mockSiteDetails.identifier
+        }
     };
 
     const mockFolders: DotFolder[] = [
@@ -50,8 +63,16 @@ describe('DotContentDriveSidebarComponent', () => {
         }
     ];
 
-    const mockTreeNodes: TreeNodeItem[] = [
-        ALL_FOLDER,
+    const mockTreeNodes: DotFolderTreeNodeItem[] = [
+        {
+            ...realAllFolder,
+            data: {
+                hostname: mockSiteDetails.hostname,
+                path: '',
+                type: 'folder',
+                id: mockSiteDetails.identifier
+            }
+        },
         {
             key: 'folder-1',
             label: '/documents/',
@@ -86,11 +107,10 @@ describe('DotContentDriveSidebarComponent', () => {
             }),
             mockProvider(DotContentDriveStore, {
                 initContentDrive: jest.fn(),
-                currentSite: jest.fn(),
+                currentSite: jest.fn().mockReturnValue(mockSiteDetails),
                 isTreeExpanded: jest.fn().mockReturnValue(true),
                 removeFilter: jest.fn(),
                 getFilterValue: jest.fn(),
-                $query: jest.fn(),
                 setIsTreeExpanded: jest.fn(),
                 path: jest.fn().mockReturnValue('/test/path'),
                 setItems: jest.fn(),
@@ -98,7 +118,15 @@ describe('DotContentDriveSidebarComponent', () => {
                 setPagination: jest.fn(),
                 setSort: jest.fn(),
                 patchFilters: jest.fn(),
-                setPath: jest.fn()
+                setPath: jest.fn(),
+                $searchParams: jest.fn(),
+                contextMenu: jest.fn().mockReturnValue(null),
+                folders: jest.fn().mockReturnValue(mockTreeNodes),
+                selectedNode: jest.fn().mockReturnValue(mockTreeNodes[1]),
+                sidebarLoading: jest.fn().mockReturnValue(false),
+                loadFolders: jest.fn(),
+                loadChildFolders: jest.fn(),
+                updateFolders: jest.fn()
             })
         ]
     });
@@ -111,20 +139,10 @@ describe('DotContentDriveSidebarComponent', () => {
                 })
             ]
         });
-        component = spectator.component;
-        contentDriveStore = spectator.inject(DotContentDriveStore);
-        folderService = spectator.inject(DotFolderService) as jest.Mocked<DotFolderService>;
 
-        // Set up component state for testing
-        component.$folders.set(mockTreeNodes);
-        component.$selectedNode.set(mockTreeNodes[1]);
-        component.$loading.set(false);
+        contentDriveStore = spectator.inject(DotContentDriveStore, true);
 
         spectator.detectChanges();
-    });
-
-    afterEach(() => {
-        jest.clearAllMocks();
     });
 
     describe('HTML Rendering', () => {
@@ -139,8 +157,8 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should pass correct loading input to dot-tree-folder', () => {
-            component.$loading.set(true);
-            spectator.detectChanges();
+            contentDriveStore.sidebarLoading.mockReturnValue(true);
+            spectator.detectComponentChanges();
 
             const treeComponent = spectator.query(DotTreeFolderComponent);
             expect(treeComponent?.$loading()).toBe(true);
@@ -148,7 +166,8 @@ describe('DotContentDriveSidebarComponent', () => {
 
         it('should pass correct selectedNode input to dot-tree-folder', () => {
             const treeComponent = spectator.query(DotTreeFolderComponent);
-            expect(treeComponent?.$selectedNode()).toEqual(mockTreeNodes[1]);
+            const selectedNode = mockTreeNodes[1];
+            expect(treeComponent?.$selectedNode()).toEqual([selectedNode]);
         });
 
         it('should pass showFolderIconOnFirstOnly as true to dot-tree-folder', () => {
@@ -157,7 +176,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should update dot-tree-folder inputs when signals change', () => {
-            const newTreeNodes: TreeNodeItem[] = [
+            const newTreeNodes: DotFolderTreeNodeItem[] = [
                 {
                     key: 'new-folder',
                     label: '/new-folder/',
@@ -171,14 +190,16 @@ describe('DotContentDriveSidebarComponent', () => {
                 }
             ];
 
-            component.$folders.set(newTreeNodes);
-            component.$selectedNode.set(newTreeNodes[0]);
-            component.$loading.set(true);
-            spectator.detectChanges();
+            const selectedNode = newTreeNodes[0];
+
+            contentDriveStore.folders.mockReturnValue(newTreeNodes);
+            contentDriveStore.selectedNode.mockReturnValue(newTreeNodes[0]);
+            contentDriveStore.sidebarLoading.mockReturnValue(true);
+            spectator.detectComponentChanges();
 
             const treeComponent = spectator.query(DotTreeFolderComponent);
             expect(treeComponent?.$folders()).toEqual(newTreeNodes);
-            expect(treeComponent?.$selectedNode()).toEqual(newTreeNodes[0]);
+            expect(treeComponent?.$selectedNode()).toEqual([selectedNode]);
             expect(treeComponent?.$loading()).toBe(true);
         });
     });
@@ -197,7 +218,7 @@ describe('DotContentDriveSidebarComponent', () => {
             });
 
             it('should extract path from node data correctly', () => {
-                const customNode: TreeNodeItem = {
+                const customNode: DotFolderTreeNodeItem = {
                     key: 'custom-folder',
                     label: 'Custom',
                     data: {
@@ -222,7 +243,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
         describe('onNodeExpand', () => {
             it('should handle onNodeExpand event when node has no children', () => {
-                const nodeWithoutChildren: TreeNodeItem = {
+                const nodeWithoutChildren: DotFolderTreeNodeItem = {
                     key: 'expandable-folder',
                     label: '/expandable/',
                     data: {
@@ -242,7 +263,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', mockEvent);
 
-                expect(folderService.getFolders).toHaveBeenCalledWith(
+                expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
                     'demo.dotcms.com/expandable/'
                 );
             });
@@ -251,7 +272,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 // Reset the mock to clear any calls from component initialization
                 jest.clearAllMocks();
 
-                const nodeWithChildren: TreeNodeItem = {
+                const nodeWithChildren: DotFolderTreeNodeItem = {
                     key: 'parent-folder',
                     label: '/parent/',
                     data: {
@@ -272,13 +293,16 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', mockEvent);
 
                 expect(nodeWithChildren.expanded).toBe(true);
-                expect(folderService.getFolders).not.toHaveBeenCalled();
+                expect(contentDriveStore.loadChildFolders).not.toHaveBeenCalled();
             });
 
             it('should set loading state during expansion', fakeAsync(() => {
-                // Delay the response to simulate a network request
-                jest.spyOn(folderService, 'getFolders').mockReturnValue(of([]).pipe(delay(500)));
-                const nodeWithoutChildren: TreeNodeItem = {
+                // Mock the store's loadChildFolders method to return a delayed observable
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ parent: mockFolders[0], folders: [] }).pipe(delay(500))
+                );
+
+                const nodeWithoutChildren: DotFolderTreeNodeItem = {
                     key: 'loading-folder',
                     label: '/loading/',
                     data: {
@@ -305,7 +329,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
         describe('onNodeCollapse', () => {
             it('should handle onNodeCollapse event for regular nodes', () => {
-                const regularNode: TreeNodeItem = {
+                const regularNode: DotFolderTreeNodeItem = {
                     key: 'regular-folder',
                     label: '/regular/',
                     data: {
@@ -329,9 +353,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 expect(regularNode.expanded).toBe(true); // No change for regular nodes
             });
 
-            it('should prevent ALL_FOLDER from collapsing', () => {
-                const allFolderNode: TreeNodeItem = {
-                    ...ALL_FOLDER,
+            it('should prevent root from collapsing', () => {
+                const allFolderNode: DotFolderTreeNodeItem = {
+                    ...realAllFolder,
                     expanded: true
                 };
 
@@ -343,6 +367,40 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeCollapse', mockEvent);
 
                 expect(allFolderNode.expanded).toBe(true);
+            });
+        });
+
+        describe('uploadFiles', () => {
+            it('should emit uploadFiles event when dot-tree-folder emits uploadFiles', () => {
+                const mockFileList = {
+                    length: 2,
+                    item: (_index: number) => null,
+                    [Symbol.iterator]: function* () {
+                        yield new File(['content1'], 'file1.txt');
+                        yield new File(['content2'], 'file2.txt');
+                    }
+                } as FileList;
+
+                const mockUploadEvent: DotContentDriveUploadFiles = {
+                    files: mockFileList,
+                    targetFolderId: 'folder-1'
+                };
+
+                let emittedValue: DotContentDriveUploadFiles | undefined;
+
+                spectator.component.uploadFiles.subscribe((event) => {
+                    emittedValue = event;
+                });
+
+                spectator.triggerEventHandler(
+                    DotTreeFolderComponent,
+                    'uploadFiles',
+                    mockUploadEvent
+                );
+
+                expect(emittedValue).toBeDefined();
+                expect(emittedValue?.files).toBe(mockFileList);
+                expect(emittedValue?.targetFolderId).toBe('folder-1');
             });
         });
     });
@@ -360,7 +418,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should trigger events in correct sequence during node interaction', () => {
-            const testNode: TreeNodeItem = {
+            const testNode: DotFolderTreeNodeItem = {
                 key: 'test-node',
                 label: '/test/',
                 data: {
@@ -386,7 +444,17 @@ describe('DotContentDriveSidebarComponent', () => {
                 node: testNode
             };
             spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', expandEvent);
-            expect(folderService.getFolders).toHaveBeenCalledWith('demo.dotcms.com/test/');
+            expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
+                'demo.dotcms.com/test/'
+            );
+        });
+    });
+
+    describe('Current site hostname', () => {
+        it('should render the current site hostname', () => {
+            const currentSiteHostname = spectator.query('[data-testid="current-site-hostname"]');
+
+            expect(currentSiteHostname.innerHTML).toContain(mockSiteDetails.hostname);
         });
     });
 });

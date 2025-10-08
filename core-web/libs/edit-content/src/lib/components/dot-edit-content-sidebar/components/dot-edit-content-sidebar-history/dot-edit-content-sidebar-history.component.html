@@ -1,3 +1,5 @@
+@let historicalVersionInode = $historicalVersionInode();
+
 <section role="region" aria-label="Content Version History">
     <dot-sidebar-accordion
         [initialActiveTab]="'versions'"
@@ -32,7 +34,7 @@
                     <div class="dot-edit-content-sidebar-history__content">
                         <p-scroller
                             [items]="$historyItems()"
-                            [itemSize]="85"
+                            [itemSize]="83"
                             [lazy]="true"
                             scrollHeight="100%"
                             (onScrollIndexChange)="onScrollIndexChange($event)"
@@ -41,8 +43,16 @@
                             <ng-template pTemplate="item" let-item let-index="index">
                                 <dot-history-timeline-item
                                     [item]="item"
+                                    [itemIndex]="getRealIndex(item)"
+                                    [isActive]="historicalVersionInode === item.inode"
+                                    (click)="
+                                        timelineItemAction.emit({
+                                            type: 'view',
+                                            item
+                                        })
+                                    "
                                     (actionTriggered)="
-                                        onTimelineItemAction($event)
+                                        timelineItemAction.emit($event)
                                     "></dot-history-timeline-item>
                             </ng-template>
                         </p-scroller>

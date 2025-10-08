@@ -119,8 +119,11 @@ describe('DotPageStateService', () => {
 
         service = injector.get(DotPageStateService);
 
-        jest.spyOn(dotRouterService, 'queryParams', 'get').mockReturnValue({
-            url: '/an/url/test/form/query/params'
+        Object.defineProperty(dotRouterService, 'queryParams', {
+            value: {
+                url: '/an/url/test/form/query/params'
+            },
+            writable: true
         });
 
         jest.spyOn(dotFavoritePageService, 'get').mockReturnValue(
@@ -502,7 +505,10 @@ describe('DotPageStateService', () => {
 
     describe('login as user', () => {
         beforeEach(() => {
-            jest.spyOn(loginService, 'auth', 'get').mockReturnValue(mockUserAuth);
+            Object.defineProperty(loginService, 'auth', {
+                value: mockUserAuth,
+                writable: true
+            });
         });
 
         it('should set lockedByAnotherUser', () => {

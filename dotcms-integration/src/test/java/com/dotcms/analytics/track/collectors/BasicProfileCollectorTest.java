@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.mock;
  * @author Jose Castro
  * @since Oct 9th, 2024
  */
+@Ignore("Data Collectors have been disabled in favor of creating events via REST")
 public class BasicProfileCollectorTest extends IntegrationTestBase {
 
     private static String CLUSTER_ID = null;

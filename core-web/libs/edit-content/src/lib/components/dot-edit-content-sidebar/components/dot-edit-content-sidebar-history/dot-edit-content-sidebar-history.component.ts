@@ -15,10 +15,7 @@ import {
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
 
-import {
-    DotHistoryTimelineItemAction,
-    DotHistoryTimelineItemActionType
-} from '../../../../models/dot-edit-content.model';
+import { DotHistoryTimelineItemAction } from '../../../../models/dot-edit-content.model';
 
 /**
  * Component that displays content version history in the sidebar.
@@ -71,9 +68,20 @@ export class DotEditContentSidebarHistoryComponent {
     $pagination = input<DotPagination | null>(null, { alias: 'pagination' });
 
     /**
+     * Current historical version inode being viewed
+     * @readonly
+     */
+    $historicalVersionInode = input<string | null>(null, { alias: 'historicalVersionInode' });
+
+    /**
      * Event emitted when page changes
      */
     pageChange = output<number>();
+
+    /**
+     * Event emitted when a timeline item action is triggered
+     */
+    timelineItemAction = output<DotHistoryTimelineItemAction>();
 
     /**
      * Determines if the history is in a loading state
@@ -92,46 +100,6 @@ export class DotEditContentSidebarHistoryComponent {
         const pagination = this.$pagination();
         return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
     });
-
-    /**
-     * Handle timeline item actions
-     */
-    onTimelineItemAction(action: DotHistoryTimelineItemAction): void {
-        switch (action.type) {
-            case DotHistoryTimelineItemActionType.PREVIEW:
-                this.onPreviewVersion(action.item);
-                break;
-            case DotHistoryTimelineItemActionType.RESTORE:
-                this.onRestoreVersion(action.item);
-                break;
-            case DotHistoryTimelineItemActionType.COMPARE:
-                this.onCompareVersion(action.item);
-                break;
-            default:
-                console.warn('Unknown timeline item action type:', action.type);
-        }
-    }
-
-    /**
-     * Handle version preview action
-     */
-    private onPreviewVersion(_item: DotCMSContentletVersion): void {
-        // TODO: Implement preview functionality
-    }
-
-    /**
-     * Handle version restore action
-     */
-    private onRestoreVersion(_item: DotCMSContentletVersion): void {
-        // TODO: Implement restore functionality
-    }
-
-    /**
-     * Handle version compare action
-     */
-    private onCompareVersion(_item: DotCMSContentletVersion): void {
-        // TODO: Implement compare functionality
-    }
 
     /**
      * Handle infinite scroll when user scrolls near the end
@@ -161,6 +129,14 @@ export class DotEditContentSidebarHistoryComponent {
         if (pagination && this.$hasMoreItems()) {
             this.pageChange.emit(pagination.currentPage + 1);
         }
+    }
+
+    /**
+     * Get the real index of an item in the history array
+     * This is needed because p-scroller's template index is virtual
+     */
+    getRealIndex(item: DotCMSContentletVersion): number {
+        return this.$historyItems().indexOf(item);
     }
 
     /**

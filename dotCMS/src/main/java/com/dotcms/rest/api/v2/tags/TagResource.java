@@ -14,6 +14,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TagsPaginator;
+import com.dotcms.rest.ResponseEntityTagOperationView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.tag.RestTag;
@@ -31,7 +32,6 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -69,7 +69,6 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
 import static com.dotmarketing.util.UUIDUtil.isUUID;
-import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 
 /**
  * This REST Endpoint provide CRUD operations for Tags in dotCMS.
@@ -81,7 +80,7 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 public class TagResource {
 
     public static final String NO_TAGS_WERE_FOUND_BY_THE_INODE_S = "No tags with Inode %s were found.";
-    
+
     private final WebResource webResource;
     private final TagAPI tagAPI;
 	private final TagsResourceHelper helper;
@@ -195,13 +194,13 @@ public class TagResource {
 
         // 3. Use PaginationUtil with TagsPaginator
         final PaginationUtil paginationUtil = new PaginationUtil(new TagsPaginator());
-        
-        // 4. Build extra parameters for site and global filtering  
+
+        // 4. Build extra parameters for site and global filtering
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put(TagsPaginator.FILTER_PARAM, filter);
         extraParams.put(TagsPaginator.SITE_ID_PARAM, resolvedSiteId);
         extraParams.put(TagsPaginator.GLOBAL_PARAM, global);
-        
+
         // 5. Build pagination parameters - let PaginationUtil handle validation and defaults
         final PaginationUtilParams<RestTag, List<RestTag>> params = new PaginationUtilParams.Builder<RestTag, List<RestTag>>()
             .withRequest(request)
@@ -270,8 +269,7 @@ public class TagResource {
         Logger.debug(TagResource.class,()->String.format("User '%s' is adding %d tag(s)", user.getUserId(), tagForms.size()));
 
         // Validate all tags upfront - fail fast with structured error
-        for (int i = 0; i < tagForms.size(); i++) {
-            final TagForm form = tagForms.get(i);
+        for (final TagForm form : tagForms) {
             form.checkValid(); // ValidationException (a BadRequestException) will propagate with correct messages
         }
 
@@ -782,37 +780,196 @@ public class TagResource {
     }
 
     /**
-     * Imports Tags from a CSV file.
+     * Imports Tags from a CSV file with detailed row-level error reporting.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
      * @param form     The {@link FormDataMultiPart} containing the CSV file.
      *
-     * @return A {@link ResponseEntityBooleanView} containing the result of the import operation.
+     * @return A {@link ResponseEntityTagOperationView} containing import statistics and detailed error information.
      *
      * @throws DotDataException     An error occurred when persisting Tag data.
      * @throws IOException          An error occurred when reading the CSV file.
      * @throws DotSecurityException The specified user does not have the required permissions to
      *                              perform this operation.
      */
+    @Operation(
+        summary = "Import tags from CSV file",
+        description = "Imports tags from a CSV file with row-level error reporting. Returns detailed statistics and error information for each failed row."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                description = "Import completed with detailed results",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = ResponseEntityTagOperationView.class))),
+        @ApiResponse(responseCode = "400",
+                description = "Bad Request - Invalid file format or content",
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                description = "Unauthorized - Authentication required",
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                description = "Forbidden - User does not have access to Tags portlet",
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+                description = "Internal Server Error - Database or system error",
+                content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/import")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final ResponseEntityBooleanView importTags(
+    public final ResponseEntityTagOperationView importTags(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @RequestBody(description = "CSV file with tag data in format: tag_name,host_id",
+                    required = true)
             final FormDataMultiPart form
     ) throws DotDataException, IOException, DotSecurityException {
         final InitDataObject initDataObject = getInitDataObject(request, response);
 
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class, String.format("User '%s' is importing Tags form CSV file.",user.getUserId()));
-        helper.importTags(form, user, request);
+        Logger.debug(TagResource.class, String.format("User '%s' is importing Tags from CSV file.", user.getUserId()));
 
-        return new ResponseEntityBooleanView(true);
+        // Get detailed import results
+        final TagsResourceHelper.TagImportResult result = helper.importTags(form, user, request);
+
+        // Build statistics map
+        final Map<String, Object> stats = Map.of(
+            "totalRows", result.totalRows,
+            "successCount", result.successCount,
+            "failureCount", result.errors.size(),
+            "success", result.errors.isEmpty()
+        );
+
+        Logger.info(TagResource.class, String.format(
+            "Tag import completed for user '%s': %d total, %d success, %d errors",
+            user.getUserId(), result.totalRows, result.successCount, result.errors.size()));
+
+        // Return a detailed response with statistics and errors
+        return new ResponseEntityTagOperationView(
+            stats,
+            List.copyOf(result.errors)
+    );
+    }
+
+    /**
+     * Exports tags to CSV or JSON format.
+     * Supports the same filtering as the list endpoint.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param format   The export format (csv or json).
+     * @param global   Include global/system tags.
+     * @param siteId   Filter by specific host/site.
+     * @param filter   Tag name filter (LIKE search).
+     *
+     * @throws DotDataException     An error occurred when retrieving Tag data.
+     * @throws DotSecurityException The specified user does not have the required permissions.
+     */
+    @Operation(
+        summary = "Export tags",
+        description = "Export tags to CSV or JSON format. Supports the same filtering as list/search endpoint with configurable export format."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+            description = "File download initiated with appropriate content type",
+            content = {
+                @Content(mediaType = "text/csv"),
+                @Content(mediaType = "application/json")
+            }),
+        @ApiResponse(responseCode = "400",
+            description = "Invalid parameters",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+            description = "Unauthorized - Authentication required",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+            description = "Forbidden - Insufficient permissions",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+            description = "Internal server error",
+            content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/export")
+    @NoCache
+    @Produces({"text/csv", "application/json"})
+    public Response exportTags(
+        @Context final HttpServletRequest request,
+        @Context final HttpServletResponse response,
+        @Parameter(description = "Export format", example = "csv",
+                   schema = @Schema(allowableValues = {"csv", "json"}))
+        @QueryParam("format") @DefaultValue("csv") final String format,
+        @Parameter(description = "Include global tags", example = "false")
+        @QueryParam("global") @DefaultValue("false") final Boolean global,
+        @Parameter(description = "Filter by specific host/site", example = "48190c8c-42c4-46af-8d1a-0cd5db894797")
+        @QueryParam("siteId") final String siteId,
+        @Parameter(description = "Tag name filter (LIKE search)", example = "market")
+        @QueryParam("filter") final String filter
+    ) throws DotDataException, DotSecurityException {
+        
+        // Initialize and validate
+        final InitDataObject initData = getInitDataObject(request, response);
+        final User user = initData.getUser();
+        
+        // Validate format parameter
+        if (!"csv".equalsIgnoreCase(format) && !"json".equalsIgnoreCase(format)) {
+            throw new BadRequestException("Export format must be either 'csv' or 'json'");
+        }
+        
+        Logger.debug(this, () -> String.format(
+            "User '%s' exporting tags with format=%s, filter=%s, siteId=%s, global=%s",
+            user.getUserId(), format, filter, siteId, global));
+        
+        // Delegate to helper with all parameters
+        return helper.exportTags(request, response, format, global, siteId, filter, user);
+    }
+
+    /**
+     * Downloads a CSV template file for tag imports.
+     * No parameters required.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     */
+    @Operation(
+        summary = "Download tag import template",
+        description = "Download a CSV template file with headers and example data for tag imports. No parameters required."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+            description = "CSV template file download",
+            content = @Content(mediaType = "text/csv")),
+        @ApiResponse(responseCode = "401",
+            description = "Unauthorized - Authentication required",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+            description = "Forbidden - Insufficient permissions",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+            description = "Template generation error",
+            content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/export/template")
+    @NoCache
+    @Produces("text/csv")
+    public Response downloadTemplate(
+        @Context final HttpServletRequest request,
+        @Context final HttpServletResponse response
+    ) {
+        
+        // Ensure authenticated
+        final InitDataObject initData = getInitDataObject(request, response);
+        final User user = initData.getUser();
+        
+        Logger.debug(this, () -> String.format(
+            "User '%s' downloading tag import template", user.getUserId()));
+        
+        return helper.downloadImportTemplate(response);
     }
 
 }
