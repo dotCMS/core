@@ -5,6 +5,7 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotContentDriveDropzoneComponent } from './dot-content-drive-dropzone.component';
 
+import { DROPZONE_STATE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 // Mock DragEvent since it's not available in Jest environment
@@ -85,7 +86,7 @@ describe('DotContentDriveDropzoneComponent', () => {
         });
 
         it('should initialize with isInternalDrag as false', () => {
-            expect(spectator.component.state.isInternalDrag()).toBe(false);
+            expect(spectator.component.state()).toBe(DROPZONE_STATE.INACTIVE);
         });
 
         it('should render the message content', () => {
@@ -127,7 +128,7 @@ describe('DotContentDriveDropzoneComponent', () => {
                 window.dispatchEvent(dragStartEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.isInternalDrag()).toBe(true);
+                expect(spectator.component.state()).toBe(DROPZONE_STATE.INTERNAL_DRAG);
             });
         });
 
@@ -138,14 +139,14 @@ describe('DotContentDriveDropzoneComponent', () => {
                 window.dispatchEvent(dragStartEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.isInternalDrag()).toBe(true);
+                expect(spectator.component.state()).toBe(DROPZONE_STATE.INTERNAL_DRAG);
 
                 // Then trigger dragend
                 const dragEndEvent = new DragEvent('dragend');
                 window.dispatchEvent(dragEndEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.isInternalDrag()).toBe(false);
+                expect(spectator.component.state()).toBe(DROPZONE_STATE.INACTIVE);
             });
         });
 
@@ -156,14 +157,14 @@ describe('DotContentDriveDropzoneComponent', () => {
                 window.dispatchEvent(dragStartEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.isInternalDrag()).toBe(true);
+                expect(spectator.component.state()).toBe(DROPZONE_STATE.INTERNAL_DRAG);
 
                 // Then trigger drop on window
                 const dropEvent = new DragEvent('drop');
                 window.dispatchEvent(dropEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.isInternalDrag()).toBe(false);
+                expect(spectator.component.state()).toBe(DROPZONE_STATE.INACTIVE);
             });
         });
 
@@ -462,7 +463,7 @@ describe('DotContentDriveDropzoneComponent', () => {
             window.dispatchEvent(dragStartEvent);
             spectator.detectChanges();
 
-            expect(spectator.component.state.isInternalDrag()).toBe(true);
+            expect(spectator.component.state()).toBe(DROPZONE_STATE.INTERNAL_DRAG);
 
             // 2. Try to enter dropzone
             const dragEnterEvent = createDragEnterEvent();
@@ -479,7 +480,7 @@ describe('DotContentDriveDropzoneComponent', () => {
             window.dispatchEvent(dragEndEvent);
             spectator.detectChanges();
 
-            expect(spectator.component.state.isInternalDrag()).toBe(false);
+            expect(spectator.component.state()).toBe(DROPZONE_STATE.INACTIVE);
         });
 
         it('should handle drag leave without dropping', () => {
@@ -503,7 +504,7 @@ describe('DotContentDriveDropzoneComponent', () => {
 
         it('should reset internal drag flag after external drag completes', async () => {
             // 1. Start external drag
-            expect(spectator.component.state.isInternalDrag()).toBe(false);
+            expect(spectator.component.state()).toBe(DROPZONE_STATE.INACTIVE);
 
             const dragEnterEvent = createDragEnterEvent();
 
@@ -527,7 +528,7 @@ describe('DotContentDriveDropzoneComponent', () => {
             spectator.detectChanges();
 
             // Should still be false since it was external
-            expect(spectator.component.state.isInternalDrag()).toBe(false);
+            expect(spectator.component.state()).toBe(DROPZONE_STATE.INACTIVE);
         });
 
         it('should handle internal drag with window events and properly reset', () => {
@@ -536,7 +537,7 @@ describe('DotContentDriveDropzoneComponent', () => {
             window.dispatchEvent(windowDragStart);
             spectator.detectChanges();
 
-            expect(spectator.component.state.isInternalDrag()).toBe(true);
+            expect(spectator.component.state()).toBe(DROPZONE_STATE.INTERNAL_DRAG);
 
             // 2. Try to enter dropzone - should not activate
             const dragEnter = createDragEnterEvent();
@@ -551,7 +552,7 @@ describe('DotContentDriveDropzoneComponent', () => {
             window.dispatchEvent(windowDrop);
             spectator.detectChanges();
 
-            expect(spectator.component.state.isInternalDrag()).toBe(false);
+            expect(spectator.component.state()).toBe(DROPZONE_STATE.INACTIVE);
 
             // 4. Now external drag should work
             const externalDragEnter = createDragEnterEvent();
