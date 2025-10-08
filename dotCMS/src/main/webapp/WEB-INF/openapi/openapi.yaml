@@ -13656,6 +13656,11 @@ paths:
           type: integer
           format: int32
           default: 40
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
       responses:
         "200":
           content:

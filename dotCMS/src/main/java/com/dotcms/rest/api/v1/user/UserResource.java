@@ -507,7 +507,8 @@ public class UserResource implements Serializable {
 	public ResponseEntityListUserView filterByPredicate(@Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
 						   @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
-						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage)
+						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                                                        final String userPredicateScript)
             throws DotDataException, IOException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -525,7 +526,6 @@ public class UserResource implements Serializable {
 
         if (isRoleAdministrator) {
 
-            final String userPredicateScript = getBodyAsString(request);
             final List<User> allUsers = this.userAPI.findAllUsers();
 
             if (userPredicateScript == null || userPredicateScript.trim().isEmpty()) {
@@ -553,15 +553,6 @@ public class UserResource implements Serializable {
         }
 
         throw new ForbiddenException(USER_MSG + loggedInUser.getUserId() + " does not have permissions to retrieve users");
-    }
-
-    /**
-     * Helper para leer el body del request como un String.
-     */
-    private String getBodyAsString(HttpServletRequest request) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()))) {
-            return reader.lines().collect(Collectors.joining("\n"));
-        }
     }
 
     private List<UserView> applyPagination(final List<User> users, final int page, final int perPage) throws DotDataException {
