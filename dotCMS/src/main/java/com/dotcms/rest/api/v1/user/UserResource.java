@@ -60,6 +60,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -505,10 +506,10 @@ public class UserResource implements Serializable {
     @Consumes(MediaType.TEXT_PLAIN) //("application/javascript") is a javascript
     @Produces({ MediaType.APPLICATION_JSON })
 	public ResponseEntityListUserView filterByPredicate(@Context final HttpServletRequest request,
-                                      @Context final HttpServletResponse response,
-						   @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
-						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                                        final String userPredicateScript)
+                                                        @Context final HttpServletResponse response,
+                                                        @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
+						                                @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                                                        @RequestBody final String userPredicateScript)
             throws DotDataException, IOException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
