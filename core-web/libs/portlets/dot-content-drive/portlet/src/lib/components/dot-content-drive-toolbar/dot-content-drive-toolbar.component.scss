@@ -32,7 +32,8 @@
 }
 
 .p-toolbar-group {
-    gap: $spacing-1;
+    row-gap: $spacing-1;
+    column-gap: $spacing-1;
     display: grid;
     width: 100%;
     grid-template-columns: min-content 1fr;
@@ -41,6 +42,12 @@
         ". toolbar-group-bottom";
 
     place-items: center;
+
+    transition: column-gap $content-drive-animation-speed $content-drive-animation-ease;
+
+    &:has(dot-content-drive-tree-toggler.sidebar-expanded) {
+        column-gap: 0;
+    }
 }
 
 .p-toolbar-group-top {
@@ -65,12 +72,10 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(4.5rem, 14rem));
     width: 100%;
-    gap: 1rem;
     grid-area: toolbar-group-bottom;
 }
 
 .p-toolbar-group-top,
-.p-toolbar-group-end,
-.p-toolbar-group-center {
+.p-toolbar-group-bottom {
     gap: $spacing-1;
 }
