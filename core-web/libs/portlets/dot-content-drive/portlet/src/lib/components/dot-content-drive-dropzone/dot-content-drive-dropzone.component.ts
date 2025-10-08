@@ -28,6 +28,8 @@ export class DotContentDriveDropzoneComponent {
 
     readonly $isActive = signal(false);
 
+    readonly $isInternalDrag = signal(false);
+
     readonly #store = inject(DotContentDriveStore);
 
     /**
@@ -39,15 +41,34 @@ export class DotContentDriveDropzoneComponent {
     }
 
     /**
+     * @description Set the dropzone as internal drag
+     * @memberof DotContentDriveDropzoneComponent
+     */
+    @HostListener('window:dragstart')
+    onWindowDragStart() {
+        this.$isInternalDrag.set(true);
+    }
+
+    /**
+     * @description Set the dropzone as not internal drag
+     * @memberof DotContentDriveDropzoneComponent
+     */
+    @HostListener('window:dragend')
+    @HostListener('window:drop')
+    onWindowDragEnd() {
+        this.$isInternalDrag.set(false);
+    }
+
+    /**
      * @description Set the dropzone as active when the drag enters the dropzone
      * @param event - DragEvent
      */
     @HostListener('dragenter', ['$event'])
-    onDragEnter(event: DragEvent & { fromElement: HTMLElement }) {
+    onDragEnter(event: DragEvent) {
         event.stopPropagation();
         event.preventDefault();
 
-        if (event.fromElement) {
+        if (this.$isInternalDrag()) {
             return;
         }
 
