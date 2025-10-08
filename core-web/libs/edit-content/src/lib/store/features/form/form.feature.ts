@@ -25,7 +25,13 @@ export function withForm() {
             onFormChange: (formValues: FormValues) => {
                 patchState(store, { formValues });
             },
-            setFormIsValid: (state: 'init' | 'valid' | 'invalid') => {
+            /**
+             * Sets the form status.
+             *
+             * @param {('init' | 'valid' | 'invalid')} state
+             * @memberof withForm
+             */
+            setFormStatus: (state: 'init' | 'valid' | 'invalid') => {
                 patchState(store, { formStatus: state });
             }
         }))
