@@ -1,3 +1,4 @@
+@let item = $item();
 <div class="dot-pushpublish-timeline-item" data-testid="pushpublish-item">
     <!-- Timeline Marker Column -->
     <div class="dot-pushpublish-timeline-item__marker-column">
@@ -6,10 +7,7 @@
             class="dot-pushpublish-timeline-item__connector dot-pushpublish-timeline-item__connector--top"></div>
 
         <!-- Marker -->
-        <div
-            class="dot-pushpublish-timeline-item__marker"
-            [class]="$timelineMarkerClass()"
-            data-testid="timeline-marker"></div>
+        <div class="dot-pushpublish-timeline-item__marker" data-testid="timeline-marker"></div>
 
         <!-- Bottom connector line (fills remaining space) -->
         <div
@@ -35,14 +33,14 @@
             <div class="dot-pushpublish-timeline-item__overlay-content">
                 <ul class="dot-pushpublish-timeline-item__overlay-list">
                     <li>
-                        {{ $item().pushDate | date: 'MMM d, yyyy - h:mm a' }}
+                        {{ item.pushDate | date: 'MMM d, yyyy - h:mm a' }}
                     </li>
                     <li>
                         {{ 'edit.content.sidebar.pushpublish.environment' | dm }}:
-                        {{ $item().environment }}
+                        {{ item.environment }}
                     </li>
                     <li>
-                        {{ 'edit.content.sidebar.pushpublish.bundle' | dm }}: {{ $item().bundleId }}
+                        {{ 'edit.content.sidebar.pushpublish.bundle' | dm }}: {{ item.bundleId }}
                     </li>
                 </ul>
             </div>
@@ -55,7 +53,7 @@
                 <span
                     class="dot-pushpublish-timeline-item__time-relative"
                     data-testid="time-display">
-                    {{ $item().pushDate | dotRelativeDate }}
+                    {{ item.pushDate | dotRelativeDate }}
                 </span>
 
                 <!-- Bundle ID Section -->
@@ -68,7 +66,7 @@
                         {{ $truncatedBundleId() }}
                     </span>
                     <dot-copy-button
-                        [copy]="$item().bundleId"
+                        [copy]="item.bundleId"
                         [tooltipText]="'Copy Bundle ID'"
                         customClass="dot-pushpublish-timeline-item__copy-button"
                         data-testid="copy-bundle-id"></dot-copy-button>
@@ -79,13 +77,13 @@
             <div class="dot-pushpublish-timeline-item__user-section">
                 <p-avatar
                     dotGravatar
-                    [label]="$item().pushedBy.charAt(0).toUpperCase()"
+                    [label]="item.pushedBy.charAt(0).toUpperCase()"
                     styleClass="dot-pushpublish-timeline-item__avatar"
                     data-testid="user-avatar"></p-avatar>
                 <span
                     class="dot-pushpublish-timeline-item__user-name"
                     data-testid="pushpublish-user">
-                    {{ $item().pushedBy }}
+                    {{ item.pushedBy }}
                 </span>
             </div>
         </div>

@@ -220,14 +220,6 @@ export class DotEditContentSidebarHistoryComponent {
     }
 
     /**
-     * Get the real index of a push publish item in the push publish history array
-     * This is needed because p-scroller's template index is virtual
-     */
-    getPushPublishRealIndex(item: DotPushPublishHistoryItem): number {
-        return this.$pushPublishHistoryItems().indexOf(item);
-    }
-
-    /**
      * Menu items for push publish actions
      */
     readonly $menuItems = computed(() => [

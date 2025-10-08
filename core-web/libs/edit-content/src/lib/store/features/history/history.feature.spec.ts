@@ -241,6 +241,7 @@ describe('HistoryFeature', () => {
         dotMessageService.get.mockImplementation((key: string) => {
             const messages: Record<string, string> = {
                 Success: 'Success',
+                success: 'Success',
                 'edit.content.sidebar.history.version.deleted.successfully':
                     'Version deleted successfully',
                 'edit.content.sidebar.history.delete.confirm.message':
@@ -253,6 +254,14 @@ describe('HistoryFeature', () => {
                 'edit.content.sidebar.history.restore.confirm.header': 'Restore Version',
                 'edit.content.sidebar.history.restore.confirm.accept': 'Restore',
                 'edit.content.sidebar.history.restore.confirm.reject': 'Cancel',
+                'edit.content.sidebar.history.push.publish.delete.all.confirm.message':
+                    'Are you sure you want to delete all push publish history for this content?',
+                'edit.content.sidebar.history.push.publish.delete.all.confirm.header':
+                    'Delete All Push Publish History',
+                'edit.content.sidebar.history.push.publish.delete.all.success':
+                    'Push publish history deleted successfully',
+                'edit.content.sidebar.history.push.publish.delete.all.error':
+                    'Failed to delete push publish history',
                 Error: 'Error',
                 'edit.content.sidebar.history.load.error': 'Failed to load version content'
             };
@@ -726,6 +735,33 @@ describe('HistoryFeature', () => {
                 error: null
             });
         });
+    });
+
+    describe('deletePushPublishHistory', () => {
+        it('should delete push publish history successfully', fakeAsync(() => {
+            // Mock service call
+            dotEditContentService.deletePushPublishHistory.mockReturnValue(of({}));
+
+            // Mock confirmation service to auto-accept
+            confirmationService.confirm.mockImplementation((config: any) => {
+                if (config.accept) {
+                    config.accept();
+                }
+                return confirmationService;
+            });
+
+            store.deletePushPublishHistory('test-identifier');
+            tick();
+
+            // Verify service was called
+            expect(dotEditContentService.deletePushPublishHistory).toHaveBeenCalledWith(
+                'test-identifier'
+            );
+
+            // Verify state was cleared
+            expect(store.pushPublishHistory()).toEqual([]);
+            expect(store.pushPublishHistoryPagination()).toBeNull();
+        }));
     });
 
     describe('Edge Cases and Integration', () => {
