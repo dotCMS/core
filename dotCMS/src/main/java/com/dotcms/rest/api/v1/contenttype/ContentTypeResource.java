@@ -1529,7 +1529,7 @@ public class ContentTypeResource implements Serializable {
 												  ),
                                                   style = ParameterStyle.FORM,
 												  description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
-										  ) List<String> types,
+										  ) List<String> type,
 										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
 												  description = "Filter by site identifier."
 										  ) final String siteId,
@@ -1544,9 +1544,14 @@ public class ContentTypeResource implements Serializable {
 		final String orderBy = this.getOrderByRealName(orderByParam);
 		try {
 			final Map<String, Object> extraParams = new HashMap<>();
-			if (null != types) {
-                //Remove dupe and preserve order
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(types));
+			if (null != type) {
+                //Remove empty strings and duplicates, preserve order
+				final List<String> filteredTypes = type.stream()
+					.filter(UtilMethods::isSet)
+					.collect(Collectors.toList());
+				if (!filteredTypes.isEmpty()) {
+					extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(filteredTypes));
+				}
 			}
 			if (null != siteId) {
 				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
