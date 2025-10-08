@@ -9,7 +9,7 @@ import { MockComponent } from 'ng-mocks';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotLocalstorageService, DotMessageService } from '@dotcms/data-access';
 import {
     DotAnalyticsDashboardStore,
     DotAnalyticsService,
@@ -27,7 +27,9 @@ import DotAnalyticsDashboardComponent from './dot-analytics-dashboard.component'
 const messageServiceMock = new MockDotMessageService({
     'analytics.metrics.total-pageviews': 'Total Pageviews',
     'analytics.metrics.unique-visitors': 'Unique Visitors',
-    'analytics.metrics.top-page-performance': 'Top Page Performance'
+    'analytics.metrics.top-page-performance': 'Top Page Performance',
+    'analytics.feature.state': 'This feature is in',
+    development: 'development'
 });
 
 describe('DotAnalyticsDashboardComponent', () => {
@@ -54,6 +56,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             mockProvider(GlobalStore, {
                 currentSiteId: jest.fn().mockReturnValue('test-site-123')
             }),
+            mockProvider(DotLocalstorageService),
             mockProvider(Router)
         ]
     });
@@ -203,6 +206,108 @@ describe('DotAnalyticsDashboardComponent', () => {
                 queryParamsHandling: 'replace',
                 replaceUrl: true
             });
+        });
+    });
+
+    describe('Development Status Banner', () => {
+        it('should show message banner when localStorage key is not present', () => {
+            const mockLocalStorage = {
+                getItem: jest.fn().mockReturnValue(null),
+                setItem: jest.fn()
+            };
+
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotLocalstorageService,
+                        useValue: mockLocalStorage
+                    }
+                ]
+            });
+
+            spectator.detectChanges();
+
+            const messageBanner = spectator.query(byTestId('analytics-message'));
+            expect(messageBanner).toExist();
+        });
+
+        it('should hide message banner when localStorage key is present', () => {
+            const mockLocalStorage = {
+                getItem: jest.fn().mockReturnValue(true),
+                setItem: jest.fn()
+            };
+
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotLocalstorageService,
+                        useValue: mockLocalStorage
+                    }
+                ]
+            });
+
+            spectator.detectChanges();
+
+            const messageBanner = spectator.query(byTestId('analytics-message'));
+            expect(messageBanner).not.toExist();
+        });
+
+        it('should display correct message content', () => {
+            const mockLocalStorage = {
+                getItem: jest.fn().mockReturnValue(null),
+                setItem: jest.fn()
+            };
+
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotLocalstorageService,
+                        useValue: mockLocalStorage
+                    }
+                ]
+            });
+
+            spectator.detectChanges();
+
+            const messageContent = spectator.query(byTestId('message-content'));
+            expect(messageContent).toExist();
+            expect(messageContent).toContainText('This feature is in');
+            expect(messageContent).toContainText('development');
+        });
+
+        it('should hide message and save to localStorage when close button is clicked', () => {
+            const mockLocalStorage = {
+                getItem: jest.fn().mockReturnValue(null),
+                setItem: jest.fn()
+            };
+
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotLocalstorageService,
+                        useValue: mockLocalStorage
+                    }
+                ]
+            });
+
+            spectator.detectChanges();
+
+            let messageBanner = spectator.query(byTestId('analytics-message'));
+            expect(messageBanner).toExist();
+
+            const closeButton = spectator.query(byTestId('close-message'));
+            expect(closeButton).toExist();
+
+            spectator.click(closeButton);
+            spectator.detectChanges();
+
+            expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+                'analytics-dashboard-hide-message-banner',
+                true
+            );
+
+            messageBanner = spectator.query(byTestId('analytics-message'));
+            expect(messageBanner).not.toExist();
         });
     });
 });
