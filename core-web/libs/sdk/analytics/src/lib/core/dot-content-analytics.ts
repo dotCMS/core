@@ -3,11 +3,8 @@ import { Analytics } from 'analytics';
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
-import { DotCMSAnalytics, DotCMSAnalyticsConfig } from './shared/dot-content-analytics.model';
-import {
-    cleanupActivityTracking,
-    updateSessionActivity
-} from './shared/dot-content-analytics.utils';
+import { cleanupActivityTracking } from './shared/dot-content-analytics.utils';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
 
 /**
  * Creates an analytics instance for content analytics tracking.
@@ -18,14 +15,14 @@ import {
 export const initializeContentAnalytics = (
     config: DotCMSAnalyticsConfig
 ): DotCMSAnalytics | null => {
-    if (!config.siteKey) {
-        console.error('DotContentAnalytics: Missing "siteKey" in configuration');
+    if (!config.siteAuth) {
+        console.error('DotCMS Analytics: Missing "siteAuth" in configuration');
 
         return null;
     }
 
     if (!config.server) {
-        console.error('DotContentAnalytics: Missing "server" in configuration');
+        console.error('DotCMS Analytics: Missing "server" in configuration');
 
         return null;
     }
@@ -35,7 +32,7 @@ export const initializeContentAnalytics = (
         debug: config.debug,
         plugins: [
             dotAnalyticsIdentityPlugin(config), // Inject identity context (user_id, session_id, local_tz)
-            dotAnalyticsEnricherPlugin(), // Enrich with page, device, utm data
+            dotAnalyticsEnricherPlugin(), // Enrich and clean payload with page, device, utm data and custom data
             dotAnalytics(config) // Send events to server
         ]
     });
@@ -51,20 +48,20 @@ export const initializeContentAnalytics = (
     return {
         /**
          * Track a page view.
-         * @param {Record<string, unknown>} payload - The payload to track.
+         * Session activity is automatically updated by the identity plugin.
+         * @param payload - Optional custom data to include with the page view (any valid JSON object)
          */
-        pageView: (payload: Record<string, unknown> = {}) => {
-            updateSessionActivity();
+        pageView: (payload: JsonObject = {}) => {
             analytics?.page(payload);
         },
 
         /**
          * Track a custom event.
-         * @param {string} eventName - The name of the event to track.
-         * @param {Record<string, unknown>} payload - The payload to track.
+         * Session activity is automatically updated by the identity plugin.
+         * @param eventName - The name of the event to track
+         * @param payload - Custom data to include with the event (any valid JSON object)
          */
-        track: (eventName: string, payload: Record<string, unknown> = {}) => {
-            updateSessionActivity();
+        track: (eventName: string, payload: JsonObject = {}) => {
             analytics?.track(eventName, payload);
         }
     };

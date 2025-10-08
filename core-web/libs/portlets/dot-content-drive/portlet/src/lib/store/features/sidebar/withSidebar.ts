@@ -12,15 +12,16 @@ import { inject, effect, EffectRef } from '@angular/core';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveState } from '../../../shared/models';
 import { getFolderHierarchyByPath, getFolderNodesByPath } from '../../../utils/functions';
-import { ALL_FOLDER, buildTreeFolderNodes, TreeNodeItem } from '../../../utils/tree-folder.utils';
+import { ALL_FOLDER, buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
 
 interface WithSidebarState {
     sidebarLoading: boolean;
-    folders: TreeNodeItem[];
-    selectedNode: TreeNodeItem;
+    folders: DotFolderTreeNodeItem[];
+    selectedNode: DotFolderTreeNodeItem;
 }
 
 export function withSidebar() {
@@ -43,19 +44,30 @@ export function withSidebar() {
                     return;
                 }
 
+                const realAllFolder: DotFolderTreeNodeItem = {
+                    ...ALL_FOLDER,
+                    data: {
+                        hostname: currentSite.hostname,
+                        path: '',
+                        type: 'folder',
+                        id: currentSite.identifier
+                    }
+                };
+
                 const urlFolderPath = store.path() || '';
                 const fullPath = `${currentSite.hostname}${urlFolderPath}`;
 
                 getFolderHierarchyByPath(fullPath, dotFolderService).subscribe((folders) => {
-                    const { rootNodes, selectedNode } = buildTreeFolderNodes(
-                        folders,
-                        urlFolderPath || '/'
-                    );
+                    const { rootNodes, selectedNode } = buildTreeFolderNodes({
+                        folderHierarchyLevels: folders,
+                        targetPath: urlFolderPath || '/',
+                        rootNode: realAllFolder
+                    });
 
                     patchState(store, {
                         sidebarLoading: false,
-                        folders: [ALL_FOLDER, ...rootNodes],
-                        selectedNode: selectedNode || ALL_FOLDER
+                        folders: [realAllFolder, ...rootNodes],
+                        selectedNode: selectedNode
                     });
                 });
             },
@@ -65,20 +77,20 @@ export function withSidebar() {
              */
             loadChildFolders: (
                 path: string
-            ): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> => {
+            ): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> => {
                 return getFolderNodesByPath(path, dotFolderService);
             },
             /**
              * Sets the selected node
              */
-            setSelectedNode: (node: TreeNodeItem) => {
+            setSelectedNode: (node: DotFolderTreeNodeItem) => {
                 patchState(store, { selectedNode: node });
             },
 
             /**
              * Updates the folders array
              */
-            updateFolders: (folders: TreeNodeItem[]) => {
+            updateFolders: (folders: DotFolderTreeNodeItem[]) => {
                 patchState(store, { folders: [...folders] });
             }
         })),
