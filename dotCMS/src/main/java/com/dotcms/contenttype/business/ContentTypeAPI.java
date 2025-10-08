@@ -522,7 +522,10 @@ public interface ContentTypeAPI {
    * @param orderBy   The order-by clause, which is internally sanitized by this Factory.
    * @param limit     The maximum number of returned items in the result set, for pagination
    *                  purposes.
-   * @param offset    The requested page number of the result set, for pagination purposes.
+   * @param offset    Start position of the result list, skipping the value of records passed
+   *                  by param. e.g:
+   *                  offset = 0 -> start from the first record
+   *                  offset = 10 -> start from the #11 record
    * @param includeContentTypeIds
    *                  The Content Types that are explicitly required to be included.
    *
