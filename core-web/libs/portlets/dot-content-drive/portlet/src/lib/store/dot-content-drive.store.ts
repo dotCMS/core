@@ -39,7 +39,7 @@ import {
 import { buildContentDriveQuery, decodeFilters } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
-    currentSite: SYSTEM_HOST,
+    currentSite: undefined, // So we have the actual site selected on start
     path: DEFAULT_PATH,
     filters: {},
     items: [],
@@ -143,7 +143,7 @@ export const DotContentDriveStore = signalStore(
                         query,
                         limit,
                         offset,
-                        sort: `score,${field} ${order}`
+                        sort: `${field} ${order}`
                     })
                     .pipe(
                         take(1),

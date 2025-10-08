@@ -10,6 +10,12 @@
                     </span>
                 </div>
                 <div class="flex align-items-center gap-2">
+                    <a
+                        href="https://community.dotcms.com/t/check-out-an-early-version-of-our-content-drive/242?u=marcboutillette"
+                        target="_blank"
+                        data-testid="learn-more-link">
+                        {{ 'content-drive.feature.learn-more' | dm }}
+                    </a>
                     <p-button
                         styleClass="p-button-text p-button-rounded p-button-sm p-button-icon-only"
                         type="button"
@@ -22,28 +28,42 @@
     </p-messages>
 }
 
-<dot-content-drive-toolbar data-testid="toolbar" />
+<dot-content-drive-toolbar (addNewDotAsset)="onAddNewDotAsset()" data-testid="toolbar" />
 
 <div
     class="tree-selector center-content"
     [class.expanded]="$treeExpanded()"
     data-testid="tree-selector">
-    <dot-content-drive-sidebar data-testid="sidebar" />
+    <dot-content-drive-sidebar data-testid="sidebar" (uploadFiles)="resolveFilesUpload($event)" />
 </div>
 
-<dot-folder-list-view
-    [items]="$items()"
-    [totalItems]="$totalItems()"
-    [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
-    (paginate)="onPaginate($event)"
-    (sort)="onSort($event)"
-    (rightClick)="onContextMenu($event)"
-    (doubleClick)="onDoubleClick($event)"
-    #listView />
-
+<dot-content-drive-dropzone data-testid="dropzone" (uploadFiles)="resolveFilesUpload($event)">
+    <dot-folder-list-view
+        [items]="$items()"
+        [totalItems]="$totalItems()"
+        [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
+        (paginate)="onPaginate($event)"
+        (sort)="onSort($event)"
+        (rightClick)="onContextMenu($event)"
+        (doubleClick)="onDoubleClick($event)"
+        #listView />
+</dot-content-drive-dropzone>
 <dot-folder-list-context-menu />
 
-<p-toast position="top-center" data-testId="content-drive-toast" />
+<p-toast position="top-center" data-testId="content-drive-toast">
+    <ng-template let-message pTemplate="message">
+        <span
+            class="p-toast-message-icon"
+            [attr.aria-hidden]="true"
+            [attr.data-pc-section]="'icon'">
+            <dot-severity-icon [severity]="message.severity" />
+        </span>
+        <div class="p-toast-message-text">
+            <span class="p-toast-summary" innerHtml="{{ message.summary }}"></span>
+            <span class="p-toast-detail" innerHtml="{{ message.detail }}"></span>
+        </div>
+    </ng-template>
+</p-toast>
 
 @if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle
@@ -72,3 +92,6 @@
         }
     }
 </p-dialog>
+
+<!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
+<input type="file" (change)="onFileChange($event)" #fileInput hidden />

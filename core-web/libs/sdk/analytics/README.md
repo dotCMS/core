@@ -10,7 +10,7 @@ Lightweight JavaScript SDK for tracking content-aware events in dotCMS. Works in
 <script
     src="ca.min.js"
     data-analytics-server="https://demo.dotcms.com"
-    data-analytics-auth="SITE_KEY"
+    data-analytics-auth="SITE_AUTH"
     data-analytics-auto-page-view="true"
     data-analytics-debug="false"></script>
 ```
@@ -25,7 +25,7 @@ npm install @dotcms/analytics
 import { initializeContentAnalytics } from '@dotcms/analytics';
 
 const analytics = initializeContentAnalytics({
-    siteKey: 'SITE_KEY',
+    siteAuth: 'SITE_AUTH',
     server: 'https://demo.dotcms.com'
 });
 
@@ -42,7 +42,7 @@ npm install @dotcms/analytics
 import { DotContentAnalytics } from '@dotcms/analytics/react';
 
 const config = {
-    siteKey: 'SITE_KEY',
+    siteAuth: 'SITE_AUTH',
     server: 'https://demo.dotcms.com',
     autoPageView: true // Optional, default is true in React
 };
@@ -78,7 +78,7 @@ Track any user action as an event using `track('event-name', { payload })`.
 
 | Option         | Type      | Required | Default                             | Description                            |
 | -------------- | --------- | -------- | ----------------------------------- | -------------------------------------- |
-| `siteKey`      | `string`  | ✅       | -                                   | Site key from dotCMS Analytics app     |
+| `siteAuth`     | `string`  | ✅       | -                                   | Site auth from dotCMS Analytics app    |
 | `server`       | `string`  | ✅       | -                                   | Your dotCMS server URL                 |
 | `debug`        | `boolean` | ❌       | `false`                             | Enable verbose logging                 |
 | `autoPageView` | `boolean` | ❌       | React: `true` / Standalone: `false` | Auto track page views on route changes |
@@ -99,7 +99,7 @@ window.dotAnalytics.pageView();
 
 ```javascript
 const analytics = initializeContentAnalytics({
-    siteKey: 'abc123',
+    siteAuth: 'abc123',
     server: 'https://your-dotcms.com',
     debug: true,
     autoPageView: false
@@ -121,7 +121,7 @@ analytics.pageView();
 import { useContentAnalytics } from '@dotcms/analytics/react';
 
 const { track } = useContentAnalytics({
-    siteKey: 'SITE_KEY',
+    siteAuth: 'SITE_AUTH',
     server: 'https://demo.dotcms.com'
 });
 
@@ -134,7 +134,7 @@ track('cta-click', { label: 'Download PDF' });
 import { useContentAnalytics } from '@dotcms/analytics/react';
 
 const { pageView } = useContentAnalytics({
-    siteKey: 'SITE_KEY',
+    siteAuth: 'SITE_AUTH',
     server: 'https://demo.dotcms.com'
 });
 useEffect(() => {
@@ -151,7 +151,7 @@ import { useLocation } from 'react-router-dom';
 import { useContentAnalytics } from '@dotcms/analytics/react';
 
 const { pageView } = useContentAnalytics({
-    siteKey: 'SITE_KEY',
+    siteAuth: 'SITE_AUTH',
     server: 'https://demo.dotcms.com'
 });
 const location = useLocation();

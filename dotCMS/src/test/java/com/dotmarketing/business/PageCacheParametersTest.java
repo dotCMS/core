@@ -91,6 +91,22 @@ public class PageCacheParametersTest {
         Assert.assertNull(result);
     }
 
+
+    /**
+     * makes sure an empty query string is the same as no query string
+     */
+    @Test
+    public void testFilterQueryStringWithEmptyStringVsNull() {
+        String result1 = PageCacheParameters.filterQueryString("?");
+        String result2 = PageCacheParameters.filterQueryString("");
+        String result3 = PageCacheParameters.filterQueryString(null);
+
+        Assert.assertNull(result1);
+        Assert.assertNull(result2);
+        Assert.assertNull(result3);
+    }
+
+
     @Test
     public void testFilterQueryStringBasicFunctionality() {
         // Test basic functionality without relying on Config values

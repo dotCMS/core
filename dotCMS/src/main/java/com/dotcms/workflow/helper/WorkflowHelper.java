@@ -16,6 +16,8 @@ import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.rest.api.v1.workflow.CountWorkflowAction;
 import com.dotcms.rest.api.v1.workflow.CountWorkflowStep;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
+import com.dotcms.rest.api.v1.workflow.WorkflowSearcherForm;
+import com.dotcms.rest.api.v1.workflow.WorkflowTaskView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.util.CollectionsUtils;
@@ -58,6 +60,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -558,6 +561,71 @@ public class WorkflowHelper {
 
     public List<SystemActionWorkflowActionMapping> findSystemActionsByContentType(final ContentType contentType, final User user) throws DotDataException, DotSecurityException {
         return this.workflowAPI.findSystemActionsByContentType(contentType, user);
+    }
+
+    /**
+     * Convert the WorkflowSearcherForm to WorkflowSearcher
+     * @param workflowSearcherForm
+     * @param user
+     * @return
+     */
+    public WorkflowSearcher toWorkflowSearcher(final WorkflowSearcherForm workflowSearcherForm, final User user) {
+
+        final WorkflowSearcher workflowSearcher = new WorkflowSearcher();
+
+        workflowSearcher.setUser(user);
+        Optional.ofNullable(workflowSearcherForm.getKeywords()).ifPresent(workflowSearcher::setKeywords);
+            workflowSearcher.setAssignedTo(Optional.ofNullable(workflowSearcherForm.getAssignedTo()).orElseGet(() ->
+                    !workflowSearcherForm.isShow4all()? // if show all is set we have to set as a null when not assignedto set
+                            user.getUserRole().getId():null));
+        workflowSearcher.setDaysOld(workflowSearcherForm.getDaysOld());
+        Optional.ofNullable(workflowSearcherForm.getSchemeId()).ifPresent(workflowSearcher::setSchemeId);
+        Optional.ofNullable(workflowSearcherForm.getStepId()).ifPresent(workflowSearcher::setStepId);
+        workflowSearcher.setOpen(workflowSearcherForm.isOpen());
+        workflowSearcher.setClosed(workflowSearcherForm.isClosed());
+        Optional.ofNullable(workflowSearcherForm.getCreatedBy()).ifPresent(workflowSearcher::setCreatedBy);
+        workflowSearcher.setShow4All(workflowSearcherForm.isShow4all());
+        workflowSearcher.setOrderBy(Optional.ofNullable(workflowSearcherForm.getOrderBy()).orElseGet(()->"title"));
+        workflowSearcher.setCount(workflowSearcherForm.getCount());
+        workflowSearcher.setPage(workflowSearcherForm.getPage());
+
+        return workflowSearcher;
+    }
+
+    public List<WorkflowTaskView> toWorkflowTasksView(final List<WorkflowTask> workflowTasks) {
+        if (workflowTasks == null || workflowTasks.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        final java.util.List<WorkflowTaskView> views = new java.util.ArrayList<>(workflowTasks.size());
+        for (final WorkflowTask task : workflowTasks) {
+            if (task != null) {
+                views.add(this.toWorkflowTaskView(task));
+            }
+        }
+        return views;
+    }
+
+    public WorkflowTaskView toWorkflowTaskView(final WorkflowTask workflowTask) {
+
+        final WorkflowTaskView.Builder builder = WorkflowTaskView.builder();
+
+        final String assignedUserName =
+                Try.of(()-> APILocator.getRoleAPI().loadRoleById(workflowTask.getAssignedTo()).getName()).getOrElse("Unknown Name");
+
+        builder.id(workflowTask.getId())
+                .assignedTo(workflowTask.getAssignedTo())
+                .assignedUserName(assignedUserName)
+                .createdBy(workflowTask.getCreatedBy())
+                .description(workflowTask.getDescription())
+                .belongsTo(workflowTask.getBelongsTo())
+                .creationDate(workflowTask.getCreationDate())
+                .getDueDate(workflowTask.getDueDate())
+                .languageId(workflowTask.getLanguageId())
+                .modDate(workflowTask.getModDate())
+                .title(workflowTask.getTitle())
+                .status(workflowTask.getStatus());
+
+        return builder.build();
     }
 
     private static class SingletonHolder {

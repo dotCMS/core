@@ -25,7 +25,7 @@ import { PrimeTemplate } from 'primeng/api';
 import { DataView, DataViewLazyLoadEvent } from 'primeng/dataview';
 import { OverlayPanel } from 'primeng/overlaypanel';
 
-import { debounceTime, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
 
 /**
  * Dropdown with pagination and global search
@@ -152,17 +152,6 @@ export class SearchableDropdownComponent
     selectedOptionIndex = 0;
     selectedOptionValue = '';
 
-    keyMap: string[] = [
-        'Shift',
-        'Alt',
-        'Control',
-        'Meta',
-        'ArrowUp',
-        'ArrowDown',
-        'ArrowLeft',
-        'ArrowRight'
-    ];
-
     propagateChange = (_: unknown) => {
         /**/
     };
@@ -189,12 +178,12 @@ export class SearchableDropdownComponent
                             this.selectDropdownOption(keyboardEvent.key);
                         }
                     }),
+                    map((keyboardEvent: KeyboardEvent) => keyboardEvent.target['value']),
+                    distinctUntilChanged(),
                     debounceTime(500)
                 )
-                .subscribe((keyboardEvent: KeyboardEvent) => {
-                    if (!this.isModifierKey(keyboardEvent.key)) {
-                        this.filterChange.emit(keyboardEvent.target['value']);
-                    }
+                .subscribe((value: string) => {
+                    this.filterChange.emit(value);
                 });
         }
     }
@@ -412,10 +401,6 @@ export class SearchableDropdownComponent
             this.selectedOptionValue = this.getItemLabel(this.options[0]);
             this.selectedOptionIndex = 0;
         }
-    }
-
-    private isModifierKey(key: string): boolean {
-        return this.keyMap.includes(key);
     }
 
     private usePlaceholder(placeholderChange: SimpleChange): boolean {

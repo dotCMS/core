@@ -44,14 +44,20 @@
 }
 
 .p-toolbar-group-top {
-    display: flex;
+    display: grid;
     align-items: center;
-    justify-content: space-between;
     width: 100%;
     grid-area: toolbar-group-top;
 
+    grid-template-columns: repeat(3, minmax(4.5rem, 14rem));
+
     .search-input {
-        max-width: 22rem;
+        grid-column: 1 / 3;
+    }
+
+    p-button {
+        grid-column: 4;
+        justify-self: end;
     }
 }
 

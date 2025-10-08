@@ -18,7 +18,7 @@ import { initializeAnalytics } from '../internal';
  * function Button({ title, urlTitle }) {
  *   const { track } = useContentAnalytics({
  *     server: 'https://demo.dotcms.com',
- *     siteKey: 'my-site-key',
+ *     siteAuth: 'my-site-auth',
  *     debug: false
  *   });
  *
@@ -41,7 +41,7 @@ export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
 
     if (!instance) {
         throw new Error(
-            'Failed to initialize DotContentAnalytics. Please verify the required configuration (server and siteKey).'
+            'Failed to initialize DotContentAnalytics. Please verify the required configuration (server and siteAuth).'
         );
     }
 
