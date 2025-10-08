@@ -1,3 +1,5 @@
+import { patchState, signalState } from '@ngrx/signals';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -5,8 +7,7 @@ import {
     HostBinding,
     HostListener,
     inject,
-    output,
-    signal
+    output
 } from '@angular/core';
 
 import { DotContentDriveUploadFiles } from '@dotcms/portlets/content-drive/ui';
@@ -26,9 +27,10 @@ export class DotContentDriveDropzoneComponent {
 
     readonly elementRef = inject(ElementRef);
 
-    readonly $isActive = signal(false);
-
-    readonly $isInternalDrag = signal(false);
+    readonly state = signalState<{ isInternalDrag: boolean; isActive: boolean }>({
+        isInternalDrag: false,
+        isActive: false
+    });
 
     readonly #store = inject(DotContentDriveStore);
 
@@ -37,7 +39,7 @@ export class DotContentDriveDropzoneComponent {
      * @returns {boolean} - The active state of the dropzone
      */
     @HostBinding('class.active') get active(): boolean {
-        return this.$isActive();
+        return this.state.isActive();
     }
 
     /**
@@ -46,7 +48,7 @@ export class DotContentDriveDropzoneComponent {
      */
     @HostListener('window:dragstart')
     onWindowDragStart() {
-        this.$isInternalDrag.set(true);
+        patchState(this.state, { isInternalDrag: true });
     }
 
     /**
@@ -56,7 +58,7 @@ export class DotContentDriveDropzoneComponent {
     @HostListener('window:dragend')
     @HostListener('window:drop')
     onWindowDragEnd() {
-        this.$isInternalDrag.set(false);
+        patchState(this.state, { isInternalDrag: false });
     }
 
     /**
@@ -68,11 +70,11 @@ export class DotContentDriveDropzoneComponent {
         event.stopPropagation();
         event.preventDefault();
 
-        if (this.$isInternalDrag()) {
+        if (this.state.isInternalDrag()) {
             return;
         }
 
-        this.$isActive.set(true);
+        patchState(this.state, { isActive: true });
 
         // Reset the context menu
         this.#store.resetContextMenu();
@@ -104,7 +106,7 @@ export class DotContentDriveDropzoneComponent {
         }
 
         // Drag has left the dropzone
-        this.$isActive.set(false);
+        patchState(this.state, { isActive: false });
     }
 
     /**
@@ -114,7 +116,7 @@ export class DotContentDriveDropzoneComponent {
     @HostListener('dragend', ['$event'])
     onDragEnd(event: DragEvent) {
         event.preventDefault();
-        this.$isActive.set(false);
+        patchState(this.state, { isActive: false });
     }
 
     /**
@@ -129,7 +131,7 @@ export class DotContentDriveDropzoneComponent {
 
         const files = event.dataTransfer?.files ?? undefined;
 
-        this.$isActive.set(false);
+        patchState(this.state, { isActive: false });
 
         if (files?.length) {
             this.uploadFiles.emit({ files, targetFolderId: this.#store.selectedNode()?.data.id });
