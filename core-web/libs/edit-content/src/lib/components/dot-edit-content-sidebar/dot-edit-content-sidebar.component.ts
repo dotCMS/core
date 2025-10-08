@@ -187,4 +187,15 @@ export class DotEditContentSidebarComponent {
     onTimelineItemAction(action: DotHistoryTimelineItemAction) {
         this.$store.handleHistoryAction(action);
     }
+
+    /**
+     * Handles delete all push publish history action
+     * Calls the store method to delete push publish history with confirmation
+     */
+    onDeletePushPublishHistory() {
+        const identifier = this.$identifier();
+        if (identifier) {
+            this.$store.deletePushPublishHistory(identifier);
+        }
+    }
 }

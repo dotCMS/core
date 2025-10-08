@@ -65,6 +65,17 @@
         <dot-sidebar-accordion-tab
             id="push-publish"
             [label]="'edit.content.sidebar.history.push.publish' | dm">
+            <div
+                slot="header-content"
+                class="dot-edit-content-sidebar-history__push-publish__actions">
+                <p-button
+                    icon="pi pi-ellipsis-v"
+                    styleClass="p-button-rounded p-button-sm p-button-text dot-edit-content-sidebar-history__menu-button p-button-tertiary"
+                    (click)="ppMenu.toggle($event); $event.stopPropagation()"
+                    [disabled]="!$hasPushPublishHistoryItems()"
+                    data-testid="push-publish-menu-button"></p-button>
+                <p-menu #ppMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true"></p-menu>
+            </div>
             <div class="dot-edit-content-sidebar-history__push-publish">
                 @if ($isLoading()) {
                     <!-- Loading state for push publish -->

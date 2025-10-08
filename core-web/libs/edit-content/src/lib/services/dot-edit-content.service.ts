@@ -373,4 +373,15 @@ export class DotEditContentService {
             { params: httpParams }
         );
     }
+
+    /**
+     * Deletes all push publish history for a content item by its identifier.
+     * Calls the /api/bundle/deletepushhistory/assetid/{identifier} endpoint.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @returns {Observable<any>} Observable that emits the deletion response
+     */
+    deletePushPublishHistory(identifier: string): Observable<unknown> {
+        return this.#http.get(`/api/bundle/deletepushhistory/assetid/${identifier}`);
+    }
 }

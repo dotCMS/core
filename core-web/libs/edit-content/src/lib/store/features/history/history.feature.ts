@@ -457,6 +457,79 @@ export function withHistory() {
                     },
 
                     /**
+                     * Deletes all push publish history for a content item
+                     * Shows confirmation dialog and clears local state on success
+                     * @param identifier - The content identifier
+                     */
+                    deletePushPublishHistory: (identifier: string) => {
+                        confirmationService.confirm({
+                            message: dotMessageService.get(
+                                'edit.content.sidebar.history.push.publish.delete.all.confirm.message'
+                            ),
+                            header: dotMessageService.get(
+                                'edit.content.sidebar.history.push.publish.delete.all.confirm.header'
+                            ),
+                            icon: 'pi pi-exclamation-triangle text-warning-yellow',
+                            acceptLabel: dotMessageService.get('delete'),
+                            rejectLabel: dotMessageService.get('cancel'),
+                            acceptIcon: 'hidden',
+                            rejectIcon: 'hidden',
+                            rejectButtonStyleClass: 'p-button-outlined',
+                            accept: () => {
+                                patchState(store, {
+                                    pushPublishHistoryStatus: {
+                                        status: ComponentStatus.LOADING,
+                                        error: null
+                                    }
+                                });
+
+                                dotEditContentService
+                                    .deletePushPublishHistory(identifier)
+                                    .subscribe({
+                                        next: () => {
+                                            // Clear the push publish history data on successful deletion
+                                            patchState(store, {
+                                                pushPublishHistory: [],
+                                                pushPublishHistoryPagination: null,
+                                                pushPublishHistoryStatus: {
+                                                    status: ComponentStatus.LOADED,
+                                                    error: null
+                                                }
+                                            });
+
+                                            // Show success message
+                                            messageService.add({
+                                                severity: 'success',
+                                                summary: dotMessageService.get('success'),
+                                                detail: dotMessageService.get(
+                                                    'edit.content.sidebar.history.push.publish.delete.all.success'
+                                                )
+                                            });
+                                        },
+                                        error: (error) => {
+                                            errorManager.handle(error);
+                                            patchState(store, {
+                                                pushPublishHistoryStatus: {
+                                                    status: ComponentStatus.ERROR,
+                                                    error: error.message
+                                                }
+                                            });
+
+                                            // Show error message
+                                            messageService.add({
+                                                severity: 'error',
+                                                summary: dotMessageService.get('error'),
+                                                detail: dotMessageService.get(
+                                                    'edit.content.sidebar.history.push.publish.delete.all.error'
+                                                )
+                                            });
+                                        }
+                                    });
+                            }
+                        });
+                    },
+
+                    /**
                      * Exposes the delete version method for external use
                      */
                     deleteVersion: deleteVersion,

@@ -1,6 +1,8 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
+import { MenuModule } from 'primeng/menu';
 import { ScrollerModule, ScrollerLazyLoadEvent } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
@@ -32,6 +34,8 @@ import {
         ScrollerModule,
         SkeletonModule,
         TooltipModule,
+        ButtonModule,
+        MenuModule,
         DotEmptyContainerComponent,
         DotMessagePipe,
         DotSidebarAccordionComponent,
@@ -70,7 +74,7 @@ export class DotEditContentSidebarHistoryComponent {
      * Pagination data for history items
      * @readonly
      */
-    $pagination = input<DotPagination | null>(null, { alias: 'pagination' });
+    $historypagination = input<DotPagination | null>(null, { alias: 'historyPagination' });
 
     /**
      * Pagination data for push publish history items
@@ -95,9 +99,9 @@ export class DotEditContentSidebarHistoryComponent {
     });
 
     /**
-     * Event emitted when page changes
+     * Event emitted when history page changes
      */
-    pageChange = output<number>();
+    historyPageChange = output<number>();
 
     /**
      * Event emitted when push publish history page changes
@@ -108,6 +112,11 @@ export class DotEditContentSidebarHistoryComponent {
      * Event emitted when a timeline item action is triggered
      */
     timelineItemAction = output<DotHistoryTimelineItemAction>();
+
+    /**
+     * Event emitted when delete all push publish history is requested
+     */
+    deletePushPublishHistory = output<void>();
 
     /**
      * Determines if the history is in a loading state
@@ -123,7 +132,7 @@ export class DotEditContentSidebarHistoryComponent {
      * Determines if there are more items to load for infinite scroll
      */
     readonly $hasMoreItems = computed(() => {
-        const pagination = this.$pagination();
+        const pagination = this.$historypagination();
         return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
     });
 
@@ -186,9 +195,9 @@ export class DotEditContentSidebarHistoryComponent {
      * Load the next page of history items
      */
     private loadNextPage(): void {
-        const pagination = this.$pagination();
+        const pagination = this.$historypagination();
         if (pagination && this.$hasMoreItems()) {
-            this.pageChange.emit(pagination.currentPage + 1);
+            this.historyPageChange.emit(pagination.currentPage + 1);
         }
     }
 
@@ -217,6 +226,19 @@ export class DotEditContentSidebarHistoryComponent {
     getPushPublishRealIndex(item: DotPushPublishHistoryItem): number {
         return this.$pushPublishHistoryItems().indexOf(item);
     }
+
+    /**
+     * Menu items for push publish actions
+     */
+    readonly $menuItems = computed(() => [
+        {
+            label: this.dotMessagePipe.transform(
+                'edit.content.sidebar.history.push.publish.delete.all'
+            ),
+            icon: 'pi pi-trash',
+            command: () => this.deletePushPublishHistory.emit()
+        }
+    ]);
 
     /**
      * Handle accordion tab change
