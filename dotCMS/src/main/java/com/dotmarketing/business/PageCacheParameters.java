@@ -124,7 +124,7 @@ public class PageCacheParameters {
                 queryStringBuilder.append("&").append(queryParam);
             }
         }
-        return queryStringBuilder.toString();
+        return queryStringBuilder.length() > 0 ? queryStringBuilder.toString() : null;
 
     }
 

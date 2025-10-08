@@ -1,13 +1,27 @@
-import { ChangeDetectionStrategy, Component, input, output, computed } from '@angular/core';
+import { JsonPipe } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    input,
+    output,
+    computed,
+    ElementRef,
+    HostListener,
+    inject,
+    signal,
+    InputSignal
+} from '@angular/core';
 
 import { TreeNode } from 'primeng/api';
 import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
 import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
+import { DotFolderTreeNodeData, DotContentDriveUploadFiles } from '../shared/models';
+
 @Component({
     selector: 'dot-tree-folder',
-    imports: [TreeModule, FolderNamePipe, DotMessagePipe],
+    imports: [TreeModule, FolderNamePipe, DotMessagePipe, JsonPipe],
     templateUrl: './dot-tree-folder.component.html',
     styleUrls: ['./dot-tree-folder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -51,14 +65,9 @@ export class DotTreeFolderComponent {
      *
      * @type {InputSignal<boolean>}
      */
-    $showFolderIconOnFirstOnly = input<boolean>(false, { alias: 'showFolderIconOnFirstOnly' });
-
-    /**
-     * Computed style classes for the underlying p-tree component.
-     */
-    treeStyleClasses = computed(
-        () => `w-full h-full ${this.$showFolderIconOnFirstOnly() ? 'first-only' : 'folder-all'}`
-    );
+    $showFolderIconOnFirstOnly: InputSignal<boolean> = input<boolean>(false, {
+        alias: 'showFolderIconOnFirstOnly'
+    });
 
     /**
      * Event emitter for when a tree node is expanded.
@@ -83,4 +92,107 @@ export class DotTreeFolderComponent {
      * @type {TreeNodeCollapseEvent}
      */
     onNodeCollapse = output<TreeNodeCollapseEvent>();
+
+    /**
+     * Event emitter for when a file is uploaded.
+     *
+     * @event uploadFiles
+     * @type {DotContentDriveUploadFiles}
+     */
+    uploadFiles = output<DotContentDriveUploadFiles>();
+
+    readonly elementRef = inject(ElementRef);
+
+    readonly $activeDropNode = signal<DotFolderTreeNodeData | null>(null);
+
+    /**
+     * Computed style classes for the underlying p-tree component.
+     */
+    readonly treeStyleClasses = computed(
+        () => `w-full h-full ${this.$showFolderIconOnFirstOnly() ? 'first-only' : 'folder-all'}`
+    );
+
+    /**
+     * @description Set the dropzone as active when the drag enters the dropzone
+     * @param event - DragEvent
+     */
+    @HostListener('dragenter', ['$event'])
+    onDragEnter(event: DragEvent & { fromElement?: HTMLElement }) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    /**
+     * @description Prevent the default behavior to allow drop and not opening the file in the browser
+     * @param event - DragEvent
+     */
+    @HostListener('dragover', ['$event'])
+    onDragOver(event: DragEvent) {
+        event.stopPropagation();
+        event.preventDefault();
+
+        const target = event.target as HTMLElement;
+
+        // First, check if the target itself has the data-json-node attribute
+        let activeNodeSpan: HTMLElement | null = null;
+
+        if (target.hasAttribute('data-json-node')) {
+            activeNodeSpan = target;
+        } else {
+            // If not, search for it within the target's children
+            activeNodeSpan = target.querySelector('[data-testid="tree-node-label"]');
+        }
+
+        if (!activeNodeSpan) {
+            console.warn('Content drive tree folder: No active node span found');
+            return;
+        }
+
+        const nodeData = activeNodeSpan.getAttribute('data-json-node');
+
+        if (!nodeData) {
+            console.warn('Content drive tree folder: No node data found');
+            return;
+        }
+
+        this.$activeDropNode.set(JSON.parse(nodeData));
+    }
+
+    /**
+     * @description Set the dropzone as inactive when the drag leaves the dropzone
+     * @param event - DragEvent
+     */
+    @HostListener('dragleave', ['$event'])
+    onDragLeave(event: DragEvent) {
+        event.preventDefault();
+
+        // Check if the relatedTarget (where the drag is going) is still within the dropzone
+        const relatedTarget = event.relatedTarget as Node;
+
+        if (relatedTarget && this.elementRef.nativeElement.contains(relatedTarget)) {
+            return; // Still within the dropzone, don't deactivate
+        }
+
+        this.$activeDropNode.set(null);
+    }
+
+    /**
+     * @description Handle drop event
+     * @param event - DragEvent
+     */
+    @HostListener('drop', ['$event'])
+    onDrop(event: DragEvent) {
+        event.stopPropagation();
+        event.preventDefault();
+
+        const targetFolderId = this.$activeDropNode().id;
+
+        this.$activeDropNode.set(null);
+
+        const files = event.dataTransfer?.files ?? undefined;
+
+        if (files?.length) {
+            this.uploadFiles.emit({ files, targetFolderId });
+        }
+    }
 }
