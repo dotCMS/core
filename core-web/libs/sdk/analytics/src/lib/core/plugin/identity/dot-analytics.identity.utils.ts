@@ -1,9 +1,6 @@
-import {
-    DEFAULT_SESSION_TIMEOUT_MINUTES,
-    EXPECTED_UTM_KEYS,
-    SESSION_UTM_KEY
-} from '../../shared/dot-content-analytics.constants';
+import { DEFAULT_SESSION_TIMEOUT_MINUTES, SESSION_UTM_KEY } from '../../shared/constants';
 import { safeSessionStorage } from '../../shared/dot-content-analytics.utils';
+import { DotCMSEventUtmData } from '../../shared/models';
 
 // Activity tracking state
 let lastActivityTime = Date.now();
@@ -61,26 +58,13 @@ export const getLastActivityTime = (): number => {
 };
 
 /**
- * Extracts UTM parameters from current location
+ * Compares UTM parameters to detect campaign changes.
+ * Only checks significant parameters: source, medium, and campaign.
+ * @internal This function is for internal use only.
+ * @param currentUTM - Current UTM parameters in DotCMS format
+ * @returns True if UTM parameters have changed, false otherwise
  */
-export const extractUTMParameters = (): Record<string, string> => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const utmParams: Record<string, string> = {};
-
-    EXPECTED_UTM_KEYS.forEach((key) => {
-        const value = urlParams.get(key);
-        if (value !== null) {
-            utmParams[key.replace('utm_', '')] = value;
-        }
-    });
-
-    return utmParams;
-};
-
-/**
- * Compares UTM parameters to detect campaign changes
- */
-export const hasUTMChanged = (currentUTM: Record<string, string>): boolean => {
+export const hasUTMChanged = (currentUTM: DotCMSEventUtmData): boolean => {
     try {
         const storedUTM = safeSessionStorage.getItem(SESSION_UTM_KEY);
         if (!storedUTM) {
@@ -90,7 +74,7 @@ export const hasUTMChanged = (currentUTM: Record<string, string>): boolean => {
         }
 
         const previousUTM = JSON.parse(storedUTM);
-        const significantParams = ['source', 'medium', 'campaign'];
+        const significantParams: (keyof DotCMSEventUtmData)[] = ['source', 'medium', 'campaign'];
 
         for (const param of significantParams) {
             if (currentUTM[param] !== previousUTM[param]) {

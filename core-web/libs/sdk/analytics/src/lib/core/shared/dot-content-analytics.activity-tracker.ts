@@ -1,8 +1,5 @@
-import {
-    ACTIVITY_EVENTS,
-    DEFAULT_SESSION_TIMEOUT_MINUTES
-} from './dot-content-analytics.constants';
-import { DotCMSAnalyticsConfig } from './dot-content-analytics.model';
+import { ACTIVITY_EVENTS, DEFAULT_SESSION_TIMEOUT_MINUTES } from './constants';
+import { DotCMSAnalyticsConfig } from './models';
 
 /**
  * Activity tracking manager for DotCMS Analytics.

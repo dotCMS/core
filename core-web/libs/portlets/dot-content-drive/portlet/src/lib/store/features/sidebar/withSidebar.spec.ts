@@ -4,6 +4,7 @@ import { signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';
@@ -13,7 +14,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../../../shared/models';
-import { ALL_FOLDER, TreeNodeItem } from '../../../utils/tree-folder.utils';
+import { ALL_FOLDER } from '../../../utils/tree-folder.utils';
 
 const mockSite = createFakeSite();
 
@@ -38,7 +39,7 @@ const mockFolders = [
     })
 ];
 
-const mockTreeNodes: TreeNodeItem[] = [
+const mockTreeNodes: DotFolderTreeNodeItem[] = [
     {
         key: 'folder-1',
         label: '/documents/',
@@ -85,6 +86,16 @@ describe('withSidebar', () => {
     let store: InstanceType<typeof sidebarStoreMock>;
     let folderService: jest.Mocked<DotFolderService>;
 
+    const realAllFolder: DotFolderTreeNodeItem = {
+        ...ALL_FOLDER,
+        data: {
+            hostname: mockSite.hostname,
+            path: '',
+            type: 'folder',
+            id: mockSite.identifier
+        }
+    };
+
     const createService = createServiceFactory({
         service: sidebarStoreMock,
         providers: [
@@ -104,7 +115,9 @@ describe('withSidebar', () => {
         it('should initialize with default sidebar state', () => {
             expect(store.sidebarLoading()).toBe(true);
             expect(store.folders()).toEqual([]);
-            expect(store.selectedNode()).toEqual(ALL_FOLDER);
+            expect(store.selectedNode()).toEqual({
+                ...ALL_FOLDER
+            });
         });
     });
 
@@ -117,7 +130,9 @@ describe('withSidebar', () => {
                 setTimeout(() => {
                     expect(folderService.getFolders).toHaveBeenCalled();
                     expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContain(ALL_FOLDER);
+                    expect(store.folders()).toContainEqual({
+                        ...realAllFolder
+                    });
                     done();
                 }, 0);
             });
@@ -129,7 +144,9 @@ describe('withSidebar', () => {
 
                 setTimeout(() => {
                     expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContain(ALL_FOLDER);
+                    expect(store.folders()).toContainEqual({
+                        ...realAllFolder
+                    });
                     done();
                 }, 0);
             });
@@ -186,7 +203,7 @@ describe('withSidebar', () => {
 
         describe('updateFolders', () => {
             it('should update the folders array', () => {
-                const newFolders = [ALL_FOLDER, ...mockTreeNodes];
+                const newFolders = [realAllFolder, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 
@@ -195,7 +212,7 @@ describe('withSidebar', () => {
 
             it('should create a new array reference', () => {
                 const originalFolders = store.folders();
-                const newFolders = [ALL_FOLDER, ...mockTreeNodes];
+                const newFolders = [realAllFolder, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 
@@ -217,7 +234,7 @@ describe('withSidebar', () => {
             setTimeout(() => {
                 // Verify folders are loaded
                 expect(store.sidebarLoading()).toBe(false);
-                expect(store.folders()).toContain(ALL_FOLDER);
+                expect(store.folders()).toContainEqual(realAllFolder);
 
                 // Select a node
                 const nodeToSelect = mockTreeNodes[0];

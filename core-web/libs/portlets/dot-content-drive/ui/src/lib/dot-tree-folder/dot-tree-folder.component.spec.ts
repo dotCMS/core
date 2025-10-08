@@ -12,6 +12,58 @@ import { DotTreeFolderComponent } from './dot-tree-folder.component';
 
 import { SYSTEM_HOST_ID } from '../shared/constants';
 
+// Mock DragEvent since it's not available in Jest environment
+class DragEventMock extends Event {
+    override preventDefault = jest.fn();
+    override stopPropagation = jest.fn();
+    dataTransfer: { files?: FileList | null } | null = null;
+
+    constructor(type: string) {
+        super(type);
+        this.dataTransfer = { files: null };
+    }
+}
+
+// Override global DragEvent with our mock
+(global as unknown as { DragEvent: typeof DragEventMock }).DragEvent = DragEventMock;
+
+// Helper functions to create properly mocked drag events
+function createDragEnterEvent(
+    fromElement?: HTMLElement | null
+): DragEvent & { fromElement: HTMLElement | null } {
+    const event = new DragEvent('dragenter') as DragEvent & { fromElement: HTMLElement | null };
+    (event as unknown as { fromElement: HTMLElement | null }).fromElement = fromElement ?? null;
+
+    return event;
+}
+
+function createDragLeaveEvent(relatedTarget?: EventTarget | null): DragEvent {
+    const event = new DragEvent('dragleave');
+    (event as unknown as { relatedTarget: EventTarget | null }).relatedTarget =
+        relatedTarget ?? null;
+
+    return event;
+}
+
+function createDragOverEvent(target?: HTMLElement): DragEvent {
+    const event = new DragEvent('dragover');
+    Object.defineProperty(event, 'target', {
+        value: target ?? document.createElement('div'),
+        writable: false
+    });
+
+    return event;
+}
+
+function createDropEvent(files?: FileList | null): DragEvent {
+    const event = new DragEvent('drop');
+    if (event.dataTransfer) {
+        (event.dataTransfer as unknown as { files: FileList | null }).files = files ?? null;
+    }
+
+    return event;
+}
+
 describe('DotTreeFolderComponent', () => {
     let spectator: Spectator<DotTreeFolderComponent>;
     let component: DotTreeFolderComponent;
@@ -323,6 +375,402 @@ describe('DotTreeFolderComponent', () => {
 
             const treeComponent = spectator.query(Tree);
             expect(treeComponent?.loading).toBe(false);
+        });
+    });
+
+    describe('Drag and Drop', () => {
+        let elementRefSpy: ReturnType<typeof jest.spyOn>;
+        let uploadFilesSpyEmitter: ReturnType<typeof jest.spyOn>;
+
+        beforeEach(() => {
+            uploadFilesSpyEmitter = jest.spyOn(component.uploadFiles, 'emit');
+
+            // Spy on the component's elementRef nativeElement.contains method
+            if (component.elementRef?.nativeElement) {
+                elementRefSpy = jest
+                    .spyOn(component.elementRef.nativeElement, 'contains')
+                    .mockReturnValue(false);
+            }
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        describe('dragenter', () => {
+            it('should prevent default and stop propagation', () => {
+                const dragEvent = createDragEnterEvent(null);
+
+                component.onDragEnter(dragEvent);
+
+                expect(dragEvent.preventDefault).toHaveBeenCalled();
+                expect(dragEvent.stopPropagation).toHaveBeenCalled();
+            });
+
+            it('should handle dragenter with fromElement', () => {
+                const mockFromElement = document.createElement('div');
+                const dragEvent = createDragEnterEvent(mockFromElement);
+
+                component.onDragEnter(dragEvent);
+
+                expect(dragEvent.preventDefault).toHaveBeenCalled();
+                expect(dragEvent.stopPropagation).toHaveBeenCalled();
+            });
+        });
+
+        describe('dragover', () => {
+            it('should prevent default and stop propagation', () => {
+                const dragEvent = createDragOverEvent();
+
+                component.onDragOver(dragEvent);
+
+                expect(dragEvent.preventDefault).toHaveBeenCalled();
+                expect(dragEvent.stopPropagation).toHaveBeenCalled();
+            });
+
+            it('should set activeDropNode when dragging over a node with data-json-node attribute', () => {
+                const mockNodeData = {
+                    id: 'folder-123',
+                    hostname: 'demo.dotcms.com',
+                    path: '/documents/',
+                    type: 'folder' as const
+                };
+
+                const targetElement = document.createElement('span');
+                targetElement.setAttribute('data-json-node', JSON.stringify(mockNodeData));
+                targetElement.setAttribute('data-testid', 'tree-node-label');
+
+                const dragEvent = createDragOverEvent(targetElement);
+
+                component.onDragOver(dragEvent);
+
+                expect(component.$activeDropNode()).toEqual(mockNodeData);
+            });
+
+            it('should set activeDropNode when target contains a child with data-testid="tree-node-label"', () => {
+                const mockNodeData = {
+                    id: 'folder-456',
+                    hostname: 'demo.dotcms.com',
+                    path: '/images/',
+                    type: 'folder' as const
+                };
+
+                const childElement = document.createElement('span');
+                childElement.setAttribute('data-json-node', JSON.stringify(mockNodeData));
+                childElement.setAttribute('data-testid', 'tree-node-label');
+
+                const parentElement = document.createElement('div');
+                parentElement.appendChild(childElement);
+
+                const dragEvent = createDragOverEvent(parentElement);
+
+                component.onDragOver(dragEvent);
+
+                expect(component.$activeDropNode()).toEqual(mockNodeData);
+            });
+
+            it('should not set activeDropNode when target has no data-json-node attribute', () => {
+                const targetElement = document.createElement('div');
+                const dragEvent = createDragOverEvent(targetElement);
+
+                component.$activeDropNode.set(null);
+                component.onDragOver(dragEvent);
+
+                expect(component.$activeDropNode()).toBeNull();
+            });
+        });
+
+        describe('dragleave', () => {
+            beforeEach(() => {
+                // Set an active drop node first
+                component.$activeDropNode.set({
+                    id: 'folder-123',
+                    hostname: 'demo.dotcms.com',
+                    path: '/documents/',
+                    type: 'folder'
+                });
+            });
+
+            it('should reset activeDropNode when drag leaves and relatedTarget is not within component', () => {
+                const mockRelatedTarget = document.createElement('div');
+                elementRefSpy.mockReturnValue(false);
+
+                const dragEvent = createDragLeaveEvent(mockRelatedTarget);
+
+                component.onDragLeave(dragEvent);
+
+                expect(component.$activeDropNode()).toBeNull();
+            });
+
+            it('should not reset activeDropNode when relatedTarget is still within component', () => {
+                const mockRelatedTarget = document.createElement('div');
+                elementRefSpy.mockReturnValue(true);
+
+                const dragEvent = createDragLeaveEvent(mockRelatedTarget);
+
+                component.onDragLeave(dragEvent);
+
+                expect(component.$activeDropNode()).not.toBeNull();
+            });
+
+            it('should reset activeDropNode when relatedTarget is null', () => {
+                const dragEvent = createDragLeaveEvent(null);
+
+                component.onDragLeave(dragEvent);
+
+                expect(component.$activeDropNode()).toBeNull();
+            });
+
+            it('should prevent default', () => {
+                const dragEvent = createDragLeaveEvent(null);
+
+                component.onDragLeave(dragEvent);
+
+                expect(dragEvent.preventDefault).toHaveBeenCalled();
+            });
+        });
+
+        describe('drop', () => {
+            let mockFiles: FileList;
+            let mockFile: File;
+
+            beforeEach(() => {
+                mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
+
+                mockFiles = {
+                    length: 1,
+                    item: (index: number) => (index === 0 ? mockFile : null),
+                    [0]: mockFile,
+                    [Symbol.iterator]: function* () {
+                        yield mockFile;
+                    }
+                } as FileList;
+
+                // Set an active drop node
+                component.$activeDropNode.set({
+                    id: 'folder-789',
+                    hostname: 'demo.dotcms.com',
+                    path: '/uploads/',
+                    type: 'folder'
+                });
+            });
+
+            it('should emit uploadFiles event with files and targetFolderId', () => {
+                const dragEvent = createDropEvent(mockFiles);
+
+                component.onDrop(dragEvent);
+
+                expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
+                    files: mockFiles,
+                    targetFolderId: 'folder-789'
+                });
+            });
+
+            it('should reset activeDropNode after drop', () => {
+                const dragEvent = createDropEvent(mockFiles);
+
+                component.onDrop(dragEvent);
+
+                expect(component.$activeDropNode()).toBeNull();
+            });
+
+            it('should prevent default and stop propagation', () => {
+                const dragEvent = createDropEvent(mockFiles);
+
+                component.onDrop(dragEvent);
+
+                expect(dragEvent.preventDefault).toHaveBeenCalled();
+                expect(dragEvent.stopPropagation).toHaveBeenCalled();
+            });
+
+            it('should not emit uploadFiles when no files are dropped', () => {
+                const dragEvent = createDropEvent(null);
+
+                component.onDrop(dragEvent);
+
+                expect(uploadFilesSpyEmitter).not.toHaveBeenCalled();
+            });
+
+            it('should not emit uploadFiles when files list is empty', () => {
+                const emptyFiles = {
+                    length: 0,
+                    item: () => null,
+                    [Symbol.iterator]: function* () {
+                        // Empty generator
+                    }
+                } as FileList;
+
+                const dragEvent = createDropEvent(emptyFiles);
+
+                component.onDrop(dragEvent);
+
+                expect(uploadFilesSpyEmitter).not.toHaveBeenCalled();
+            });
+
+            it('should handle multiple files being dropped', () => {
+                const file1 = new File(['content1'], 'test1.txt', { type: 'text/plain' });
+                const file2 = new File(['content2'], 'test2.txt', { type: 'text/plain' });
+
+                const multipleFiles = {
+                    length: 2,
+                    item: (index: number) => [file1, file2][index] || null,
+                    [0]: file1,
+                    [1]: file2,
+                    [Symbol.iterator]: function* () {
+                        yield file1;
+                        yield file2;
+                    }
+                } as FileList;
+
+                const dragEvent = createDropEvent(multipleFiles);
+
+                component.onDrop(dragEvent);
+
+                expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
+                    files: multipleFiles,
+                    targetFolderId: 'folder-789'
+                });
+            });
+        });
+
+        describe('Integration Tests', () => {
+            it('should complete full drag and drop cycle', () => {
+                const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
+                const mockFiles = {
+                    length: 1,
+                    item: () => mockFile,
+                    [0]: mockFile,
+                    [Symbol.iterator]: function* () {
+                        yield mockFile;
+                    }
+                } as FileList;
+
+                const mockNodeData = {
+                    id: 'folder-integration',
+                    hostname: 'demo.dotcms.com',
+                    path: '/integration-test/',
+                    type: 'folder' as const
+                };
+
+                // 1. Drag enter
+                const dragEnterEvent = createDragEnterEvent(null);
+                component.onDragEnter(dragEnterEvent);
+                expect(dragEnterEvent.preventDefault).toHaveBeenCalled();
+
+                // 2. Drag over a node
+                const targetElement = document.createElement('span');
+                targetElement.setAttribute('data-json-node', JSON.stringify(mockNodeData));
+                const dragOverEvent = createDragOverEvent(targetElement);
+                component.onDragOver(dragOverEvent);
+                expect(component.$activeDropNode()).toEqual(mockNodeData);
+
+                // 3. Drop files
+                const dropEvent = createDropEvent(mockFiles);
+                component.onDrop(dropEvent);
+
+                expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
+                    files: mockFiles,
+                    targetFolderId: 'folder-integration'
+                });
+                expect(component.$activeDropNode()).toBeNull();
+            });
+
+            it('should handle drag leave without dropping', () => {
+                const mockNodeData = {
+                    id: 'folder-cancel',
+                    hostname: 'demo.dotcms.com',
+                    path: '/cancel-test/',
+                    type: 'folder' as const
+                };
+
+                // 1. Drag over to set active node
+                const targetElement = document.createElement('span');
+                targetElement.setAttribute('data-json-node', JSON.stringify(mockNodeData));
+                const dragOverEvent = createDragOverEvent(targetElement);
+                component.onDragOver(dragOverEvent);
+                expect(component.$activeDropNode()).toEqual(mockNodeData);
+
+                // 2. Drag leave
+                const dragLeaveEvent = createDragLeaveEvent(null);
+                component.onDragLeave(dragLeaveEvent);
+
+                expect(component.$activeDropNode()).toBeNull();
+                expect(uploadFilesSpyEmitter).not.toHaveBeenCalled();
+            });
+
+            it('should update activeDropNode when dragging over different nodes', () => {
+                const mockNodeData1 = {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folder-1/',
+                    type: 'folder' as const
+                };
+
+                const mockNodeData2 = {
+                    id: 'folder-2',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folder-2/',
+                    type: 'folder' as const
+                };
+
+                // Drag over first node
+                const targetElement1 = document.createElement('span');
+                targetElement1.setAttribute('data-json-node', JSON.stringify(mockNodeData1));
+                const dragOverEvent1 = createDragOverEvent(targetElement1);
+                component.onDragOver(dragOverEvent1);
+                expect(component.$activeDropNode()).toEqual(mockNodeData1);
+
+                // Drag over second node
+                const targetElement2 = document.createElement('span');
+                targetElement2.setAttribute('data-json-node', JSON.stringify(mockNodeData2));
+                const dragOverEvent2 = createDragOverEvent(targetElement2);
+                component.onDragOver(dragOverEvent2);
+                expect(component.$activeDropNode()).toEqual(mockNodeData2);
+            });
+        });
+
+        describe('$activeDropNode Signal', () => {
+            it('should initialize as null', () => {
+                expect(component.$activeDropNode()).toBeNull();
+            });
+
+            it('should update when set programmatically', () => {
+                const mockNodeData = {
+                    id: 'test-folder',
+                    hostname: 'test.com',
+                    path: '/test/',
+                    type: 'folder' as const
+                };
+
+                component.$activeDropNode.set(mockNodeData);
+
+                expect(component.$activeDropNode()).toEqual(mockNodeData);
+            });
+
+            it('should be reactive when updated', () => {
+                const mockNodeData1 = {
+                    id: 'folder-a',
+                    hostname: 'test.com',
+                    path: '/a/',
+                    type: 'folder' as const
+                };
+
+                const mockNodeData2 = {
+                    id: 'folder-b',
+                    hostname: 'test.com',
+                    path: '/b/',
+                    type: 'folder' as const
+                };
+
+                component.$activeDropNode.set(mockNodeData1);
+                expect(component.$activeDropNode()).toEqual(mockNodeData1);
+
+                component.$activeDropNode.set(mockNodeData2);
+                expect(component.$activeDropNode()).toEqual(mockNodeData2);
+
+                component.$activeDropNode.set(null);
+                expect(component.$activeDropNode()).toBeNull();
+            });
         });
     });
 });
