@@ -2,11 +2,11 @@ import { NgModule } from '@angular/core';
 
 import { DotContentletsComponent } from './dot-contentlets.component';
 
-import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 
 @NgModule({
     declarations: [DotContentletsComponent],
-    imports: [DotContentletEditorModule],
+    imports: [DotEditContentletComponent],
     exports: [DotContentletsComponent],
     providers: []
 })

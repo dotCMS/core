@@ -10,7 +10,7 @@ import { DotRouterService } from '@dotcms/dotcms-js';
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
 import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotContentletEditorModule } from '../../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotEditContentletComponent } from '../../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotExperimentClassDirective } from '../../../shared/directives/dot-experiment-class.directive';
 import { DotBlockEditorSidebarModule } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.module';
 import { DotEditPageNavDirective } from '../dot-edit-page-nav/directives/dot-edit-page-nav.directive';
@@ -20,7 +20,7 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
     imports: [
         CommonModule,
         RouterModule,
-        DotContentletEditorModule,
+        DotEditContentletComponent,
         DotBlockEditorSidebarModule,
         DotEditPageNavDirective,
         DotEditPageNavModule,

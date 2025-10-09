@@ -4,10 +4,10 @@ import { DotDialogComponent } from '@dotcms/ui';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 
-import { IFrameModule } from '../_common/iframe';
+import { IframeComponent } from '../_common/iframe/iframe-component/iframe.component';
 
 @NgModule({
-    imports: [DotDialogComponent, IFrameModule],
+    imports: [DotDialogComponent, IframeComponent],
     declarations: [DotIframeDialogComponent],
     exports: [DotIframeDialogComponent]
 })

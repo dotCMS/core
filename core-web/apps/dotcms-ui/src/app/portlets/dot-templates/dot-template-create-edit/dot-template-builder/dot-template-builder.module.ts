@@ -10,7 +10,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 
 import { DotGlobalMessageModule } from '../../../../view/components/_common/dot-global-message/dot-global-message.module';
-import { IFrameModule } from '../../../../view/components/_common/iframe/iframe.module';
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotTemplateAdvancedModule } from '../dot-template-advanced/dot-template-advanced.module';
 
@@ -20,7 +20,7 @@ import { DotTemplateAdvancedModule } from '../dot-template-advanced/dot-template
         DotMessagePipe,
         DotTemplateAdvancedModule,
         TabViewModule,
-        IFrameModule,
+        IframeComponent,
         DotPortletBoxModule,
         TemplateBuilderModule,
         ButtonModule,

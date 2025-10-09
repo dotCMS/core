@@ -70,7 +70,8 @@ import { SiteSelectorFieldModule } from '../../../view/components/_common/dot-si
 import { DotTextareaContentComponent } from '../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotWorkflowsActionsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 import { DotWorkflowsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
-import { IFrameModule } from '../../../view/components/_common/iframe/iframe.module';
+import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { IframeComponent } from '../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { SearchableDropdownComponent } from '../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotBaseTypeSelectorModule } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
 import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
@@ -139,8 +140,9 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DragulaModule,
         DropdownModule,
         FormsModule,
-        IFrameModule,
+        IframeComponent,
         DotInlineEditModule,
+        DotLoadingIndicatorModule,
         InputTextModule,
         MultiSelectModule,
         OverlayPanelModule,

@@ -5,10 +5,10 @@ import { DotDiffPipe, DotMessagePipe } from '@dotcms/ui';
 
 import { DotWhatsChangedComponent } from './dot-whats-changed.component';
 
-import { IFrameModule } from '../../../../../view/components/_common/iframe/iframe.module';
+import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 
 @NgModule({
-    imports: [CommonModule, IFrameModule, DotDiffPipe, DotMessagePipe],
+    imports: [CommonModule, IframeComponent, DotDiffPipe, DotMessagePipe],
     declarations: [DotWhatsChangedComponent],
     exports: [DotWhatsChangedComponent]
 })

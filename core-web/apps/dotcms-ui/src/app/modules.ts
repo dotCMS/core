@@ -21,7 +21,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TreeTableModule } from 'primeng/treetable';
 
-import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
+import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotDialogComponent, DotIconComponent } from '@dotcms/ui';
 
 import { DotActionButtonComponent } from './view/components/_common/dot-action-button/dot-action-button.component';
@@ -31,9 +31,10 @@ import { DotPushPublishDialogComponent } from './view/components/_common/dot-pus
 import { DotSiteSelectorComponent } from './view/components/_common/dot-site-selector/dot-site-selector.component';
 import { DotTextareaContentComponent } from './view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotWizardComponent } from './view/components/_common/dot-wizard/dot-wizard.component';
-import { IFrameModule } from './view/components/_common/iframe';
+import { IframeComponent } from './view/components/_common/iframe/iframe-component/iframe.component';
+import { IframePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/iframe-porlet-legacy.component';
 import { SearchableDropdownComponent } from './view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
-import { DotContentletEditorModule } from './view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotEditContentletComponent } from './view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotLargeMessageDisplayComponent } from './view/components/dot-large-message-display/dot-large-message-display.component';
 import { DotListingDataTableComponent } from './view/components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotMessageDisplayComponent } from './view/components/dot-message-display/dot-message-display.component';
@@ -43,19 +44,20 @@ import { DotWorkflowTaskDetailComponent } from './view/components/dot-workflow-t
 export const CUSTOM_MODULES = [
     DotToolbarComponent,
     DotActionButtonComponent,
-    DotContentletEditorModule,
+    DotEditContentletComponent,
     DotDialogComponent,
     DotIconComponent,
     DotTextareaContentComponent,
     DotWorkflowTaskDetailComponent,
     DotMessageDisplayComponent,
-    IFrameModule,
+    IframeComponent,
+    IframePortletLegacyComponent,
     DotListingDataTableComponent,
     SearchableDropdownComponent,
     DotSiteSelectorComponent,
     DotLargeMessageDisplayComponent,
     DotPushPublishDialogComponent,
-    DotContentCompareModule,
+    DotContentCompareComponent,
     DotDownloadBundleDialogComponent,
     DotWizardComponent,
     DotGenerateSecurePasswordComponent

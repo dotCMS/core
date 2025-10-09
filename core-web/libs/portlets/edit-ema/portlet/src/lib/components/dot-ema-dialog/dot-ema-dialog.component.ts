@@ -26,7 +26,7 @@ import {
     DotCMSWorkflowActionEvent,
     DotContentCompareEvent
 } from '@dotcms/dotcms-models';
-import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
+import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap } from '@dotcms/types';
 import { DotSpinnerComponent, SafeUrlPipe } from '@dotcms/ui';
 
@@ -53,7 +53,7 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
         EmaFormSelectorComponent,
         DialogModule,
         DotSpinnerComponent,
-        DotContentCompareModule
+        DotContentCompareComponent
     ],
     providers: [DotEmaDialogStore, DotEmaWorkflowActionsService]
 })

@@ -40,7 +40,7 @@ import { DotDirectivesModule } from '../../../shared/dot-directives.module';
 import { DotOverlayMaskModule } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotPaletteModule } from '../components/dot-palette/dot-palette.module';
 import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
 const routes: Routes = [
@@ -58,13 +58,13 @@ const routes: Routes = [
         DialogModule,
         CheckboxModule,
         RouterModule.forChild(routes),
-        DotContentletEditorModule,
+        DotEditContentletComponent,
         DotSafeHtmlPipe,
         DotDirectivesModule,
         DotWhatsChangedModule,
         DotFormSelectorModule,
         TooltipModule,
-        DotContentletEditorModule,
+        DotEditContentletComponent,
         DotLoadingIndicatorModule,
         DotEditPageToolbarModule,
         DotEditPageViewAsControllerModule,

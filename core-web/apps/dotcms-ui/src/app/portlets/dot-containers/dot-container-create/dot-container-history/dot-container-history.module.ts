@@ -3,12 +3,12 @@ import { NgModule } from '@angular/core';
 
 import { DotContainerHistoryComponent } from './dot-container-history.component';
 
-import { IFrameModule } from '../../../../view/components/_common/iframe/iframe.module';
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 @NgModule({
     declarations: [DotContainerHistoryComponent],
     exports: [DotContainerHistoryComponent],
-    imports: [CommonModule, DotPortletBoxModule, IFrameModule]
+    imports: [CommonModule, DotPortletBoxModule, IframeComponent]
 })
 export class DotContainerHistoryModule {}
