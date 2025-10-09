@@ -47,6 +47,7 @@ export class DotFolderListViewComponent {
     rightClick = output<ContextMenuData>();
     doubleClick = output<DotContentDriveItem>();
     dragStart = output<DotContentDriveItem[]>();
+    dragEnd = output<void>();
 
     selectedItems = [];
 
@@ -200,8 +201,16 @@ export class DotFolderListViewComponent {
         }
 
         document.body.appendChild(container);
+        // This will remove the container from the dom after the drag captures the images
         setTimeout(() => document.body.removeChild(container), 0);
 
         return container;
+    }
+
+    /**
+     * Handles drag end on a content item
+     */
+    onDragEnd() {
+        this.dragEnd.emit();
     }
 }

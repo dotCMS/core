@@ -57,7 +57,8 @@
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
                 [draggable]="true"
-                (dragstart)="onDragStart($event, item)">
+                (dragstart)="onDragStart($event, item)"
+                (dragend)="onDragEnd()">
                 <td data-testId="item-checkbox">
                     <p-tableCheckbox [value]="item" />
                 </td>

@@ -19,6 +19,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
+import { withDragging } from './features/dragging/withDragging';
 import { withSidebar } from './features/sidebar/withSidebar';
 
 import {
@@ -209,5 +210,6 @@ export const DotContentDriveStore = signalStore(
     }),
     withContextMenu(),
     withDialog(),
-    withSidebar()
+    withSidebar(),
+    withDragging()
 );

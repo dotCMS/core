@@ -46,6 +46,8 @@
         (sort)="onSort($event)"
         (rightClick)="onContextMenu($event)"
         (doubleClick)="onDoubleClick($event)"
+        (dragStart)="onDragStart($event)"
+        (dragEnd)="onDragEnd()"
         #listView />
 </dot-content-drive-dropzone>
 <dot-folder-list-context-menu />
