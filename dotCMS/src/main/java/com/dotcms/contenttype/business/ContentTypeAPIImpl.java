@@ -63,6 +63,8 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.util.HashSet;
+import java.util.Set;
 import org.elasticsearch.action.search.SearchResponse;
 
 import java.util.ArrayList;
@@ -70,7 +72,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -802,31 +803,118 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public List<ContentType> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
           throws DotDataException {
+      return search(sites, condition, base, orderBy, limit, offset, null);
+  }
 
-    final List<ContentType> returnTypes = new ArrayList<>();
-    int rollingOffset = offset;
-    try {
-      while ((limit<0)||(returnTypes.size() < limit)) {
-        final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(sites, this.user, this.respectFrontendRoles);
-        final List<ContentType> rawContentTypes = this.contentTypeFactory.search(resolvedSiteIds,
-                condition, base.getType(), orderBy, limit, rollingOffset);
-        if (rawContentTypes.isEmpty()) {
-          break;
-        }
-        returnTypes.addAll(this.perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user));
-        if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
-          break;
-        }
-        rollingOffset += limit;
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final List<String> sites, final String condition,
+          final BaseContentType base, final String orderBy, final int limit, final int offset,
+          final List<String> requestedContentTypes) throws DotDataException {
+
+      final List<ContentType> returnTypes = new ArrayList<>();
+      final Set<String> includedIds = new HashSet<>();
+
+      final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(sites, this.user,
+              this.respectFrontendRoles);
+
+      try {
+          // Handle explicitly requested Content Types
+          if (requestedContentTypes != null && !requestedContentTypes.isEmpty()) {
+              final List<ContentType> includedContentTypes = this.contentTypeFactory.find(
+                      requestedContentTypes, null, offset, limit, orderBy);
+
+              final List<ContentType> authorizedIncluded = this.perms.filterCollection(
+                      includedContentTypes, PermissionAPI.PERMISSION_READ,
+                      this.respectFrontendRoles, this.user);
+
+              for (ContentType contentType : authorizedIncluded) {
+                  if (limit < 0 || returnTypes.size() < limit) {
+                      returnTypes.add(contentType);
+                      includedIds.add(contentType.inode());
+                      includedIds.add(contentType.id());
+                  }
+              }
+
+              // Early return if limit reached
+              if (limit > 0 && returnTypes.size() >= limit) {
+                  return returnTypes;
+              }
+          }
+
+          // Calculate remaining limit
+          int remainingLimit = (limit < 0) ? -1 : (limit - returnTypes.size());
+
+          // Perform paginated search
+          final List<ContentType> searchResults = performSearch(resolvedSiteIds, condition, base,
+                  orderBy, remainingLimit, offset, includedIds);
+
+          returnTypes.addAll(searchResults);
+          return returnTypes;
+
+      } catch (final DotSecurityException e) {
+          Logger.error(this,
+                  String.format("An error occurred when searching for Content Types: %s",
+                          ExceptionUtil.getErrorMessage(e)));
+          throw new DotStateException(e);
+      }
+  }
+
+  private List<ContentType> performSearch(final List<String> resolvedSiteIds,
+          final String condition, final BaseContentType base, final String orderBy,
+          final int limit, final int offset, final Set<String> includedIds)
+          throws DotDataException {
+
+      final List<ContentType> returnTypes = new ArrayList<>();
+      int rollingOffset = offset;
+      int remainingLimit = limit;
+
+      while ((limit < 0) || (returnTypes.size() < limit)) {
+          int currentLimit = (remainingLimit < 0) ? -1 : remainingLimit;
+
+          final List<ContentType> rawContentTypes = this.contentTypeFactory.search(resolvedSiteIds,
+                  condition, base.getType(), orderBy, currentLimit, rollingOffset);
+
+          if (rawContentTypes.isEmpty()) {
+              break;
+          }
+
+          // Filter by permission AND exclude already included items
+          final List<ContentType> filtered = filterByPermissionAndDuplicity(includedIds,
+                  rawContentTypes);
+          returnTypes.addAll(filtered);
+
+          if (limit > 0) {
+              remainingLimit = limit - returnTypes.size();
+              if (remainingLimit <= 0 || rawContentTypes.size() < currentLimit) {
+                  break;
+              }
+          }
+
+          rollingOffset += rawContentTypes.size();
       }
 
-      final int maxAmount = (limit<0)?returnTypes.size():Math.min(limit, returnTypes.size());
+      final int maxAmount = (limit < 0) ? returnTypes.size() : Math.min(limit, returnTypes.size());
       return returnTypes.subList(0, maxAmount);
-    } catch (final DotSecurityException e) {
-      Logger.error(this, String.format("An error occurred when searching for Content Types: " +
-              "%s", ExceptionUtil.getErrorMessage(e)));
-      throw new DotStateException(e);
-    }
+  }
+
+  private List<ContentType> filterByPermissionAndDuplicity(Set<String> includedIds,
+          List<ContentType> rawContentTypes) throws DotDataException {
+
+      final List<ContentType> filteredContentTypes = new ArrayList<>();
+
+      for (ContentType rawContentType : rawContentTypes) {
+          if (this.perms.doesUserHavePermission(rawContentType,
+                  PermissionAPI.PERMISSION_READ, this.user, this.respectFrontendRoles)
+                  && !includedIds.contains(rawContentType.inode())
+                  && !includedIds.contains(rawContentType.id())) {
+
+              filteredContentTypes.add(rawContentType);
+              includedIds.add(rawContentType.inode());
+              includedIds.add(rawContentType.id());
+          }
+      }
+      return filteredContentTypes;
   }
 
   @CloseDBIfOpened
@@ -835,6 +923,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             throws DotDataException {
         return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base, orderBy, limit, offset);
     }
+
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final String condition, final BaseContentType base,
+          final String orderBy, final int limit, final int offset, final String siteId,
+          final List<String> requestedContentTypes)
+          throws DotDataException {
+      return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base,
+              orderBy, limit, offset, requestedContentTypes);
+  }
 
   @CloseDBIfOpened
   @Override
