@@ -2,12 +2,15 @@ package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rendering.engine.ScriptEngine;
+import com.dotcms.rendering.engine.ScriptEngineFactory;
+import com.dotcms.rendering.js.proxy.JsRolesFetcherByUser;
+import com.dotcms.rendering.js.proxy.JsUser;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -23,13 +26,10 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
@@ -41,18 +41,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
-import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -71,6 +61,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -98,21 +89,21 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.util.stream.Collectors;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
@@ -140,49 +131,49 @@ public class UserResource implements Serializable {
 	private final ErrorResponseHelper errorHelper;
 	private final PaginationUtil paginationUtil;
 	private final RoleAPI roleAPI;
-	private final UserPermissionHelper userPermissionHelper;
+    private final UserPermissionHelper userPermissionHelper;
 
-	/**
-	 * CDI constructor for dependency injection.
-	 */
-	@Inject
-	public UserResource(final UserPermissionHelper userPermissionHelper) {
-		this(new WebResource(new ApiProvider()), UserResourceHelper.getInstance(),
-				new PaginationUtil(new UserPaginator()), new DotRestInstanceProvider()
-																 .setUserAPI(APILocator.getUserAPI())
-																 .setHostAPI(APILocator.getHostAPI())
-																 .setRoleAPI(APILocator.getRoleAPI())
-																 .setErrorHelper(ErrorResponseHelper.INSTANCE),
-				userPermissionHelper);
-	}
+    /**
+     * CDI constructor for dependency injection.
+     */
+    @Inject
+    public UserResource(final UserPermissionHelper userPermissionHelper) {
+        this(new WebResource(new ApiProvider()), UserResourceHelper.getInstance(),
+                new PaginationUtil(new UserPaginator()), new DotRestInstanceProvider()
+                        .setUserAPI(APILocator.getUserAPI())
+                        .setHostAPI(APILocator.getHostAPI())
+                        .setRoleAPI(APILocator.getRoleAPI())
+                        .setErrorHelper(ErrorResponseHelper.INSTANCE),
+                userPermissionHelper);
+    }
 
-	/**
-	 * Backward-compatible test constructor for existing tests.
-	 * Chains to 5-parameter constructor with default UserPermissionHelper.
-	 */
-	@VisibleForTesting
-	protected UserResource(final WebResource webResource, final UserResourceHelper userHelper,
-						   PaginationUtil paginationUtil, final DotRestInstanceProvider instanceProvider) {
-		this(webResource, userHelper, paginationUtil, instanceProvider, new UserPermissionHelper());
-	}
+    /**
+     * Backward-compatible test constructor for existing tests.
+     * Chains to 5-parameter constructor with default UserPermissionHelper.
+     */
+    @VisibleForTesting
+    protected UserResource(final WebResource webResource, final UserResourceHelper userHelper,
+                           PaginationUtil paginationUtil, final DotRestInstanceProvider instanceProvider) {
+        this(webResource, userHelper, paginationUtil, instanceProvider, new UserPermissionHelper());
+    }
 
-	/**
-	 * Full test constructor with all dependencies.
-	 * Contains the main initialization logic.
-	 */
-	@VisibleForTesting
-	protected UserResource(final WebResource webResource, final UserResourceHelper userHelper,
-						   PaginationUtil paginationUtil, final DotRestInstanceProvider instanceProvider,
-						   final UserPermissionHelper userPermissionHelper) {
-		this.webResource = webResource;
-		this.helper = userHelper;
-		this.paginationUtil = paginationUtil;
-		this.userAPI = instanceProvider.getUserAPI();
-		this.siteAPI = instanceProvider.getHostAPI();
-		this.errorHelper = instanceProvider.getErrorHelper();
-		this.roleAPI = instanceProvider.getRoleAPI();
-		this.userPermissionHelper = userPermissionHelper;
-	}
+    /**
+     * Full test constructor with all dependencies.
+     * Contains the main initialization logic.
+     */
+    @VisibleForTesting
+    protected UserResource(final WebResource webResource, final UserResourceHelper userHelper,
+                           PaginationUtil paginationUtil, final DotRestInstanceProvider instanceProvider,
+                           final UserPermissionHelper userPermissionHelper) {
+        this.webResource = webResource;
+        this.helper = userHelper;
+        this.paginationUtil = paginationUtil;
+        this.userAPI = instanceProvider.getUserAPI();
+        this.siteAPI = instanceProvider.getHostAPI();
+        this.errorHelper = instanceProvider.getErrorHelper();
+        this.roleAPI = instanceProvider.getRoleAPI();
+        this.userPermissionHelper = userPermissionHelper;
+    }
 
 	@Operation(
 		operationId = "getCurrentUser",
@@ -375,109 +366,40 @@ public class UserResource implements Serializable {
 		return response;
 	} // update.
 
-	/**
-	 * Returns a list of dotCMS users based on the specified search criteria. Depending on the filtering values, 2
-	 * types of results can be returned:
-	 * <ol>
-	 * 		<li>If both the {@code assetInode} and {@code permission} parameters <b>ARE specified</b>, this method will
-	 * 		return a list of users that have the specified permission type on the specified asset Inode, and match the
-	 * 		remaining filtering parameters as well.</li>
-	 * 		<li>If either the {@code assetInode} or {@code permission} parameters <b>ARE NOT specified</b>, this method
-	 * 		will return a list of users based on the remaining filtering parameters.</li>
-	 * </ol>
-	 * <p>
-	 * The parameters for this REST call are optional -- they have their respective fallback values -- and are as
-	 * follows:
-	 * <ul>
-	 * 		<li>{@code assetInode}</li>
-	 * 		<li>{@code permission}</li>
-	 * 		<li>{@code query}</li>
-	 * 		<li>{@code page}</li>
-	 * 		<li>{@code per_page}</li>
-	 * 		<li>{@code includeAnonymous}</li>
-	 * 		<li>{@code includeDefault}</li>
-	 * </ul>
-	 * <p>
-	 * Example #1:
-	 * <pre>
-	 * http://localhost:8080/api/v1/users/filter?page=0&per_page=30&includeAnonymous=true&includeDefault=true
-	 * </pre>
-	 * <p>
-	 * Example #2:
-	 * <pre>
-	 * http://localhost:8080/api/v1/users/filter?assetInode=6e13c345-4599-49d0-aa47-6a7e59245247&permission=1&query=John&page=0&per_page=10&includeAnonymous=false
-	 * </pre>
-	 *
-	 * @param request          The current instance of the {@link HttpServletRequest}.
-	 * @param response         The current instance of the {@link HttpServletResponse}.
-	 * @param filter           Allows you to filter Users by their full name or parts of it.
-	 * @param page             The results page or offset, for pagination purposes.
-	 * @param perPage          The size of the results page, for pagination purposes.
-	 * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
-	 *                         check {@link SQLUtil #ORDERBY_WHITELIST(private method in SQLUtil)}.
-	 * @param direction        The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
-	 * @param includeAnonymous If the Anonymous User must be included in the results, set this to {@code true}.
-	 * @param includeDefault   If the Default User must be included in the results, set this to {@code true}.
-	 * @param assetInode       The Inode of a specific asset, if you're querying Users that have a specific permission
-	 *                         on it.
-	 * @param permission       The permission type that Users may have on the previous asset.
-	 *
-	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
-	 */
-	@Operation(
-		operationId = "filterUsers",
-		summary = "Filter users",
-		description = "Returns a list of dotCMS users based on specified search criteria with pagination support"
-	)
-	@io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
-		@ApiResponse(responseCode = "200",
-					description = "Users retrieved successfully",
-					content = @Content(mediaType = "application/json",
-									  schema = @Schema(implementation = ResponseEntityListUserView.class))),
-		@ApiResponse(responseCode = "401",
-					description = "Unauthorized - authentication required",
-					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "403",
-					description = "Forbidden - insufficient permissions",
-					content = @Content(mediaType = "application/json"))
-	})
-	@GET
-	@JSONP
-	@Path("/filter")
-	@NoCache
-	@Produces({ MediaType.APPLICATION_JSON })
-	public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-						   @Parameter(description = "Filter users by full name or parts of it") @QueryParam(UserPaginator.QUERY_PARAM) final String filter,
-						   @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
-						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-						   @Parameter(description = "Column name for sorting results") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
-						   @Parameter(description = "Sorting direction: ASC or DESC") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-						   @Parameter(description = "Include anonymous user in results") @QueryParam(UserPaginator.INCLUDE_ANONYMOUS) boolean includeAnonymous,
-						   @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
-						   @Parameter(description = "Asset inode for permission-based filtering") @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
-						   @Parameter(description = "Permission type for asset-based filtering") @QueryParam(UserPaginator.PERMISSION_PARAM) int permission) {
-		final InitDataObject initData = new WebResource.InitBuilder(webResource)
-				.requiredBackendUser(true)
-				.requiredFrontendUser(false)
-				.requestAndResponse(request, response)
-				.rejectWhenNoUser(true)
-				.init();
-
-		final Map<String, Object> extraParams = new HashMap<>();
-		extraParams.put(UserPaginator.ASSET_INODE_PARAM, assetInode);
-		extraParams.put(UserPaginator.PERMISSION_PARAM, permission);
-		extraParams.put(UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous);
-		extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
-		extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
-
-		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
-		final User user = initData.getUser();
-		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
-	}
 
     /**
-     * Returns a single user
-     * Only admin user can retrieve someone else user
+     * Returns a list of dotCMS users based on the specified search criteria. Depending on the filtering values, 2
+     * types of results can be returned:
+     * <ol>
+     * 		<li>If both the {@code assetInode} and {@code permission} parameters <b>ARE specified</b>, this method will
+     * 		return a list of users that have the specified permission type on the specified asset Inode, and match the
+     * 		remaining filtering parameters as well.</li>
+     * 		<li>If either the {@code assetInode} or {@code permission} parameters <b>ARE NOT specified</b>, this method
+     * 		will return a list of users based on the remaining filtering parameters.</li>
+     * </ol>
+     * <p>
+     * The parameters for this REST call are optional -- they have their respective fallback values -- and are as
+     * follows:
+     * <ul>
+     * 		<li>{@code assetInode}</li>
+     * 		<li>{@code permission}</li>
+     * 		<li>{@code query}</li>
+     * 		<li>{@code page}</li>
+     * 		<li>{@code per_page}</li>
+     * 		<li>{@code includeAnonymous}</li>
+     * 		<li>{@code includeDefault}</li>
+     * </ul>
+     * <p>
+     * Example #1:
+     * <pre>
+     * http://localhost:8080/api/v1/users/filter?page=0&per_page=30&includeAnonymous=true&includeDefault=true
+     * </pre>
+     * <p>
+     * Example #2:
+     * <pre>
+     * http://localhost:8080/api/v1/users/filter?assetInode=6e13c345-4599-49d0-aa47-6a7e59245247&permission=1&query=John&page=0&per_page=10&includeAnonymous=false
+     * </pre>
+     *
      * @param request          The current instance of the {@link HttpServletRequest}.
      * @param response         The current instance of the {@link HttpServletResponse}.
      * @param filter           Allows you to filter Users by their full name or parts of it.
@@ -495,6 +417,200 @@ public class UserResource implements Serializable {
      * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
      */
     @Operation(
+            operationId = "filterUsers",
+            summary = "Filter users",
+            description = "Returns a list of dotCMS users based on specified search criteria with pagination support"
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Users retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityListUserView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @JSONP
+    @Path("/filter")
+    @NoCache
+    @Produces({ MediaType.APPLICATION_JSON })
+    public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                           @Parameter(description = "Filter users by full name or parts of it") @QueryParam(UserPaginator.QUERY_PARAM) final String filter,
+                           @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
+                           @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                           @Parameter(description = "Column name for sorting results") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
+                           @Parameter(description = "Sorting direction: ASC or DESC") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
+                           @Parameter(description = "Include anonymous user in results") @QueryParam(UserPaginator.INCLUDE_ANONYMOUS) boolean includeAnonymous,
+                           @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
+                           @Parameter(description = "Asset inode for permission-based filtering") @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
+                           @Parameter(description = "Permission type for asset-based filtering") @QueryParam(UserPaginator.PERMISSION_PARAM) int permission) {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(UserPaginator.ASSET_INODE_PARAM, assetInode);
+        extraParams.put(UserPaginator.PERMISSION_PARAM, permission);
+        extraParams.put(UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous);
+        extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
+        extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
+
+        final OrderDirection orderDirection = OrderDirection.valueOf(direction);
+        final User user = initData.getUser();
+        return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
+    }
+
+	/**
+	 * Returns a list of dotCMS users based on the specified predicate in js search criteria.
+	 * <p>
+	 * <p>
+	 * Example (the body is an application/javascript):
+	 * <pre>
+	 * http://localhost:8080/api/v1/users/filter?page=0&per_page=30
+     * const roles = rolesFetcher.asArray();
+     * const arrayLength = roles.length;
+     *
+     * let isScriptingUserRole = 0;
+     * for (let i = 0; i < arrayLength; i++) {
+     *     const role = roles[i];
+     *     const roleKey = role.getRoleKey();
+     *     isScriptingUserRole |= typeof roleKey === '\''string'\'' && roleKey === '\''Scripting Developer'\'';
+     * }
+     *
+     * return isScriptingUserRole === 1;
+     *
+	 * </pre>
+	 * <p>
+	 *
+     * In this example the list of users is being filtered by the ones with the role Scripting Developer
+     * user and rolesFetcher are the arguments implicit on the context.
+     * user is the actual user
+     * and rolesFetches is such as a view tool to retrieve the user roles lazy.
+     *
+     * if returns a boolean as a true, the user will be included in the results, otherwise will be filtered
+     *
+	 * @param request          The current instance of the {@link HttpServletRequest}.
+	 * @param response         The current instance of the {@link HttpServletResponse}.
+	 * @param page             The results page or offset, for pagination purposes.
+	 * @param perPage          The size of the results page, for pagination purposes.
+	 *
+	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
+	 */
+	@Operation(
+		operationId = "filterUsersByPredicate",
+		summary = "Filter users",
+		description = "Returns a list of dotCMS users based on specified search criteria with pagination support"
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Users retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityListUserView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json"))
+	})
+	@POST
+	@JSONP
+    @Path("/filter")
+	@NoCache
+    @Consumes(MediaType.TEXT_PLAIN) //("application/javascript") is a javascript
+    @Produces({ MediaType.APPLICATION_JSON })
+	public ResponseEntityListUserView filterByPredicate(@Context final HttpServletRequest request,
+                                                        @Context final HttpServletResponse response,
+                                                        @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
+						                                @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                                                        @RequestBody(description = "Javascript body predicate with the logic to filter the users") final String userPredicateScript)
+            throws DotDataException, IOException {
+
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true)
+				.init();
+
+		final User loggedInUser = initData.getUser();
+        final boolean isRoleAdministrator = loggedInUser.isAdmin() ||
+                (
+                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), loggedInUser) &&
+                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), loggedInUser)
+                );
+
+        if (isRoleAdministrator) {
+
+            final List<User> allUsers = this.userAPI.findAllUsers();
+            if (userPredicateScript == null || userPredicateScript.trim().isEmpty()) {
+
+                // all users not filtering at all
+                return new ResponseEntityListUserView(applyPagination(allUsers, page, perPage)); // 200
+            }
+
+            final boolean isScriptingAvailableForUserRestAPI = Config.getBooleanProperty("SCRIPTING_ENABLED_FOR_USERS_API", false);
+            if (!isScriptingAvailableForUserRestAPI) {
+                throw new DotDataException("SCRIPTING_ENABLED_FOR_USERS_API is not enabled, can not run javascript on the api");
+            }
+
+            final List<User> filteredUsers = new ArrayList<>();
+            final String fullScript = "var filter = function(user, rolesFetcher) { " + userPredicateScript + " }; filter;";
+            final ScriptEngine jsEngine = ScriptEngineFactory.getInstance().getEngine(ScriptEngineFactory.JAVASCRIPT_ENGINE);
+
+            Logger.debug(this, ()-> "Filtering by using the js script: " + fullScript);
+            for (final User user : allUsers) {
+
+                final Map<String, Object> bindings = new HashMap<>();
+                final Object result = jsEngine.executeFunction("filter", fullScript, bindings, new JsUser(user), new JsRolesFetcherByUser(user.getUserId()));
+
+                if (result instanceof Boolean && (Boolean) result) {
+                    filteredUsers.add(user);
+                }
+            }
+
+            return new ResponseEntityListUserView(applyPagination(filteredUsers, page, perPage)); // 200
+        }
+
+        throw new ForbiddenException(USER_MSG + loggedInUser.getUserId() + " does not have permissions to retrieve users");
+    }
+
+    private List<UserView> applyPagination(final List<User> users, final int page, final int perPage) throws DotDataException {
+
+        final int fromIndex = page * perPage;
+        final int toIndex = Math.min(fromIndex + perPage, users.size());
+
+        if (fromIndex >= users.size()) {
+            return new ArrayList<>();
+        }
+
+        final List<UserView> userViewList = new ArrayList<>();
+        for (final User user : users.subList(fromIndex, toIndex)) {
+
+            final Role role = APILocator.getRoleAPI().getUserRole(user);
+            userViewList.add(new UserView(user, role));
+        }
+
+        return userViewList;
+    }
+
+
+    /**
+     * Returns a single user
+     * Only admin user can retrieve someone else user
+     * @param request          The current instance of the {@link HttpServletRequest}.
+     * @param response         The current instance of the {@link HttpServletResponse}.
+     * @param userId           id of the user to retrieve
+     *
+     * @return A {@link ResponseUserEntityView} User View
+     */
+    @Operation(
             operationId = "findUser",
             summary = "Find an user",
             description = "Returns an user"
@@ -503,9 +619,12 @@ public class UserResource implements Serializable {
             @ApiResponse(responseCode = "200",
                     description = "User retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseUserMapEntityView.class))),
+                            schema = @Schema(implementation = ResponseUserEntityView.class))),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "NotFound - User not found",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403",
                     description = "Forbidden - insufficient permissions",
@@ -516,9 +635,9 @@ public class UserResource implements Serializable {
     @Path("/{userId}")
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON })
-    public ResponseUserMapEntityView findUserById(@Context final HttpServletRequest request,
-                           @Context final HttpServletResponse response,
-                           @PathParam("userId") @Parameter(
+    public ResponseUserEntityView findUserById(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response,
+                                               @PathParam("userId") @Parameter(
                                    required = true,
                                    description = "Identifier of user to retrieve",
                                    schema = @Schema(type = "string")
@@ -545,8 +664,7 @@ public class UserResource implements Serializable {
                 final User user = this.userAPI.loadUserById(userId);
                 final Role role = APILocator.getRoleAPI().getUserRole(user);
 
-                return new ResponseUserMapEntityView(Map.of(USER_ID, user.getUserId(),
-                        "user", user.toMap(), "roleId", role.getId())); // 200
+                return new ResponseUserEntityView(new UserView(user, role)); // 200
             } catch (NoSuchUserException e) {
 
                 throw new DoesNotExistException("User " + userId + " does not exist", e);
@@ -691,6 +809,7 @@ public class UserResource implements Serializable {
 		updateLoginAsSessionInfo(request, currentSite, principalUserId, null);
 		request.getSession().removeAttribute(WebKeys.PRINCIPAL_USER_ID);
 	}
+
 
 	/**
 	 * Sets the appropriate Site for the user that is being impersonated. The approach is the following:
@@ -885,7 +1004,7 @@ public class UserResource implements Serializable {
 	    @ApiResponse(responseCode = "200",
 	                description = "User created successfully",
 	                content = @Content(mediaType = "application/json",
-	                                  schema = @Schema(implementation = ResponseEntityUserUpdateView.class))),
+	                                  schema = @Schema(implementation = ResponseUserEntityView.class))),
 	    @ApiResponse(responseCode = "400",
 	                description = "Bad request - missing required fields or invalid data",
 	                content = @Content(mediaType = "application/json")),
@@ -907,7 +1026,7 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public final Response create(@Context final HttpServletRequest httpServletRequest,
+	public final ResponseUserEntityView create(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
 								 @io.swagger.v3.oas.annotations.parameters.RequestBody(
 								     description = "User creation data",
@@ -935,8 +1054,7 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
 			final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
-			return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
-					"user", userToUpdated.toMap()))).build(); // 200
+			return new ResponseUserEntityView(new UserView(userToUpdated, role));
 		}
 
 		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
@@ -1102,25 +1220,25 @@ public class UserResource implements Serializable {
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If success returns a map with the user + user id."),
                     @ApiResponse(
                             responseCode = "403",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
                     @ApiResponse(
                             responseCode = "404",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user to update does not exist"),
                     @ApiResponse(
                             responseCode = "400",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user information is not valid"),
             })
     @PATCH
@@ -1128,9 +1246,9 @@ public class UserResource implements Serializable {
     @JSONP
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public final ResponseUserMapEntityView active(@Context final HttpServletRequest httpServletRequest,
-                                 @Context final HttpServletResponse httpServletResponse,
-                                 @PathParam("userId") @Parameter(
+    public final ResponseUserEntityView active(@Context final HttpServletRequest httpServletRequest,
+                                               @Context final HttpServletResponse httpServletResponse,
+                                               @PathParam("userId") @Parameter(
                                          required = true,
                                          description = "Identifier of an user.\n\n" +
                                                  "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
@@ -1163,8 +1281,8 @@ public class UserResource implements Serializable {
             userToUpdated.setActive(true);
             this.userAPI.save(userToUpdated, modUser, false);
 
-            return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
-                    "user", userToUpdated.toMap())); // 200
+            final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
+            return new ResponseUserEntityView(new UserView(userToUpdated, role)); // 200
         }
 
         throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
@@ -1185,25 +1303,25 @@ public class UserResource implements Serializable {
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If success returns a map with the user + user id."),
                     @ApiResponse(
                             responseCode = "403",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
                     @ApiResponse(
                             responseCode = "404",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user to update does not exist"),
                     @ApiResponse(
                             responseCode = "400",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
-                                            ResponseUserMapEntityView.class)),
+                                            ResponseUserEntityView.class)),
                             description = "If the user information is not valid"),
             })
     @PATCH
@@ -1211,9 +1329,9 @@ public class UserResource implements Serializable {
     @JSONP
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public final ResponseUserMapEntityView deactivate(@Context final HttpServletRequest httpServletRequest,
-                                                  @Context final HttpServletResponse httpServletResponse,
-                                                  @PathParam("userId") @Parameter(
+    public final ResponseUserEntityView deactivate(@Context final HttpServletRequest httpServletRequest,
+                                                   @Context final HttpServletResponse httpServletResponse,
+                                                   @PathParam("userId") @Parameter(
                                                           required = true,
                                                           description = "Identifier of an user.\n\n" +
                                                                   "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
@@ -1245,9 +1363,9 @@ public class UserResource implements Serializable {
 
             userToUpdated.setActive(false);
             this.userAPI.save(userToUpdated, modUser, false);
+            final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
 
-            return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
-                    "user", userToUpdated.toMap())); // 200
+            return new ResponseUserEntityView(new UserView(userToUpdated, role)); // 200
         }
 
         throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
@@ -1475,81 +1593,78 @@ public class UserResource implements Serializable {
 		}
 	} // delete.
 
+    /**
+     * Retrieves permissions for a user's individual role, grouped by assets.
+     * Replicates RoleAjax.getRolePermissions() logic for a specific user.
+     */
+    @GET
+    @Path("/{userId}/permissions")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            summary = "Get user permissions",
+            description = "Retrieves permissions for a user's individual role, organized by asset type and permission scope"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "User permissions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityUserPermissionsView.class))),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid user id",
+                    content = @Content(mediaType = "application/json"))
+    })
+    public ResponseEntityUserPermissionsView getUserPermissions(
+            @Context HttpServletRequest request,
+            @Context HttpServletResponse response,
+            @Parameter(description = "User ID or email address", required = true)
+            @PathParam("userId") String userId
+    ) throws DotDataException, DotSecurityException {
 
-	/**
-	 * Retrieves permissions for a user's individual role, grouped by assets.
-	 * Replicates RoleAjax.getRolePermissions() logic for a specific user.
-	 */
-	@GET
-	@Path("/{userId}/permissions")
-	@NoCache
-	@Produces(MediaType.APPLICATION_JSON)
-	@Operation(
-		summary = "Get user permissions",
-		description = "Retrieves permissions for a user's individual role, organized by asset type and permission scope"
-	)
-	@ApiResponses(value = {
-		@ApiResponse(responseCode = "200",
-					description = "User permissions retrieved successfully",
-					content = @Content(mediaType = "application/json",
-									  schema = @Schema(implementation = ResponseEntityUserPermissionsView.class))),
-		@ApiResponse(responseCode = "403",
-					description = "Forbidden - insufficient permissions",
-					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "400",
-					description = "Bad request - invalid user id",
-					content = @Content(mediaType = "application/json"))
-	})
-	public ResponseEntityUserPermissionsView getUserPermissions(
-		@Context HttpServletRequest request,
-		@Context HttpServletResponse response,
-		@Parameter(description = "User ID or email address", required = true)
-		@PathParam("userId") String userId
-	) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
 
-		final InitDataObject initData = new WebResource.InitBuilder(webResource)
-			.requiredBackendUser(true)
-			.requestAndResponse(request, response)
-			.rejectWhenNoUser(true)
-			.init();
+        final User requestingUser = initData.getUser();
 
-		final User requestingUser = initData.getUser();
+        if (!UtilMethods.isSet(userId)) {
+            Logger.debug(this, () -> String.format("Invalid user ID request from %s",
+                    requestingUser.getUserId()));
+            throw new BadRequestException("User ID is required");
+        }
 
-		if (!UtilMethods.isSet(userId)) {
-			Logger.debug(this, () -> String.format("Invalid user ID request from %s",
-				requestingUser.getUserId()));
-			throw new BadRequestException("User ID is required");
-		}
+        final User finalTargetUser = helper.loadUserByIdOrEmail(userId, userAPI.getSystemUser(), requestingUser);
 
-		final User finalTargetUser = helper.loadUserByIdOrEmail(userId, userAPI.getSystemUser(), requestingUser);
+        // Security validation - user can view own permissions or admin can view any
+        if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(finalTargetUser.getUserId())) {
+            throw new ForbiddenException("Insufficient permissions to view user permissions");
+        }
 
-		// Security validation - user can view own permissions or admin can view any
-		if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(finalTargetUser.getUserId())) {
-			throw new ForbiddenException("Insufficient permissions to view user permissions");
-		}
+        Logger.debug(this, () -> String.format("Loading permissions for user %s requested by %s",
+                finalTargetUser.getUserId(), requestingUser.getUserId()));
 
-		Logger.debug(this, () -> String.format("Loading permissions for user %s requested by %s",
-			finalTargetUser.getUserId(), requestingUser.getUserId()));
+        final Role userRole = roleAPI.getUserRole(finalTargetUser);
+        if (userRole == null) {
+            Logger.error(this, String.format("User role not found for user: %s", userId));
+            throw new DotDataException("User role not found for: " + userId);
+        }
 
-		final Role userRole = roleAPI.getUserRole(finalTargetUser);
-		if (userRole == null) {
-			Logger.error(this, String.format("User role not found for user: %s", userId));
-			throw new DotDataException("User role not found for: " + userId);
-		}
+        final List<Map<String, Object>> permissions = userPermissionHelper
+                .buildUserPermissionResponse(userRole, requestingUser);
 
-		final List<Map<String, Object>> permissions = userPermissionHelper
-			.buildUserPermissionResponse(userRole, requestingUser);
+        final Map<String, Object> responseData = Map.of(
+                "userId", finalTargetUser.getUserId(),
+                "roleId", userRole.getId(),
+                "assets", permissions
+        );
 
-		final Map<String, Object> responseData = Map.of(
-			"userId", finalTargetUser.getUserId(),
-			"roleId", userRole.getId(),
-			"assets", permissions
-		);
-
-		Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)",
-			finalTargetUser.getUserId(), requestingUser.getUserId()));
-		return new ResponseEntityUserPermissionsView(responseData);
-	}
-
-
+        Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)",
+                finalTargetUser.getUserId(), requestingUser.getUserId()));
+        return new ResponseEntityUserPermissionsView(responseData);
+    }
 }
