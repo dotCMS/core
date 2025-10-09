@@ -12,6 +12,27 @@
                     border: none;
                     border-radius: 0;
                 }
+
+                .p-datatable-tbody {
+                    tr.content-drive-table__row {
+                        .content-drive-table__actions-button {
+                            opacity: 0;
+                            transition: opacity 0.2s ease-in-out;
+                        }
+
+                        &:hover {
+                            cursor: pointer;
+
+                            .content-drive-table__actions-button {
+                                opacity: 1;
+                            }
+                        }
+
+                        &:active[draggable="true"] {
+                            cursor: grabbing;
+                        }
+                    }
+                }
             }
         }
 
@@ -24,6 +45,18 @@
                         height: 100%;
                     }
                 }
+            }
+        }
+
+        tr.content-drive-table__row {
+            cursor: grab;
+
+            &:hover {
+                cursor: pointer;
+            }
+
+            &:active[draggable="true"] {
+                cursor: grabbing;
             }
         }
     }
@@ -84,19 +117,6 @@
         color: $black;
         font-size: $font-size-md;
         line-height: 1.5;
-    }
-}
-
-.content-drive-table__row {
-    .content-drive-table__actions-button {
-        opacity: 0;
-        transition: opacity 0.2s ease-in-out;
-    }
-
-    &:hover {
-        .content-drive-table__actions-button {
-            opacity: 1;
-        }
     }
 }
 
