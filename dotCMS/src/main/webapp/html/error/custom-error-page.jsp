@@ -14,7 +14,9 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.util.UtilMethods" %>
 <%@page import="com.dotmarketing.util.WebKeys"%>
-<%@page import="com.liferay.portal.language.LanguageUtil"%><%
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="static com.dotcms.filters.interceptor.saml.SamlWebInterceptor.REFERRER_PARAMETER_KEY" %>
+<%
 out.clear();
 if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGES_FOR_BACKEND", true)){
     out.append(String.valueOf(response.getStatus()));
@@ -55,8 +57,10 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
             ? referrer + "?" + forwardQueryString
             : referrer;
 
+        if (!UtilMethods.isSet(request.getParameter(REFERRER_PARAMETER_KEY)){
         request.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, referrerWithParams);
-        session.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, referrerWithParams);
+        }
+        session.setAttribute(RequestDispatcher.FORWARD_QUERY_STRING, forwardQueryString);
     }
 
     final String errorPage = "/cms" + status + "Page";
