@@ -49,11 +49,15 @@ export class DotGravatarDirective {
      */
     $gravatarUrl = computed(() => {
         const email = this.$email();
-        const isEmail = email.includes('@');
+        if (!email) {
+            return null;
+        }
+        const cleanedEmail = email.trim().toLowerCase();
+        const isEmail = cleanedEmail.includes('@');
         if (!isEmail) {
             return null;
         }
-        const hash = md5(email.trim().toLowerCase());
+        const hash = md5(cleanedEmail);
         return `${this.#GRAVATAR_URL}${hash}?s=${this.#DEFAULT_SIZE}&r=${this.#DEFAULT_RATING}&d=404`;
     });
 
@@ -64,7 +68,11 @@ export class DotGravatarDirective {
      */
     $firstLetter = computed(() => {
         const email = this.$email();
-        return email ? email[0]?.toUpperCase() : FALLBACK_AVATAR_LETTER;
+        if (!email) {
+            return FALLBACK_AVATAR_LETTER;
+        }
+        const cleanedEmail = email.trim();
+        return cleanedEmail[0]?.toUpperCase();
     });
 
     /**
