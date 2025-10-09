@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import dev.langchain4j.agent.tool.Tool;
@@ -24,6 +25,7 @@ import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -116,6 +118,84 @@ public class AiContentTools {
             Logger.error(this, e.getMessage(), e);
             return ToolResult.fail("temporary failure");
         }
+    }
+
+    @Tool(
+            "Set the value of a field on an existing contentlet. " +
+                    "Parameters: identifier (content identifier), languageId (optional, default 1), " +
+                    "fieldVar (field variable name), value (string, can be large HTML), publish (optional, default false). " +
+                    "Example: setValue(\"1234-...-abcd\", 1, \"body\", \"<p>HTML...</p>\", true)"
+    )
+    public ToolResult<String> setValue(final String identifier, final Long languageId,
+                                       final String fieldVar, final String value, final Boolean publish) {
+
+        try {
+            final User iaUser = APILocator.systemUser();
+            final String err = this.validate(identifier, fieldVar, value);
+            if (err != null) {
+                return ToolResult.invalid(err);
+            }
+
+            final long lang = (languageId == null || languageId <= 0) ? APILocator.getLanguageAPI().getDefaultLanguage().getId() : languageId;
+            final boolean doPublish = publish != null && publish;
+            final PageMode pageMode = PageMode.EDIT_MODE;
+            final  boolean live = pageMode.showLive;
+            final boolean respectFrontendRoles = pageMode.respectAnonPerms;
+
+            final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,  lang,  iaUser,  respectFrontendRoles);
+            if (contentlet == null) {
+                return ToolResult.invalid("Content not found");
+            }
+            final ContentType contentType = contentlet.getContentType();
+            if (contentType == null) {
+                return ToolResult.invalid("Content type not found");
+            }
+
+            final Field finalField = contentType.fieldMap().get(fieldVar);
+            if (finalField == null) {
+                return ToolResult.invalid("Field not found");
+            }
+
+            final Contentlet checkoutContentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), iaUser, false);
+            final String inode = checkoutContentlet.getInode();
+            APILocator.getContentletAPI().copyProperties(checkoutContentlet, contentlet.getMap());
+            checkoutContentlet.setInode(inode);
+            if (Objects.nonNull(contentlet.getVariantId())) {
+                checkoutContentlet.setVariantId(contentlet.getVariantId());
+            }
+
+            APILocator.getContentletAPI().setContentletProperty(checkoutContentlet, finalField, value);
+            final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(checkoutContentlet, iaUser, respectFrontendRoles);
+            // todo: publish if true
+
+            return ToolResult.success("Field updated: identifier=" + identifier + ", inode=" + savedContentlet.getInode() +
+                    ", field=" + fieldVar + (doPublish ? " (published)" : "") );
+
+        } catch (DotSecurityException e) {
+            Logger.error(this, "Permission error updating field", e);
+            return ToolResult.denied(e.getMessage());
+        } catch (DotDataException e) {
+            Logger.error(this, "Data error updating field", e);
+            return ToolResult.fail("Persistence error: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ToolResult.invalid(e.getMessage());
+        } catch (Exception e) {
+            Logger.error(this, "Unexpected error updating field", e);
+            return ToolResult.fail("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    public String validate(final String identifier, final String fieldVar, final String value) {
+        if (StringUtils.isBlank(identifier)) {
+            return "'identifier' is required";
+        }
+        if (StringUtils.isBlank(fieldVar))   {
+            return "'fieldVar' is required";
+        }
+        if (value == null)       {
+            return "'value' must not be null (use empty string to clear)";
+        }
+        return null;
     }
 
     @Tool(
