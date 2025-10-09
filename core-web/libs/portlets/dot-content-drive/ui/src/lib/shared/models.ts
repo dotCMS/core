@@ -1,5 +1,7 @@
 import { TreeNode } from 'primeng/api';
 
+import { DotContentDriveItem } from '@dotcms/dotcms-models';
+
 /**
  * @export
  * @interface DotFolderListViewColumn
@@ -21,6 +23,15 @@ export interface DotFolderListViewColumn {
 export interface DotContentDriveUploadFiles {
     files: FileList;
     targetFolderId: string;
+}
+
+/**
+ * @export
+ * @interface DotContentDriveMoveItems
+ * @description Move items
+ */
+export interface DotContentDriveMoveItems extends Omit<DotContentDriveUploadFiles, 'files'> {
+    items: DotContentDriveItem[];
 }
 
 /**

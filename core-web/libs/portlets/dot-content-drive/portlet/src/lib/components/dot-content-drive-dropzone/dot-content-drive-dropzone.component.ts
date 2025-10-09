@@ -9,7 +9,7 @@ import {
     signal
 } from '@angular/core';
 
-import { DotContentDriveUploadFiles } from '@dotcms/portlets/content-drive/ui';
+import { DotContentDriveUploadFiles, DOT_DRAG_ITEM } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DROPZONE_STATE } from '../../shared/constants';
@@ -67,7 +67,10 @@ export class DotContentDriveDropzoneComponent {
         event.stopPropagation();
         event.preventDefault();
 
-        if (this.state() === DROPZONE_STATE.INTERNAL_DRAG) {
+        if (
+            this.state() === DROPZONE_STATE.INTERNAL_DRAG ||
+            event.dataTransfer?.types.includes(DOT_DRAG_ITEM)
+        ) {
             return;
         }
 

@@ -10,3 +10,9 @@ export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
 ].sort((a, b) => a.order - b.order); // Sort the columns by order, so the columns are in the correct order in the UI
 
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
+
+/**
+ * @export
+ * @type DOT_DRAG_ITEM
+ */
+export const DOT_DRAG_ITEM = 'dotcms/item';

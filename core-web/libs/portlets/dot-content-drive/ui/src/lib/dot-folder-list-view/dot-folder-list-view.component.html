@@ -55,7 +55,9 @@
                 class="content-drive-table__row"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
-                (dblclick)="onDoubleClick(item)">
+                (dblclick)="onDoubleClick(item)"
+                [draggable]="true"
+                (dragstart)="onDragStart($event, item)">
                 <td data-testId="item-checkbox">
                     <p-tableCheckbox [value]="item" />
                 </td>
@@ -65,7 +67,8 @@
                             [fieldVariable]="item?.contentType"
                             [iconSize]="'48px'"
                             [contentlet]="item"
-                            data-testId="contentlet-thumbnail" />
+                            data-testId="contentlet-thumbnail"
+                            [attr.data-id]="item.identifier" />
                     </div>
                     <span data-testId="item-title-text" class="truncate-text">
                         {{ item.title }}
@@ -117,5 +120,3 @@
         </tr>
     </ng-template>
 </p-table>
-
-<!-- <p-contextMenu #contextMenu [model]="items" /> -->
