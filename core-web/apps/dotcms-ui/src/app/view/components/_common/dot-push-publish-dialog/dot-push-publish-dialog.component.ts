@@ -22,11 +22,7 @@ import {
     DotPushPublishData,
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
-import {
-    DotDialogComponent,
-    DotFieldValidationMessageComponent,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
+import { DotDialogComponent } from '@dotcms/ui';
 
 import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-push-publish-form.module';
@@ -43,8 +39,6 @@ import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-pus
         DropdownModule,
         SelectButtonModule,
         DotDialogComponent,
-        DotFieldValidationMessageComponent,
-        DotSafeHtmlPipe,
         PushPublishEnvSelectorModule,
         DotPushPublishFormModule
     ],

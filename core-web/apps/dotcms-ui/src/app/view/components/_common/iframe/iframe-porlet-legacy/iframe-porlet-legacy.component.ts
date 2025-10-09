@@ -14,13 +14,15 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { IframeComponent } from '../iframe-component/iframe.component';
 
 @Component({
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
     templateUrl: 'iframe-porlet-legacy.component.html',
-    imports: [CommonModule, RouterModule, IframeComponent, DotNotLicenseComponent]
+    imports: [CommonModule, RouterModule, IframeComponent, DotNotLicenseComponent],
+    providers: [DotCustomEventHandlerService, DotContentletEditorService]
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private contentletService = inject(DotContentTypeService);

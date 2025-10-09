@@ -17,7 +17,7 @@ import { DotIconComponent } from '@dotcms/ui';
  * @implements {OnDestroy}
  */
 @Component({
-    providers: [MessageService, DotMessageDisplayService],
+    providers: [MessageService],
     selector: 'dot-message-display',
     styleUrls: ['dot-message-display.component.scss'],
     templateUrl: 'dot-message-display.component.html',

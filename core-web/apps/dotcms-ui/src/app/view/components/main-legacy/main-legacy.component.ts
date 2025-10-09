@@ -1,10 +1,11 @@
 import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotContentletEditorService } from '../dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
-    providers: [],
+    providers: [DotCustomEventHandlerService, DotContentletEditorService],
     selector: 'dot-main-component',
     styleUrls: ['./main-legacy.component.scss'],
     templateUrl: './main-legacy.component.html',

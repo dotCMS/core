@@ -30,7 +30,7 @@ import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
 
-import { DotAutofocusDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 /**
  * Dropdown with pagination and global search
@@ -56,7 +56,6 @@ import { DotAutofocusDirective, DotIconComponent, DotMessagePipe } from '@dotcms
         DataViewModule,
         InputTextModule,
         OverlayPanelModule,
-        DotAutofocusDirective,
         DotIconComponent,
         DotMessagePipe
     ]

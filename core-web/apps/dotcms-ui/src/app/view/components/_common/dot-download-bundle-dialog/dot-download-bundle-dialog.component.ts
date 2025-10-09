@@ -22,12 +22,7 @@ import {
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { DotDialogActions } from '@dotcms/dotcms-models';
-import {
-    DotDialogComponent,
-    DotFieldRequiredDirective,
-    DotMessagePipe,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
+import { DotDialogComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
 import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
@@ -51,10 +46,9 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
         SelectButtonModule,
         DotDialogComponent,
         DotFieldRequiredDirective,
-        DotMessagePipe,
-        DotSafeHtmlPipe
+        DotMessagePipe
     ],
-    providers: [DotPushPublishFiltersService, DotDownloadBundleDialogService]
+    providers: [DotPushPublishFiltersService]
 })
 export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     fb = inject(UntypedFormBuilder);

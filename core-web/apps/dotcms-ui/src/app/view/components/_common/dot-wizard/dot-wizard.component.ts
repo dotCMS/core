@@ -14,7 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
+import { Dialog, DialogModule } from 'primeng/dialog';
 
 import { filter, tap, delay } from 'rxjs/operators';
 
@@ -26,7 +26,6 @@ import {
     DotWizardInput,
     DotWizardStep
 } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotFormModel } from '../../../../shared/models/dot-form/dot-form.model';
 import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
@@ -45,9 +44,7 @@ import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-pus
         ButtonModule,
         DotContainerReferenceModule,
         DotCommentAndAssignFormModule,
-        DotPushPublishFormModule,
-        DotSafeHtmlPipe,
-        DotDialogComponent
+        DotPushPublishFormModule
     ],
     providers: [DotWizardService]
 })
@@ -74,7 +71,7 @@ export class DotWizardComponent implements AfterViewInit {
 
     @ViewChildren(DotContainerReferenceDirective)
     formHosts: QueryList<DotContainerReferenceDirective>;
-    @ViewChild('dialog', { static: true }) dialog: DotDialogComponent;
+    @ViewChild('dialog', { static: true }) dialog: Dialog;
 
     constructor() {
         this.#dotWizardService.showDialog$

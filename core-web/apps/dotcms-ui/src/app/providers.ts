@@ -10,10 +10,12 @@ import {
     DotContentTypesInfoService,
     DotCrudService,
     DotFormatDateService,
+    DotGenerateSecurePasswordService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotIframeService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
     DotSessionStorageService,
@@ -29,6 +31,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotAccountService } from './api/services/dot-account-service';
 import { DotAppsService } from './api/services/dot-apps/dot-apps.service';
+import { DotDownloadBundleDialogService } from './api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from './api/services/dot-menu.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
@@ -41,6 +44,7 @@ import { ColorUtil } from './api/util/ColorUtil';
 import { StringFormat } from './api/util/stringFormat';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
 import { DotTitleStrategy } from './shared/services/dot-title-strategy.service';
+import { DotIframePortletLegacyResolver } from './view/components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
 import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from './view/components/login/shared/services/dot-login-page-state.service';
@@ -64,12 +68,15 @@ const PROVIDERS: Provider[] = [
     DotIframeService,
     DotLicenseService,
     DotMenuService,
+    DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
     DotSaveOnDeactivateService,
     DotUiColorsService,
     DotFormatDateService,
+    DotGenerateSecurePasswordService,
     IframeOverlayService,
+    DotIframePortletLegacyResolver,
     MenuGuardService,
     NotificationsService,
     PaginatorService,
@@ -85,6 +92,7 @@ const PROVIDERS: Provider[] = [
     CanDeactivateGuardService,
     DotSessionStorageService,
     DotAppsService,
+    DotDownloadBundleDialogService,
     {
         provide: TitleStrategy,
         useClass: DotTitleStrategy

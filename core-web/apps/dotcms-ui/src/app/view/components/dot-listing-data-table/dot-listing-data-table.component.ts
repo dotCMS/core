@@ -32,7 +32,6 @@ import {
     DotIconComponent,
     DotMessagePipe,
     DotRelativeDatePipe,
-    DotSafeHtmlPipe,
     DotStringFormatPipe
 } from '@dotcms/ui';
 
@@ -74,7 +73,6 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
         DotIconComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
-        DotSafeHtmlPipe,
         DotStringFormatPipe
     ]
 })

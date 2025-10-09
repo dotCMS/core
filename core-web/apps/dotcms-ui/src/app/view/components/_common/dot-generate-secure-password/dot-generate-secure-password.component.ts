@@ -9,14 +9,14 @@ import { takeUntil } from 'rxjs/operators';
 
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
 import { DotDialogActions } from '@dotcms/dotcms-models';
-import { DotClipboardUtil, DotDialogComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotClipboardUtil, DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-generate-secure-password',
     templateUrl: './dot-generate-secure-password.component.html',
     styleUrls: ['./dot-generate-secure-password.component.scss'],
-    imports: [CommonModule, ButtonModule, DotDialogComponent, DotMessagePipe, DotSafeHtmlPipe],
-    providers: [DotGenerateSecurePasswordService, DotClipboardUtil]
+    imports: [CommonModule, ButtonModule, DotDialogComponent, DotMessagePipe],
+    providers: [DotClipboardUtil]
 })
 export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
     private dotClipboardUtil = inject(DotClipboardUtil);
