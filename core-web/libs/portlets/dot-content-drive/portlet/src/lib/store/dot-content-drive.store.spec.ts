@@ -53,7 +53,7 @@ describe('DotContentDriveStore', () => {
 
     describe('Initial State', () => {
         it('should have the correct initial state', () => {
-            expect(store.currentSite()).toEqual(SYSTEM_HOST);
+            expect(store.currentSite()).toEqual(undefined);
             expect(store.path()).toBe(DEFAULT_PATH);
             expect(store.filters()).toEqual({});
             expect(store.items()).toEqual([]);
@@ -68,9 +68,7 @@ describe('DotContentDriveStore', () => {
             it('should build base query when no path or filters are provided', () => {
                 const baseQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    )
+                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
                     .build();
 
                 expect(store.$searchParams().query).toEqual(baseQuery);
@@ -409,7 +407,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             query: expect.any(String),
             limit: DEFAULT_PAGINATION.limit,
             offset: DEFAULT_PAGINATION.offset,
-            sort: 'score,baseType desc'
+            sort: 'baseType desc'
         });
     });
 
