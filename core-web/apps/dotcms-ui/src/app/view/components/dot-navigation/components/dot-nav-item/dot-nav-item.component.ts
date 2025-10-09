@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -11,15 +12,27 @@ import {
 } from '@angular/core';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { DotIconComponent } from '@dotcms/ui';
 
-import { LABEL_IMPORTANT_ICON } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
+import {
+    LABEL_IMPORTANT_ICON,
+    DotRandomIconPipe
+} from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
+import { DotNavIconComponent } from '../dot-nav-icon/dot-nav-icon.component';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
 @Component({
     selector: 'dot-nav-item',
     templateUrl: './dot-nav-item.component.html',
     styleUrls: ['./dot-nav-item.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotIconComponent,
+        DotSubNavComponent,
+        DotNavIconComponent,
+        DotRandomIconPipe
+    ],
+    standalone: true
 })
 export class DotNavItemComponent {
     private hostElRef = inject(ElementRef);

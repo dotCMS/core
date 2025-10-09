@@ -84,7 +84,7 @@ afterAll(() => {
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
 import { ButtonModel } from '../../../shared/models/action-header/button.model';
 import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
-import { DotActionButtonModule } from '../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotListingDataTableModule } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
@@ -486,7 +486,7 @@ describe('DotTemplateListComponent', () => {
                 CheckboxModule,
                 MenuModule,
                 ButtonModule,
-                DotActionButtonModule,
+                DotActionButtonComponent,
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
                 HttpClientTestingModule,

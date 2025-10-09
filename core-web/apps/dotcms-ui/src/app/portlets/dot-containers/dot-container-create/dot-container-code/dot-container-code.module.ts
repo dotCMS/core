@@ -8,12 +8,12 @@ import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotFieldRequiredDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAddVariableModule } from './dot-add-variable/dot-add-variable.module';
 import { DotContentEditorComponent } from './dot-container-code.component';
 
-import { DotTextareaContentModule } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 
 @NgModule({
     declarations: [DotContentEditorComponent],
@@ -21,13 +21,13 @@ import { DotTextareaContentModule } from '../../../../view/components/_common/do
         CommonModule,
         TabViewModule,
         MenuModule,
-        DotTextareaContentModule,
+        DotTextareaContentComponent,
         DotMessagePipe,
         ReactiveFormsModule,
         ButtonModule,
         DynamicDialogModule,
         DotAddVariableModule,
-        DotIconModule,
+        DotIconComponent,
         SkeletonModule,
         DotFieldRequiredDirective
     ],

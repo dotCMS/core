@@ -13,6 +13,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+
 import { filter, tap, delay } from 'rxjs/operators';
 
 import { DotMessageService, DotWizardService } from '@dotcms/data-access';
@@ -23,18 +26,30 @@ import {
     DotWizardInput,
     DotWizardStep
 } from '@dotcms/dotcms-models';
-import { DotDialogComponent } from '@dotcms/ui';
+import { DotDialogComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotFormModel } from '../../../../shared/models/dot-form/dot-form.model';
 import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
+import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
+import { DotCommentAndAssignFormModule } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.module';
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
+import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-push-publish-form.module';
 
 @Component({
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
-    standalone: false
+    imports: [
+        DialogModule,
+        ButtonModule,
+        DotContainerReferenceModule,
+        DotCommentAndAssignFormModule,
+        DotPushPublishFormModule,
+        DotSafeHtmlPipe,
+        DotDialogComponent
+    ],
+    providers: [DotWizardService]
 })
 export class DotWizardComponent implements AfterViewInit {
     #wizardData: { [key: string]: string };

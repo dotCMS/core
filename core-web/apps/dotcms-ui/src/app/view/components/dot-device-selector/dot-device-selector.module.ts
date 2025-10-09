@@ -5,12 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotDevicesService } from '@dotcms/data-access';
-import { DotIconModule, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotDeviceSelectorComponent } from './dot-device-selector.component';
 
 @NgModule({
-    imports: [CommonModule, DropdownModule, FormsModule, DotIconModule, DotSafeHtmlPipe],
+    imports: [CommonModule, DropdownModule, FormsModule, DotIconComponent, DotSafeHtmlPipe],
     declarations: [DotDeviceSelectorComponent],
     exports: [DotDeviceSelectorComponent],
     providers: [DotDevicesService]

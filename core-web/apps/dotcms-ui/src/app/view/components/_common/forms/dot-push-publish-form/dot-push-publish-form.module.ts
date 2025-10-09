@@ -10,7 +10,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { PushPublishService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import {
-    DotDialogModule,
+    DotDialogComponent,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
@@ -30,7 +30,7 @@ import { PushPublishEnvSelectorModule } from '../../dot-push-publish-env-selecto
         AutoFocusModule,
         FormsModule,
         CalendarModule,
-        DotDialogModule,
+        DotDialogComponent,
         PushPublishEnvSelectorModule,
         ReactiveFormsModule,
         DropdownModule,

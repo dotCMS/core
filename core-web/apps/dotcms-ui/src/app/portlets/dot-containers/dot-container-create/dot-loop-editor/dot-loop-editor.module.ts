@@ -8,12 +8,12 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotLoopEditorComponent } from './dot-loop-editor.component';
 
-import { DotTextareaContentModule } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 
 @NgModule({
     declarations: [DotLoopEditorComponent],
     imports: [
-        DotTextareaContentModule,
+        DotTextareaContentComponent,
         DotMessagePipe,
         CommonModule,
         ButtonModule,

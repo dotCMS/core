@@ -6,7 +6,7 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ChipsModule } from 'primeng/chips';
 
 import { DotTagsService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
 
@@ -16,7 +16,7 @@ import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component'
         ChipsModule,
         AutoCompleteModule,
         FormsModule,
-        DotIconModule,
+        DotIconComponent,
         DotSafeHtmlPipe,
         DotMessagePipe
     ],

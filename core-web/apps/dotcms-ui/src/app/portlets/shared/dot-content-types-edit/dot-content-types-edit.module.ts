@@ -23,10 +23,10 @@ import {
     DotApiLinkComponent,
     DotAutofocusDirective,
     DotCopyButtonComponent,
-    DotDialogModule,
+    DotDialogComponent,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotIconModule,
+    DotIconComponent,
     DotMenuComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
@@ -67,11 +67,11 @@ import { DotInlineEditModule } from '../../../view/components/_common/dot-inline
 import { DotMdIconSelectorModule } from '../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotPageSelectorModule } from '../../../view/components/_common/dot-page-selector/dot-page-selector.module';
 import { SiteSelectorFieldModule } from '../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotTextareaContentModule } from '../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
+import { DotTextareaContentComponent } from '../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotWorkflowsActionsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 import { DotWorkflowsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { IFrameModule } from '../../../view/components/_common/iframe/iframe.module';
-import { SearchableDropDownModule } from '../../../view/components/_common/searchable-dropdown/searchable-dropdown.module';
+import { SearchableDropdownComponent } from '../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotBaseTypeSelectorModule } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
 import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
 import { DotFieldHelperModule } from '../../../view/components/dot-field-helper/dot-field-helper.module';
@@ -120,7 +120,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotContentTypeFieldsVariablesModule,
         DotContentTypesEditRoutingModule,
         DotCopyLinkModule,
-        DotDialogModule,
+        DotDialogComponent,
         DotDirectivesModule,
         DotSafeHtmlPipe,
         DotSecondaryToolbarModule,
@@ -128,12 +128,12 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotFieldValidationMessageComponent,
         DotBinarySettingsComponent,
         TooltipModule,
-        DotIconModule,
+        DotIconComponent,
         DotMaxlengthModule,
         DotMenuComponent,
         DotPageSelectorModule,
         DotRelationshipsModule,
-        DotTextareaContentModule,
+        DotTextareaContentComponent,
         DotWorkflowsActionsSelectorFieldModule,
         DotWorkflowsSelectorFieldModule,
         DragulaModule,
@@ -146,7 +146,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         OverlayPanelModule,
         RadioButtonModule,
         ReactiveFormsModule,
-        SearchableDropDownModule,
+        SearchableDropdownComponent,
         SiteSelectorFieldModule,
         SplitButtonModule,
         TabViewModule,

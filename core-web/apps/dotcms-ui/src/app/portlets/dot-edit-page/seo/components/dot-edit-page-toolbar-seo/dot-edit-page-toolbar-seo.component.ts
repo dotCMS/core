@@ -31,7 +31,7 @@ import {
     FeaturedFlags,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotGlobalMessageModule } from '../../../../../view/components/_common/dot-global-message/dot-global-message.module';
 import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
@@ -56,7 +56,6 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
         ToolbarModule,
         TooltipModule,
         DotGlobalMessageModule,
-        DotIconModule,
         RouterLink,
         TagModule,
         DotEditPageInfoSeoComponent,

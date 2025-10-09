@@ -60,7 +60,7 @@ import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
 import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../test/dot-test-bed';
-import { DotDownloadBundleDialogModule } from '../../../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotDownloadBundleDialogComponent } from '../../../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotExperimentClassDirective } from '../../../shared/directives/dot-experiment-class.directive';
 import { DotEditPageNavDirective } from '../dot-edit-page-nav/directives/dot-edit-page-nav.directive';
@@ -128,7 +128,7 @@ describe('DotEditPageMainComponent', () => {
                     }
                 ]),
                 DotEditPageNavModule,
-                DotDownloadBundleDialogModule,
+                DotDownloadBundleDialogComponent,
                 HttpClientTestingModule,
                 DotExperimentClassDirective,
                 DotEditPageNavDirective

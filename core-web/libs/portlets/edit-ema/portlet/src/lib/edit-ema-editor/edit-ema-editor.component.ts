@@ -53,7 +53,7 @@ import {
     DotCMSUVEAction
 } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
@@ -111,7 +111,6 @@ import {
         NgStyle,
         FormsModule,
         SafeUrlPipe,
-        DotSpinnerModule,
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EmaPageDropzoneComponent,

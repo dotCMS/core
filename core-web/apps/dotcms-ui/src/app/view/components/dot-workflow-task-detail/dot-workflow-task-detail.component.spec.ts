@@ -29,7 +29,12 @@ describe('DotWorkflowTaskDetailComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotWorkflowTaskDetailComponent],
+            imports: [
+                DotWorkflowTaskDetailComponent,
+                DotIframeDialogModule,
+                RouterTestingModule,
+                BrowserAnimationsModule
+            ],
             providers: [
                 DotWorkflowTaskDetailService,
                 {
@@ -44,8 +49,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
                         }
                     }
                 }
-            ],
-            imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
+            ]
         });
     }));
 

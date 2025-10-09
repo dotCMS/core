@@ -1,8 +1,11 @@
+import { CommonModule } from '@angular/common';
 import { Component, HostBinding, HostListener, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
+import { DotNavHeaderComponent } from './components/dot-nav-header/dot-nav-header.component';
+import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
 import { DotNavigationService } from './services/dot-navigation.service';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
@@ -11,7 +14,8 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
     selector: 'dot-main-nav',
     styleUrls: ['./dot-navigation.component.scss'],
     templateUrl: 'dot-navigation.component.html',
-    standalone: false
+    imports: [CommonModule, DotNavHeaderComponent, DotNavItemComponent],
+    standalone: true
 })
 export class DotNavigationComponent {
     /**

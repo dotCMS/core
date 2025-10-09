@@ -57,7 +57,7 @@ import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-e
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotWorkflowTaskDetailModule } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
+import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 
 @Injectable()
@@ -83,7 +83,7 @@ describe('DotWorkflowTaskComponent', () => {
         TestBed.configureTestingModule({
             declarations: [DotWorkflowTaskComponent],
             imports: [
-                DotWorkflowTaskDetailModule,
+                DotWorkflowTaskDetailComponent,
                 BrowserAnimationsModule,
                 RouterTestingModule,
                 HttpClientTestingModule

@@ -6,7 +6,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import {
     DotAutofocusDirective,
-    DotDialogModule,
+    DotDialogComponent,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
@@ -18,18 +18,18 @@ import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialo
 import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { SiteSelectorFieldModule } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotBaseTypeSelectorModule } from '../../../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
-import { DotListingDataTableModule } from '../../../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
+import { DotListingDataTableComponent } from '../../../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 @NgModule({
     imports: [
         CommonModule,
         ReactiveFormsModule,
         InputTextModule,
-        DotListingDataTableModule,
+        DotListingDataTableComponent,
         DotBaseTypeSelectorModule,
         DotSafeHtmlPipe,
         DotFieldValidationMessageComponent,
-        DotDialogModule,
+        DotDialogComponent,
         DotMdIconSelectorModule,
         SiteSelectorFieldModule,
         DotAutofocusDirective,

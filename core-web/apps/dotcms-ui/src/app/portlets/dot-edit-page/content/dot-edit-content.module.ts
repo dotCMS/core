@@ -20,7 +20,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotResultsSeoToolComponent, DotSelectSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotCopyContentModalService, DotIconModule, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotCopyContentModalService, DotIconComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotEditPageStateControllerModule } from './components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
@@ -71,7 +71,7 @@ const routes: Routes = [
         DotEditPageStateControllerModule,
         DotOverlayMaskModule,
         DotPaletteModule,
-        DotIconModule,
+        DotIconComponent,
         DotEditPageToolbarSeoComponent,
         DotShowHideFeatureDirective,
         DotResultsSeoToolComponent,

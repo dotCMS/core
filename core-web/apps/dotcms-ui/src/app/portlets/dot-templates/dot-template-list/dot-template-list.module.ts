@@ -21,23 +21,23 @@ import { DotTemplateListResolver } from './dot-template-list-resolver.service';
 import { DotTemplateListComponent } from './dot-template-list.component';
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
-import { DotActionButtonModule } from '../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotBulkInformationModule } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.module';
 import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
-import { DotListingDataTableModule } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 @NgModule({
     declarations: [DotTemplateListComponent],
     imports: [
         CommonModule,
-        DotListingDataTableModule,
+        DotListingDataTableComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SharedModule,
         CheckboxModule,
         MenuModule,
         ButtonModule,
-        DotActionButtonModule,
+        DotActionButtonComponent,
         DotActionMenuButtonComponent,
         DotAddToBundleComponent,
         DynamicDialogModule,

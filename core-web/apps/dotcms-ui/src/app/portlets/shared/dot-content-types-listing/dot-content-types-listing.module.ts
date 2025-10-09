@@ -13,13 +13,13 @@ import { DotContentTypeCopyDialogModule } from './components/dot-content-type-co
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
 
 import { DotBaseTypeSelectorModule } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
-import { DotListingDataTableModule } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
 
 @NgModule({
     imports: [
         CommonModule,
-        DotListingDataTableModule,
+        DotListingDataTableComponent,
         DotBaseTypeSelectorModule,
         DotAddToBundleComponent,
         DotAddToMenuModule,

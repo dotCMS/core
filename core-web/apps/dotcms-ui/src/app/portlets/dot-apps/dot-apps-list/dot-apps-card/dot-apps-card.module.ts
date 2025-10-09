@@ -8,7 +8,7 @@ import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
 
@@ -18,7 +18,7 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
         CardModule,
         AvatarModule,
         BadgeModule,
-        DotIconModule,
+        DotIconComponent,
         MarkdownModule.forChild(),
         TooltipModule,
         DotSafeHtmlPipe,

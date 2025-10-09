@@ -5,12 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotThemesService, PaginatorService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 
-import { DotSiteSelectorModule } from '../_common/dot-site-selector/dot-site-selector.module';
-import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
+import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @NgModule({
     declarations: [DotThemeSelectorDropdownComponent],
@@ -18,12 +18,12 @@ import { SearchableDropDownModule } from '../_common/searchable-dropdown/searcha
     providers: [PaginatorService, DotThemesService],
     imports: [
         CommonModule,
-        SearchableDropDownModule,
+        SearchableDropdownComponent,
         FormsModule,
         DotMessagePipe,
-        DotSiteSelectorModule,
+        DotSiteSelectorComponent,
         InputTextModule,
-        DotIconModule
+        DotIconComponent
     ]
 })
 export class DotThemeSelectorDropdownModule {}

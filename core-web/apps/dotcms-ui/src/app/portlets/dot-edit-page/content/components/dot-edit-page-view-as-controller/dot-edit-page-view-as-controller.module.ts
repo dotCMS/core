@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
 
@@ -23,7 +23,7 @@ import { DotPersonaSelectorModule } from '../../../../../view/components/dot-per
         DotLanguageSelectorComponent,
         DotDeviceSelectorModule,
         DotSafeHtmlPipe,
-        DotIconModule,
+        DotIconComponent,
         DotMessagePipe
     ],
     declarations: [DotEditPageViewAsControllerComponent],

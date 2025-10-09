@@ -10,7 +10,7 @@ import { TableModule } from 'primeng/table';
 import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotContentletService, DotVersionableService } from '@dotcms/data-access';
 import {
-    DotDialogModule,
+    DotDialogComponent,
     DotDiffPipe,
     DotMessagePipe,
     DotRelativeDatePipe,
@@ -34,7 +34,7 @@ import { DotContentCompareComponent } from './dot-content-compare.component';
     exports: [DotContentCompareDialogComponent, DotContentCompareComponent],
     imports: [
         CommonModule,
-        DotDialogModule,
+        DotDialogComponent,
         TableModule,
         DropdownModule,
         SelectButtonModule,

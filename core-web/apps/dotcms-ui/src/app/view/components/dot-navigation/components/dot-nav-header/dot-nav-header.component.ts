@@ -1,5 +1,8 @@
+import { CommonModule } from '@angular/common';
 import { Component, input, inject, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+
+import { ButtonModule } from 'primeng/button';
 
 import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-nav-logo.service';
 
@@ -7,7 +10,8 @@ import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-
     selector: 'dot-nav-header',
     styleUrls: ['./dot-nav-header.component.scss'],
     templateUrl: 'dot-nav-header.component.html',
-    standalone: false
+    imports: [CommonModule, ButtonModule],
+    standalone: true
 })
 export class DotNavHeaderComponent {
     /**

@@ -1,9 +1,12 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 
 import { DotMessageDisplayService } from '@dotcms/data-access';
 import { DotMessage } from '@dotcms/dotcms-models';
+import { DotIconComponent } from '@dotcms/ui';
 
 /**
  *Show message send from the Backend
@@ -14,11 +17,11 @@ import { DotMessage } from '@dotcms/dotcms-models';
  * @implements {OnDestroy}
  */
 @Component({
-    providers: [MessageService],
+    providers: [MessageService, DotMessageDisplayService],
     selector: 'dot-message-display',
     styleUrls: ['dot-message-display.component.scss'],
     templateUrl: 'dot-message-display.component.html',
-    standalone: false
+    imports: [CommonModule, ToastModule, DotIconComponent]
 })
 export class DotMessageDisplayComponent implements OnInit, OnDestroy {
     private dotMessageDisplayService = inject(DotMessageDisplayService);

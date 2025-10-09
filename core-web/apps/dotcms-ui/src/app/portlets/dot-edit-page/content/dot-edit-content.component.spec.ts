@@ -104,7 +104,7 @@ import { DotDownloadBundleDialogService } from '../../../api/services/dot-downlo
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotOverlayMaskModule } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.module';
-import { DotWizardModule } from '../../../view/components/_common/dot-wizard/dot-wizard.module';
+import { DotWizardComponent } from '../../../view/components/_common/dot-wizard/dot-wizard.component';
 import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
@@ -298,7 +298,7 @@ describe('DotEditContentComponent', () => {
                 DotLoadingIndicatorModule,
                 DotEditPageWorkflowsActionsModule,
                 DotOverlayMaskModule,
-                DotWizardModule,
+                DotWizardComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotEditContentComponent,

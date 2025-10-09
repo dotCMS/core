@@ -7,7 +7,7 @@ import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
 
@@ -15,7 +15,7 @@ import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.com
     imports: [
         CommonModule,
         FormsModule,
-        DotIconModule,
+        DotIconComponent,
         DotAvatarDirective,
         AvatarModule,
         BadgeModule,

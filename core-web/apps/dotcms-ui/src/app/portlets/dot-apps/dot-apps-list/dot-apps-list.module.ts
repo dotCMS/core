@@ -4,7 +4,12 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotIconModule, DotMessagePipe, DotNotLicenseComponent, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotIconComponent,
+    DotMessagePipe,
+    DotNotLicenseComponent,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 
 import { DotAppsCardModule } from './dot-apps-card/dot-apps-card.module';
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
@@ -23,7 +28,7 @@ import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialo
         DotSafeHtmlPipe,
         DotAppsImportExportDialogModule,
         DotNotLicenseComponent,
-        DotIconModule,
+        DotIconComponent,
         DotPortletBaseModule,
         DotMessagePipe
     ],

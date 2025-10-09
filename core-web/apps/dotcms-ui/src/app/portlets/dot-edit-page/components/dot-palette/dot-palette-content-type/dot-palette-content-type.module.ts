@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe, DotSpinnerModule } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe, DotSpinnerComponent } from '@dotcms/ui';
 
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type.component';
 
@@ -12,8 +12,8 @@ import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-pal
         CommonModule,
         DotMessagePipe,
         DotSafeHtmlPipe,
-        DotIconModule,
-        DotSpinnerModule,
+        DotIconComponent,
+        DotSpinnerComponent,
         DotPaletteInputFilterModule
     ],
     declarations: [DotPaletteContentTypeComponent],

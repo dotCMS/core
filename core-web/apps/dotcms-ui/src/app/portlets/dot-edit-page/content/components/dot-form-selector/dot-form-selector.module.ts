@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 
-import { DotDialogModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotDialogComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotFormSelectorComponent } from './dot-form-selector.component';
 
@@ -12,7 +12,7 @@ import { DotFormSelectorComponent } from './dot-form-selector.component';
     imports: [
         CommonModule,
         TableModule,
-        DotDialogModule,
+        DotDialogComponent,
         ButtonModule,
         DotSafeHtmlPipe,
         DotMessagePipe

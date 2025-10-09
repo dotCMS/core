@@ -6,7 +6,7 @@ export const LABEL_IMPORTANT_ICON = 'label_important';
 // The reference of the icon comes from this file: Task210316UpdateLayoutIcons.java
 @Pipe({
     name: 'dotRandomIcon',
-    standalone: false
+    standalone: true
 })
 export class DotRandomIconPipe implements PipeTransform {
     iconsArray = [

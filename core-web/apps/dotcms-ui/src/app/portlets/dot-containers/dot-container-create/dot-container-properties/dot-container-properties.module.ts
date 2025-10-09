@@ -19,7 +19,7 @@ import {
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
-import { DotTextareaContentModule } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotPortletBaseModule } from '../../../../view/components/dot-portlet-base/dot-portlet-base.module';
 import { DotContentEditorModule } from '../dot-container-code/dot-container-code.module';
 import { DotLoopEditorModule } from '../dot-loop-editor/dot-loop-editor.module';
@@ -34,7 +34,7 @@ import { DotLoopEditorModule } from '../dot-loop-editor/dot-loop-editor.module';
         InputTextModule,
         DotPortletBaseModule,
         CardModule,
-        DotTextareaContentModule,
+        DotTextareaContentComponent,
         ReactiveFormsModule,
         TabViewModule,
         MenuModule,

@@ -29,7 +29,7 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotDeviceSelectorModule } from '../../../../../view/components/dot-device-selector/dot-device-selector.module';
 import { DotIframeDialogModule } from '../../../../../view/components/dot-iframe-dialog/dot-iframe-dialog.module';
@@ -48,7 +48,6 @@ import { DotPersonaSelectorModule } from '../../../../../view/components/dot-per
         DotPersonaSelectorModule,
         DotLanguageSelectorComponent,
         DotDeviceSelectorModule,
-        DotIconModule,
         CheckboxModule,
         ConfirmDialogModule,
         DotIframeDialogModule,

@@ -51,7 +51,7 @@ import { DotWorkflowTaskModule } from './dot-workflow-task/dot-workflow-task.mod
 import { DotCustomEventHandlerService } from '../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../test/dot-test-bed';
-import { DotDownloadBundleDialogModule } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotDownloadBundleDialogComponent } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 
 describe('DotPortletDetailComponent', () => {
     let fixture: ComponentFixture<DotPortletDetailComponent>;
@@ -99,7 +99,7 @@ describe('DotPortletDetailComponent', () => {
                 DotContentletsModule,
                 RouterTestingModule,
                 BrowserAnimationsModule,
-                DotDownloadBundleDialogModule,
+                DotDownloadBundleDialogComponent,
                 HttpClientTestingModule
             ]
         });

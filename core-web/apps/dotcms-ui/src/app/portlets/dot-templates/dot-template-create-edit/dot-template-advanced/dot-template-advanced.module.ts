@@ -5,7 +5,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
 import { DotGlobalMessageModule } from '../../../../view/components/_common/dot-global-message/dot-global-message.module';
-import { DotTextareaContentModule } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotContainerSelectorModule } from '../../../../view/components/dot-container-selector/dot-container-selector.module';
 import { DotPortletBaseModule } from '../../../../view/components/dot-portlet-base/dot-portlet-base.module';
 
@@ -15,7 +15,7 @@ import { DotPortletBaseModule } from '../../../../view/components/dot-portlet-ba
     imports: [
         CommonModule,
         DotContainerSelectorModule,
-        DotTextareaContentModule,
+        DotTextareaContentComponent,
         DotPortletBaseModule,
         ReactiveFormsModule,
         DotGlobalMessageModule

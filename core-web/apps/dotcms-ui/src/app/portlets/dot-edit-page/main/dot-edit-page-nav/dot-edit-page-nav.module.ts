@@ -5,7 +5,7 @@ import { RouterModule } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 
@@ -14,7 +14,7 @@ import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
         CommonModule,
         RouterModule,
         TooltipModule,
-        DotIconModule,
+        DotIconComponent,
         DotSafeHtmlPipe,
         DotMessagePipe,
         DotPageToolsSeoComponent

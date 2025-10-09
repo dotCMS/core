@@ -3,11 +3,11 @@ import { NgModule } from '@angular/core';
 
 import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 
-import { DotWorkflowTaskDetailModule } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
+import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
 
 @NgModule({
     declarations: [DotWorkflowTaskComponent],
-    imports: [CommonModule, DotWorkflowTaskDetailModule],
+    imports: [CommonModule, DotWorkflowTaskDetailComponent],
     exports: [DotWorkflowTaskComponent],
     providers: []
 })

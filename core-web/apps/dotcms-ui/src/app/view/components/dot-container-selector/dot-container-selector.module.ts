@@ -8,7 +8,7 @@ import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 
-import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @NgModule({
     declarations: [DotContainerSelectorComponent],
@@ -17,7 +17,7 @@ import { SearchableDropDownModule } from '../_common/searchable-dropdown/searcha
         CommonModule,
         FormsModule,
         ButtonModule,
-        SearchableDropDownModule,
+        SearchableDropdownComponent,
         DotSafeHtmlPipe,
         DotMessagePipe
     ]

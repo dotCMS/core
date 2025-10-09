@@ -138,12 +138,12 @@ describe('DotListingDataTableComponent', () => {
         TestBed.configureTestingModule({
             declarations: [
                 ActionHeaderComponent,
-                DotActionButtonComponent,
                 DotListingDataTableComponent,
                 TestHostComponent,
                 EmptyMockComponent
             ],
             imports: [
+                DotActionButtonComponent,
                 TableModule,
                 SharedModule,
                 RouterTestingModule.withRoutes([

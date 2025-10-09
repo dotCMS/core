@@ -8,7 +8,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 
 import {
     DotAutofocusDirective,
-    DotDialogModule,
+    DotDialogComponent,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
@@ -27,7 +27,7 @@ import { DotNavigationService } from '../../../../../view/components/dot-navigat
     imports: [
         CommonModule,
         DotAutofocusDirective,
-        DotDialogModule,
+        DotDialogComponent,
         DotFieldValidationMessageComponent,
         DotSafeHtmlPipe,
         DropdownModule,

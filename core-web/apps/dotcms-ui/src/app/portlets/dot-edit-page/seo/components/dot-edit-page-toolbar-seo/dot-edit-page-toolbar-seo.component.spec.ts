@@ -78,7 +78,7 @@ import {
 import { DotEditPageToolbarSeoComponent } from './dot-edit-page-toolbar-seo.component';
 
 import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
-import { DotWizardModule } from '../../../../../view/components/_common/dot-wizard/dot-wizard.module';
+import { DotWizardComponent } from '../../../../../view/components/_common/dot-wizard/dot-wizard.component';
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
 import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
@@ -169,7 +169,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotEditPageWorkflowsActionsModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
-                DotWizardModule,
+                DotWizardComponent,
                 TooltipModule,
                 TagModule,
                 DotExperimentClassDirective,

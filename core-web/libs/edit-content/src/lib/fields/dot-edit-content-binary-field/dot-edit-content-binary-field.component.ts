@@ -44,7 +44,7 @@ import {
     DotAIImagePromptComponent,
     DotDropZoneComponent,
     DotMessagePipe,
-    DotSpinnerModule,
+    DotSpinnerComponent,
     DropZoneErrorType,
     DropZoneFileEvent,
     DropZoneFileValidity
@@ -84,7 +84,7 @@ type SystemOptionsType = {
         MonacoEditorModule,
         DotMessagePipe,
         DotBinaryFieldUiMessageComponent,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         DotBinaryFieldEditorComponent,
         InputTextModule,
         DotBinaryFieldUrlModeComponent,

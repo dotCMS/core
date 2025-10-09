@@ -7,7 +7,7 @@ import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { ActionHeaderComponent } from './action-header.component';
 
-import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
+import { DotActionButtonComponent } from '../../_common/dot-action-button/dot-action-button.component';
 
 @NgModule({
     bootstrap: [],
@@ -15,7 +15,7 @@ import { DotActionButtonModule } from '../../_common/dot-action-button/dot-actio
     exports: [ActionHeaderComponent],
     imports: [
         CommonModule,
-        DotActionButtonModule,
+        DotActionButtonComponent,
         SplitButtonModule,
         DotSafeHtmlPipe,
         DotMessagePipe

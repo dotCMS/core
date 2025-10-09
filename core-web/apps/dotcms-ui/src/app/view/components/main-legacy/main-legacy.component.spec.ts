@@ -45,8 +45,8 @@ import { MainComponentLegacyComponent } from './main-legacy.component';
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
-import { DotDownloadBundleDialogModule } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotWizardModule } from '../_common/dot-wizard/dot-wizard.module';
+import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
+import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 
 @Component({
@@ -112,8 +112,8 @@ describe('MainLegacyComponent', () => {
             imports: [
                 RouterTestingModule,
                 DotContentletEditorModule,
-                DotDownloadBundleDialogModule,
-                DotWizardModule,
+                DotDownloadBundleDialogComponent,
+                DotWizardComponent,
                 HttpClientTestingModule
             ],
             providers: [

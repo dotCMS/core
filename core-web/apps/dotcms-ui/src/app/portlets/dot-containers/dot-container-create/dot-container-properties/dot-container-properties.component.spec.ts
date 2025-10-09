@@ -70,7 +70,7 @@ import { DotContainerPropertiesComponent } from './dot-container-properties.comp
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 import { dotEventSocketURLFactory } from '../../../../test/dot-test-bed';
-import { DotActionButtonModule } from '../../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotActionButtonComponent } from '../../../../view/components/_common/dot-action-button/dot-action-button.component';
 
 @Component({
     selector: 'dot-container-code',
@@ -300,7 +300,7 @@ describe('DotContainerPropertiesComponent', () => {
                 ReactiveFormsModule,
                 MenuModule,
                 ButtonModule,
-                DotActionButtonModule,
+                DotActionButtonComponent,
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
                 HttpClientTestingModule,

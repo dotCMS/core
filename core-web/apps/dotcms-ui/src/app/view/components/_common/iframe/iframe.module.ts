@@ -14,7 +14,7 @@ import { IframeOverlayService } from './service/iframe-overlay.service';
 
 import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotOverlayMaskModule } from '../dot-overlay-mask/dot-overlay-mask.module';
-import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
+import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
 
 @NgModule({
     declarations: [IframeComponent, IframePortletLegacyComponent],
@@ -22,7 +22,7 @@ import { SearchableDropDownModule } from '../searchable-dropdown/searchable-drop
     imports: [
         CommonModule,
         FormsModule,
-        SearchableDropDownModule,
+        SearchableDropdownComponent,
         DotLoadingIndicatorModule,
         RouterModule,
         DotOverlayMaskModule,
