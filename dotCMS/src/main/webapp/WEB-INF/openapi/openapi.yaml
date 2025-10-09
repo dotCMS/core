@@ -13656,6 +13656,12 @@ paths:
           type: integer
           format: int32
           default: 40
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        description: Javascript body predicate with the logic to filter the users
       responses:
         "200":
           content:

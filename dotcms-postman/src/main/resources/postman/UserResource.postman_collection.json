@@ -1849,6 +1849,44 @@
 			"name": "FilteringByPredicate",
 			"item": [
 				{
+					"name": "SetFFToTrue",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"SCRIPTING_ENABLED_FOR_USERS_API\",\n    \"value\":\"true\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/system-table",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"system-table"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "RetrieveFEUsers",
 					"event": [
 						{
