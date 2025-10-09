@@ -42,6 +42,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -509,7 +510,7 @@ public class UserResource implements Serializable {
                                                         @Context final HttpServletResponse response,
                                                         @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
 						                                @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                                        @RequestBody final String userPredicateScript)
+                                                        @RequestBody(description = "Javascript body predicate with the logic to filter the users") final String userPredicateScript)
             throws DotDataException, IOException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -528,11 +529,15 @@ public class UserResource implements Serializable {
         if (isRoleAdministrator) {
 
             final List<User> allUsers = this.userAPI.findAllUsers();
-
             if (userPredicateScript == null || userPredicateScript.trim().isEmpty()) {
 
                 // all users not filtering at all
                 return new ResponseEntityListUserView(applyPagination(allUsers, page, perPage)); // 200
+            }
+
+            final boolean isScriptingAvailableForUserRestAPI = Config.getBooleanProperty("SCRIPTING_ENABLED_FOR_USERS_API", false);
+            if (!isScriptingAvailableForUserRestAPI) {
+                throw new DotDataException("SCRIPTING_ENABLED_FOR_USERS_API is not enabled, can not run javascript on the api");
             }
 
             final List<User> filteredUsers = new ArrayList<>();
