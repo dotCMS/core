@@ -57,7 +57,7 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
             ? referrer + "?" + forwardQueryString
             : referrer;
 
-        if (!UtilMethods.isSet(request.getParameter(REFERRER_PARAMETER_KEY)){
+        if (!UtilMethods.isSet(request.getParameter(REFERRER_PARAMETER_KEY))){
         request.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, referrerWithParams);
         }
         session.setAttribute(RequestDispatcher.FORWARD_QUERY_STRING, forwardQueryString);
