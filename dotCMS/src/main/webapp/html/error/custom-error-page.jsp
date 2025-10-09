@@ -51,7 +51,11 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
                 : (null != request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI))
                 ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) : request.getRequestURI();
 
-        // Preserve query string from forwarded request
+        if (null == session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)){
+          session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, referrer);
+        }
+
+
         final String forwardQueryString = (String) request.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
         final String referrerWithParams = (UtilMethods.isSet(forwardQueryString) && !referrer.contains("?"))
             ? referrer + "?" + forwardQueryString
