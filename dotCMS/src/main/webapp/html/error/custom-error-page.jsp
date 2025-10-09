@@ -56,6 +56,7 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
             : referrer;
 
         request.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, referrerWithParams);
+        session.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, referrerWithParams);
     }
 
     final String errorPage = "/cms" + status + "Page";
