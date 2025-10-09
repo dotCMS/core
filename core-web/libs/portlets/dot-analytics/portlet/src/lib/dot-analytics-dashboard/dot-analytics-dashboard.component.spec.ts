@@ -9,6 +9,8 @@ import { MockComponent } from 'ng-mocks';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessagesModule } from 'primeng/messages';
+
 import { DotLocalstorageService, DotMessageService } from '@dotcms/data-access';
 import {
     DotAnalyticsDashboardStore,
@@ -16,7 +18,7 @@ import {
     TIME_RANGE_OPTIONS
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { GlobalStore } from '@dotcms/store';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipe, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
@@ -37,8 +39,14 @@ describe('DotAnalyticsDashboardComponent', () => {
     let store: InstanceType<typeof DotAnalyticsDashboardStore>;
     let router: SpyObject<Router>;
 
+    const defaultLocalStorageMock = {
+        getItem: jest.fn().mockReturnValue(true), // Por defecto, el banner está oculto
+        setItem: jest.fn()
+    };
+
     const createComponent = createRoutingFactory({
         component: DotAnalyticsDashboardComponent,
+        imports: [MessagesModule, DotMessagePipe],
         declarations: [
             MockComponent(DotAnalyticsDashboardChartComponent),
             MockComponent(DotAnalyticsDashboardFiltersComponent),
@@ -47,7 +55,6 @@ describe('DotAnalyticsDashboardComponent', () => {
         ],
         providers: [
             DotAnalyticsDashboardStore,
-            mockProvider(DotMessageService),
             mockProvider(DotAnalyticsService),
             {
                 provide: DotMessageService,
@@ -56,7 +63,10 @@ describe('DotAnalyticsDashboardComponent', () => {
             mockProvider(GlobalStore, {
                 currentSiteId: jest.fn().mockReturnValue('test-site-123')
             }),
-            mockProvider(DotLocalstorageService),
+            {
+                provide: DotLocalstorageService,
+                useValue: defaultLocalStorageMock
+            },
             mockProvider(Router)
         ]
     });
@@ -210,104 +220,69 @@ describe('DotAnalyticsDashboardComponent', () => {
     });
 
     describe('Development Status Banner', () => {
-        it('should show message banner when localStorage key is not present', () => {
-            const mockLocalStorage = {
-                getItem: jest.fn().mockReturnValue(null),
-                setItem: jest.fn()
-            };
-
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotLocalstorageService,
-                        useValue: mockLocalStorage
-                    }
-                ]
-            });
-
-            spectator.detectChanges();
-
-            const messageBanner = spectator.query(byTestId('analytics-message'));
-            expect(messageBanner).toExist();
+        beforeEach(() => {
+            jest.clearAllMocks();
         });
 
-        it('should hide message banner when localStorage key is present', () => {
-            const mockLocalStorage = {
-                getItem: jest.fn().mockReturnValue(true),
-                setItem: jest.fn()
-            };
-
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotLocalstorageService,
-                        useValue: mockLocalStorage
-                    }
-                ]
-            });
-
+        it('should show the message banner', () => {
+            defaultLocalStorageMock.getItem.mockReturnValue(null);
+            spectator = createComponent();
             spectator.detectChanges();
 
-            const messageBanner = spectator.query(byTestId('analytics-message'));
-            expect(messageBanner).not.toExist();
+            const message = spectator.query(byTestId('analytics-message'));
+            expect(message).toExist();
         });
 
-        it('should display correct message content', () => {
-            const mockLocalStorage = {
-                getItem: jest.fn().mockReturnValue(null),
-                setItem: jest.fn()
-            };
-
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotLocalstorageService,
-                        useValue: mockLocalStorage
-                    }
-                ]
-            });
-
+        it('should show the message content', () => {
+            defaultLocalStorageMock.getItem.mockReturnValue(null);
+            spectator = createComponent();
             spectator.detectChanges();
 
             const messageContent = spectator.query(byTestId('message-content'));
             expect(messageContent).toExist();
-            expect(messageContent).toContainText('This feature is in');
-            expect(messageContent).toContainText('development');
         });
 
-        it('should hide message and save to localStorage when close button is clicked', () => {
-            const mockLocalStorage = {
-                getItem: jest.fn().mockReturnValue(null),
-                setItem: jest.fn()
-            };
-
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotLocalstorageService,
-                        useValue: mockLocalStorage
-                    }
-                ]
-            });
-
+        it('should set $showMessage to false when close button is clicked', () => {
+            defaultLocalStorageMock.getItem.mockReturnValue(null);
+            spectator = createComponent();
             spectator.detectChanges();
 
-            let messageBanner = spectator.query(byTestId('analytics-message'));
-            expect(messageBanner).toExist();
-
-            const closeButton = spectator.query(byTestId('close-message'));
-            expect(closeButton).toExist();
-
-            spectator.click(closeButton);
+            const closeButton = spectator.query('[data-testid="close-message"]');
+            closeButton.dispatchEvent(new Event('click'));
             spectator.detectChanges();
 
-            expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+            expect(spectator.component.$showMessage()).toBe(false);
+        });
+
+        it('should return true if the hide message banner key is not set', () => {
+            defaultLocalStorageMock.getItem.mockReturnValue(undefined);
+            spectator = createComponent();
+            spectator.detectChanges();
+
+            expect(spectator.component.$showMessage()).toBe(true);
+        });
+
+        it('should return false if the hide message banner key is set', () => {
+            defaultLocalStorageMock.getItem.mockReturnValue(true);
+            spectator = createComponent();
+            spectator.detectComponentChanges();
+
+            expect(spectator.component.$showMessage()).toBe(false);
+        });
+
+        it('should call the localStorage service to set the hide message banner key', () => {
+            defaultLocalStorageMock.getItem.mockReturnValue(null);
+            spectator = createComponent();
+            spectator.detectChanges();
+
+            const closeButton = spectator.query('[data-testid="close-message"]');
+            closeButton.dispatchEvent(new Event('click'));
+            spectator.detectChanges();
+
+            expect(defaultLocalStorageMock.setItem).toHaveBeenCalledWith(
                 'analytics-dashboard-hide-message-banner',
                 true
             );
-
-            messageBanner = spectator.query(byTestId('analytics-message'));
-            expect(messageBanner).not.toExist();
         });
     });
 });

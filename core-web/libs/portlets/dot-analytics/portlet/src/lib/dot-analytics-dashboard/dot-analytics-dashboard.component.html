@@ -12,12 +12,13 @@
                         </span>
                     </div>
                     <div class="flex align-items-center gap-2">
-                        <p-button
-                            styleClass="p-button-text p-button-rounded p-button-sm p-button-icon-only"
+                        <button
+                            pButton
+                            class="p-button-text p-button-rounded p-button-sm p-button-icon-only"
                             type="button"
                             icon="pi pi-times"
                             data-testid="close-message"
-                            (onClick)="onCloseMessage()"></p-button>
+                            (click)="onCloseMessage()"></button>
                     </div>
                 </div>
             </ng-template>

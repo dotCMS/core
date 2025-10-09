@@ -61,7 +61,7 @@ export default class DotAnalyticsDashboardComponent {
     private readonly $currentSiteId = inject(GlobalStore).currentSiteId;
 
     // Message banner visibility
-    protected readonly $showMessage = signal<boolean>(
+    readonly $showMessage = signal<boolean>(
         !this.localStorageService.getItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY)
     );
 
@@ -108,7 +108,7 @@ export default class DotAnalyticsDashboardComponent {
     /**
      * Closes the message banner and stores the preference in localStorage
      */
-    protected onCloseMessage(): void {
+    onCloseMessage(): void {
         this.$showMessage.set(false);
         this.localStorageService.setItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY, true);
     }
