@@ -38,6 +38,7 @@ import { DotEditContentletComponent } from './view/components/dot-contentlet-edi
 import { DotLargeMessageDisplayComponent } from './view/components/dot-large-message-display/dot-large-message-display.component';
 import { DotListingDataTableComponent } from './view/components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotMessageDisplayComponent } from './view/components/dot-message-display/dot-message-display.component';
+import { DotThemeSelectorDropdownComponent } from './view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
 import { DotToolbarComponent } from './view/components/dot-toolbar/dot-toolbar.component';
 import { DotWorkflowTaskDetailComponent } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
 
@@ -60,7 +61,8 @@ export const CUSTOM_MODULES = [
     DotContentCompareComponent,
     DotDownloadBundleDialogComponent,
     DotWizardComponent,
-    DotGenerateSecurePasswordComponent
+    DotGenerateSecurePasswordComponent,
+    DotThemeSelectorDropdownComponent
 ];
 
 export const NGFACES_MODULES = [

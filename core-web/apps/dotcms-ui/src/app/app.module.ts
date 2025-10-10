@@ -12,7 +12,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { AppRoutingModule } from './app-routing.module';
-import { AppComponent } from './app.component';
 import { COMPONENTS, STANDALONE_COMPONENTS } from './components';
 import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
 import { ENV_PROVIDERS } from './providers';
@@ -20,8 +19,7 @@ import { DotDirectivesModule } from './shared/dot-directives.module';
 import { SharedModule } from './shared/shared.module';
 
 @NgModule({
-    bootstrap: [AppComponent],
-    declarations: [AppComponent, ...COMPONENTS],
+    declarations: [...COMPONENTS],
     imports: [
         ...CUSTOM_MODULES,
         ...NGFACES_MODULES,

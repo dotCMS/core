@@ -2,6 +2,7 @@
 
 import { of } from 'rxjs';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, inject as inject_1, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
@@ -14,9 +15,9 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
+import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { CoreWebServiceMock, MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 
@@ -24,7 +25,6 @@ import {
     PaginationEvent,
     SearchableDropdownComponent
 } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
-import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.themes': 'Select Themes',
@@ -100,13 +100,15 @@ describe('DotThemeSelectorDropdownComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [
-                DotThemeSelectorDropdownComponent,
-                SearchableDropdownComponent,
                 TestHostFilledComponent,
                 TestHostEmtpyComponent,
                 MockDotSiteSelectorComponent
             ],
             providers: [
+                {
+                    provide: CoreWebService,
+                    useClass: CoreWebServiceMock
+                },
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -170,12 +172,14 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 }
             ],
             imports: [
+                DotThemeSelectorDropdownComponent,
+                SearchableDropdownComponent,
                 FormsModule,
                 DotMessagePipe,
                 ReactiveFormsModule,
-                SearchableDropDownModule,
-                DotIconModule,
-                BrowserAnimationsModule
+                DotIconComponent,
+                BrowserAnimationsModule,
+                HttpClientTestingModule
             ]
         }).compileComponents();
     });

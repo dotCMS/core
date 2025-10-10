@@ -1,4 +1,6 @@
+import { AppComponent } from './app.component';
 import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
+import { DotThemeSelectorDropdownComponent } from './view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
 import { GlobalSearchComponent } from './view/components/global-search/global-search';
 import { DotLogOutContainerComponent } from './view/components/login/dot-logout-container-component/dot-log-out-container';
 import { DotLoginPageComponent } from './view/components/login/main/dot-login-page.component';
@@ -14,4 +16,9 @@ export const COMPONENTS = [
 ];
 
 // Standalone components (migrated to standalone)
-export const STANDALONE_COMPONENTS = [MainComponentLegacyComponent, DotAlertConfirmComponent];
+export const STANDALONE_COMPONENTS = [
+    AppComponent,
+    MainComponentLegacyComponent,
+    DotAlertConfirmComponent,
+    DotThemeSelectorDropdownComponent
+];

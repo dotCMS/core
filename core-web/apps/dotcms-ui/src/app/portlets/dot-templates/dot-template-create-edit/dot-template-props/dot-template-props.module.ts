@@ -15,7 +15,7 @@ import {
 import { DotTemplatePropsComponent } from './dot-template-props.component';
 import { DotTemplateThumbnailFieldModule } from './dot-template-thumbnail-field/dot-template-thumbnail-field.module';
 
-import { DotThemeSelectorDropdownModule } from '../../../../view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.module';
+import { DotThemeSelectorDropdownComponent } from '../../../../view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
 
 @NgModule({
     declarations: [DotTemplatePropsComponent],
@@ -29,7 +29,7 @@ import { DotThemeSelectorDropdownModule } from '../../../../view/components/dot-
         ReactiveFormsModule,
         DotMessagePipe,
         DotTemplateThumbnailFieldModule,
-        DotThemeSelectorDropdownModule,
+        DotThemeSelectorDropdownComponent,
         DotFieldRequiredDirective
     ]
 })
