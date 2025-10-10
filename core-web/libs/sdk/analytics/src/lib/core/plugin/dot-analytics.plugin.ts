@@ -62,8 +62,6 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                 };
                 sendAnalyticsEvent(body, config);
             }
-
-            return Promise.resolve();
         },
 
         /**
@@ -91,8 +89,6 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                 };
                 sendAnalyticsEvent(body, config); // Uses 'fetch' by default
             }
-
-            return Promise.resolve();
         },
 
         /**
