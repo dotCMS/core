@@ -1,10 +1,9 @@
 import { Component, Input, OnInit, signal } from '@angular/core';
-import { BlockEditorContent } from '@dotcms/types';
+import { BlockEditorNode } from '@dotcms/types';
 
 @Component({
   selector: 'app-paragraph',
   standalone: true,
-  imports: [],
   template: `
     <p>
       {{ $text() }}
@@ -19,16 +18,17 @@ import { BlockEditorContent } from '@dotcms/types';
   `,
 })
 export class ParagraphComponent implements OnInit {
-  @Input() content!: BlockEditorContent;
+  @Input() node!: BlockEditorNode;
 
   protected $text = signal<string>('');
 
   ngOnInit() {
-    if (!this.content.content) {
+    console.log("node => ",this.node);
+    if (!this.node.content) {
       return;
     }
 
-    const [{ text }] = this.content.content;
+    const [{ text }] = this.node.content;
     this.$text.set(text ?? '');
   }
 }

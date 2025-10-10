@@ -8,7 +8,7 @@ interface Activity {
 
 @Component({
   selector: 'app-activity',
-  template: '<div>{{ contentlet.title }}</div>',
+  template: '<div>{{ node.title }}</div>',
   standalone: true,
   styles: `
     :host {
@@ -17,5 +17,5 @@ interface Activity {
   `,
 })
 export class ActivityComponent {
-  @Input() contentlet!: Activity;
+  @Input() node!: Activity;
 }

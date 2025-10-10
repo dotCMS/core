@@ -63,10 +63,11 @@ export class NoComponentProvided {
 })
 export class DotContentletBlock {
     @Input() customRenderers: CustomRenderer | undefined;
-    @Input() attrs: BlockEditorNode['attrs'];
+    @Input() node: BlockEditorNode | undefined;
 
     contentComponent: DynamicComponentEntity | undefined;
-    protected readonly $data = computed(() => this.attrs?.['data']);
+    protected readonly $data = computed(() => this.node?.attrs?.['data']);
+
     private readonly DOT_CONTENT_NO_DATA_MESSAGE =
         '[DotCMSBlockEditorRenderer]: No data provided for Contentlet Block. Try to add a contentlet to the block editor. If the error persists, please contact the DotCMS support team.';
     private readonly DOT_CONTENT_NO_MATCHING_COMPONENT_MESSAGE = (contentType: string) =>

@@ -48,5 +48,5 @@ export const DotContent = ({ customRenderers, node }: DotContentProps) => {
         return null;
     }
 
-    return <Component {...node} />;
+    return <Component node={node} />;
 };
