@@ -374,7 +374,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
     });
 
     beforeEach(() => {
-        jest.restoreAllMocks();
+        jest.clearAllMocks();
     });
 
     it('should fetch content when store has a non-SYSTEM_HOST site', () => {
@@ -408,6 +408,20 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             limit: DEFAULT_PAGINATION.limit,
             offset: DEFAULT_PAGINATION.offset,
             sort: 'baseType desc'
+        });
+    });
+
+    it('should handle sorting with score when query includes title', () => {
+        // Set sort in store
+        store.patchFilters({ title: 'test' });
+
+        spectator.service.loadItems();
+
+        expect(contentSearchService.get).toHaveBeenCalledWith({
+            query: expect.any(String),
+            limit: DEFAULT_PAGINATION.limit,
+            offset: DEFAULT_PAGINATION.offset,
+            sort: 'score,modDate desc'
         });
     });
 
