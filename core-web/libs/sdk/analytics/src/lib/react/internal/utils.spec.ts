@@ -24,7 +24,7 @@ const loadUtils = () => {
 describe('react/internal/utils', () => {
     const mockConfig = {
         server: 'https://demo.dotcms.com',
-        siteKey: 'test-site',
+        siteAuth: 'test-site',
         debug: false
     };
 
@@ -60,13 +60,13 @@ describe('react/internal/utils', () => {
             expect(mockInitialize).toHaveBeenCalledTimes(2);
         });
 
-        it('resets singleton when siteKey changes', () => {
+        it('resets singleton when siteAuth changes', () => {
             const { initializeAnalytics } = loadUtils();
 
             const instance1 = initializeAnalytics(mockConfig);
             const instance2 = initializeAnalytics({
                 ...mockConfig,
-                siteKey: 'new-site'
+                siteAuth: 'new-site'
             });
 
             expect(instance1).toBe(mockAnalyticsInstance);

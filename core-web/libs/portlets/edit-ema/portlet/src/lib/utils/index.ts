@@ -243,19 +243,19 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 }
 
 /**
- * Sanitizes a URL by:
- * 1. Removing extra leading/trailing slashes
- * 2. Preserving 'index' in the URL path
- *
- * @param {string} url
- * @return {*}  {string}
+ * Sanitizes a URL by removing query parameters and cleaning up multiple slashes
+ * @param url The URL to sanitize
+ * @returns The sanitized URL path
  */
 export function sanitizeURL(url?: string): string {
     if (!url || url === '/') {
         return '/';
     }
 
-    return url.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
+    // Remove query params if present
+    const path = url.split('?')[0];
+
+    return path.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
 }
 
 /**
