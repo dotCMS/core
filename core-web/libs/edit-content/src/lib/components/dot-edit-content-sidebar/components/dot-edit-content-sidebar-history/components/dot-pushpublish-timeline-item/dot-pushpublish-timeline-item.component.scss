@@ -8,7 +8,7 @@
     }
 }
 
-.dot-history-timeline-item {
+.dot-pushpublish-timeline-item {
     display: flex;
     align-items: stretch;
     width: 100%;
@@ -16,7 +16,7 @@
     min-height: 80px;
 }
 
-.dot-history-timeline-item__marker-column {
+.dot-pushpublish-timeline-item__marker-column {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -24,7 +24,7 @@
     padding: 0 2px;
 }
 
-.dot-history-timeline-item__marker {
+.dot-pushpublish-timeline-item__marker {
     width: 12px;
     height: 12px;
     border-radius: 50%;
@@ -33,19 +33,9 @@
     z-index: 2;
     background: $color-palette-gray-400;
     flex-shrink: 0;
-
-    &--live {
-        background: $color-palette-green;
-        box-shadow: 0 0 0 2px $color-palette-green-op-20;
-    }
-
-    &--draft {
-        background: $color-palette-yellow;
-        box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
-    }
 }
 
-.dot-history-timeline-item__connector {
+.dot-pushpublish-timeline-item__connector {
     width: 2px;
     background: $color-palette-gray-300;
     flex-shrink: 0;
@@ -59,15 +49,15 @@
     }
 }
 
-:host:first-child .dot-history-timeline-item__connector--top {
+:host:first-child .dot-pushpublish-timeline-item__connector--top {
     visibility: hidden;
 }
 
-:host:last-child .dot-history-timeline-item__connector--bottom {
+:host:last-child .dot-pushpublish-timeline-item__connector--bottom {
     visibility: hidden;
 }
 
-.dot-history-timeline-item__content-wrapper {
+.dot-pushpublish-timeline-item__content-wrapper {
     background: $color-palette-gray-100;
     border-radius: $border-radius-md;
     padding: $spacing-1;
@@ -81,62 +71,42 @@
 
     &:hover {
         background: $color-palette-primary-op-10;
-
-        .dot-history-timeline-item__actions {
-            visibility: visible;
-        }
-    }
-
-    &--active {
-        background: $color-palette-primary-op-30 !important;
-
-        .dot-history-timeline-item__actions {
-            visibility: visible;
-        }
     }
 }
 
-.dot-history-timeline-item__content {
+.dot-pushpublish-timeline-item__content {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: $spacing-1;
 }
 
-.dot-history-timeline-item__header {
+.dot-pushpublish-timeline-item__header {
     display: flex;
-    gap: $spacing-1;
     align-items: center;
+    justify-content: space-between;
     line-height: $spacing-4;
 }
 
-.dot-history-timeline-item__time-section {
-    display: flex;
-    align-items: center;
-    gap: $spacing-2;
-}
-
-.dot-history-timeline-item__time-relative {
+.dot-pushpublish-timeline-item__time-relative {
     font-weight: $font-weight-medium-bold;
     color: $black;
     font-size: $font-size-md;
 }
 
-.dot-history-timeline-item__actions {
-    display: flex;
-    visibility: hidden;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.dot-history-timeline-item__user-section {
+.dot-pushpublish-timeline-item__bundle-id-section {
     display: flex;
     align-items: center;
     gap: $spacing-0;
 }
 
-::ng-deep .dot-history-timeline-item__avatar.p-avatar {
+.dot-pushpublish-timeline-item__user-section {
+    display: flex;
+    align-items: center;
+    gap: $spacing-0;
+}
+
+::ng-deep .dot-pushpublish-timeline-item__avatar.p-avatar {
     width: 21px;
     height: 21px;
     border-radius: 50%;
@@ -146,12 +116,12 @@
     }
 }
 
-.dot-history-timeline-item__user-name {
+.dot-pushpublish-timeline-item__user-name {
     color: $color-palette-gray-800;
     font-size: $font-size-md;
 }
 
-::ng-deep .dot-history-timeline-item__tooltip.p-tooltip {
+::ng-deep .dot-pushpublish-timeline-item__tooltip.p-tooltip {
     &.p-tooltip-bottom {
         transform: translateX(-55px);
 
@@ -167,19 +137,19 @@
     .p-tooltip-text {
         background: $color-palette-primary-200;
         padding: 0;
-        min-width: 220px;
-        max-width: 220px;
+        min-width: 260px;
+        max-width: 260px;
     }
 }
 
-.dot-history-timeline-item__overlay-content {
+.dot-pushpublish-timeline-item__overlay-content {
     padding: $spacing-1;
     display: flex;
     flex-direction: column;
     gap: $spacing-0;
 }
 
-.dot-history-timeline-item__overlay-title {
+.dot-pushpublish-timeline-item__overlay-title {
     margin: 0;
     color: $color-palette-gray-800;
     font-size: $font-size-sm;
@@ -187,7 +157,7 @@
     word-wrap: break-word;
 }
 
-.dot-history-timeline-item__overlay-list {
+.dot-pushpublish-timeline-item__overlay-list {
     padding-left: $spacing-3;
     margin: 0;
 

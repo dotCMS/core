@@ -75,6 +75,15 @@ describe('DotEditContentStore', () => {
         expect(store.isDialogMode()).toBe(false);
     });
 
+    it('should initialize push publish history state correctly', () => {
+        expect(store.pushPublishHistory()).toEqual([]);
+        expect(store.pushPublishHistoryPagination()).toBeNull();
+        expect(store.pushPublishHistoryStatus()).toEqual({
+            status: ComponentStatus.INIT,
+            error: null
+        });
+    });
+
     it('should compose with all required features', () => {
         // Verify features are composed into the store
         expect(store.contentType).toBeDefined();
@@ -94,12 +103,19 @@ describe('DotEditContentStore', () => {
         expect(store.activeSidebarTab).toBeDefined();
         // User Feature
         expect(store.currentUser).toBeDefined();
+        // History Feature - Push Publish History
+        expect(store.pushPublishHistory).toBeDefined();
+        expect(store.pushPublishHistoryPagination).toBeDefined();
+        expect(store.pushPublishHistoryStatus).toBeDefined();
         // Methods
         expect(store.enableDialogMode).toBeDefined();
         expect(store.initializeNewContent).toBeDefined();
         expect(store.initializeExistingContent).toBeDefined();
         expect(store.initializeDialogMode).toBeDefined();
         expect(store.initializeAsPortlet).toBeDefined();
+        expect(store.loadPushPublishHistory).toBeDefined();
+        expect(store.clearPushPublishHistory).toBeDefined();
+        expect(store.deletePushPublishHistory).toBeDefined();
     });
 
     describe('initializeDialogMode', () => {
