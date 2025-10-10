@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { MockProvider } from 'ng-mocks';
+import { MockModule, MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -34,7 +34,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
-import { DotDialogModule } from '@dotcms/ui';
+import { DotDialogComponent } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotWizardComponent } from './dot-wizard.component';
@@ -42,8 +42,8 @@ import { DotWizardComponent } from './dot-wizard.component';
 import { DotParseHtmlService } from '../../../../api/services/dot-parse-html/dot-parse-html.service';
 import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
 import { PushPublishServiceMock } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
-import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
+import { DotCommentAndAssignFormModule } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.module';
+import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-push-publish-form.module';
 
 const messageServiceMock = new MockDotMessageService({
     send: 'Send',
@@ -105,15 +105,10 @@ describe('DotWizardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                DotCommentAndAssignFormComponent,
-                DotPushPublishFormComponent,
-                FormOneComponent,
-                FormTwoComponent
-            ],
+            declarations: [FormOneComponent, FormTwoComponent],
             imports: [
                 DotWizardComponent,
-                DotDialogModule,
+                DotDialogComponent,
                 CommonModule,
                 DotContainerReferenceModule,
                 HttpClientTestingModule,
@@ -123,7 +118,9 @@ describe('DotWizardComponent', () => {
                 DropdownModule,
                 BrowserAnimationsModule,
                 DialogModule,
-                ButtonModule
+                ButtonModule,
+                MockModule(DotCommentAndAssignFormModule),
+                MockModule(DotPushPublishFormModule)
             ],
             providers: [
                 LoggerService,

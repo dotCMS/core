@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -40,6 +41,7 @@ import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-pus
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
     imports: [
+        CommonModule,
         DialogModule,
         ButtonModule,
         DotContainerReferenceModule,

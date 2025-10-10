@@ -7,7 +7,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, LoginService } from '@dotcms/dotcms-js';
+import {
+    DotcmsEventsService,
+    DotEventsSocket,
+    LoggerService,
+    LoginService
+} from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
@@ -16,7 +21,6 @@ import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detai
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
-import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
 
 describe('DotWorkflowTaskDetailComponent', () => {
     let component: DotWorkflowTaskDetailComponent;
@@ -32,7 +36,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 DotWorkflowTaskDetailComponent,
-                DotIframeDialogModule,
+                DotIframeDialogComponent,
                 RouterTestingModule,
                 BrowserAnimationsModule
             ],
@@ -43,6 +47,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
                 DotRouterService,
                 DotUiColorsService,
                 DotcmsEventsService,
+                DotEventsSocket,
                 LoggerService,
                 {
                     provide: LoginService,

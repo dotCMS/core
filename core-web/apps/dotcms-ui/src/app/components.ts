@@ -5,11 +5,13 @@ import { DotLoginPageComponent } from './view/components/login/main/dot-login-pa
 import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from './view/components/main-legacy/main-legacy.component';
 
+// Non-standalone components (traditional NgModule components)
 export const COMPONENTS = [
     MainCoreLegacyComponent,
-    MainComponentLegacyComponent,
     DotLoginPageComponent,
     DotLogOutContainerComponent,
-    GlobalSearchComponent,
-    DotAlertConfirmComponent
+    GlobalSearchComponent
 ];
+
+// Standalone components (migrated to standalone)
+export const STANDALONE_COMPONENTS = [MainComponentLegacyComponent, DotAlertConfirmComponent];

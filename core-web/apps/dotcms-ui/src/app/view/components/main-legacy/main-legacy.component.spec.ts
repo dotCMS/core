@@ -33,6 +33,7 @@ import {
     DotcmsEventsService,
     DotEventsSocket,
     DotEventsSocketURL,
+    DotPushPublishDialogService,
     LoggerService,
     LoginService,
     StringUtils,
@@ -43,11 +44,14 @@ import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dot
 import { MainComponentLegacyComponent } from './main-legacy.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
-import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
+// import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -111,10 +115,11 @@ describe('MainLegacyComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 RouterTestingModule,
-                DotContentletEditorModule,
+                // DotContentletEditorModule,
                 DotDownloadBundleDialogComponent,
                 DotWizardComponent,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                MainComponentLegacyComponent
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -144,10 +149,16 @@ describe('MainLegacyComponent', () => {
                 DotGlobalMessageService,
                 DotEventsService,
                 DotGenerateSecurePasswordService,
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                // Add missing services for standalone components
+                DotDownloadBundleDialogService,
+                DotPushPublishDialogService,
+                DotWorkflowEventHandlerService,
+                DotNavigationService,
+                IframeOverlayService
             ],
             declarations: [
-                MainComponentLegacyComponent,
+                // MainComponentLegacyComponent, // Moved to imports as standalone
                 MockDotDialogComponent,
                 MockDotMainNavComponent,
                 MockDotToolbarComponent,

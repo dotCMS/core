@@ -1,8 +1,9 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 
-import { ConfirmDialog } from 'primeng/confirmdialog';
+import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -11,7 +12,7 @@ import { DotAlertConfirmService } from '@dotcms/data-access';
 @Component({
     selector: 'dot-alert-confirm',
     templateUrl: './dot-alert-confirm.html',
-    standalone: false
+    imports: [CommonModule, ConfirmDialogModule]
 })
 export class DotAlertConfirmComponent implements OnInit, OnDestroy {
     dotAlertConfirmService = inject(DotAlertConfirmService);

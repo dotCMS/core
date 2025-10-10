@@ -3,7 +3,12 @@ import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 
-import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotIframeService,
+    DotContentletService
+} from '@dotcms/data-access';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
 
 import { DotContentCompareTableComponent } from './components/dot-content-compare-table/dot-content-compare-table.component';
@@ -13,7 +18,7 @@ import { DotContentCompareState, DotContentCompareStore } from './store/dot-cont
     selector: 'dot-content-compare',
     templateUrl: './dot-content-compare.component.html',
     styleUrls: ['./dot-content-compare.component.scss'],
-    providers: [DotContentCompareStore],
+    providers: [DotContentCompareStore, DotContentletService],
     imports: [CommonModule, DotContentCompareTableComponent]
 })
 export class DotContentCompareComponent {

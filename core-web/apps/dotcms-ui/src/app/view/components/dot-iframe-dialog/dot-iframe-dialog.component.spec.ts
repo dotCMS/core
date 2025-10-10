@@ -1,19 +1,32 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { LoginService } from '@dotcms/dotcms-js';
-import { DotDialogComponent, DotDialogModule } from '@dotcms/ui';
+import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    LoggerService,
+    LoginService,
+    StringUtils
+} from '@dotcms/dotcms-js';
+import { DotDialogComponent } from '@dotcms/ui';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 
 import { IframeComponent } from '../_common/iframe/iframe-component';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 let component: DotIframeDialogComponent;
 let de: DebugElement;
@@ -25,12 +38,39 @@ let dotIframeComponent: IframeComponent;
 
 const getTestConfig = (hostComponent) => {
     return {
-        imports: [DotDialogModule, BrowserAnimationsModule, IframeComponent, RouterTestingModule],
+        imports: [
+            DotDialogComponent,
+            BrowserAnimationsModule,
+            IframeComponent,
+            RouterTestingModule,
+            HttpClientTestingModule
+        ],
         providers: [
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
-            }
+            },
+            {
+                provide: CoreWebService,
+                useClass: CoreWebServiceMock
+            },
+            DotIframeService,
+            DotRouterService,
+            DotUiColorsService,
+            DotcmsEventsService,
+            DotEventsSocket,
+            {
+                provide: DotEventsSocketURL,
+                useFactory: () =>
+                    new DotEventsSocketURL(
+                        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
+                        window.location.protocol === 'https:'
+                    )
+            },
+            DotLoadingIndicatorService,
+            LoggerService,
+            StringUtils,
+            IframeOverlayService
         ],
         declarations: [DotIframeDialogComponent, hostComponent]
     };
