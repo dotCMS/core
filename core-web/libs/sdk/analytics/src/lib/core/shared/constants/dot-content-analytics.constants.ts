@@ -68,6 +68,14 @@ export const USER_ID_KEY = 'dot_analytics_user_id';
 export const ACTIVITY_EVENTS = ['click'] as const;
 
 /**
+ * Default queue configuration for event batching
+ */
+export const DEFAULT_QUEUE_CONFIG = {
+    eventBatchSize: 15, // Max events per batch - auto-sends when reached
+    flushInterval: 5000 // Time between flushes - sends whatever is queued
+} as const;
+
+/**
  * The name of the analytics minified script.
  */
 export const ANALYTICS_MINIFIED_SCRIPT_NAME = 'ca.min.js';
