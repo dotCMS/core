@@ -26,13 +26,15 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPersonalizeService,
     DotPropertiesService,
     DotRouterService,
     DotSessionStorageService,
     DotGlobalMessageService,
     DotIframeService,
     DotFormatDateService,
-    DotPageStateService
+    DotPageStateService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -121,6 +123,16 @@ class MockDotPageStateService {
     requestFavoritePageData(_urlParam: string): Observable<ESContent> {
         return of();
     }
+}
+
+@Injectable()
+class MockDotPersonalizeService {
+    personalized = jest.fn().mockReturnValue(of([]));
+}
+
+@Injectable()
+class MockDotWorkflowActionsFireService {
+    fireWorkflowAction = jest.fn().mockReturnValue(of({}));
 }
 
 @Injectable()
@@ -213,6 +225,11 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotcmsEventsService,
                 DotEventsSocket,
                 DotContentletEditorService,
+                { provide: DotPersonalizeService, useClass: MockDotPersonalizeService },
+                {
+                    provide: DotWorkflowActionsFireService,
+                    useClass: MockDotWorkflowActionsFireService
+                },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },

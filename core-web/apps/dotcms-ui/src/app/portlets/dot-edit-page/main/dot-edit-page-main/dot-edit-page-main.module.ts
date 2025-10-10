@@ -14,7 +14,7 @@ import { DotEditContentletComponent } from '../../../../view/components/dot-cont
 import { DotExperimentClassDirective } from '../../../shared/directives/dot-experiment-class.directive';
 import { DotBlockEditorSidebarModule } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.module';
 import { DotEditPageNavDirective } from '../dot-edit-page-nav/directives/dot-edit-page-nav.directive';
-import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
+import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 
 @NgModule({
     imports: [
@@ -23,7 +23,7 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
         DotEditContentletComponent,
         DotBlockEditorSidebarModule,
         DotEditPageNavDirective,
-        DotEditPageNavModule,
+        DotEditPageNavComponent,
         DotExperimentClassDirective,
         OverlayPanelModule,
         DialogModule
