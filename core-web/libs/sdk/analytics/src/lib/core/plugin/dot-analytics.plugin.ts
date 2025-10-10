@@ -18,6 +18,33 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
     const enableQueue = config.queue !== false;
     let queue: ReturnType<typeof createAnalyticsQueue> | null = null;
 
+    /**
+     * Common handler for both page views and custom events
+     * Processes events by either queuing them or sending directly
+     */
+    const handleEvent = (params: DotCMSAnalyticsParams): void => {
+        const { config, payload } = params;
+
+        if (!isInitialized) {
+            throw new Error('DotCMS Analytics: Plugin not initialized');
+        }
+
+        const event = payload.events[0];
+        const context = payload.context;
+
+        // Use queue or send directly
+        if (enableQueue && queue) {
+            queue.enqueue(event, context);
+        } else {
+            // Direct send without queue (when queue === false)
+            const body = {
+                context,
+                events: [event]
+            };
+            sendAnalyticsEvent(body, config);
+        }
+    };
+
     return {
         name: 'dot-analytics',
         config,
@@ -28,7 +55,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
         initialize: () => {
             isInitialized = true;
 
-            // Initialize queue if enabled (queueConfig is undefined or an object)
+            // Initialize queue if enabled (queue is undefined or an object)
             if (enableQueue) {
                 queue = createAnalyticsQueue(config);
                 queue.initialize();
@@ -41,55 +68,13 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
          * Track a page view event
          * The enricher plugin has already built the complete request body
          */
-        page: (params: DotCMSAnalyticsParams) => {
-            const { config, payload } = params;
-
-            if (!isInitialized) {
-                throw new Error('DotCMS Analytics: Plugin not initialized');
-            }
-
-            const event = payload.events[0];
-            const context = payload.context;
-
-            // Use queue or send directly
-            if (enableQueue && queue) {
-                queue.enqueue(event, context);
-            } else {
-                // Direct send without queue (when queueConfig === false)
-                const body = {
-                    context,
-                    events: [event]
-                };
-                sendAnalyticsEvent(body, config);
-            }
-        },
+        page: handleEvent,
 
         /**
          * Track a custom event
          * The enricher plugin has already built the complete request body
          */
-        track: (params: DotCMSAnalyticsParams) => {
-            const { config, payload } = params;
-
-            if (!isInitialized) {
-                throw new Error('DotCMS Analytics: Plugin not initialized');
-            }
-
-            const event = payload.events[0];
-            const context = payload.context;
-
-            // Use queue or send directly
-            if (enableQueue && queue) {
-                queue.enqueue(event, context);
-            } else {
-                // Direct send without queue (when queueConfig === false)
-                const body = {
-                    context,
-                    events: [event]
-                };
-                sendAnalyticsEvent(body, config); // Uses 'fetch' by default
-            }
-        },
+        track: handleEvent,
 
         /**
          * Check if the plugin is loaded
