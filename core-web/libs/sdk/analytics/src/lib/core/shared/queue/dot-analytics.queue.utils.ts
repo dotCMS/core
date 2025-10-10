@@ -1,10 +1,7 @@
 import smartQueue, { type Queue } from '@analytics/queue-utils';
 
 import { DEFAULT_QUEUE_CONFIG } from '../constants';
-import {
-    sendAnalyticsEventToServer,
-    sendAnalyticsEventWithBeacon
-} from '../dot-content-analytics.http';
+import { sendAnalyticsEvent, type TransportType } from '../dot-content-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsEventContext,
@@ -21,10 +18,10 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
     let currentContext: DotCMSAnalyticsEventContext | null = null;
 
     /**
-     * Flag to determine which send method to use
-     * When page is unloading, we need sendBeacon for reliable delivery
+     * Transport type to use for sending events
+     * 'beacon' for page unload (reliable), 'fetch' for normal sends
      */
-    let useBeaconForSend = false;
+    let transportType: TransportType = 'fetch';
 
     // Merge user config with defaults (allows partial configuration)
     const queueConfig: QueueConfig = {
@@ -34,7 +31,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
 
     /**
      * Send batch of events to server
-     * Called by smartQueue - uses appropriate method based on context
+     * Called by smartQueue - uses appropriate transport based on context
      */
     const sendBatch = (events: DotCMSEvent[]): void => {
         if (!currentContext) return;
@@ -43,23 +40,17 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             // eslint-disable-next-line no-console
             console.log(`DotCMS Analytics Queue: Sending batch of ${events.length} event(s)`, {
                 events,
-                method: useBeaconForSend ? 'sendBeacon' : 'fetch'
+                transport: transportType
             });
         }
 
         const payload = { context: currentContext, events };
-
-        // Use sendBeacon during page unload, fetch otherwise
-        if (useBeaconForSend) {
-            sendAnalyticsEventWithBeacon(payload, config);
-        } else {
-            sendAnalyticsEventToServer(payload, config);
-        }
+        sendAnalyticsEvent(payload, config, transportType);
     };
 
     /**
      * Flush remaining events when page becomes hidden or unloads
-     * Sets flag and triggers smartQueue to flush ALL events
+     * Sets transport to 'beacon' and triggers smartQueue to flush ALL events
      */
     const flushRemaining = (): void => {
         if (!eventQueue || eventQueue.size() === 0 || !currentContext) return;
@@ -70,8 +61,8 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             );
         }
 
-        // Set flag so sendBatch uses sendBeacon
-        useBeaconForSend = true;
+        // Use beacon transport for reliable delivery during page unload
+        transportType = 'beacon';
 
         // Flush all events - flush(true) makes smartQueue recursively batch until empty
         eventQueue.flush(true);
@@ -122,15 +113,20 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             currentContext = context;
             if (!eventQueue) return;
 
-            eventQueue.push(event);
-
             if (config.debug) {
+                // Calculate predicted size before push to show correct order in logs
+                const predictedSize = eventQueue.size() + 1;
+                const maxSize = queueConfig.eventBatchSize ?? DEFAULT_QUEUE_CONFIG.eventBatchSize;
+                const willBeFull = predictedSize >= maxSize;
                 // eslint-disable-next-line no-console
                 console.log(
-                    `DotCMS Analytics Queue: Event added. Queue size: ${eventQueue.size()}/${queueConfig.eventBatchSize}`,
+                    `DotCMS Analytics Queue: Event added. Queue size: ${predictedSize}/${maxSize}${willBeFull ? ' (full, sending...)' : ''}`,
                     { eventType: event.event_type, event }
                 );
             }
+
+            // Push triggers sendBatch callback if queue is full (throttle: false)
+            eventQueue.push(event);
         },
 
         /**
@@ -154,7 +150,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
 
             eventQueue = null;
             currentContext = null;
-            useBeaconForSend = false;
+            transportType = 'fetch';
         }
     };
 };

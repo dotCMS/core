@@ -1,4 +1,4 @@
-import { sendAnalyticsEventToServer } from '../shared/dot-content-analytics.http';
+import { sendAnalyticsEvent } from '../shared/dot-content-analytics.http';
 import { DotCMSAnalyticsConfig, DotCMSAnalyticsParams } from '../shared/models';
 import { createAnalyticsQueue } from '../shared/queue';
 
@@ -60,7 +60,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                     context,
                     events: [event]
                 };
-                sendAnalyticsEventToServer(body, config);
+                sendAnalyticsEvent(body, config);
             }
 
             return Promise.resolve();
@@ -89,7 +89,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                     context,
                     events: [event]
                 };
-                sendAnalyticsEventToServer(body, config);
+                sendAnalyticsEvent(body, config); // Uses 'fetch' by default
             }
 
             return Promise.resolve();

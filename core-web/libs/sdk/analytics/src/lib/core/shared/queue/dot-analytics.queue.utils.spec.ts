@@ -2,16 +2,12 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { DEFAULT_QUEUE_CONFIG } from '../constants';
-import {
-    sendAnalyticsEventToServer,
-    sendAnalyticsEventWithBeacon
-} from '../dot-content-analytics.http';
+import { sendAnalyticsEvent } from '../dot-content-analytics.http';
 import { DotCMSAnalyticsConfig, DotCMSAnalyticsEventContext, DotCMSEvent } from '../models';
 
-// Mock the HTTP utilities
+// Mock the HTTP utility
 jest.mock('../dot-content-analytics.http', () => ({
-    sendAnalyticsEventToServer: jest.fn(),
-    sendAnalyticsEventWithBeacon: jest.fn()
+    sendAnalyticsEvent: jest.fn()
 }));
 
 // Mock @analytics/queue-utils
@@ -259,7 +255,9 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(debugConfig);
             queue.initialize();
 
-            mockQueueSize.mockReturnValue(5);
+            // Mock size to return 4 (so predicted size will be 5)
+            mockQueueSize.mockReturnValue(4);
+
             queue.enqueue(mockEvent, mockContext);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
@@ -312,15 +310,15 @@ describe('createAnalyticsQueue', () => {
             const events = [mockEvent, mockEvent];
             sendBatchCallback(events);
 
-            expect(sendAnalyticsEventToServer).toHaveBeenCalledTimes(1);
-            expect(sendAnalyticsEventToServer).toHaveBeenCalledWith(
+            expect(sendAnalyticsEvent).toHaveBeenCalledTimes(1);
+            expect(sendAnalyticsEvent).toHaveBeenCalledWith(
                 {
                     context: mockContext,
                     events
                 },
-                mockConfig
+                mockConfig,
+                'fetch' // Default transport
             );
-            expect(sendAnalyticsEventWithBeacon).not.toHaveBeenCalled();
         });
 
         it('should not send if context is not set', () => {
@@ -333,8 +331,7 @@ describe('createAnalyticsQueue', () => {
             // Don't enqueue anything (no context set)
             sendBatchCallback([mockEvent]);
 
-            expect(sendAnalyticsEventToServer).not.toHaveBeenCalled();
-            expect(sendAnalyticsEventWithBeacon).not.toHaveBeenCalled();
+            expect(sendAnalyticsEvent).not.toHaveBeenCalled();
         });
 
         it('should log debug info when debug is enabled', () => {
@@ -351,7 +348,7 @@ describe('createAnalyticsQueue', () => {
             expect(mockConsoleLog).toHaveBeenCalledWith(
                 expect.stringContaining('Sending batch of 2 event(s)'),
                 expect.objectContaining({
-                    method: 'fetch',
+                    transport: 'fetch',
                     events: expect.any(Array)
                 })
             );
@@ -409,8 +406,11 @@ describe('createAnalyticsQueue', () => {
             // Now simulate smartQueue calling sendBatch
             sendBatchCallback([mockEvent]);
 
-            expect(sendAnalyticsEventWithBeacon).toHaveBeenCalledTimes(1);
-            expect(sendAnalyticsEventToServer).not.toHaveBeenCalled();
+            expect(sendAnalyticsEvent).toHaveBeenCalledWith(
+                expect.any(Object),
+                mockConfig,
+                'beacon' // Should use beacon for page unload
+            );
         });
 
         it('should not flush if queue is empty', () => {
@@ -534,8 +534,11 @@ describe('createAnalyticsQueue', () => {
             // Should use fetch again (not beacon)
             sendBatchCallback([mockEvent]);
 
-            expect(sendAnalyticsEventToServer).toHaveBeenCalled();
-            expect(sendAnalyticsEventWithBeacon).not.toHaveBeenCalled();
+            expect(sendAnalyticsEvent).toHaveBeenCalledWith(
+                expect.any(Object),
+                mockConfig,
+                'fetch' // Should use fetch after cleanup
+            );
         });
     });
 
@@ -554,7 +557,7 @@ describe('createAnalyticsQueue', () => {
             expect(mockConsoleLog).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
-                    method: 'fetch'
+                    transport: 'fetch'
                 })
             );
         });
@@ -587,7 +590,7 @@ describe('createAnalyticsQueue', () => {
             expect(sendBatchCall).toBeDefined();
             expect(sendBatchCall?.[1]).toEqual(
                 expect.objectContaining({
-                    method: 'sendBeacon'
+                    transport: 'beacon'
                 })
             );
         });
