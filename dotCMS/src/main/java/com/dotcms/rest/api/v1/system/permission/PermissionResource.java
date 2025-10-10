@@ -302,7 +302,6 @@ public class PermissionResource {
 
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
