@@ -1,3 +1,5 @@
+import { TreeNode } from 'primeng/api';
+
 /**
  * @export
  * @interface DotFolderListViewColumn
@@ -10,3 +12,32 @@ export interface DotFolderListViewColumn {
     sortable?: boolean;
     order: number;
 }
+
+/**
+ * @export
+ * @interface DotContentDriveUploadFiles
+ * @description File and host folder for the drop zone
+ */
+export interface DotContentDriveUploadFiles {
+    files: FileList;
+    targetFolderId: string;
+}
+
+/**
+ * @export
+ * @interface DotFolderTreeNodeData
+ * @description Tree node data
+ */
+export type DotFolderTreeNodeData = {
+    type: 'site' | 'folder';
+    path: string;
+    hostname: string;
+    id: string;
+};
+
+/**
+ * @export
+ * @type DotFolderTreeNodeItem
+ * @description Tree node item
+ */
+export type DotFolderTreeNodeItem = TreeNode<DotFolderTreeNodeData>;

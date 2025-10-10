@@ -11,15 +11,6 @@ body:
       value: |
         **Note: This template is intended for Engineering team use.**
 
-  - type: input
-    id: spike-title
-    attributes:
-      label: Spike Title
-      description: Clear, concise title describing the research objective
-      placeholder: "e.g., Research integration options for new authentication system"
-    validations:
-      required: true
-
   - type: textarea
     id: research-question
     attributes:

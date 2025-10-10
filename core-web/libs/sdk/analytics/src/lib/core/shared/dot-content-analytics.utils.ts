@@ -1,21 +1,24 @@
 import { PageData } from 'analytics';
 
 import {
+    ANALYTICS_JS_DEFAULT_PROPERTIES,
     ANALYTICS_MINIFIED_SCRIPT_NAME,
     DEFAULT_SESSION_TIMEOUT_MINUTES,
     EXPECTED_UTM_KEYS,
     SESSION_STORAGE_KEY,
     USER_ID_KEY
-} from './dot-content-analytics.constants';
+} from './constants';
 import {
+    AnalyticsBasePayloadWithContext,
     DotCMSAnalyticsConfig,
-    DotCMSAnalyticsContext,
-    DotCMSAnalyticsPayload,
-    DotCMSBrowserEventData,
-    DotCMSDeviceData,
-    DotCMSPageData,
-    DotCMSUtmData
-} from './dot-content-analytics.model';
+    DotCMSAnalyticsEventContext,
+    DotCMSBrowserData,
+    DotCMSEventDeviceData,
+    DotCMSEventPageData,
+    DotCMSEventUtmData,
+    EnrichedAnalyticsPayload,
+    JsonObject
+} from './models';
 
 // Export activity tracking functions from separate module
 export {
@@ -28,17 +31,19 @@ export {
 } from './dot-content-analytics.activity-tracker';
 
 // Performance cache for static browser data that rarely changes
-let staticBrowserData: {
-    user_language: string | undefined;
-    doc_encoding: string | undefined;
-    screen_resolution: string | undefined;
-} | null = null;
+let staticBrowserData: Pick<
+    DotCMSBrowserData,
+    'user_language' | 'doc_encoding' | 'screen_resolution'
+> | null = null;
 
 // UTM parameters cache to avoid repetitive URL parsing
-let utmCache: { search: string; params: Record<string, string> } | null = null;
+let utmCache: { search: string; params: DotCMSEventUtmData } | null = null;
 
 /**
- * Generates a cryptographically secure random ID
+ * Generates a cryptographically secure random ID.
+ * @internal This function is for internal use only and should not be used outside of the SDK.
+ * @param prefix - The prefix for the generated ID
+ * @returns A unique ID string with the given prefix
  */
 export const generateSecureId = (prefix: string): string => {
     const timestamp = Date.now();
@@ -49,7 +54,8 @@ export const generateSecureId = (prefix: string): string => {
 };
 
 /**
- * Safe localStorage wrapper
+ * Safe localStorage wrapper with error handling.
+ * @internal This is for internal use only.
  */
 const safeLocalStorage = {
     getItem: (key: string): string | null => {
@@ -63,7 +69,7 @@ const safeLocalStorage = {
         try {
             localStorage.setItem(key, value);
         } catch {
-            console.warn(`DotAnalytics: Could not save ${key} to localStorage`);
+            console.warn(`DotCMS Analytics: Could not save ${key} to localStorage`);
         }
     }
 };
@@ -83,13 +89,15 @@ export const safeSessionStorage = {
         try {
             sessionStorage.setItem(key, value);
         } catch {
-            console.warn(`DotAnalytics: Could not save ${key} to sessionStorage`);
+            console.warn(`DotCMS Analytics: Could not save ${key} to sessionStorage`);
         }
     }
 };
 
 /**
- * Gets or generates a user ID
+ * Gets or generates a user ID from localStorage.
+ * @internal This function is for internal use only.
+ * @returns The user ID string
  */
 export const getUserId = (): string => {
     let userId = safeLocalStorage.getItem(USER_ID_KEY);
@@ -120,13 +128,15 @@ const hasPassedMidnight = (sessionStartTime: number): boolean => {
 };
 
 /**
- * Gets session ID with comprehensive lifecycle management
- * Returns existing valid session ID or creates a new one if needed
+ * Gets session ID with comprehensive lifecycle management.
+ * Returns existing valid session ID or creates a new one if needed.
+ * @internal This function is for internal use only.
  *
  * Session validation criteria:
  * 1. User is still active (< 30 min inactivity)
  * 2. Session hasn't passed midnight (UTC)
- * 3. UTM parameters haven't changed
+ *
+ * @returns The session ID string
  */
 export const getSessionId = (): string => {
     const now = Date.now();
@@ -180,21 +190,25 @@ export const getSessionId = (): string => {
 };
 
 /**
- * Gets analytics context with user and session identification
+ * Gets analytics context with user and session identification.
+ * Used by the identity plugin to inject context into analytics events.
+ *
+ * @param config - The analytics configuration object
+ * @returns The analytics context with site_key, session_id, and user_id
  */
-export const getAnalyticsContext = (config: DotCMSAnalyticsConfig): DotCMSAnalyticsContext => {
+export const getAnalyticsContext = (config: DotCMSAnalyticsConfig): DotCMSAnalyticsEventContext => {
     const sessionId = getSessionId();
     const userId = getUserId();
 
     if (config.debug) {
-        console.warn('DotAnalytics Identity Context:', {
+        console.warn('DotCMS Analytics Identity Context:', {
             sessionId,
             userId
         });
     }
 
     return {
-        site_key: config.siteKey,
+        site_auth: config.siteAuth,
         session_id: sessionId,
         user_id: userId
     };
@@ -211,9 +225,13 @@ export interface AnalyticsConfigResult {
 }
 
 /**
- * Gets analytics configuration, always returns a config (with defaults if needed)
+ * Gets analytics configuration from script tag attributes.
+ * Always returns a config (with defaults if needed).
+ *
  * - If no data-analytics-server attribute is found, uses the current domain as the server endpoint
  * - Both debug and autoPageView default to false (must be explicitly set to "true")
+ *
+ * @returns The analytics configuration object
  */
 export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
     // Try to find the analytics script with data-analytics-auth (required attribute)
@@ -226,7 +244,7 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
             server: script.getAttribute('data-analytics-server') || window.location.origin,
             debug: script.getAttribute('data-analytics-debug') === 'true',
             autoPageView: script.getAttribute('data-analytics-auto-page-view') === 'true',
-            siteKey: script.getAttribute('data-analytics-auth') || ''
+            siteAuth: script.getAttribute('data-analytics-auth') || ''
         };
     }
 
@@ -235,7 +253,7 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
         server: window.location.origin,
         debug: false,
         autoPageView: false,
-        siteKey: ''
+        siteAuth: ''
     };
 };
 
@@ -248,12 +266,12 @@ const getStaticBrowserData = () => {
     }
 
     staticBrowserData = {
-        user_language: navigator.language || undefined,
-        doc_encoding: document.characterSet || document.charset || undefined,
+        user_language: navigator.language,
+        doc_encoding: document.characterSet || document.charset,
         screen_resolution:
             typeof screen !== 'undefined' && screen.width && screen.height
                 ? `${screen.width}x${screen.height}`
-                : undefined
+                : ''
     };
 
     return staticBrowserData;
@@ -261,8 +279,11 @@ const getStaticBrowserData = () => {
 
 /**
  * Retrieves the browser event data - optimized but accurate.
+ * @internal This function is for internal use only.
+ * @param location - The Location object to extract data from
+ * @returns Browser event data with all relevant information
  */
-export const getBrowserEventData = (location: Location): DotCMSBrowserEventData => {
+export const getBrowserEventData = (location: Location): DotCMSBrowserData => {
     const staticData = getStaticBrowserData();
 
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
@@ -275,49 +296,57 @@ export const getBrowserEventData = (location: Location): DotCMSBrowserEventData 
         local_tz_offset: new Date().getTimezoneOffset(),
         screen_resolution: staticData.screen_resolution,
         vp_size: `${viewportWidth}x${viewportHeight}`,
-        user_language: staticData.user_language,
-        doc_encoding: staticData.doc_encoding,
-        doc_path: location.pathname || undefined,
-        doc_host: location.hostname || undefined,
-        doc_protocol: location.protocol || undefined,
+        user_language: staticData.user_language ?? '',
+        doc_encoding: staticData.doc_encoding ?? '',
+        doc_path: location.pathname,
+        doc_host: location.hostname,
+        doc_protocol: location.protocol,
         doc_hash: location.hash || '',
         doc_search: location.search || '',
-        referrer: typeof document !== 'undefined' ? document.referrer || undefined : undefined,
-        page_title: typeof document !== 'undefined' ? document.title || undefined : undefined,
-        url: location.href || undefined,
+        referrer: typeof document !== 'undefined' ? document.referrer || '' : '',
+        page_title: document.title,
+        url: location.href,
         utm: utmParams
     };
 };
 
 /**
- * Extracts UTM parameters from the URL - cached for performance
+ * Extracts and transforms UTM parameters from the URL - cached for performance.
+ * Returns UTM data in DotCMS format (without 'utm_' prefix).
+ * @internal This function is for internal use only.
+ * @param location - The Location object to extract UTM parameters from
+ * @returns DotCMSEventUtmData object with transformed UTM parameters (source, medium, campaign, etc.)
  */
-export const extractUTMParameters = (location: Location): Record<string, string> => {
+export const extractUTMParameters = (location: Location): DotCMSEventUtmData => {
     const search = location.search;
 
     // Return cached result if search hasn't changed
     if (utmCache && utmCache.search === search) {
-        return utmCache.params;
+        return utmCache.params as DotCMSEventUtmData;
     }
 
     const urlParams = new URLSearchParams(search);
-    const utmParams: Record<string, string> = {};
+    const utmData: DotCMSEventUtmData = {};
 
     EXPECTED_UTM_KEYS.forEach((key) => {
         const value = urlParams.get(key);
         if (value) {
-            utmParams[key] = value;
+            // Transform utm_source -> source, utm_medium -> medium, etc.
+            const cleanKey = key.replace('utm_', '') as keyof DotCMSEventUtmData;
+            utmData[cleanKey] = value;
         }
     });
 
     // Cache the result
-    utmCache = { search, params: utmParams };
+    utmCache = { search, params: utmData };
 
-    return utmParams;
+    return utmData;
 };
 
 /**
- * Default redirect function
+ * Default redirect function.
+ * @internal This function is for internal use only.
+ * @param href - The URL to redirect to
  */
 export const defaultRedirectFn = (href: string) => (window.location.href = href);
 
@@ -339,7 +368,10 @@ const getTimezoneOffset = (): string => {
 };
 
 /**
- * Gets local time in ISO format without milliseconds
+ * Gets local time in ISO format without milliseconds.
+ * Used by enricher plugins to add local_time to events.
+ *
+ * @returns Local time string in ISO 8601 format with timezone offset (e.g., "2024-01-01T12:00:00-05:00")
  */
 export const getLocalTime = (): string => {
     try {
@@ -361,14 +393,17 @@ export const getLocalTime = (): string => {
 };
 
 /**
- * Gets page data from browser event data and payload
+ * Gets page data from browser event data and payload.
+ * @internal This function is for internal use only.
+ * @param browserData - Browser event data
+ * @param payload - Payload with properties
+ * @returns PageData object for Analytics.js
  */
 export const getPageData = (
-    browserData: DotCMSBrowserEventData,
-    payload: DotCMSAnalyticsPayload
+    browserData: DotCMSBrowserData,
+    payload: { properties: Record<string, unknown> }
 ): PageData => {
-    // Now properly typed - no need for 'any'
-    const payloadProperties = payload.properties as Record<string, unknown>;
+    const payloadProperties = payload.properties;
 
     return {
         url: browserData.url,
@@ -383,9 +418,12 @@ export const getPageData = (
 };
 
 /**
- * Gets device data from browser event data
+ * Gets device data from browser event data.
+ * @internal This function is for internal use only.
+ * @param browserData - Browser event data
+ * @returns Device data with screen resolution, language, and viewport dimensions
  */
-export const getDeviceData = (browserData: DotCMSBrowserEventData): DotCMSDeviceData => {
+export const getDeviceData = (browserData: DotCMSBrowserData): DotCMSEventDeviceData => {
     const [viewportWidth, viewportHeight] = (browserData.vp_size ?? '0x0').split('x');
 
     return {
@@ -397,38 +435,23 @@ export const getDeviceData = (browserData: DotCMSBrowserEventData): DotCMSDevice
 };
 
 /**
- * Gets UTM data from browser event data
+ * Gets UTM data from browser event data.
+ * @internal This function is for internal use only.
+ * @param browserData - Browser event data
+ * @returns UTM data with source, medium, campaign, etc.
  */
-export const getUtmData = (browserData: DotCMSBrowserEventData): DotCMSUtmData => {
-    try {
-        const utm = browserData.utm as Record<string, string>;
-        const result: DotCMSUtmData = {};
-
-        // Check if utm exists and is an object
-        if (!utm || typeof utm !== 'object') {
-            return result;
-        }
-
-        // Transform from prefixed UTM parameters to non-prefixed format
-        if (utm.utm_medium) result.medium = utm.utm_medium;
-        if (utm.utm_source) result.source = utm.utm_source;
-        if (utm.utm_campaign) result.campaign = utm.utm_campaign;
-        if (utm.utm_term) result.term = utm.utm_term;
-        if (utm.utm_content) result.content = utm.utm_content;
-        if (utm.utm_id) result.id = utm.utm_id;
-
-        return result;
-    } catch (error) {
-        console.warn('DotAnalytics: Error extracting UTM data:', error);
-
-        return {};
-    }
+export const getUtmData = (browserData: DotCMSBrowserData): DotCMSEventUtmData => {
+    // UTM data is already in DotCMS format (transformed by extractUTMParameters)
+    return browserData.utm || {};
 };
 
 /**
- * Enriches payload with UTM data
+ * Enriches payload with UTM data.
+ * @internal This function is for internal use only.
+ * @param payload - The payload to enrich
+ * @returns The payload with UTM data added
  */
-export const enrichWithUtmData = (payload: DotCMSAnalyticsPayload) => {
+export const enrichWithUtmData = <T extends Record<string, unknown>>(payload: T) => {
     const browserData = getBrowserEventData(window.location);
     const utmData = getUtmData(browserData);
 
@@ -443,67 +466,73 @@ export const enrichWithUtmData = (payload: DotCMSAnalyticsPayload) => {
 };
 
 /**
- * Optimized payload enrichment using existing analytics.js data
- * Reuses payload.properties data instead of recalculating from DOM when available
- * Maintains the same output structure as the original function
+ * Optimized payload enrichment using existing analytics.js data.
+ * Filters out Analytics.js default properties and only keeps user-provided properties in custom.
+ * Used by the enricher plugin to transform Analytics.js payload into DotCMS event format.
+ *
+ * @param payload - The Analytics.js payload with context already injected by identity plugin
+ * @param location - The Location object to extract page data from (defaults to window.location)
+ * @returns Enriched payload with page, device, UTM, custom data, and local_time
  */
 export const enrichPagePayloadOptimized = (
-    payload: DotCMSAnalyticsPayload,
+    payload: AnalyticsBasePayloadWithContext,
     location: Location = typeof window !== 'undefined' ? window.location : ({} as Location)
-) => {
+): EnrichedAnalyticsPayload => {
     const local_time = getLocalTime();
     const staticData = getStaticBrowserData();
 
     // Extract data from analytics.js payload
     const { properties } = payload;
-    const { utm } = properties as Record<string, unknown>;
 
-    const pageData: DotCMSPageData = {
-        url: (properties.url as string) ?? location.href,
+    // Filter out Analytics.js default properties to get only user-provided properties
+    const userProvidedProperties: JsonObject = {};
+    Object.keys(properties).forEach((key) => {
+        if (!(ANALYTICS_JS_DEFAULT_PROPERTIES as readonly string[]).includes(key)) {
+            userProvidedProperties[key] = properties[key as keyof typeof properties];
+        }
+    });
+
+    const pageData: DotCMSEventPageData = {
+        url: location.href,
         doc_encoding: staticData.doc_encoding,
-        doc_hash: (properties.hash as string) ?? location.hash ?? '',
+        doc_hash: location.hash,
         doc_protocol: location.protocol,
-        doc_search: (properties.search as string) ?? location.search ?? '',
+        doc_search: location.search,
         doc_host: location.hostname,
-        doc_path: (properties.path as string) ?? location.pathname,
-        title: (properties.title as string) ?? document?.title,
-        language_id: undefined,
-        persona: undefined
+        doc_path: location.pathname,
+        title: (properties.title as string) ?? document?.title
     };
 
-    const deviceData: DotCMSDeviceData = {
-        screen_resolution: staticData.screen_resolution,
-        language: staticData.user_language,
+    const deviceData: DotCMSEventDeviceData = {
+        screen_resolution: staticData.screen_resolution ?? '',
+        language: staticData.user_language ?? '',
         viewport_width: String(properties.width),
         viewport_height: String(properties.height)
     };
 
-    const utmData: DotCMSUtmData = {};
-    if (utm && typeof utm === 'object') {
-        const utmRecord = utm as DotCMSUtmData;
-        if (utmRecord.medium) utmData.medium = utmRecord.medium;
-        if (utmRecord.source) utmData.source = utmRecord.source;
-        if (utmRecord.campaign) utmData.campaign = utmRecord.campaign;
-        if (utmRecord.term) utmData.term = utmRecord.term;
-        if (utmRecord.content) utmData.content = utmRecord.content;
-    }
+    // Extract UTM parameters from the current URL (already transformed to DotCMS format)
+    const utmData = extractUTMParameters(location);
 
     return {
         ...payload,
         page: pageData,
         device: deviceData,
         ...(Object.keys(utmData).length > 0 && { utm: utmData }),
+        // Only include custom if there are user-provided properties
+        ...(Object.keys(userProvidedProperties).length > 0 && { custom: userProvidedProperties }),
         local_time
     };
 };
 
 /**
- * @deprecated Use enrichPagePayloadOptimized instead to avoid data duplication
- * Legacy function that enriches page payload with all data in one call
- * This function duplicates data already available in analytics.js payload
+ * Legacy function that enriches page payload with all data in one call.
+ * @internal This function is for internal use only.
+ * @param payload - The payload to enrich
+ * @param location - The Location object to extract data from
+ * @returns Object with enriched payload
  */
 export const enrichPagePayload = (
-    payload: DotCMSAnalyticsPayload,
+    payload: { properties: Record<string, unknown> } & Record<string, unknown>,
     location: Location = window.location
 ) => {
     const browserData = getBrowserEventData(location);
