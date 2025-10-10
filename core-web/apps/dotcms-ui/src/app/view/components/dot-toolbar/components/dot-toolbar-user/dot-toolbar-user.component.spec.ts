@@ -50,7 +50,7 @@ import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '../../../../../providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
-import { SearchableDropDownModule } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
+import { SearchableDropdownComponent } from '../../../_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
 import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
@@ -93,7 +93,7 @@ describe('DotToolbarUserComponent', () => {
                 BrowserAnimationsModule,
                 DotDialogModule,
                 DotIconModule,
-                SearchableDropDownModule,
+                SearchableDropdownComponent,
                 RouterTestingModule,
                 ButtonModule,
                 DotSafeHtmlPipe,

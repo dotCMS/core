@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -13,8 +13,6 @@ import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { IFrameModule } from '../_common/iframe';
 import { IframeComponent } from '../_common/iframe/iframe-component';
 
 let component: DotIframeDialogComponent;
@@ -27,7 +25,7 @@ let dotIframeComponent: IframeComponent;
 
 const getTestConfig = (hostComponent) => {
     return {
-        imports: [DotDialogModule, BrowserAnimationsModule, IFrameModule, RouterTestingModule],
+        imports: [DotDialogModule, BrowserAnimationsModule, IframeComponent, RouterTestingModule],
         providers: [
             {
                 provide: LoginService,
@@ -77,11 +75,11 @@ describe('DotIframeDialogComponent', () => {
         let hostFixture: ComponentFixture<TestHostComponent>;
 
         beforeEach(waitForAsync(() => {
-            DOTTestBed.configureTestingModule(getTestConfig(TestHostComponent));
+            TestBed.configureTestingModule(getTestConfig(TestHostComponent));
         }));
 
         beforeEach(() => {
-            hostFixture = DOTTestBed.createComponent(TestHostComponent);
+            hostFixture = TestBed.createComponent(TestHostComponent);
             hostDe = hostFixture.debugElement;
             hostComponent = hostFixture.componentInstance;
             de = hostDe.query(By.css('dot-iframe-dialog'));
@@ -231,11 +229,11 @@ describe('DotIframeDialogComponent', () => {
         let hostComponent: TestHostComponent;
 
         beforeEach(waitForAsync(() => {
-            DOTTestBed.configureTestingModule(getTestConfig(TestHost2Component));
+            TestBed.configureTestingModule(getTestConfig(TestHost2Component));
         }));
 
         beforeEach(() => {
-            hostFixture = DOTTestBed.createComponent(TestHost2Component);
+            hostFixture = TestBed.createComponent(TestHost2Component);
             hostDe = hostFixture.debugElement;
             hostComponent = hostFixture.componentInstance;
             de = hostDe.query(By.css('dot-iframe-dialog'));

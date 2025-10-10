@@ -1,19 +1,20 @@
 import { of as observableOf } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { LoginService } from '@dotcms/dotcms-js';
+import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
+import { DotcmsEventsService, LoggerService, LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
 
@@ -28,7 +29,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
     let dotWorkflowTaskDetailService: DotWorkflowTaskDetailService;
 
     beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             imports: [
                 DotWorkflowTaskDetailComponent,
                 DotIframeDialogModule,
@@ -37,6 +38,12 @@ describe('DotWorkflowTaskDetailComponent', () => {
             ],
             providers: [
                 DotWorkflowTaskDetailService,
+                IframeOverlayService,
+                DotIframeService,
+                DotRouterService,
+                DotUiColorsService,
+                DotcmsEventsService,
+                LoggerService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -54,7 +61,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
     }));
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotWorkflowTaskDetailComponent);
+        fixture = TestBed.createComponent(DotWorkflowTaskDetailComponent);
         de = fixture.debugElement;
         component = de.componentInstance;
         dotWorkflowTaskDetailService = de.injector.get(DotWorkflowTaskDetailService);

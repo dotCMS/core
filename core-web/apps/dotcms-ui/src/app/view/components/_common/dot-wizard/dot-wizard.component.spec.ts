@@ -106,13 +106,13 @@ describe('DotWizardComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [
-                DotWizardComponent,
                 DotCommentAndAssignFormComponent,
                 DotPushPublishFormComponent,
                 FormOneComponent,
                 FormTwoComponent
             ],
             imports: [
+                DotWizardComponent,
                 DotDialogModule,
                 CommonModule,
                 DotContainerReferenceModule,

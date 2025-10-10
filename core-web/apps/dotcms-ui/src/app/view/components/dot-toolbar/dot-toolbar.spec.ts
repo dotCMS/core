@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
-import { MockComponent } from 'ng-mocks';
+import { MockComponent, MockModule } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -33,7 +33,7 @@ import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-lo
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
+import { DotCrumbtrailModule } from '../dot-crumbtrail/dot-crumbtrail.component';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Injectable()
@@ -83,12 +83,14 @@ describe('DotToolbarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotToolbarComponent,
-        imports: [ToolbarModule, DotShowHideFeatureDirective],
-        detectChanges: false,
-        declarations: [
-            MockComponent(DotCrumbtrailComponent),
-            MockComponent(DotSiteSelectorComponent)
+        imports: [
+            DotToolbarComponent,
+            ToolbarModule,
+            DotShowHideFeatureDirective,
+            MockModule(DotCrumbtrailModule)
         ],
+        detectChanges: false,
+        declarations: [MockComponent(DotSiteSelectorComponent)],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),

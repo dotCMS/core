@@ -49,6 +49,8 @@ export class SiteSelectorComponent {
     @Input()
     live: boolean;
     @Input()
+    width: string;
+    @Input()
     system: boolean;
     @Input()
     asField: boolean;
