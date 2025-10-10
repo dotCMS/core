@@ -12,14 +12,14 @@ import { DotContainerPermissionsModule } from './dot-container-permissions/dot-c
 import { DotContainerPropertiesModule } from './dot-container-properties/dot-container-properties.module';
 
 import { DotGlobalMessageModule } from '../../../view/components/_common/dot-global-message/dot-global-message.module';
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @NgModule({
     declarations: [DotContainerCreateComponent],
     imports: [
         CommonModule,
         DotContainerCreateRoutingModule,
-        DotPortletBaseModule,
+        DotPortletBaseComponent,
         TabViewModule,
         DotMessagePipe,
         DotContainerPropertiesModule,

@@ -15,7 +15,7 @@ import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContainerHistoryComponent } from './dot-container-history.component';
 
-import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 
 @Component({
     selector: 'dot-iframe',
@@ -48,7 +48,7 @@ describe('ContainerHistoryComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotContainerHistoryComponent, IframeMockComponent, DotTestHostComponent],
-            imports: [DotPortletBoxModule],
+            imports: [DotPortletBoxComponent],
             providers: [{ provide: DotRouterService, useClass: MockDotRouterService }]
         }).compileComponents();
 

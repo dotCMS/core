@@ -5,7 +5,7 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
 
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotCategoriesListingModule } from '../dot-categories-list/dot-categories-list.module';
 
 @Pipe({
@@ -24,7 +24,7 @@ describe('CategoriesCreateEditComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotCategoriesCreateEditComponent, MockPipe],
-            imports: [DotPortletBaseModule, DotCategoriesListingModule, TabViewModule]
+            imports: [DotPortletBaseComponent, DotCategoriesListingModule, TabViewModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotCategoriesCreateEditComponent);

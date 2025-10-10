@@ -1,12 +1,22 @@
 import { Subject } from 'rxjs';
 
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { FileUploadModule } from 'primeng/fileupload';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { camelCase } from '@dotcms/utils';
 
 import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-file-upload.model';
@@ -15,7 +25,14 @@ import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-fil
     selector: 'dot-create-persona-form',
     templateUrl: './dot-create-persona-form.component.html',
     styleUrls: ['./dot-create-persona-form.component.scss'],
-    standalone: false
+    imports: [
+        ReactiveFormsModule,
+        FileUploadModule,
+        InputTextModule,
+        ButtonModule,
+        DotMessagePipe,
+        DotFieldValidationMessageComponent
+    ]
 })
 export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);

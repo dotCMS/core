@@ -1,12 +1,18 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 
+import { AvatarModule } from 'primeng/avatar';
+import { BadgeModule } from 'primeng/badge';
+import { ButtonModule } from 'primeng/button';
+
 import { DotPersona } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-persona-selector-option',
     templateUrl: './dot-persona-selector-option.component.html',
     styleUrls: ['./dot-persona-selector-option.component.scss'],
-    standalone: false
+    imports: [CommonModule, AvatarModule, BadgeModule, ButtonModule, DotMessagePipe]
 })
 export class DotPersonaSelectorOptionComponent {
     @Input() canDespersonalize = true;

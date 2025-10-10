@@ -2,8 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
     selector: 'dot-reorder-menu',
-    templateUrl: './dot-reorder-menu.component.html',
-    standalone: false
+    templateUrl: './dot-reorder-menu.component.html'
 })
 export class DotReorderMenuComponent {
     @Input() url: string;

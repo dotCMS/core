@@ -43,11 +43,10 @@ import {
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotAddPersonaDialogComponent } from '../dot-add-persona-dialog/dot-add-persona-dialog.component';
-import { DotAddPersonaDialogModule } from '../dot-add-persona-dialog/dot-add-persona-dialog.module';
-import { DotPersonaSelectedItemModule } from '../dot-persona-selected-item/dot-persona-selected-item.module';
-import { DotPersonaSelectorOptionModule } from '../dot-persona-selector-option/dot-persona-selector-option.module';
+import { DotPersonaSelectedItemComponent } from '../dot-persona-selected-item/dot-persona-selected-item.component';
+import { DotPersonaSelectorOptionComponent } from '../dot-persona-selector-option/dot-persona-selector-option.component';
 
 @Component({
     selector: 'dot-host-component',
@@ -144,13 +143,14 @@ describe('DotPersonaSelectorComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPersonaSelectorComponent, HostTestComponent],
+            declarations: [HostTestComponent],
             imports: [
                 BrowserAnimationsModule,
-                SearchableDropDownModule,
-                DotPersonaSelectedItemModule,
-                DotPersonaSelectorOptionModule,
-                DotAddPersonaDialogModule,
+                DotPersonaSelectorComponent,
+                SearchableDropdownComponent,
+                DotPersonaSelectedItemComponent,
+                DotPersonaSelectorOptionComponent,
+                DotAddPersonaDialogComponent,
                 DotMessagePipe,
                 HttpClientTestingModule,
                 DotAvatarDirective,

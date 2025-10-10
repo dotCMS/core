@@ -25,7 +25,7 @@ describe('DotReorderMenuComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [DotReorderMenuComponent],
+            imports: [DotReorderMenuComponent],
             providers: [
                 {
                     provide: LoginService,

@@ -17,7 +17,7 @@ import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 
 import { DotGlobalMessageModule } from '../../../../../view/components/_common/dot-global-message/dot-global-message.module';
-import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
+import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotEditPageInfoModule } from '../../../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageNavDirective } from '../../../main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
@@ -33,7 +33,7 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
         DotEditPageInfoModule,
         DotEditPageViewAsControllerModule,
         DotEditPageStateControllerModule,
-        DotSecondaryToolbarModule,
+        DotSecondaryToolbarComponent,
         FormsModule,
         ToolbarModule,
         TooltipModule,

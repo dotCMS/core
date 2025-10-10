@@ -8,7 +8,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotCategoriesCreateEditRoutingModule } from './dot-categories-create-edit-routing.module';
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
 
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotCategoriesListingModule } from '../dot-categories-list/dot-categories-list.module';
 import { DotCategoriesPermissionsModule } from '../dot-categories-permissions/dot-categories-permissions.module';
 
@@ -21,7 +21,7 @@ import { DotCategoriesPermissionsModule } from '../dot-categories-permissions/do
         TabViewModule,
         DotCategoriesListingModule,
         DotCategoriesCreateEditRoutingModule,
-        DotPortletBaseModule,
+        DotPortletBaseComponent,
         DotCategoriesPermissionsModule
     ]
 })

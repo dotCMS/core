@@ -76,9 +76,9 @@ import { SearchableDropdownComponent } from '../../../view/components/_common/se
 import { DotBaseTypeSelectorModule } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
 import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
 import { DotFieldHelperModule } from '../../../view/components/dot-field-helper/dot-field-helper.module';
-import { DotPortletBoxModule } from '../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotPortletBoxComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotRelationshipTreeModule } from '../../../view/components/dot-relationship-tree/dot-relationship-tree.module';
-import { DotSecondaryToolbarModule } from '../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
+import { DotSecondaryToolbarComponent } from '../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotMaxlengthModule } from '../../../view/directives/dot-maxlength/dot-maxlength.module';
 import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.module';
 
@@ -124,7 +124,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotDialogComponent,
         DotDirectivesModule,
         DotSafeHtmlPipe,
-        DotSecondaryToolbarModule,
+        DotSecondaryToolbarComponent,
         DotFieldHelperModule,
         DotFieldValidationMessageComponent,
         DotBinarySettingsComponent,
@@ -153,7 +153,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         SplitButtonModule,
         TabViewModule,
         DotRelationshipTreeModule,
-        DotPortletBoxModule,
+        DotPortletBoxComponent,
         DotMdIconSelectorModule,
         DotAddToMenuModule,
         DotFieldRequiredDirective,

@@ -10,13 +10,13 @@ import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotToolbarAnnouncementsComponent } from './components/dot-toolbar-announcements/dot-toolbar-announcements.component';
-import { DotToolbarNotificationModule } from './components/dot-toolbar-notifications/dot-toolbar-notifications.module';
+import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notifications/dot-toolbar-notifications.component';
 import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
 
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotCrumbtrailModule } from '../dot-crumbtrail/dot-crumbtrail.module';
+import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
 
 @Component({
     selector: 'dot-toolbar',
@@ -26,9 +26,9 @@ import { DotCrumbtrailModule } from '../dot-crumbtrail/dot-crumbtrail.module';
         CommonModule,
         ToolbarModule,
         DividerModule,
-        DotCrumbtrailModule,
+        DotCrumbtrailComponent,
         DotSiteSelectorComponent,
-        DotToolbarNotificationModule,
+        DotToolbarNotificationsComponent,
         DotToolbarAnnouncementsComponent,
         DotToolbarUserComponent,
         DotShowHideFeatureDirective

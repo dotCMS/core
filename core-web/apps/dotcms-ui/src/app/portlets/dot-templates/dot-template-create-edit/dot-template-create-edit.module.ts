@@ -11,14 +11,14 @@ import { DotTemplateCreateEditRoutingModule } from './dot-template-create-edit-r
 import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
 import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
 
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @NgModule({
     imports: [
         ButtonModule,
         CommonModule,
         DotApiLinkComponent,
-        DotPortletBaseModule,
+        DotPortletBaseComponent,
         DotTemplateCreateEditRoutingModule,
         DotTemplatePropsModule,
         DynamicDialogModule,

@@ -9,7 +9,7 @@ import { DotPortletBaseComponent } from './dot-portlet-base.component';
     template: `
         <dot-portlet-base><div>Hello World</div></dot-portlet-base>
     `,
-    standalone: false
+    imports: [DotPortletBaseComponent]
 })
 class DefaultTestHostComponent {}
 
@@ -17,7 +17,7 @@ class DefaultTestHostComponent {}
     template: `
         <dot-portlet-base [boxed]="false"><div>Hello World</div></dot-portlet-base>
     `,
-    standalone: false
+    imports: [DotPortletBaseComponent]
 })
 class DefaultTestHostUnboxedComponent {}
 
@@ -28,14 +28,13 @@ class DefaultTestHostUnboxedComponent {}
             <div>Hello World</div>
         </dot-portlet-base>
     `,
-    standalone: false
+    imports: [DotPortletBaseComponent]
 })
 class DefaultTestHostWithToolbarComponent {}
 
 @Component({
     selector: 'dot-portlet-toolbar',
-    template: ``,
-    standalone: false
+    template: ``
 })
 class DotToolbarMockComponent {}
 
@@ -43,14 +42,12 @@ describe('DotPortletBaseComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [
-                DotPortletBaseComponent,
                 DefaultTestHostComponent,
-                DotPortletBoxComponent,
                 DefaultTestHostUnboxedComponent,
                 DefaultTestHostWithToolbarComponent,
                 DotToolbarMockComponent
             ],
-            imports: [CommonModule]
+            imports: [CommonModule, DotPortletBaseComponent, DotPortletBoxComponent]
         }).compileComponents();
     });
 

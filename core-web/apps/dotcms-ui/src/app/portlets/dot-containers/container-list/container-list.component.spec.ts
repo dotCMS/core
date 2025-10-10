@@ -65,7 +65,7 @@ import { DotContainersService } from '../../../api/services/dot-containers/dot-c
 import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
 import { ActionHeaderModule } from '../../../view/components/dot-listing-data-table/action-header/action-header.module';
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 const containersMock: DotContainer[] = [
     {
@@ -293,7 +293,7 @@ describe('ContainerListComponent', () => {
                 DotAddToBundleComponent,
                 DotEmptyStateModule,
                 DotMessagePipe,
-                DotPortletBaseModule,
+                DotPortletBaseComponent,
                 DotRelativeDatePipe,
                 HttpClientTestingModule,
                 InputTextModule,

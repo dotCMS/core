@@ -35,8 +35,8 @@ import { ContentTypesLayoutComponent } from './content-types-layout.component';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditModule } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotCopyLinkModule } from '../../../../../view/components/dot-copy-link/dot-copy-link.module';
-import { DotPortletBoxModule } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
+import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
+import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
@@ -144,7 +144,7 @@ describe('ContentTypesLayoutComponent', () => {
             imports: [
                 TabViewModule,
                 DotIconModule,
-                DotSecondaryToolbarModule,
+                DotSecondaryToolbarComponent,
                 RouterTestingModule,
                 DotApiLinkComponent,
                 DotCopyLinkModule,
@@ -153,7 +153,7 @@ describe('ContentTypesLayoutComponent', () => {
                 SplitButtonModule,
                 DotInlineEditModule,
                 HttpClientTestingModule,
-                DotPortletBoxModule,
+                DotPortletBoxComponent,
                 DotCopyButtonComponent
             ],
             providers: [

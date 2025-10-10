@@ -11,7 +11,7 @@ import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 
 import { DotGlobalMessageModule } from '../../../../view/components/_common/dot-global-message/dot-global-message.module';
 import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
-import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotTemplateAdvancedModule } from '../dot-template-advanced/dot-template-advanced.module';
 
 @NgModule({
@@ -21,7 +21,7 @@ import { DotTemplateAdvancedModule } from '../dot-template-advanced/dot-template
         DotTemplateAdvancedModule,
         TabViewModule,
         IframeComponent,
-        DotPortletBoxModule,
+        DotPortletBoxComponent,
         TemplateBuilderModule,
         ButtonModule,
         DotGlobalMessageModule

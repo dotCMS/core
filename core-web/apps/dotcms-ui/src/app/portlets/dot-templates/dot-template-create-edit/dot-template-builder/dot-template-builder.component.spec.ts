@@ -23,7 +23,7 @@ import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 
 import { DotShowHideFeatureDirective } from '../../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
-import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import {
     DotTemplateItem,
     EMPTY_TEMPLATE_ADVANCED,
@@ -130,7 +130,7 @@ describe('DotTemplateBuilderComponent', () => {
             ],
             imports: [
                 DotMessagePipe,
-                DotPortletBoxModule,
+                DotPortletBoxComponent,
                 DotShowHideFeatureDirective,
                 ButtonModule,
                 DotIconModule,

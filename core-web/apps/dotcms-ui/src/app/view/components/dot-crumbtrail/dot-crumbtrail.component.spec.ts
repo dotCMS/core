@@ -8,6 +8,8 @@ import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 import { DotCrumbtrailComponent } from './dot-crumbtrail.component';
 import { DotCrumb, DotCrumbtrailService } from './service/dot-crumbtrail.service';
 
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
+
 @Injectable()
 class MockDotCrumbtrailService {
     private crumbTrail: Subject<DotCrumb[]> = new Subject();
@@ -21,17 +23,28 @@ class MockDotCrumbtrailService {
     }
 }
 
+@Injectable()
+class MockDotNavigationService {
+    onNavigationEnd(): Observable<unknown> {
+        return new Subject();
+    }
+}
+
 describe('DotCrumbtrailComponent', () => {
     let spectator: Spectator<DotCrumbtrailComponent>;
     const mockService = new MockDotCrumbtrailService();
 
     const createComponent = createComponentFactory({
         component: DotCrumbtrailComponent,
-        imports: [DotCollapseBreadcrumbComponent],
+        imports: [DotCrumbtrailComponent],
         providers: [
             {
                 provide: DotCrumbtrailService,
                 useValue: mockService
+            },
+            {
+                provide: DotNavigationService,
+                useClass: MockDotNavigationService
             }
         ],
         detectChanges: false

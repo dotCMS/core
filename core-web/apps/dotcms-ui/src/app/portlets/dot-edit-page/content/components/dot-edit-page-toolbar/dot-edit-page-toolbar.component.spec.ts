@@ -73,7 +73,7 @@ import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 
 import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
 import { DotWizardComponent } from '../../../../../view/components/_common/dot-wizard/dot-wizard.component';
-import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
+import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotExperimentClassDirective } from '../../../../shared/directives/dot-experiment-class.directive';
 import { DotEditPageInfoModule } from '../../../components/dot-edit-page-info/dot-edit-page-info.module';
 import { dotVariantDataMock } from '../../../seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component.spec';
@@ -158,7 +158,7 @@ describe('DotEditPageToolbarComponent', () => {
                 ButtonModule,
                 CommonModule,
                 CheckboxModule,
-                DotSecondaryToolbarModule,
+                DotSecondaryToolbarComponent,
                 FormsModule,
                 ToolbarModule,
                 DotEditPageViewAsControllerModule,

@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotContainerPermissionsComponent } from './dot-container-permissions.component';
 
-import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 
 @Component({
     selector: 'dot-iframe',
@@ -39,7 +39,7 @@ describe('ContainerPermissionsComponent', () => {
                 IframeMockComponent,
                 DotTestHostComponent
             ],
-            imports: [DotPortletBoxModule]
+            imports: [DotPortletBoxComponent]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotContainerPermissionsComponent);

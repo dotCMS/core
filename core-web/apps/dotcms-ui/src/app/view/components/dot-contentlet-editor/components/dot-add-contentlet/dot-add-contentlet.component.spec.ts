@@ -55,7 +55,8 @@ describe('DotAddContentletComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotAddContentletComponent, DotContentletWrapperComponent],
+            declarations: [DotContentletWrapperComponent],
+            imports: [DotAddContentletComponent],
             providers: [
                 DotContentletEditorService,
                 DotMenuService,

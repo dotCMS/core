@@ -14,7 +14,7 @@ import { DotContentTypesPortletComponent } from './dot-content-types.component';
 
 import { DotBaseTypeSelectorModule } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
 import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @NgModule({
     imports: [
@@ -24,7 +24,7 @@ import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/
         DotAddToBundleComponent,
         DotAddToMenuModule,
         DotContentTypeCopyDialogModule,
-        DotPortletBaseModule
+        DotPortletBaseComponent
     ],
     declarations: [DotContentTypesPortletComponent],
     exports: [DotContentTypesPortletComponent],

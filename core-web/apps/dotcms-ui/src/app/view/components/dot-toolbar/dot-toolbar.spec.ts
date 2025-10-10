@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -33,7 +33,7 @@ import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-lo
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotCrumbtrailModule } from '../dot-crumbtrail/dot-crumbtrail.component';
+import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Injectable()
@@ -54,8 +54,7 @@ class MockToolbarUsersComponent {}
 
 @Component({
     selector: 'dot-toolbar-notifications',
-    template: '',
-    standalone: false
+    template: ''
 })
 class MockToolbarNotificationsComponent {}
 
@@ -87,7 +86,7 @@ describe('DotToolbarComponent', () => {
             DotToolbarComponent,
             ToolbarModule,
             DotShowHideFeatureDirective,
-            MockModule(DotCrumbtrailModule)
+            MockComponent(DotCrumbtrailComponent)
         ],
         detectChanges: false,
         declarations: [MockComponent(DotSiteSelectorComponent)],

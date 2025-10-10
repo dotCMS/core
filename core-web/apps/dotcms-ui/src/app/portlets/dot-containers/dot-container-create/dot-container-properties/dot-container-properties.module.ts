@@ -20,7 +20,7 @@ import { DotContainerPropertiesComponent } from './dot-container-properties.comp
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
-import { DotPortletBaseModule } from '../../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotContentEditorModule } from '../dot-container-code/dot-container-code.module';
 import { DotLoopEditorModule } from '../dot-loop-editor/dot-loop-editor.module';
 
@@ -32,7 +32,7 @@ import { DotLoopEditorModule } from '../dot-loop-editor/dot-loop-editor.module';
         InplaceModule,
         SharedModule,
         InputTextModule,
-        DotPortletBaseModule,
+        DotPortletBaseComponent,
         CardModule,
         DotTextareaContentComponent,
         ReactiveFormsModule,

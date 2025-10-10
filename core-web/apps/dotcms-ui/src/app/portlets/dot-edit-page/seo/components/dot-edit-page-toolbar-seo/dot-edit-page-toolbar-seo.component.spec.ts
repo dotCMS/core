@@ -81,7 +81,7 @@ import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
 import { DotWizardComponent } from '../../../../../view/components/_common/dot-wizard/dot-wizard.component';
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
-import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
+import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotExperimentClassDirective } from '../../../../shared/directives/dot-experiment-class.directive';
 import { DotEditPageViewAsControllerModule } from '../../../content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '../../../content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -160,7 +160,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 ButtonModule,
                 CommonModule,
                 CheckboxModule,
-                DotSecondaryToolbarModule,
+                DotSecondaryToolbarComponent,
                 FormsModule,
                 ToolbarModule,
                 DotEditPageViewAsControllerModule,

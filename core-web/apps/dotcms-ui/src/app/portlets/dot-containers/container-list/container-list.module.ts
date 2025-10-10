@@ -24,14 +24,14 @@ import { DotContainersService } from '../../../api/services/dot-containers/dot-c
 import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
 import { DotContentTypeSelectorModule } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.module';
 import { ActionHeaderModule } from '../../../view/components/dot-listing-data-table/action-header/action-header.module';
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @NgModule({
     declarations: [ContainerListComponent],
     imports: [
         CommonModule,
         ContainerListRoutingModule,
-        DotPortletBaseModule,
+        DotPortletBaseComponent,
         TableModule,
         DotContentTypeSelectorModule,
         DotMessagePipe,
