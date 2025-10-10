@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { ANALYTICS_ENDPOINT } from './constants';
-import { sendAnalyticsEventToServer } from './dot-content-analytics.http';
+import { sendAnalyticsEvent } from './dot-content-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSCustomEventRequestBody,
@@ -28,6 +28,13 @@ const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {
 describe('DotAnalytics HTTP Utils', () => {
     let mockConfig: DotCMSAnalyticsConfig;
     let mockPayload: DotCMSPageViewRequestBody | DotCMSTrackRequestBody;
+
+    // Mock sendBeacon
+    const mockSendBeacon = jest.fn();
+    Object.defineProperty(navigator, 'sendBeacon', {
+        writable: true,
+        value: mockSendBeacon
+    });
 
     beforeEach(() => {
         // Reset all mocks
@@ -83,7 +90,7 @@ describe('DotAnalytics HTTP Utils', () => {
         mockConsoleWarn.mockRestore();
     });
 
-    describe('sendAnalyticsEventToServer', () => {
+    describe('sendAnalyticsEvent', () => {
         describe('Happy Path', () => {
             it('should send POST request with correct parameters when successful', async () => {
                 // Mock successful response
@@ -95,7 +102,7 @@ describe('DotAnalytics HTTP Utils', () => {
                 mockFetch.mockResolvedValue(mockResponse);
 
                 // Execute function
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to 'fetch'
 
                 // Verify fetch was called correctly
                 expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -124,11 +131,11 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, debugConfig);
+                await sendAnalyticsEvent(mockPayload, debugConfig); // defaults to 'fetch'
 
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
-                    'DotCMS Analytics: HTTP Body to send:',
-                    JSON.stringify(mockPayload, null, 2)
+                    `DotCMS Analytics: Sending ${mockPayload.events.length} event(s) via fetch`,
+                    { payload: mockPayload }
                 );
             });
 
@@ -140,7 +147,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to 'fetch'
 
                 // Should not log the body
                 expect(mockConsoleWarn).not.toHaveBeenCalled();
@@ -159,7 +166,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to 'fetch'
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
@@ -177,7 +184,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to 'fetch'
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
@@ -195,7 +202,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to 'fetch'
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
@@ -210,7 +217,7 @@ describe('DotAnalytics HTTP Utils', () => {
                 const networkError = new Error('Network request failed');
                 mockFetch.mockRejectedValue(networkError);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to 'fetch'
 
                 expect(mockConsoleError).toHaveBeenCalledTimes(1);
                 expect(mockConsoleError).toHaveBeenCalledWith(

@@ -2,26 +2,63 @@ import { ANALYTICS_ENDPOINT } from './constants';
 import { DotCMSAnalyticsConfig, DotCMSEvent, DotCMSRequestBody } from './models';
 
 /**
- * Send an analytics event to the server using fetch
+ * Available transport methods for sending analytics events
+ */
+export const TRANSPORT_TYPES = {
+    FETCH: 'fetch',
+    BEACON: 'beacon'
+} as const;
+
+export type TransportType = (typeof TRANSPORT_TYPES)[keyof typeof TRANSPORT_TYPES];
+
+/**
+ * Send analytics events to the server
  * @param payload - The event payload data
  * @param config - The analytics configuration
- * @returns A promise that resolves when the request is complete
+ * @param transportType - Transport method: 'fetch' (default) or 'beacon' (for page unload)
+ * @returns A promise that resolves when the request is complete (fetch only)
  */
-export const sendAnalyticsEventToServer = async (
+export const sendAnalyticsEvent = async (
     payload: DotCMSRequestBody<DotCMSEvent>,
-    config: DotCMSAnalyticsConfig
+    config: DotCMSAnalyticsConfig,
+    transportType: TransportType = 'fetch'
 ): Promise<void> => {
-    try {
-        if (config.debug) {
-            console.warn('DotCMS Analytics: HTTP Body to send:', JSON.stringify(payload, null, 2));
+    const endpoint = `${config.server}${ANALYTICS_ENDPOINT}`;
+    const body = JSON.stringify(payload);
+
+    if (config.debug) {
+        console.warn(
+            `DotCMS Analytics: Sending ${payload.events.length} event(s) via ${transportType}`,
+            transportType === 'fetch' ? { payload } : undefined
+        );
+    }
+
+    // Use sendBeacon for page unload scenarios
+    if (transportType === 'beacon') {
+        if (navigator.sendBeacon) {
+            // Create Blob with correct Content-Type for JSON
+            const blob = new Blob([body], { type: 'application/json' });
+            const sent = navigator.sendBeacon(endpoint, blob);
+
+            if (!sent && config.debug) {
+                console.warn('DotCMS Analytics: sendBeacon failed (queue might be full)');
+            }
+        } else {
+            // Fallback to fetch if sendBeacon not available
+            if (config.debug) {
+                console.warn('DotCMS Analytics: sendBeacon not available, using fetch fallback');
+            }
+            return sendAnalyticsEvent(payload, config, 'fetch');
         }
+        return;
+    }
 
-        const endpoint = `${config.server}${ANALYTICS_ENDPOINT}`;
-
+    // Use fetch for normal scenarios
+    try {
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body
         });
 
         if (!response.ok) {
@@ -49,41 +86,5 @@ export const sendAnalyticsEventToServer = async (
         }
     } catch (error) {
         console.error('DotCMS Analytics: Error sending event:', error);
-    }
-};
-
-/**
- * Send analytics events using sendBeacon for reliable page unload delivery
- * sendBeacon is fire-and-forget and not cancelled when the page unloads
- * @param payload - The event payload data
- * @param config - The analytics configuration
- */
-export const sendAnalyticsEventWithBeacon = (
-    payload: DotCMSRequestBody<DotCMSEvent>,
-    config: DotCMSAnalyticsConfig
-): void => {
-    if (config.debug) {
-        console.warn(
-            `DotCMS Analytics: Sending ${payload.events.length} events with sendBeacon (page unload)`
-        );
-    }
-
-    const endpoint = `${config.server}${ANALYTICS_ENDPOINT}`;
-    const body = JSON.stringify(payload);
-
-    if (navigator.sendBeacon) {
-        // Create Blob with correct Content-Type for JSON
-        const blob = new Blob([body], { type: 'application/json' });
-        const sent = navigator.sendBeacon(endpoint, blob);
-
-        if (!sent && config.debug) {
-            console.warn('DotCMS Analytics: sendBeacon failed (queue might be full)');
-        }
-    } else {
-        // Fallback: attempt synchronous send (may not complete)
-        if (config.debug) {
-            console.warn('DotCMS Analytics: sendBeacon not available, using fetch fallback');
-        }
-        sendAnalyticsEventToServer(payload, config);
     }
 };
