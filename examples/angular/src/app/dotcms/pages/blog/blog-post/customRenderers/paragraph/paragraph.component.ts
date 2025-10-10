@@ -23,7 +23,6 @@ export class ParagraphComponent implements OnInit {
   protected $text = signal<string>('');
 
   ngOnInit() {
-    console.log("node => ",this.node);
     if (!this.node.content) {
       return;
     }
