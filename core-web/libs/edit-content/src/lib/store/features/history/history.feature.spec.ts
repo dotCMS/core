@@ -49,6 +49,7 @@ const mockContentletVersion: DotCMSContentletVersion = {
     live: true,
     modDate: 1701428400000, // 2023-12-01T10:00:00.000Z as timestamp
     modUser: 'dotcms.org.1',
+    modUserName: 'Admin User',
     title: 'Test Content Version 1',
     working: true
 };

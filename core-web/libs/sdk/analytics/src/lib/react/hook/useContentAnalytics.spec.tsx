@@ -25,7 +25,7 @@ const mockPageView = jest.fn();
 
 const mockConfig = {
     server: 'https://example.com',
-    siteKey: 'test-site-key',
+    siteAuth: 'test-site-key',
     debug: false
 };
 
@@ -39,29 +39,20 @@ describe('useContentAnalytics', () => {
         mockGetUVEState.mockReturnValue(undefined);
     });
 
-    it('tracks with timestamp when outside editor', () => {
-        const mockDate = '2024-01-01T00:00:00.000Z';
-        jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);
-
+    it('tracks event with payload when outside editor', () => {
         const { result } = renderHook(() => useContentAnalytics(mockConfig));
         result.current.track('test-event', { data: 'test' });
 
         expect(mockTrack).toHaveBeenCalledWith('test-event', {
-            data: 'test',
-            timestamp: mockDate
+            data: 'test'
         });
     });
 
-    it('handles undefined payload', () => {
-        const mockDate = '2024-01-01T00:00:00.000Z';
-        jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);
-
+    it('tracks event without payload when outside editor', () => {
         const { result } = renderHook(() => useContentAnalytics(mockConfig));
         result.current.track('test-event');
 
-        expect(mockTrack).toHaveBeenCalledWith('test-event', {
-            timestamp: mockDate
-        });
+        expect(mockTrack).toHaveBeenCalledWith('test-event', {});
     });
 
     it('does not track when inside editor', () => {
@@ -89,8 +80,55 @@ describe('useContentAnalytics', () => {
 
         expect(() => {
             renderHook(() => useContentAnalytics(mockConfig));
-        }).toThrow('Failed to initialize DotContentAnalytics');
+        }).toThrow('DotCMS Analytics: Failed to initialize');
 
         console.error = originalError;
+    });
+
+    it('memoizes instance when config does not change', () => {
+        const { rerender } = renderHook(() => useContentAnalytics(mockConfig));
+
+        // First render initializes
+        expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
+
+        // Re-render with same config should not re-initialize
+        rerender();
+        expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
+    });
+
+    it('re-initializes when server changes', () => {
+        const { rerender } = renderHook((config) => useContentAnalytics(config), {
+            initialProps: mockConfig
+        });
+
+        expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
+
+        // Change server
+        rerender({ ...mockConfig, server: 'https://new-server.com' });
+        expect(mockInitializeAnalytics).toHaveBeenCalledTimes(2);
+    });
+
+    it('re-initializes when siteAuth changes', () => {
+        const { rerender } = renderHook((config) => useContentAnalytics(config), {
+            initialProps: mockConfig
+        });
+
+        expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
+
+        // Change siteKey
+        rerender({ ...mockConfig, siteAuth: 'new-site-key' });
+        expect(mockInitializeAnalytics).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not re-initialize when debug changes', () => {
+        const { rerender } = renderHook((config) => useContentAnalytics(config), {
+            initialProps: mockConfig
+        });
+
+        expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
+
+        // Change debug (should not trigger re-initialization in useMemo)
+        rerender({ ...mockConfig, debug: true });
+        expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
     });
 });
