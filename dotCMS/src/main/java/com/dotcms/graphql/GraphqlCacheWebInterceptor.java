@@ -6,6 +6,7 @@ import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.request.HttpRequestReaderWrapper;
 import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
@@ -179,6 +180,10 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         return Optional.of(defaultTTL.get());
     }
 
+    ObjectMapper getObjectMapper(){
+        return DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+    }
+
     @Override
     public boolean afterIntercept(final HttpServletRequest request,
             final HttpServletResponse response) {
@@ -190,7 +195,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             response.setHeader("x-graphql-cache", "miss, writing to cache");
             final String graphqlResponse = mockResponse.writer.toString();
 
-            final Map<String,Object> map = Try.of(()->new ObjectMapper()
+            final Map<String,Object> map = Try.of(()->getObjectMapper()
                     .readValue(graphqlResponse, Map.class)).getOrNull();
 
             Try.run(() -> mockResponse.originalResponse.getWriter().write(graphqlResponse));
