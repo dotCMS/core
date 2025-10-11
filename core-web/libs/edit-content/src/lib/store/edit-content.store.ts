@@ -42,6 +42,7 @@ export interface EditContentState {
     // Content state
     contentType: DotCMSContentType | null;
     contentlet: DotCMSContentlet | null;
+    compareContentlet: DotCMSContentlet | null;
     schemes: Record<
         string,
         {
@@ -129,6 +130,7 @@ export const initialRootState: EditContentState = {
     // Content state
     contentType: null,
     contentlet: null,
+    compareContentlet: null,
     schemes: {},
     initialContentletState: 'new',
 
@@ -148,6 +150,7 @@ export const initialRootState: EditContentState = {
 
     // UI state
     uiState: {
+        view: 'form',
         activeTab: 0,
         isSidebarOpen: true,
         activeSidebarTab: 0,

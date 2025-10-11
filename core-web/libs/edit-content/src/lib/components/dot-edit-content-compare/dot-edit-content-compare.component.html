@@ -1,0 +1,58 @@
+@let showSidebar = $store.isSidebarOpen();
+
+<div class="flex flex-column h-full">
+    <div
+        class="dot-edit-content-actions flex align-items-center w-full"
+        data-testId="edit-content-actions"
+        [class.dot-edit-content-actions--sidebar-open]="showSidebar">
+        <!-- Left group for lock controls -->
+
+        <!-- Right group for all other actions -->
+        <div class="dot-edit-content-actions__right flex align-items-center">
+            <button
+                pButton
+                (click)="$store.restoreCurrentHistoricalVersion()"
+                data-testId="restore-historical-version-button">
+                {{ 'edit.content.sidebar.history.restore' | dm }}
+            </button>
+
+            <!-- Sidebar toggle always visible -->
+            <div
+                class="dot-edit-content-actions__sidebar-toggle flex align-items-center"
+                data-testId="sidebar-toggle"
+                [class.dot-edit-content-actions__sidebar-toggle--hidden]="showSidebar">
+                <button
+                    class="dot-edit-content-actions__sidebar-btn p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
+                    (click)="$store.toggleSidebar()"
+                    data-testId="sidebar-toggle-button">
+                    <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect
+                            x="2.70588"
+                            y="3.17659"
+                            width="14.5882"
+                            height="13.6471"
+                            rx="1.17647"
+                            stroke="#426BF0"
+                            stroke-width="1.41176" />
+                        <line
+                            x1="12.3528"
+                            y1="16.1223"
+                            x2="12.3528"
+                            y2="3.87797"
+                            stroke="#426BF0"
+                            stroke-width="1.88235" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 h-full overflow-y-auto p-4">
+        <dot-content-compare [data]="$store.compareData()" />
+    </div>
+</div>

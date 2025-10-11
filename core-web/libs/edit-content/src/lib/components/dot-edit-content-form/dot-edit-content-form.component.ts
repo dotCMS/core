@@ -113,7 +113,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 })
 export class DotEditContentFormComponent implements OnInit {
     readonly #rootStore = inject(GlobalStore);
-    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly $store = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
