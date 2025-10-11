@@ -35,7 +35,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
 
         if (CustomRendererComponent) {
             return (
-                <CustomRendererComponent key={key} content={node.content}>
+                <CustomRendererComponent key={key} node={node}>
                     <BlockEditorBlock content={node.content} customRenderers={customRenderers} />
                 </CustomRendererComponent>
             );

@@ -1,6 +1,6 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { BlockEditorContent, UVE_MODE } from '@dotcms/types';
+import { BlockEditorNode, UVE_MODE } from '@dotcms/types';
 import { BlockEditorState } from '@dotcms/types/internal';
 import { getUVEState } from '@dotcms/uve';
 
@@ -26,7 +26,7 @@ describe('DotCMSBlockEditorRendererComponent', () => {
     let spectator: Spectator<DotCMSBlockEditorRendererComponent>;
     let component: DotCMSBlockEditorRendererComponent;
 
-    const mockValidBlock: BlockEditorContent = {
+    const mockValidBlock: BlockEditorNode = {
         type: 'doc',
         content: [
             {
@@ -44,7 +44,7 @@ describe('DotCMSBlockEditorRendererComponent', () => {
         ]
     };
 
-    const mockInvalidBlock: BlockEditorContent = {
+    const mockInvalidBlock: BlockEditorNode = {
         type: 'invalid',
         content: []
     };

@@ -2,7 +2,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 
 import { ActivityDetailComponent } from './activity-detail/activity-detail.component';
 import {
-  BlockEditorContent,
+  BlockEditorNode,
   DotCMSComposedPageResponse,
   DotCMSPageAsset,
   DotCMSURLContentMap,
