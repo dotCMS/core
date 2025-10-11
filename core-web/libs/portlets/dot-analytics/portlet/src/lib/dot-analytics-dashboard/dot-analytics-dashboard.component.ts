@@ -1,12 +1,14 @@
 import { signalMethod } from '@ngrx/signals';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, ParamMap, Params } from '@angular/router';
+import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { MessagesModule } from 'primeng/messages';
 
+import { DotLocalstorageService } from '@dotcms/data-access';
 import {
     DotAnalyticsDashboardStore,
     extractPageTitle,
@@ -19,6 +21,8 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
+const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-banner';
+
 import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
 import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
@@ -30,6 +34,7 @@ import { getProperQueryParamsFromUrl } from './utils/state-from-url';
     imports: [
         CommonModule,
         ButtonModule,
+        MessagesModule,
         DotAnalyticsDashboardMetricsComponent,
         DotAnalyticsDashboardChartComponent,
         DotAnalyticsDashboardTableComponent,
@@ -45,6 +50,7 @@ export default class DotAnalyticsDashboardComponent {
 
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
+    private readonly localStorageService = inject(DotLocalstorageService);
 
     /** Query params */
     $queryParams = toSignal(this.route.queryParamMap, {
@@ -53,6 +59,11 @@ export default class DotAnalyticsDashboardComponent {
 
     // Current site ID
     private readonly $currentSiteId = inject(GlobalStore).currentSiteId;
+
+    // Message banner visibility
+    readonly $showMessage = signal<boolean>(
+        !this.localStorageService.getItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY)
+    );
 
     // Metrics signals
     protected readonly $totalPageViews = this.store.totalPageViews;
@@ -92,6 +103,14 @@ export default class DotAnalyticsDashboardComponent {
 
     constructor() {
         this.#handleQueryParamsChanges(this.$queryParams);
+    }
+
+    /**
+     * Closes the message banner and stores the preference in localStorage
+     */
+    onCloseMessage(): void {
+        this.$showMessage.set(false);
+        this.localStorageService.setItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY, true);
     }
 
     /**
