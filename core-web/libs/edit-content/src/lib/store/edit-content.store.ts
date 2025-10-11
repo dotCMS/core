@@ -83,6 +83,7 @@ export interface EditContentState {
 
     // Form state
     formValues: FormValues;
+    formStatus: 'init' | 'valid' | 'invalid';
 
     // Locales state
     locales: DotLanguage[] | null;
@@ -168,6 +169,7 @@ export const initialRootState: EditContentState = {
 
     // Form state
     formValues: {},
+    formStatus: 'init',
 
     // Locales state
     locales: null,
