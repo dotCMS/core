@@ -1,0 +1,62 @@
+@let isDefaultPersona = $persona().identifier === 'modes.persona.no.persona';
+
+<p-button
+    (click)="op.toggle($event)"
+    [label]="$persona().name"
+    [loading]="$isLoading()"
+    [ngClass]="{ selected: !isDefaultPersona }"
+    styleClass="p-button-text p-button-sm">
+    @if (!$isLoading()) {
+        <p-avatar
+            dotAvatar
+            styleClass="persona-avatar selected"
+            [text]="$persona().name | dm"
+            [image]="$photo()" />
+    }
+</p-button>
+
+<p-overlayPanel #op>
+    <p-listbox
+        (onChange)="onSelect($event); op.toggle($event)"
+        [options]="$personas().items"
+        #listbox
+        optionLabel="label"
+        dataKey="identifier">
+        <ng-template let-persona pTemplate="item">
+            <ng-container
+                [ngTemplateOutlet]="personaItemTemplate"
+                [ngTemplateOutletContext]="{ $implicit: persona, overlayPanel: op }"></ng-container>
+        </ng-template>
+    </p-listbox>
+    @if ($showPaginator()) {
+        <p-paginator
+            class="p-paginator-sm"
+            [rows]="$personas().itemsPerPage"
+            [totalRecords]="$personas().totalRecords"
+            (onPageChange)="onPaginate($event)"
+            [showFirstLastIcon]="false"
+            [pageLinkSize]="0" />
+    }
+</p-overlayPanel>
+
+<!-- Persona Item Template -->
+<ng-template #personaItemTemplate let-persona let-overlayPanel="overlayPanel">
+    <div class="flex w-full gap-4 align-items-center justify-content-between">
+        <div class="flex gap-2 align-items-center">
+            <p-avatar
+                dotAvatar
+                styleClass="persona-avatar"
+                [text]="persona.name | dm"
+                [image]="persona.photo" />
+            <span>{{ persona.name | dm }}</span>
+        </div>
+        @if (persona.personalized) {
+            <p-chip styleClass="p-chip-sm" data-testId="persona-chip">
+                <i
+                    class="pi pi-times-circle p-chip-icon"
+                    (click)="onRemove($event, persona); overlayPanel.toggle($event)"></i>
+                <span class="p-chip-text">{{ 'modes.persona.personalized' | dm }}</span>
+            </p-chip>
+        }
+    </div>
+</ng-template>

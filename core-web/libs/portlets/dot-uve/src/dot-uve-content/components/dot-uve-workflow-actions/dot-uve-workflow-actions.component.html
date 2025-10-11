@@ -1,0 +1,6 @@
+<dot-workflow-actions
+    (actionFired)="handleActionTrigger($event)"
+    [size]="'small'"
+    [loading]="$workflowActions().length === 0"
+    [disabled]="!$canEdit()"
+    [actions]="$workflowActions()" />
