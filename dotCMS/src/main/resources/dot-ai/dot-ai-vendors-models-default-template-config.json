@@ -1,0 +1,153 @@
+{
+  "configVersion": "1.0",
+  "routing": {
+    "default-chat": "openai.chat.gpt-4o-mini",
+    "default-embeddings": "openai.embeddings.text-embedding-3-small",
+    "fast-chat": "anthropic.chat.claude-3-5-sonnet",
+    "enterprise-azure": "azureopenai.chat.gpt-4o",
+    "bedrock-chat": "bedrock.chat.anthropic-claude-3-5-sonnet",
+    "vertex-chat": "vertex.chat.gemini-1-5-pro"
+  },
+  "config": {
+    "openai": {
+      "apiKey": "${OPENAI_API_KEY}",
+      "organization": "${OPENAI_ORG}",
+      "project": "${OPENAI_PROJECT}",
+      "baseUrl": "https://api.openai.com/v1",
+      "timeoutMs": 30000,
+      "rateLimitQps": 5,
+      "retries": 2,
+      "chat": {
+        "gpt-4o-mini": {
+          "model": "gpt-4o-mini",
+          "temperature": 0.3,
+          "maxOutputTokens": 2048
+        },
+        "gpt-4.1": {
+          "model": "gpt-4.1",
+          "temperature": 0.2,
+          "maxOutputTokens": 4096
+        }
+      },
+      "embeddings": {
+        "text-embedding-3-small": {
+          "model": "text-embedding-3-small",
+          "dimensions": 1536,
+          "timeoutMs": 20000
+        },
+        "text-embedding-3-large": {
+          "model": "text-embedding-3-large",
+          "dimensions": 3072,
+          "timeoutMs": 20000
+        }
+      }
+    },
+
+    "anthropic": {
+      "apiKey": "${ANTHROPIC_API_KEY}",
+      "baseUrl": "https://api.anthropic.com",
+      "timeoutMs": 30000,
+      "rateLimitQps": 3,
+      "retries": 2,
+      "chat": {
+        "claude-3-5-sonnet": {
+          "model": "claude-3-5-sonnet-20240620",
+          "temperature": 0.2,
+          "maxOutputTokens": 4096
+        },
+        "claude-3-opus": {
+          "model": "claude-3-opus-20240229",
+          "temperature": 0.2,
+          "maxOutputTokens": 4096
+        }
+      }
+      /* Note: No embeddings 4 Anthropic*/
+    },
+
+    "azureopenai": {
+      "apiKey": "${AZURE_OPENAI_API_KEY}",
+      "endpoint": "https://your-azure-openai-resource.openai.azure.com",
+      "apiVersion": "2024-02-15-preview",
+      "timeoutMs": 30000,
+      "rateLimitQps": 10,
+      "retries": 2,
+      "chat": {
+        "gpt-4o": {
+          "deploymentName": "gpt-4o",
+          "temperature": 0.3,
+          "maxOutputTokens": 2048
+        },
+        "gpt-35-turbo": {
+          "deploymentName": "gpt-35-turbo",
+          "temperature": 0.5,
+          "maxOutputTokens": 2048
+        }
+      },
+      "embeddings": {
+        "text-embedding-3-small": {
+          "deploymentName": "text-embedding-3-small",
+          "dimensions": 1536
+        }
+      }
+    },
+
+    "bedrock": {
+      "region": "${AWS_REGION}",
+      "accessKeyId": "${AWS_ACCESS_KEY_ID}",
+      "secretAccessKey": "${AWS_SECRET_ACCESS_KEY}",
+      "sessionToken": "${AWS_SESSION_TOKEN}",
+      "timeoutMs": 40000,
+      "rateLimitQps": 10,
+      "retries": 2,
+      "chat": {
+        "anthropic-claude-3-5-sonnet": {
+          "modelId": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+          "temperature": 0.2,
+          "maxOutputTokens": 4096
+        },
+        "meta-llama-405b": {
+          "modelId": "meta.llama3-405b-instruct-v1:0",
+          "temperature": 0.3,
+          "maxOutputTokens": 4096
+        }
+      },
+      "embeddings": {
+        "titan-embed-text-v2": {
+          "modelId": "amazon.titan-embed-text-v2:0",
+          "dimensions": 1024
+        }
+      }
+    },
+
+    "vertex": {
+      "projectId": "${GCP_PROJECT_ID}",
+      "location": "us-central1",
+      "credentialsJsonPath": "${GOOGLE_APPLICATION_CREDENTIALS}",
+      "timeoutMs": 30000,
+      "rateLimitQps": 8,
+      "retries": 2,
+      "chat": {
+        "gemini-1-5-pro": {
+          "model": "projects/${GCP_PROJECT_ID}/locations/us-central1/models/gemini-1.5-pro",
+          "temperature": 0.2,
+          "topP": 0.95,
+          "topK": 40,
+          "maxOutputTokens": 4096
+        },
+        "gemini-1-5-flash": {
+          "model": "projects/${GCP_PROJECT_ID}/locations/us-central1/models/gemini-1.5-flash",
+          "temperature": 0.3,
+          "topP": 0.95,
+          "topK": 40,
+          "maxOutputTokens": 2048
+        }
+      },
+      "embeddings": {
+        "text-embedding-004": {
+          "model": "projects/${GCP_PROJECT_ID}/locations/us-central1/models/text-embedding-004",
+          "dimensions": 768
+        }
+      }
+    }
+  }
+}
