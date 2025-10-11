@@ -13,6 +13,9 @@ import com.dotcms.mock.request.MockHttpRequestUnitTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.google.common.collect.ImmutableList;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+
 public class SecurityUtilsTest {
 
   final static String PORTAL_HOST = "portalhost.com";
@@ -98,9 +101,148 @@ public class SecurityUtilsTest {
   
   
   private HttpServletRequest mockRequest(String host, String uri, String referer) {
-    
+
 
     return new MockHeaderRequest(new MockAttributeRequest(new MockSessionRequest(new MockHttpRequestUnitTest(host, uri).request()).request()).request(), "referer", referer);
+  }
+
+  /**
+   * Test validateIdentifier with valid UUIDs
+   */
+  @Test
+  public void test_validateIdentifier_validUUIDs() {
+    // Valid UUIDs should not throw exceptions
+    SecurityUtils.validateIdentifier("550e8400-e29b-41d4-a716-446655440000");
+    SecurityUtils.validateIdentifier("6ba7b810-9dad-11d1-80b4-00c04fd430c8");
+    SecurityUtils.validateIdentifier("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
+  }
+
+  /**
+   * Test validateIdentifier with system identifiers
+   */
+  @Test
+  public void test_validateIdentifier_systemIdentifiers() {
+    // System identifiers should not throw exceptions
+    SecurityUtils.validateIdentifier("SYSTEM_HOST");
+    SecurityUtils.validateIdentifier("SYSTEM_FOLDER");
+  }
+
+  /**
+   * Test validateIdentifier with valid variable names
+   */
+  @Test
+  public void test_validateIdentifier_validVariableNames() {
+    // Valid variable names (alphanumeric starting with letter or underscore)
+    SecurityUtils.validateIdentifier("myVariable");
+    SecurityUtils.validateIdentifier("_privateVar");
+    SecurityUtils.validateIdentifier("var123");
+    SecurityUtils.validateIdentifier("myContentType");
+    SecurityUtils.validateIdentifier("_test");
+  }
+
+  /**
+   * Test validateIdentifier with malicious SQL injection attempts
+   */
+  @Test(expected = SecurityException.class)
+  public void test_validateIdentifier_sqlInjection() {
+    SecurityUtils.validateIdentifier("'; DROP TABLE containers; --");
+  }
+
+  /**
+   * Test validateIdentifier with XSS attempts
+   */
+  @Test(expected = SecurityException.class)
+  public void test_validateIdentifier_xssAttempt() {
+    SecurityUtils.validateIdentifier("<script>alert('xss')</script>");
+  }
+
+  /**
+   * Test validateIdentifier with null value
+   */
+  @Test(expected = SecurityException.class)
+  public void test_validateIdentifier_null() {
+    SecurityUtils.validateIdentifier(null);
+  }
+
+  /**
+   * Test validateIdentifier with empty string
+   */
+  @Test(expected = SecurityException.class)
+  public void test_validateIdentifier_empty() {
+    SecurityUtils.validateIdentifier("");
+  }
+
+  /**
+   * Test validateIdentifier with invalid characters
+   */
+  @Test(expected = SecurityException.class)
+  public void test_validateIdentifier_invalidChars() {
+    SecurityUtils.validateIdentifier("test@value!");
+  }
+
+  /**
+   * Test validateIdentifier with path traversal attempt
+   */
+  @Test(expected = SecurityException.class)
+  public void test_validateIdentifier_pathTraversal() {
+    SecurityUtils.validateIdentifier("../../../etc/passwd");
+  }
+
+  /**
+   * Test isValidIdentifier returns true for valid inputs
+   */
+  @Test
+  public void test_isValidIdentifier_validInputs() {
+    assertTrue(SecurityUtils.isValidIdentifier("550e8400-e29b-41d4-a716-446655440000"));
+    assertTrue(SecurityUtils.isValidIdentifier("SYSTEM_HOST"));
+    assertTrue(SecurityUtils.isValidIdentifier("SYSTEM_FOLDER"));
+    assertTrue(SecurityUtils.isValidIdentifier("myVariable"));
+    assertTrue(SecurityUtils.isValidIdentifier("_test123"));
+  }
+
+  /**
+   * Test isValidIdentifier returns false for invalid inputs
+   */
+  @Test
+  public void test_isValidIdentifier_invalidInputs() {
+    assertFalse(SecurityUtils.isValidIdentifier(null));
+    assertFalse(SecurityUtils.isValidIdentifier(""));
+    assertFalse(SecurityUtils.isValidIdentifier("'; DROP TABLE"));
+    assertFalse(SecurityUtils.isValidIdentifier("<script>"));
+    assertFalse(SecurityUtils.isValidIdentifier("test@value"));
+    assertFalse(SecurityUtils.isValidIdentifier("../etc/passwd"));
+  }
+
+  /**
+   * Test isSystemIdentifier
+   */
+  @Test
+  public void test_isSystemIdentifier() {
+    assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_HOST"));
+    assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_FOLDER"));
+    assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_CONTAINER"));
+    assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_TEMPLATE"));
+    assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_THEME"));
+    assertFalse(SecurityUtils.isSystemIdentifier("system_host")); // case-sensitive
+    assertFalse(SecurityUtils.isSystemIdentifier("OTHER_SYSTEM"));
+    assertFalse(SecurityUtils.isSystemIdentifier(null));
+  }
+
+  /**
+   * Test isValidVariableName
+   */
+  @Test
+  public void test_isValidVariableName() {
+    assertTrue(SecurityUtils.isValidVariableName("myVariable"));
+    assertTrue(SecurityUtils.isValidVariableName("_privateVar"));
+    assertTrue(SecurityUtils.isValidVariableName("var123"));
+    assertTrue(SecurityUtils.isValidVariableName("_test"));
+
+    assertFalse(SecurityUtils.isValidVariableName("123invalid")); // starts with number
+    assertFalse(SecurityUtils.isValidVariableName("invalid-var")); // contains hyphen
+    assertFalse(SecurityUtils.isValidVariableName("invalid var")); // contains space
+    assertFalse(SecurityUtils.isValidVariableName(null));
+    assertFalse(SecurityUtils.isValidVariableName(""));
   }
 
 }
