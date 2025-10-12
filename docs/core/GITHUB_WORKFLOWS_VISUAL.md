@@ -92,10 +92,10 @@ The Claude Code integration uses a sophisticated security system to ensure only 
 
 ```mermaid
 graph TD
-    A[@claude mention detected] --> B[Extract username from GitHub event]
+    A[Claude mention detected] --> B[Extract username from GitHub event]
     B --> C[Organization Membership Check Action]
     
-    C --> D{GitHub API Call|GET /orgs/dotCMS/members/{username}}
+    C --> D{GitHub API Call<br/>GET /orgs/dotCMS/members/USERNAME}
     
     D -->|HTTP 204 No Content| E[✅ User is authorized]
     D -->|HTTP 404 Not Found| F[❌ User is blocked]
@@ -122,7 +122,7 @@ Based on the acceptance criteria from the testing issue:
 
 ```mermaid
 graph TD
-    A[User mentions @claude] --> B{User Type Check}
+    A[User mentions Claude] --> B{User Type Check}
     
     B -->|Non-member| C[❌ FAIL<br/>Not in dotCMS org]
     B -->|Member with private visibility| D[❌ FAIL<br/>Membership not public]
@@ -157,17 +157,17 @@ sequenceDiagram
     participant Action as Security Action
     participant Log as Workflow Log
     
-    U->>GH: Mentions @claude in issue/PR
+    U->>GH: Mentions Claude in issue/PR
     GH->>Action: Triggers workflow with username
-    Action->>API: GET /orgs/dotCMS/members/{username}
+    Action->>API: GET /orgs/dotCMS/members/USERNAME
     
     alt User is authorized member
         API-->>Action: HTTP 204 No Content
-        Action->>Log: ✅ AUTHORIZED: {username} is dotCMS member
+        Action->>Log: ✅ AUTHORIZED: USERNAME is dotCMS member
         Action-->>GH: is_member=true, Continue workflow
     else User is not authorized
         API-->>Action: HTTP 404 Not Found
-        Action->>Log: ❌ BLOCKED: {username} failed membership check
+        Action->>Log: ❌ BLOCKED: USERNAME failed membership check
         Action->>U: Display troubleshooting steps
         Action-->>GH: is_member=false, Terminate workflow
     end
@@ -187,8 +187,8 @@ sequenceDiagram
 graph LR
     A[dotCMS Organization Member] --> B{Membership Visibility}
     
-    B -->|Public| C[✅ Can use @claude<br/>API returns HTTP 204]
-    B -->|Private| D[❌ Cannot use @claude<br/>API returns HTTP 404]
+    B -->|Public| C[✅ Can use Claude<br/>API returns HTTP 204]
+    B -->|Private| D[❌ Cannot use Claude<br/>API returns HTTP 404]
     
     D --> E[User Action Required:<br/>Make membership public]
     E --> F[Visit github.com/orgs/dotCMS/people]
@@ -236,7 +236,7 @@ graph TD
 
 ```mermaid
 graph TD
-    A[User is dotCMS member<br/>but @claude fails] --> B[Check membership visibility]
+    A[User is dotCMS member<br/>but Claude fails] --> B[Check membership visibility]
     
     B --> C[Visit github.com/orgs/dotCMS/people]
     C --> D{Can you see your name?}
@@ -245,7 +245,7 @@ graph TD
     D -->|No| F[Contact organization owner<br/>to be added to dotCMS org]
     
     E --> G[Click 'Make public']
-    G --> H[✅ @claude should work now]
+    G --> H[✅ Claude should work now]
     
     F --> I[Wait for org invitation]
     I --> J[Accept invitation]
