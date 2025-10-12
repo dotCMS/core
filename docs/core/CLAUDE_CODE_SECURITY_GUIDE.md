@@ -18,7 +18,7 @@ graph TB
     B --> C[Extract username from event]
     C --> D[Organization Membership Check]
     
-    D --> E{GitHub API:<br/>GET /orgs/dotCMS/members/{username}}
+    D --> E{GitHub API:<br/>GET /orgs/dotCMS/members/USERNAME}
     
     E -->|HTTP 204| F[✅ Member Verified]
     E -->|HTTP 404| G[❌ Access Denied]
