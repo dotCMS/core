@@ -18,10 +18,10 @@ graph TB
     B --> C[Extract username from event]
     C --> D[Organization Membership Check]
     
-    D --> E{GitHub API:|GET /orgs/dotCMS/members/{username}}
+    D --> E{GitHub API: GET /orgs/dotCMS/members/{username}}
     
-    E -->|HTTP 204| F[✅ Member Verified]
-    E -->|HTTP 404| G[❌ Access Denied]
+    E -->|HTTP 204| F[Member Verified]
+    E -->|HTTP 404| G[Access Denied]
     
     F --> H[Continue Claude Workflow]
     G --> I[Display Error & Troubleshooting]
@@ -87,9 +87,9 @@ If you are a member but have private visibility:
 graph TD
     A[Find your name on dotCMS members page] --> B{See 'Make public' button?}
     B -->|Yes| C[Click 'Make public']
-    B -->|No| D[Membership already public ✅]
+    B -->|No| D[Membership already public]
     
-    C --> E[Membership now public ✅]
+    C --> E[Membership now public]
     E --> F[@claude commands will work]
     D --> F
     
@@ -117,7 +117,7 @@ This error means the security gate detected that you are not authorized to use C
 graph TD
     A[❌ BLOCKED error message] --> B[Visit github.com/orgs/dotCMS/people]
     
-    B --> C{Can you see your username|in the members list?}
+    B --> C{Can you see your username<br/>in the members list?}
     
     C -->|No - Not visible| D[You are not a dotCMS member]
     C -->|Yes - I see my name| E[You are a member but have private visibility]
@@ -129,7 +129,7 @@ graph TD
     
     E --> J[Look for 'Make public' button next to your name]
     J --> K[Click 'Make public']
-    K --> L[✅ @claude should work now]
+    K --> L[@claude should work now]
     
     I --> L
     
