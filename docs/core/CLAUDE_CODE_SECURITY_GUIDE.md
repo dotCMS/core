@@ -14,7 +14,7 @@ Claude Code uses a **zero-trust security model** with organization membership ve
 
 ```mermaid
 graph TB
-    A[User mentions @claude] --> B[GitHub Action Triggered]
+    A[User mentions Claude] --> B[GitHub Action Triggered]
     B --> C[Extract username from event]
     C --> D[Organization Membership Check]
     
@@ -90,7 +90,7 @@ graph TD
     B -->|No| D[Membership already public ✅]
     
     C --> E[Membership now public ✅]
-    E --> F[@claude commands will work]
+    E --> F[Claude commands will work]
     D --> F
     
     style E fill:#c8e6c9
@@ -129,7 +129,7 @@ graph TD
     
     E --> J[Look for 'Make public' button next to your name]
     J --> K[Click 'Make public']
-    K --> L[✅ @claude should work now]
+    K --> L[✅ Claude should work now]
     
     I --> L
     
