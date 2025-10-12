@@ -18,7 +18,7 @@ graph TB
     B --> C[Extract username from event]
     C --> D[Organization Membership Check]
     
-    D --> E{GitHub API:|GET /orgs/dotCMS/members/{username}}
+    D --> E{GitHub API:<br/>GET /orgs/dotCMS/members/{username}}
     
     E -->|HTTP 204| F[✅ Member Verified]
     E -->|HTTP 404| G[❌ Access Denied]
@@ -117,7 +117,7 @@ This error means the security gate detected that you are not authorized to use C
 graph TD
     A[❌ BLOCKED error message] --> B[Visit github.com/orgs/dotCMS/people]
     
-    B --> C{Can you see your username|in the members list?}
+    B --> C{Can you see your username<br/>in the members list?}
     
     C -->|No - Not visible| D[You are not a dotCMS member]
     C -->|Yes - I see my name| E[You are a member but have private visibility]
