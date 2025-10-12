@@ -95,7 +95,7 @@ graph TD
     A[@claude mention detected] --> B[Extract username from GitHub event]
     B --> C[Organization Membership Check Action]
     
-    C --> D{GitHub API Call<br/>GET /orgs/dotCMS/members/{username}}
+    C --> D{GitHub API Call|GET /orgs/dotCMS/members/{username}}
     
     D -->|HTTP 204 No Content| E[✅ User is authorized]
     D -->|HTTP 404 Not Found| F[❌ User is blocked]
@@ -279,13 +279,7 @@ graph TD
 
 ## Current Authorized Users
 
-Based on the testing issue, only 3 users currently have public organization membership:
-
-- @fmontes
-- @oidacra  
-- @sfreudenthaler
-
-**All other dotCMS organization members must set their membership visibility to public to use @claude mentions.**
+**All dotCMS organization members must set their membership visibility to public to use @claude mentions.**
 
 ## Security Best Practices
 

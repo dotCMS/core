@@ -18,7 +18,7 @@ graph TB
     B --> C[Extract username from event]
     C --> D[Organization Membership Check]
     
-    D --> E{GitHub API:<br/>GET /orgs/dotCMS/members/{username}}
+    D --> E{GitHub API:|GET /orgs/dotCMS/members/{username}}
     
     E -->|HTTP 204| F[✅ Member Verified]
     E -->|HTTP 404| G[❌ Access Denied]
@@ -50,12 +50,7 @@ To use Claude Code (@claude mentions), users must satisfy **ALL** of these requi
 
 ### Current Status (as of October 2025)
 
-**Authorized Users**: Only 3 users currently have public membership visibility:
-- @fmontes
-- @oidacra  
-- @sfreudenthaler
-
-**All other dotCMS organization members** must make their membership public to use @claude.
+**All dotCMS organization members** must make their membership public to use @claude mentions.
 
 ## User Guide: Setting Up Claude Code Access
 
@@ -122,7 +117,7 @@ This error means the security gate detected that you are not authorized to use C
 graph TD
     A[❌ BLOCKED error message] --> B[Visit github.com/orgs/dotCMS/people]
     
-    B --> C{Can you see your username<br/>in the members list?}
+    B --> C{Can you see your username|in the members list?}
     
     C -->|No - Not visible| D[You are not a dotCMS member]
     C -->|Yes - I see my name| E[You are a member but have private visibility]
