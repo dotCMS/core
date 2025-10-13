@@ -383,7 +383,12 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 const mockUploadEvent: DotContentDriveUploadFiles = {
                     files: mockFileList,
-                    targetFolderId: 'folder-1'
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: 'folder-1',
+                        type: 'folder'
+                    }
                 };
 
                 let emittedValue: DotContentDriveUploadFiles | undefined;
@@ -400,7 +405,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 expect(emittedValue).toBeDefined();
                 expect(emittedValue?.files).toBe(mockFileList);
-                expect(emittedValue?.targetFolderId).toBe('folder-1');
+                expect(emittedValue?.targetFolder.id).toBe('folder-1');
             });
         });
     });
