@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to automatically track the cost of a method call. The cost will be added to the current request's cost
- * tracked by {@link RequestCostWebInterceptor}.
+ * tracked by {@link RequestCostApiImpl}.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

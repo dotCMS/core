@@ -6,6 +6,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -46,7 +47,6 @@ import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.cost.RequestCost;
-import com.dotcms.cost.RequestCostApi;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -4596,6 +4596,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 pullByParents, limit, offset, sortBy, -1, null);
     }
 
+    @RequestCost(increment = 1)
     @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(final Contentlet contentlet,
@@ -4603,7 +4604,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final User user,
             final boolean respectFrontendRoles, Boolean pullByParents, final int limit,
             final int offset, final String sortBy, final long language, final Boolean live) {
-        RequestCostApi.getInstance().incrementCost(1);
+
         if (variableName == null) {
             return Collections.EMPTY_LIST;
         }

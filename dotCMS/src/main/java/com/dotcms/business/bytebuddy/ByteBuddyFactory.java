@@ -52,8 +52,8 @@ public class ByteBuddyFactory {
             CloseDBIfOpened.class, CloseDBIfOpenedAdvice.class,
             LogTime.class, LogTimeAdvice.class,
             EnterpriseFeature.class, EnterpriseFeatureAdvice.class,
-        ExternalTransaction.class, ExternalTransactionAdvice.class,
-        RequestCost.class, RequestCostAdvice.class
+            ExternalTransaction.class, ExternalTransactionAdvice.class,
+            RequestCost.class, RequestCostAdvice.class
     );
 
 
@@ -106,7 +106,6 @@ public class ByteBuddyFactory {
         for (String packageElement : packageIgnore)
             ignoresByName = ignoresByName.or(nameStartsWith(packageElement));
 
-
         // will filter by name first and then by annotation
         ElementMatcher.Junction<TypeDefinition> classMatcher = selectByName.and(hasAnnotatedMethods());
 
@@ -124,12 +123,32 @@ public class ByteBuddyFactory {
                     .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
                         DynamicType.Builder<?> newBuilder = builder;
                         for (Map.Entry<Class<? extends Annotation>, Class<?>> entry : adviceMap.entrySet()) {
-                            newBuilder = getAdvice(entry.getKey(), entry.getValue()).transform(newBuilder, typeDescription, classLoader, module, protectionDomain);
+                            newBuilder = getAdvice(entry.getKey(), entry.getValue()).transform(newBuilder,
+                                    typeDescription, classLoader, module, protectionDomain);
                         }
                         return newBuilder;
                     })
 
                     .installOn(inst);
+
+            // Explicitly retransform VelocityUtil if it's already loaded
+            try {
+                Class<?> velocityUtilClass = Class.forName("com.dotcms.rendering.velocity.util.VelocityUtil", false,
+                        Thread.currentThread().getContextClassLoader());
+                if (velocityUtilClass != null) {
+                    LOGGER.info("VelocityUtil was already loaded, retransforming it now");
+                    inst.retransformClasses(velocityUtilClass);
+                }
+            } catch (ClassNotFoundException e) {
+                LOGGER.debug("VelocityUtil not yet loaded, will be transformed when loaded");
+            } catch (Exception e) {
+                LOGGER.warn("Could not retransform VelocityUtil", e);
+            }
+
+
+
+
+
             LOGGER.info("ByteBuddy Initialized");
         } catch (Exception e) {
             LOGGER.error("Error Initializing ByteBuddy", e);

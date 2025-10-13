@@ -1,15 +1,6 @@
 package com.dotmarketing.image.filter;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.focalpoint.FocalPoint;
@@ -18,7 +9,19 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.WebKeys;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 
 public abstract class ImageFilter implements ImageFilterIf {
 	protected static final String FILE_EXT = "png";
@@ -140,15 +143,19 @@ public abstract class ImageFilter implements ImageFilterIf {
 		return getFilterName() + "_";
 	}
 
+
+    static final Lazy<Method> overwriteMethod = Lazy.of(
+            () -> Try.of(() -> ImageFilter.class.getDeclaredMethod("overwrite", File.class, Map.class))
+                    .onFailure(e -> Logger.error(ImageFilter.class, e)).getOrNull());
+
+
 	protected boolean overwrite(File resultFile, Map<String, String[]> parameters){
-		boolean overwrite = false;
-		long test = resultFile.length();
-		if (!resultFile.exists())
-			overwrite = true;
-		else if (test < 50)
-			overwrite = true;
-		else if (parameters.get("overwrite") != null)
-			overwrite = true;
+        boolean overwrite = !resultFile.exists() || resultFile.length() < 50 || parameters.get("overwrite") != null;
+
+        if (overwrite) {
+
+            APILocator.getRequestCostAPI().incrementCost(1, overwriteMethod.get(), new Object[]{resultFile.toPath()});
+        }
 
 		return overwrite;
 	}

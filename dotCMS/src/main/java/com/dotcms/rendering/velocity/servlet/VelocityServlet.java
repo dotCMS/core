@@ -5,7 +5,6 @@ import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDB;
-import com.dotcms.cost.RequestCostApi;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -164,7 +163,7 @@ public class VelocityServlet extends HttpServlet {
             );
 
             Logger.debug(this, "VelocityServlet_service pageHtml: " + pageHtml);
-            RequestCostApi.getInstance().addCostHeader(response);
+            APILocator.getRequestCostAPI().addCostHeader(request, response);
             response.getOutputStream().write(pageHtml.getBytes());
         } catch (ResourceNotFoundException rnfe) {
             Logger.warnAndDebug(this.getClass(), "ResourceNotFoundException" + rnfe.toString(), rnfe);

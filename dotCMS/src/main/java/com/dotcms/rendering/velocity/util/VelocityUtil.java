@@ -3,8 +3,6 @@ package com.dotcms.rendering.velocity.util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.cost.RequestCost;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.directive.DotCacheDirective;
@@ -39,6 +37,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.SystemProperties;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.StringWriter;
@@ -64,7 +63,18 @@ public class VelocityUtil {
     public final static String REFRESH="refresh";
     public final static String NO="no";
     public final static String DOTCACHE="dotcache";
-	private static VelocityEngine ve = null;
+    private static final Lazy<VelocityEngine> velocityEngine = Lazy.of(() -> {
+        VelocityEngine engine = new VelocityEngine();
+        try {
+            engine.init(SystemProperties.getProperties());
+
+            Logger.debug(VelocityUtil.class, SystemProperties.getProperties().toString());
+        } catch (Exception e) {
+            Logger.error(VelocityUtil.class, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        }
+        return engine;
+    });
 	private static Map<String, String> digitToLetter = new HashMap<>();
 
 	static {
@@ -80,40 +90,18 @@ public class VelocityUtil {
 		digitToLetter.put("9", "nine");
 	}
 
-	private static class Holder {
-		private static final VelocityUtil INSTANCE = new VelocityUtil();
-	}
+    private static Lazy<com.dotcms.rendering.velocity.util.VelocityUtil> INSTANCE = Lazy.of(VelocityUtil::new);
 
 	protected VelocityUtil(){}
 
 	public static VelocityUtil getInstance() {
-		return Holder.INSTANCE;
+        return INSTANCE.get();
 	}
 
-	private synchronized static void init(){
-		if(ve != null)
-			return;
-		ve = new VelocityEngine();
-		try{
-			ve.init(SystemProperties.getProperties());
-
-			Logger.debug(VelocityUtil.class, SystemProperties.getProperties().toString());
-		}catch (Exception e) {
-			Logger.error(VelocityUtil.class,e.getMessage(),e);
-		}
-	}
-
-	@RequestCost(increment = 5)
 	public static VelocityEngine getEngine(){
-		if(ve == null){
-			init();
-			if(ve == null){
-				Logger.fatal(VelocityUtil.class,"Velocity Engine unable to initialize : THIS SHOULD NEVER HAPPEN");
-				throw new DotRuntimeException("Velocity Engine unable to initialize : THIS SHOULD NEVER HAPPEN");
-			}
-		}
-		return ve;
-	}
+        return velocityEngine.get();
+    }
+
 	/**
 	 * Changes $ and # to velocity escapes.  This is helps filter out velocity code injections.
 	 * @param s 
@@ -129,7 +117,7 @@ public class VelocityUtil {
 	}
 
 
-	
+    @RequestCost(increment = 5)
 	public String parseVelocity(String velocityCode, Context ctx){
 		VelocityEngine ve = VelocityUtil.getEngine();
 		StringWriter stringWriter = new StringWriter();
@@ -258,6 +246,7 @@ public class VelocityUtil {
    * This will return a velocity context for workflow actionlet.
    * It will mock a Request and Response and then use
    */
+  @RequestCost(increment = 1)
   public Context getWorkflowContext(final WorkflowProcessor processor) {
     
     final Contentlet contentlet = processor.getContentlet();
@@ -330,6 +319,7 @@ public class VelocityUtil {
     return getWebContext(getBasicContext(), request, response);
   }
 
+    @RequestCost(increment = 1)
 	public static ChainedContext getWebContext(Context ctx, final HttpServletRequest requestIn, HttpServletResponse response) {
 
 
@@ -405,6 +395,7 @@ public class VelocityUtil {
 
 	}
 
+    @RequestCost(increment = 1)
 	public String  merge(final String templatePath, final Context ctx) {
 		try {
 			return mergeTemplate(templatePath, ctx);
@@ -429,6 +420,7 @@ public class VelocityUtil {
 	 *
 	 * @deprecated Use the mockable version instead {@link VelocityUtil#merge(String, Context)}
 	 */
+    @RequestCost(increment = 1)
 	public static String mergeTemplate(String templatePath, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		Template template = null;
@@ -438,9 +430,9 @@ public class VelocityUtil {
 		template.merge(ctx, sw);
 
 		return sw.toString();
-		
 	}
-	
+
+    @RequestCost(increment = 1)
 	public static String eval(String velocity, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		StringWriter sw = new StringWriter();

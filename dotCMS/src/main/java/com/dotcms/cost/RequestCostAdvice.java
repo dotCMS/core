@@ -1,5 +1,6 @@
 package com.dotcms.cost;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import java.lang.reflect.Method;
 import net.bytebuddy.asm.Advice;
@@ -10,19 +11,23 @@ import net.bytebuddy.asm.Advice;
  */
 public class RequestCostAdvice {
 
-  private final RequestCostApi requestCostApi = RequestCostApi.getInstance();
 
-  @Advice.OnMethodEnter(inline = false)
-  public static void enter(final @Advice.Origin Method method) {
-    RequestCost annotation = method.getAnnotation(RequestCost.class);
-    Logger.info(RequestCostAdvice.class, "OnMethodEnter: " + method.getName());
-    if (annotation != null) {
-      int cost = annotation.increment();
-      RequestCostApi.getInstance().incrementCost(cost);
+    @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
+    public static void enter(
+            final @Advice.Origin Method method,
+            final @Advice.AllArguments Object[] args
+    ) {
+        RequestCost annotation = method.getAnnotation(RequestCost.class);
+        if (annotation != null) {
+            String callingMethod = method.getDeclaringClass().getSimpleName() + "." + method.getName();
+            int cost = annotation.increment();
+            Logger.debug(RequestCostAdvice.class,
+                    () -> "cost:" + callingMethod + " : "
+                            + annotation.increment());
+            APILocator.getRequestCostAPI().incrementCost(cost, method, args);
+        }
 
     }
-
-  }
 
 
 }

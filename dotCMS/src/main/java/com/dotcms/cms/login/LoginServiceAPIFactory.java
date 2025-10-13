@@ -1,5 +1,10 @@
 package com.dotcms.cms.login;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import static com.dotmarketing.util.Constants.RESPECT_FRONT_END_ROLES;
+import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
+
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -10,6 +15,7 @@ import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.cost.RequestCost;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -21,12 +27,10 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -52,13 +56,6 @@ import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.InstancePool;
 import io.vavr.Lazy;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -70,11 +67,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
-import static com.dotmarketing.util.Constants.RESPECT_FRONT_END_ROLES;
-import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Login Service Factory that allows developers to inject custom login services.
@@ -270,6 +268,7 @@ public class LoginServiceAPIFactory implements Serializable {
         
         @CloseDBIfOpened
         @Override
+        @RequestCost(increment = 2)
         public boolean doActionLogin(String userId,
                                      final String password,
                                      final boolean rememberMe,

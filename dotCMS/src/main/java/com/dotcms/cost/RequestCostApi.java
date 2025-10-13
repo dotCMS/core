@@ -1,89 +1,110 @@
 package com.dotcms.cost;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import io.vavr.Lazy;
-import javax.servlet.ServletResponse;
+
+import io.vavr.Tuple2;
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+
 
 /**
  * API for interacting with the request cost tracking system. This API is implemented as a singleton to ensure
  * consistent access to the request cost functionality throughout the application.
  */
-public class RequestCostApi {
+public interface RequestCostApi {
 
-  private static final String COST_HEADER_NAME = "X-Request-Cost";
-  private static final ThreadLocal<Integer> requestCost = ThreadLocal.withInitial(() -> -1);
+    // Reqye
+    public final static String REQUEST_COST_HEADER_NAME = "X-Request-Cost";
 
-  // Singleton instance
-  private static final Lazy<RequestCostApi> INSTANCE = Lazy.of(RequestCostApi::new);
+    public final static String REQUEST_COST_ATTRIBUTE = "dotRequestCost";
 
-  /**
-   * Private constructor to prevent direct instantiation.
-   */
-  private RequestCostApi() {
-    // Private constructor to enforce singleton pattern
-  }
+    // this is the url parameter that needs to be set in order to show an accounting report
+    public final static String REQUEST_COST_FULL_ACCOUNTING = "dotRequestAccounting";
 
-  /**
-   * Get the singleton instance of the RequestCostApi.
-   *
-   * @return The singleton instance
-   */
-  public static RequestCostApi getInstance() {
-    return INSTANCE.get();
-  }
+    // Map Keys for full Accounting
+    public final static String COST = "cost";
+    public final static String METHOD = "method";
+    public final static String CLASS = "class";
+    public final static String ARGS = "args";
 
-  /**
-   * Increment the current request's cost in a thread-safe manner.
-   *
-   * @param delta The cost to add
-   */
-  public void incrementCost(int delta) {
-    if (requestCost.get() < 0) {
-      return;
-    }
 
-    requestCost.set(requestCost.get() + delta);
+    /**
+     * Returns the current load of the system. The first value is the current number of requests in the system. The
+     * second value is the sum of the current cost for all the requests.
+     *
+     * @return
+     */
+    Tuple2<Long, Long> totalLoadGetAndReset();
 
-    // set as a request attribute as well.
-    if (HttpServletRequestThreadLocal.INSTANCE.getRequest() != null) {
-      HttpServletRequestThreadLocal.INSTANCE.getRequest().setAttribute("dotRequestCost", requestCost.get());
-    }
+    /**
+     * Returns the current Accounting list for the request
+     *
+     * @param request
+     * @return
+     */
+    List<Map<String, Object>> getAccountList(HttpServletRequest request);
 
-  }
+    /**
+     * Returns true if the request is in full accounting mode
+     *
+     * @param request
+     * @return
+     */
+    boolean isFullAccounting(HttpServletRequest request);
 
-  /**
-   * Get the current cost for the request.
-   *
-   * @return The current cost value
-   */
-  public int getCurrentCost() {
-    return requestCost.get();
-  }
 
-  public void initAccounting() {
-    requestCost.set(0);
-  }
+    /**
+     * Increment the cost for the current request
+     *
+     * @param increment
+     * @param method
+     * @param args
+     */
+    void incrementCost(int increment, @NotNull Method method, @NotNull Object[] args);
 
-  public void removeCost() {
-    requestCost.remove();
-  }
+    /**
+     * Increment the cost for the current request
+     *
+     * @param increment
+     * @param clazz
+     * @param method
+     * @param args
+     */
+    void incrementCost(int increment, @NotNull Class clazz, @NotNull String method, @NotNull Object[] args);
 
-  public void addCostHeader(ServletResponse response) {
-    if (!HttpServletResponse.class.isAssignableFrom(response.getClass())) {
-      return;
-    }
-    try {
-      if (requestCost.get() < 0 || response.isCommitted()
-          || ((HttpServletResponse) response).getHeader(COST_HEADER_NAME) != null) {
-        return;
-      }
-      ((HttpServletResponse) response).setHeader(COST_HEADER_NAME, String.valueOf(getCurrentCost()));
-    } finally {
-      removeCost();
-    }
+    /**
+     * Returns the current cost for the current request.
+     *
+     * @return
+     */
+    int getRequestCost(HttpServletRequest request);
 
-  }
+    /**
+     * Initializes the accounting system for the current request with fullAccounting set to false
+     */
+    void initAccounting(HttpServletRequest request);
 
+    /**
+     * Initializes the accounting system for the current request.
+     *
+     * @param request
+     * @param fullAccounting
+     */
+    void initAccounting(HttpServletRequest request, boolean fullAccounting);
+
+    /**
+     * Clears the accounting system for the current request.
+     */
+    void endAccounting(HttpServletRequest request);
+
+    /**
+     * Adds the current cost to the response header.
+     *
+     * @param response
+     */
+    void addCostHeader(HttpServletRequest request, HttpServletResponse response);
 
 }
