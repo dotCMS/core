@@ -222,6 +222,7 @@ export class DotContentDriveShellComponent {
      * Handles drag start event on a content item
      */
     protected onDragStart(event: DotContentDriveItem[]) {
+        this.#store.patchContextMenu({ triggeredEvent: null, contentlet: null });
         this.#store.setDragItems(event);
     }
 

@@ -17,7 +17,7 @@ import {
     DotTreeFolderComponent
 } from '@dotcms/portlets/content-drive/ui';
 
-import { SUCCESS_MESSAGE_LIFE } from '../../shared/constants';
+import { MOVE_TO_FOLDER_WORKFLOW_ACTION_ID, SUCCESS_MESSAGE_LIFE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 
@@ -112,17 +112,8 @@ export class DotContentDriveSidebarComponent {
      * @param {DotContentDriveMoveItems} event - The move items event
      */
     protected moveItemsToFolder(event: DotContentDriveMoveItems): void {
-        const dragItems = this.#store.dragItems().map((item) => item.inode);
-
-        const path = event.targetFolder.path.length > 0 ? event.targetFolder.path : '/';
-
-        const pathToMove = `//${event.targetFolder.hostname}${path}`;
-
-        const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
-
-        const folderName = cleanPath.length > 0 ? cleanPath : pathToMove;
-
-        const assetCount = dragItems.length;
+        const { folderName, assetCount, pathToMove, dragItemsInodes } =
+            this.#getMoveMetadata(event);
 
         this.#messageService.add({
             severity: 'info',
@@ -149,8 +140,8 @@ export class DotContentDriveSidebarComponent {
                         _path_to_move: pathToMove
                     }
                 },
-                contentletIds: dragItems,
-                workflowActionId: 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324' //Move to folder action
+                contentletIds: dragItemsInodes,
+                workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
             })
             .subscribe(({ successCount }) => {
                 this.#messageService.add({
@@ -168,5 +159,24 @@ export class DotContentDriveSidebarComponent {
                 this.#store.cleanDragItems();
                 this.#store.loadItems();
             });
+    }
+
+    #getMoveMetadata(event: DotContentDriveMoveItems) {
+        const dragItemsInodes = this.#store.dragItems().map((item) => item.inode);
+
+        const path = event.targetFolder.path?.length > 0 ? event.targetFolder.path : '/';
+
+        const pathToMove = `//${event.targetFolder.hostname}${path}`;
+
+        const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
+
+        const folderName = cleanPath?.length > 0 ? cleanPath : pathToMove;
+
+        return {
+            pathToMove: pathToMove,
+            folderName: folderName,
+            assetCount: dragItemsInodes.length,
+            dragItemsInodes
+        };
     }
 }

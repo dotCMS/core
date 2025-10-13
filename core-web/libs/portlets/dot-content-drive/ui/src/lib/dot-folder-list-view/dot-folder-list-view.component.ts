@@ -196,7 +196,7 @@ export class DotFolderListViewComponent {
         if (totalCount > 1) {
             const badge = document.createElement('div');
             badge.className = 'drag-image-badge';
-            badge.textContent = String(totalCount);
+            badge.textContent = totalCount.toString();
             container.appendChild(badge);
         }
 
