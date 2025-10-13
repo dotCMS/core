@@ -347,6 +347,46 @@ describe('DotFolderListViewComponent', () => {
         });
     });
 
+    describe('Selection Management', () => {
+        it('should clear selected items when items input changes', () => {
+            const firstItem = mockItems[0];
+            const secondItem = mockItems[1];
+
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            // Set some selected items
+            spectator.component.selectedItems = [firstItem, secondItem];
+            expect(spectator.component.selectedItems.length).toBe(2);
+
+            // Change items input
+            const newItems = [mockItems[2], mockItems[3]];
+            spectator.setInput('items', newItems);
+            spectator.detectChanges();
+
+            // Selected items should be cleared
+            expect(spectator.component.selectedItems).toEqual([]);
+        });
+
+        it('should clear selected items even when items array is empty', () => {
+            const firstItem = mockItems[0];
+
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            // Set some selected items
+            spectator.component.selectedItems = [firstItem];
+            expect(spectator.component.selectedItems.length).toBe(1);
+
+            // Change to empty items
+            spectator.setInput('items', []);
+            spectator.detectChanges();
+
+            // Selected items should be cleared
+            expect(spectator.component.selectedItems).toEqual([]);
+        });
+    });
+
     describe('Drag Events', () => {
         const firstItem = mockItems[0];
         const secondItem = mockItems[1];

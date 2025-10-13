@@ -79,6 +79,14 @@ export class DotFolderListViewComponent {
     });
 
     /**
+     * Effect that cleans the selected items when the items change
+     */
+    protected readonly $cleanSelectedItems = effect(() => {
+        this.$items();
+        this.selectedItems = [];
+    });
+
+    /**
      * Handles right click on a content item to show context menu
      * @param event The mouse event
      * @param contentlet The content item that was right clicked
