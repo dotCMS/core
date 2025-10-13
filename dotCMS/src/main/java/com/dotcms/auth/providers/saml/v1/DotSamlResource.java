@@ -31,6 +31,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -264,6 +265,8 @@ public class DotSamlResource implements Serializable {
 					// Add session based user ID to be used on the redirect.
 					session.setAttribute(identityProviderConfiguration.getId() + DotSamlConstants.SAML_USER_ID, user.getUserId());
 
+					String queryString = (String) session.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
+
 					String loginPath = httpServletRequest.getParameter("RelayState");
 					Logger.debug(this, "RelayState, LoginPath: " + loginPath);
 					if (!UtilMethods.isSet(loginPath)) {
@@ -288,6 +291,8 @@ public class DotSamlResource implements Serializable {
 							session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 						}
 					}
+
+					loginPath = loginPath.contains("dotAdmin") ? loginPath : loginPath + "?" + queryString;
 
 					Logger.debug(this, ()-> "Doing login to the user " + (user != null? user.getEmailAddress() : "unknown"));
 					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
