@@ -1,0 +1,312 @@
+package com.dotcms.cost;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import com.dotcms.UnitTestBase;
+import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockParameterRequest;
+import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
+import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
+import com.dotmarketing.business.APILocator;
+import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
+import java.util.Collection;
+import javax.servlet.FilterChain;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.Before;
+import org.junit.Test;
+
+/**
+ * Unit tests for {@link RequestCostFilter}. Tests the filter's behavior in normal and full accounting modes, response
+ * wrapper functionality, and header injection.
+ *
+ * @author Will Ezell
+ * @since Oct 13th, 2024
+ */
+public class RequestCostFilterTest extends UnitTestBase {
+
+    private RequestCostFilter filter;
+    private RequestCostApi requestCostApi;
+    private HttpServletRequest request;
+    private HttpServletResponse response;
+    private FilterChain filterChain;
+
+    @Before
+    public void setUp() {
+        filter = new RequestCostFilter();
+        requestCostApi = APILocator.getRequestCostAPI();
+        request = new MockParameterRequest(
+                new MockAttributeRequest(
+                        new MockHeaderRequest(
+                                new FakeHttpRequest("localhost", "/test").request())));
+        response = new MockHttpStatusAndHeadersResponse(new MockHttpResponse().response());
+        filterChain = mock(FilterChain.class);
+    }
+
+    /**
+     * Test: {@link RequestCostFilter#doFilter} in normal mode Should: Add cost header and pass through filter chain
+     * Expected: Header is added, chain continues, no report generated
+     */
+    @Test
+    public void test_doFilter_normalMode_shouldAddHeaderAndContinue() throws Exception {
+        // Given
+        requestCostApi.initAccounting(request);
+        requestCostApi.incrementCost(10, RequestCostFilterTest.class, "testMethod", new Object[]{});
+
+        // When
+        filter.doFilter(request, response, filterChain);
+
+        // Then
+        verify(filterChain, times(1)).doFilter(eq(request), any(HttpServletResponse.class));
+        String costHeader = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
+        assertNotNull("Cost header should be set", costHeader);
+        assertTrue("Cost should be at least 10", Integer.parseInt(costHeader) >= 10);
+    }
+
+    /**
+     * Test: {@link RequestCostFilter#doFilter} with full accounting mode Should: Generate HTML report instead of normal
+     * response Expected: Report is written to response, content type is text/html
+     */
+    @Test
+    public void test_doFilter_fullAccountingMode_shouldGenerateReport() throws Exception {
+        // Given
+        requestCostApi.initAccounting(request, true);
+        requestCostApi.incrementCost(5, RequestCostFilterTest.class, "method1", new Object[]{"arg1"});
+        requestCostApi.incrementCost(3, RequestCostFilterTest.class, "method2", new Object[]{"arg2"});
+
+        StringWriter stringWriter = new StringWriter();
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        MockHttpWriterCaptureResponse mockResponse = new MockHttpWriterCaptureResponse(response);
+
+        // When
+        filter.doFilter(request, mockResponse, filterChain);
+
+        // Then
+        verify(filterChain, times(1)).doFilter(eq(request), any(HttpServletResponse.class));
+
+        String output = mockResponse.getWriterContent();
+
+        assertTrue("Output should contain HTML", output.contains("<html>"));
+        assertTrue("Output should contain title", output.contains("Request Accounting"));
+        assertTrue("Output should contain table", output.contains("<table"));
+        assertTrue("Output should contain total cost", output.contains("Total:"));
+    }
+
+    /**
+     * Test: {@link RequestCostFilter#init} Should: Initialize without error Expected: No exceptions thrown
+     */
+    @Test
+    public void test_init_shouldNotFail() {
+        // When/Then - should not throw
+        filter.init(null);
+    }
+
+    /**
+     * Test: {@link RequestCostFilter#destroy} Should: Cleanup without error Expected: No exceptions thrown
+     */
+    @Test
+    public void test_destroy_shouldNotFail() {
+        // When/Then - should not throw
+        filter.destroy();
+    }
+
+    /**
+     * Test: RequestCostResponseWrapper.containsHeader Should: Return true for cost header Expected: Always returns true
+     * for X-Request-Cost
+     */
+    @Test
+    public void test_responseWrapper_containsHeader_shouldReturnTrueForCostHeader() throws Exception {
+        // Given
+        requestCostApi.initAccounting(request);
+        final boolean[] wrapperTested = {false};
+
+        FilterChain testChain = (req, res) -> {
+            HttpServletRequest request = (HttpServletRequest) req;
+            HttpServletResponse response = (HttpServletResponse) res;
+            // Test the wrapper
+            assertTrue("Should contain cost header", response.containsHeader(RequestCostApi.REQUEST_COST_HEADER_NAME));
+            assertTrue("Should contain cost header (case insensitive)", response.containsHeader("x-request-cost"));
+            wrapperTested[0] = true;
+        };
+
+        // When
+        filter.doFilter(request, response, testChain);
+
+        // Then
+        assertTrue("Wrapper should have been tested", wrapperTested[0]);
+    }
+
+    /**
+     * Test: RequestCostResponseWrapper.getHeader Should: Return current cost for cost header Expected: Returns string
+     * representation of current cost
+     */
+    @Test
+    public void test_responseWrapper_getHeader_shouldReturnCurrentCost() throws Exception {
+        // Given
+        requestCostApi.initAccounting(request);
+        requestCostApi.incrementCost(42, RequestCostFilterTest.class, "method", new Object[]{});
+
+        final boolean[] wrapperTested = {false};
+
+        FilterChain testChain = (req, res) -> {
+            HttpServletRequest request = (HttpServletRequest) req;
+            HttpServletResponse response = (HttpServletResponse) res;
+            String costHeader = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
+            assertNotNull("Cost header should not be null", costHeader);
+            int cost = Integer.parseInt(costHeader);
+            assertTrue("Cost should be at least 42", cost >= 42);
+            wrapperTested[0] = true;
+        };
+
+        // When
+        filter.doFilter(request, response, testChain);
+
+        // Then
+        assertTrue("Wrapper should have been tested", wrapperTested[0]);
+    }
+
+    /**
+     * Test: RequestCostResponseWrapper.getHeaders Should: Return collection with cost value Expected: Collection
+     * contains current cost
+     */
+    @Test
+    public void test_responseWrapper_getHeaders_shouldReturnCostCollection() throws Exception {
+        // Given
+        requestCostApi.initAccounting(request);
+        requestCostApi.incrementCost(25, RequestCostFilterTest.class, "method", new Object[]{});
+
+        final boolean[] wrapperTested = {false};
+
+        FilterChain testChain = (req, res) -> {
+            HttpServletRequest request = (HttpServletRequest) req;
+            HttpServletResponse response = (HttpServletResponse) res;
+
+            Collection<String> headers = response.getHeaders(RequestCostApi.REQUEST_COST_HEADER_NAME);
+            assertNotNull("Headers collection should not be null", headers);
+            assertEquals("Should have exactly one header value", 1, headers.size());
+            String costValue = headers.iterator().next();
+            int cost = Integer.parseInt(costValue);
+            assertTrue("Cost should be at least 25", cost >= 25);
+            wrapperTested[0] = true;
+        };
+
+        // When
+        filter.doFilter(request, response, testChain);
+
+        // Then
+        assertTrue("Wrapper should have been tested", wrapperTested[0]);
+    }
+
+    /**
+     * Test: RequestCostResponseWrapper.getHeaderNames Should: Include cost header in names collection Expected:
+     * Collection contains X-Request-Cost
+     */
+    @Test
+    public void test_responseWrapper_getHeaderNames_shouldIncludeCostHeader() throws Exception {
+        // Given
+        requestCostApi.initAccounting(request);
+
+        final boolean[] wrapperTested = {false};
+
+        FilterChain testChain = (req, res) -> {
+            HttpServletResponse response = (HttpServletResponse) res;
+            Collection<String> headerNames = response.getHeaderNames();
+            assertNotNull("Header names should not be null", headerNames);
+            assertTrue("Should contain cost header",
+                    headerNames.stream().anyMatch(name ->
+                            RequestCostApi.REQUEST_COST_HEADER_NAME.equalsIgnoreCase(name)));
+            wrapperTested[0] = true;
+        };
+
+        // When
+        filter.doFilter(request, response, testChain);
+
+        // Then
+        assertTrue("Wrapper should have been tested", wrapperTested[0]);
+    }
+
+    /**
+     * Test: Filter adds cost header before and after chain Should: Header is updated after chain execution Expected:
+     * Cost increases during chain execution
+     */
+    @Test
+    public void test_doFilter_shouldUpdateCostHeaderAfterChain() throws Exception {
+        // Given
+        requestCostApi.initAccounting(request);
+        final int[] costBeforeChain = {0};
+        final int[] costAfterChain = {0};
+
+        FilterChain testChain = (req, res) -> {
+            // Capture cost before chain completes
+            HttpServletResponse response = (HttpServletResponse) res;
+            String headerBefore = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
+            costBeforeChain[0] = Integer.parseInt(headerBefore);
+
+            // Add more cost during chain execution
+            requestCostApi.incrementCost(50, RequestCostFilterTest.class, "chainMethod", new Object[]{});
+        };
+
+        // When
+        filter.doFilter(request, response, testChain);
+
+        // Then
+        String headerAfter = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
+        costAfterChain[0] = Integer.parseInt(headerAfter);
+
+        assertTrue("Cost after chain should be greater than before",
+                costAfterChain[0] > costBeforeChain[0]);
+    }
+
+    /**
+     * Test: Filter with zero cost Should: Handle zero cost gracefully Expected: Header is set with value 0 or higher
+     */
+    @Test
+    public void test_doFilter_withZeroCost_shouldNotFail() throws Exception {
+        // Given
+        requestCostApi.initAccounting(request);
+        // Don't add any cost
+
+        // When
+        filter.doFilter(request, response, filterChain);
+
+        // Then
+        String costHeader = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
+        assertNotNull("Cost header should be set even with zero cost", costHeader);
+        int cost = Integer.parseInt(costHeader);
+        assertTrue("Cost should be non-negative", cost >= 0);
+    }
+
+    /**
+     * Test: Filter with exception in chain Should: Still add cost header before exception propagates Expected: Header
+     * is set, exception is propagated
+     */
+    @Test(expected = RuntimeException.class)
+    public void test_doFilter_withExceptionInChain_shouldStillAddHeader() throws Exception {
+        // Given
+        requestCostApi.initAccounting(request);
+        FilterChain throwingChain = (req, res) -> {
+            throw new RuntimeException("Test exception");
+        };
+
+        // When/Then - should throw but header should be set first
+        try {
+            filter.doFilter(request, response, throwingChain);
+        } finally {
+            // Verify header was set before exception
+            String costHeader = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
+            assertNotNull("Cost header should be set even when exception occurs", costHeader);
+        }
+    }
+}
