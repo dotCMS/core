@@ -34,6 +34,7 @@ describe('DotHistoryTimelineItemComponent', () => {
         live: true,
         modDate: Date.now() - 86400000,
         modUser: 'admin@dotcms.com',
+        modUserName: 'admin@dotcms.com',
         title: 'Test Content Item',
         working: false
     };
