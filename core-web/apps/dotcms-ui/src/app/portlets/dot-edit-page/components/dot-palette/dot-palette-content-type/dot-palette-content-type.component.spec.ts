@@ -16,7 +16,7 @@ import { DotPaletteContentTypeComponent } from './dot-palette-content-type.compo
 
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotFilterPipeModule } from '../../../../../view/pipes/dot-filter/dot-filter-pipe.module';
-import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
+import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 export const contentTypeDataMock = [
     {
@@ -91,12 +91,12 @@ describe('DotPaletteContentTypeComponent', () => {
             declarations: [TestHostComponent],
             imports: [
                 DotPaletteContentTypeComponent,
+                DotPaletteInputFilterComponent,
                 DotIconComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotFilterPipeModule,
                 FormsModule,
-                DotPaletteInputFilterModule,
                 HttpClientTestingModule
             ],
             providers: [

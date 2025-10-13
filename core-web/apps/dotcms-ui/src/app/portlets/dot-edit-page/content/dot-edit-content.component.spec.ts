@@ -107,7 +107,7 @@ import { DotOverlayMaskModule } from '../../../view/components/_common/dot-overl
 import { DotWizardComponent } from '../../../view/components/_common/dot-wizard/dot-wizard.component';
 import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotPaletteComponent } from '../components/dot-palette/dot-palette.component';
@@ -218,6 +218,16 @@ export class MockDotPaletteComponent {
     @Input() allowedContent: string[];
 }
 
+@Component({
+    selector: 'dot-reorder-menu',
+    template: '',
+    standalone: false
+})
+export class MockDotReorderMenuComponent {
+    @Input() url = '';
+    @Output() shutdown = new EventEmitter<void>();
+}
+
 const mockRenderedPageState = new DotPageRenderState(
     mockUser(),
     new DotPageRender(mockDotRenderedPage()),
@@ -284,6 +294,7 @@ describe('DotEditContentComponent', () => {
                 MockDotEditPageToolbarComponent,
                 MockDotIconComponent,
                 MockDotPaletteComponent,
+                MockDotReorderMenuComponent,
                 HostTestComponent,
                 MockGlobalMessageComponent,
                 MockDotEditPageToolbarSeoComponent
@@ -293,7 +304,7 @@ describe('DotEditContentComponent', () => {
                 BrowserAnimationsModule,
                 ButtonModule,
                 DialogModule,
-                DotContentletEditorModule,
+                DotEditContentletComponent,
                 DotEditPageInfoModule,
                 DotLoadingIndicatorModule,
                 DotEditPageWorkflowsActionsModule,
@@ -442,7 +453,9 @@ describe('DotEditContentComponent', () => {
                 LoggerService,
                 StringUtils,
                 ApiRoot,
-                UserModel
+                UserModel,
+                DotContentletEditorService,
+                IframeOverlayService
             ]
         });
 

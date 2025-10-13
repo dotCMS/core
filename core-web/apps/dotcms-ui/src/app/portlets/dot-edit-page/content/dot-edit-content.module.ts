@@ -41,7 +41,7 @@ import { DotOverlayMaskModule } from '../../../view/components/_common/dot-overl
 import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
-import { DotPaletteModule } from '../components/dot-palette/dot-palette.module';
+import { DotPaletteComponent } from '../components/dot-palette/dot-palette.component';
 import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
 const routes: Routes = [
     {
@@ -70,7 +70,7 @@ const routes: Routes = [
         DotEditPageViewAsControllerModule,
         DotEditPageStateControllerModule,
         DotOverlayMaskModule,
-        DotPaletteModule,
+        DotPaletteComponent,
         DotIconComponent,
         DotEditPageToolbarSeoComponent,
         DotShowHideFeatureDirective,
