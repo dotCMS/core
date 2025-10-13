@@ -191,3 +191,11 @@ params:
     hint: |
       See ....
     required: false
+  buttonParam:
+    hidden: false
+    type: "BUTTON"
+    label: "Load Default Custom AI Provider Settings"
+    hint: "Click me if the custom ai provider field is empty to load the vendors/models template"
+    required: true
+    value: "/api/v1/ai/configuration/_loadcustomproviders/$siteId"
+

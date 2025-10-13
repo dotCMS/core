@@ -2460,6 +2460,27 @@ paths:
       summary: Generate AI completions from raw prompt
       tags:
       - AI
+  /v1/ai/configuration/_loadcustomproviders/{siteId}:
+    get:
+      operationId: loadCustomProviders
+      parameters:
+      - description: |+
+          Identifier of site to populate the advanceProviderSettings.
+
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: default response
+      tags:
+      - AI
   /v1/ai/embeddings:
     delete:
       operationId: delete
