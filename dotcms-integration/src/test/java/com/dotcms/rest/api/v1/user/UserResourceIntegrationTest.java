@@ -35,8 +35,10 @@ import org.glassfish.jersey.internal.util.Base64;
 import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -367,10 +369,10 @@ public class UserResourceIntegrationTest {
         assertNotNull("Should have test host permissions", hostPerm);
         assertEquals(permissionTestHost.getHostname(), hostPerm.getName());
 
-        Map<String, List<String>> perms = hostPerm.getPermissions();
+        Map<String, Set<String>> perms = hostPerm.getPermissions();
         assertNotNull(perms);
 
-        List<String> individualPerms = perms.get("INDIVIDUAL");
+        Set<String> individualPerms = perms.get("INDIVIDUAL");
         assertNotNull(individualPerms);
         assertTrue(individualPerms.contains("READ"));
         assertTrue(individualPerms.contains("WRITE"));
@@ -386,8 +388,8 @@ public class UserResourceIntegrationTest {
             .orElse(null);
 
         assertNotNull("Should have folder1 permissions", folder1Perm);
-        Map<String, List<String>> perms1 = folder1Perm.getPermissions();
-        List<String> individualPerms1 = perms1.get("INDIVIDUAL");
+        Map<String, Set<String>> perms1 = folder1Perm.getPermissions();
+        Set<String> individualPerms1 = perms1.get("INDIVIDUAL");
         assertTrue(individualPerms1.contains("READ"));
         assertTrue(individualPerms1.contains("WRITE"));
         assertTrue(individualPerms1.contains("CAN_ADD_CHILDREN"));
@@ -400,8 +402,8 @@ public class UserResourceIntegrationTest {
             .orElse(null);
 
         assertNotNull("Should have folder2 permissions", folder2Perm);
-        Map<String, List<String>> perms2 = folder2Perm.getPermissions();
-        List<String> individualPerms2 = perms2.get("INDIVIDUAL");
+        Map<String, Set<String>> perms2 = folder2Perm.getPermissions();
+        Set<String> individualPerms2 = perms2.get("INDIVIDUAL");
         assertTrue(individualPerms2.contains("READ"));
         assertFalse(individualPerms2.contains("WRITE"));
     }
@@ -413,8 +415,8 @@ public class UserResourceIntegrationTest {
         HttpServletRequest request = mockRequest();
 
         // Create form with READ, WRITE, PUBLISH permissions
-        Map<String, List<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", List.of("READ", "WRITE", "PUBLISH"));
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Set.of("READ", "WRITE", "PUBLISH"));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         // Execute PUT
@@ -432,10 +434,10 @@ public class UserResourceIntegrationTest {
         // Verify asset in response
         UserPermissionAsset asset = data.getAsset();
         assertEquals(updateTestHost.getIdentifier(), asset.getId());
-        List<String> individualPerms = asset.getPermissions().get("INDIVIDUAL");
+        Set<String> individualPerms = asset.getPermissions().get("INDIVIDUAL");
         assertNotNull(individualPerms);
         assertEquals(3, individualPerms.size());
-        assertTrue(individualPerms.containsAll(List.of("READ", "WRITE", "PUBLISH")));
+        assertTrue(individualPerms.containsAll(Set.of("READ", "WRITE", "PUBLISH")));
 
         // END-TO-END: Verify via GET API
         ResponseEntityUserPermissionsView getResponse = resource.getUserPermissions(
@@ -447,8 +449,8 @@ public class UserResourceIntegrationTest {
                 .findFirst()
                 .orElse(null);
         assertNotNull("Host asset should be in GET response", hostAsset);
-        List<String> getPerms = hostAsset.getPermissions().get("INDIVIDUAL");
-        assertTrue("GET should show all 3 permissions", getPerms.containsAll(List.of("READ", "WRITE", "PUBLISH")));
+        Set<String> getPerms = hostAsset.getPermissions().get("INDIVIDUAL");
+        assertTrue("GET should show all 3 permissions", getPerms.containsAll(Set.of("READ", "WRITE", "PUBLISH")));
     }
 
     @Test
@@ -456,10 +458,10 @@ public class UserResourceIntegrationTest {
         HttpServletRequest request = mockRequest();
 
         // Create form with INDIVIDUAL, HOST, and FOLDER scopes
-        Map<String, List<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", List.of("READ", "WRITE"));
-        permissions.put("HOST", List.of("READ"));
-        permissions.put("FOLDER", List.of("READ", "CAN_ADD_CHILDREN"));
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Set.of("READ", "WRITE"));
+        permissions.put("HOST", Set.of("READ"));
+        permissions.put("FOLDER", Set.of("READ", "CAN_ADD_CHILDREN"));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         // Execute PUT on folder
@@ -473,19 +475,19 @@ public class UserResourceIntegrationTest {
         UserPermissionAsset asset = data.getAsset();
 
         // Verify all 3 scopes present
-        Map<String, List<String>> permMap = asset.getPermissions();
+        Map<String, Set<String>> permMap = asset.getPermissions();
         assertTrue("Should have INDIVIDUAL scope", permMap.containsKey("INDIVIDUAL"));
         assertTrue("Should have HOST scope", permMap.containsKey("HOST"));
         assertTrue("Should have FOLDER scope", permMap.containsKey("FOLDER"));
 
         // Verify INDIVIDUAL permissions
-        assertTrue(permMap.get("INDIVIDUAL").containsAll(List.of("READ", "WRITE")));
+        assertTrue(permMap.get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE")));
 
         // Verify HOST permissions
         assertTrue(permMap.get("HOST").contains("READ"));
 
         // Verify FOLDER permissions
-        assertTrue(permMap.get("FOLDER").containsAll(List.of("READ", "CAN_ADD_CHILDREN")));
+        assertTrue(permMap.get("FOLDER").containsAll(Set.of("READ", "CAN_ADD_CHILDREN")));
 
         // END-TO-END: Verify via GET API
         ResponseEntityUserPermissionsView getResponse = resource.getUserPermissions(
@@ -497,7 +499,7 @@ public class UserResourceIntegrationTest {
                 .findFirst()
                 .orElse(null);
         assertNotNull("Folder asset should be in GET response", folderAsset);
-        assertTrue("GET should show all scopes", folderAsset.getPermissions().keySet().containsAll(List.of("INDIVIDUAL", "HOST", "FOLDER")));
+        assertTrue("GET should show all scopes", folderAsset.getPermissions().keySet().containsAll(Set.of("INDIVIDUAL", "HOST", "FOLDER")));
     }
 
     @Test
@@ -509,8 +511,8 @@ public class UserResourceIntegrationTest {
                 APILocator.getPermissionAPI().isInheritingPermissions(childFolder));
 
         // Execute PUT on inheriting folder
-        Map<String, List<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", List.of("READ", "WRITE"));
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Set.of("READ", "WRITE"));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         ResponseEntitySaveUserPermissionsView response = resource.updateUserPermissions(
@@ -538,7 +540,7 @@ public class UserResourceIntegrationTest {
         assertNotNull("Child folder should have individual permissions", childAsset);
         assertFalse("Child should not be inheriting", childAsset.isInheritsPermissions());
         assertTrue("Child should have READ and WRITE",
-                childAsset.getPermissions().get("INDIVIDUAL").containsAll(List.of("READ", "WRITE")));
+                childAsset.getPermissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE")));
     }
 
     @Test
@@ -550,8 +552,8 @@ public class UserResourceIntegrationTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         // Create form with cascade=true
-        Map<String, List<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", List.of("READ", "WRITE"));
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Set.of("READ", "WRITE"));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, true);
 
         // Execute PUT with cascade on parent host
@@ -573,8 +575,8 @@ public class UserResourceIntegrationTest {
         HttpServletRequest request = mockRequest();
 
         // Setup: Give user READ+WRITE+PUBLISH on updateTestHost (already has READ from setup)
-        Map<String, List<String>> setupPermissions = new HashMap<>();
-        setupPermissions.put("INDIVIDUAL", List.of("READ", "WRITE", "PUBLISH"));
+        Map<String, Set<String>> setupPermissions = new HashMap<>();
+        setupPermissions.put("INDIVIDUAL", Set.of("READ", "WRITE", "PUBLISH"));
         SaveUserPermissionsForm setupForm = new SaveUserPermissionsForm(setupPermissions, false);
         resource.updateUserPermissions(
                 request, this.response, updateTestUser.getUserId(), updateTestHost.getIdentifier(), setupForm
@@ -589,11 +591,11 @@ public class UserResourceIntegrationTest {
                 .findFirst()
                 .orElse(null);
         assertTrue("Setup should have all 3 permissions",
-                hostAsset1.getPermissions().get("INDIVIDUAL").containsAll(List.of("READ", "WRITE", "PUBLISH")));
+                hostAsset1.getPermissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE", "PUBLISH")));
 
         // Action: Update to ONLY READ (should remove WRITE and PUBLISH)
-        Map<String, List<String>> updatePermissions = new HashMap<>();
-        updatePermissions.put("INDIVIDUAL", List.of("READ"));
+        Map<String, Set<String>> updatePermissions = new HashMap<>();
+        updatePermissions.put("INDIVIDUAL", Set.of("READ"));
         SaveUserPermissionsForm updateForm = new SaveUserPermissionsForm(updatePermissions, false);
 
         ResponseEntitySaveUserPermissionsView response = resource.updateUserPermissions(
@@ -603,7 +605,7 @@ public class UserResourceIntegrationTest {
         // Assert: Should have ONLY READ (replacement not merge)
         assertNotNull(response);
         UserPermissionAsset asset = response.getEntity().getAsset();
-        List<String> resultPerms = asset.getPermissions().get("INDIVIDUAL");
+        Set<String> resultPerms = asset.getPermissions().get("INDIVIDUAL");
         assertEquals("Should have only 1 permission", 1, resultPerms.size());
         assertTrue("Should have READ", resultPerms.contains("READ"));
         assertFalse("Should NOT have WRITE", resultPerms.contains("WRITE"));
@@ -617,7 +619,7 @@ public class UserResourceIntegrationTest {
                 .filter(a -> updateTestHost.getIdentifier().equals(a.getId()))
                 .findFirst()
                 .orElse(null);
-        List<String> getPerms = hostAsset2.getPermissions().get("INDIVIDUAL");
+        Set<String> getPerms = hostAsset2.getPermissions().get("INDIVIDUAL");
         assertEquals("GET should show only READ", 1, getPerms.size());
         assertTrue(getPerms.contains("READ"));
     }
@@ -627,8 +629,8 @@ public class UserResourceIntegrationTest {
         HttpServletRequest request = mockRequest();
 
         // Create form with invalid scope
-        Map<String, List<String>> permissions = new HashMap<>();
-        permissions.put("INVALID_SCOPE", List.of("READ"));
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("INVALID_SCOPE", Set.of("READ"));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         try {
@@ -649,8 +651,8 @@ public class UserResourceIntegrationTest {
         HttpServletRequest request = mockRequest();
 
         // Create form with invalid permission level
-        Map<String, List<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", List.of("INVALID_LEVEL"));
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Set.of("INVALID_LEVEL"));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         try {
@@ -683,8 +685,8 @@ public class UserResourceIntegrationTest {
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
 
         // Try to update another user's permissions
-        Map<String, List<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", List.of("READ"));
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Set.of("READ"));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         try {
@@ -706,8 +708,8 @@ public class UserResourceIntegrationTest {
         // This test verifies the asset-level permission check (new security fix)
 
         // Attempt: limitedUser tries to update their own permissions on updateTestHost
-        Map<String, List<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", List.of("READ", "WRITE"));
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Set.of("READ", "WRITE"));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         // Create request authenticated as limitedUser
@@ -735,8 +737,8 @@ public class UserResourceIntegrationTest {
     @Test
     public void test_updateUserPermissions_nullPermissionLevel_badRequest() throws Exception {
         // Create form with null permission level
-        Map<String, List<String>> permissions = new HashMap<>();
-        List<String> levels = new ArrayList<>();
+        Map<String, Set<String>> permissions = new HashMap<>();
+        Set<String> levels = new HashSet<>();
         levels.add("READ");
         levels.add(null);  // Invalid null level
         permissions.put("INDIVIDUAL", levels);
@@ -755,8 +757,8 @@ public class UserResourceIntegrationTest {
     @Test
     public void test_updateUserPermissions_emptyPermissionList_badRequest() throws Exception {
         // Create form with empty permission list
-        Map<String, List<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", List.of());  // Empty list
+        Map<String, Set<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Set.of());  // Empty list
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         try {

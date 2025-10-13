@@ -31,11 +31,13 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -47,6 +49,18 @@ import javax.inject.Named;
  */
 @ApplicationScoped
 public class UserPermissionHelper {
+
+    /**
+     * Maps permission names to their corresponding permission bits.
+     * Uses functional approach for clean mapping of permission names to bit operations.
+     */
+    private static final Map<String, Function<Integer, Integer>> PERMISSION_MAPPERS = Map.of(
+        "READ", bits -> bits | PermissionAPI.PERMISSION_READ,
+        "WRITE", bits -> bits | PermissionAPI.PERMISSION_WRITE,
+        "PUBLISH", bits -> bits | PermissionAPI.PERMISSION_PUBLISH,
+        "EDIT_PERMISSIONS", bits -> bits | PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+        "CAN_ADD_CHILDREN", bits -> bits | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
+    );
 
     private final PermissionAPI permissionAPI;
     private final HostAPI hostAPI;
@@ -188,7 +202,7 @@ public class UserPermissionHelper {
 
         final boolean inheritsPermissions = permissionAPI.isInheritingPermissions(asset);
 
-        final Map<String, List<String>> permissionMap = buildPermissionMap(permissions);
+        final Map<String, Set<String>> permissionMap = buildPermissionMap(permissions);
 
         return new UserPermissionAsset(id, type, name, path, hostId,
                                       canEditPermissions, inheritsPermissions, permissionMap);
@@ -197,7 +211,7 @@ public class UserPermissionHelper {
     /**
      * Groups permissions by type with permission names.
      */
-    public Map<String, List<String>> buildPermissionMap(final List<Permission> permissions) {
+    public Map<String, Set<String>> buildPermissionMap(final List<Permission> permissions) {
         if (permissions == null || permissions.isEmpty()) {
             return new HashMap<>();
         }
@@ -207,11 +221,9 @@ public class UserPermissionHelper {
                 p -> getModernPermissionType(p.getType()),
                 Collectors.mapping(
                     p -> convertBitsToPermissionNames(p.getPermission()),
-                    Collectors.flatMapping(List::stream, 
-                        Collectors.collectingAndThen(
-                            Collectors.toSet(),
-                            ArrayList::new
-                        ))
+                    Collectors.flatMapping(List::stream,
+                        Collectors.toSet()
+                    )
                 )
             ));
     }
@@ -276,17 +288,17 @@ public class UserPermissionHelper {
     /**
      * Returns all available permission levels that can be assigned.
      * These represent the different types of access (READ, WRITE, etc.).
-     * 
-     * @return List of permission level names
+     *
+     * @return Set of permission level names
      */
-    public List<String> getAvailablePermissionLevels() {
-        return convertBitsToPermissionNames(
-            PermissionAPI.PERMISSION_READ | 
+    public Set<String> getAvailablePermissionLevels() {
+        return new HashSet<>(convertBitsToPermissionNames(
+            PermissionAPI.PERMISSION_READ |
             PermissionAPI.PERMISSION_WRITE |
             PermissionAPI.PERMISSION_PUBLISH |
             PermissionAPI.PERMISSION_EDIT_PERMISSIONS |
             PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-        );
+        ));
     }
 
     public List<String> convertBitsToPermissionNames(final int permissionBits) {
@@ -315,10 +327,10 @@ public class UserPermissionHelper {
      * Converts permission level names to permission bit mask.
      * Inverse operation of convertBitsToPermissionNames().
      *
-     * @param permissionNames List of permission names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
+     * @param permissionNames Collection of permission names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
      * @return Combined permission bit mask
      */
-    public int convertPermissionNamesToBits(final List<String> permissionNames) {
+    public int convertPermissionNamesToBits(final Collection<String> permissionNames) {
         if (permissionNames == null || permissionNames.isEmpty()) {
             return 0;
         }
@@ -326,24 +338,13 @@ public class UserPermissionHelper {
         int permissionBits = 0;
 
         for (final String permissionName : permissionNames) {
-            switch (permissionName.toUpperCase()) {
-                case "READ":
-                    permissionBits |= PermissionAPI.PERMISSION_READ;
-                    break;
-                case "WRITE":
-                    permissionBits |= PermissionAPI.PERMISSION_WRITE;
-                    break;
-                case "PUBLISH":
-                    permissionBits |= PermissionAPI.PERMISSION_PUBLISH;
-                    break;
-                case "EDIT_PERMISSIONS":
-                    permissionBits |= PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
-                    break;
-                case "CAN_ADD_CHILDREN":
-                    permissionBits |= PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-                    break;
-                default:
-                    Logger.warn(this, "Unknown permission name: " + permissionName);
+            final String upperName = permissionName.toUpperCase();
+            final Function<Integer, Integer> mapper = PERMISSION_MAPPERS.get(upperName);
+
+            if (mapper != null) {
+                permissionBits = mapper.apply(permissionBits);
+            } else {
+                Logger.warn(this, "Unknown permission name: " + permissionName);
             }
         }
 
@@ -371,25 +372,25 @@ public class UserPermissionHelper {
      * Replicates RoleAjax.saveRolePermission() logic (lines 815-820).
      *
      * @param assetId The asset identifier (host identifier or folder inode)
-     * @param systemUser System user for lookups
+     * @param user User for lookups
      * @return The resolved Permissionable asset
      * @throws DotDataException if asset resolution fails
      * @throws DotSecurityException if security check fails
      */
-    public Permissionable resolveAsset(final String assetId, final User systemUser)
+    public Permissionable resolveAsset(final String assetId, final User user)
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, () -> "Resolving asset: " + assetId);
 
         // Try host first (line 815)
-        final Host host = hostAPI.find(assetId, systemUser, false);
+        final Host host = hostAPI.find(assetId, user, false);
         if (host != null) {
             Logger.debug(this, () -> "Asset resolved as Host: " + host.getHostname());
             return host;
         }
 
         // Try folder (lines 817-819)
-        final Folder folder = folderAPI.find(assetId, systemUser, false);
+        final Folder folder = folderAPI.find(assetId, user, false);
         if (folder != null && UtilMethods.isSet(() -> folder.getIdentifier())) {
             Logger.debug(this, () -> "Asset resolved as Folder: " + folder.getName());
             return folder;
@@ -447,11 +448,11 @@ public class UserPermissionHelper {
         }
 
         final List<Permission> permissionsToSave = new ArrayList<>();
-        final Map<String, List<String>> permissionMap = form.getPermissions();
+        final Map<String, Set<String>> permissionMap = form.getPermissions();
 
-        for (final Map.Entry<String, List<String>> entry : permissionMap.entrySet()) {
+        for (final Map.Entry<String, Set<String>> entry : permissionMap.entrySet()) {
             final String scope = entry.getKey();
-            final List<String> levels = entry.getValue();
+            final Set<String> levels = entry.getValue();
 
             if (levels == null || levels.isEmpty()) {
                 continue;
@@ -489,6 +490,12 @@ public class UserPermissionHelper {
         boolean cascadeInitiated = false;
         if (form.isCascade() && asset.isParentPermissionable()) {
             Logger.info(this, () -> String.format("Cascading permissions for asset %s", assetId));
+            // NOTE: Currently using legacy Quartz job pattern.
+            // TODO: Migrate to new JobProcessor pattern in future (separate ticket)
+            //       - Create CascadePermissionsProcessor implements JobProcessor
+            //       - Use JobQueueManagerAPI.createJob("cascadePermissions", params)
+            //       - Reference: ImportContentletsProcessor for implementation pattern
+            //       - Coordinate with migration of RoleAjax.java:888 and PermissionAjax.java:308
             CascadePermissionsJob.triggerJobImmediately(asset, userRole);
             cascadeInitiated = true;
         }

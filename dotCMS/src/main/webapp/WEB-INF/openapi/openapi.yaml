@@ -22864,7 +22864,7 @@ components:
           type: string
         type:
           type: string
-    PermissionMetadata:
+    PermissionMetadataView:
       type: object
       description: Permission metadata containing available levels and scopes in the
         system
@@ -22885,6 +22885,7 @@ components:
               and roles
             example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
               ]"
+          uniqueItems: true
         scopes:
           type: array
           description: Available permission scopes (asset types) that support permissions
@@ -24308,7 +24309,7 @@ components:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/PermissionMetadata"
+          $ref: "#/components/schemas/PermissionMetadataView"
         errors:
           type: array
           items:
@@ -25941,6 +25942,7 @@ components:
                 \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
                 \ CAN_ADD_CHILDREN)"
               example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\"],\"HOST\":[\"READ\"]}"
+            uniqueItems: true
           description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
             \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
             \ CAN_ADD_CHILDREN)"
@@ -27404,7 +27406,7 @@ components:
           additionalProperties:
             type: array
             description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
-              \ to arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ to sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
               \ CAN_ADD_CHILDREN)"
             example:
               HOST:
@@ -27416,12 +27418,13 @@ components:
             items:
               type: string
               description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
-                \ to arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+                \ to sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
                 \ CAN_ADD_CHILDREN)"
               example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"HOST\"\
                 :[\"READ\"]}"
+            uniqueItems: true
           description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
-            \ arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
             \ CAN_ADD_CHILDREN)"
           example:
             HOST:

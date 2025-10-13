@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.validation.constraints.NotNull;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,7 +25,7 @@ public class SaveUserPermissionsForm extends Validated {
         required = true
     )
     @NotNull(message = "permissions is required")
-    private final Map<String, List<String>> permissions;
+    private final Map<String, Set<String>> permissions;
 
     @JsonProperty("cascade")
     @Schema(
@@ -43,7 +42,7 @@ public class SaveUserPermissionsForm extends Validated {
      * @param cascade Whether to cascade permissions to children
      */
     public SaveUserPermissionsForm(
-        @JsonProperty("permissions") final Map<String, List<String>> permissions,
+        @JsonProperty("permissions") final Map<String, Set<String>> permissions,
         @JsonProperty("cascade") final boolean cascade
     ) {
         this.permissions = permissions;
@@ -55,7 +54,7 @@ public class SaveUserPermissionsForm extends Validated {
      *
      * @return Map of scopes to permission levels
      */
-    public Map<String, List<String>> getPermissions() {
+    public Map<String, Set<String>> getPermissions() {
         return permissions;
     }
 
@@ -79,15 +78,15 @@ public class SaveUserPermissionsForm extends Validated {
         // Validate against metadata API
         final UserPermissionHelper helper = new UserPermissionHelper();
         final Set<String> validScopes = helper.getAvailablePermissionScopes();
-        final List<String> validLevels = helper.getAvailablePermissionLevels();
+        final Set<String> validLevels = helper.getAvailablePermissionLevels();
 
-        for (final Map.Entry<String, List<String>> entry : permissions.entrySet()) {
+        for (final Map.Entry<String, Set<String>> entry : permissions.entrySet()) {
             final String scope = entry.getKey();
             if (!validScopes.contains(scope)) {
                 throw new BadRequestException("Invalid permission scope: " + scope);
             }
 
-            final List<String> levels = entry.getValue();
+            final Set<String> levels = entry.getValue();
 
             // Validate permission levels are not null or empty
             if (levels == null) {

@@ -307,7 +307,7 @@ public class PermissionResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final PermissionMetadata permissionMetadata = new PermissionMetadata(
+        final PermissionMetadataView permissionMetadata = new PermissionMetadataView(
             userPermissionHelper.getAvailablePermissionLevels(),
             userPermissionHelper.getAvailablePermissionScopes()
         );

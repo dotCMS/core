@@ -3,8 +3,8 @@ package com.dotcms.rest.api.v1.user;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a single permission asset (host or folder) with its associated permissions.
@@ -74,11 +74,11 @@ public class UserPermissionAsset {
 
     @JsonProperty("permissions")
     @Schema(
-        description = "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)",
+        description = "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)",
         example = "{\"INDIVIDUAL\": [\"READ\", \"WRITE\", \"PUBLISH\"], \"HOST\": [\"READ\"]}",
         required = true
     )
-    private final Map<String, List<String>> permissions;
+    private final Map<String, Set<String>> permissions;
 
     /**
      * Constructs a user permission asset with all required fields.
@@ -99,7 +99,7 @@ public class UserPermissionAsset {
                               final String hostId,
                               final boolean canEditPermissions,
                               final boolean inheritsPermissions,
-                              final Map<String, List<String>> permissions) {
+                              final Map<String, Set<String>> permissions) {
         this.id = id;
         this.type = type;
         this.name = name;
@@ -176,11 +176,11 @@ public class UserPermissionAsset {
     /**
      * Gets the permission assignments for this asset.
      * Map keys are permission types (INDIVIDUAL, HOST, FOLDER, etc.)
-     * and values are lists of permission level names (READ, WRITE, etc.).
+     * and values are sets of permission level names (READ, WRITE, etc.).
      *
      * @return Permission map
      */
-    public Map<String, List<String>> getPermissions() {
+    public Map<String, Set<String>> getPermissions() {
         return permissions;
     }
 }
