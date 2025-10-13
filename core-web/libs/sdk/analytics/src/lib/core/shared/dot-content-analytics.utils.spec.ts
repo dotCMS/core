@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import { ANALYTICS_MINIFIED_SCRIPT_NAME } from './dot-content-analytics.constants';
+import { ANALYTICS_MINIFIED_SCRIPT_NAME } from './constants';
 import {
     cleanupActivityTracking,
     defaultRedirectFn,
@@ -253,9 +253,9 @@ describe('Analytics Utils', () => {
             );
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                utm_source: 'google',
-                utm_medium: 'cpc',
-                utm_campaign: 'spring_sale'
+                source: 'google',
+                medium: 'cpc',
+                campaign: 'spring_sale'
             });
         });
 
@@ -263,7 +263,7 @@ describe('Analytics Utils', () => {
             const location = mockLocation('?utm_source=google&non_utm_param=value');
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                utm_source: 'google'
+                source: 'google'
             });
         });
 
@@ -271,8 +271,8 @@ describe('Analytics Utils', () => {
             const location = mockLocation('?utm_source=google&utm_campaign=spring_sale');
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                utm_source: 'google',
-                utm_campaign: 'spring_sale'
+                source: 'google',
+                campaign: 'spring_sale'
             });
         });
 
@@ -282,11 +282,11 @@ describe('Analytics Utils', () => {
             );
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                utm_source: 'google',
-                utm_medium: 'cpc',
-                utm_campaign: 'spring_sale',
-                utm_term: 'test',
-                utm_content: 'ad1'
+                source: 'google',
+                medium: 'cpc',
+                campaign: 'spring_sale',
+                term: 'test',
+                content: 'ad1'
             });
         });
     });
@@ -553,11 +553,11 @@ describe('Analytics Utils', () => {
         it('should extract UTM data from browser event data', () => {
             const browserData = {
                 utm: {
-                    utm_source: 'google',
-                    utm_medium: 'cpc',
-                    utm_campaign: 'spring_sale',
-                    utm_term: 'shoes',
-                    utm_content: 'ad1'
+                    source: 'google',
+                    medium: 'cpc',
+                    campaign: 'spring_sale',
+                    term: 'shoes',
+                    content: 'ad1'
                 }
             } as any;
 
@@ -583,8 +583,8 @@ describe('Analytics Utils', () => {
         it('should handle partial UTM data', () => {
             const browserData = {
                 utm: {
-                    utm_source: 'facebook',
-                    utm_campaign: 'summer'
+                    source: 'facebook',
+                    campaign: 'summer'
                 }
             } as any;
 
@@ -782,6 +782,13 @@ describe('Analytics Utils', () => {
                 ),
                 utm: {
                     source: 'google'
+                },
+                custom: {
+                    language_id: 'en-US',
+                    persona: 'default',
+                    utm: {
+                        source: 'google'
+                    }
                 }
             });
         });

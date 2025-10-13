@@ -13,15 +13,6 @@ body:
         
         EPICs represent wide areas of functionality that solve specific problems and deliver significant value.
 
-  - type: input
-    id: epic-title
-    attributes:
-      label: EPIC Title
-      description: Concise, action-based title that reflects user value
-      placeholder: "e.g., Universal Visual Editor Enhancements"
-    validations:
-      required: true
-
   - type: textarea
     id: description
     attributes:

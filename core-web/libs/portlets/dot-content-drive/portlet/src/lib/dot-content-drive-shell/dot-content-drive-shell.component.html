@@ -34,7 +34,7 @@
     class="tree-selector center-content"
     [class.expanded]="$treeExpanded()"
     data-testid="tree-selector">
-    <dot-content-drive-sidebar data-testid="sidebar" />
+    <dot-content-drive-sidebar data-testid="sidebar" (uploadFiles)="resolveFilesUpload($event)" />
 </div>
 
 <dot-content-drive-dropzone data-testid="dropzone" (uploadFiles)="resolveFilesUpload($event)">
