@@ -292,7 +292,7 @@ public class DotSamlResource implements Serializable {
 						}
 					}
 
-					loginPath = loginPath.contains("dotAdmin") ? loginPath : loginPath + "?" + queryString;
+					loginPath = (!loginPath.equals(DotSamlConstants.DEFAULT_LOGIN_PATH) && queryString != null) ? loginPath + "?" + queryString : loginPath;
 
 					Logger.debug(this, ()-> "Doing login to the user " + (user != null? user.getEmailAddress() : "unknown"));
 					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
