@@ -126,7 +126,19 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     --              Used in UVE_MODE_CHANGE event
     -- ######################################################
     frommode String,
-    tomode String
+    tomode String,
+
+
+    -- ######################################################
+    --              Used in content_impression event
+    -- ######################################################
+    content_identifier String,
+    content_inode String,
+    content_title String,
+    content_content_type String,
+
+    position_viewport_offset_pct Int16,
+    position_dom_index Int8
 ) Engine = MergeTree()
     PARTITION BY customer_id
     ORDER BY (_timestamp, customer_id)
