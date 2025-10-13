@@ -21,13 +21,15 @@ import {
     DotUploadFileService,
     DotLocalstorageService,
     DotWorkflowsActionsService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
     DotContentDriveUploadFiles,
-    DotFolderTreeNodeData
+    DotFolderTreeNodeData,
+    DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
@@ -42,7 +44,8 @@ import {
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
-    ERROR_MESSAGE_LIFE
+    ERROR_MESSAGE_LIFE,
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
@@ -81,7 +84,7 @@ export class DotContentDriveShellComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
-
+    readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
@@ -291,7 +294,7 @@ export class DotContentDriveShellComponent {
         this.#fileService
             .uploadDotAsset(file, {
                 baseType: 'dotAsset',
-                hostFolder: hostFolder.id,
+                hostFolder: hostFolder?.id,
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
@@ -321,5 +324,78 @@ export class DotContentDriveShellComponent {
                     });
                 }
             });
+    }
+
+    /**
+     * Handles when items are moved to a folder
+     *
+     * @param {DotContentDriveMoveItems} event - The move items event
+     */
+    protected onMoveItems(event: DotContentDriveMoveItems): void {
+        const { folderName, assetCount, pathToMove, dragItemsInodes } = this.getMoveMetadata(event);
+
+        this.#messageService.add({
+            severity: 'info',
+            summary: this.#dotMessageService.get(
+                'content-drive.move-to-folder-in-progress',
+                folderName
+            ),
+            detail: this.#dotMessageService.get(
+                'content-drive.move-to-folder-in-progress-detail',
+                assetCount.toString(),
+                `${assetCount > 1 ? 's ' : ' '}`
+            )
+        });
+
+        this.#dotWorkflowActionsFireService
+            .bulkFire({
+                additionalParams: {
+                    assignComment: {
+                        assign: '',
+                        comment: ''
+                    },
+                    pushPublish: {},
+                    additionalParamsMap: {
+                        _path_to_move: pathToMove
+                    }
+                },
+                contentletIds: dragItemsInodes,
+                workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+            })
+            .subscribe(({ successCount }) => {
+                this.#messageService.add({
+                    severity: 'success',
+                    summary: this.#dotMessageService.get('content-drive.move-to-folder-success'),
+                    detail: this.#dotMessageService.get(
+                        'content-drive.move-to-folder-success-detail',
+                        successCount.toString(),
+                        `${successCount > 1 ? 's ' : ' '}`,
+                        folderName
+                    ),
+                    life: SUCCESS_MESSAGE_LIFE
+                });
+
+                this.#store.cleanDragItems();
+                this.#store.loadItems();
+            });
+    }
+
+    protected getMoveMetadata(event: DotContentDriveMoveItems) {
+        const dragItemsInodes = this.#store.dragItems().map((item) => item.inode);
+
+        const path = event.targetFolder.path?.length > 0 ? event.targetFolder.path : '/';
+
+        const pathToMove = `//${event.targetFolder.hostname}${path}`;
+
+        const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
+
+        const folderName = cleanPath?.length > 0 ? cleanPath : pathToMove;
+
+        return {
+            pathToMove: pathToMove,
+            folderName: folderName,
+            assetCount: dragItemsInodes.length,
+            dragItemsInodes
+        };
     }
 }

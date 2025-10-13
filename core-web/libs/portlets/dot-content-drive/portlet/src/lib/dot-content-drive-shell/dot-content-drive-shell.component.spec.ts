@@ -22,12 +22,14 @@ import {
     DotLanguagesService,
     DotFolderService,
     DotUploadFileService,
-    DotLocalstorageService
+    DotLocalstorageService,
+    DotMessageService
 } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
-    DotFolderTreeNodeItem
+    DotFolderTreeNodeItem,
+    DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
@@ -39,7 +41,8 @@ import {
     HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
     WARNING_MESSAGE_LIFE,
     SUCCESS_MESSAGE_LIFE,
-    ERROR_MESSAGE_LIFE
+    ERROR_MESSAGE_LIFE,
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
 import {
     MOCK_ITEMS,
@@ -87,7 +90,10 @@ describe('DotContentDriveShellComponent', () => {
             mockProvider(DotUploadFileService, {
                 uploadDotAsset: jest.fn().mockReturnValue(of({}))
             }),
-            provideHttpClient()
+            provideHttpClient(),
+            mockProvider(DotMessageService, {
+                get: jest.fn().mockImplementation((key: string) => key)
+            })
         ],
         componentProviders: [DotContentDriveStore],
         detectChanges: false
@@ -133,7 +139,9 @@ describe('DotContentDriveShellComponent', () => {
                     closeDialog: jest.fn(),
                     patchContextMenu: jest.fn(),
                     setDragItems: jest.fn(),
-                    cleanDragItems: jest.fn()
+                    cleanDragItems: jest.fn(),
+                    dragItems: jest.fn().mockReturnValue([]),
+                    loadItems: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -161,7 +169,11 @@ describe('DotContentDriveShellComponent', () => {
                     )
                 }),
                 mockProvider(DotWorkflowsActionsService),
-                mockProvider(DotWorkflowActionsFireService),
+                mockProvider(DotWorkflowActionsFireService, {
+                    bulkFire: jest
+                        .fn()
+                        .mockReturnValue(of({ successCount: 1, skippedCount: 0, fails: [] }))
+                }),
                 mockProvider(DotWorkflowEventHandlerService),
                 mockProvider(MessageService, {
                     messageObserver: of({}),
@@ -970,6 +982,179 @@ describe('DotContentDriveShellComponent', () => {
                 spectator.triggerEventHandler(folderListView, 'dragEnd', undefined);
 
                 expect(store.cleanDragItems).toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('Move Items', () => {
+        let workflowService: SpyObject<DotWorkflowActionsFireService>;
+
+        beforeEach(() => {
+            spectator.detectChanges();
+            workflowService = spectator.inject(DotWorkflowActionsFireService);
+            messageService.add.mockClear();
+        });
+
+        describe('onMoveItems', () => {
+            it('should handle move with single item', () => {
+                const mockDragItems = [MOCK_ITEMS[0]];
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 1, skippedCount: 0, fails: [] })
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                expect(messageService.add).toHaveBeenCalledWith({
+                    severity: 'info',
+                    summary: expect.any(String),
+                    detail: expect.any(String)
+                });
+
+                expect(workflowService.bulkFire).toHaveBeenCalledWith({
+                    additionalParams: {
+                        assignComment: {
+                            assign: '',
+                            comment: ''
+                        },
+                        pushPublish: {},
+                        additionalParamsMap: {
+                            _path_to_move: '//demo.dotcms.com/documents/'
+                        }
+                    },
+                    contentletIds: [mockDragItems[0].inode],
+                    workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+                });
+            });
+
+            it('should handle move with multiple items', () => {
+                const mockDragItems = [MOCK_ITEMS[0], MOCK_ITEMS[1]];
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 2, skippedCount: 0, fails: [] })
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-2',
+                        hostname: 'demo.dotcms.com',
+                        path: '/images/',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                expect(workflowService.bulkFire).toHaveBeenCalledWith({
+                    additionalParams: {
+                        assignComment: {
+                            assign: '',
+                            comment: ''
+                        },
+                        pushPublish: {},
+                        additionalParamsMap: {
+                            _path_to_move: '//demo.dotcms.com/images/'
+                        }
+                    },
+                    contentletIds: [mockDragItems[0].inode, mockDragItems[1].inode],
+                    workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+                });
+            });
+
+            it('should show success message after successful move', () => {
+                const mockDragItems = [MOCK_ITEMS[0]];
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 1, skippedCount: 0, fails: [] })
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                expect(messageService.add).toHaveBeenCalledWith({
+                    severity: 'success',
+                    summary: expect.any(String),
+                    detail: expect.any(String),
+                    life: SUCCESS_MESSAGE_LIFE
+                });
+            });
+
+            it('should clean drag items and reload items after successful move', () => {
+                const mockDragItems = [MOCK_ITEMS[0]];
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 1, skippedCount: 0, fails: [] })
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                expect(store.cleanDragItems).toHaveBeenCalled();
+                expect(store.loadItems).toHaveBeenCalled();
+            });
+
+            it('should handle move to root folder (empty path)', () => {
+                const mockDragItems = [MOCK_ITEMS[0]];
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 1, skippedCount: 0, fails: [] })
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'root-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                expect(workflowService.bulkFire).toHaveBeenCalledWith({
+                    additionalParams: {
+                        assignComment: {
+                            assign: '',
+                            comment: ''
+                        },
+                        pushPublish: {},
+                        additionalParamsMap: {
+                            _path_to_move: '//demo.dotcms.com/'
+                        }
+                    },
+                    contentletIds: [mockDragItems[0].inode],
+                    workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+                });
             });
         });
     });

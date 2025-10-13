@@ -3,16 +3,11 @@ import { of } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { MessageService } from 'primeng/api';
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
 import { delay } from 'rxjs/operators';
 
-import {
-    DotFolderService,
-    DotMessageService,
-    DotWorkflowActionsFireService
-} from '@dotcms/data-access';
+import { DotFolderService, DotMessageService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
 import {
     DotContentDriveUploadFiles,
@@ -21,11 +16,9 @@ import {
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
-import { MOVE_TO_FOLDER_WORKFLOW_ACTION_ID, SUCCESS_MESSAGE_LIFE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { ALL_FOLDER } from '../../utils/tree-folder.utils';
 
@@ -108,17 +101,8 @@ describe('DotContentDriveSidebarComponent', () => {
         component: DotContentDriveSidebarComponent,
         imports: [DotTreeFolderComponent],
         providers: [
-            mockProvider(DotMessageService, new MockDotMessageService({})),
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(mockSiteDetails)
-            }),
-            mockProvider(MessageService, {
-                add: jest.fn()
-            }),
-            mockProvider(DotWorkflowActionsFireService, {
-                bulkFire: jest
-                    .fn()
-                    .mockReturnValue(of({ successCount: 1, skippedCount: 0, fails: [] }))
             }),
             mockProvider(DotContentDriveStore, {
                 initContentDrive: jest.fn(),
@@ -141,10 +125,10 @@ describe('DotContentDriveSidebarComponent', () => {
                 sidebarLoading: jest.fn().mockReturnValue(false),
                 loadFolders: jest.fn(),
                 loadChildFolders: jest.fn(),
-                updateFolders: jest.fn(),
-                dragItems: jest.fn().mockReturnValue([]),
-                cleanDragItems: jest.fn(),
-                loadItems: jest.fn()
+                updateFolders: jest.fn()
+            }),
+            mockProvider(DotMessageService, {
+                get: jest.fn().mockImplementation((key: string) => key)
             })
         ]
     });
@@ -154,9 +138,6 @@ describe('DotContentDriveSidebarComponent', () => {
             providers: [
                 mockProvider(DotFolderService, {
                     getFolders: jest.fn().mockReturnValue(of(mockFolders))
-                }),
-                mockProvider(DotMessageService, {
-                    get: jest.fn().mockImplementation((key: string) => key)
                 })
             ]
         });
@@ -431,30 +412,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         describe('moveItems', () => {
-            let messageService: jest.Mocked<MessageService>;
-            let workflowService: jest.Mocked<DotWorkflowActionsFireService>;
-
-            beforeEach(() => {
-                messageService = spectator.inject(MessageService) as jest.Mocked<MessageService>;
-                workflowService = spectator.inject(
-                    DotWorkflowActionsFireService
-                ) as jest.Mocked<DotWorkflowActionsFireService>;
-
-                jest.clearAllMocks();
-            });
-
-            it('should handle moveItems event when dot-tree-folder emits moveItems with single item', () => {
-                const mockDragItems = [
-                    {
-                        inode: 'inode-1',
-                        identifier: 'id-1',
-                        title: 'Test Item 1',
-                        name: 'test-item-1'
-                    }
-                ] as unknown as ReturnType<typeof contentDriveStore.dragItems>;
-
-                contentDriveStore.dragItems.mockReturnValue(mockDragItems);
-
+            it('should emit moveItems event when dot-tree-folder emits moveItems', () => {
                 const mockMoveEvent: DotContentDriveMoveItems = {
                     targetFolder: {
                         id: 'folder-1',
@@ -464,179 +422,16 @@ describe('DotContentDriveSidebarComponent', () => {
                     }
                 };
 
-                spectator.triggerEventHandler(DotTreeFolderComponent, 'moveItems', mockMoveEvent);
+                let emittedValue: DotContentDriveMoveItems | undefined;
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'info',
-                    summary: expect.any(String),
-                    detail: expect.any(String)
+                spectator.component.moveItems.subscribe((event) => {
+                    emittedValue = event;
                 });
-
-                expect(workflowService.bulkFire).toHaveBeenCalledWith({
-                    additionalParams: {
-                        assignComment: {
-                            assign: '',
-                            comment: ''
-                        },
-                        pushPublish: {},
-                        additionalParamsMap: {
-                            _path_to_move: '//demo.dotcms.com/documents/'
-                        }
-                    },
-                    contentletIds: ['inode-1'],
-                    workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
-                });
-            });
-
-            it('should handle moveItems event with multiple items', () => {
-                const mockDragItems = [
-                    {
-                        inode: 'inode-1',
-                        identifier: 'id-1',
-                        title: 'Test Item 1',
-                        name: 'test-item-1'
-                    },
-                    {
-                        inode: 'inode-2',
-                        identifier: 'id-2',
-                        title: 'Test Item 2',
-                        name: 'test-item-2'
-                    }
-                ] as unknown as ReturnType<typeof contentDriveStore.dragItems>;
-
-                contentDriveStore.dragItems.mockReturnValue(mockDragItems);
-
-                const mockMoveEvent: DotContentDriveMoveItems = {
-                    targetFolder: {
-                        id: 'folder-2',
-                        hostname: 'demo.dotcms.com',
-                        path: '/images/',
-                        type: 'folder'
-                    }
-                };
 
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'moveItems', mockMoveEvent);
 
-                expect(workflowService.bulkFire).toHaveBeenCalledWith({
-                    additionalParams: {
-                        assignComment: {
-                            assign: '',
-                            comment: ''
-                        },
-                        pushPublish: {},
-                        additionalParamsMap: {
-                            _path_to_move: '//demo.dotcms.com/images/'
-                        }
-                    },
-                    contentletIds: ['inode-1', 'inode-2'],
-                    workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
-                });
-            });
-
-            it('should show success message after successful move', () => {
-                const mockDragItems = [
-                    {
-                        inode: 'inode-1',
-                        identifier: 'id-1',
-                        title: 'Test Item 1',
-                        name: 'test-item-1'
-                    }
-                ] as unknown as ReturnType<typeof contentDriveStore.dragItems>;
-
-                contentDriveStore.dragItems.mockReturnValue(mockDragItems);
-                workflowService.bulkFire.mockReturnValue(
-                    of({ successCount: 1, skippedCount: 0, fails: [] })
-                );
-
-                const mockMoveEvent: DotContentDriveMoveItems = {
-                    targetFolder: {
-                        id: 'folder-1',
-                        hostname: 'demo.dotcms.com',
-                        path: '/documents/',
-                        type: 'folder'
-                    }
-                };
-
-                spectator.triggerEventHandler(DotTreeFolderComponent, 'moveItems', mockMoveEvent);
-
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: expect.any(String),
-                    detail: expect.any(String),
-                    life: SUCCESS_MESSAGE_LIFE
-                });
-            });
-
-            it('should clean drag items and reload items after successful move', () => {
-                const mockDragItems = [
-                    {
-                        inode: 'inode-1',
-                        identifier: 'id-1',
-                        title: 'Test Item 1',
-                        name: 'test-item-1'
-                    }
-                ] as unknown as ReturnType<typeof contentDriveStore.dragItems>;
-
-                contentDriveStore.dragItems.mockReturnValue(mockDragItems);
-                workflowService.bulkFire.mockReturnValue(
-                    of({ successCount: 1, skippedCount: 0, fails: [] })
-                );
-
-                const mockMoveEvent: DotContentDriveMoveItems = {
-                    targetFolder: {
-                        id: 'folder-1',
-                        hostname: 'demo.dotcms.com',
-                        path: '/documents/',
-                        type: 'folder'
-                    }
-                };
-
-                spectator.triggerEventHandler(DotTreeFolderComponent, 'moveItems', mockMoveEvent);
-
-                expect(contentDriveStore.cleanDragItems).toHaveBeenCalled();
-                expect(contentDriveStore.loadItems).toHaveBeenCalled();
-            });
-
-            it('should handle move to root folder (empty path)', () => {
-                const mockDragItems = [
-                    {
-                        inode: 'inode-1',
-                        identifier: 'id-1',
-                        title: 'Test Item 1',
-                        name: 'test-item-1'
-                    }
-                ] as unknown as ReturnType<typeof contentDriveStore.dragItems>;
-
-                contentDriveStore.dragItems.mockReturnValue(mockDragItems);
-                workflowService.bulkFire.mockReturnValue(
-                    of({ successCount: 1, skippedCount: 0, fails: [] })
-                );
-
-                const mockMoveEvent: DotContentDriveMoveItems = {
-                    targetFolder: {
-                        id: 'root-folder',
-                        hostname: 'demo.dotcms.com',
-                        path: '',
-                        type: 'folder'
-                    }
-                };
-
-                spectator.triggerEventHandler(DotTreeFolderComponent, 'moveItems', mockMoveEvent);
-
-                expect(workflowService.bulkFire).toHaveBeenCalledWith({
-                    additionalParams: {
-                        assignComment: {
-                            assign: '',
-                            comment: ''
-                        },
-                        pushPublish: {},
-                        additionalParamsMap: {
-                            _path_to_move: '//demo.dotcms.com/'
-                        }
-                    },
-                    contentletIds: ['inode-1'],
-                    workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
-                });
+                expect(emittedValue).toBeDefined();
+                expect(emittedValue?.targetFolder).toEqual(mockMoveEvent.targetFolder);
             });
         });
     });
