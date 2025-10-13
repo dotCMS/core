@@ -26,10 +26,9 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotAddPersonaDialogComponent } from './dot-add-persona-dialog.component';
-import { DotCreatePersonaFormModule } from './dot-create-persona-form/dot-create-persona-form.module';
+import { DotCreatePersonaFormComponent } from './dot-create-persona-form/dot-create-persona-form.component';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { SiteSelectorFieldModule } from '../_common/dot-site-selector-field/dot-site-selector-field.module';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -55,13 +54,13 @@ describe('DotAddPersonaDialogComponent', () => {
         const siteServiceMock = new SiteServiceMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [DotAddPersonaDialogComponent, TestFieldValidationMessageComponent],
+            declarations: [TestFieldValidationMessageComponent],
             imports: [
+                DotAddPersonaDialogComponent,
+                DotCreatePersonaFormComponent,
                 BrowserAnimationsModule,
                 DotDialogModule,
                 FileUploadModule,
-                SiteSelectorFieldModule,
-                DotCreatePersonaFormModule,
                 DotMessagePipe
             ],
             providers: [

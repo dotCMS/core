@@ -26,6 +26,7 @@ import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 
 import {
+    DotAlertConfirmService,
     DotEventsService,
     DotFormatDateService,
     DotHttpErrorManagerService,
@@ -41,13 +42,7 @@ import {
     DotDialogActions,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import {
-    DotDialogComponent,
-    DotDialogModule,
-    DotFieldValidationMessageComponent,
-    DotIconModule,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotDialogComponent, DotDialogModule, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 import {
     cleanUpDialog,
@@ -65,6 +60,8 @@ import { ContentTypeFieldsAddRowModule } from '..';
 import { DotActionButtonComponent } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
+import { ContentTypeFieldsTabComponent } from '../content-type-fields-tab';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
@@ -83,7 +80,7 @@ const fakeContentType: DotCMSContentType = {
 @Component({
     selector: 'dot-content-type-fields-row',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestContentTypeFieldsRowComponent {
     @Input()
@@ -97,7 +94,7 @@ class TestContentTypeFieldsRowComponent {
 @Component({
     selector: 'dot-content-type-fields-properties-form',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestContentTypeFieldsPropertiesFormComponent {
     @Output()
@@ -117,7 +114,7 @@ class TestContentTypeFieldsPropertiesFormComponent {
 @Component({
     selector: 'dot-content-type-fields-tab',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestDotContentTypeFieldsTabComponent {
     @Input()
@@ -132,7 +129,7 @@ class TestDotContentTypeFieldsTabComponent {
 @Component({
     selector: 'dot-loading-indicator ',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestDotLoadingIndicatorComponent {
     @Input()
@@ -201,10 +198,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         TestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsDropZoneComponent,
-                TestContentTypeFieldsPropertiesFormComponent,
-                TestContentTypeFieldsRowComponent,
-                TestDotContentTypeFieldsTabComponent,
-                TestDotLoadingIndicatorComponent
+                ContentTypeFieldsPropertiesFormComponent,
+                ContentTypeFieldsTabComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([
@@ -214,24 +209,17 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     }
                 ]),
                 BrowserAnimationsModule,
-                ContentTypeFieldsAddRowModule,
-                DotContentTypeFieldsVariablesModule,
-                DotDialogModule,
-                DotActionButtonComponent,
-                ButtonModule,
-                DotIconModule,
-                DragulaModule,
-                TableModule,
-                DotFieldValidationMessageComponent,
-                ReactiveFormsModule,
                 HttpClientTestingModule,
                 DotMessagePipe,
-                TabViewModule
+                TabViewModule,
+                DotDialogComponent,
+                DragulaModule
             ],
             providers: [
                 { provide: Router, useValue: mockRouter },
                 { provide: FieldDragDropService, useValue: dragDropService },
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotAlertConfirmService, useValue: {} },
                 {
                     provide: DotLoadingIndicatorService,
                     useValue: dotLoadingIndicatorServiceMock
@@ -414,7 +402,7 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
     selector: 'dot-test-host-component',
     template:
         '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>',
-    standalone: false
+    imports: [ContentTypeFieldsDropZoneComponent]
 })
 class TestHostComponent {
     layout: DotCMSContentTypeLayoutRow[];
@@ -441,7 +429,7 @@ const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
 @Component({
     selector: 'dot-block-editor-settings',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestDotBlockEditorSettingsComponent {
     @Output() changeControls = new EventEmitter<DotDialogActions>();
@@ -478,18 +466,15 @@ describe('Load fields and drag and drop', () => {
         testFieldDragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [
+            declarations: [DotConvertToBlockInfoComponent, DotConvertWysiwygToBlockComponent],
+            imports: [
                 ContentTypeFieldsDropZoneComponent,
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
                 TestHostComponent,
                 TestDotLoadingIndicatorComponent,
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent,
-                TestDotBlockEditorSettingsComponent
-            ],
-            imports: [
+                TestDotBlockEditorSettingsComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
@@ -42,7 +43,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContentletsComponent } from './dot-contentlets.component';
 
@@ -96,7 +97,10 @@ describe('DotContentletsComponent', () => {
                 },
                 DotWorkflowEventHandlerService,
                 PushPublishService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: CoreWebService,
+                    useValue: { request: jest.fn().mockReturnValue(of({})) }
+                },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 PushPublishService,

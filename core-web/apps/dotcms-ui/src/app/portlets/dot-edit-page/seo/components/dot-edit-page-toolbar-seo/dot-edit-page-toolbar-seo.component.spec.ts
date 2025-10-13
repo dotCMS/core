@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { CommonModule, DatePipe, Location } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -59,7 +59,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     dotcmsContentletMock,
     DotFormatDateServiceMock,
     LoginServiceMock,
@@ -168,7 +167,6 @@ describe('DotEditPageToolbarSeoComponent', () => {
             declarations: [TestHostComponent, MockGlobalMessageComponent],
             imports: [
                 DotEditPageToolbarSeoComponent,
-                HttpClientTestingModule,
                 ButtonModule,
                 CommonModule,
                 CheckboxModule,
@@ -232,7 +230,13 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: CoreWebService,
+                    useValue: {
+                        request: jest.fn().mockReturnValue(of({})),
+                        requestView: jest.fn().mockReturnValue(of({}))
+                    }
+                },
                 LoggerService,
                 StringUtils,
                 { provide: DotRouterService, useClass: MockDotRouterService },
@@ -248,7 +252,8 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotESContentService,
                 DotPropertiesService,
                 { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock },
-                { provide: DotPropertiesService, useClass: MockDotPropertiesService }
+                { provide: DotPropertiesService, useClass: MockDotPropertiesService },
+                provideHttpClientTesting()
             ]
         });
     });

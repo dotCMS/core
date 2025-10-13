@@ -3,7 +3,7 @@
 import { mockProvider } from '@ngneat/spectator/jest';
 import { Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, forwardRef, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
@@ -179,8 +179,9 @@ describe('ContentTypesFormComponent', () => {
         const siteServiceMock = new SiteServiceMock();
 
         TestBed.configureTestingModule({
-            declarations: [ContentTypesFormComponent, DotSiteSelectorComponent],
+            declarations: [DotSiteSelectorComponent],
             imports: [
+                ContentTypesFormComponent,
                 RouterTestingModule.withRoutes([
                     { component: ContentTypesFormComponent, path: 'test' }
                 ]),
@@ -200,7 +201,6 @@ describe('ContentTypesFormComponent', () => {
                 ReactiveFormsModule,
                 RouterTestingModule,
                 TabViewModule,
-                HttpClientTestingModule,
                 DotMdIconSelectorModule,
                 DotMessagePipe
             ],
@@ -223,7 +223,8 @@ describe('ContentTypesFormComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useValue: mockActivatedRoute
-                }
+                },
+                provideHttpClientTesting()
             ]
         });
 

@@ -28,6 +28,8 @@ class MockDotNavigationService {
     onNavigationEnd(): Observable<unknown> {
         return new Subject();
     }
+
+    items$ = new Subject();
 }
 
 describe('DotCrumbtrailComponent', () => {

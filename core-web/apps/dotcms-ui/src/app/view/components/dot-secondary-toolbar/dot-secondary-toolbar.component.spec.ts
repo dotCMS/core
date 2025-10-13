@@ -16,6 +16,7 @@ import { DotSecondaryToolbarComponent } from './dot-secondary-toolbar.component'
             <div class="lower-toolbar-right">4</div>
         </dot-secondary-toolbar>
     `,
+    standalone: true,
     imports: [DotSecondaryToolbarComponent]
 })
 class HostTestComponent {}
@@ -26,8 +27,12 @@ describe('DotSecondaryToolbarComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [HostTestComponent],
-            imports: [CommonModule, RouterTestingModule, DotSecondaryToolbarComponent]
+            imports: [
+                HostTestComponent,
+                CommonModule,
+                RouterTestingModule,
+                DotSecondaryToolbarComponent
+            ]
         }).compileComponents();
     });
 

@@ -1,19 +1,4 @@
-import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
-
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextModule } from 'primeng/inputtext';
-import { RadioButtonModule } from 'primeng/radiobutton';
-
-import {
-    DotAutofocusDirective,
-    DotDialogComponent,
-    DotFieldRequiredDirective,
-    DotFieldValidationMessageComponent,
-    DotMessagePipe,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
 
@@ -22,21 +7,8 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotNavigationService } from '../../../../../view/components/dot-navigation/services/dot-navigation.service';
 
 @NgModule({
-    declarations: [DotAddToMenuComponent],
+    imports: [DotAddToMenuComponent],
     exports: [DotAddToMenuComponent],
-    imports: [
-        CommonModule,
-        DotAutofocusDirective,
-        DotDialogComponent,
-        DotFieldValidationMessageComponent,
-        DotSafeHtmlPipe,
-        DropdownModule,
-        InputTextModule,
-        RadioButtonModule,
-        ReactiveFormsModule,
-        DotFieldRequiredDirective,
-        DotMessagePipe
-    ],
     providers: [DotAddToMenuService, DotMenuService, DotNavigationService]
 })
 export class DotAddToMenuModule {}

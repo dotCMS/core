@@ -31,7 +31,12 @@ describe('DotCopyLinkComponent', () => {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                DotClipboardUtil
+                {
+                    provide: DotClipboardUtil,
+                    useValue: {
+                        copy: jest.fn()
+                    }
+                }
             ],
             imports: [ButtonModule, TooltipModule, DotIconModule]
         }).compileComponents();

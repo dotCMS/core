@@ -1,6 +1,7 @@
 import { Spectator, createComponentFactory, mockProvider, byTestId } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -51,7 +52,8 @@ describe('DotLocalesListComponent', () => {
                 useValue: messageServiceMock
             },
             mockProvider(DotHttpErrorManagerService),
-            ConfirmationService
+            ConfirmationService,
+            provideHttpClientTesting()
         ]
     });
 

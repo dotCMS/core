@@ -11,7 +11,7 @@ import { DotContainerHistoryModule } from './dot-container-history/dot-container
 import { DotContainerPermissionsModule } from './dot-container-permissions/dot-container-permissions.module';
 import { DotContainerPropertiesModule } from './dot-container-properties/dot-container-properties.module';
 
-import { DotGlobalMessageModule } from '../../../view/components/_common/dot-global-message/dot-global-message.module';
+import { DotGlobalMessageComponent } from '../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @NgModule({
@@ -25,7 +25,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotContainerPropertiesModule,
         DotContainerPermissionsModule,
         DotContainerHistoryModule,
-        DotGlobalMessageModule
+        DotGlobalMessageComponent
     ]
 })
 export class DotContainerCreateModule {}

@@ -35,7 +35,7 @@ import {
     DotStringFormatPipe
 } from '@dotcms/ui';
 
-import { ActionHeaderModule } from './action-header/action-header.module';
+import { ActionHeaderComponent } from './action-header/action-header.component';
 
 import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
 import { ButtonAction } from '../../../shared/models/action-header/button-action.model';
@@ -61,7 +61,7 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     styleUrls: ['./dot-listing-data-table.component.scss'],
     templateUrl: 'dot-listing-data-table.component.html',
     imports: [
-        ActionHeaderModule,
+        ActionHeaderComponent,
         CommonModule,
         FormsModule,
         RouterModule,

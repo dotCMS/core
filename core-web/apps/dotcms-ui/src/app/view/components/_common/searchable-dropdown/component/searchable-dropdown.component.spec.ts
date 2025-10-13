@@ -11,7 +11,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 
-import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
+// import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module'; // Module deleted during standalone migration
 
 @Component({
     selector: 'dot-host-component',

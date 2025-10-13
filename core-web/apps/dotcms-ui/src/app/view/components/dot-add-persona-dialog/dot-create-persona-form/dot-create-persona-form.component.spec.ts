@@ -62,11 +62,9 @@ describe('DotCreatePersonaFormComponent', () => {
         const siteServiceMock = new SiteServiceMock();
 
         TestBed.configureTestingModule({
-            declarations: [
-                DotCreatePersonaFormComponent,
-                MockComponent(DotSiteSelectorFieldComponent)
-            ],
             imports: [
+                DotCreatePersonaFormComponent,
+                MockComponent(DotSiteSelectorFieldComponent),
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
                 FileUploadModule,
@@ -162,14 +160,13 @@ describe('DotCreatePersonaFormComponent', () => {
             expect(component.form.getRawValue()).toEqual(FROM_INITIAL_VALUE);
         });
 
-        it('should update the dot-site-selector-field value when set the form hostFolder value', () => {
-            const siteSelectorField: DebugElement = fixture.debugElement.query(
-                By.css('dot-site-selector-field')
+        it('should update the hostFolder input value when set the form hostFolder value', () => {
+            const hostFolderInput: DebugElement = fixture.debugElement.query(
+                By.css('#content-type-form-host')
             );
             component.form.get('hostFolder').setValue(mockSites[0].identifier);
             fixture.detectChanges();
-            // Con el mock component, solo verificamos que el elemento existe
-            expect(siteSelectorField).toBeTruthy();
+            expect(hostFolderInput).toBeTruthy();
             expect(component.form.get('hostFolder').value).toEqual(mockSites[0].identifier);
         });
 
@@ -261,11 +258,11 @@ describe('DotCreatePersonaFormComponent', () => {
             expect(component.tempUploadedFile).toEqual(null);
         });
 
-        it('should pass placeholder correctly to DotAutocompleteTags', () => {
-            const autoComplete = fixture.debugElement.query(By.css('dot-autocomplete-tags'));
+        it('should pass placeholder correctly to tags input', () => {
+            const tagsInput = fixture.debugElement.query(By.css('#persona-other-tags'));
 
-            // Con MockModule, verificamos que el componente existe
-            expect(autoComplete).toBeTruthy();
+            // Verificamos que el input existe
+            expect(tagsInput).toBeTruthy();
         });
     });
 

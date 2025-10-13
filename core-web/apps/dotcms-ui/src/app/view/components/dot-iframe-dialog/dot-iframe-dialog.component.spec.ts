@@ -39,6 +39,7 @@ let dotIframeComponent: IframeComponent;
 const getTestConfig = (hostComponent) => {
     return {
         imports: [
+            DotIframeDialogComponent,
             DotDialogComponent,
             BrowserAnimationsModule,
             IframeComponent,
@@ -72,7 +73,7 @@ const getTestConfig = (hostComponent) => {
             StringUtils,
             IframeOverlayService
         ],
-        declarations: [DotIframeDialogComponent, hostComponent]
+        declarations: [hostComponent]
     };
 };
 

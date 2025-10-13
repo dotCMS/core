@@ -93,8 +93,13 @@ describe('DotDownloadBundleDialogComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotDownloadBundleDialogComponent],
-            imports: [DotDialogModule, SelectButtonModule, DropdownModule, DotMessagePipe],
+            imports: [
+                DotDownloadBundleDialogComponent,
+                DotDialogModule,
+                SelectButtonModule,
+                DropdownModule,
+                DotMessagePipe
+            ],
             providers: [
                 DotDownloadBundleDialogService,
                 DotPushPublishFiltersService,

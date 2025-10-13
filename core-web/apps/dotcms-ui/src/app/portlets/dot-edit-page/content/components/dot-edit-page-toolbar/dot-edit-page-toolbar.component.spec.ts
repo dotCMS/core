@@ -1,21 +1,16 @@
 import { Observable, of } from 'rxjs';
 
-import { CommonModule, DatePipe, Location } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DatePipe, Location } from '@angular/common';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService } from 'primeng/dynamicdialog';
-import { TagModule } from 'primeng/tag';
-import { ToolbarModule } from 'primeng/toolbar';
-import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
@@ -25,6 +20,7 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPersonalizeService,
     DotPropertiesService,
     DotRouterService,
     DotSessionStorageService,
@@ -54,7 +50,6 @@ import {
     ESContent,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -70,16 +65,11 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
+import { DotEditPageToolbarModule } from './dot-edit-page-toolbar.module';
 
 import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
-import { DotWizardComponent } from '../../../../../view/components/_common/dot-wizard/dot-wizard.component';
-import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
-import { DotExperimentClassDirective } from '../../../../shared/directives/dot-experiment-class.directive';
-import { DotEditPageInfoModule } from '../../../components/dot-edit-page-info/dot-edit-page-info.module';
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { dotVariantDataMock } from '../../../seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component.spec';
-import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
-import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
-import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -125,6 +115,11 @@ class MockDotPageStateService {
     }
 }
 
+@Injectable()
+class MockDotPersonalizeService {
+    personalized = jest.fn().mockReturnValue(of([]));
+}
+
 export class ActivatedRouteListStoreMock {
     get queryParams() {
         return of({
@@ -149,28 +144,11 @@ describe('DotEditPageToolbarComponent', () => {
         TestBed.configureTestingModule({
             declarations: [
                 TestHostComponent,
-                DotEditPageToolbarComponent,
                 MockDotIconButtonComponent,
                 MockGlobalMessageComponent
             ],
             imports: [
-                HttpClientTestingModule,
-                ButtonModule,
-                CommonModule,
-                CheckboxModule,
-                DotSecondaryToolbarComponent,
-                FormsModule,
-                ToolbarModule,
-                DotEditPageViewAsControllerModule,
-                DotEditPageStateControllerModule,
-                DotEditPageInfoModule,
-                DotEditPageWorkflowsActionsModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe,
-                DotWizardComponent,
-                TooltipModule,
-                TagModule,
-                DotExperimentClassDirective,
+                DotEditPageToolbarModule,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'edit-page/experiments/pageId/id/reports',
@@ -225,7 +203,11 @@ describe('DotEditPageToolbarComponent', () => {
                 DialogService,
                 DotESContentService,
                 DotPropertiesService,
-                { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock }
+                DotContentletEditorService,
+                { provide: DotPersonalizeService, useClass: MockDotPersonalizeService },
+                { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock },
+                provideHttpClient(),
+                provideHttpClientTesting()
             ]
         });
     });

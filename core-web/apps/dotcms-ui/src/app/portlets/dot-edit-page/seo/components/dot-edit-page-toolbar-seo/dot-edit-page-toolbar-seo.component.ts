@@ -33,7 +33,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotGlobalMessageModule } from '../../../../../view/components/_common/dot-global-message/dot-global-message.module';
+import { DotGlobalMessageComponent } from '../../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotEditPageWorkflowsActionsModule } from '../../../content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
@@ -44,7 +44,7 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
     selector: 'dot-edit-page-toolbar-seo',
     templateUrl: './dot-edit-page-toolbar-seo.component.html',
     styleUrls: ['./dot-edit-page-toolbar-seo.component.scss'],
-    providers: [DialogService, DotPropertiesService],
+    providers: [DialogService],
     imports: [
         ButtonModule,
         CommonModule,
@@ -55,7 +55,7 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
         FormsModule,
         ToolbarModule,
         TooltipModule,
-        DotGlobalMessageModule,
+        DotGlobalMessageComponent,
         RouterLink,
         TagModule,
         DotEditPageInfoSeoComponent,

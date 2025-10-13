@@ -9,9 +9,10 @@ import { TableModule } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRelativeDatePipe, DotDiffPipe } from '@dotcms/ui';
 
 import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
+import { DotContentCompareBlockEditorComponent } from '../dot-content-compare-block-editor/dot-content-compare-block-editor.component';
 import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 
 @Component({
@@ -27,7 +28,9 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
         ButtonModule,
         DotMessagePipe,
         DotRelativeDatePipe,
-        DotContentComparePreviewFieldComponent
+        DotDiffPipe,
+        DotContentComparePreviewFieldComponent,
+        DotContentCompareBlockEditorComponent
     ]
 })
 export class DotContentCompareTableComponent {

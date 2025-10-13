@@ -48,20 +48,21 @@ class MockDotNavigationService {
 @Component({
     selector: 'dot-toolbar-user',
     template: '',
-    standalone: false
+    standalone: true
 })
 class MockToolbarUsersComponent {}
 
 @Component({
     selector: 'dot-toolbar-notifications',
-    template: ''
+    template: '',
+    standalone: true
 })
 class MockToolbarNotificationsComponent {}
 
 @Component({
     selector: 'dot-toolbar-announcements',
     template: '',
-    standalone: false
+    standalone: true
 })
 class MockToolbarAnnouncementsComponent {}
 
@@ -86,10 +87,10 @@ describe('DotToolbarComponent', () => {
             DotToolbarComponent,
             ToolbarModule,
             DotShowHideFeatureDirective,
-            MockComponent(DotCrumbtrailComponent)
+            MockComponent(DotCrumbtrailComponent),
+            MockComponent(DotSiteSelectorComponent)
         ],
         detectChanges: false,
-        declarations: [MockComponent(DotSiteSelectorComponent)],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),

@@ -64,7 +64,7 @@ import { DotContainerListStore } from './store/dot-container-list.store';
 import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
 import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
-import { ActionHeaderModule } from '../../../view/components/dot-listing-data-table/action-header/action-header.module';
+import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 const containersMock: DotContainer[] = [
@@ -284,7 +284,7 @@ describe('ContainerListComponent', () => {
                 }
             ],
             imports: [
-                ActionHeaderModule,
+                ActionHeaderComponent,
                 ButtonModule,
                 CheckboxModule,
                 CommonModule,

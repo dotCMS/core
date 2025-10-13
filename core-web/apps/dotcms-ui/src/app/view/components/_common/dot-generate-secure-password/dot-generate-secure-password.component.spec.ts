@@ -46,8 +46,9 @@ describe('DotGenerateSecurePasswordComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotGenerateSecurePasswordComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
+                DotGenerateSecurePasswordComponent,
                 BrowserAnimationsModule,
                 ButtonModule,
                 DotDialogModule,

@@ -4,7 +4,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
-import { DotGlobalMessageModule } from '../../../../view/components/_common/dot-global-message/dot-global-message.module';
+import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotContainerSelectorModule } from '../../../../view/components/dot-container-selector/dot-container-selector.module';
 import { DotPortletBaseComponent } from '../../../../view/components/dot-portlet-base/dot-portlet-base.component';
@@ -18,7 +18,7 @@ import { DotPortletBaseComponent } from '../../../../view/components/dot-portlet
         DotTextareaContentComponent,
         DotPortletBaseComponent,
         ReactiveFormsModule,
-        DotGlobalMessageModule
+        DotGlobalMessageComponent
     ],
     providers: []
 })

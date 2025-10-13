@@ -45,8 +45,9 @@ describe('IframeComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
+            declarations: [MockDotLoadingIndicatorComponent],
             imports: [
+                IframeComponent,
                 RouterTestingModule,
                 DotOverlayMaskModule,
                 DotSafeHtmlPipe,

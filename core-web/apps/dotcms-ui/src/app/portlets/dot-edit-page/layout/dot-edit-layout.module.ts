@@ -6,7 +6,7 @@ import { TemplateBuilderModule } from '@dotcms/template-builder';
 
 import { DotEditLayoutComponent } from './dot-edit-layout/dot-edit-layout.component';
 
-import { DotGlobalMessageModule } from '../../../view/components/_common/dot-global-message/dot-global-message.module';
+import { DotGlobalMessageComponent } from '../../../view/components/_common/dot-global-message/dot-global-message.component';
 
 const routes: Routes = [
     {
@@ -21,7 +21,7 @@ const routes: Routes = [
         CommonModule,
         RouterModule.forChild(routes),
         TemplateBuilderModule,
-        DotGlobalMessageModule
+        DotGlobalMessageComponent
     ],
     exports: [DotEditLayoutComponent]
 })

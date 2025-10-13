@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type.component';
 
@@ -86,11 +88,12 @@ describe('DotPaletteContentTypeComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotPaletteContentTypeComponent],
+            declarations: [TestHostComponent],
             imports: [
+                DotPaletteContentTypeComponent,
+                DotIconComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
-                DotIconModule,
                 DotFilterPipeModule,
                 FormsModule,
                 DotPaletteInputFilterModule,
@@ -98,7 +101,10 @@ describe('DotPaletteContentTypeComponent', () => {
             ],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
+                {
+                    provide: CoreWebService,
+                    useValue: { request: jest.fn().mockReturnValue(of({})) }
+                }
             ]
         });
 

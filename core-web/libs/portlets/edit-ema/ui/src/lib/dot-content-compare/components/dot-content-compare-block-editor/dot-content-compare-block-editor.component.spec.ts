@@ -284,17 +284,17 @@ describe('DotContentCompareBlockEditorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContentCompareBlockEditorComponent],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
             imports: [
+                DotContentCompareBlockEditorComponent,
                 DotDiffPipe,
                 HttpClientTestingModule,
                 CommonModule,
                 BlockEditorMockComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe
-            ]
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
     });
 

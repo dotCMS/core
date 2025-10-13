@@ -10,7 +10,7 @@ import { delay, take } from 'rxjs/operators';
 
 import { DotSessionStorageService, PaginatorService } from '@dotcms/data-access';
 import { DotPageMode, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
-import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import {
@@ -40,9 +40,7 @@ export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
         ButtonModule,
         TooltipModule,
         SharedModule,
-        DotIconComponent,
         DotMessagePipe,
-        DotSafeHtmlPipe,
         SearchableDropdownComponent,
         DotPersonaSelectedItemComponent,
         DotPersonaSelectorOptionComponent,

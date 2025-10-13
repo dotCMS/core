@@ -38,7 +38,7 @@ describe('DotPersonaSelectedItemComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPersonaSelectedItemComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: LoginService,
@@ -50,6 +50,7 @@ describe('DotPersonaSelectedItemComponent', () => {
                 }
             ],
             imports: [
+                DotPersonaSelectedItemComponent,
                 BrowserAnimationsModule,
                 DotIconModule,
                 DotAvatarDirective,

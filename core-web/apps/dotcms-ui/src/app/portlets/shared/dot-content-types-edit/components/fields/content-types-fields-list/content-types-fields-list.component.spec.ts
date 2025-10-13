@@ -58,8 +58,7 @@ describe('ContentTypesFieldsListComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [ContentTypesFieldsListComponent],
-            imports: [DragulaModule, DotIconModule],
+            imports: [ContentTypesFieldsListComponent, DragulaModule, DotIconModule],
             providers: [
                 DragulaService,
                 {

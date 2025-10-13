@@ -133,7 +133,6 @@ describe('ContentTypesLayoutComponent', () => {
 
         TestBed.configureTestingModule({
             declarations: [
-                ContentTypesLayoutComponent,
                 TestContentTypeFieldsListComponent,
                 TestContentTypeFieldsRowListComponent,
                 TestDotIframeComponent,
@@ -142,6 +141,7 @@ describe('ContentTypesLayoutComponent', () => {
                 MockDotAddToMenuComponent
             ],
             imports: [
+                ContentTypesLayoutComponent,
                 TabViewModule,
                 DotIconModule,
                 DotSecondaryToolbarComponent,

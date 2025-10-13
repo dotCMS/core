@@ -1,6 +1,6 @@
 import { mockProvider } from '@ngneat/spectator/jest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -13,6 +13,7 @@ import { ConfirmationService } from 'primeng/api';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
+    DotContentletEditorService,
     DotCurrentUserService,
     DotEventsService,
     DotFormatDateService,
@@ -27,6 +28,7 @@ import {
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
+    DotWorkflowTaskDetailService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -91,7 +93,10 @@ describe('DotPortletDetailComponent', () => {
                 DotEventsService,
                 DotGenerateSecurePasswordService,
                 DotLicenseService,
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                mockProvider(DotContentletEditorService),
+                mockProvider(DotWorkflowTaskDetailService),
+                provideHttpClientTesting()
             ],
             declarations: [DotPortletDetailComponent],
             imports: [
@@ -99,8 +104,7 @@ describe('DotPortletDetailComponent', () => {
                 DotContentletsModule,
                 RouterTestingModule,
                 BrowserAnimationsModule,
-                DotDownloadBundleDialogComponent,
-                HttpClientTestingModule
+                DotDownloadBundleDialogComponent
             ]
         });
     }));

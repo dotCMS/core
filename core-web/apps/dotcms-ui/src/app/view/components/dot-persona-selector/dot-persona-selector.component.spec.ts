@@ -24,6 +24,7 @@ import {
     DotRouterService,
     DotSessionStorageService,
     DotSystemConfigService,
+    DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
@@ -177,6 +178,7 @@ describe('DotPersonaSelectorComponent', () => {
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
                 DotHttpErrorManagerService,
+                DotWorkflowActionsFireService,
                 ConfirmationService,
                 DotAlertConfirmService,
                 DotEventsService
