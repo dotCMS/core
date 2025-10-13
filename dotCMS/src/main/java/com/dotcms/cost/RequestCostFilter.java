@@ -3,6 +3,7 @@ package com.dotcms.cost;
 import com.dotmarketing.business.APILocator;
 import com.liferay.util.servlet.NullServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -39,7 +40,8 @@ public class RequestCostFilter implements Filter {
         if (fullAccounting) {
             response.setContentType("text/html");
             response.setStatus(HttpServletResponse.SC_OK);
-            response.getWriter().write(new RequestCostReport().writeAccounting(request));
+            PrintWriter out = response.getWriter();
+            out.write(new RequestCostReport().writeAccounting(request));
         }
     }
 
