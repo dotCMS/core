@@ -936,6 +936,230 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "content_impression required fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(8);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(8);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.url\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: data.page.url\");",
+											"",
+											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(1);",
+											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[1].data.page.title\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: data.page.title\");",
+											"",
+											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(2);",
+											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[2].data.content.identifier\");",
+											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Required field is missing: data.content.identifier\");",
+											"",
+											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(3);",
+											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[3].data.content.inode\");",
+											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Required field is missing: data.content.inode\");",
+											"",
+											"    pm.expect(responseBody.errors[4].eventIndex).to.be.eq(4);",
+											"    pm.expect(responseBody.errors[4].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[4].field).to.be.eq(\"events[4].data.content.title\");",
+											"    pm.expect(responseBody.errors[4].message).to.be.eq(\"Required field is missing: data.content.title\");",
+											"",
+											"    pm.expect(responseBody.errors[5].eventIndex).to.be.eq(5);",
+											"    pm.expect(responseBody.errors[5].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[5].field).to.be.eq(\"events[5].data.content.content_type\");",
+											"    pm.expect(responseBody.errors[5].message).to.be.eq(\"Required field is missing: data.content.content_type\");",
+											"",
+											"    pm.expect(responseBody.errors[6].eventIndex).to.be.eq(6);",
+											"    pm.expect(responseBody.errors[6].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[6].field).to.be.eq(\"events[6].data.position.viewport_offset_pct\");",
+											"    pm.expect(responseBody.errors[6].message).to.be.eq(\"Required field is missing: data.position.viewport_offset_pct\");",
+											"",
+											"    pm.expect(responseBody.errors[7].eventIndex).to.be.eq(7);",
+											"    pm.expect(responseBody.errors[7].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[7].field).to.be.eq(\"events[7].data.position.dom_index\");",
+											"    pm.expect(responseBody.errors[7].message).to.be.eq(\"Required field is missing: data.position.dom_index\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									},
+									{
+										"key": "Referer",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": { \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\",     \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18\n                }\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "content_impression extra attributes",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(1);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(4);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.extra\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Unknown field 'data.page.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.content.extra\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Unknown field 'data.content.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[0].data.position.extra\");",
+											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Unknown field 'data.position.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[0].data.extra\");",
+											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Unknown field 'data.extra'\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									},
+									{
+										"key": "Referer",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\",\n                    \"extra\": \"\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\",\n                    \"extra\": \"\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5,\n                    \"extra\": \"\"\n                },\n                \"extra\": \"\"\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
