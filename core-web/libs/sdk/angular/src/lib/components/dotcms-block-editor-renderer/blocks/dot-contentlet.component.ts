@@ -54,7 +54,7 @@ export class NoComponentProvided {
             <ng-container
                 *ngComponentOutlet="
                     contentComponent | async;
-                    inputs: { contentlet: $data() }
+                    inputs: { node: node }
                 "></ng-container>
         } @else if (isDevMode) {
             <dotcms-no-component-provided [contentType]="$data()?.contentType" />

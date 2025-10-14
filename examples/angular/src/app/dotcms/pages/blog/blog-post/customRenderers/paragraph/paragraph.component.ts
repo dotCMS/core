@@ -5,9 +5,7 @@ import { BlockEditorNode } from '@dotcms/types';
   selector: 'app-paragraph',
   standalone: true,
   template: `
-    <p>
-      {{ $text() }}
-    </p>
+    <p>{{ $text() }}</p>
   `,
   styles: `
     p {

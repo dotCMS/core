@@ -1,4 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { Component, computed, Input } from '@angular/core';
+import { BlockEditorNode } from '@dotcms/types';
 
 // You can define the type of the contentlet in the component
 interface Activity {
@@ -8,7 +9,7 @@ interface Activity {
 
 @Component({
   selector: 'app-activity',
-  template: '<div>{{ node.title }}</div>',
+  template: '<div>{{ contentlet().title }}</div>',
   standalone: true,
   styles: `
     :host {
@@ -17,5 +18,9 @@ interface Activity {
   `,
 })
 export class ActivityComponent {
-  @Input() node!: Activity;
+  @Input() node!: BlockEditorNode;
+
+  contentlet = computed(() => {
+    return this.node.attrs?.['data'] as Activity;
+  });
 }

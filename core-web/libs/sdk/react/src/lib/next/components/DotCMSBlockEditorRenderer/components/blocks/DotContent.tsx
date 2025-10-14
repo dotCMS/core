@@ -6,7 +6,7 @@ import { useIsDevMode } from '../../../../hooks/useIsDevMode';
 import { CustomRenderer } from '../../DotCMSBlockEditorRenderer';
 
 interface DotContentProps {
-    customRenderers: CustomRenderer;
+    customRenderers?: CustomRenderer;
     node: BlockEditorNode;
 }
 
@@ -34,7 +34,7 @@ export const DotContent = ({ customRenderers, node }: DotContentProps) => {
     }
 
     const { contentType = 'Unknown Content Type' } = data;
-    const Component = customRenderers[contentType];
+    const Component = customRenderers?.[contentType];
 
     /* In dev mode, show a helpful message for unknown content types */
     if (isDevMode && !Component) {
