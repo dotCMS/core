@@ -1,6 +1,6 @@
 import { mockProvider } from '@ngneat/spectator/jest';
 
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -13,7 +13,6 @@ import { ConfirmationService } from 'primeng/api';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
-    DotContentletEditorService,
     DotCurrentUserService,
     DotEventsService,
     DotFormatDateService,
@@ -28,7 +27,6 @@ import {
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    DotWorkflowTaskDetailService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -39,6 +37,7 @@ import {
     DotcmsEventsService,
     DotEventsSocket,
     DotEventsSocketURL,
+    DotPushPublishDialogService,
     LoggerService,
     LoginService,
     StringUtils,
@@ -46,14 +45,16 @@ import {
 } from '@dotcms/dotcms-js';
 import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
-import { DotContentletsModule } from './dot-contentlets/dot-contentlets.module';
 import { DotPortletDetailComponent } from './dot-portlet-detail.component';
-import { DotWorkflowTaskModule } from './dot-workflow-task/dot-workflow-task.module';
 
 import { DotCustomEventHandlerService } from '../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../test/dot-test-bed';
+import { DotDownloadBundleDialogService } from '../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotDownloadBundleDialogComponent } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
+import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotWorkflowTaskDetailService } from '../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 
 describe('DotPortletDetailComponent', () => {
     let fixture: ComponentFixture<DotPortletDetailComponent>;
@@ -93,15 +94,16 @@ describe('DotPortletDetailComponent', () => {
                 DotEventsService,
                 DotGenerateSecurePasswordService,
                 DotLicenseService,
-                mockProvider(DotContentTypeService),
-                mockProvider(DotContentletEditorService),
-                mockProvider(DotWorkflowTaskDetailService),
-                provideHttpClientTesting()
+                DotContentletEditorService,
+                DotWorkflowTaskDetailService,
+                DotDownloadBundleDialogService,
+                DotPushPublishDialogService,
+                IframeOverlayService,
+                mockProvider(DotContentTypeService)
             ],
-            declarations: [DotPortletDetailComponent],
             imports: [
-                DotWorkflowTaskModule,
-                DotContentletsModule,
+                DotPortletDetailComponent,
+                HttpClientTestingModule,
                 RouterTestingModule,
                 BrowserAnimationsModule,
                 DotDownloadBundleDialogComponent

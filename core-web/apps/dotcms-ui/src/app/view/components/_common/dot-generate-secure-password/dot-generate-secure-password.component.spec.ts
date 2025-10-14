@@ -1,17 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { ButtonModule } from 'primeng/button';
 
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
 import {
     DotClipboardUtil,
     DotDialogComponent,
-    DotDialogModule,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
@@ -19,23 +17,17 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-password.component';
 
-@Component({
-    selector: 'dot-test-host-component',
-    template: '<dot-generate-secure-password></dot-generate-secure-password>',
-    standalone: false
-})
-class TestHostComponent {}
-
 describe('DotGenerateSecurePasswordComponent', () => {
-    let comp: DotGenerateSecurePasswordComponent;
-    let fixture: ComponentFixture<TestHostComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<DotGenerateSecurePasswordComponent>;
     let dotGenerateSecurePasswordService: DotGenerateSecurePasswordService;
     let dotClipboardUtil: DotClipboardUtil;
 
     const messageServiceMock = new MockDotMessageService({
         'generate.secure.password': 'Generate Secure Password',
         Copy: 'Copy',
+        Copied: 'Copied',
+        Close: 'Close',
+        hide: 'hide',
         'generate.secure.password.reveal': 'Reveal',
         'generate.secure.password.description': 'Description'
     });
@@ -44,86 +36,90 @@ describe('DotGenerateSecurePasswordComponent', () => {
         password: '123'
     };
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            declarations: [TestHostComponent],
-            imports: [
-                DotGenerateSecurePasswordComponent,
-                BrowserAnimationsModule,
-                ButtonModule,
-                DotDialogModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                DotGenerateSecurePasswordService,
-                DotClipboardUtil
-            ]
-        });
+    const clipboardUtilMock = {
+        copy: jest.fn()
+    };
 
-        fixture = TestBed.createComponent(TestHostComponent);
-        de = fixture.debugElement.query(By.css('dot-generate-secure-password'));
-        comp = de.componentInstance;
-        dotGenerateSecurePasswordService = TestBed.inject(DotGenerateSecurePasswordService);
-        dotClipboardUtil = TestBed.inject(DotClipboardUtil);
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: DotGenerateSecurePasswordComponent,
+        imports: [BrowserAnimationsModule, ButtonModule, DotDialogComponent, DotSafeHtmlPipe, DotMessagePipe],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            DotGenerateSecurePasswordService
+        ],
+        componentProviders: [
+            { provide: DotClipboardUtil, useValue: clipboardUtilMock }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+        dotGenerateSecurePasswordService = spectator.inject(DotGenerateSecurePasswordService);
+        // DotClipboardUtil está en componentProviders, así que obtenemos la referencia del mock
+        dotClipboardUtil = clipboardUtilMock as any;
+        jest.clearAllMocks();
     });
 
     describe('dot-dialog', () => {
         let dialog: DotDialogComponent;
+        
         beforeEach(() => {
-            jest.spyOn(dotClipboardUtil, 'copy');
-            dialog = fixture.debugElement.query(By.css('dot-dialog')).componentInstance;
+            dialog = spectator.query(DotDialogComponent);
             dotGenerateSecurePasswordService.open(passwordGenerateData);
-            fixture.detectChanges();
+            spectator.detectChanges();
         });
 
         it('should set dialog params', () => {
-            expect(dialog.visible).toEqual(comp.dialogShow);
+            expect(dialog.visible).toEqual(spectator.component.dialogShow);
             expect(dialog.width).toEqual('34.25rem');
-            expect(comp.value).toEqual(passwordGenerateData.password);
-            expect(comp.typeInput).toBe('password');
+            expect(spectator.component.value).toEqual(passwordGenerateData.password);
+            expect(spectator.component.typeInput).toBe('password');
         });
 
         it('should copy password to clipboard', fakeAsync(() => {
-            const copyButton = fixture.debugElement.query(By.css('[data-testId="copyBtn"]'));
-            copyButton.nativeElement.click();
-            fixture.detectChanges();
-            expect(dotClipboardUtil.copy).toHaveBeenCalledWith(comp.value);
+            const copyButton = spectator.query('[data-testId="copyBtn"]') as HTMLButtonElement;
+            spectator.click(copyButton);
+            spectator.detectChanges();
+            
+            expect(dotClipboardUtil.copy).toHaveBeenCalledWith(spectator.component.value);
             expect(dotClipboardUtil.copy).toHaveBeenCalledTimes(1);
-            expect(copyButton.nativeElement.textContent).toBe('Copied');
+            expect(copyButton.textContent).toBe('Copied');
+            
             tick(2000);
-            fixture.detectChanges();
-            expect(copyButton.nativeElement.textContent).toBe('Copy');
+            spectator.detectChanges();
+            expect(copyButton.textContent).toBe('Copy');
         }));
 
         it('should Reveal password', () => {
-            const revealButton = fixture.debugElement.query(
-                By.css('.dot-generate-secure-password__reveal-link')
-            );
-            revealButton.nativeElement.click();
-            expect(revealButton.nativeElement.text).toContain('Reveal');
-            fixture.detectChanges();
-            expect(comp.typeInput).toBe('text');
-            expect(revealButton.nativeElement.text).toContain('hide');
+            const revealButton = spectator.query(
+                '.dot-generate-secure-password__reveal-link'
+            ) as HTMLAnchorElement;
+            
+            expect(revealButton.text).toContain('Reveal');
+            spectator.click(revealButton);
+            spectator.detectChanges();
+            
+            expect(spectator.component.typeInput).toBe('text');
+            expect(revealButton.text).toContain('hide');
         });
 
         it('should reset on close', () => {
-            const revealButton = fixture.debugElement.query(
-                By.css('.dot-generate-secure-password__reveal-link')
-            );
+            const revealButton = spectator.query(
+                '.dot-generate-secure-password__reveal-link'
+            ) as HTMLAnchorElement;
+            
             dialog.close();
-            fixture.detectChanges();
-            expect(comp.typeInput).toBe('password');
-            expect(comp.value).toBe('');
-            expect(comp.dialogShow).toBe(false);
-            expect(revealButton.nativeElement.text.trim()).toBe('Reveal');
+            spectator.detectChanges();
+            
+            expect(spectator.component.typeInput).toBe('password');
+            expect(spectator.component.value).toBe('');
+            expect(spectator.component.dialogShow).toBe(false);
+            expect(revealButton.text.trim()).toBe('Reveal');
         });
     });
 
     afterEach(() => {
-        comp.dialogShow = false;
-        fixture.detectChanges();
+        spectator.component.dialogShow = false;
+        spectator.detectChanges();
     });
 });

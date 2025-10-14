@@ -1,10 +1,24 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { DotPagesFavoritePageEmptySkeletonComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-pages-card',
     templateUrl: './dot-pages-card.component.html',
     styleUrls: ['./dot-pages-card.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        CardModule,
+        DotPagesFavoritePageEmptySkeletonComponent,
+        ButtonModule,
+        TooltipModule,
+        DotSafeHtmlPipe
+    ]
 })
 export class DotPagesCardComponent {
     @Input() actionButtonId: string;

@@ -16,9 +16,9 @@ const routes: Routes = [
         path: '',
         children: [
             {
-                loadChildren: () =>
-                    import('../dot-porlet-detail/dot-portlet-detail.module').then(
-                        (m) => m.DotPortletDetailModule
+                loadComponent: () =>
+                    import('../dot-porlet-detail/dot-portlet-detail.component').then(
+                        (m) => m.DotPortletDetailComponent
                     ),
                 path: ':asset',
                 canActivate: [newEditContentForContentletGuard],

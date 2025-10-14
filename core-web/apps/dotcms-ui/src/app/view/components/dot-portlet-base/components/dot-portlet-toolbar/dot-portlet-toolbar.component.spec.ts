@@ -40,8 +40,8 @@ describe('DotPortletToolbarComponent', () => {
                     })
                 }
             ],
-            declarations: [DotPortletToolbarComponent, TestHostComponent],
-            imports: [ToolbarModule, DotMessagePipe, ButtonModule, MenuModule]
+            declarations: [TestHostComponent],
+            imports: [ToolbarModule, DotMessagePipe, ButtonModule, MenuModule, DotPortletToolbarComponent]
         }).compileComponents();
     });
 

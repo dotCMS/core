@@ -22,32 +22,27 @@ class DefaultTestHostComponent {}
 class DefaultTestHostUnboxedComponent {}
 
 @Component({
+    selector: 'dot-portlet-toolbar',
+    template: ``,
+    standalone: true
+})
+class DotToolbarMockComponent {}
+
+@Component({
     template: `
         <dot-portlet-base>
             <dot-portlet-toolbar></dot-portlet-toolbar>
             <div>Hello World</div>
         </dot-portlet-base>
     `,
-    imports: [DotPortletBaseComponent]
+    imports: [DotPortletBaseComponent, DotToolbarMockComponent]
 })
 class DefaultTestHostWithToolbarComponent {}
-
-@Component({
-    selector: 'dot-portlet-toolbar',
-    template: ``
-})
-class DotToolbarMockComponent {}
 
 describe('DotPortletBaseComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                DefaultTestHostComponent,
-                DefaultTestHostUnboxedComponent,
-                DefaultTestHostWithToolbarComponent,
-                DotToolbarMockComponent
-            ],
-            imports: [CommonModule, DotPortletBaseComponent, DotPortletBoxComponent]
+            imports: [CommonModule, DotPortletBaseComponent, DotPortletBoxComponent, DefaultTestHostComponent, DefaultTestHostUnboxedComponent, DefaultTestHostWithToolbarComponent, DotToolbarMockComponent]
         }).compileComponents();
     });
 

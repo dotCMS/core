@@ -24,6 +24,7 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
+import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
@@ -42,7 +43,7 @@ import {
     DotDialogActions,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotDialogModule, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDialogComponent, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 import {
     cleanUpDialog,
@@ -196,11 +197,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         dragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsDropZoneComponent,
-                ContentTypeFieldsPropertiesFormComponent,
-                ContentTypeFieldsTabComponent
-            ],
+            declarations: [ContentTypeFieldsDropZoneComponent],
             imports: [
                 RouterTestingModule.withRoutes([
                     {
@@ -210,10 +207,24 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 ]),
                 BrowserAnimationsModule,
                 HttpClientTestingModule,
+                FormsModule,
+                ReactiveFormsModule,
                 DotMessagePipe,
                 TabViewModule,
+                TooltipModule,
+                ButtonModule,
                 DotDialogComponent,
-                DragulaModule
+                DragulaModule,
+                TestDotLoadingIndicatorComponent,
+                TestContentTypeFieldsRowComponent,
+                TestContentTypeFieldsPropertiesFormComponent,
+                TestDotContentTypeFieldsTabComponent,
+                ContentTypeFieldsAddRowModule,
+                DotContentTypeFieldsVariablesModule,
+                DotIconComponent,
+                DotActionButtonComponent,
+                TableModule,
+                CheckboxModule
             ],
             providers: [
                 { provide: Router, useValue: mockRouter },
@@ -402,7 +413,7 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
     selector: 'dot-test-host-component',
     template:
         '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>',
-    imports: [ContentTypeFieldsDropZoneComponent]
+    standalone: false
 })
 class TestHostComponent {
     layout: DotCMSContentTypeLayoutRow[];
@@ -466,13 +477,16 @@ describe('Load fields and drag and drop', () => {
         testFieldDragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [DotConvertToBlockInfoComponent, DotConvertWysiwygToBlockComponent],
-            imports: [
+            declarations: [
                 ContentTypeFieldsDropZoneComponent,
+                TestHostComponent,
+                DotConvertToBlockInfoComponent,
+                DotConvertWysiwygToBlockComponent
+            ],
+            imports: [
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
-                TestHostComponent,
                 TestDotLoadingIndicatorComponent,
                 TestDotBlockEditorSettingsComponent,
                 RouterTestingModule.withRoutes([
@@ -488,11 +502,11 @@ describe('Load fields and drag and drop', () => {
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
                 DotActionButtonComponent,
-                DotIconModule,
+                DotIconComponent,
                 ButtonModule,
                 TableModule,
                 ContentTypeFieldsAddRowModule,
-                DotDialogModule,
+                DotDialogComponent,
                 HttpClientTestingModule,
                 DotMessagePipe,
                 TabViewModule

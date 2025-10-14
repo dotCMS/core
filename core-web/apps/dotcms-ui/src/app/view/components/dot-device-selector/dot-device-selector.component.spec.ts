@@ -11,7 +11,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     DotDevicesServiceMock,
     mockDotDevices,
@@ -54,7 +54,7 @@ describe('DotDeviceSelectorComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotDeviceSelectorComponent],
-            imports: [BrowserAnimationsModule, DotIconModule, DotMessagePipe],
+            imports: [BrowserAnimationsModule, DotIconComponent, DotMessagePipe],
             providers: [
                 {
                     provide: DotDevicesService,

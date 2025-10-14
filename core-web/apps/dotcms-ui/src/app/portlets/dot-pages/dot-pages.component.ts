@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import {
     AfterViewInit,
@@ -11,7 +12,8 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { Menu } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { Observable } from 'rxjs/internal/Observable';
 import { filter, take, takeUntil } from 'rxjs/operators';
@@ -30,7 +32,11 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
+import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
+import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel/dot-pages-favorite-panel.component';
+import { DotPagesListingPanelComponent } from './dot-pages-listing-panel/dot-pages-listing-panel.component';
 import {
     DotPagesState,
     DotPageStore,
@@ -48,7 +54,15 @@ export interface DotActionsMenuEventParams {
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
     templateUrl: './dot-pages.component.html',
-    standalone: false
+    imports: [
+        CommonModule,
+        DotAddToBundleComponent,
+        DotPagesCreatePageDialogComponent,
+        DotPagesFavoritePanelComponent,
+        DotPagesListingPanelComponent,
+        MenuModule,
+        ProgressSpinnerModule
+    ]
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
     private dotRouterService = inject(DotRouterService);

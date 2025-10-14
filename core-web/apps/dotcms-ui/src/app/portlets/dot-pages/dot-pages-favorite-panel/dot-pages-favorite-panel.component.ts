@@ -1,9 +1,12 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
+import { PanelModule } from 'primeng/panel';
 
 import {
     DotHttpErrorManagerService,
@@ -13,7 +16,9 @@ import {
 import { HttpCode } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotPagesCardComponent } from './dot-pages-card/dot-pages-card.component';
 import {
     DotPagesState,
     DotPageStore,
@@ -25,7 +30,13 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     selector: 'dot-pages-favorite-panel',
     templateUrl: './dot-pages-favorite-panel.component.html',
     styleUrls: ['./dot-pages-favorite-panel.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotMessagePipe,
+        DotPagesCardComponent,
+        PanelModule,
+        ButtonModule
+    ]
 })
 export class DotPagesFavoritePanelComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

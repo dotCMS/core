@@ -7,7 +7,7 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
 
@@ -58,7 +58,8 @@ describe('ContentTypesFieldsListComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [ContentTypesFieldsListComponent, DragulaModule, DotIconModule],
+            declarations: [ContentTypesFieldsListComponent],
+            imports: [DragulaModule, DotIconComponent],
             providers: [
                 DragulaService,
                 {

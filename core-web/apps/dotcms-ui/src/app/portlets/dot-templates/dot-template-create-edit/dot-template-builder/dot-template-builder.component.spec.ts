@@ -16,7 +16,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotEventsService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotLayout, DotTemplate, DotTemplateDesigner } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
@@ -125,15 +125,15 @@ describe('DotTemplateBuilderComponent', () => {
                 TabViewMockComponent,
                 TabPanelMockComponent,
                 DotTestHostComponent,
-                TemplateBuilderMockComponent,
-                DotGlobalMessageComponent
+                TemplateBuilderMockComponent
             ],
             imports: [
                 DotMessagePipe,
                 DotPortletBoxComponent,
                 DotShowHideFeatureDirective,
                 ButtonModule,
-                DotIconModule,
+                DotGlobalMessageComponent,
+                DotIconComponent,
                 RouterTestingModule
             ],
             providers: [

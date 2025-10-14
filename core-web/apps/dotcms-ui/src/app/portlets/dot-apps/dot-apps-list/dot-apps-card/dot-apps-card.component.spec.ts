@@ -8,7 +8,7 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
@@ -40,7 +40,7 @@ describe('DotAppsCardComponent', () => {
                 AvatarModule,
                 DotAvatarDirective,
                 BadgeModule,
-                DotIconModule,
+                DotIconComponent,
                 TooltipModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe

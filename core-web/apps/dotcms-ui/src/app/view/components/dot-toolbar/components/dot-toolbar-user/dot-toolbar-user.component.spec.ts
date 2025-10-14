@@ -36,9 +36,9 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import {
-    DotDialogModule,
+    DotDialogComponent,
     DotGravatarDirective,
-    DotIconModule,
+    DotIconComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
@@ -91,8 +91,8 @@ describe('DotToolbarUserComponent', () => {
             ],
             imports: [
                 BrowserAnimationsModule,
-                DotDialogModule,
-                DotIconModule,
+                DotDialogComponent,
+                DotIconComponent,
                 SearchableDropdownComponent,
                 RouterTestingModule,
                 ButtonModule,
@@ -108,7 +108,9 @@ describe('DotToolbarUserComponent', () => {
                 DotMyAccountComponent,
                 DotToolbarUserComponent,
                 DotGravatarDirective,
-                AvatarModule
+                AvatarModule,
+                DotIconComponent,
+                DotDialogComponent
             ]
         });
 

@@ -14,7 +14,7 @@ import { delay } from 'rxjs/operators';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotDialogModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotDialogComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -73,7 +73,7 @@ describe('DotFormSelectorComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock }
             ],
             imports: [
-                DotDialogModule,
+                DotDialogComponent,
                 BrowserAnimationsModule,
                 HttpClientTestingModule,
                 TableModule,

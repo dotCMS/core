@@ -18,7 +18,7 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotDialogModule,
+    DotDialogComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
@@ -83,7 +83,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             imports: [
                 InputTextModule,
                 DotAutofocusDirective,
-                DotDialogModule,
+                DotDialogComponent,
                 CommonModule,
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,

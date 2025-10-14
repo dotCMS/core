@@ -154,7 +154,9 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivate: [MenuGuardService, PagesGuardService],
         path: 'pages',
         loadChildren: () =>
-            import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
+            import('@portlets/dot-pages/dot-pages-routing.module').then(
+                (m) => m.DotPagesRoutingModule
+            )
     },
     {
         canActivate: [MenuGuardService],
