@@ -78,10 +78,14 @@ export function withSidebar() {
              * Loads child folders for a specific path
              */
             loadChildFolders: (
-                path: string
+                path: string,
+                hostname?: string
             ): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> => {
-                return getFolderNodesByPath(path, dotFolderService).pipe(
-                    tap(() => patchState(store, { path: path }))
+                const host = hostname || store.currentSite()?.hostname;
+                const fullPath = `${host}${path}`;
+
+                return getFolderNodesByPath(fullPath, dotFolderService).pipe(
+                    tap(() => patchState(store, { path }))
                 );
             },
             /**

@@ -74,7 +74,6 @@ export class DotContentDriveSidebarComponent {
     protected onNodeExpand(event: TreeNodeExpandEvent): void {
         const { node } = event;
         const { hostname, path } = node.data;
-        const fullPath = `${hostname}${path}`;
 
         if (node.children?.length > 0 || node.leaf) {
             node.expanded = true;
@@ -82,7 +81,7 @@ export class DotContentDriveSidebarComponent {
         }
 
         node.loading = true;
-        this.#store.loadChildFolders(fullPath).subscribe(({ folders }) => {
+        this.#store.loadChildFolders(path, hostname).subscribe(({ folders }) => {
             node.loading = false;
             node.expanded = true;
             node.leaf = folders.length === 0;
