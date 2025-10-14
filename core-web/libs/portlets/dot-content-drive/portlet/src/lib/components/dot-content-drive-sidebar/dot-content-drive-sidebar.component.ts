@@ -10,6 +10,7 @@ import {
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
 import {
+    DotContentDriveMoveItems,
     DotContentDriveUploadFiles,
     DotTreeFolderComponent
 } from '@dotcms/portlets/content-drive/ui';
@@ -33,6 +34,7 @@ export class DotContentDriveSidebarComponent {
     readonly $currentSite = this.#store.currentSite;
 
     readonly uploadFiles = output<DotContentDriveUploadFiles>();
+    readonly moveItems = output<DotContentDriveMoveItems>();
 
     readonly getSiteFoldersEffect = effect(() => {
         const currentSite = this.$currentSite();
