@@ -7,43 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.2.0
 
-### Added
+### Fixed
 
-#### Enhanced Node Access in Custom Renderers
+#### Contentlet Component Input Binding
 
-- **NEW**: Custom renderers now receive the complete `BlockEditorNode` with full access to all properties
-  - Access `node.attrs.data` for contentlet data
-  - Access `node.type` for block type identification
-  - Access `node.marks` for text formatting marks
-  - Access `node.content` for nested content nodes
-  - Access all other node properties (text, attrs, etc.)
+- **Fixed**: `DotContentletBlock` component now correctly passes `node` instead of `contentlet` to custom renderers
+  - Ensures consistency with the documented API where custom renderers receive the complete `BlockEditorNode`
+  - Custom renderers should access contentlet data via `node.attrs?.['data']`
 
   ```typescript
+  // Example: Custom renderer accessing contentlet data
   @Component({
-      selector: 'activity-renderer',
-      template: `
-          <article class="activity">
-              <h2>{{ data.title }}</h2>
-              <p>{{ data.description }}</p>
-              <time>{{ data.date }}</time>
-              <ng-content />
-          </article>
-      `
+    selector: 'activity-renderer',
+    template: '<div>{{ contentlet().title }}</div>'
   })
   export class ActivityRendererComponent {
-      @Input() node!: BlockEditorNode;
+    @Input() node!: BlockEditorNode;
 
-      get data() {
-          // Access contentlet data from node.attrs.data
-          return this.node.attrs?.data as {
-              title: string;
-              description: string;
-              date: string;
-          };
-      }
+    contentlet = computed(() => {
+      return this.node.attrs?.['data'] as Activity;
+    });
   }
   ```
-
 ### Changed
 
 #### Block Editor Renderer - Breaking Changes
@@ -75,12 +60,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   *ngComponentOutlet="customRender | async; inputs: { node: node }"
   ```
 
-#### Contentlet Block Component
+- **Important**: When creating a custom renderer for BlockEditorRenderer, the component must have an `@Input()` property named `node` of type `BlockEditorNode`
+  - The `node` input contains all node information including type, attrs, content, marks and text properties
+  - Custom renderers access node data via `@Input() node: BlockEditorNode`
 
-- **Changed**: `DotContentletBlock` component now receives and passes the complete `node` object
-  - Added `@Input() node: BlockEditorNode` property
-  - Component outlets now receive `{ node: $node() }` instead of `{ contentlet: $data() }`
-  - Maintains backward compatibility with `attrs` input for data access
+  ```typescript
+  // Example: Custom renderer component structure
+  @Component({
+    selector: 'my-custom-renderer',
+    template: '<div>{{ node.text }}</div>' 
+  })
+  export class MyCustomRendererComponent {
+    @Input() node!: BlockEditorNode; // Required input name and type
+  }
+  ```
 
 ### Removed
 

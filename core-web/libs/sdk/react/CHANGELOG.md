@@ -2,10 +2,29 @@
 
 All notable changes to the DotCMS React SDK will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## v1.2.0
+
+### Fixed
+
+#### Optional Custom Renderers
+
+- **Fixed**: `customRenderers` prop is now optional in `DotContent` component
+  - Changed `customRenderers: CustomRenderer` to `customRenderers?: CustomRenderer`
+  - Added optional chaining when accessing custom renderers: `customRenderers?.[contentType]`
+  - Prevents runtime errors when `customRenderers` is not provided
+  - Allows using the component without custom renderers and relying on default rendering
+
+  ```typescript
+  // Now works without custom renderers
+  <DotCMSBlockEditorRenderer blocks={blogContent} />
+
+  // Also works with custom renderers
+  <DotCMSBlockEditorRenderer
+    blocks={blogContent}
+    customRenderers={customRenderers}
+  />
+  ```
 
 ### Added
 
@@ -58,9 +77,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   };
 
   // After
-  const MyCustomBlock: React.FC<CustomRendererProps> = ({ node, children }) => {
+  const MyCustomBlock: React.FC<CustomRendererProps> = ({ node }) => {
     const text = node.content?.[0]?.text;
-    return <div>{text}{children}</div>;
+    return <div>{text}</div>;
   };
   ```
 
@@ -136,7 +155,7 @@ Update your custom renderer components to use the new node-based signature:
 
 ```tsx
 // Before
-import { DotCMSBlockEditorRenderer } from '@dotcms/react/next';
+import { DotCMSBlockEditorRenderer } from '@dotcms/react';
 
 const ParagraphRenderer = ({ content }) => {
   const [{ text }] = content;
@@ -148,12 +167,12 @@ const customRenderers = {
 };
 
 // After
-import { DotCMSBlockEditorRenderer } from '@dotcms/react/next';
+import { DotCMSBlockEditorRenderer, CustomRendererProps } from '@dotcms/reactt';
 import { BlockEditorNode } from '@dotcms/types';
 
-const ParagraphRenderer = ({ node, children }) => {
+const ParagraphRenderer = ({ node }: CustomRendererProps) => {
   const text = node.content?.[0]?.text;
-  return <p style={node.attrs}>{text}{children}</p>;
+  return <p style={node.attrs}>{text}</p>;
 };
 
 const customRenderers = {
@@ -181,32 +200,6 @@ interface BlogPost {
 }
 ```
 
-#### For Nested Content Rendering
-
-The `children` prop now handles nested content rendering automatically:
-
-```tsx
-// Before - Manual nested rendering
-const CalloutRenderer = ({ node }) => (
-  <div className="callout">
-    <h3>{node.attrs.title}</h3>
-    {node.content && node.content.map((child, i) => (
-      <DotCMSBlockEditorRenderer
-        key={i}
-        blocks={{ type: 'doc', content: [child] }}
-      />
-    ))}
-  </div>
-);
-
-// After - Automatic nested rendering via children
-const CalloutRenderer = ({ node, children }) => (
-  <div className="callout">
-    <h3>{node.attrs.title}</h3>
-    {children}
-  </div>
-);
-```
 
 #### For Contentlet Renderers
 
@@ -232,29 +225,6 @@ const ProductRenderer = ({ node }) => {
   );
 };
 ```
-
-#### For Test Files
-
-Update test assertions to use the new prop structure:
-
-```tsx
-// Before
-const customRenderers = {
-  paragraph: ({ content }) => {
-    const [{ text }] = content;
-    return <p data-testid="custom-paragraph">{text}</p>;
-  }
-};
-
-// After
-const customRenderers = {
-  paragraph: ({ node }) => {
-    const text = node.content?.[0]?.text;
-    return <p data-testid="custom-paragraph">{text}</p>;
-  }
-};
-```
-
 ### Benefits
 
 - **Consistency**: Single unified interface (`BlockEditorNode`) for all block editor structures
