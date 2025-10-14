@@ -2,9 +2,15 @@
     <p-inputIcon styleClass="pi pi-search" />
     <input
         pInputText
-        type="text"
+        type="search"
         name="search"
         placeholder="Search"
         autocomplete="off"
         [formControl]="searchControl" />
+    @if (searchControl.value) {
+        <p-inputIcon
+            styleClass="pi pi-times p-input-icon-right"
+            data-testId="search-icon-clear"
+            (click)="searchControl.reset()" />
+    }
 </p-iconField>

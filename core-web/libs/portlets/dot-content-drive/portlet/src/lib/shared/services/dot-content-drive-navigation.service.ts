@@ -17,7 +17,6 @@ export class DotContentDriveNavigationService {
     readonly #router = inject(Router);
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotRouterService = inject(DotRouterService);
-
     /**
      * Navigates to the appropriate editor based on the content type
      * @param contentlet The content item to edit

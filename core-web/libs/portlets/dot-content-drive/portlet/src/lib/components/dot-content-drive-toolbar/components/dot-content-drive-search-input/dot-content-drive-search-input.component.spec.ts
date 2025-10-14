@@ -1,4 +1,10 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@ngneat/spectator/jest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -149,5 +155,30 @@ describe('DotContentDriveSearchInputComponent', () => {
 
             expect(mockStore.patchFilters).not.toHaveBeenCalled();
         }));
+    });
+
+    describe('Clear Icon', () => {
+        it('should appear when input has value', () => {
+            spectator.component.searchControl.setValue('test value');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('search-icon-clear'))).toBeTruthy();
+        });
+
+        it('should not appear when input is empty', () => {
+            spectator.component.searchControl.setValue('');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('search-icon-clear'))).not.toBeTruthy();
+        });
+
+        it('should clear input when clear icon is clicked', () => {
+            spectator.component.searchControl.setValue('test value');
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('search-icon-clear')));
+
+            expect(spectator.component.searchControl.value).toBe(null);
+        });
     });
 });

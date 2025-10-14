@@ -36,11 +36,7 @@ import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple2;
 import java.io.Serializable;
 import java.net.URISyntaxException;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -768,6 +764,22 @@ public class ContentTypeHelper implements Serializable {
         }
 
         return key;
+    }
+
+    /**
+     * Maps a comma-separated Content Types (String) to a List of Content Types (List<String>)
+     * <p>
+     *
+     * @param ensuredContentTypes List of Content Types requested to be included in the response
+     * @return List of Content Types names in lowercase (e.g. [video, content]).
+     */
+    public List<String> getEnsuredContentTypes(final String ensuredContentTypes) {
+        return ensuredContentTypes == null || ensuredContentTypes.isBlank()
+                ? Collections.emptyList()
+                : Arrays.stream(ensuredContentTypes.split("\\s*,\\s*"))
+                        .map(s -> s.trim().toLowerCase())
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
     }
 
 } // E:O:F:ContentTypeHelper.

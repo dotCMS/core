@@ -3,12 +3,7 @@
  * Contains interfaces for SDK/library internal structures (not for end users)
  */
 
-import {
-    DotCMSAnalyticsEventContext,
-    DotCMSEventDeviceData,
-    DotCMSEventPageData,
-    DotCMSEventUtmData
-} from './data.model';
+import { DotCMSAnalyticsEventContext, DotCMSEventPageData, DotCMSEventUtmData } from './data.model';
 import { JsonObject } from './event.model';
 import { DotCMSAnalyticsRequestBody } from './request.model';
 
@@ -140,13 +135,11 @@ export interface AnalyticsBasePayloadWithContext extends AnalyticsBasePayload {
 /**
  * Enriched analytics payload with DotCMS-specific data.
  * This is the result of enriching the base Analytics.js payload with context (from identity plugin)
- * and then adding page, device, UTM, and custom data (from enricher plugin).
+ * and then adding page, UTM, and custom data (from enricher plugin).
  */
 export type EnrichedAnalyticsPayload = AnalyticsBasePayloadWithContext & {
     /** Page data for the current page */
     page: DotCMSEventPageData;
-    /** Device and browser information */
-    device: DotCMSEventDeviceData;
     /** UTM parameters for campaign tracking */
     utm?: DotCMSEventUtmData;
     /** Custom data associated with the event (any valid JSON) */
