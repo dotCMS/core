@@ -1,6 +1,7 @@
 package com.dotcms.cost;
 
 
+import com.dotcms.cost.RequestPrices.Price;
 import io.vavr.Tuple2;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -31,6 +32,8 @@ public interface RequestCostApi {
     public final static String ARGS = "args";
 
 
+    int getRequestCostDenominator();
+
     /**
      * Returns the current load of the system. The first value is the current number of requests in the system. The
      * second value is the sum of the current cost for all the requests.
@@ -56,24 +59,18 @@ public interface RequestCostApi {
     boolean isFullAccounting(@NotNull HttpServletRequest request);
 
 
-    /**
-     * Increment the cost for the current request
-     *
-     * @param increment
-     * @param method
-     * @param args
-     */
-    void incrementCost(int increment, @NotNull Method method, @NotNull Object[] args);
+    void incrementCost(Price price, Method method, Object[] args);
+
 
     /**
      * Increment the cost for the current request
      *
-     * @param increment
+     * @param price
      * @param clazz
      * @param method
      * @param args
      */
-    void incrementCost(int increment, @NotNull Class clazz, @NotNull String method, @NotNull Object[] args);
+    void incrementCost(Price price, @NotNull Class clazz, @NotNull String method, @NotNull Object[] args);
 
     /**
      * Returns the current cost for the current request.

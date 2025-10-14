@@ -20,6 +20,8 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -1894,8 +1896,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-    
-    
+
+    @RequestCost(Price.ES_QUERY)
     @Override
     protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
 

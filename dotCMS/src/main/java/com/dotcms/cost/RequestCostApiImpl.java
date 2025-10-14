@@ -1,6 +1,7 @@
 package com.dotcms.cost;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -29,11 +30,13 @@ import javax.servlet.http.HttpServletResponse;
 @ApplicationScoped
 public class RequestCostApiImpl implements RequestCostApi {
 
-
+    //log an accounting every X seconds
     private int requestCostTimeWindowSeconds;
     private final AtomicLong requestCountForWindow = new AtomicLong(0);
     private final AtomicLong requestCostForWindow = new AtomicLong(0);
     private ScheduledExecutorService scheduler;
+
+    // make the request cost points look like $$
     private int requestCostDenominator;
 
     public RequestCostApiImpl() {
@@ -68,13 +71,19 @@ public class RequestCostApiImpl implements RequestCostApi {
             }
             Logger.info(this.getClass(),
                     String.format(
-                            "Request Cost Monitor: Window: %ds, Count: %d, Total Cost: %.2f, Cost/Request: %.2f",
+                            "Request Cost Monitor: Window: %ds, Count: %d, Total Cost: %.2f¢, Cost/Request: %.2f¢",
                             requestCostTimeWindowSeconds,
                             load._1, load._2.doubleValue() / requestCostDenominator,
                             load._2.doubleValue() / load._1 / requestCostDenominator));
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error logging request cost", e);
         }
+    }
+
+
+    @Override
+    public int getRequestCostDenominator() {
+        return requestCostDenominator;
     }
 
 
@@ -120,16 +129,16 @@ public class RequestCostApiImpl implements RequestCostApi {
         return false;
     }
 
-
-    public void incrementCost(int cost, Method method, Object[] args) {
+    @Override
+    public void incrementCost(Price price, Method method, Object[] args) {
         Class clazz = method.getDeclaringClass();
 
-        incrementCost(cost, clazz, method.getName(), args);
+        incrementCost(price, clazz, method.getName(), args);
     }
 
 
     @Override
-    public void incrementCost(int cost, Class clazz, String method, Object[] args) {
+    public void incrementCost(Price price, Class clazz, String method, Object[] args) {
 
         HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         if (request == null) {
@@ -137,10 +146,10 @@ public class RequestCostApiImpl implements RequestCostApi {
         }
         boolean fullAccounting = isFullAccounting(request);
         Map<String, Object> load = fullAccounting
-                ? Map.of(COST, cost, METHOD, method, CLASS, clazz, ARGS, args)
-                : Map.of(COST, cost);
+                ? Map.of(COST, price.price, METHOD, method, CLASS, clazz, ARGS, args)
+                : Map.of(COST, price.price);
         getAccountList(request).add(load);
-        requestCostForWindow.accumulateAndGet(cost, Math::addExact);
+        requestCostForWindow.accumulateAndGet(price.price, Math::addExact);
 
     }
 
@@ -169,7 +178,8 @@ public class RequestCostApiImpl implements RequestCostApi {
             request.setAttribute(REQUEST_COST_FULL_ACCOUNTING, true);
         }
         requestCountForWindow.incrementAndGet();
-        this.incrementCost(1, RequestCostApi.class, "initAccounting", new Object[]{request, fullAccounting});
+        this.incrementCost(Price.COSTING_INIT, RequestCostApi.class, "initAccounting",
+                new Object[]{request, fullAccounting});
     }
 
 

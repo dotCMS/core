@@ -18,6 +18,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -142,7 +143,9 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2417,6 +2420,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
+    private Lazy<Method> firePreActionMethod = Lazy.of(() -> {
+        return Try.of(() -> WorkFlowActionlet.class.getMethod("executePreAction", WorkflowProcessor.class, Map.class))
+                .getOrElseThrow(
+                        DotRuntimeException::new);
+    });
+
+
 	private WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user, final ConcurrentMap<String,Object> context) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 		WorkflowProcessor processor = new WorkflowProcessor(contentlet, user, context);
 		if(!processor.inProcess()){
@@ -2438,6 +2448,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				//Validate the actionlet exists and the OSGI is installed and running.
 				if(UtilMethods.isSet(actionlet)){
 					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+
+                    APILocator.getRequestCostAPI().incrementCost(Price.WORKFLOW_ACTION_RUN, firePreActionMethod.get(),
+                            new Object[]{actionlet.getName(), params});
+
+
 					actionlet.executePreAction(processor, params);
 					//if we should stop processing further actionlets
 					if(actionlet.stopProcessing()){
@@ -2452,6 +2467,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return processor;
 	}
+
+    private Lazy<Method> firePostActionMethod = Lazy.of(() -> {
+        return Try.of(() -> WorkFlowActionlet.class.getMethod("fireWorkflowPostCheckin", WorkflowProcessor.class))
+                .getOrElseThrow(
+                        DotRuntimeException::new);
+    });
 
 	@WrapInTransaction
 	@Override
@@ -2468,6 +2489,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					final WorkFlowActionlet actionlet = actionClass.getActionlet();
 					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+
+                    APILocator.getRequestCostAPI().incrementCost(Price.WORKFLOW_ACTION_RUN, firePostActionMethod.get(),
+                            new Object[]{actionlet.getName(), params});
+
 					if (processor.isRunningBulk() && actionlet instanceof BatchAction) {
 						final BatchAction batchable = (BatchAction) actionlet;
 						batchable.preBatchAction(processor, actionClass, params);

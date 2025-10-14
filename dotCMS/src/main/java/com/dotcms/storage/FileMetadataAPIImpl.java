@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
@@ -315,7 +316,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return
      */
-    @RequestCost(increment = 1)
+    @RequestCost(Price.FILE_METADATA_FROM_CACHE)
     @Override
     public Metadata getOrGenerateMetadata(final Contentlet contentlet, final String fieldVariableName)
             throws DotDataException {

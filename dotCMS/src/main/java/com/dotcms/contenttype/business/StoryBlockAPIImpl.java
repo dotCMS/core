@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.util.ConversionUtils;
@@ -168,7 +169,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 : Integer.parseInt(MAX_RELATIONSHIP_DEPTH.get());
     }
 
-    @RequestCost(increment = 1)
+    @RequestCost(Price.BLOCK_EDITOR_HYDRATION)
     @CloseDBIfOpened
     @Override
     @SuppressWarnings("unchecked")

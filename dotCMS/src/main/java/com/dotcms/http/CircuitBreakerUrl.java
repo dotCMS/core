@@ -1,6 +1,7 @@
 package com.dotcms.http;
 
 import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.BadRequestException;
@@ -243,7 +244,7 @@ public class CircuitBreakerUrl {
         });
     }
 
-    @RequestCost(increment = 4)
+    @RequestCost(Price.HTTP_FETCH)
     public void doOut(final HttpServletResponse response) throws IOException {
 
         circuitBreakerConnectionControl.check(this.proxyUrl);

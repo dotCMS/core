@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -143,7 +144,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
 
         // Initialize first
         listener.requestInitialized(event);
-        requestCostApi.incrementCost(10, RequestCostRequestListenerTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.TEN, RequestCostRequestListenerTest.class, "method", new Object[]{});
 
         // Verify it's set up
         assertNotNull("ThreadLocal should be set", HttpServletRequestThreadLocal.INSTANCE.getRequest());
@@ -182,8 +183,8 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
                 HttpServletRequestThreadLocal.INSTANCE.getRequest());
 
         // When - Process (simulate some work)
-        requestCostApi.incrementCost(5, RequestCostRequestListenerTest.class, "method1", new Object[]{});
-        requestCostApi.incrementCost(3, RequestCostRequestListenerTest.class, "method2", new Object[]{});
+        requestCostApi.incrementCost(Price.FIVE, RequestCostRequestListenerTest.class, "method1", new Object[]{});
+        requestCostApi.incrementCost(Price.THREE, RequestCostRequestListenerTest.class, "method2", new Object[]{});
 
         // Then - Verify processing
         int cost = requestCostApi.getRequestCost(request);
@@ -215,7 +216,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
 
         // When - First request lifecycle
         listener.requestInitialized(event1);
-        requestCostApi.incrementCost(10, RequestCostRequestListenerTest.class, "method1", new Object[]{});
+        requestCostApi.incrementCost(Price.TEN, RequestCostRequestListenerTest.class, "method1", new Object[]{});
         int cost1 = requestCostApi.getRequestCost(request1);
         listener.requestDestroyed(event1);
 
@@ -229,7 +230,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
 
         // When - Second request lifecycle
         listener.requestInitialized(event2);
-        requestCostApi.incrementCost(20, RequestCostRequestListenerTest.class, "method2", new Object[]{});
+        requestCostApi.incrementCost(Price.TWENTY, RequestCostRequestListenerTest.class, "method2", new Object[]{});
         int cost2 = requestCostApi.getRequestCost(request2);
         listener.requestDestroyed(event2);
 

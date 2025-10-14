@@ -1,5 +1,6 @@
 package com.dotmarketing.image.filter;
 
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -154,7 +155,8 @@ public abstract class ImageFilter implements ImageFilterIf {
 
         if (overwrite) {
 
-            APILocator.getRequestCostAPI().incrementCost(1, overwriteMethod.get(), new Object[]{resultFile.toPath()});
+            APILocator.getRequestCostAPI().incrementCost(Price.IMAGE_FILTER_TRANSFORM, overwriteMethod.get(),
+                    new Object[]{resultFile.toPath()});
         }
 
 		return overwrite;

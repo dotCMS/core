@@ -1,5 +1,6 @@
 package com.dotcms.cost;
 
+import com.dotcms.cost.RequestPrices.Price;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -20,6 +21,6 @@ public @interface RequestCost {
    *
    * @return cost value to increment
    */
-  int increment() default 1;
+  Price value() default Price.COSTING_INIT;
 
 }

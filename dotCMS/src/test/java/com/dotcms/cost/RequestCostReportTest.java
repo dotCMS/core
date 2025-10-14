@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -18,8 +19,6 @@ import org.junit.Test;
 /**
  * Unit tests for {@link RequestCostReport}. Tests HTML report generation with various accounting data scenarios.
  *
- * @author Will Ezell
- * @since Oct 13th, 2024
  */
 public class RequestCostReportTest extends UnitTestBase {
 
@@ -45,9 +44,9 @@ public class RequestCostReportTest extends UnitTestBase {
     public void test_writeAccounting_withFullData_shouldGenerateCompleteReport() {
         // Given
         requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(5, RequestCostReportTest.class, "method1", new Object[]{"arg1", "arg2"});
-        requestCostApi.incrementCost(10, RequestCostReportTest.class, "method2", new Object[]{123, true});
-        requestCostApi.incrementCost(3, RequestCostReportTest.class, "method3", new Object[]{});
+        requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "method1", new Object[]{"arg1", "arg2"});
+        requestCostApi.incrementCost(Price.TEN, RequestCostReportTest.class, "method2", new Object[]{123, true});
+        requestCostApi.incrementCost(Price.THREE, RequestCostReportTest.class, "method3", new Object[]{});
 
         // When
         String html = report.writeAccounting(request);
@@ -72,7 +71,7 @@ public class RequestCostReportTest extends UnitTestBase {
     public void test_writeAccounting_withMinimalData_shouldGenerateBasicReport() {
         // Given
         requestCostApi.initAccounting(request, false);
-        requestCostApi.incrementCost(7, RequestCostReportTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.SEVEN, RequestCostReportTest.class, "method", new Object[]{});
 
         // When
         String html = report.writeAccounting(request);
@@ -134,9 +133,9 @@ public class RequestCostReportTest extends UnitTestBase {
     public void test_writeAccounting_shouldCalculateTotalCorrectly() {
         // Given
         requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(10, RequestCostReportTest.class, "method1", new Object[]{});
-        requestCostApi.incrementCost(20, RequestCostReportTest.class, "method2", new Object[]{});
-        requestCostApi.incrementCost(30, RequestCostReportTest.class, "method3", new Object[]{});
+        requestCostApi.incrementCost(Price.TEN, RequestCostReportTest.class, "method1", new Object[]{});
+        requestCostApi.incrementCost(Price.TWENTY, RequestCostReportTest.class, "method2", new Object[]{});
+        requestCostApi.incrementCost(Price.THIRTY, RequestCostReportTest.class, "method3", new Object[]{});
 
         int expectedTotal = requestCostApi.getRequestCost(request);
 
@@ -156,9 +155,9 @@ public class RequestCostReportTest extends UnitTestBase {
     public void test_writeAccounting_shouldNumberRowsSequentially() {
         // Given
         requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(1, RequestCostReportTest.class, "method1", new Object[]{});
-        requestCostApi.incrementCost(2, RequestCostReportTest.class, "method2", new Object[]{});
-        requestCostApi.incrementCost(3, RequestCostReportTest.class, "method3", new Object[]{});
+        requestCostApi.incrementCost(Price.ONE, RequestCostReportTest.class, "method1", new Object[]{});
+        requestCostApi.incrementCost(Price.TWO, RequestCostReportTest.class, "method2", new Object[]{});
+        requestCostApi.incrementCost(Price.THREE, RequestCostReportTest.class, "method3", new Object[]{});
 
         // When
         String html = report.writeAccounting(request);
@@ -177,7 +176,7 @@ public class RequestCostReportTest extends UnitTestBase {
     public void test_writeAccounting_shouldDisplayArguments() {
         // Given
         requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(5, RequestCostReportTest.class, "testMethod",
+        requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "testMethod",
                 new Object[]{"stringArg", 42, true, null});
 
         // When
@@ -197,7 +196,7 @@ public class RequestCostReportTest extends UnitTestBase {
     public void test_writeAccounting_withNullArguments_shouldNotFail() {
         // Given
         requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(5, RequestCostReportTest.class, "method",
+        requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "method",
                 new Object[]{null, "valid", null});
 
         // When
@@ -219,7 +218,7 @@ public class RequestCostReportTest extends UnitTestBase {
         requestCostApi.initAccounting(request, true);
         int entryCount = 100;
         for (int i = 0; i < entryCount; i++) {
-            requestCostApi.incrementCost(1, RequestCostReportTest.class, "method" + i, new Object[]{i});
+            requestCostApi.incrementCost(Price.ONE, RequestCostReportTest.class, "method" + i, new Object[]{i});
         }
 
         // When
@@ -241,7 +240,7 @@ public class RequestCostReportTest extends UnitTestBase {
     public void test_writeAccounting_shouldGenerateValidHTML() {
         // Given
         requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(5, RequestCostReportTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "method", new Object[]{});
 
         // When
         String html = report.writeAccounting(request);
@@ -272,7 +271,7 @@ public class RequestCostReportTest extends UnitTestBase {
         // Given
         requestCostApi.initAccounting(request, true);
         // Class and method names from Java won't have HTML special chars, but args might
-        requestCostApi.incrementCost(5, RequestCostReportTest.class, "method",
+        requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "method",
                 new Object[]{"<test>", "&value", "\"quoted\""});
 
         // When

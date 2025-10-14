@@ -16,6 +16,7 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -268,7 +269,7 @@ public class LoginServiceAPIFactory implements Serializable {
         
         @CloseDBIfOpened
         @Override
-        @RequestCost(increment = 2)
+        @RequestCost(Price.LOGIN_USERNAME_PASS)
         public boolean doActionLogin(String userId,
                                      final String password,
                                      final boolean rememberMe,

@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.directive.DotCacheDirective;
@@ -117,7 +118,7 @@ public class VelocityUtil {
 	}
 
 
-    @RequestCost(increment = 5)
+    @RequestCost(Price.VELOCITY_PARSE)
 	public String parseVelocity(String velocityCode, Context ctx){
 		VelocityEngine ve = VelocityUtil.getEngine();
 		StringWriter stringWriter = new StringWriter();
@@ -246,7 +247,7 @@ public class VelocityUtil {
    * This will return a velocity context for workflow actionlet.
    * It will mock a Request and Response and then use
    */
-  @RequestCost(increment = 1)
+  @RequestCost(Price.VELOCITY_BUILD_CONTEXT)
   public Context getWorkflowContext(final WorkflowProcessor processor) {
     
     final Contentlet contentlet = processor.getContentlet();
@@ -319,7 +320,7 @@ public class VelocityUtil {
     return getWebContext(getBasicContext(), request, response);
   }
 
-    @RequestCost(increment = 1)
+    @RequestCost(Price.VELOCITY_BUILD_CONTEXT)
 	public static ChainedContext getWebContext(Context ctx, final HttpServletRequest requestIn, HttpServletResponse response) {
 
 
@@ -395,7 +396,7 @@ public class VelocityUtil {
 
 	}
 
-    @RequestCost(increment = 1)
+    @RequestCost(Price.VELOCITY_MERGE)
 	public String  merge(final String templatePath, final Context ctx) {
 		try {
 			return mergeTemplate(templatePath, ctx);
@@ -420,7 +421,7 @@ public class VelocityUtil {
 	 *
 	 * @deprecated Use the mockable version instead {@link VelocityUtil#merge(String, Context)}
 	 */
-    @RequestCost(increment = 1)
+    @RequestCost(Price.VELOCITY_MERGE)
 	public static String mergeTemplate(String templatePath, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		Template template = null;
@@ -432,7 +433,7 @@ public class VelocityUtil {
 		return sw.toString();
 	}
 
-    @RequestCost(increment = 1)
+    @RequestCost(Price.VELOCITY_MERGE)
 	public static String eval(String velocity, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		StringWriter sw = new StringWriter();

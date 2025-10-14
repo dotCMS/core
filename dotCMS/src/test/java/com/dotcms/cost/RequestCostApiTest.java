@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -71,7 +72,7 @@ public class RequestCostApiTest extends UnitTestBase {
     }
 
     /**
-     * Test: {@link RequestCostApi#incrementCost(int, Method, Object[])} Should: Increment cost using method reference
+     * Test: {@link RequestCostApi#incrementCost(Price, Method, Object[])} Should: Increment cost using method reference
      * Expected: Cost is added to the request total
      */
     @Test
@@ -82,7 +83,7 @@ public class RequestCostApiTest extends UnitTestBase {
         int initialCost = requestCostApi.getRequestCost(request);
 
         // When
-        requestCostApi.incrementCost(5, testMethod, new Object[]{});
+        requestCostApi.incrementCost(Price.FIVE, testMethod, new Object[]{});
 
         // Then
         int finalCost = requestCostApi.getRequestCost(request);
@@ -90,7 +91,7 @@ public class RequestCostApiTest extends UnitTestBase {
     }
 
     /**
-     * Test: {@link RequestCostApi#incrementCost(int, Class, String, Object[])} Should: Increment cost using class and
+     * Test: {@link RequestCostApi#incrementCost(Price, Class, String, Object[])} Should: Increment cost using class and
      * method name Expected: Cost is added to the request total
      */
     @Test
@@ -100,7 +101,7 @@ public class RequestCostApiTest extends UnitTestBase {
         int initialCost = requestCostApi.getRequestCost(request);
 
         // When
-        requestCostApi.incrementCost(10, RequestCostApiTest.class, "testMethod", new Object[]{"arg1", "arg2"});
+        requestCostApi.incrementCost(Price.TEN, RequestCostApiTest.class, "testMethod", new Object[]{"arg1", "arg2"});
 
         // Then
         int finalCost = requestCostApi.getRequestCost(request);
@@ -115,9 +116,9 @@ public class RequestCostApiTest extends UnitTestBase {
     public void test_getRequestCost_shouldReturnAccumulatedCost() {
         // Given
         requestCostApi.initAccounting(request);
-        requestCostApi.incrementCost(3, RequestCostApiTest.class, "method1", new Object[]{});
-        requestCostApi.incrementCost(7, RequestCostApiTest.class, "method2", new Object[]{});
-        requestCostApi.incrementCost(5, RequestCostApiTest.class, "method3", new Object[]{});
+        requestCostApi.incrementCost(Price.THREE, RequestCostApiTest.class, "method1", new Object[]{});
+        requestCostApi.incrementCost(Price.SEVEN, RequestCostApiTest.class, "method2", new Object[]{});
+        requestCostApi.incrementCost(Price.FIVE, RequestCostApiTest.class, "method3", new Object[]{});
 
         // When
         int totalCost = requestCostApi.getRequestCost(request);
@@ -137,8 +138,8 @@ public class RequestCostApiTest extends UnitTestBase {
         int initialSize = requestCostApi.getAccountList(request).size();
 
         // When
-        requestCostApi.incrementCost(1, RequestCostApiTest.class, "method1", new Object[]{});
-        requestCostApi.incrementCost(2, RequestCostApiTest.class, "method2", new Object[]{});
+        requestCostApi.incrementCost(Price.ONE, RequestCostApiTest.class, "method1", new Object[]{});
+        requestCostApi.incrementCost(Price.TWO, RequestCostApiTest.class, "method2", new Object[]{});
 
         // Then
         List<Map<String, Object>> accountList = requestCostApi.getAccountList(request);
@@ -155,7 +156,7 @@ public class RequestCostApiTest extends UnitTestBase {
         requestCostApi.initAccounting(request, true);
 
         // When
-        requestCostApi.incrementCost(5, RequestCostApiTest.class, "testMethod", new Object[]{"arg1", 123});
+        requestCostApi.incrementCost(Price.FIVE, RequestCostApiTest.class, "testMethod", new Object[]{"arg1", 123});
 
         // Then
         List<Map<String, Object>> accountList = requestCostApi.getAccountList(request);
@@ -180,7 +181,7 @@ public class RequestCostApiTest extends UnitTestBase {
         requestCostApi.initAccounting(request, false);
 
         // When
-        requestCostApi.incrementCost(5, RequestCostApiTest.class, "testMethod", new Object[]{"arg1"});
+        requestCostApi.incrementCost(Price.FIVE, RequestCostApiTest.class, "testMethod", new Object[]{"arg1"});
 
         // Then
         List<Map<String, Object>> accountList = requestCostApi.getAccountList(request);
@@ -232,7 +233,7 @@ public class RequestCostApiTest extends UnitTestBase {
     public void test_endAccounting_shouldClearAttributes() {
         // Given
         requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(5, RequestCostApiTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.FIVE, RequestCostApiTest.class, "method", new Object[]{});
 
         // When
         requestCostApi.endAccounting(request);
@@ -253,15 +254,15 @@ public class RequestCostApiTest extends UnitTestBase {
     public void test_addCostHeader_shouldSetHeaderWithCost() {
         // Given
         requestCostApi.initAccounting(request);
-        requestCostApi.incrementCost(42, RequestCostApiTest.class, "method", new Object[]{});
-
+        requestCostApi.incrementCost(Price.THIRTY, RequestCostApiTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.TWENTY, RequestCostApiTest.class, "method", new Object[]{});
         // When
         requestCostApi.addCostHeader(request, response);
 
         // Then
         String costHeader = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
         assertNotNull("Cost header should be set", costHeader);
-        int headerValue = Integer.parseInt(costHeader);
+        double headerValue = Double.parseDouble(costHeader);
         assertTrue("Cost header should be at least 42", headerValue >= 42);
     }
 
@@ -273,7 +274,10 @@ public class RequestCostApiTest extends UnitTestBase {
     public void test_totalLoadGetAndReset_shouldReturnAndReset() {
         // Given
         requestCostApi.initAccounting(request);
-        requestCostApi.incrementCost(100, RequestCostApiTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.THIRTY, RequestCostApiTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.THIRTY, RequestCostApiTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.THIRTY, RequestCostApiTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.THIRTY, RequestCostApiTest.class, "method", new Object[]{});
 
         // When
         Tuple2<Long, Long> load1 = requestCostApi.totalLoadGetAndReset();
@@ -300,7 +304,7 @@ public class RequestCostApiTest extends UnitTestBase {
         requestCostApi.initAccounting(request1);
         requestCostApi.initAccounting(request2);
 
-        requestCostApi.incrementCost(10, RequestCostApiTest.class, "method1", new Object[]{});
+        requestCostApi.incrementCost(Price.TEN, RequestCostApiTest.class, "method1", new Object[]{});
         // Note: incrementCost uses ThreadLocal, so it will add to whichever request is in the ThreadLocal
         // For proper testing, we'd need to set the ThreadLocal appropriately
 
@@ -322,7 +326,7 @@ public class RequestCostApiTest extends UnitTestBase {
         int initialCost = requestCostApi.getRequestCost(request);
 
         // When
-        requestCostApi.incrementCost(0, RequestCostApiTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.FREE, RequestCostApiTest.class, "method", new Object[]{});
 
         // Then
         int finalCost = requestCostApi.getRequestCost(request);
@@ -339,11 +343,11 @@ public class RequestCostApiTest extends UnitTestBase {
         int initialCost = requestCostApi.getRequestCost(request);
 
         // When
-        requestCostApi.incrementCost(1000000, RequestCostApiTest.class, "expensiveMethod", new Object[]{});
+        requestCostApi.incrementCost(Price.TEN_THOUSAND, RequestCostApiTest.class, "expensiveMethod", new Object[]{});
 
         // Then
         int finalCost = requestCostApi.getRequestCost(request);
-        assertEquals("Cost should increase by 1000000", initialCost + 1000000, finalCost);
+        assertEquals("Cost should increase by 10000", initialCost + Price.TEN_THOUSAND.price, finalCost);
     }
 
     /**

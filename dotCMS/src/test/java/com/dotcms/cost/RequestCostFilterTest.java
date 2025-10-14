@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -62,7 +63,7 @@ public class RequestCostFilterTest extends UnitTestBase {
     public void test_doFilter_normalMode_shouldAddHeaderAndContinue() throws Exception {
         // Given
         requestCostApi.initAccounting(request);
-        requestCostApi.incrementCost(10, RequestCostFilterTest.class, "testMethod", new Object[]{});
+        requestCostApi.incrementCost(Price.TEN, RequestCostFilterTest.class, "testMethod", new Object[]{});
 
         // When
         filter.doFilter(request, response, filterChain);
@@ -71,7 +72,8 @@ public class RequestCostFilterTest extends UnitTestBase {
         verify(filterChain, times(1)).doFilter(eq(request), any(HttpServletResponse.class));
         String costHeader = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
         assertNotNull("Cost header should be set", costHeader);
-        assertTrue("Cost should be at least 10", Integer.parseInt(costHeader) >= 10);
+        assertTrue("Cost should be at least 10",
+                Double.parseDouble(costHeader) >= 10 / requestCostApi.getRequestCostDenominator());
     }
 
     /**
@@ -82,8 +84,8 @@ public class RequestCostFilterTest extends UnitTestBase {
     public void test_doFilter_fullAccountingMode_shouldGenerateReport() throws Exception {
         // Given
         requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(5, RequestCostFilterTest.class, "method1", new Object[]{"arg1"});
-        requestCostApi.incrementCost(3, RequestCostFilterTest.class, "method2", new Object[]{"arg2"});
+        requestCostApi.incrementCost(Price.FIVE, RequestCostFilterTest.class, "method1", new Object[]{"arg1"});
+        requestCostApi.incrementCost(Price.THREE, RequestCostFilterTest.class, "method2", new Object[]{"arg2"});
 
         StringWriter stringWriter = new StringWriter();
 
@@ -156,8 +158,9 @@ public class RequestCostFilterTest extends UnitTestBase {
     public void test_responseWrapper_getHeader_shouldReturnCurrentCost() throws Exception {
         // Given
         requestCostApi.initAccounting(request);
-        requestCostApi.incrementCost(42, RequestCostFilterTest.class, "method", new Object[]{});
-
+        requestCostApi.incrementCost(Price.TWENTY, RequestCostFilterTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.TWENTY, RequestCostFilterTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.THREE, RequestCostFilterTest.class, "method", new Object[]{});
         final boolean[] wrapperTested = {false};
 
         FilterChain testChain = (req, res) -> {
@@ -166,7 +169,7 @@ public class RequestCostFilterTest extends UnitTestBase {
             String costHeader = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
             assertNotNull("Cost header should not be null", costHeader);
             int cost = Integer.parseInt(costHeader);
-            assertTrue("Cost should be at least 42", cost >= 42);
+            assertTrue("Cost should be at least 42", cost >= 42 / requestCostApi.getRequestCostDenominator());
             wrapperTested[0] = true;
         };
 
@@ -185,8 +188,8 @@ public class RequestCostFilterTest extends UnitTestBase {
     public void test_responseWrapper_getHeaders_shouldReturnCostCollection() throws Exception {
         // Given
         requestCostApi.initAccounting(request);
-        requestCostApi.incrementCost(25, RequestCostFilterTest.class, "method", new Object[]{});
-
+        requestCostApi.incrementCost(Price.FIVE, RequestCostFilterTest.class, "method", new Object[]{});
+        requestCostApi.incrementCost(Price.TWENTY, RequestCostFilterTest.class, "method", new Object[]{});
         final boolean[] wrapperTested = {false};
 
         FilterChain testChain = (req, res) -> {
@@ -198,7 +201,7 @@ public class RequestCostFilterTest extends UnitTestBase {
             assertEquals("Should have exactly one header value", 1, headers.size());
             String costValue = headers.iterator().next();
             int cost = Integer.parseInt(costValue);
-            assertTrue("Cost should be at least 25", cost >= 25);
+            assertTrue("Cost should be at least 25", cost >= 25 / requestCostApi.getRequestCostDenominator());
             wrapperTested[0] = true;
         };
 
@@ -245,17 +248,18 @@ public class RequestCostFilterTest extends UnitTestBase {
     public void test_doFilter_shouldUpdateCostHeaderAfterChain() throws Exception {
         // Given
         requestCostApi.initAccounting(request);
-        final int[] costBeforeChain = {0};
-        final int[] costAfterChain = {0};
+        final double[] costBeforeChain = {0};
+        final double[] costAfterChain = {0};
 
         FilterChain testChain = (req, res) -> {
             // Capture cost before chain completes
             HttpServletResponse response = (HttpServletResponse) res;
             String headerBefore = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
-            costBeforeChain[0] = Integer.parseInt(headerBefore);
+            costBeforeChain[0] = Double.parseDouble(headerBefore);
 
             // Add more cost during chain execution
-            requestCostApi.incrementCost(50, RequestCostFilterTest.class, "chainMethod", new Object[]{});
+            requestCostApi.incrementCost(Price.TWENTY, RequestCostFilterTest.class, "chainMethod", new Object[]{});
+            requestCostApi.incrementCost(Price.THIRTY, RequestCostFilterTest.class, "chainMethod", new Object[]{});
         };
 
         // When
@@ -263,7 +267,7 @@ public class RequestCostFilterTest extends UnitTestBase {
 
         // Then
         String headerAfter = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
-        costAfterChain[0] = Integer.parseInt(headerAfter);
+        costAfterChain[0] = Double.parseDouble(headerAfter);
 
         assertTrue("Cost after chain should be greater than before",
                 costAfterChain[0] > costBeforeChain[0]);
@@ -284,7 +288,7 @@ public class RequestCostFilterTest extends UnitTestBase {
         // Then
         String costHeader = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
         assertNotNull("Cost header should be set even with zero cost", costHeader);
-        int cost = Integer.parseInt(costHeader);
+        double cost = Double.parseDouble(costHeader);
         assertTrue("Cost should be non-negative", cost >= 0);
     }
 

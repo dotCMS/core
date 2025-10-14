@@ -1,5 +1,6 @@
 package com.dotcms.cost;
 
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import java.lang.reflect.Method;
@@ -20,11 +21,11 @@ public class RequestCostAdvice {
         RequestCost annotation = method.getAnnotation(RequestCost.class);
         if (annotation != null) {
             String callingMethod = method.getDeclaringClass().getSimpleName() + "." + method.getName();
-            int cost = annotation.increment();
+            Price price = annotation.value();
             Logger.debug(RequestCostAdvice.class,
                     () -> "cost:" + callingMethod + " : "
-                            + annotation.increment());
-            APILocator.getRequestCostAPI().incrementCost(cost, method, args);
+                            + annotation.value());
+            APILocator.getRequestCostAPI().incrementCost(price, method, args);
         }
 
     }
