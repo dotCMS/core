@@ -100,6 +100,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param fullBinaryFieldNameSet  {@link SortedSet} fields to generate full metadata
      * @return ContentletMetadata
      */
+    @RequestCost(Price.FILE_METADATA_FROM_DB)
     private ContentletMetadata internalGenerateContentletMetadata(final Contentlet contentlet,
                                                           final SortedSet<String> basicBinaryFieldNameSet,
                                                           final SortedSet<String> fullBinaryFieldNameSet,
@@ -316,7 +317,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return
      */
-    @RequestCost(Price.FILE_METADATA_FROM_CACHE)
+
     @Override
     public Metadata getOrGenerateMetadata(final Contentlet contentlet, final String fieldVariableName)
             throws DotDataException {
@@ -330,6 +331,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param generateIfAbsent  @boolean
      * @return
      */
+    @RequestCost(Price.FILE_METADATA_FROM_CACHE)
         private Metadata internalGetGenerateMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean generateIfAbsent, final boolean checkVersion)
             throws DotDataException {
 

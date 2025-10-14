@@ -32,6 +32,7 @@ public class RequestPrices {
         CONTENT_CHECKIN(1),
         WORKFLOW_ACTION_RUN(1),
         BLOCK_EDITOR_HYDRATION(1),
+        FILE_METADATA_GENERATE(3),
         FILE_METADATA_FROM_CACHE(1),
         FILE_METADATA_FROM_DB(3),
         HTTP_FETCH(4),
@@ -43,7 +44,9 @@ public class RequestPrices {
         XSLT_PARSE(3),
         XSLT_FETCH_AND_PARSE(7),
         IMAGE_FILTER_TRANSFORM(2),
-        ES_QUERY(3);
+        ES_CACHE(1),
+        ES_QUERY(3),
+        ES_COUNT(3);
 
 
         final int price;
