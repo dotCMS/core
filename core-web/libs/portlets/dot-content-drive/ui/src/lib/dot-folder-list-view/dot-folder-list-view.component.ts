@@ -4,8 +4,10 @@ import {
     computed,
     CUSTOM_ELEMENTS_SCHEMA,
     effect,
+    inject,
     input,
     output,
+    Renderer2,
     signal
 } from '@angular/core';
 
@@ -37,6 +39,8 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFolderListViewComponent {
+    private readonly renderer = inject(Renderer2);
+
     $items = input<DotContentDriveItem[]>([], { alias: 'items' });
     $totalItems = input<number>(0, { alias: 'totalItems' });
     $loading = input<boolean>(false, { alias: 'loading' });
@@ -164,53 +168,64 @@ export class DotFolderListViewComponent {
      * Creates drag image from actual rendered thumbnails (img/icon elements)
      */
     private createDragImage(items: DotContentDriveItem[], totalCount: number): HTMLElement | null {
-        const container = document.createElement('div');
-        container.className = 'drag-image-container';
+        const container = this.renderer.createElement('div');
+        this.renderer.addClass(container, 'drag-image-container');
 
         items.forEach((item, idx) => {
-            if (!item?.identifier) return;
+            if (!item?.identifier) {
+                return;
+            }
 
             // Find the thumbnail element
+            // Note: Using querySelector here as Renderer2 doesn't provide query methods
+            // This is acceptable since drag operations are client-side only
             const thumbnail = document.querySelector(
                 `[data-id="${item.identifier}"]`
             ) as HTMLElement;
 
-            if (thumbnail) {
-                const wrapper = document.createElement('div');
-                wrapper.className = `drag-image-item drag-image-item-${idx}`;
-
-                // Check if first child is an img - if so, copy its HTML
-                const firstChild = thumbnail.firstElementChild;
-                if (firstChild && firstChild.tagName.toLowerCase() === 'img') {
-                    wrapper.innerHTML = firstChild.outerHTML;
-                } else if (firstChild) {
-                    // For custom elements with shadow DOM, try to get the actual content
-                    const shadowRoot = (firstChild as Element).shadowRoot;
-                    if (shadowRoot) {
-                        // Copy shadow root content
-                        wrapper.innerHTML = shadowRoot.innerHTML;
-                    } else {
-                        // Fallback: clone the element
-                        const clone = firstChild.cloneNode(true) as HTMLElement;
-                        wrapper.appendChild(clone);
-                    }
-                }
-
-                container.appendChild(wrapper);
+            if (!thumbnail) {
+                return;
             }
+
+            const wrapper = this.renderer.createElement('div');
+            this.renderer.addClass(wrapper, 'drag-image-item');
+            this.renderer.addClass(wrapper, `drag-image-item-${idx}`);
+
+            // Check if first child is an img - if so, copy its HTML
+            const firstChild = thumbnail.firstElementChild;
+
+            if (!firstChild) {
+                return;
+            }
+
+            const childIsImage = firstChild.tagName.toLowerCase() === 'img';
+            const hasShadowRoot = firstChild.shadowRoot;
+
+            if (!childIsImage && !hasShadowRoot) {
+                const clone = firstChild.cloneNode(true) as HTMLElement;
+                this.renderer.appendChild(wrapper, clone);
+            } else {
+                this.renderer.setProperty(
+                    wrapper,
+                    'innerHTML',
+                    childIsImage ? firstChild.outerHTML : firstChild.shadowRoot?.innerHTML || ''
+                );
+            }
+
+            this.renderer.appendChild(container, wrapper);
         });
 
         // Add badge if multiple items
         if (totalCount > 1) {
-            const badge = document.createElement('div');
-            badge.className = 'drag-image-badge';
-            badge.textContent = totalCount.toString();
-            container.appendChild(badge);
+            const badge = this.renderer.createElement('div');
+            this.renderer.addClass(badge, 'drag-image-badge');
+            this.renderer.setProperty(badge, 'textContent', totalCount.toString());
+            this.renderer.appendChild(container, badge);
         }
 
-        document.body.appendChild(container);
+        this.renderer.appendChild(document.body, container);
         // This will remove the container from the dom after the drag captures the images
-        setTimeout(() => document.body.removeChild(container), 0);
+        setTimeout(() => this.renderer.removeChild(document.body, container), 0);
 
         return container;
     }
