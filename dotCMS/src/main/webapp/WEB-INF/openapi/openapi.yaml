@@ -2902,11 +2902,11 @@ paths:
       summary: Fire an user custom event **(Beta)**.
       tags:
       - Content Analytics
-  /v1/analytics/content/sitekey/generate/{siteId}:
+  /v1/analytics/content/siteauth/generate/{siteId}:
     get:
       description: Generates and returns a Site Key that must be used by the client-side
         JS code to send custom Content Analytics Events
-      operationId: generateSiteKey
+      operationId: generateSiteAuth
       parameters:
       - in: path
         name: siteId
@@ -2926,7 +2926,7 @@ paths:
           description: Method Not Allowed
         "500":
           description: Internal Server Error
-      summary: Generate Site Key
+      summary: Generate Site Auth
       tags:
       - Content Analytics
   /v1/announcements:
@@ -3762,6 +3762,42 @@ paths:
             application/json: {}
           description: Asset not found
       summary: Download asset file
+      tags:
+      - Web Assets
+  /v1/assets/drive:
+    post:
+      description: Search and browse assets using drive-like functionality with filtering
+        and navigation capabilities
+      operationId: drive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriveRequestForm"
+        description: Drive search request parameters
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Drive search response containing assets and navigation
+                  data
+          description: Drive search results retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "404":
+          content:
+            application/json: {}
+          description: Not found. e.g Site/folder not found
+      summary: Search assets with drive functionality
       tags:
       - Web Assets
   /v1/assets/folders:
@@ -6112,6 +6148,51 @@ paths:
           description: default response
       tags:
       - Content
+  /v1/content/{identifier}/push/history:
+    get:
+      description: Returns the push history of a contentlet
+      operationId: getPushHistory
+      parameters:
+      - description: ID of the Contentlet whose push history will be retrieved.
+        in: path
+        name: identifier
+        required: true
+        schema:
+          type: string
+      - description: "Maximum number or results being returned, for pagination purposes."
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      - description: "Page number of the results being returned, for pagination purposes."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: History data retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required.
+        "404":
+          content:
+            application/json: {}
+          description: The specified identifier does not match any contentlet.
+        "500":
+          content:
+            application/json: {}
+          description: An internal dotCMS error has occurred.
+      summary: Contentlet Push History
+      tags:
+      - Content
   /v1/content/{identifier}/references/count:
     get:
       operationId: getAllContentletReferencesCount
@@ -6400,6 +6481,12 @@ paths:
           \ or keys."
         in: query
         name: sites
+        schema:
+          type: string
+      - description: "Guarantee Content Types to be included in the response: Comma-separated\
+          \ content type keys (e.g. `activity, blog, product`)."
+        in: query
+        name: ensure
         schema:
           type: string
       responses:
@@ -13783,6 +13870,64 @@ paths:
       summary: Deletes an existing user.
       tags:
       - Users
+    get:
+      description: Returns an user
+      operationId: findUser
+      parameters:
+      - description: Identifier of user to retrieve
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseUserMapEntityView"
+          description: User retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Find an user
+      tags:
+      - Users
+  /v1/users/{userId}/permissions:
+    get:
+      description: "Retrieves permissions for a user's individual role, organized\
+        \ by asset type and permission scope"
+      operationId: getUserPermissions
+      parameters:
+      - description: User ID or email address
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUserPermissionsView"
+          description: User permissions retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid user id
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Get user permissions
+      tags:
+      - Users
   /v1/variants:
     post:
       description: Creates a new content variant with the specified name and description.
@@ -16754,6 +16899,36 @@ paths:
         "500":
           description: Internal Server Error
       summary: Find default system actions by workflow action id
+      tags:
+      - Workflow
+  /v1/workflow/tasks:
+    post:
+      description: "Retrieve the workflow tasks that matchedhttps://www2.dotcms.com/docs/latest/workflow-tasks,\
+        \ [workflow task]"
+      operationId: getWorkflowTasks
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/WorkflowSearcherForm"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityWorkflowTasksView"
+          description: Action(s) returned successfully
+        "400":
+          description: Bad Request
+        "401":
+          description: Invalid User
+        "403":
+          description: Forbidden
+        "406":
+          description: Not Acceptable
+        "500":
+          description: Internal Server Error
+      summary: Find workflow tasks based on the filter parameters on the request body
       tags:
       - Workflow
   /v1/workflow/tasks/history/comments/{contentletIdentifier}:
@@ -20069,6 +20244,74 @@ components:
             type: string
           versionable:
             type: boolean
+    DriveRequestForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+        baseTypes:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        contentTypes:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        filter:
+          type: string
+        language:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        live:
+          type: boolean
+        maxResults:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        showArchived:
+          type: boolean
+        showContent:
+          type: boolean
+        showDotAssets:
+          type: boolean
+        showFiles:
+          type: boolean
+        showFolders:
+          type: boolean
+        showImages:
+          type: boolean
+        showLinks:
+          type: boolean
+        showPages:
+          type: boolean
+        sortBy:
+          type: string
+        working:
+          type: boolean
     EmbeddingsForm:
       type: object
       properties:
@@ -24404,6 +24647,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityUserPermissionsView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityUserUpdateView:
       type: object
       properties:
@@ -25036,6 +25304,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowStep"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityWorkflowTasksView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/WorkflowSearchResultsView"
         errors:
           type: array
           items:
@@ -27586,6 +27877,46 @@ components:
           uniqueItems: true
       required:
       - schemes
+    WorkflowSearchResultsView:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        workflowTasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowTaskView"
+    WorkflowSearcherForm:
+      type: object
+      properties:
+        assignedTo:
+          type: string
+        closed:
+          type: boolean
+        count:
+          type: integer
+          format: int32
+        createdBy:
+          type: string
+        daysOld:
+          type: integer
+          format: int32
+        keywords:
+          type: string
+        open:
+          type: boolean
+        orderBy:
+          type: string
+        page:
+          type: integer
+          format: int32
+        schemeId:
+          type: string
+        show4all:
+          type: boolean
+        stepId:
+          type: string
     WorkflowStep:
       type: object
       properties:
@@ -27711,6 +28042,37 @@ components:
         title:
           type: string
         webasset:
+          type: string
+    WorkflowTaskView:
+      type: object
+      properties:
+        assignedTo:
+          type: string
+        assignedUserName:
+          type: string
+        belongsTo:
+          type: string
+        createdBy:
+          type: string
+        creationDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        id:
+          type: string
+        languageId:
+          type: integer
+          format: int64
+        modDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+        title:
           type: string
     WorkflowTimelineItemView:
       type: object

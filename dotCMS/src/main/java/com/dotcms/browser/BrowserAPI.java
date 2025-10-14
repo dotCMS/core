@@ -248,6 +248,38 @@ public interface BrowserAPI {
 	Map<String, Object> getFolderContent(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
 
 
+    /**
+     * Retrieves a paginated collection of contentlets that reside under the specified parent
+     * ({@code browserQuery.directParent}).
+     * <p>
+     * Key differences compared to other retrieval methods:
+     * <ul>
+     *   <li>This method applies pagination at the database level using
+     *       {@code browserQuery.offset} and {@code browserQuery.maxResults}
+     *       to fetch only the requested slice of contentlets.</li>
+     *   <li>Folders are <b>not</b> paginated by this method. They are returned in full
+     *       when {@code browserQuery.showFolders} is enabled.</li>
+     *   <li>Other retrieval methods may combine multiple asset types (contentlets, folders, links)
+     *       into a single list and then apply pagination at the aggregate level.
+     *       In contrast, this method paginates only contentlets from the database.</li>
+     * </ul>
+     * <p>
+     * When implementing pagination:
+     * <ul>
+     *   <li>Enable {@code browserQuery.showFolders} to render folders before paginated contentlets.</li>
+     *   <li>Pagination will then continue over contentlets only.</li>
+     * </ul>
+     *
+     * @param browserQuery the query parameters defining parent, pagination, and flags for which
+     *                     elements (content, folders, links) to include
+     * @return a {@code Map<String, Object>} containing the retrieved contentlets and,
+     *         if requested, folders and/or links
+     * @throws DotSecurityException if the user does not have permission to access the parent or contents
+     * @throws DotDataException if a data retrieval error occurs at the database level
+     */
+    Map<String, Object> getPaginatedFolderContents(final BrowserQuery browserQuery)
+            throws DotSecurityException, DotDataException;
+
 	/**
 	 * Returns a collection of contentlets that live inside the parent(browserQuery.directParent)
 	 * @param browserQuery {@link BrowserQuery}

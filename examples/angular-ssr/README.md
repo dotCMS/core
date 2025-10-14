@@ -118,6 +118,26 @@ The `server.ts` file implements a secure API architecture:
 3. **Site Components**: Add to `components/` folder for site-wide usage
 4. **dotCMS Components**: Add to `dotcms/components/` for content rendering
 
+## Vercel Deployment
+
+This Angular SSR application is configured for deployment on Vercel with the following setup:
+
+### Configuration Files
+- **`vercel.json`**: Routes all requests through the serverless function
+- **`api/index.js`**: Entry point that imports the compiled Angular server
+- **`src/indexFile.html`**: Renamed from `index.html` to prevent Vercel from serving it directly
+
+### Server Export Configuration
+The Express app is exported as the default export in `server.ts` to allow Vercel's serverless function to import and use it. This enables the Angular SSR application to run in Vercel's serverless environment.
+
+### Environment Variables
+Set these in your Vercel project settings:
+- `DOTCMS_URL`: Your dotCMS instance URL
+- `DOTCMS_AUTH_TOKEN`: Authentication token for dotCMS API
+- `DOTCMS_SITE_ID`: Your dotCMS site identifier
+
+The application automatically handles the serverless environment and properly initializes dotCMS integration on each request.
+
 ## Additional Resources
 
 - [Angular CLI Documentation](https://angular.dev/tools/cli)

@@ -1,8 +1,19 @@
-import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    inject,
+    output,
+    untracked
+} from '@angular/core';
 
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
-import { DotTreeFolderComponent } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotContentDriveMoveItems,
+    DotContentDriveUploadFiles,
+    DotTreeFolderComponent
+} from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
@@ -21,6 +32,9 @@ export class DotContentDriveSidebarComponent {
     readonly $folders = this.#store.folders;
     readonly $selectedNode = this.#store.selectedNode;
     readonly $currentSite = this.#store.currentSite;
+
+    readonly uploadFiles = output<DotContentDriveUploadFiles>();
+    readonly moveItems = output<DotContentDriveMoveItems>();
 
     readonly getSiteFoldersEffect = effect(() => {
         const currentSite = this.$currentSite();

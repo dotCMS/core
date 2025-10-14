@@ -119,3 +119,15 @@ export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
     '*.tar',
     '*.gz'
 ];
+
+export const SUCCESS_MESSAGE_LIFE = 4500;
+export const WARNING_MESSAGE_LIFE = 4200;
+export const ERROR_MESSAGE_LIFE = 4500;
+export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
+
+// Dropzone state
+export const DROPZONE_STATE = {
+    INTERNAL_DRAG: 'internal-drag',
+    ACTIVE: 'active',
+    INACTIVE: 'inactive'
+} as const;

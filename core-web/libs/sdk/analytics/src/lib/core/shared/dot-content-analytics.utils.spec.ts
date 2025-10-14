@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import { ANALYTICS_MINIFIED_SCRIPT_NAME } from './dot-content-analytics.constants';
+import { ANALYTICS_MINIFIED_SCRIPT_NAME } from './constants';
 import {
     cleanupActivityTracking,
     defaultRedirectFn,
@@ -60,7 +60,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: false,
                 autoPageView: false,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
 
@@ -74,7 +74,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: true,
                 autoPageView: false,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
 
@@ -88,7 +88,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: false,
                 autoPageView: true,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
 
@@ -104,7 +104,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: true,
                 autoPageView: true,
-                siteKey: 'custom-site-key'
+                siteAuth: 'custom-site-key'
             });
         });
 
@@ -124,7 +124,7 @@ describe('Analytics Utils', () => {
                 server: window.location.origin,
                 debug: false,
                 autoPageView: false,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
 
@@ -138,7 +138,7 @@ describe('Analytics Utils', () => {
                 server: window.location.origin,
                 debug: false,
                 autoPageView: false,
-                siteKey: ''
+                siteAuth: ''
             });
         });
 
@@ -159,7 +159,7 @@ describe('Analytics Utils', () => {
                 server: window.location.origin,
                 debug: false,
                 autoPageView: false,
-                siteKey: ''
+                siteAuth: ''
             });
         });
 
@@ -174,7 +174,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: false,
                 autoPageView: false,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
     });
@@ -253,9 +253,9 @@ describe('Analytics Utils', () => {
             );
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                utm_source: 'google',
-                utm_medium: 'cpc',
-                utm_campaign: 'spring_sale'
+                source: 'google',
+                medium: 'cpc',
+                campaign: 'spring_sale'
             });
         });
 
@@ -263,7 +263,7 @@ describe('Analytics Utils', () => {
             const location = mockLocation('?utm_source=google&non_utm_param=value');
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                utm_source: 'google'
+                source: 'google'
             });
         });
 
@@ -271,8 +271,8 @@ describe('Analytics Utils', () => {
             const location = mockLocation('?utm_source=google&utm_campaign=spring_sale');
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                utm_source: 'google',
-                utm_campaign: 'spring_sale'
+                source: 'google',
+                campaign: 'spring_sale'
             });
         });
 
@@ -282,11 +282,11 @@ describe('Analytics Utils', () => {
             );
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                utm_source: 'google',
-                utm_medium: 'cpc',
-                utm_campaign: 'spring_sale',
-                utm_term: 'test',
-                utm_content: 'ad1'
+                source: 'google',
+                medium: 'cpc',
+                campaign: 'spring_sale',
+                term: 'test',
+                content: 'ad1'
             });
         });
     });
@@ -553,11 +553,11 @@ describe('Analytics Utils', () => {
         it('should extract UTM data from browser event data', () => {
             const browserData = {
                 utm: {
-                    utm_source: 'google',
-                    utm_medium: 'cpc',
-                    utm_campaign: 'spring_sale',
-                    utm_term: 'shoes',
-                    utm_content: 'ad1'
+                    source: 'google',
+                    medium: 'cpc',
+                    campaign: 'spring_sale',
+                    term: 'shoes',
+                    content: 'ad1'
                 }
             } as any;
 
@@ -583,8 +583,8 @@ describe('Analytics Utils', () => {
         it('should handle partial UTM data', () => {
             const browserData = {
                 utm: {
-                    utm_source: 'facebook',
-                    utm_campaign: 'summer'
+                    source: 'facebook',
+                    campaign: 'summer'
                 }
             } as any;
 
@@ -693,7 +693,7 @@ describe('Analytics Utils', () => {
             mockSessionStorage.getItem.mockClear();
         });
 
-        it('should return analytics context with session and user IDs', () => {
+        it('should return analytics context with session, user IDs, and device data', () => {
             mockLocalStorage.getItem.mockReturnValue('user_12345');
 
             const sessionData = {
@@ -703,14 +703,20 @@ describe('Analytics Utils', () => {
             };
             mockSessionStorage.getItem.mockReturnValue(JSON.stringify(sessionData));
 
-            const config = { siteKey: 'test-site', debug: false } as any;
+            const config = { siteAuth: 'test-site', debug: false } as any;
 
             const result = getAnalyticsContext(config);
 
             expect(result).toEqual({
-                site_key: 'test-site',
+                site_auth: 'test-site',
                 session_id: 'session_67890',
-                user_id: 'user_12345'
+                user_id: 'user_12345',
+                device: {
+                    screen_resolution: '1920x1080',
+                    language: 'es-ES',
+                    viewport_width: '1024',
+                    viewport_height: '768'
+                }
             });
         });
     });
@@ -738,9 +744,20 @@ describe('Analytics Utils', () => {
             Object.defineProperty(document, 'referrer', { value: 'https://referrer.com' });
         });
 
-        it('should enrich payload with page, device, and UTM data', () => {
+        it('should enrich payload with page and UTM data (device in context)', () => {
             const payload = {
                 event: 'pageview',
+                context: {
+                    site_auth: 'test-key',
+                    session_id: 'session123',
+                    user_id: 'user456',
+                    device: {
+                        screen_resolution: '1920x1080',
+                        language: 'es-ES',
+                        viewport_width: '1024',
+                        viewport_height: '768'
+                    }
+                },
                 properties: {
                     language_id: 'en-US',
                     persona: 'default',
@@ -758,6 +775,7 @@ describe('Analytics Utils', () => {
 
             expect(result).toEqual({
                 event: 'pageview',
+                context: payload.context,
                 properties: payload.properties,
                 page: {
                     url: 'https://example.com/page',
@@ -771,17 +789,18 @@ describe('Analytics Utils', () => {
                     language_id: undefined,
                     persona: undefined
                 },
-                device: {
-                    screen_resolution: '1920x1080',
-                    language: 'es-ES',
-                    viewport_width: '1024',
-                    viewport_height: '768'
-                },
                 local_time: expect.stringMatching(
                     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/
                 ),
                 utm: {
                     source: 'google'
+                },
+                custom: {
+                    language_id: 'en-US',
+                    persona: 'default',
+                    utm: {
+                        source: 'google'
+                    }
                 }
             });
         });
@@ -790,6 +809,10 @@ describe('Analytics Utils', () => {
             Object.defineProperty(window, 'location', {
                 value: {
                     href: 'https://example.com/page',
+                    pathname: '/page',
+                    hostname: 'example.com',
+                    protocol: 'https:',
+                    hash: '',
                     search: ''
                 },
                 writable: true
@@ -797,15 +820,30 @@ describe('Analytics Utils', () => {
 
             const payload = {
                 event: 'pageview',
+                context: {
+                    site_auth: 'test-key',
+                    session_id: 'session123',
+                    user_id: 'user456',
+                    device: {
+                        screen_resolution: '1920x1080',
+                        language: 'es-ES',
+                        viewport_width: '1024',
+                        viewport_height: '768'
+                    }
+                },
                 properties: {
                     language_id: 'en-US',
-                    persona: 'default'
+                    persona: 'default',
+                    title: 'Test Page',
+                    width: 1024,
+                    height: 768
                 }
             } as any;
 
             const result = enrichPagePayloadOptimized(payload);
 
             expect(result).not.toHaveProperty('utm');
+            expect(result.context.device).toBeDefined();
         });
     });
 });

@@ -53,7 +53,7 @@ export class ActivityComponent {
         map((event: NavigationEnd) => event.urlAfterRedirects),
         startWith(route),
         switchMap((url: string) =>
-          this.http.post<DotCMSComposedPageResponse<ActivityPage>>('/api/page', { url })
+          this.http.post<DotCMSComposedPageResponse<ActivityPage>>('/data/page', { url })
         )
       )
       .pipe(switchMap((response) => this.editablePageService.listen<ActivityPage>(response)))

@@ -29,6 +29,7 @@ import {
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 
+import { ERROR_MESSAGE_LIFE } from '../../shared/constants';
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
@@ -86,6 +87,14 @@ export class DotFolderListViewContextMenuComponent {
 
         if (status === DotContentDriveStatus.LOADING) {
             this.$memoizedMenuItems.set({});
+        }
+    });
+
+    readonly closeOnContextMenuReset = effect(() => {
+        const data = this.#store.contextMenu();
+
+        if (!data?.contentlet && this.contextMenu()?.visible()) {
+            this.contextMenu()?.hide();
         }
     });
 
@@ -211,15 +220,14 @@ export class DotFolderListViewContextMenuComponent {
                         severity: 'success',
                         summary: this.#dotMessageService.get(
                             'content-drive.toast.workflow-executed'
-                        ),
-                        life: 2000
+                        )
                     });
                 },
                 (error) => {
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
-                        life: 2000
+                        life: ERROR_MESSAGE_LIFE
                     });
                     this.#store.setStatus(DotContentDriveStatus.LOADED);
                     console.error('Error firing workflow action', error);

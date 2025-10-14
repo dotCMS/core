@@ -38,5 +38,19 @@ describe('DotUploadFileService', () => {
 
             expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalled();
         });
+
+        it('should upload a file as a dotAsset with extra data', () => {
+            dotWorkflowActionsFireService.newContentlet.mockReturnValueOnce(
+                of({ entity: { identifier: 'test' } })
+            );
+
+            const file = new File([''], 'test.png', {
+                type: 'image/png'
+            });
+
+            spectator.service.uploadDotAsset(file, { title: 'test' }).subscribe();
+
+            expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalled();
+        });
     });
 });

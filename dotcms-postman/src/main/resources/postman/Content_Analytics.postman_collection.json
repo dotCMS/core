@@ -1,1368 +1,1604 @@
 {
-	"info": {
-		"_postman_id": "85500a45-413a-46d4-ba9e-b48a05df0512",
-		"name": "Content Analytics",
-		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "30436704"
-	},
-	"item": [
-		{
-			"name": "Events",
-			"item": [
-				{
-					"name": "Validations",
-					"item": [
-						{
-							"name": "Generate Test Data",
-							"item": [
-								{
-									"name": "Create Test Site",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test(\"Test Site was created successfully\", function() {",
-													"    const json = pm.response.json();",
-													"    const testSiteName = pm.collectionVariables.get(\"testSiteName\");",
-													"    pm.expect(json.entity.siteName).to.equal(testSiteName, \"The new Test Site does not have the expected name\");",
-													"    pm.expect(json.errors.length).to.equal(0, \"\");",
-													"    pm.collectionVariables.set(\"testSiteId\", json.entity.identifier);",
-													"});",
-													""
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										},
-										{
-											"listen": "prerequest",
-											"script": {
-												"exec": [
-													"const randomNumber = Math.floor(Math.random() * (100 - 1 + 1)) + 1;",
-													"const siteName = \"www.test-ca-site\" + randomNumber + \".com\";",
-													"pm.collectionVariables.set(\"testSiteName\", siteName);"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "{{jwt}}",
-													"type": "string"
-												}
-											]
-										},
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"siteName\": \"{{testSiteName}}\"\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{serverURL}}/api/v1/site",
-											"host": [
-												"{{serverURL}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"site"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Add App Config for Site Copy",
-									"event": [
-										{
-											"listen": "prerequest",
-											"script": {
-												"exec": [
-													"pm.collectionVariables.set(\"testSiteKey\", \"DOT.48190c8c-42c4-46af-8d1a-0cd5db894797.8N9Oq3uD311V8YN2L6-BoINgX\")",
-													"pm.collectionVariables.set(\"appKey\", \"dotContentAnalytics-config\");"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										},
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test(\"Check that the response is correct\", function () {",
-													"    const jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity).to.equal(\"Ok\", \"The value of the 'entity' attribute is not the expected one\");",
-													"    pm.expect(jsonData.errors.length).to.equal(0, \"An error occurred when saving the App secret\");",
-													"});",
-													""
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "{{jwt}}",
-													"type": "string"
-												}
-											]
-										},
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"siteKey\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteKey}}\"\n    }\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{serverURL}}/api/v1/apps/{{appKey}}/{{testSiteId}}",
-											"host": [
-												"{{serverURL}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"apps",
-												"{{appKey}}",
-												"{{testSiteId}}"
-											]
-										}
-									},
-									"response": []
-								}
-							],
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"type": "text/javascript",
-										"packages": {},
-										"exec": [
-											""
-										]
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"type": "text/javascript",
-										"packages": {},
-										"exec": [
-											"pm.test(\"HTTP Status must be successful\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
-										]
-									}
-								}
-							]
-						},
-						{
-							"name": "No Query Form on Event",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be 400\", function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Origin",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									},
-									{
-										"key": "Referer",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/event",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"event"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Unsupported Media Type Event",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"// Validate the response status is 415",
-											"pm.test(\"Response status is 415\", function () {",
-											"    pm.response.to.have.status(415);",
-											"});",
-											"",
-											"// Validate that the response body contains the 'message' property and it is not empty",
-											"pm.test(\"Response should have an error message\", function () {",
-											"    const responseBody = pm.response.json();",
-											"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
-											"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disabledSystemHeaders": {
-									"content-type": true
-								}
-							},
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/x-www-form-urlencoded",
-										"type": "text"
-									},
-									{
-										"key": "Origin",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									},
-									{
-										"key": "Referer",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"query\": {}\n}\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/event",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"event"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "site_key is required",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be 400\", function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test(\"Response sould be right\", function () {",
-											"    const responseBody = pm.response.json();",
-											"",
-											"    pm.expect(responseBody).to.not.have.property(\"failed\");",
-											"    pm.expect(responseBody).to.not.have.property(\"success\");",
-											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
-											"",
-											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
-											"    pm.expect(responseBody.errors.length).to.be.eq(1);",
-											"",
-											"    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
-											"",
-											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.site_key\");",
-											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.site_key\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Origin",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									},
-									{
-										"key": "Referer",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"page_view\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/event",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"event"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "events is required",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be 400\", function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test(\"Response sould be right\", function () {",
-											"    const responseBody = pm.response.json();",
-											"",
-											"    pm.expect(responseBody).to.not.have.property(\"failed\");",
-											"    pm.expect(responseBody).to.not.have.property(\"success\");",
-											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
-											"",
-											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
-											"    pm.expect(responseBody.errors.length).to.be.eq(1);",
-											"",
-											"    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
-											"",
-											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events\");",
-											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: events\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Origin",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									},
-									{
-										"key": "Referer",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    }\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/event",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"event"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "session_id is required",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be 400\", function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test(\"Response sould be right\", function () {",
-											"    const responseBody = pm.response.json();",
-											"",
-											"    pm.expect(responseBody).to.not.have.property(\"failed\");",
-											"    pm.expect(responseBody).to.not.have.property(\"success\");",
-											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
-											"",
-											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
-											"    pm.expect(responseBody.errors.length).to.be.eq(1);",
-											"",
-											"    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
-											"",
-											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.session_id\");",
-											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.session_id\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Origin",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									},
-									{
-										"key": "Referer",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/event",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"event"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "user_id is required",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be 400\", function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test(\"Response sould be right\", function () {",
-											"    const responseBody = pm.response.json();",
-											"",
-											"    pm.expect(responseBody).to.not.have.property(\"failed\");",
-											"    pm.expect(responseBody).to.not.have.property(\"success\");",
-											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
-											"",
-											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
-											"    pm.expect(responseBody.errors.length).to.be.eq(1);",
-											"",
-											"    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
-											"",
-											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.user_id\");",
-											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.user_id\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Origin",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									},
-									{
-										"key": "Referer",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\"\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/event",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"event"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "event_type is required",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be 400\", function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test(\"Response sould be right\", function () {",
-											"    const responseBody = pm.response.json();",
-											"",
-											"    pm.expect(responseBody.failed).to.be.eq(2);",
-											"    pm.expect(responseBody.success).to.be.eq(0);",
-											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
-											"",
-											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
-											"    pm.expect(responseBody.errors.length).to.be.eq(2);",
-											"",
-											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
-											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].event_type\");",
-											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: event_type\");",
-											"",
-											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(1);",
-											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[1].event_type\");",
-											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: event_type\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Origin",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									},
-									{
-										"key": "Referer",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        },\n        {\n            \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        }\n    ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/event",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"event"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "pageview required fields",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be 400\", function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test(\"Response sould be right\", function () {",
-											"    const responseBody = pm.response.json();",
-											"",
-											"    pm.expect(responseBody.failed).to.be.eq(6);",
-											"    pm.expect(responseBody.success).to.be.eq(0);",
-											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
-											"",
-											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
-											"    pm.expect(responseBody.errors.length).to.be.eq(8);",
-											"",
-											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
-											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].local_time\");",
-											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: local_time\");",
-											"",
-											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
-											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.page.url\");",
-											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: data.page.url\");",
-											"",
-											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(1);",
-											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[1].data.page.doc_encoding\");",
-											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Required field is missing: data.page.doc_encoding\");",
-											"",
-											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(2);",
-											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[2].data.page.title\");",
-											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Required field is missing: data.page.title\");",
-											"",
-											"    pm.expect(responseBody.errors[4].eventIndex).to.be.eq(3);",
-											"    pm.expect(responseBody.errors[4].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[4].field).to.be.eq(\"events[3].data.device.screen_resolution\");",
-											"    pm.expect(responseBody.errors[4].message).to.be.eq(\"Required field is missing: data.device.screen_resolution\");",
-											"",
-											"    pm.expect(responseBody.errors[5].eventIndex).to.be.eq(4);",
-											"    pm.expect(responseBody.errors[5].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[5].field).to.be.eq(\"events[4].data.device.language\");",
-											"    pm.expect(responseBody.errors[5].message).to.be.eq(\"Required field is missing: data.device.language\");",
-											"",
-											"    pm.expect(responseBody.errors[6].eventIndex).to.be.eq(5);",
-											"    pm.expect(responseBody.errors[6].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[6].field).to.be.eq(\"events[5].data.device.viewport_height\");",
-											"    pm.expect(responseBody.errors[6].message).to.be.eq(\"Required field is missing: data.device.viewport_height\");",
-											"",
-											"    pm.expect(responseBody.errors[7].eventIndex).to.be.eq(5);",
-											"    pm.expect(responseBody.errors[7].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[7].field).to.be.eq(\"events[5].data.device.viewport_width\");",
-											"    pm.expect(responseBody.errors[7].message).to.be.eq(\"Required field is missing: data.device.viewport_width\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Origin",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									},
-									{
-										"key": "Referer",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        }\n    ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/event",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"event"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "pageview extra attributes",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be 400\", function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test(\"Response sould be right\", function () {",
-											"    const responseBody = pm.response.json();",
-											"",
-											"    pm.expect(responseBody.failed).to.be.eq(1);",
-											"    pm.expect(responseBody.success).to.be.eq(0);",
-											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
-											"",
-											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
-											"    pm.expect(responseBody.errors.length).to.be.eq(4);",
-											"",
-											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
-											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"UNKNOWN_FIELD\");",
-											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.extra\");",
-											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Unknown field 'data.page.extra'\");",
-											"",
-											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
-											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"UNKNOWN_FIELD\");",
-											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.device.extra\");",
-											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Unknown field 'data.device.extra'\");",
-											"",
-											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(0);",
-											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"UNKNOWN_FIELD\");",
-											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[0].data.utm.extra\");",
-											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Unknown field 'data.utm.extra'\");",
-											"",
-											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(0);",
-											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"UNKNOWN_FIELD\");",
-											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[0].data.extra\");",
-											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Unknown field 'data.extra'\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Origin",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									},
-									{
-										"key": "Referer",
-										"value": "http://{{testSiteName}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_key\": \"{{testSiteKey}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"extra\": \"extra\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\",\n                    \"extra\": \"extra\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\",\n                    \"extra\": \"extra\"\n                },\n                \"extra\": \"extra\"\n            }\n        }\n    ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/event",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"event"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "App Configuration",
-					"item": [
-						{
-							"name": "Create test Site",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be successful\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check test Site information\", function () {",
-											"    const jsonData = pm.response.json();",
-											"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								},
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"pm.collectionVariables.set(\"siteName\", \"www.mytestsitewithcontentanalytics.com\");"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"siteName\": \"{{siteName}}\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/site",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"site"
-									]
-								},
-								"description": "## API Endpoint: Create Site\n\nThis endpoint allows users to create a new site by sending a POST request to the server. The request requires a JSON payload that includes the name of the site to be created.\n\n### Request\n\n- **Method**: POST\n    \n- **URL**: `{{serverURL}}/api/v1/site`\n    \n- **Content-Type**: application/json\n    \n\n#### Request Body\n\nThe request body must be in JSON format and include the following parameter:\n\n- `siteName` (string): The name of the site that you want to create.\n    \n\n**Example Request Body:**\n\n``` json\n{\n  \"siteName\": \"{{siteName}}\"\n}\n\n ```\n\n### Response\n\nUpon a successful request, the server responds with a status code of `200` and a JSON object containing the details of the created site.\n\n#### Response Structure\n\n- **entity**: An object containing the details of the site.\n    \n    - `addThis`: (null) Placeholder for additional configuration.\n        \n    - `aliases`: (null) Placeholder for site aliases.\n        \n    - `archived`: (boolean) Indicates if the site is archived.\n        \n    - `default`: (boolean) Indicates if this is the default site.\n        \n    - `description`: (null) Placeholder for site description.\n        \n    - `embeddedDashboard`: (null) Placeholder for embedded dashboard settings.\n        \n    - `googleAnalytics`: (null) Placeholder for Google Analytics settings.\n        \n    - `googleMap`: (null) Placeholder for Google Map settings.\n        \n    - `identifier`: (string) Unique identifier for the site.\n        \n    - `inode`: (string) Internal node identifier.\n        \n    - `keywords`: (null) Placeholder for site keywords.\n        \n    - `languageId`: (integer) Language identifier.\n        \n    - `live`: (boolean) Indicates if the site is live.\n        \n    - `locked`: (boolean) Indicates if the site is locked.\n        \n    - `modDate`: (integer) Modification date timestamp.\n        \n    - `modUser`: (string) User who last modified the site.\n        \n    - `proxyUrlForEditMode`: (null) Placeholder for proxy URL in edit mode.\n        \n    - `runDashboard`: (boolean) Indicates if the dashboard should run.\n        \n    - `siteName`: (string) The name of the site.\n        \n    - `siteThumbnail`: (string) URL for the site thumbnail.\n        \n    - `systemHost`: (boolean) Indicates if this is a system host.\n        \n    - `tagStorage`: (string) Placeholder for tag storage.\n        \n    - `variables`: (array) Array of variables associated with the site.\n        \n    - `working`: (boolean) Indicates if the site is in a working state.\n        \n- **errors**: (array) An array that will contain any errors encountered during the request. In this case, it is empty.\n    \n- **i18nMessagesMap**: (object) An object for internationalization messages, which is empty in this response.\n    \n- **messages**: (array) An array for any messages returned by the server, which is also empty.\n    \n- **pagination**: (null) Placeholder for pagination details, if applicable.\n    \n- **permissions**: (array) An array for permissions related to the site, which is empty.\n    \n\nThis endpoint is essential for managing site creation and ensures that the necessary parameters are provided to successfully create a new site."
-							},
-							"response": []
-						},
-						{
-							"name": "Generate Site Key For System Host",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be successful\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Verify expected data in response body\", function () {",
-											"    pm.expect(pm.response.text()).to.contain(\"DOT.SYSTEM_HOST.\", \"Returned Site Key doesn't have the expected format/value\");",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": ""
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/sitekey/generate/SYSTEM_HOST",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"sitekey",
-										"generate",
-										"SYSTEM_HOST"
-									]
-								},
-								"description": "## Endpoint: Generate Site Key for CA Authentication for System Host\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the System Host configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/sitekey/generate/SYSTEM_HOST`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body contains a unique identifier for the system host configuration. The format of the response body is a plain text string, which represents the generated identifier. For example:\n\n```\nDOT.SYSTEM_HOST.xIUpL_9NXGDhoA_JykjWgEQHX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the system host configuration identifier is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current system host configuration settings. Ensure that the server is running and accessible to get a successful response. The generated identifier can be utilized for tracking or referencing the specific system host configuration in subsequent requests or operations."
-							},
-							"response": []
-						},
-						{
-							"name": "Generate Site Key For Test Site",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be successful\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Verify expected data in response body\", function () {",
-											"    const siteId = pm.collectionVariables.get(\"siteId\");",
-											"    pm.expect(pm.response.text()).to.contain(\"DOT.\" + siteId + \".\", \"Returned Site Key doesn't have the expected format/value\");",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": ""
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/sitekey/generate/{{siteId}}",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"analytics",
-										"content",
-										"sitekey",
-										"generate",
-										"{{siteId}}"
-									]
-								},
-								"description": "## Endpoint: Generate Site Key for CA Authentication for Test Site\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the Test Site configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/sitekey/generate/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body will contain a string representing the CA Authentication Object. For example, the response might look like:\n\n```\nDOT.3ac45bec0907840d1f12dc78e2642d8f.DlaM8q76AOZGimRLAj80Zy_wX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the CA Authentication Object is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response. The returned CA Authentication Object is essential for further interactions with the Test Site."
-							},
-							"response": []
-						},
-						{
-							"name": "Save User-Defined Site Key",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be successful\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check that response is correct\", function () {",
-											"    const jsonData = pm.response.json();",
-											"    pm.expect(jsonData.entity).to.equal(\"Ok\", \"The value of the 'entity' attribute is not the expected one\");",
-											"    pm.expect(jsonData.errors.length).to.equal(0, \"An error occurred when saving the App secret\");",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								},
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"pm.collectionVariables.set(\"customKeyValue\", \"custom-key-value\");"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{ \n\t  \"siteKey\": {\n\t\t \"value\": \"{{customKeyValue}}\"\n      }\n}\n"
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/apps/{{appKey}}/{{siteId}}",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"apps",
-										"{{appKey}}",
-										"{{siteId}}"
-									]
-								},
-								"description": "## HTTP POST Request to Save Content Analytics App Secrets\n\n### Endpoint\n\n`POST {{serverURL}}/api/v1/apps/{{key}}/{{siteId}}`\n\n### Request Parameters\n\n- **Request Body** (Raw JSON):\n    \n    - `siteKey` (object): Contains the following property:\n        \n        - `value` (string): The custom key value to identify the site.\n            \n\n### Expected Response\n\n- **Status Code**: `200 OK`\n    \n- **Content-Type**: `application/json`\n    \n- **Response Body**:\n    \n    - `entity` (string): Represents the entity returned.\n        \n    - `errors` (array): A list of any errors encountered during the request.\n        \n    - `i18nMessagesMap` (object): A map for internationalization messages.\n        \n    - `messages` (array): A list of messages related to the request.\n        \n    - `pagination` (null): Indicates if there is any pagination data.\n        \n    - `permissions` (array): A list of permissions associated with the request.\n        \n\nThis request is designed to save Content Analytics App data using the provided app key and site ID."
-							},
-							"response": []
-						},
-						{
-							"name": "Get App Configuration From Test Site",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"HTTP Status code must be successful\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Verify expected data in response body\", function () {",
-											"    const customKeyValue = pm.collectionVariables.get(\"customKeyValue\");",
-											"    const siteName = pm.collectionVariables.get(\"siteName\");",
-											"    const entity = pm.response.json().entity;",
-											"    pm.expect(entity.sites[0].name).to.equal(siteName, \"The Site Name is not the expected one.\");",
-											"    pm.expect(entity.sites[0].secrets[0].value).to.equal(customKeyValue, \"The custom Site Key is not the expected one.\");",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": ""
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/apps/dotContentAnalytics-config/{{siteId}}",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"apps",
-										"dotContentAnalytics-config",
-										"{{siteId}}"
-									]
-								},
-								"description": "## Endpoint: Get CA Configuration Data for Test Site\n\nThis endpoint retrieves the Test Site configuration from the Content Analytics App. It is a simple HTTP GET request that does not require any additional parameters or headers.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/apps/dotContentAnalytics-config/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: application/json\n    \n\n### Response Body\n\nThe response body will contain a JSON object with the following structure:\n\n``` json\n{\n  \"entity\": {\n    \"allowExtraParams\": true,\n    \"configurationsCount\": 0,\n    \"description\": \"\",\n    \"iconUrl\": \"\",\n    \"key\": \"\",\n    \"name\": \"\",\n    \"sites\": [\n      {\n        \"configured\": true,\n        \"id\": \"\",\n        \"name\": \"\",\n        \"secrets\": [\n          {\n            \"buttonEndpoint\": \"\",\n            \"buttonLabel\": \"\",\n            \"dynamic\": true,\n            \"envShow\": true,\n            \"hasEnvVar\": true,\n            \"hasEnvVarValue\": true,\n            \"hidden\": true,\n            \"hint\": \"\",\n            \"label\": \"\",\n            \"name\": \"\",\n            \"required\": true,\n            \"type\": \"\",\n            \"value\": \"\"\n          }\n        ]\n      }\n    ]\n  },\n  \"errors\": [],\n  \"i18nMessagesMap\": {},\n  \"messages\": [],\n  \"pagination\": null,\n  \"permissions\": []\n}\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the Test Site configuration is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response."
-							},
-							"response": []
-						}
-					],
-					"description": "Verifies that the different configuration parameters in the **Content Analytics** App are evaluated and/or generated correctly.",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"type": "text/javascript",
-								"packages": {},
-								"exec": [
-									"pm.collectionVariables.set(\"appKey\", \"dotContentAnalytics-config\")"
-								]
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"packages": {},
-								"exec": [
-									""
-								]
-							}
-						}
-					]
-				}
-			]
-		}
-	],
-	"auth": {
-		"type": "bearer",
-		"bearer": [
-			{
-				"key": "token",
-				"value": "{{jwt}}",
-				"type": "string"
-			}
-		]
-	},
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"packages": {},
-				"exec": [
-					"if (!pm.environment.get('jwt')) {",
-					"    console.log(\"generating....\")",
-					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-					"",
-					"    if (!pm.environment.get('jwt')) {",
-					"        const username = pm.environment.get(\"user\");",
-					"        const password = pm.environment.get(\"password\");",
-					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-					"",
-					"        const requestOptions = {",
-					"            url: apiUrl,",
-					"            method: \"POST\",",
-					"            header: {",
-					"                \"accept\": \"*/*\",",
-					"                \"content-type\": \"application/json\",",
-					"                \"Authorization\": `Basic ${basicAuth}`",
-					"            },",
-					"            body: {",
-					"                mode: \"raw\",",
-					"                raw: JSON.stringify({",
-					"                    \"expirationSeconds\": 7200,",
-					"                    \"userId\": \"dotcms.org.1\",",
-					"                    \"network\": \"0.0.0.0/0\",",
-					"                    \"claims\": {\"label\": \"postman-tests\"}",
-					"                })",
-					"            }",
-					"        };",
-					"",
-					"        pm.sendRequest(requestOptions, function (err, response) {",
-					"            if (err) {",
-					"                console.log(err);",
-					"            } else {",
-					"                const jwt = response.json().entity.jwt;",
-					"                pm.environment.set('jwt', jwt);",
-					"                console.log(jwt);",
-					"            }",
-					"        });",
-					"    }",
-					"}",
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"packages": {},
-				"exec": [
-					""
-				]
-			}
-		}
-	]
+  "info": {
+    "_postman_id": "4438f786-b403-474b-81fe-ad4aae6e2ce1",
+    "name": "Content Analytics",
+    "description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30436704"
+  },
+  "item": [
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Validations",
+          "item": [
+            {
+              "name": "Generate Test Data",
+              "item": [
+                {
+                  "name": "Create Test Site",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Test Site was created successfully\", function() {",
+                          "    const json = pm.response.json();",
+                          "    const testSiteName = pm.collectionVariables.get(\"testSiteName\");",
+                          "    pm.expect(json.entity.siteName).to.equal(testSiteName, \"The new Test Site does not have the expected name\");",
+                          "    pm.expect(json.errors.length).to.equal(0, \"\");",
+                          "    pm.collectionVariables.set(\"testSiteId\", json.entity.identifier);",
+                          "});",
+                          ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                      }
+                    },
+                    {
+                      "listen": "prerequest",
+                      "script": {
+                        "exec": [
+                          "const randomNumber = Math.floor(Math.random() * (100 - 1 + 1)) + 1;",
+                          "const siteName = \"www.test-ca-site\" + randomNumber + \".com\";",
+                          "pm.collectionVariables.set(\"testSiteName\", siteName);"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "bearer",
+                      "bearer": [
+                        {
+                          "key": "token",
+                          "value": "{{jwt}}",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"siteName\": \"{{testSiteName}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/site",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "site"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Add App Config for Site",
+                  "event": [
+                    {
+                      "listen": "prerequest",
+                      "script": {
+                        "exec": [
+                          "pm.collectionVariables.set(\"testSiteAuth\", \"DOT.48190c8c-42c4-46af-8d1a-0cd5db894797.8N9Oq3uD311V8YN2L6-BoINgX\")",
+                          "pm.collectionVariables.set(\"appKey\", \"dotContentAnalytics-config\");"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                      }
+                    },
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Check that the response is correct\", function () {",
+                          "    const jsonData = pm.response.json();",
+                          "    pm.expect(jsonData.entity).to.equal(\"Ok\", \"The value of the 'entity' attribute is not the expected one\");",
+                          "    pm.expect(jsonData.errors.length).to.equal(0, \"An error occurred when saving the App secret\");",
+                          "});",
+                          ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "bearer",
+                      "bearer": [
+                        {
+                          "key": "token",
+                          "value": "{{jwt}}",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    }\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/apps/{{appKey}}/{{testSiteId}}",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "apps",
+                        "{{appKey}}",
+                        "{{testSiteId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "exec": [
+                      ""
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "exec": [
+                      "pm.test(\"HTTP Status must be successful\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "No Query Form on Event",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Unsupported Media Type Event",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "// Validate the response status is 415",
+                      "pm.test(\"Response status is 415\", function () {",
+                      "    pm.response.to.have.status(415);",
+                      "});",
+                      "",
+                      "// Validate that the response body contains the 'message' property and it is not empty",
+                      "pm.test(\"Response should have an error message\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+                      "    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "protocolProfileBehavior": {
+                "disabledSystemHeaders": {
+                  "content-type": true
+                }
+              },
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"query\": {}\n}\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "site_key is required",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response sould be right\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "",
+                      "    pm.expect(responseBody).to.not.have.property(\"failed\");",
+                      "    pm.expect(responseBody).to.not.have.property(\"success\");",
+                      "    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+                      "",
+                      "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                      "    pm.expect(responseBody.errors.length).to.be.eq(1);",
+                      "",
+                      "    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
+                      "",
+                      "    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.site_auth\");",
+                      "    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.site_auth\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"context\": {\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"page_view\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "events is required",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response sould be right\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "",
+                      "    pm.expect(responseBody).to.not.have.property(\"failed\");",
+                      "    pm.expect(responseBody).to.not.have.property(\"success\");",
+                      "    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+                      "",
+                      "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                      "    pm.expect(responseBody.errors.length).to.be.eq(1);",
+                      "",
+                      "    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
+                      "",
+                      "    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[0].field).to.be.eq(\"events\");",
+                      "    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: events\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "session_id is required",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response sould be right\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "",
+                      "    pm.expect(responseBody).to.not.have.property(\"failed\");",
+                      "    pm.expect(responseBody).to.not.have.property(\"success\");",
+                      "    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+                      "",
+                      "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                      "    pm.expect(responseBody.errors.length).to.be.eq(1);",
+                      "",
+                      "    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
+                      "",
+                      "    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.session_id\");",
+                      "    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.session_id\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "user_id is required",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response sould be right\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "",
+                      "    pm.expect(responseBody).to.not.have.property(\"failed\");",
+                      "    pm.expect(responseBody).to.not.have.property(\"success\");",
+                      "    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+                      "",
+                      "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                      "    pm.expect(responseBody.errors.length).to.be.eq(1);",
+                      "",
+                      "    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
+                      "",
+                      "    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.user_id\");",
+                      "    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.user_id\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "event_type is required",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response sould be right\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "",
+                      "    pm.expect(responseBody.failed).to.be.eq(2);",
+                      "    pm.expect(responseBody.success).to.be.eq(0);",
+                      "    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+                      "",
+                      "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                      "    pm.expect(responseBody.errors.length).to.be.eq(2);",
+                      "",
+                      "    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].event_type\");",
+                      "    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: event_type\");",
+                      "",
+                      "    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(1);",
+                      "    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[1].event_type\");",
+                      "    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: event_type\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n           \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        },\n        {\n            \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "pageview required fields",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response sould be right\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "",
+                      "    pm.expect(responseBody.failed).to.be.eq(3);",
+                      "    pm.expect(responseBody.success).to.be.eq(0);",
+                      "    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+                      "",
+                      "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                      "    pm.expect(responseBody.errors.length).to.be.eq(4);",
+                      "",
+                      "    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].local_time\");",
+                      "    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: local_time\");",
+                      "",
+                      "    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.page.url\");",
+                      "    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: data.page.url\");",
+                      "",
+                      "    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(1);",
+                      "    pm.expect(responseBody.errors[2].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[1].data.page.doc_encoding\");",
+                      "    pm.expect(responseBody.errors[2].message).to.be.eq(\"Required field is missing: data.page.doc_encoding\");",
+                      "",
+                      "    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(2);",
+                      "    pm.expect(responseBody.errors[3].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[2].data.page.title\");",
+                      "    pm.expect(responseBody.errors[3].message).to.be.eq(\"Required field is missing: data.page.title\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "pageview extra attributes",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response sould be right\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "",
+                      "    pm.expect(responseBody.failed).to.be.eq(1);",
+                      "    pm.expect(responseBody.success).to.be.eq(0);",
+                      "    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+                      "",
+                      "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                      "    pm.expect(responseBody.errors.length).to.be.eq(3);",
+                      "",
+                      "    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[0].code).to.be.eq(\"UNKNOWN_FIELD\");",
+                      "    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.extra\");",
+                      "    pm.expect(responseBody.errors[0].message).to.be.eq(\"Unknown field 'data.page.extra'\");",
+                      "",
+                      "    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[1].code).to.be.eq(\"UNKNOWN_FIELD\");",
+                      "    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.utm.extra\");",
+                      "    pm.expect(responseBody.errors[1].message).to.be.eq(\"Unknown field 'data.utm.extra'\");",
+                      "",
+                      "    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[2].code).to.be.eq(\"UNKNOWN_FIELD\");",
+                      "    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[0].data.extra\");",
+                      "    pm.expect(responseBody.errors[2].message).to.be.eq(\"Unknown field 'data.extra'\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"extra\": \"extra\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\",\n                    \"extra\": \"extra\"\n                },\n                \"extra\": \"extra\"\n            }\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "content_impression required fields",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response sould be right\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "",
+                      "    pm.expect(responseBody.failed).to.be.eq(8);",
+                      "    pm.expect(responseBody.success).to.be.eq(0);",
+                      "    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+                      "",
+                      "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                      "    pm.expect(responseBody.errors.length).to.be.eq(8);",
+                      "",
+                      "    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.url\");",
+                      "    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: data.page.url\");",
+                      "",
+                      "    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(1);",
+                      "    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[1].data.page.title\");",
+                      "    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: data.page.title\");",
+                      "",
+                      "    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(2);",
+                      "    pm.expect(responseBody.errors[2].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[2].data.content.identifier\");",
+                      "    pm.expect(responseBody.errors[2].message).to.be.eq(\"Required field is missing: data.content.identifier\");",
+                      "",
+                      "    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(3);",
+                      "    pm.expect(responseBody.errors[3].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[3].data.content.inode\");",
+                      "    pm.expect(responseBody.errors[3].message).to.be.eq(\"Required field is missing: data.content.inode\");",
+                      "",
+                      "    pm.expect(responseBody.errors[4].eventIndex).to.be.eq(4);",
+                      "    pm.expect(responseBody.errors[4].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[4].field).to.be.eq(\"events[4].data.content.title\");",
+                      "    pm.expect(responseBody.errors[4].message).to.be.eq(\"Required field is missing: data.content.title\");",
+                      "",
+                      "    pm.expect(responseBody.errors[5].eventIndex).to.be.eq(5);",
+                      "    pm.expect(responseBody.errors[5].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[5].field).to.be.eq(\"events[5].data.content.content_type\");",
+                      "    pm.expect(responseBody.errors[5].message).to.be.eq(\"Required field is missing: data.content.content_type\");",
+                      "",
+                      "    pm.expect(responseBody.errors[6].eventIndex).to.be.eq(6);",
+                      "    pm.expect(responseBody.errors[6].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[6].field).to.be.eq(\"events[6].data.position.viewport_offset_pct\");",
+                      "    pm.expect(responseBody.errors[6].message).to.be.eq(\"Required field is missing: data.position.viewport_offset_pct\");",
+                      "",
+                      "    pm.expect(responseBody.errors[7].eventIndex).to.be.eq(7);",
+                      "    pm.expect(responseBody.errors[7].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+                      "    pm.expect(responseBody.errors[7].field).to.be.eq(\"events[7].data.position.dom_index\");",
+                      "    pm.expect(responseBody.errors[7].message).to.be.eq(\"Required field is missing: data.position.dom_index\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": { \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\",     \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18\n                }\n            }\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "content_impression extra attributes",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response sould be right\", function () {",
+                      "    const responseBody = pm.response.json();",
+                      "",
+                      "    pm.expect(responseBody.failed).to.be.eq(1);",
+                      "    pm.expect(responseBody.success).to.be.eq(0);",
+                      "    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+                      "",
+                      "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                      "    pm.expect(responseBody.errors.length).to.be.eq(4);",
+                      "",
+                      "    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[0].code).to.be.eq(\"UNKNOWN_FIELD\");",
+                      "    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.extra\");",
+                      "    pm.expect(responseBody.errors[0].message).to.be.eq(\"Unknown field 'data.page.extra'\");",
+                      "",
+                      "    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[1].code).to.be.eq(\"UNKNOWN_FIELD\");",
+                      "    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.content.extra\");",
+                      "    pm.expect(responseBody.errors[1].message).to.be.eq(\"Unknown field 'data.content.extra'\");",
+                      "",
+                      "    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[2].code).to.be.eq(\"UNKNOWN_FIELD\");",
+                      "    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[0].data.position.extra\");",
+                      "    pm.expect(responseBody.errors[2].message).to.be.eq(\"Unknown field 'data.position.extra'\");",
+                      "",
+                      "    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(0);",
+                      "    pm.expect(responseBody.errors[3].code).to.be.eq(\"UNKNOWN_FIELD\");",
+                      "    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[0].data.extra\");",
+                      "    pm.expect(responseBody.errors[3].message).to.be.eq(\"Unknown field 'data.extra'\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Referer",
+                    "value": "http://{{testSiteName}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\",\n                    \"extra\": \"\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\",\n                    \"extra\": \"\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5,\n                    \"extra\": \"\"\n                },\n                \"extra\": \"\"\n            }\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "event"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "App Configuration",
+          "item": [
+            {
+              "name": "Create test Site",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be successful\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Check test Site information\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.collectionVariables.set(\"siteName\", \"www.mytestsitewithcontentanalytics.com\");"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"siteName\": \"{{siteName}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/site",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "site"
+                  ]
+                },
+                "description": "## API Endpoint: Create Site\n\nThis endpoint allows users to create a new site by sending a POST request to the server. The request requires a JSON payload that includes the name of the site to be created.\n\n### Request\n\n- **Method**: POST\n    \n- **URL**: `{{serverURL}}/api/v1/site`\n    \n- **Content-Type**: application/json\n    \n\n#### Request Body\n\nThe request body must be in JSON format and include the following parameter:\n\n- `siteName` (string): The name of the site that you want to create.\n    \n\n**Example Request Body:**\n\n``` json\n{\n  \"siteName\": \"{{siteName}}\"\n}\n\n ```\n\n### Response\n\nUpon a successful request, the server responds with a status code of `200` and a JSON object containing the details of the created site.\n\n#### Response Structure\n\n- **entity**: An object containing the details of the site.\n    \n    - `addThis`: (null) Placeholder for additional configuration.\n        \n    - `aliases`: (null) Placeholder for site aliases.\n        \n    - `archived`: (boolean) Indicates if the site is archived.\n        \n    - `default`: (boolean) Indicates if this is the default site.\n        \n    - `description`: (null) Placeholder for site description.\n        \n    - `embeddedDashboard`: (null) Placeholder for embedded dashboard settings.\n        \n    - `googleAnalytics`: (null) Placeholder for Google Analytics settings.\n        \n    - `googleMap`: (null) Placeholder for Google Map settings.\n        \n    - `identifier`: (string) Unique identifier for the site.\n        \n    - `inode`: (string) Internal node identifier.\n        \n    - `keywords`: (null) Placeholder for site keywords.\n        \n    - `languageId`: (integer) Language identifier.\n        \n    - `live`: (boolean) Indicates if the site is live.\n        \n    - `locked`: (boolean) Indicates if the site is locked.\n        \n    - `modDate`: (integer) Modification date timestamp.\n        \n    - `modUser`: (string) User who last modified the site.\n        \n    - `proxyUrlForEditMode`: (null) Placeholder for proxy URL in edit mode.\n        \n    - `runDashboard`: (boolean) Indicates if the dashboard should run.\n        \n    - `siteName`: (string) The name of the site.\n        \n    - `siteThumbnail`: (string) URL for the site thumbnail.\n        \n    - `systemHost`: (boolean) Indicates if this is a system host.\n        \n    - `tagStorage`: (string) Placeholder for tag storage.\n        \n    - `variables`: (array) Array of variables associated with the site.\n        \n    - `working`: (boolean) Indicates if the site is in a working state.\n        \n- **errors**: (array) An array that will contain any errors encountered during the request. In this case, it is empty.\n    \n- **i18nMessagesMap**: (object) An object for internationalization messages, which is empty in this response.\n    \n- **messages**: (array) An array for any messages returned by the server, which is also empty.\n    \n- **pagination**: (null) Placeholder for pagination details, if applicable.\n    \n- **permissions**: (array) An array for permissions related to the site, which is empty.\n    \n\nThis endpoint is essential for managing site creation and ensures that the necessary parameters are provided to successfully create a new site."
+              },
+              "response": []
+            },
+            {
+              "name": "Generate Site Key For System Host",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be successful\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Verify expected data in response body\", function () {",
+                      "    pm.expect(pm.response.text()).to.contain(\"DOT.SYSTEM_HOST.\", \"Returned Site Key doesn't have the expected format/value\");",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/siteauth/generate/SYSTEM_HOST",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "siteauth",
+                    "generate",
+                    "SYSTEM_HOST"
+                  ]
+                },
+                "description": "## Endpoint: Generate Site Key for CA Authentication for System Host\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the System Host configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/siteauth/generate/SYSTEM_HOST`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body contains a unique identifier for the system host configuration. The format of the response body is a plain text string, which represents the generated identifier. For example:\n\n```\nDOT.SYSTEM_HOST.xIUpL_9NXGDhoA_JykjWgEQHX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the system host configuration identifier is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current system host configuration settings. Ensure that the server is running and accessible to get a successful response. The generated identifier can be utilized for tracking or referencing the specific system host configuration in subsequent requests or operations."
+              },
+              "response": []
+            },
+            {
+              "name": "Generate Site Key For Test Site",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be successful\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Verify expected data in response body\", function () {",
+                      "    const siteId = pm.collectionVariables.get(\"siteId\");",
+                      "    pm.expect(pm.response.text()).to.contain(\"DOT.\" + siteId + \".\", \"Returned Site Key doesn't have the expected format/value\");",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/analytics/content/siteauth/generate/{{siteId}}",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "analytics",
+                    "content",
+                    "siteauth",
+                    "generate",
+                    "{{siteId}}"
+                  ]
+                },
+                "description": "## Endpoint: Generate Site Key for CA Authentication for Test Site\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the Test Site configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/siteauth/generate/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body will contain a string representing the CA Authentication Object. For example, the response might look like:\n\n```\nDOT.3ac45bec0907840d1f12dc78e2642d8f.DlaM8q76AOZGimRLAj80Zy_wX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the CA Authentication Object is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response. The returned CA Authentication Object is essential for further interactions with the Test Site."
+              },
+              "response": []
+            },
+            {
+              "name": "Save User-Defined Site Key",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be successful\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Check that response is correct\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.entity).to.equal(\"Ok\", \"The value of the 'entity' attribute is not the expected one\");",
+                      "    pm.expect(jsonData.errors.length).to.equal(0, \"An error occurred when saving the App secret\");",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.collectionVariables.set(\"customKeyValue\", \"custom-key-value\");"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \n\t  \"siteAuth\": {\n\t\t \"value\": \"{{customKeyValue}}\"\n      }\n}\n"
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/apps/{{appKey}}/{{siteId}}",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "apps",
+                    "{{appKey}}",
+                    "{{siteId}}"
+                  ]
+                },
+                "description": "## HTTP POST Request to Save Content Analytics App Secrets\n\n### Endpoint\n\n`POST {{serverURL}}/api/v1/apps/{{key}}/{{siteId}}`\n\n### Request Parameters\n\n- **Request Body** (Raw JSON):\n    \n    - `siteAuth` (object): Contains the following property:\n        \n        - `value` (string): The custom key value to identify the site.\n            \n\n### Expected Response\n\n- **Status Code**: `200 OK`\n    \n- **Content-Type**: `application/json`\n    \n- **Response Body**:\n    \n    - `entity` (string): Represents the entity returned.\n        \n    - `errors` (array): A list of any errors encountered during the request.\n        \n    - `i18nMessagesMap` (object): A map for internationalization messages.\n        \n    - `messages` (array): A list of messages related to the request.\n        \n    - `pagination` (null): Indicates if there is any pagination data.\n        \n    - `permissions` (array): A list of permissions associated with the request.\n        \n\nThis request is designed to save Content Analytics App data using the provided app key and site ID."
+              },
+              "response": []
+            },
+            {
+              "name": "Get App Configuration From Test Site",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"HTTP Status code must be successful\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Verify expected data in response body\", function () {",
+                      "    const customKeyValue = pm.collectionVariables.get(\"customKeyValue\");",
+                      "    const siteName = pm.collectionVariables.get(\"siteName\");",
+                      "    const entity = pm.response.json().entity;",
+                      "    pm.expect(entity.sites[0].name).to.equal(siteName, \"The Site Name is not the expected one.\");",
+                      "    pm.expect(entity.sites[0].secrets[0].value).to.equal(customKeyValue, \"The custom Site Key is not the expected one.\");",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/apps/dotContentAnalytics-config/{{siteId}}",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "apps",
+                    "dotContentAnalytics-config",
+                    "{{siteId}}"
+                  ]
+                },
+                "description": "## Endpoint: Get CA Configuration Data for Test Site\n\nThis endpoint retrieves the Test Site configuration from the Content Analytics App. It is a simple HTTP GET request that does not require any additional parameters or headers.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/apps/dotContentAnalytics-config/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: application/json\n    \n\n### Response Body\n\nThe response body will contain a JSON object with the following structure:\n\n``` json\n{\n  \"entity\": {\n    \"allowExtraParams\": true,\n    \"configurationsCount\": 0,\n    \"description\": \"\",\n    \"iconUrl\": \"\",\n    \"key\": \"\",\n    \"name\": \"\",\n    \"sites\": [\n      {\n        \"configured\": true,\n        \"id\": \"\",\n        \"name\": \"\",\n        \"secrets\": [\n          {\n            \"buttonEndpoint\": \"\",\n            \"buttonLabel\": \"\",\n            \"dynamic\": true,\n            \"envShow\": true,\n            \"hasEnvVar\": true,\n            \"hasEnvVarValue\": true,\n            \"hidden\": true,\n            \"hint\": \"\",\n            \"label\": \"\",\n            \"name\": \"\",\n            \"required\": true,\n            \"type\": \"\",\n            \"value\": \"\"\n          }\n        ]\n      }\n    ]\n  },\n  \"errors\": [],\n  \"i18nMessagesMap\": {},\n  \"messages\": [],\n  \"pagination\": null,\n  \"permissions\": []\n}\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the Test Site configuration is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response."
+              },
+              "response": []
+            }
+          ],
+          "description": "Verifies that the different configuration parameters in the **Content Analytics** App are evaluated and/or generated correctly.",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "pm.collectionVariables.set(\"appKey\", \"dotContentAnalytics-config\")"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          "if (!pm.environment.get('jwt')) {",
+          "    console.log(\"generating....\")",
+          "    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+          "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+          "",
+          "    if (!pm.environment.get('jwt')) {",
+          "        const username = pm.environment.get(\"user\");",
+          "        const password = pm.environment.get(\"password\");",
+          "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "",
+          "        const requestOptions = {",
+          "            url: apiUrl,",
+          "            method: \"POST\",",
+          "            header: {",
+          "                \"accept\": \"*/*\",",
+          "                \"content-type\": \"application/json\",",
+          "                \"Authorization\": `Basic ${basicAuth}`",
+          "            },",
+          "            body: {",
+          "                mode: \"raw\",",
+          "                raw: JSON.stringify({",
+          "                    \"expirationSeconds\": 7200,",
+          "                    \"userId\": \"dotcms.org.1\",",
+          "                    \"network\": \"0.0.0.0/0\",",
+          "                    \"claims\": {\"label\": \"postman-tests\"}",
+          "                })",
+          "            }",
+          "        };",
+          "",
+          "        pm.sendRequest(requestOptions, function (err, response) {",
+          "            if (err) {",
+          "                console.log(err);",
+          "            } else {",
+          "                const jwt = response.json().entity.jwt;",
+          "                pm.environment.set('jwt', jwt);",
+          "                console.log(jwt);",
+          "            }",
+          "        });",
+          "    }",
+          "}",
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "testSiteAuth",
+      "value": ""
+    },
+    {
+      "key": "appKey",
+      "value": ""
+    },
+    {
+      "key": "testSiteName",
+      "value": ""
+    },
+    {
+      "key": "testSiteId",
+      "value": ""
+    },
+    {
+      "key": "siteName",
+      "value": ""
+    },
+    {
+      "key": "siteId",
+      "value": ""
+    },
+    {
+      "key": "customKeyValue",
+      "value": ""
+    }
+  ]
 }

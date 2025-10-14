@@ -1,8 +1,8 @@
-name: Theme
+name: Pillar
 description: High-level strategic initiative that groups related EPICs
-title: "[THEME] "
+title: "[PILLAR] "
 labels: []
-type: theme
+type: pillar
 assignees: []
 
 body:
@@ -11,23 +11,14 @@ body:
       value: |
         **Note: This template is intended for Product team use only.**
         
-        ## Theme Overview
-        Themes represent broad strategic initiatives that align with product vision and encompass multiple EPICs.
-
-  - type: input
-    id: theme-title
-    attributes:
-      label: Theme Title
-      description: Concise, action-based title that reflects strategic value
-      placeholder: "e.g., Enhanced Content Management Experience"
-    validations:
-      required: true
+        ## Pillar Overview
+        Pillars represent broad strategic initiatives that align with product vision and encompass multiple EPICs.
 
   - type: textarea
     id: vision
     attributes:
       label: Vision
-      description: Explain in detail how this theme will benefit our customers
+      description: Explain in detail how this pillar will benefit our customers
       placeholder: "Describe the strategic value and customer impact..."
     validations:
       required: true
@@ -36,7 +27,7 @@ body:
     id: personas
     attributes:
       label: Target Personas
-      description: Select the personas this theme primarily affects
+      description: Select the personas this pillar primarily affects
       options:
         - label: Developer teams
         - label: Content teams
