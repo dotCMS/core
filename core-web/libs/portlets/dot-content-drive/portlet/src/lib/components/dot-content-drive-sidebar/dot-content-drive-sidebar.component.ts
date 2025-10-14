@@ -34,13 +34,6 @@ export class DotContentDriveSidebarComponent {
 
     readonly uploadFiles = output<DotContentDriveUploadFiles>();
 
-    constructor() {
-        effect(() => {
-            this.#store.path();
-            // Do a Collapse All Here
-        });
-    }
-
     readonly getSiteFoldersEffect = effect(() => {
         const currentSite = this.$currentSite();
         if (!currentSite) {
