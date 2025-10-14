@@ -188,9 +188,9 @@ const PORTLETS_IFRAME = [
                         path: 'new'
                     },
                     {
-                        loadChildren: () =>
-                            import('@portlets/dot-porlet-detail/dot-portlet-detail.module').then(
-                                (m) => m.DotPortletDetailModule
+                        loadComponent: () =>
+                            import('@portlets/dot-porlet-detail/dot-portlet-detail.component').then(
+                                (m) => m.DotPortletDetailComponent
                             ),
                         path: ':asset',
                         data: {

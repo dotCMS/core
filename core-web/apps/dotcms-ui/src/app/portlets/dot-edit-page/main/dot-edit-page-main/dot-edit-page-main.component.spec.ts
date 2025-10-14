@@ -59,13 +59,14 @@ import {
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
 import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../../../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotExperimentClassDirective } from '../../../shared/directives/dot-experiment-class.directive';
+import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEditPageNavDirective } from '../dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
-import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -127,11 +128,12 @@ describe('DotEditPageMainComponent', () => {
                         path: ''
                     }
                 ]),
-                DotEditPageNavModule,
+                DotEditPageNavComponent,
                 DotDownloadBundleDialogComponent,
                 HttpClientTestingModule,
                 DotExperimentClassDirective,
-                DotEditPageNavDirective
+                DotEditPageNavDirective,
+                DotBlockEditorSidebarComponent
             ],
             declarations: [DotEditPageMainComponent, MockDotEditContentletComponent],
             providers: [
@@ -192,7 +194,8 @@ describe('DotEditPageMainComponent', () => {
                 DotLicenseService,
                 Title,
                 mockProvider(DotSessionStorageService),
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                mockProvider(DotDownloadBundleDialogService)
             ]
         });
     }));

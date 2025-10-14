@@ -12,7 +12,7 @@ import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotEditContentletComponent } from '../../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotExperimentClassDirective } from '../../../shared/directives/dot-experiment-class.directive';
-import { DotBlockEditorSidebarModule } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.module';
+import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEditPageNavDirective } from '../dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 
@@ -21,7 +21,7 @@ import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.
         CommonModule,
         RouterModule,
         DotEditContentletComponent,
-        DotBlockEditorSidebarModule,
+        DotBlockEditorSidebarComponent,
         DotEditPageNavDirective,
         DotEditPageNavComponent,
         DotExperimentClassDirective,
