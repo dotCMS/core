@@ -1419,7 +1419,7 @@ public class ContentTypeResource implements Serializable {
 	 *                     reference, please check
 	 *                     {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}.
 	 * @param direction    The direction of the sorting. It can be either "ASC" or "DESC".
-	 * @param types         The Velocity variable name of the Content Type  to retrieve.
+	 * @param type         The Velocity variable name of the Content Type  to retrieve.
 	 * @param siteId       The identifier of the Site where the requested Content Types live.
 	 * @param sites        A comma-separated list of Site identifiers or Site Keys where the
 	 *                     requested Content Types live.
@@ -1531,7 +1531,7 @@ public class ContentTypeResource implements Serializable {
                     ),
                     style = ParameterStyle.FORM,
                     description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
-            ) List<String> types,
+            ) List<String> type,
             @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
                     description = "Filter by site identifier."
             ) final String siteId,
@@ -1551,10 +1551,14 @@ public class ContentTypeResource implements Serializable {
 
 		try {
 			final Map<String, Object> extraParams = new HashMap<>();
-
-			if (null != types) {
-                //Remove dupe and preserve order
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(types));
+			if (null != type) {
+                //Remove empty strings and duplicates, preserve order
+				final List<String> filteredTypes = type.stream()
+					.filter(UtilMethods::isSet)
+					.collect(Collectors.toList());
+				if (!filteredTypes.isEmpty()) {
+					extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(filteredTypes));
+				}
 			}
 
 			if (null != siteId) {
