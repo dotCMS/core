@@ -34,6 +34,7 @@ public class RequestCostApiImpl implements RequestCostApi {
     private final AtomicLong requestCountForWindow = new AtomicLong(0);
     private final AtomicLong requestCostForWindow = new AtomicLong(0);
     private ScheduledExecutorService scheduler;
+    private int requestCostDenominator;
 
     public RequestCostApiImpl() {
         // CDI requires a no-arg constructor
@@ -41,7 +42,11 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     @PostConstruct
     public void init() {
-        this.requestCostTimeWindowSeconds = Config.getIntProperty("REQUEST_COST_TIME_WINDOW_SECONDS", 30);
+        this.requestCostTimeWindowSeconds = Config.getIntProperty("REQUEST_COST_TIME_WINDOW_SECONDS", 60);
+        this.requestCostDenominator = Config.getIntProperty("REQUEST_COST_DENOMINATOR", 100);
+
+
+
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 r -> {
                     Thread t = new Thread(r, "RequestCostMonitor");
@@ -63,9 +68,10 @@ public class RequestCostApiImpl implements RequestCostApi {
             }
             Logger.info(this.getClass(),
                     String.format(
-                            "Request Cost Monitor: Window: %ds, Count: %d, Total Cost: %d, Cost/Request: %.2f%n",
+                            "Request Cost Monitor: Window: %ds, Count: %d, Total Cost: %.2f, Cost/Request: %.2f",
                             requestCostTimeWindowSeconds,
-                            load._1, load._2, load._2.floatValue() / load._1));
+                            load._1, load._2.doubleValue() / requestCostDenominator,
+                            load._2.doubleValue() / load._1 / requestCostDenominator));
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error logging request cost", e);
         }
@@ -177,9 +183,10 @@ public class RequestCostApiImpl implements RequestCostApi {
     @Override
     public void addCostHeader(HttpServletRequest request, HttpServletResponse response) {
 
-        int currentCost = getRequestCost(request);
+        Integer currentCost = getRequestCost(request);
 
-        response.setHeader(REQUEST_COST_HEADER_NAME, String.valueOf(currentCost));
+        response.setHeader(REQUEST_COST_HEADER_NAME,
+                String.format("%.2f", currentCost.doubleValue() / requestCostDenominator));
 
     }
 

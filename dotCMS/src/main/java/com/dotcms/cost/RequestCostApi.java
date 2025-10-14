@@ -45,7 +45,7 @@ public interface RequestCostApi {
      * @param request
      * @return
      */
-    List<Map<String, Object>> getAccountList(HttpServletRequest request);
+    List<Map<String, Object>> getAccountList(@NotNull HttpServletRequest request);
 
     /**
      * Returns true if the request is in full accounting mode
@@ -53,7 +53,7 @@ public interface RequestCostApi {
      * @param request
      * @return
      */
-    boolean isFullAccounting(HttpServletRequest request);
+    boolean isFullAccounting(@NotNull HttpServletRequest request);
 
 
     /**
@@ -80,12 +80,12 @@ public interface RequestCostApi {
      *
      * @return
      */
-    int getRequestCost(HttpServletRequest request);
+    int getRequestCost(@NotNull HttpServletRequest request);
 
     /**
      * Initializes the accounting system for the current request with fullAccounting set to false
      */
-    void initAccounting(HttpServletRequest request);
+    void initAccounting(@NotNull HttpServletRequest request);
 
     /**
      * Initializes the accounting system for the current request.
@@ -93,18 +93,18 @@ public interface RequestCostApi {
      * @param request
      * @param fullAccounting
      */
-    void initAccounting(HttpServletRequest request, boolean fullAccounting);
+    void initAccounting(@NotNull HttpServletRequest request, boolean fullAccounting);
 
     /**
      * Clears the accounting system for the current request.
      */
-    void endAccounting(HttpServletRequest request);
+    void endAccounting(@NotNull HttpServletRequest request);
 
     /**
      * Adds the current cost to the response header.
      *
      * @param response
      */
-    void addCostHeader(HttpServletRequest request, HttpServletResponse response);
+    void addCostHeader(@NotNull HttpServletRequest request, HttpServletResponse response);
 
 }
