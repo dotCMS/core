@@ -41,7 +41,13 @@ describe('DotPortletToolbarComponent', () => {
                 }
             ],
             declarations: [TestHostComponent],
-            imports: [ToolbarModule, DotMessagePipe, ButtonModule, MenuModule, DotPortletToolbarComponent]
+            imports: [
+                ToolbarModule,
+                DotMessagePipe,
+                ButtonModule,
+                MenuModule,
+                DotPortletToolbarComponent
+            ]
         }).compileComponents();
     });
 

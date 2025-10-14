@@ -95,7 +95,7 @@ describe('SearchableDropdownComponent', () => {
         });
 
         await TestBed.configureTestingModule({
-            declarations: [ HostTestComponent],
+            declarations: [HostTestComponent],
             imports: [
                 SearchableDropdownComponent,
                 BrowserAnimationsModule,

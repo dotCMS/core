@@ -31,13 +31,7 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     selector: 'dot-pages-favorite-panel',
     templateUrl: './dot-pages-favorite-panel.component.html',
     styleUrls: ['./dot-pages-favorite-panel.component.scss'],
-    imports: [
-        CommonModule,
-        DotMessagePipe,
-        DotPagesCardComponent,
-        PanelModule,
-        ButtonModule
-    ]
+    imports: [CommonModule, DotMessagePipe, DotPagesCardComponent, PanelModule, ButtonModule]
 })
 export class DotPagesFavoritePanelComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

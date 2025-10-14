@@ -8,12 +8,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
-import {
-    DotClipboardUtil,
-    DotDialogComponent,
-    DotMessagePipe,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
+import { DotClipboardUtil, DotDialogComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-password.component';
@@ -43,14 +38,18 @@ describe('DotGenerateSecurePasswordComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotGenerateSecurePasswordComponent,
-        imports: [BrowserAnimationsModule, ButtonModule, DotDialogComponent, DotSafeHtmlPipe, DotMessagePipe],
+        imports: [
+            BrowserAnimationsModule,
+            ButtonModule,
+            DotDialogComponent,
+            DotSafeHtmlPipe,
+            DotMessagePipe
+        ],
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },
             DotGenerateSecurePasswordService
         ],
-        componentProviders: [
-            { provide: DotClipboardUtil, useValue: clipboardUtilMock }
-        ]
+        componentProviders: [{ provide: DotClipboardUtil, useValue: clipboardUtilMock }]
     });
 
     beforeEach(() => {
@@ -63,7 +62,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
 
     describe('dot-dialog', () => {
         let dialog: DotDialogComponent;
-        
+
         beforeEach(() => {
             dialog = spectator.query(DotDialogComponent);
             dotGenerateSecurePasswordService.open(passwordGenerateData);
@@ -81,11 +80,11 @@ describe('DotGenerateSecurePasswordComponent', () => {
             const copyButton = spectator.query('[data-testId="copyBtn"]') as HTMLButtonElement;
             spectator.click(copyButton);
             spectator.detectChanges();
-            
+
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith(spectator.component.value);
             expect(dotClipboardUtil.copy).toHaveBeenCalledTimes(1);
             expect(copyButton.textContent).toBe('Copied');
-            
+
             tick(2000);
             spectator.detectChanges();
             expect(copyButton.textContent).toBe('Copy');
@@ -95,11 +94,11 @@ describe('DotGenerateSecurePasswordComponent', () => {
             const revealButton = spectator.query(
                 '.dot-generate-secure-password__reveal-link'
             ) as HTMLAnchorElement;
-            
+
             expect(revealButton.text).toContain('Reveal');
             spectator.click(revealButton);
             spectator.detectChanges();
-            
+
             expect(spectator.component.typeInput).toBe('text');
             expect(revealButton.text).toContain('hide');
         });
@@ -108,10 +107,10 @@ describe('DotGenerateSecurePasswordComponent', () => {
             const revealButton = spectator.query(
                 '.dot-generate-secure-password__reveal-link'
             ) as HTMLAnchorElement;
-            
+
             dialog.close();
             spectator.detectChanges();
-            
+
             expect(spectator.component.typeInput).toBe('password');
             expect(spectator.component.value).toBe('');
             expect(spectator.component.dialogShow).toBe(false);

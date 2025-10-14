@@ -42,7 +42,15 @@ class DefaultTestHostWithToolbarComponent {}
 describe('DotPortletBaseComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [CommonModule, DotPortletBaseComponent, DotPortletBoxComponent, DefaultTestHostComponent, DefaultTestHostUnboxedComponent, DefaultTestHostWithToolbarComponent, DotToolbarMockComponent]
+            imports: [
+                CommonModule,
+                DotPortletBaseComponent,
+                DotPortletBoxComponent,
+                DefaultTestHostComponent,
+                DefaultTestHostUnboxedComponent,
+                DefaultTestHostWithToolbarComponent,
+                DotToolbarMockComponent
+            ]
         }).compileComponents();
     });
 
