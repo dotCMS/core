@@ -61,8 +61,6 @@ import { ContentTypeFieldsAddRowModule } from '..';
 import { DotActionButtonComponent } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
-import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
-import { ContentTypeFieldsTabComponent } from '../content-type-fields-tab';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';

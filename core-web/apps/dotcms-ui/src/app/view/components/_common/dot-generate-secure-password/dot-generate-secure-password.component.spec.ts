@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { fakeAsync, tick } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { ButtonModule } from 'primeng/button';
 
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';

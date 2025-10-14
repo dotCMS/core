@@ -19,6 +19,7 @@ import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPagesCardComponent } from './dot-pages-card/dot-pages-card.component';
+
 import {
     DotPagesState,
     DotPageStore,

@@ -48,13 +48,13 @@ import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 import { DotPortletDetailComponent } from './dot-portlet-detail.component';
 
 import { DotCustomEventHandlerService } from '../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotDownloadBundleDialogService } from '../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../test/dot-test-bed';
-import { DotDownloadBundleDialogService } from '../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotDownloadBundleDialogComponent } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
+import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotWorkflowTaskDetailService } from '../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 
 describe('DotPortletDetailComponent', () => {
     let fixture: ComponentFixture<DotPortletDetailComponent>;
