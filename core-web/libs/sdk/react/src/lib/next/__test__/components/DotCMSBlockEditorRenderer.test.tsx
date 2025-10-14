@@ -1,14 +1,17 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 
-import { BlockEditorContent } from '@dotcms/types';
+import { BlockEditorNode } from '@dotcms/types';
 import * as blockValidator from '@dotcms/uve/internal';
 
-import { DotCMSBlockEditorRenderer } from '../../components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
+import {
+    DotCMSBlockEditorRenderer,
+    CustomRendererProps
+} from '../../components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
 import * as isDevModeHook from '../../hooks/useIsDevMode';
 
 describe('DotCMSBlockEditorRenderer', () => {
-    const blocks: BlockEditorContent = {
+    const blocks: BlockEditorNode = {
         type: 'doc',
         content: [
             {
@@ -42,8 +45,8 @@ describe('DotCMSBlockEditorRenderer', () => {
 
     it('should render with custom renderers', () => {
         const customRenderers = {
-            paragraph: ({ content }: { content: any }) => {
-                const [{ text }] = content;
+            paragraph: ({ node }: CustomRendererProps) => {
+                const text = node.content?.[0]?.text;
 
                 return <p data-testid="custom-paragraph">{text}</p>;
             }
@@ -76,7 +79,7 @@ describe('DotCMSBlockEditorRenderer', () => {
             });
 
             const { getByTestId } = render(
-                <DotCMSBlockEditorRenderer blocks={null as unknown as BlockEditorContent} />
+                <DotCMSBlockEditorRenderer blocks={null as unknown as BlockEditorNode} />
             );
 
             expect(getByTestId('invalid-blocks-message')).toHaveTextContent(
@@ -92,7 +95,7 @@ describe('DotCMSBlockEditorRenderer', () => {
 
             const { getByTestId } = render(
                 <DotCMSBlockEditorRenderer
-                    blocks={'Invalid blocks' as unknown as BlockEditorContent}
+                    blocks={'Invalid blocks' as unknown as BlockEditorNode}
                 />
             );
 
@@ -111,7 +114,7 @@ describe('DotCMSBlockEditorRenderer', () => {
             });
 
             const { container } = render(
-                <DotCMSBlockEditorRenderer blocks={null as unknown as BlockEditorContent} />
+                <DotCMSBlockEditorRenderer blocks={null as unknown as BlockEditorNode} />
             );
 
             expect(container.firstChild).toBeNull();
@@ -137,7 +140,7 @@ describe('DotCMSBlockEditorRenderer', () => {
 
             const { rerender } = render(<DotCMSBlockEditorRenderer blocks={blocks} />);
 
-            const updatedBlocks: BlockEditorContent = {
+            const updatedBlocks: BlockEditorNode = {
                 type: 'doc',
                 content: [
                     {
