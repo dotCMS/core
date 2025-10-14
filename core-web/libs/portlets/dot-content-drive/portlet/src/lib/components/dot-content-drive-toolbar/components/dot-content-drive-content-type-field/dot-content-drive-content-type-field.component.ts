@@ -81,6 +81,12 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         return contentTypes ?? [];
     });
 
+    private readonly $mappedEnsuredContentTypes = computed<string>(() => {
+        const ensuredContentTypesString =
+            this.#store.filters().ensuredContentTypes?.join(',') ?? '';
+        return ensuredContentTypesString.length > 0 ? ensuredContentTypesString : undefined;
+    });
+
     // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991
     // This prevents the effect from being triggered when the base types are the same or filters changes
     private readonly $mappedBaseTypes = computed<string>(
@@ -155,11 +161,15 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         const value = this.$selectedContentTypes();
 
         if (value?.length) {
+            const contentTypeValues = value.map((item) => item.variable);
+
             this.#store.patchFilters({
-                contentType: value.map((item) => item.variable)
+                contentType: contentTypeValues,
+                ensuredContentTypes: contentTypeValues
             });
         } else {
             this.#store.removeFilter('contentType');
+            this.#store.removeFilter('ensuredContentTypes');
         }
     }
 
@@ -232,7 +242,10 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      */
     private loadInitialContentTypes() {
         this.#contentTypesService
-            .getContentTypesWithPagination({ filter: '', type: this.$mappedBaseTypes() })
+            .getContentTypesWithPagination({
+                type: this.$mappedBaseTypes(),
+                ensure: this.$mappedEnsuredContentTypes()
+            })
             .pipe(
                 tap(() => this.updateState({ loading: true })),
                 catchError(() =>
@@ -288,7 +301,11 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 takeUntilDestroyed(this.#destroyRef),
                 switchMap(({ filter, baseType: type }) =>
                     this.#contentTypesService
-                        .getContentTypes({ filter, type })
+                        .getContentTypes({
+                            filter,
+                            type,
+                            ensure: this.$mappedEnsuredContentTypes()
+                        })
                         .pipe(catchError(() => of([])))
                 )
             )

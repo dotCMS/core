@@ -60,7 +60,7 @@ describe('DotContentletService', () => {
             done();
         });
         const req = httpMock.expectOne(
-            '/api/v1/contenttype?filter=&orderby=name&direction=ASC&per_page=40'
+            '/api/v1/contenttype?orderby=name&direction=ASC&per_page=40'
         );
         expect(req.request.method).toBe('GET');
         req.flush({ entity: [...responseData] });
@@ -76,7 +76,7 @@ describe('DotContentletService', () => {
                 done();
             });
         const req = httpMock.expectOne(
-            '/api/v1/contenttype?filter=&orderby=name&direction=ASC&per_page=40&type=contentType&type=contentTypeB'
+            '/api/v1/contenttype?orderby=name&direction=ASC&per_page=40&type=contentType&type=contentTypeB'
         );
         expect(req.request.method).toBe('GET');
         req.flush({ entity: [...responseData] });
@@ -143,12 +143,20 @@ describe('DotContentletService', () => {
                 done();
             });
 
-        const req = httpMock.expectOne(
-            `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}&type=${type}`
-        );
+        const req = httpMock.expectOne((request) => {
+            return (
+                request.url === '/api/v1/contenttype' &&
+                request.params.get('filter') === filter &&
+                request.params.get('orderby') === 'name' &&
+                request.params.get('direction') === 'ASC' &&
+                request.params.get('per_page') === page.toString() &&
+                request.params.get('type') === type
+            );
+        });
         expect(req.request.method).toBe('GET');
         req.flush({ entity: [...responseData], pagination });
     });
+
     it('should call the BE with correct endpoint and map pagination for getContentTypesWithPagination() with multiple types', (done) => {
         const filter = 'blog';
         const page = 20;
@@ -168,9 +176,50 @@ describe('DotContentletService', () => {
                 done();
             });
 
-        const req = httpMock.expectOne(
-            `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}&type=contentType&type=contentTypeB`
-        );
+        const req = httpMock.expectOne((request) => {
+            return (
+                request.url === '/api/v1/contenttype' &&
+                request.params.get('filter') === filter &&
+                request.params.get('orderby') === 'name' &&
+                request.params.get('direction') === 'ASC' &&
+                request.params.get('per_page') === page.toString()
+            );
+        });
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [...responseData], pagination });
+    });
+
+    it('should call the BE with correct endpoint and map pagination for getContentTypesWithPagination() with ensure', (done) => {
+        const filter = 'blog';
+        const page = 20;
+        const type = 'contentType';
+        const ensure = 'blog,article';
+
+        const pagination: DotPagination = {
+            currentPage: 1,
+            perPage: page,
+            totalEntries: 4
+        };
+
+        dotContentTypeService
+            .getContentTypesWithPagination({ filter, page, type, ensure })
+            .subscribe(({ contentTypes, pagination: resultPagination }) => {
+                expect(contentTypes).toEqual(responseData);
+                expect(resultPagination).toEqual(pagination);
+                done();
+            });
+
+        const req = httpMock.expectOne((request) => {
+            return (
+                request.url === '/api/v1/contenttype' &&
+                request.params.get('filter') === filter &&
+                request.params.get('orderby') === 'name' &&
+                request.params.get('direction') === 'ASC' &&
+                request.params.get('per_page') === page.toString() &&
+                request.params.get('type') === type &&
+                request.params.get('ensure') === ensure
+            );
+        });
         expect(req.request.method).toBe('GET');
         req.flush({ entity: [...responseData], pagination });
     });
