@@ -48,10 +48,19 @@ export const EXPECTED_UTM_KEYS = [
  */
 export const DEFAULT_SESSION_TIMEOUT_MINUTES = 30;
 
+/**
+ * Session storage key for session ID
+ */
 export const SESSION_STORAGE_KEY = 'dot_analytics_session_id';
 
+/**
+ * Session storage key for session start time
+ */
 export const SESSION_START_KEY = 'dot_analytics_session_start';
 
+/**
+ * Session storage key for session UTM data
+ */
 export const SESSION_UTM_KEY = 'dot_analytics_session_utm';
 
 /**
@@ -60,12 +69,30 @@ export const SESSION_UTM_KEY = 'dot_analytics_session_utm';
 export const USER_ID_KEY = 'dot_analytics_user_id';
 
 /**
+ * Default queue configuration batch size
+ */
+const DEFAULT_QUEUE_CONFIG_BATCH_SIZE = 15;
+
+/**
+ * Default queue configuration flush interval
+ */
+const DEFAULT_QUEUE_CONFIG_FLUSH_INTERVAL = 5000;
+
+/**
  * Activity tracking configuration
  * Events used to detect user activity for session management
  * - click: Detects real user interaction with minimal performance impact
  * - visibilitychange: Handled separately to detect tab changes
  */
 export const ACTIVITY_EVENTS = ['click'] as const;
+
+/**
+ * Default queue configuration for event batching
+ */
+export const DEFAULT_QUEUE_CONFIG = {
+    eventBatchSize: DEFAULT_QUEUE_CONFIG_BATCH_SIZE, // Max events per batch - auto-sends when reached
+    flushInterval: DEFAULT_QUEUE_CONFIG_FLUSH_INTERVAL // Time between flushes - sends whatever is queued
+} as const;
 
 /**
  * The name of the analytics minified script.
