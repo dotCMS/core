@@ -39,7 +39,7 @@ import {
 import { buildContentDriveQuery, decodeFilters } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
-    currentSite: SYSTEM_HOST,
+    currentSite: undefined, // So we have the actual site selected on start
     path: DEFAULT_PATH,
     filters: {},
     items: [],
@@ -138,12 +138,15 @@ export const DotContentDriveStore = signalStore(
                     return;
                 }
 
+                // Since we are using scored search for the title we need to sort by score desc
+                const extraSort = query.includes('title') ? 'score,' : '';
+
                 contentSearchService
                     .get<ESContent>({
                         query,
                         limit,
                         offset,
-                        sort: `score,${field} ${order}`
+                        sort: `${extraSort}${field} ${order}`
                     })
                     .pipe(
                         take(1),
