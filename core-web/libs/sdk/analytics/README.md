@@ -262,6 +262,12 @@ When you call `pageView(customData?)`, the SDK **automatically enriches** the ev
         site_key: string;          //    Your site key
         session_id: string;        //    Current session ID
         user_id: string;           //    Anonymous user ID
+        device: {                  // 🤖 AUTOMATIC - Device & Browser Info
+            screen_resolution: string;  // Screen size
+            language: string;           // Browser language
+            viewport_width: string;     // Viewport width
+            viewport_height: string;    // Viewport height
+        }
     },
     events: [{
         event_type: "pageview",
@@ -277,12 +283,6 @@ When you call `pageView(customData?)`, the SDK **automatically enriches** the ev
                 doc_search: string;    //  Query string
                 doc_hash: string;      //  URL hash
                 doc_encoding: string;  //  Character encoding
-            },
-            device: {              // 🤖 AUTOMATIC - Device & Browser Info
-                screen_resolution: string;  // Screen size
-                language: string;           // Browser language
-                viewport_width: string;     // Viewport width
-                viewport_height: string;    // Viewport height
             },
             utm?: {                // 🤖 AUTOMATIC - Campaign Tracking (if present in URL)
                 source: string;    //    utm_source
@@ -319,6 +319,12 @@ When you call `track(eventName, properties)`, the following structure is sent:
         site_key: string;      // Your site key
         session_id: string;    // Current session ID
         user_id: string;       // Anonymous user ID
+        device: {              // 🤖 AUTOMATIC - Device & Browser Info
+            screen_resolution: string;  // Screen size
+            language: string;           // Browser language
+            viewport_width: string;     // Viewport width
+            viewport_height: string;    // Viewport height
+        }
     },
     events: [{
         event_type: string,    // Your custom event name
