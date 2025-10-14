@@ -296,8 +296,13 @@ public enum ValidAnalyticsEventPayloadTransformer {
 
         if (dataAttributes.containsKey(UTM_ATTRIBUTE_NAME)) {
             final Map<String, Object> utmAttributes = (Map<String, Object>) dataAttributes.get(UTM_ATTRIBUTE_NAME);
+            dataAttributes.remove(UTM_ATTRIBUTE_NAME);
             jsonObject.put(UTM_ATTRIBUTE_NAME, utmAttributes);
         }
+
+        dataAttributes.remove(PAGE_ATTRIBUTE_NAME);
+
+        moveToRoot(jsonObject, dataAttributes, Map.of());
 
         final String localTimeAttributes = (String) jsonObject.get(LOCAL_TIME_ATTRIBUTE_NAME);
         jsonObject.put("utc_time", localTimeAttributes);
@@ -356,7 +361,7 @@ public enum ValidAnalyticsEventPayloadTransformer {
      *
      * @param jsonObject Json Object
      * @param attributes attributes to move to the root
-     * @param replacementsKeys Key that you want to replace when theay are move.
+     * @param replacementsKeys Key that you want to replace when they are move.
      */
     private static void moveToRoot(final JSONObject jsonObject,
                                    final Map<String, Object> attributes,
