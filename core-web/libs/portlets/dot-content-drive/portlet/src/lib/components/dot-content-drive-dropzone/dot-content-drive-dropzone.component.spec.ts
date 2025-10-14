@@ -123,7 +123,7 @@ describe('DotContentDriveDropzoneComponent', () => {
 
     describe('Drag Events', () => {
         describe('window:dragstart', () => {
-            it('should set isInternalDrag to true when drag starts from window', () => {
+            it('should set state to INTERNAL_DRAG when drag starts from window', () => {
                 const dragStartEvent = new DragEvent('dragstart');
                 window.dispatchEvent(dragStartEvent);
                 spectator.detectChanges();
@@ -133,7 +133,7 @@ describe('DotContentDriveDropzoneComponent', () => {
         });
 
         describe('window:dragend', () => {
-            it('should reset isInternalDrag to false when drag ends', () => {
+            it('should reset state to INACTIVE when drag ends', () => {
                 // First trigger dragstart
                 const dragStartEvent = new DragEvent('dragstart');
                 window.dispatchEvent(dragStartEvent);

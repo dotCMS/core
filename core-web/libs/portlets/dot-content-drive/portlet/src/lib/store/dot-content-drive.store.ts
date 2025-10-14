@@ -138,12 +138,15 @@ export const DotContentDriveStore = signalStore(
                     return;
                 }
 
+                // Since we are using scored search for the title we need to sort by score desc
+                const extraSort = query.includes('title') ? 'score,' : '';
+
                 contentSearchService
                     .get<ESContent>({
                         query,
                         limit,
                         offset,
-                        sort: `${field} ${order}`
+                        sort: `${extraSort}${field} ${order}`
                     })
                     .pipe(
                         take(1),
