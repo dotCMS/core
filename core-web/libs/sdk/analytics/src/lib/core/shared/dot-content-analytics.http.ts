@@ -1,5 +1,5 @@
-import { ANALYTICS_ENDPOINT } from './dot-content-analytics.constants';
-import { DotCMSAnalyticsConfig, DotCMSAnalyticsRequestBody } from './dot-content-analytics.model';
+import { ANALYTICS_ENDPOINT } from './constants';
+import { DotCMSAnalyticsConfig, DotCMSEvent, DotCMSRequestBody } from './models';
 
 /**
  * Send an analytics event to the server
@@ -8,10 +8,14 @@ import { DotCMSAnalyticsConfig, DotCMSAnalyticsRequestBody } from './dot-content
  * @returns A promise that resolves when the request is complete
  */
 export const sendAnalyticsEventToServer = async (
-    payload: DotCMSAnalyticsRequestBody,
+    payload: DotCMSRequestBody<DotCMSEvent>,
     config: DotCMSAnalyticsConfig
 ): Promise<void> => {
     try {
+        if (config.debug) {
+            console.warn('DotCMS Analytics: HTTP Body to send:', JSON.stringify(payload, null, 2));
+        }
+
         const response = await fetch(`${config.server}${ANALYTICS_ENDPOINT}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -26,22 +30,22 @@ export const sendAnalyticsEventToServer = async (
             try {
                 const errorData = await response.json();
                 if (errorData.message) {
-                    console.warn(`DotAnalytics: ${errorData.message} (${baseErrorMessage})`);
+                    console.warn(`DotCMS Analytics: ${errorData.message} (${baseErrorMessage})`);
                 } else {
                     // JSON parsed successfully but no message property
                     console.warn(
-                        `DotAnalytics: ${baseErrorMessage} - No error message in response`
+                        `DotCMS Analytics: ${baseErrorMessage} - No error message in response`
                     );
                 }
             } catch (parseError) {
                 // JSON parsing failed, log the HTTP status with parse error
                 console.warn(
-                    `DotAnalytics: ${baseErrorMessage} - Failed to parse error response:`,
+                    `DotCMS Analytics: ${baseErrorMessage} - Failed to parse error response:`,
                     parseError
                 );
             }
         }
     } catch (error) {
-        console.error('DotAnalytics: Error sending event:', error);
+        console.error('DotCMS Analytics: Error sending event:', error);
     }
 };

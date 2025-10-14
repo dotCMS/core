@@ -11,15 +11,6 @@ body:
       value: |
         **Note: This template is intended for Engineering team use.**
 
-  - type: input
-    id: task-title
-    attributes:
-      label: Task Title
-      description: Clear, concise title describing the task
-      placeholder: "e.g., Update dependency versions for security patches"
-    validations:
-      required: true
-
   - type: textarea
     id: description
     attributes:

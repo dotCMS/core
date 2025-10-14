@@ -165,7 +165,7 @@ public class DotTransformerBuilder {
     public DotTransformerBuilder webAssetOptions(){
         optionsHolder.clear();
         optionsHolder.addAll(
-                EnumSet.of(COMMON_PROPS, VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS));
+                EnumSet.of(COMMON_PROPS, VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS, BINARIES));
         return this;
     }
 
