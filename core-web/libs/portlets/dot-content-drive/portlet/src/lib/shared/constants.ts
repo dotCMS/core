@@ -123,3 +123,10 @@ export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
 export const SUCCESS_MESSAGE_LIFE = 4500;
 export const WARNING_MESSAGE_LIFE = 4200;
 export const ERROR_MESSAGE_LIFE = 4500;
+
+// Dropzone state
+export const DROPZONE_STATE = {
+    INTERNAL_DRAG: 'internal-drag',
+    ACTIVE: 'active',
+    INACTIVE: 'inactive'
+} as const;
