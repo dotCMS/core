@@ -20,10 +20,7 @@ cube('request', {
             cluster_id, customer_id, utc_time,
             content_identifier, content_inode, content_title, content_content_type,
             position_viewport_offset_pct,position_dom_index,
-<<<<<<< HEAD
             element_text, element_type, element_id, element_class, element_attributes,
-=======
->>>>>>> origin/main
             custom_1, custom_2, custom_3, custom_4, custom_5, custom_6, custom_7, custom_8, custom_9, custom_10,
             custom_11, custom_12, custom_13, custom_14, custom_15, custom_16, custom_17, custom_18, custom_19, custom_20,
             custom_21, custom_22, custom_23, custom_24, custom_25, custom_26, custom_27, custom_28, custom_29, custom_30,
