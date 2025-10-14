@@ -8,7 +8,9 @@ import {
 } from '@ngrx/signals';
 import { Observable } from 'rxjs';
 
-import { inject, effect, EffectRef } from '@angular/core';
+import { inject } from '@angular/core';
+
+import { tap } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
@@ -78,7 +80,9 @@ export function withSidebar() {
             loadChildFolders: (
                 path: string
             ): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> => {
-                return getFolderNodesByPath(path, dotFolderService);
+                return getFolderNodesByPath(path, dotFolderService).pipe(
+                    tap(() => patchState(store, { path: path }))
+                );
             },
             /**
              * Sets the selected node
@@ -95,22 +99,9 @@ export function withSidebar() {
             }
         })),
         withHooks((store) => {
-            let pathEffect: EffectRef;
-
             return {
                 onInit() {
-                    /**
-                     * Listen to path changes and reload the folders.
-                     * This effect is triggered when:
-                     * - User performs a search
-                     * - Folders are created/updated/deleted (CRUD operations)
-                     */
-                    pathEffect = effect(() => {
-                        store.loadFolders();
-                    });
-                },
-                onDestroy() {
-                    pathEffect?.destroy();
+                    store.loadFolders();
                 }
             };
         })
