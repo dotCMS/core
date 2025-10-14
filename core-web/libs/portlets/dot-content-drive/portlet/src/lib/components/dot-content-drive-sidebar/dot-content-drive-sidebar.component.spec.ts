@@ -264,7 +264,8 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', mockEvent);
 
                 expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
-                    'demo.dotcms.com/expandable/'
+                    '/expandable/',
+                    'demo.dotcms.com'
                 );
             });
 
@@ -445,7 +446,8 @@ describe('DotContentDriveSidebarComponent', () => {
             };
             spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', expandEvent);
             expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
-                'demo.dotcms.com/test/'
+                '/test/',
+                'demo.dotcms.com'
             );
         });
     });
