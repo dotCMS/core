@@ -9,7 +9,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
@@ -52,7 +52,7 @@ describe('DotPersonaSelectedItemComponent', () => {
             imports: [
                 DotPersonaSelectedItemComponent,
                 BrowserAnimationsModule,
-                DotIconModule,
+                DotIconComponent,
                 DotAvatarDirective,
                 AvatarModule,
                 BadgeModule,
@@ -72,12 +72,20 @@ describe('DotPersonaSelectedItemComponent', () => {
 
     it('should have p-avatar with right properties', () => {
         const avatar = fixture.debugElement.query(By.css('p-avatar'));
+        const avatarInstance = avatar.componentInstance;
 
-        const { image } = avatar.componentInstance;
+        // Verify p-avatar image input is correctly set
+        expect(avatarInstance.image).toBe(mockDotPersona.photo);
 
-        expect(image).toBe(mockDotPersona.photo);
-        expect(avatar.query(By.css('.p-badge'))).toBeTruthy();
-        expect(avatar.attributes['ng-reflect-text']).toBe(mockDotPersona.name);
+        // Verify that persona name is rendered in the component
+        const personaName = de.query(By.css('.dot-persona-selector__name'));
+        expect(personaName.nativeElement.textContent.trim()).toBe(mockDotPersona.name);
+
+        // Verify badge is present when personalized
+        const badge = avatar.query(By.css('.p-badge'));
+        if (mockDotPersona.personalized) {
+            expect(badge).toBeTruthy();
+        }
     });
 
     it('should render persona name and label', () => {

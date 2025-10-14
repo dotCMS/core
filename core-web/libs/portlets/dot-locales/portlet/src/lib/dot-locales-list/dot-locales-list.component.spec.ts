@@ -1,10 +1,13 @@
 import { Spectator, createComponentFactory, mockProvider, byTestId } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { Table } from 'primeng/table';
 
 import {
@@ -39,33 +42,38 @@ describe('DotLocalesListComponent', () => {
                 }
             },
             {
-                provide: DotLanguagesService,
-                useValue: {
-                    get: () => of([...mockLocales]),
-                    getISO: () => of(mockLanguagesISO)
-                }
-            },
-
-            DotLocalesListStore,
-            {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
             mockProvider(DotHttpErrorManagerService),
             ConfirmationService,
+            provideHttpClient(),
             provideHttpClientTesting()
+        ],
+        componentProviders: [
+            DotLocalesListStore,
+            DialogService,
+            MessageService,
+            {
+                provide: DotLanguagesService,
+                useValue: {
+                    get: () => of([...mockLocales]),
+                    getISO: () => of(mockLanguagesISO)
+                }
+            }
         ]
     });
 
     beforeEach(() => (spectator = createComponent()));
 
-    it('should display locales when component is initialized', () => {
+    it('should display locales when component is initialized', fakeAsync(() => {
         spectator.detectChanges();
+        tick();
 
         const localeElements = spectator.queryAll(byTestId('locale-cell'));
         expect(localeElements.length).toEqual(2);
         expect(localeElements[0]).toHaveText('English (en-US)');
-    });
+    }));
 
     it('should filter locale when using the filer input', () => {
         const table = spectator.query(Table);
@@ -78,14 +86,16 @@ describe('DotLocalesListComponent', () => {
         expect(table.filterGlobal).toHaveBeenCalledWith('Spanish', 'contains');
     });
 
-    it('should display default tag for default locale', () => {
+    it('should display default tag for default locale', fakeAsync(() => {
         spectator.detectChanges();
+        tick();
 
         expect(spectator.query('.p-tag-success')).toHaveText('Default');
-    });
+    }));
 
-    it('should open AddEditDialog with locale id when row is clicked', () => {
+    it('should open AddEditDialog with locale id when row is clicked', fakeAsync(() => {
         spectator.detectChanges();
+        tick();
 
         jest.spyOn(spectator.component.store, 'openAddEditDialog');
 
@@ -94,5 +104,5 @@ describe('DotLocalesListComponent', () => {
         spectator.click(row);
 
         expect(spectator.component.store.openAddEditDialog).toHaveBeenCalled();
-    });
+    }));
 });

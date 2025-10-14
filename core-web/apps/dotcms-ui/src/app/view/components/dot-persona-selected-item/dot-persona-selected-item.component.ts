@@ -5,13 +5,13 @@ import { BadgeModule } from 'primeng/badge';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPersona } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-persona-selected-item',
     templateUrl: './dot-persona-selected-item.component.html',
     styleUrls: ['./dot-persona-selected-item.component.scss'],
-    imports: [AvatarModule, BadgeModule, TooltipModule, DotMessagePipe]
+    imports: [AvatarModule, BadgeModule, TooltipModule, DotAvatarDirective, DotMessagePipe]
 })
 export class DotPersonaSelectedItemComponent {
     @Input() persona: DotPersona;
