@@ -6,7 +6,7 @@ servers:
 - description: dotCMS Server
   url: /
 tags:
-- description: AI-powered content generation and analysis endpoints
+- description: AI to support configuration endpoints
   name: AI
 - description: Content type field definitions and configuration
   name: Content Type Field
@@ -2478,6 +2478,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
+          description: default response
+      tags:
+      - AI
+  /v1/ai/configuration/loadmodelconfig:
+    get:
+      operationId: loadModelConfigCatalog
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiModelConfig"
           description: default response
       tags:
       - AI
@@ -18483,6 +18495,11 @@ components:
           $ref: "#/components/schemas/PushPublishBean"
         pushPublishBean:
           $ref: "#/components/schemas/PushPublishBean"
+    AiModelConfig:
+      type: object
+      properties:
+        name:
+          type: string
     Announcement:
       type: object
       properties:

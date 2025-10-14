@@ -1,6 +1,11 @@
 package com.dotcms.ai.rest;
 
-import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.ai.config.AiModelConfig;
+import com.dotcms.ai.config.AiModelConfigCatalog;
+import com.dotcms.ai.config.AiModelConfigCatalogImpl;
+import com.dotcms.ai.config.AiVendor;
+import com.dotcms.ai.config.parser.AiModelConfigParser;
+import com.dotcms.ai.config.parser.AiVendorCatalogData;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
@@ -32,24 +37,68 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.Map;
 import java.util.Optional;
 
 @Path("/v1/ai/configuration")
 @Tag(name = "AI", description = "AI to support configuration endpoints")
-public class ConfigurationResource {
+public class AiConfigurationResource {
 
     public static final String ADVANCE_PROVIDER_SETTINGS_KEY = "advanceProviderSettings";
     public static final String DOT_AI_APP_KEY = "dotAI";
     public static final String CONFIG_JSON_PATH = "/dot-ai/dot-ai-vendors-models-default-template-config.json";
     private final WebResource    webResource;
 
-    public ConfigurationResource() {
+    public AiConfigurationResource() {
         this(new WebResource());
     }
 
-    public ConfigurationResource(WebResource webResource) {
+    public AiConfigurationResource(WebResource webResource) {
         this.webResource = webResource;
     }
+
+    /**
+     * This method loads the default configuration from the class path to the site AI config, if the field
+     * advanceProviderSettings is empty
+     *
+     * @param request the HttpServletRequest object.
+     * @param response the HttpServletResponse object.
+     * @param siteId site id to make the change
+     * @return a Response object containing a map with "type" as key and "embeddings" as value.
+     */
+    @GET
+    @JSONP
+    @Path("/loadmodelconfig")
+    @Produces(MediaType.APPLICATION_JSON)
+    public final AiModelConfig loadModelConfigCatalog(@Context final HttpServletRequest request,
+                                                              @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        final String aiJsonConfigPath = "/dot-ai/dot-ai-vendors-models-default-template-config.json";
+        final String aiJsonConfiguration = ClasspathResourceLoader.readTextOrThrow(aiJsonConfigPath);
+
+        final AiModelConfigParser modelConfigParser  = new AiModelConfigParser();
+        AiVendorCatalogData vendorCatalogData = modelConfigParser.parse(aiJsonConfiguration,
+                    Map.of("OPENAI_API_KEY", "OPENAI_K",
+                            "OPENAI_ORG", "OPENAI_O",
+                            "OPENAI_PROJECT", "OPENAI_Z",
+                            "ANTHROPIC_API_KEY", "ANTHROPIC",
+                            "AZURE_OPENAI_API_KEY", "AZURE_K",
+                            "AWS_REGION", "OPENAI_K",
+                            "AWS_ACCESS_KEY_ID", "OPENAI_O",
+                            "AWS_SECRET_ACCESS_KEY", "OPENAI_Z",
+                            "AWS_SESSION_TOKEN", "ANTHROPIC",
+                            "GCP_PROJECT_ID", "AZURE_K"));
+        final AiModelConfigCatalog modelConfigCatalog = AiModelConfigCatalogImpl.from(vendorCatalogData);
+        final AiModelConfig modelConfig = modelConfigCatalog.getChatConfig(AiVendor.OPEN_AI);
+
+        return modelConfig;
+    }
+
+
 
     /**
      * This method loads the default configuration from the class path to the site AI config, if the field
@@ -128,4 +177,6 @@ public class ConfigurationResource {
 
         return new ResponseEntityStringView("A configuration already exists. To apply changes, you must first clear the 'Custom AI Provider Settings' field.");
     }
+
+
 }
