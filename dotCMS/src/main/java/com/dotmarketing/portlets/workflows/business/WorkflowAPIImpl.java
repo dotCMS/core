@@ -2449,8 +2449,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				if(UtilMethods.isSet(actionlet)){
 					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
 
-                    APILocator.getRequestCostAPI().incrementCost(Price.WORKFLOW_ACTION_RUN, firePreActionMethod.get(),
-                            new Object[]{actionlet.getName(), params});
+                    APILocator.getRequestCostAPI()
+                            .incrementCost(Price.WORKFLOW_ACTION_RUN, this.getClass(), "fireWorkflowPreCheckin",
+                                    new Object[]{actionlet.getName(), params});
 
 
 					actionlet.executePreAction(processor, params);
@@ -2468,11 +2469,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return processor;
 	}
 
-    private Lazy<Method> firePostActionMethod = Lazy.of(() -> {
-        return Try.of(() -> WorkFlowActionlet.class.getMethod("fireWorkflowPostCheckin", WorkflowProcessor.class))
-                .getOrElseThrow(
-                        DotRuntimeException::new);
-    });
 
 	@WrapInTransaction
 	@Override
@@ -2490,7 +2486,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					final WorkFlowActionlet actionlet = actionClass.getActionlet();
 					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
 
-                    APILocator.getRequestCostAPI().incrementCost(Price.WORKFLOW_ACTION_RUN, firePostActionMethod.get(),
+                    APILocator.getRequestCostAPI()
+                            .incrementCost(Price.WORKFLOW_ACTION_RUN, this.getClass(), "fireWorkflowPostCheckin",
                             new Object[]{actionlet.getName(), params});
 
 					if (processor.isRunningBulk() && actionlet instanceof BatchAction) {

@@ -12,7 +12,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,10 +29,10 @@ import javax.servlet.http.HttpServletResponse;
 @ApplicationScoped
 public class RequestCostApiImpl implements RequestCostApi {
 
-    //log an accounting every X seconds
-    private int requestCostTimeWindowSeconds;
     private final AtomicLong requestCountForWindow = new AtomicLong(0);
     private final AtomicLong requestCostForWindow = new AtomicLong(0);
+    //log an accounting every X seconds
+    private int requestCostTimeWindowSeconds;
     private ScheduledExecutorService scheduler;
 
     // make the request cost points look like $$
@@ -47,8 +46,6 @@ public class RequestCostApiImpl implements RequestCostApi {
     public void init() {
         this.requestCostTimeWindowSeconds = Config.getIntProperty("REQUEST_COST_TIME_WINDOW_SECONDS", 60);
         this.requestCostDenominator = Config.getIntProperty("REQUEST_COST_DENOMINATOR", 100);
-
-
 
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 r -> {
@@ -65,6 +62,9 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     private void logRequestCost() {
         try {
+            if (!isAccountingEnabled()) {
+                return;
+            }
             Tuple2<Long, Long> load = totalLoadGetAndReset();
             if (load._1 == 0) {
                 return;
@@ -92,9 +92,6 @@ public class RequestCostApiImpl implements RequestCostApi {
         return new Tuple2<>(requestCountForWindow.getAndSet(0), requestCostForWindow.getAndSet(0));
     }
 
-    Optional<HttpServletRequest> getRequest() {
-        return Optional.ofNullable(HttpServletRequestThreadLocal.INSTANCE.getRequest());
-    }
 
     @Override
     public List<Map<String, Object>> getAccountList(HttpServletRequest request) {
@@ -153,6 +150,11 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     }
 
+    boolean isAccountingEnabled() {
+        return Config.getBooleanProperty("REQUEST_COST_ACCOUNTING_ENABLED", false);
+
+    }
+
     /**
      * Get the current cost for the request.
      *
@@ -171,6 +173,9 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     @Override
     public void initAccounting(HttpServletRequest request, boolean fullAccounting) {
+        if (!isAccountingEnabled()) {
+            return;
+        }
         Logger.debug(this.getClass(), "<Starting request cost accounting---");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         request.setAttribute(REQUEST_COST_ATTRIBUTE, new ArrayList<>());
@@ -192,7 +197,9 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     @Override
     public void addCostHeader(HttpServletRequest request, HttpServletResponse response) {
-
+        if (!isAccountingEnabled()) {
+            return;
+        }
         Integer currentCost = getRequestCost(request);
 
         response.setHeader(REQUEST_COST_HEADER_NAME,
