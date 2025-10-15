@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DOT_DRAG_ITEM } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveDropzoneComponent } from './dot-content-drive-dropzone.component';
 
@@ -12,11 +13,11 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 class DragEventMock extends Event {
     override preventDefault = jest.fn();
     override stopPropagation = jest.fn();
-    dataTransfer: { files?: FileList | null } | null = null;
+    dataTransfer: { files?: FileList | null; types?: string[] } | null = null;
 
-    constructor(type: string) {
+    constructor(type: string, dataTransferTypes?: string[]) {
         super(type);
-        this.dataTransfer = { files: null };
+        this.dataTransfer = { files: null, types: dataTransferTypes ?? [] };
     }
 }
 
@@ -24,8 +25,8 @@ class DragEventMock extends Event {
 (global as unknown as { DragEvent: typeof DragEventMock }).DragEvent = DragEventMock;
 
 // Helper functions to create properly mocked drag events
-function createDragEnterEvent(): DragEvent {
-    return new DragEvent('dragenter');
+function createDragEnterEvent(types?: string[]): DragEvent {
+    return new DragEventMock('dragenter', types) as unknown as DragEvent;
 }
 
 function createDragLeaveEvent(relatedTarget?: EventTarget | null): DragEvent {
@@ -192,6 +193,26 @@ describe('DotContentDriveDropzoneComponent', () => {
 
                 expect(spectator.component.active).toBe(false);
                 expect(store.resetContextMenu).not.toHaveBeenCalled();
+            });
+
+            it('should not activate dropzone when drag contains DOT_DRAG_ITEM type', () => {
+                const dragEvent = createDragEnterEvent([DOT_DRAG_ITEM]);
+
+                spectator.component.onDragEnter(dragEvent);
+                spectator.detectChanges();
+
+                expect(spectator.component.active).toBe(false);
+                expect(store.resetContextMenu).not.toHaveBeenCalled();
+            });
+
+            it('should activate dropzone when drag contains other types but not DOT_DRAG_ITEM', () => {
+                const dragEvent = createDragEnterEvent(['Files', 'text/plain']);
+
+                spectator.component.onDragEnter(dragEvent);
+                spectator.detectChanges();
+
+                expect(spectator.component.active).toBe(true);
+                expect(store.resetContextMenu).toHaveBeenCalled();
             });
 
             it('should prevent default and stop propagation for external drag', () => {
@@ -372,7 +393,7 @@ describe('DotContentDriveDropzoneComponent', () => {
 
             expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
                 files: mockFiles,
-                targetFolderId: 'test-id'
+                targetFolder: { id: 'test-id' }
             });
         });
 
@@ -450,7 +471,7 @@ describe('DotContentDriveDropzoneComponent', () => {
 
             expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
                 files: mockFiles,
-                targetFolderId: 'test-id'
+                targetFolder: { id: 'test-id' }
             });
 
             expect(spectator.component.active).toBe(false);
