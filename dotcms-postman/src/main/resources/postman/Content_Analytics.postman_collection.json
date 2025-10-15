@@ -1280,12 +1280,10 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8082/api/v1/analytics/content/event",
-									"protocol": "http",
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
 									"host": [
-										"localhost"
+										"{{serverURL}}"
 									],
-									"port": "8082",
 									"path": [
 										"api",
 										"v1",
@@ -1384,12 +1382,10 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8082/api/v1/analytics/content/event",
-									"protocol": "http",
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
 									"host": [
-										"localhost"
+										"{{serverURL}}"
 									],
-									"port": "8082",
 									"path": [
 										"api",
 										"v1",
@@ -1473,12 +1469,10 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8082/api/v1/analytics/content/event",
-									"protocol": "http",
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
 									"host": [
-										"localhost"
+										"{{serverURL}}"
 									],
-									"port": "8082",
 									"path": [
 										"api",
 										"v1",
@@ -1558,12 +1552,10 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8082/api/v1/analytics/content/event",
-									"protocol": "http",
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
 									"host": [
-										"localhost"
+										"{{serverURL}}"
 									],
-									"port": "8082",
 									"path": [
 										"api",
 										"v1",
