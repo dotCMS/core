@@ -74,6 +74,11 @@ export class DotEditContentSidebarComponent {
     readonly $versionsItems = this.$store.versions; // All accumulated versions for infinite scroll
     readonly $versionsPagination = this.$store.versionsPagination;
     readonly $historyStatus = computed(() => this.$store.versionsStatus().status);
+    readonly $pushPublishHistoryItems = this.$store.pushPublishHistory; // All accumulated push publish history items
+    readonly $pushPublishHistoryPagination = this.$store.pushPublishHistoryPagination;
+    readonly $pushPublishHistoryStatus = computed(
+        () => this.$store.pushPublishHistoryStatus().status
+    );
 
     /**
      * Computed property that returns the workflow state of the content.
@@ -165,10 +170,32 @@ export class DotEditContentSidebarComponent {
     }
 
     /**
+     * Handles pagination navigation for push publish history (automatically detects initial vs accumulation)
+     * @param page - The page number to navigate to
+     */
+    onPushPublishPageChange(page: number) {
+        const identifier = this.$identifier();
+        if (identifier) {
+            this.$store.loadPushPublishHistory({ identifier, page });
+        }
+    }
+
+    /**
      * Handles timeline item actions from history component
      * @param action - The action object containing type and item data
      */
     onTimelineItemAction(action: DotHistoryTimelineItemAction) {
         this.$store.handleHistoryAction(action);
+    }
+
+    /**
+     * Handles delete all push publish history action
+     * Calls the store method to delete push publish history with confirmation
+     */
+    onDeletePushPublishHistory() {
+        const identifier = this.$identifier();
+        if (identifier) {
+            this.$store.deletePushPublishHistory(identifier);
+        }
     }
 }
