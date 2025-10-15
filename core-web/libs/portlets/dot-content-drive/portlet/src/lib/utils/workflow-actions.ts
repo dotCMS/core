@@ -9,44 +9,83 @@ export enum ENUM_WORKFLOW_ACTIONS {
     DESTROY = 'DESTROY'
 }
 
-const NEW_WORKFLOW_ACTIONS = {
+export interface WorkflowActionVisibilityRules {
+    contentSelected?: boolean; // Hide when content is selected
+    multiSelection?: boolean; // Hide in multi-selection mode
+    archived?: boolean; // Hide when content is archived (true)
+    published?: boolean; // Hide when content is published (true)
+}
+
+export interface WorkflowAction {
+    name: string;
+    id: ENUM_WORKFLOW_ACTIONS;
+    hideWhen?: WorkflowActionVisibilityRules;
+}
+
+const NEW_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'new',
-    id: ENUM_WORKFLOW_ACTIONS.NEW
+    id: ENUM_WORKFLOW_ACTIONS.NEW,
+    hideWhen: {
+        contentSelected: true
+    }
 };
 
-const EDIT_WORKFLOW_ACTIONS = {
+const EDIT_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'edit',
-    id: ENUM_WORKFLOW_ACTIONS.EDIT
+    id: ENUM_WORKFLOW_ACTIONS.EDIT,
+    hideWhen: {
+        multiSelection: true // Edit should not be displayed in multi-selection
+    }
 };
 
-const PUBLISH_WORKFLOW_ACTIONS = {
+const PUBLISH_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'publish',
-    id: ENUM_WORKFLOW_ACTIONS.PUBLISH
+    id: ENUM_WORKFLOW_ACTIONS.PUBLISH,
+    hideWhen: {
+        archived: true, // Hide when archived
+        published: true // Hide when already published (avoid duplication)
+    }
 };
 
-const UNPUBLISH_WORKFLOW_ACTIONS = {
+const UNPUBLISH_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'unpublish',
-    id: ENUM_WORKFLOW_ACTIONS.UNPUBLISH
+    id: ENUM_WORKFLOW_ACTIONS.UNPUBLISH,
+    hideWhen: {
+        archived: true, // Hide when archived
+        published: false // Hide when unpublished (avoid duplication)
+    }
 };
 
-const ARCHIVE_WORKFLOW_ACTIONS = {
+const ARCHIVE_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'archive',
-    id: ENUM_WORKFLOW_ACTIONS.ARCHIVE
+    id: ENUM_WORKFLOW_ACTIONS.ARCHIVE,
+    hideWhen: {
+        archived: true // Hide when already archived
+    }
 };
 
-const UNARCHIVE_WORKFLOW_ACTIONS = {
+const UNARCHIVE_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'unarchive',
-    id: ENUM_WORKFLOW_ACTIONS.UNARCHIVE
+    id: ENUM_WORKFLOW_ACTIONS.UNARCHIVE,
+    hideWhen: {
+        archived: false // Hide when NOT archived (only show when archived)
+    }
 };
 
-const DELETE_WORKFLOW_ACTIONS = {
+const DELETE_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'delete',
-    id: ENUM_WORKFLOW_ACTIONS.DELETE
+    id: ENUM_WORKFLOW_ACTIONS.DELETE,
+    hideWhen: {
+        archived: false // Hide when NOT archived (only show when archived)
+    }
 };
 
-const DESTROY_WORKFLOW_ACTIONS = {
+const DESTROY_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'destroy',
-    id: ENUM_WORKFLOW_ACTIONS.DESTROY
+    id: ENUM_WORKFLOW_ACTIONS.DESTROY,
+    hideWhen: {
+        archived: false // Hide when NOT archived (only show when archived)
+    }
 };
 
 export const DEFAULT_WORKFLOW_ACTIONS = [

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -15,4 +15,10 @@ import { DEFAULT_WORKFLOW_ACTIONS } from '../../../../utils/workflow-actions';
 })
 export class DotContentDriveWorkflowActionsComponent {
     protected readonly DEFAULT_WORKFLOW_ACTIONS = DEFAULT_WORKFLOW_ACTIONS;
+    readonly $actionTriggered = output<string>({ alias: 'actionTriggered' });
+
+    onClick(id: string) {
+        this.$actionTriggered.emit(id);
+        // console.log(id);
+    }
 }

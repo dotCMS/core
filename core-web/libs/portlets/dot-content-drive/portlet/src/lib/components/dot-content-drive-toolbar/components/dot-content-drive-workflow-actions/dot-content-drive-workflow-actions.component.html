@@ -1,3 +1,6 @@
 @for (action of DEFAULT_WORKFLOW_ACTIONS; track action.id) {
-    <p-button styleClass="p-button-sm p-button-outlined" [label]="action.name | dm" />
+    <p-button
+        styleClass="p-button-sm p-button-outlined"
+        [label]="action.name | dm"
+        (click)="onClick(action.id)" />
 }
