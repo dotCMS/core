@@ -110,7 +110,9 @@ public class RequestCostApiImpl implements RequestCostApi {
         if (request.getAttribute(REQUEST_COST_FULL_ACCOUNTING) == null) {
             request.setAttribute(REQUEST_COST_FULL_ACCOUNTING, fullAccounting(request));
         }
-        return (Boolean) request.getAttribute(REQUEST_COST_FULL_ACCOUNTING);
+        return request.getAttribute(REQUEST_COST_FULL_ACCOUNTING) == null
+                ? false
+                : (Boolean) request.getAttribute(REQUEST_COST_FULL_ACCOUNTING);
 
 
     }
