@@ -14,7 +14,6 @@ import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
-import com.dotmarketing.business.APILocator;
 import io.vavr.Tuple2;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -37,7 +36,7 @@ public class RequestCostApiTest extends UnitTestBase {
 
     @Before
     public void setUp() {
-        requestCostApi = APILocator.getRequestCostAPI();
+        requestCostApi = new RequestCostApiImpl(true);
         request = new MockParameterRequest(
                 new MockAttributeRequest(new MockHeaderRequest(new FakeHttpRequest("localhost", "/").request())));
         response = new MockHttpStatusAndHeadersResponse(new MockHttpResponse().response());

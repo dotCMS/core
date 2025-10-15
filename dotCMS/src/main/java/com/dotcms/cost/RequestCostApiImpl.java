@@ -12,6 +12,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -38,8 +39,13 @@ public class RequestCostApiImpl implements RequestCostApi {
     // make the request cost points look like $$
     private int requestCostDenominator;
 
+    private final Optional<Boolean> enableForTests;
     public RequestCostApiImpl() {
-        // CDI requires a no-arg constructor
+        enableForTests = Optional.empty();
+    }
+
+    public RequestCostApiImpl(Boolean enable) {
+        enableForTests = Optional.ofNullable(enable);
     }
 
     @PostConstruct
@@ -153,7 +159,7 @@ public class RequestCostApiImpl implements RequestCostApi {
     }
 
     boolean isAccountingEnabled() {
-        return Config.getBooleanProperty("REQUEST_COST_ACCOUNTING_ENABLED", false);
+        return enableForTests.orElse(Config.getBooleanProperty("REQUEST_COST_ACCOUNTING_ENABLED", false));
 
     }
 
