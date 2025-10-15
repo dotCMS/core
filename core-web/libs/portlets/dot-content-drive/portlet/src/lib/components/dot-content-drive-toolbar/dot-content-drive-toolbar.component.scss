@@ -70,7 +70,7 @@
 
 .p-toolbar-group-bottom {
     display: grid;
-    grid-template-columns: repeat(3, minmax(4.5rem, 14rem));
+    grid-template-columns: repeat(3, minmax(4.5rem, 14rem)) 1fr;
     width: 100%;
     grid-area: toolbar-group-bottom;
 }
