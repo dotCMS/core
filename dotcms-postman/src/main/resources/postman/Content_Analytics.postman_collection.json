@@ -1266,7 +1266,7 @@
 								"header": [
 									{
 										"key": "Origin",
-										"value": "http://default:8082",
+										"value": "http://{{testSiteName}}",
 										"type": "text"
 									}
 								],
@@ -1370,7 +1370,7 @@
 								"header": [
 									{
 										"key": "Origin",
-										"value": "http://default:8082",
+										"value": "http://{{testSiteName}}",
 										"type": "text"
 									}
 								],
@@ -1459,7 +1459,7 @@
 								"header": [
 									{
 										"key": "Origin",
-										"value": "http://default:8082",
+										"value": "http://{{testSiteName}}",
 										"type": "text"
 									}
 								],
@@ -1497,10 +1497,26 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"HTTP Status code must be 200\", function () {",
-											"    pm.response.to.have.status(200);",
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
 											"});",
-											""
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(1);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(1);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"INVALID_JSON_ARRAY_TYPE\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.element.attributes\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Field value is not a JSON array: attribute1:value1\");",
+											"",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {},
@@ -1528,7 +1544,7 @@
 								"header": [
 									{
 										"key": "Origin",
-										"value": "http://default:8082",
+										"value": "http://{{testSiteName}}",
 										"type": "text"
 									}
 								],
