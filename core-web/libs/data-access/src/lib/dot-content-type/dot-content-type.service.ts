@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
@@ -10,16 +10,28 @@ import {
     StructureTypeView,
     ContentTypeView,
     DotCopyContentTypeDialogFormFields,
-    DotPagination
+    DotPagination,
+    DotContentTypePaginationOptions
 } from '@dotcms/dotcms-models';
+import { hasValidValue } from '@dotcms/utils';
 
-const generateContentTypeFilter = (type: string) => {
-    return type.length > 0
-        ? type
-              .split(',')
-              .map((item) => `&type=${item}`)
-              .join('')
-        : '';
+/**
+ * Creates HttpParams for content type filtering
+ * @param type Comma-separated string of content types
+ * @param baseParams Optional base HttpParams to append to
+ * @returns HttpParams with type filters added
+ */
+const generateContentTypeFilter = (type: string, baseParams?: HttpParams): HttpParams => {
+    let params = baseParams || new HttpParams();
+
+    if (type && type.length > 0) {
+        const types = type.split(',').filter((t) => t.trim());
+        types.forEach((typeValue) => {
+            params = params.append('type', typeValue.trim());
+        });
+    }
+
+    return params;
 };
 
 @Injectable()
@@ -38,32 +50,61 @@ export class DotContentTypeService {
     }
 
     /**
-     *Get the content types from the endpoint
-     *
-     * @param {*} { filter = '', page = 40, type = '' }
-     * @return {*}  {Observable<DotCMSContentType[]>}
-     * @memberof DotContentTypeService
+     * Creates HttpParams for retrieving content types with optional parameters
+     * Only includes parameters that have meaningful values (not empty, null, or undefined)
      */
-    getContentTypes({ filter = '', page = 40, type = '' }): Observable<DotCMSContentType[]> {
-        return this.#httpClient
-            .get<{
-                entity: DotCMSContentType[];
-            }>(
-                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${generateContentTypeFilter(
-                    type
-                )}`
-            )
-            .pipe(pluck('entity'));
+    private getContentTypePaginationParams(
+        options: DotContentTypePaginationOptions = {}
+    ): HttpParams {
+        let params = new HttpParams();
+
+        // Default parameters
+        params = params.set('orderby', 'name');
+        params = params.set('direction', 'ASC');
+        params = params.set('per_page', (options.page ?? 40).toString());
+
+        // Add optional parameters if they have meaningful values
+        if (hasValidValue(options.filter)) {
+            params = params.set('filter', options.filter);
+        }
+
+        if (hasValidValue(options.ensure)) {
+            params = params.set('ensure', options.ensure);
+        }
+
+        if (hasValidValue(options.type)) {
+            params = generateContentTypeFilter(options.type, params);
+        }
+
+        return params;
     }
 
     /**
      *Get the content types from the endpoint
      *
-     * @param {*} { filter = '', page = 40, type = [] }
-     * @return {*}  {Observable<DotCMSContentType[]>}
+     * @param options Optional parameters for filtering and pagination
+     * @return {Observable<DotCMSContentType[]>} Observable containing content types info
      * @memberof DotContentTypeService
      */
-    getContentTypesWithPagination({ filter = '', page = 40, type = '' }): Observable<{
+    getContentTypes(
+        options: DotContentTypePaginationOptions = {}
+    ): Observable<DotCMSContentType[]> {
+        return this.#httpClient
+            .get<{
+                entity: DotCMSContentType[];
+            }>('/api/v1/contenttype', { params: this.getContentTypePaginationParams(options) })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Get the content types from the endpoint with pagination
+     *
+     * @param options Optional parameters for filtering and pagination
+     * @return {Observable<{contentTypes: DotCMSContentType[];pagination: DotPagination;}>}
+     * Observable containing content types and pagination info
+     * @memberof DotContentTypeService
+     */
+    getContentTypesWithPagination(options: DotContentTypePaginationOptions = {}): Observable<{
         contentTypes: DotCMSContentType[];
         pagination: DotPagination;
     }> {
@@ -71,11 +112,7 @@ export class DotContentTypeService {
             .get<{
                 entity: DotCMSContentType[];
                 pagination: DotPagination;
-            }>(
-                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${generateContentTypeFilter(
-                    type
-                )}`
-            )
+            }>('/api/v1/contenttype', { params: this.getContentTypePaginationParams(options) })
             .pipe(map((data) => ({ contentTypes: data.entity, pagination: data.pagination })));
     }
 
@@ -182,15 +219,17 @@ export class DotContentTypeService {
     /**
      * Get content type by types
      *
-     * @param {string} type
-     * @return {*}  {Observable<DotCMSContentType[]>}
+     * @param {string} type Comma-separated string of content types
+     * @param {number} per_page Number of items per page (default: 100)
+     * @return {Observable<DotCMSContentType[]>} Observable containing content types info
      * @memberof DotContentTypeService
      */
     getByTypes(type: string, per_page = 100): Observable<DotCMSContentType[]> {
+        let params = new HttpParams().set('per_page', per_page.toString());
+        params = generateContentTypeFilter(type, params);
+
         return this.#httpClient
-            .get<{
-                entity: DotCMSContentType[];
-            }>(`/api/v1/contenttype?per_page=${per_page}${generateContentTypeFilter(type)}`)
+            .get<{ entity: DotCMSContentType[] }>('/api/v1/contenttype', { params })
             .pipe(pluck('entity'));
     }
 

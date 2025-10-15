@@ -81,6 +81,17 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         return contentTypes ?? [];
     });
 
+    /**
+     * Maps the ensured content types to a string
+     * @returns {string} The ensured content types in comma separated string
+     * @private
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
+    private readonly $mappedEnsuredContentTypes = computed<string>(() => {
+        const contentType = this.#store.filters().contentType?.join(',') ?? '';
+        return contentType.length > 0 ? contentType : undefined;
+    });
+
     // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991
     // This prevents the effect from being triggered when the base types are the same or filters changes
     private readonly $mappedBaseTypes = computed<string>(
@@ -232,7 +243,10 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      */
     private loadInitialContentTypes() {
         this.#contentTypesService
-            .getContentTypesWithPagination({ filter: '', type: this.$mappedBaseTypes() })
+            .getContentTypesWithPagination({
+                type: this.$mappedBaseTypes(),
+                ensure: this.$mappedEnsuredContentTypes()
+            })
             .pipe(
                 tap(() => this.updateState({ loading: true })),
                 catchError(() =>
@@ -288,7 +302,11 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 takeUntilDestroyed(this.#destroyRef),
                 switchMap(({ filter, baseType: type }) =>
                     this.#contentTypesService
-                        .getContentTypes({ filter, type })
+                        .getContentTypes({
+                            filter,
+                            type,
+                            ensure: this.$mappedEnsuredContentTypes()
+                        })
                         .pipe(catchError(() => of([])))
                 )
             )
