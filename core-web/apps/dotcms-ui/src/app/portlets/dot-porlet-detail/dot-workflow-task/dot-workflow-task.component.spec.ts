@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
@@ -25,6 +26,7 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPropertiesService,
     DotRouterService,
     DotUiColorsService,
     DotWizardService,
@@ -44,6 +46,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -71,6 +74,10 @@ const messageServiceMock = new MockDotMessageService({
     'workflow.task.dialog.header': 'Task Detail'
 });
 
+const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
+    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled
+});
+
 describe('DotWorkflowTaskComponent', () => {
     let fixture: ComponentFixture<DotWorkflowTaskComponent>;
     let de: DebugElement;
@@ -83,12 +90,12 @@ describe('DotWorkflowTaskComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotWorkflowTaskComponent],
             imports: [
                 DotWorkflowTaskDetailComponent,
                 BrowserAnimationsModule,
                 RouterTestingModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                DotWorkflowTaskComponent
             ],
             providers: [
                 DotWorkflowTaskDetailService,
@@ -145,7 +152,13 @@ describe('DotWorkflowTaskComponent', () => {
                 DotGlobalMessageService,
                 DotGenerateSecurePasswordService,
                 DotEventsService,
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKeys: () => of(createFeatureFlagResponse())
+                    }
+                }
             ]
         });
 
@@ -207,19 +220,16 @@ describe('DotWorkflowTaskComponent', () => {
             detail: {
                 name: 'workflow-wizard',
                 data: {
-                    callback: 'test'
+                    workflow: {
+                        actionInputs: []
+                    },
+                    callback: 'test',
+                    inode: '123'
                 }
             }
         };
 
-        taskDetail.triggerEventHandler('custom', {
-            detail: {
-                name: 'workflow-wizard',
-                data: {
-                    callback: 'test'
-                }
-            }
-        });
+        taskDetail.triggerEventHandler('custom', mockEvent);
         expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
     });
 });

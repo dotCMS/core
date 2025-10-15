@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotPagesFavoritePageEmptySkeletonComponent, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-pages-card',
@@ -16,8 +16,7 @@ import { DotPagesFavoritePageEmptySkeletonComponent, DotSafeHtmlPipe } from '@do
         CardModule,
         DotPagesFavoritePageEmptySkeletonComponent,
         ButtonModule,
-        TooltipModule,
-        DotSafeHtmlPipe
+        TooltipModule
     ]
 })
 export class DotPagesCardComponent {

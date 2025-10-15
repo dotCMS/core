@@ -27,7 +27,10 @@ import {
     DotGlobalMessageService,
     DotIframeService,
     DotFormatDateService,
-    DotPageStateService
+    DotPageStateService,
+    DotWorkflowActionsFireService,
+    PushPublishService,
+    DotCurrentUserService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -207,7 +210,10 @@ describe('DotEditPageToolbarComponent', () => {
                 { provide: DotPersonalizeService, useClass: MockDotPersonalizeService },
                 { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock },
                 provideHttpClient(),
-                provideHttpClientTesting()
+                provideHttpClientTesting(),
+                DotWorkflowActionsFireService,
+                PushPublishService,
+                DotCurrentUserService
             ]
         });
     });

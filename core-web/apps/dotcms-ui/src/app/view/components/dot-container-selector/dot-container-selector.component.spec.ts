@@ -49,7 +49,7 @@ describe('ContainerSelectorComponent', () => {
         TestBed.configureTestingModule({
             declarations: [DotContainerSelectorComponent],
             imports: [
-                SearchableDropDownModule,
+                SearchableDropdownComponent,
                 BrowserAnimationsModule,
                 CommonModule,
                 FormsModule,

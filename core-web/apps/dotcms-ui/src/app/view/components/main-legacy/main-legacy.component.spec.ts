@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
@@ -21,10 +22,12 @@ import {
     DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
+    DotPropertiesService,
     DotRouterService,
     DotUiColorsService,
     DotWorkflowActionsFireService,
-    DotWorkflowEventHandlerService
+    DotWorkflowEventHandlerService,
+    DotSystemConfigService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -39,6 +42,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { MainComponentLegacyComponent } from './main-legacy.component';
@@ -46,6 +50,8 @@ import { MainComponentLegacyComponent } from './main-legacy.component';
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { NotificationsService } from '../../../api/services/notifications-service';
+import { LOCATION_TOKEN } from '../../../providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
@@ -106,6 +112,10 @@ class MockDotLargeMessageDisplayComponent {}
 })
 class MockDotPushPublishDialogComponent {}
 
+const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
+    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled
+});
+
 describe('MainLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
@@ -155,7 +165,22 @@ describe('MainLegacyComponent', () => {
                 DotPushPublishDialogService,
                 DotWorkflowEventHandlerService,
                 DotNavigationService,
-                IframeOverlayService
+                IframeOverlayService,
+                DotSystemConfigService,
+                NotificationsService,
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKeys: () => of(createFeatureFlagResponse()),
+                        getFeatureFlag: jest.fn().mockReturnValue(of(true))
+                    }
+                },
+                {
+                    provide: LOCATION_TOKEN,
+                    useValue: {
+                        reload: jest.fn()
+                    }
+                }
             ],
             declarations: [
                 // MainComponentLegacyComponent, // Moved to imports as standalone
@@ -200,11 +225,15 @@ describe('MainLegacyComponent', () => {
 
         it('should call dotCustomEventHandlerService on customEvent', () => {
             jest.spyOn(dotCustomEventHandlerService, 'handle');
-            createContentlet.triggerEventHandler('custom', { data: 'test' });
+            const mockEvent = {
+                detail: {
+                    name: 'create-contentlet',
+                    data: 'test'
+                }
+            };
+            createContentlet.triggerEventHandler('custom', mockEvent);
 
-            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
-                data: 'test'
-            });
+            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
         });
     });
 });

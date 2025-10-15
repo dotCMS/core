@@ -34,7 +34,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
-import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel/dot-pages-favorite-panel.component';
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel/dot-pages-listing-panel.component';
 import {
@@ -57,7 +56,6 @@ export interface DotActionsMenuEventParams {
     imports: [
         CommonModule,
         DotAddToBundleComponent,
-        DotPagesCreatePageDialogComponent,
         DotPagesFavoritePanelComponent,
         DotPagesListingPanelComponent,
         MenuModule,

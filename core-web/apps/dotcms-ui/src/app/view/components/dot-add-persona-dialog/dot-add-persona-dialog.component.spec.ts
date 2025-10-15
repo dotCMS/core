@@ -15,7 +15,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotDialogModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -59,7 +59,7 @@ describe('DotAddPersonaDialogComponent', () => {
                 DotAddPersonaDialogComponent,
                 DotCreatePersonaFormComponent,
                 BrowserAnimationsModule,
-                DotDialogModule,
+                DotDialogComponent,
                 FileUploadModule,
                 DotMessagePipe
             ],

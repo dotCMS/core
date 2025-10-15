@@ -19,7 +19,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
-    DotIconModule,
+    DotIconComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
@@ -143,7 +143,7 @@ describe('ContentTypesLayoutComponent', () => {
             imports: [
                 ContentTypesLayoutComponent,
                 TabViewModule,
-                DotIconModule,
+                DotIconComponent,
                 DotSecondaryToolbarComponent,
                 RouterTestingModule,
                 DotApiLinkComponent,

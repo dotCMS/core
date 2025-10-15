@@ -52,7 +52,6 @@ import { RegexCheckPropertyComponent } from './components/fields/content-type-fi
 import { ValuesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/values-property';
 import { ContentTypeFieldsRowComponent } from './components/fields/content-type-fields-row';
 import { ContentTypeFieldsTabComponent } from './components/fields/content-type-fields-tab';
-import { ContentTypesFieldsListComponent } from './components/fields/content-types-fields-list';
 import { DotContentTypeFieldsVariablesModule } from './components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 import { FieldDragDropService } from './components/fields/service/field-drag-drop.service';
 import { FieldPropertyService } from './components/fields/service/field-properties.service';
@@ -93,9 +92,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         ContentTypeFieldsPropertiesFormComponent,
         ContentTypeFieldsRowComponent,
         ContentTypeFieldsTabComponent,
-        ContentTypesFieldsListComponent,
         ContentTypesFormComponent,
-        ContentTypesLayoutComponent,
         DataTypePropertyComponent,
         DefaultValuePropertyComponent,
         DotContentTypesEditComponent,
@@ -108,6 +105,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
+        ContentTypesLayoutComponent,
         ButtonModule,
         CheckboxModule,
         ConfirmDialogModule,
