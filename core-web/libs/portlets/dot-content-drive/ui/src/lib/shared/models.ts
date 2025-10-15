@@ -20,8 +20,15 @@ export interface DotFolderListViewColumn {
  */
 export interface DotContentDriveUploadFiles {
     files: FileList;
-    targetFolderId: string;
+    targetFolder: DotFolderTreeNodeData;
 }
+
+/**
+ * @export
+ * @interface DotContentDriveMoveItems
+ * @description Move items
+ */
+export type DotContentDriveMoveItems = Omit<DotContentDriveUploadFiles, 'files'>;
 
 /**
  * @export

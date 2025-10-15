@@ -10,6 +10,17 @@ import { DotCMSAnalyticsRequestBody } from './request.model';
 import { DotCMSCustomEventType } from '../constants';
 
 /**
+ * Configuration for event queue management.
+ * Controls how events are batched before sending to the server.
+ */
+export interface QueueConfig {
+    /** Maximum events per batch - auto-sends when reached (default: 15) */
+    eventBatchSize?: number;
+    /** Time in milliseconds between flushes - sends pending events (default: 5000) */
+    flushInterval?: number;
+}
+
+/**
  * Main interface for the DotCMS Analytics SDK.
  * Provides the core methods for tracking page views and custom events.
  */
@@ -52,6 +63,14 @@ export interface DotCMSAnalyticsConfig {
      * The site auth for authenticating with the Analytics service.
      */
     siteAuth: string;
+
+    /**
+     * Queue configuration for event batching:
+     * - `false`: Disable queuing, send events immediately
+     * - `true` or `undefined` (default): Enable queuing with default settings
+     * - `QueueConfig`: Enable queuing with custom settings
+     */
+    queue?: QueueConfig | boolean;
 }
 
 /**

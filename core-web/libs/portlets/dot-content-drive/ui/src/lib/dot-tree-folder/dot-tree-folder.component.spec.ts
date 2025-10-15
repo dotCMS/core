@@ -381,9 +381,11 @@ describe('DotTreeFolderComponent', () => {
     describe('Drag and Drop', () => {
         let elementRefSpy: ReturnType<typeof jest.spyOn>;
         let uploadFilesSpyEmitter: ReturnType<typeof jest.spyOn>;
+        let moveItemsSpyEmitter: ReturnType<typeof jest.spyOn>;
 
         beforeEach(() => {
             uploadFilesSpyEmitter = jest.spyOn(component.uploadFiles, 'emit');
+            moveItemsSpyEmitter = jest.spyOn(component.moveItems, 'emit');
 
             // Spy on the component's elementRef nativeElement.contains method
             if (component.elementRef?.nativeElement) {
@@ -555,15 +557,21 @@ describe('DotTreeFolderComponent', () => {
                 });
             });
 
-            it('should emit uploadFiles event with files and targetFolderId', () => {
+            it('should emit uploadFiles event with files and targetFolder', () => {
                 const dragEvent = createDropEvent(mockFiles);
 
                 component.onDrop(dragEvent);
 
                 expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
                     files: mockFiles,
-                    targetFolderId: 'folder-789'
+                    targetFolder: {
+                        id: 'folder-789',
+                        hostname: 'demo.dotcms.com',
+                        path: '/uploads/',
+                        type: 'folder'
+                    }
                 });
+                expect(moveItemsSpyEmitter).not.toHaveBeenCalled();
             });
 
             it('should reset activeDropNode after drop', () => {
@@ -591,6 +599,22 @@ describe('DotTreeFolderComponent', () => {
                 expect(uploadFilesSpyEmitter).not.toHaveBeenCalled();
             });
 
+            it('should emit moveItems when no files are dropped', () => {
+                const dragEvent = createDropEvent(null);
+
+                component.onDrop(dragEvent);
+
+                expect(uploadFilesSpyEmitter).not.toHaveBeenCalled();
+                expect(moveItemsSpyEmitter).toHaveBeenCalledWith({
+                    targetFolder: {
+                        id: 'folder-789',
+                        hostname: 'demo.dotcms.com',
+                        path: '/uploads/',
+                        type: 'folder'
+                    }
+                });
+            });
+
             it('should not emit uploadFiles when files list is empty', () => {
                 const emptyFiles = {
                     length: 0,
@@ -605,6 +629,30 @@ describe('DotTreeFolderComponent', () => {
                 component.onDrop(dragEvent);
 
                 expect(uploadFilesSpyEmitter).not.toHaveBeenCalled();
+            });
+
+            it('should emit moveItems when files list is empty', () => {
+                const emptyFiles = {
+                    length: 0,
+                    item: () => null,
+                    [Symbol.iterator]: function* () {
+                        // Empty generator
+                    }
+                } as FileList;
+
+                const dragEvent = createDropEvent(emptyFiles);
+
+                component.onDrop(dragEvent);
+
+                expect(uploadFilesSpyEmitter).not.toHaveBeenCalled();
+                expect(moveItemsSpyEmitter).toHaveBeenCalledWith({
+                    targetFolder: {
+                        id: 'folder-789',
+                        hostname: 'demo.dotcms.com',
+                        path: '/uploads/',
+                        type: 'folder'
+                    }
+                });
             });
 
             it('should handle multiple files being dropped', () => {
@@ -628,8 +676,14 @@ describe('DotTreeFolderComponent', () => {
 
                 expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
                     files: multipleFiles,
-                    targetFolderId: 'folder-789'
+                    targetFolder: {
+                        id: 'folder-789',
+                        hostname: 'demo.dotcms.com',
+                        path: '/uploads/',
+                        type: 'folder'
+                    }
                 });
+                expect(moveItemsSpyEmitter).not.toHaveBeenCalled();
             });
         });
 
@@ -670,7 +724,7 @@ describe('DotTreeFolderComponent', () => {
 
                 expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
                     files: mockFiles,
-                    targetFolderId: 'folder-integration'
+                    targetFolder: mockNodeData
                 });
                 expect(component.$activeDropNode()).toBeNull();
             });

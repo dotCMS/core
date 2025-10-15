@@ -10,6 +10,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
+import { ALL_FOLDER } from '../../../../utils/tree-folder.utils';
 
 @Component({
     selector: 'dot-content-drive-search-input',
@@ -41,6 +42,7 @@ export class DotContentDriveSearchInputComponent implements OnInit {
             .subscribe((value) => {
                 const searchValue = (value as string)?.trim() || '';
                 this.#store.setGlobalSearch(searchValue);
+                this.#store.setSelectedNode(ALL_FOLDER);
             });
     }
 }
