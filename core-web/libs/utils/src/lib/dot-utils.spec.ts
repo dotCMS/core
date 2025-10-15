@@ -1,7 +1,7 @@
 import { DotCMSBaseTypesContentTypes, DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
-import { getImageAssetUrl, ellipsizeText, getRunnableLink } from './dot-utils';
+import { getImageAssetUrl, ellipsizeText, getRunnableLink, hasValidValue } from './dot-utils';
 
 describe('Dot Utils', () => {
     describe('getImageAssetUrl', () => {
@@ -365,6 +365,19 @@ describe('Dot Utils', () => {
             expect(getRunnableLink(url, params)).toEqual(
                 'https://example.com/http://my-site.com/current-page?host_id=123&language_id=456'
             );
+        });
+    });
+
+    describe('hasValidValue', () => {
+        it('should return true when value is not empty string, null, or undefined', () => {
+            expect(hasValidValue('test')).toEqual(true);
+        });
+
+        it('should return false when value is empty string, null, or undefined', () => {
+            expect(hasValidValue('')).toEqual(false);
+            expect(hasValidValue('   ')).toEqual(false);
+            expect(hasValidValue(null)).toEqual(false);
+            expect(hasValidValue(undefined)).toEqual(false);
         });
     });
 });

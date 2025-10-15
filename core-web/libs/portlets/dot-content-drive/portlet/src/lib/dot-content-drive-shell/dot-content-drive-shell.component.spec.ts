@@ -210,7 +210,7 @@ describe('DotContentDriveShellComponent', () => {
         it('should not include filters in query params when filters are empty', () => {
             store.isTreeExpanded.mockReturnValue(false);
             store.path.mockReturnValue('/another/path');
-            filtersSignal.set({ contentType: 'Blog', baseType: ['1', '2', '3'] });
+            filtersSignal.set({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
             spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {

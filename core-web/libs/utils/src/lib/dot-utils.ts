@@ -125,3 +125,12 @@ export function ellipsizeText(text: string, limit: number): string {
 
     return truncated.slice(0, truncated.lastIndexOf(' ')) + '...';
 }
+
+/**
+ * Checks if a string value is meaningful (not empty string, null, or undefined)
+ * @param value The value to check
+ * @returns {boolean} True if the value is meaningful, false otherwise
+ */
+export function hasValidValue(value: string | undefined | null): value is string {
+    return value !== null && value !== undefined && value.trim() !== '';
+}

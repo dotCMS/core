@@ -13,6 +13,7 @@ import {
     DotPagination,
     DotContentTypePaginationOptions
 } from '@dotcms/dotcms-models';
+import { hasValidValue } from '@dotcms/utils';
 
 /**
  * Creates HttpParams for content type filtering
@@ -52,7 +53,7 @@ export class DotContentTypeService {
      * Creates HttpParams for retrieving content types with optional parameters
      * Only includes parameters that have meaningful values (not empty, null, or undefined)
      */
-    private getcontentTypePaginationParams(
+    private getContentTypePaginationParams(
         options: DotContentTypePaginationOptions = {}
     ): HttpParams {
         let params = new HttpParams();
@@ -63,28 +64,19 @@ export class DotContentTypeService {
         params = params.set('per_page', (options.page ?? 40).toString());
 
         // Add optional parameters if they have meaningful values
-        if (this.hasValue(options.filter)) {
+        if (hasValidValue(options.filter)) {
             params = params.set('filter', options.filter);
         }
 
-        if (this.hasValue(options.ensure)) {
+        if (hasValidValue(options.ensure)) {
             params = params.set('ensure', options.ensure);
         }
 
-        if (this.hasValue(options.type)) {
+        if (hasValidValue(options.type)) {
             params = generateContentTypeFilter(options.type, params);
         }
 
         return params;
-    }
-
-    /**
-     * Checks if a value is meaningful (not empty string, null, or undefined)
-     * @param value The value to check
-     * @returns {boolean} True if the value is meaningful, false otherwise
-     */
-    private hasValue<T>(value: T | undefined | null): value is T {
-        return value !== null && value !== undefined && value !== '';
     }
 
     /**
@@ -100,7 +92,7 @@ export class DotContentTypeService {
         return this.#httpClient
             .get<{
                 entity: DotCMSContentType[];
-            }>('/api/v1/contenttype', { params: this.getcontentTypePaginationParams(options) })
+            }>('/api/v1/contenttype', { params: this.getContentTypePaginationParams(options) })
             .pipe(pluck('entity'));
     }
 
@@ -120,7 +112,7 @@ export class DotContentTypeService {
             .get<{
                 entity: DotCMSContentType[];
                 pagination: DotPagination;
-            }>('/api/v1/contenttype', { params: this.getcontentTypePaginationParams(options) })
+            }>('/api/v1/contenttype', { params: this.getContentTypePaginationParams(options) })
             .pipe(map((data) => ({ contentTypes: data.entity, pagination: data.pagination })));
     }
 

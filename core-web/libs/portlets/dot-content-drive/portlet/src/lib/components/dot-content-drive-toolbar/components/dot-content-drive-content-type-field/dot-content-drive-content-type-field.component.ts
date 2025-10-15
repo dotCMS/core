@@ -81,6 +81,12 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         return contentTypes ?? [];
     });
 
+    /**
+     * Maps the ensured content types to a string
+     * @returns {string} The ensured content types in comma separated string
+     * @private
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
     private readonly $mappedEnsuredContentTypes = computed<string>(() => {
         const contentType = this.#store.filters().contentType?.join(',') ?? '';
         return contentType.length > 0 ? contentType : undefined;
