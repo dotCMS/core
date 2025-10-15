@@ -859,6 +859,63 @@
 			]
 		},
 		{
+          "name": "deleteFolder",
+          "item": [
+            {
+              "name": "deleteNonExistedFolder",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Response status code is 404\", function () {",
+                      "    pm.expect(pm.response.code).to.equal(404);",
+                      "});",
+                      "",
+                      "pm.test(\"Response should contain a message field\", function () {",
+                      "    const responseData = pm.response.json();",
+                      "    ",
+                      "    pm.expect(responseData).to.be.an('object');",
+                      "    pm.expect(responseData).to.have.property('message');",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "[\"/folder-1/folder-2/target-folder\"]",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/folder/default",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "folder",
+                    "default"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
 			"name": "Get Folder Success",
 			"event": [
 				{
