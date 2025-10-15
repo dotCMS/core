@@ -17,7 +17,11 @@ import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/
 
 import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
-import { DotFolderTreeNodeData, DotContentDriveUploadFiles } from '../shared/models';
+import {
+    DotFolderTreeNodeData,
+    DotContentDriveUploadFiles,
+    DotContentDriveMoveItems
+} from '../shared/models';
 
 @Component({
     selector: 'dot-tree-folder',
@@ -100,6 +104,14 @@ export class DotTreeFolderComponent {
      * @type {DotContentDriveUploadFiles}
      */
     uploadFiles = output<DotContentDriveUploadFiles>();
+
+    /**
+     * Event emitter for when items are moved.
+     *
+     * @event moveItems
+     * @type {DotContentDriveMoveItems}
+     */
+    moveItems = output<DotContentDriveMoveItems>();
 
     readonly elementRef = inject(ElementRef);
 
@@ -185,14 +197,16 @@ export class DotTreeFolderComponent {
         event.stopPropagation();
         event.preventDefault();
 
-        const targetFolderId = this.$activeDropNode().id;
+        const targetFolder = this.$activeDropNode();
 
         this.$activeDropNode.set(null);
 
         const files = event.dataTransfer?.files ?? undefined;
 
         if (files?.length) {
-            this.uploadFiles.emit({ files, targetFolderId });
+            this.uploadFiles.emit({ files, targetFolder });
+        } else {
+            this.moveItems.emit({ targetFolder });
         }
     }
 }

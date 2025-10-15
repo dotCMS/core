@@ -24,7 +24,7 @@ import {
     DotFolder,
     TreeNodeItem
 } from '../models/dot-edit-content-host-folder-field.interface';
-import { Activity } from '../models/dot-edit-content.model';
+import { Activity, DotPushPublishHistoryItem } from '../models/dot-edit-content.model';
 import { createPaths } from '../utils/functions.util';
 
 @Injectable()
@@ -352,5 +352,36 @@ export class DotEditContentService {
             `/api/v1/content/versions/id/${identifier}/history`,
             { params: httpParams }
         );
+    }
+
+    /**
+     * Retrieves the push publish history for a content item by its identifier.
+     * Returns all push publish operations for the content.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters (offset-based)
+     * @returns {Observable<DotCMSResponse<DotPushPublishHistoryItem[]>>} Observable that emits DotCMS response with push publish history
+     */
+    getPushPublishHistory(
+        identifier: string,
+        paginationParams?: PaginationParams
+    ): Observable<DotCMSResponse<DotPushPublishHistoryItem[]>> {
+        const httpParams = this.buildPaginationParams(paginationParams);
+
+        return this.#http.get<DotCMSResponse<DotPushPublishHistoryItem[]>>(
+            `/api/v1/content/${identifier}/push/history`,
+            { params: httpParams }
+        );
+    }
+
+    /**
+     * Deletes all push publish history for a content item by its identifier.
+     * Calls the /api/bundle/deletepushhistory/assetid/{identifier} endpoint.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @returns {Observable<any>} Observable that emits the deletion response
+     */
+    deletePushPublishHistory(identifier: string): Observable<unknown> {
+        return this.#http.get(`/api/bundle/deletepushhistory/assetid/${identifier}`);
     }
 }

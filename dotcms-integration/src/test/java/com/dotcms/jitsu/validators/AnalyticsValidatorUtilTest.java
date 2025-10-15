@@ -106,7 +106,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": 123," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[{}]" +
                 "}";
@@ -140,7 +146,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 "{" +
                     "\"context\": {" +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[{}]" +
                 "}";
@@ -182,7 +194,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"invalid-auth\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                        "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[{}]" +
                 "}";
@@ -228,7 +246,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[{}]" +
                 "}";
@@ -288,7 +312,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[{}]" +
                 "}";
@@ -340,7 +370,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": 456," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[{}]" +
                 "}";
@@ -374,7 +410,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 "{" +
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[{}]" +
                 "}";
@@ -409,7 +451,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": 789" +
+                        "\"user_id\": 789," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[{}]" +
                 "}";
@@ -443,7 +491,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 "{" +
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
-                        "\"session_id\": \"abc\"" +
+                        "\"session_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[{}]" +
                 "}";
@@ -477,6 +531,12 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"site_auth\": 123," +
                     "\"session_id\": \"abc\"," +
                     "\"user_id\": \"abc\"," +
+                    "\"device\": {" +
+                        "\"screen_resolution\": \"1200x800\"," +
+                        "\"language\": \"en\"," +
+                        "\"viewport_width\": \"1200\"," +
+                        "\"viewport_height\": \"800\"" +
+                    "}," +
                     "\"events\":[{}]" +
                 "}";
 
@@ -484,7 +544,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
 
         final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
-        assertEquals(7, errors.size());
+        assertEquals(16, errors.size());
         final List<String> errorFields =
                 errors.stream().map(AnalyticsValidatorUtil.Error::getField).collect(Collectors.toList());
 
@@ -495,6 +555,15 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         assertTrue(errorFields.contains("site_auth"));
         assertTrue(errorFields.contains("session_id"));
         assertTrue(errorFields.contains("user_id"));
+        assertTrue(errorFields.contains("context.device.language"));
+        assertTrue(errorFields.contains("context.device.screen_resolution"));
+        assertTrue(errorFields.contains("context.device.viewport_width"));
+        assertTrue(errorFields.contains("context.device.viewport_height"));
+        assertTrue(errorFields.contains("context.device"));
+        assertTrue(errorFields.contains("device.language"));
+        assertTrue(errorFields.contains("device.screen_resolution"));
+        assertTrue(errorFields.contains("device.viewport_width"));
+        assertTrue(errorFields.contains("device.viewport_height"));
 
         for (AnalyticsValidatorUtil.Error error : errors) {
             if (error.getField().equals("context.site_auth")) {
@@ -525,6 +594,42 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 assertEquals("user_id", error.getField());
                 assertEquals("UNKNOWN_FIELD", error.getCode().toString());
                 assertEquals("Unknown field 'user_id'", error.getMessage());
+            } else  if (error.getField().equals("context.device.language")){
+                assertEquals("context.device.language", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device.language", error.getMessage());
+            } else  if (error.getField().equals("context.device.screen_resolution")){
+                assertEquals("context.device.screen_resolution", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device.screen_resolution", error.getMessage());
+            } else  if (error.getField().equals("context.device.viewport_width")){
+                assertEquals("context.device.viewport_width", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device.viewport_width", error.getMessage());
+            } else  if (error.getField().equals("context.device.viewport_height")){
+                assertEquals("context.device.viewport_height", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device.viewport_height", error.getMessage());
+            } else  if (error.getField().equals("context.device")){
+                assertEquals("context.device", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device", error.getMessage());
+            } else  if (error.getField().equals("device.language")){
+                assertEquals("device.language", error.getField());
+                assertEquals("UNKNOWN_FIELD", error.getCode().toString());
+                assertEquals("Unknown field 'device.language'", error.getMessage());
+            } else  if (error.getField().equals("device.screen_resolution")){
+                assertEquals("device.screen_resolution", error.getField());
+                assertEquals("UNKNOWN_FIELD", error.getCode().toString());
+                assertEquals("Unknown field 'device.screen_resolution'", error.getMessage());
+            } else  if (error.getField().equals("device.viewport_width")){
+                assertEquals("device.viewport_width", error.getField());
+                assertEquals("UNKNOWN_FIELD", error.getCode().toString());
+                assertEquals("Unknown field 'device.viewport_width'", error.getMessage());
+            } else  if (error.getField().equals("device.viewport_height")){
+                assertEquals("device.viewport_height", error.getField());
+                assertEquals("UNKNOWN_FIELD", error.getCode().toString());
+                assertEquals("Unknown field 'device.viewport_height'", error.getMessage());
             } else {
                 throw new AssertionError("Unexpected field: " + errorFields);
             }
@@ -555,7 +660,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
 
         final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
-        assertEquals(4, errors.size());
+        assertEquals(9, errors.size());
         final List<String> errorFields =
                 errors.stream().map(AnalyticsValidatorUtil.Error::getField).collect(Collectors.toList());
 
@@ -563,6 +668,11 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         assertTrue(errorFields.contains("context.session_id"));
         assertTrue(errorFields.contains("context.user_id"));
         assertTrue(errorFields.contains("context"));
+        assertTrue(errorFields.contains("context.device.language"));
+        assertTrue(errorFields.contains("context.device.screen_resolution"));
+        assertTrue(errorFields.contains("context.device.viewport_width"));
+        assertTrue(errorFields.contains("context.device.viewport_height"));
+        assertTrue(errorFields.contains("context.device"));
 
         for (AnalyticsValidatorUtil.Error error : errors) {
             if (error.getField().equals("context.site_auth")) {
@@ -577,10 +687,32 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 assertEquals("context.user_id", error.getField());
                 assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
                 assertEquals("Required field is missing: context.user_id", error.getMessage());
-            } else {
+            } else if (error.getField().equals("context")) {
                 assertEquals("context", error.getField());
                 assertEquals("INVALID_JSON_OBJECT_TYPE", error.getCode().toString());
                 assertEquals("Field value is not a JSON object: 123", error.getMessage());
+            } else  if (error.getField().equals("context.device.language")){
+                assertEquals("context.device.language", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device.language", error.getMessage());
+            } else  if (error.getField().equals("context.device.screen_resolution")){
+                assertEquals("context.device.screen_resolution", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device.screen_resolution", error.getMessage());
+            } else  if (error.getField().equals("context.device.viewport_width")){
+                assertEquals("context.device.viewport_width", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device.viewport_width", error.getMessage());
+            } else  if (error.getField().equals("context.device.viewport_height")){
+                assertEquals("context.device.viewport_height", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device.viewport_height", error.getMessage());
+            } else  if (error.getField().equals("context.device")){
+                assertEquals("context.device", error.getField());
+                assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
+                assertEquals("Required field is missing: context.device", error.getMessage());
+            } else {
+                throw new AssertionError("Unexpected field: " + errorFields);
             }
         }
     }
@@ -605,7 +737,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}," +
                     "}," +
                     "\"events\":123" +
                 "}";
@@ -643,7 +781,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"xyz\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[" +
                         "{" +
@@ -688,13 +832,19 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
      */
     @Test
     public void dataIsRequired() {
-        final int errorsCountExpected = 10;
+        final int errorsCountExpected = 5;
         final String json =
                 "{" +
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[" +
                         "{" +
@@ -718,11 +868,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         assertTrue(errorsField.contains("events[0].data.page.url"));
         assertTrue(errorsField.contains("events[0].data.page.title"));
         assertTrue(errorsField.contains("events[0].data.page.doc_encoding"));
-        assertTrue(errorsField.contains("events[0].data.device"));
-        assertTrue(errorsField.contains("events[0].data.device.screen_resolution"));
-        assertTrue(errorsField.contains("events[0].data.device.language"));
-        assertTrue(errorsField.contains("events[0].data.device.viewport_width"));
-        assertTrue(errorsField.contains("events[0].data.device.viewport_height"));
         assertTrue(errorsField.contains("events[0].local_time"));
 
         final List<ValidationErrorCode> errorsCode = errors.stream()
@@ -742,11 +887,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         assertTrue(errorsMessages.contains("Required field is missing: data.page"));
         assertTrue(errorsMessages.contains("Required field is missing: data.page.url"));
         assertTrue(errorsMessages.contains("Required field is missing: data.page.title"));
-        assertTrue(errorsMessages.contains("Required field is missing: data.device"));
-        assertTrue(errorsMessages.contains("Required field is missing: data.device.screen_resolution"));
-        assertTrue(errorsMessages.contains("Required field is missing: data.device.language"));
-        assertTrue(errorsMessages.contains("Required field is missing: data.device.viewport_width"));
-        assertTrue(errorsMessages.contains("Required field is missing: data.device.viewport_height"));
         assertTrue(errorsMessages.contains("Required field is missing: local_time"));
     }
 
@@ -762,7 +902,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH +"\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[" +
                         "{" +
@@ -773,12 +919,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                                     "\"url\": \"http://www.google.com\"," +
                                     "\"title\": \"Google\"," +
                                     "\"doc_encoding\": \"UTF8\"" +
-                                "}," +
-                                "\"device\": {" +
-                                    "\"screen_resolution\": \"1200x800\"," +
-                                    "\"language\": \"en\"," +
-                                    "\"viewport_width\": \"1200\"," +
-                                    "\"viewport_height\": \"800\"" +
                                 "}" +
                             "}" +
                         "}" +
@@ -803,7 +943,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[" +
                         "{" +
@@ -814,12 +960,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                                     "\"url\": \"http://www.google.com\"," +
                                     "\"title\": \"Google\"," +
                                     "\"doc_encoding\": \"UTF8\"" +
-                                "}," +
-                                "\"device\": {" +
-                                    "\"screen_resolution\": \"1200x800\"," +
-                                    "\"language\": \"en\"," +
-                                    "\"viewport_width\": \"1200\"," +
-                                    "\"viewport_height\": \"800\"" +
                                 "}" +
                             "}" +
                         "}" +
@@ -848,7 +988,13 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "\"context\": {" +
                         "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
-                        "\"user_id\": \"abc\"" +
+                        "\"user_id\": \"abc\"," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
                     "}," +
                     "\"events\":[" +
                         "{" +
@@ -859,13 +1005,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                                     "\"url\": \"http://www.google.com\"," +
                                     "\"title\": \"Google\"," +
                                     "\"doc_encoding\": \"UTF8\"," +
-                                    "\"extra_field\": \"extra\"" +
-                                "}," +
-                                "\"device\": {" +
-                                    "\"screen_resolution\": \"1200x800\"," +
-                                    "\"language\": \"en\"," +
-                                    "\"viewport_width\": \"1200\"," +
-                                    "\"viewport_height\": \"800\"," +
                                     "\"extra_field\": \"extra\"" +
                                 "}" +
                             "}," +
@@ -878,7 +1017,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
                 .validateEvents((JSONArray) new JSONObject(json).get("events"));
 
-        assertEquals(4, errors.size());
+        assertEquals(3, errors.size());
 
         final List<String> errorsField = errors.stream()
                 .map(AnalyticsValidatorUtil.Error::getField)
@@ -886,7 +1025,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 .collect(Collectors.toList());
 
         assertTrue(errorsField.contains("events[0].data.page.extra_field"));
-        assertTrue(errorsField.contains("events[0].data.device.extra_field"));
         assertTrue(errorsField.contains("events[0].extra_field_1"));
         assertTrue(errorsField.contains("events[0].extra_field_2.extra_field"));
 

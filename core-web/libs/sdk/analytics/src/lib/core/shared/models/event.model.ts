@@ -3,7 +3,7 @@
  * Contains interfaces for different types of analytics events
  */
 
-import { DotCMSEventDeviceData, DotCMSEventPageData, DotCMSEventUtmData } from './data.model';
+import { DotCMSEventPageData, DotCMSEventUtmData } from './data.model';
 
 import {
     DotCMSCustomEventType,
@@ -45,13 +45,11 @@ export interface DotCMSEventBase<TEventType extends DotCMSEventType, TData> {
 
 /**
  * Data structure for pageview events.
- * Contains page, device, and optional UTM/custom data.
+ * Contains page and optional UTM/custom data.
  */
 export type DotCMSPageViewEventData = {
     /** Page data associated with the event */
     page: DotCMSEventPageData;
-    /** Device and browser information */
-    device: DotCMSEventDeviceData;
     /** UTM parameters for campaign tracking (optional) */
     utm?: DotCMSEventUtmData;
     /** Custom data associated with the event (any valid JSON) */
