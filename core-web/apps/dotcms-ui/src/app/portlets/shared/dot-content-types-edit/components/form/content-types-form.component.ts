@@ -1,5 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
+import { AsyncPipe, CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -12,6 +13,7 @@ import {
     inject
 } from '@angular/core';
 import {
+    ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormControl,
     UntypedFormGroup,
@@ -20,6 +22,9 @@ import {
 import { ActivatedRoute } from '@angular/router';
 
 import { SelectItem } from 'primeng/api';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { filter, startWith, take, takeUntil } from 'rxjs/operators';
 
@@ -34,7 +39,20 @@ import {
     DotCMSWorkflow,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { isEqual, FieldUtil } from '@dotcms/utils';
+
+import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
+import { DotPageSelectorModule } from '../../../../../view/components/_common/dot-page-selector/dot-page-selector.module';
+import { SiteSelectorFieldModule } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
+import { DotWorkflowsActionsSelectorFieldModule } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
+import { DotWorkflowsSelectorFieldModule } from '../../../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
+import { DotFieldHelperModule } from '../../../../../view/components/dot-field-helper/dot-field-helper.module';
 
 /**
  * Form component to create or edit content types
@@ -48,7 +66,24 @@ import { isEqual, FieldUtil } from '@dotcms/utils';
     selector: 'dot-content-types-form',
     styleUrls: ['./content-types-form.component.scss'],
     templateUrl: 'content-types-form.component.html',
-    standalone: false
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        AsyncPipe,
+        CheckboxModule,
+        DropdownModule,
+        InputTextModule,
+        DotMessagePipe,
+        DotFieldRequiredDirective,
+        DotAutofocusDirective,
+        DotFieldValidationMessageComponent,
+        DotMdIconSelectorModule,
+        SiteSelectorFieldModule,
+        DotWorkflowsSelectorFieldModule,
+        DotWorkflowsActionsSelectorFieldModule,
+        DotPageSelectorModule,
+        DotFieldHelperModule
+    ]
 })
 export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);

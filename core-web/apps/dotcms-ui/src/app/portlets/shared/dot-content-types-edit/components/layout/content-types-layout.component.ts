@@ -37,7 +37,7 @@ import { DotInlineEditModule } from '../../../../../view/components/_common/dot-
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
-import { DotAddToMenuModule } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.module';
+import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 import { ContentTypesFieldsListComponent } from '../fields/content-types-fields-list';
 import { FieldDragDropService } from '../fields/service';
 
@@ -61,7 +61,7 @@ import { FieldDragDropService } from '../fields/service';
         DotInlineEditModule,
         DotPortletBoxComponent,
         IframeComponent,
-        DotAddToMenuModule,
+        DotAddToMenuComponent,
         ContentTypesFieldsListComponent
     ]
 })

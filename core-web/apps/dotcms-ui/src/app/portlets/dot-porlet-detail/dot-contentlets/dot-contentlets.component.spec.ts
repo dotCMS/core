@@ -50,7 +50,8 @@ import { DotContentletsComponent } from './dot-contentlets.component';
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
-import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
+import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 @Injectable()
@@ -69,8 +70,12 @@ describe('DotContentletsComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentletsComponent],
-            imports: [DotContentletEditorModule, RouterTestingModule, HttpClientTestingModule],
+            imports: [
+                DotEditContentletComponent,
+                RouterTestingModule,
+                HttpClientTestingModule,
+                DotContentletsComponent
+            ],
             providers: [
                 DotContentletEditorService,
                 DotIframeService,
@@ -99,7 +104,10 @@ describe('DotContentletsComponent', () => {
                 PushPublishService,
                 {
                     provide: CoreWebService,
-                    useValue: { request: jest.fn().mockReturnValue(of({})) }
+                    useValue: {
+                        request: jest.fn().mockReturnValue(of({})),
+                        requestView: jest.fn().mockReturnValue(of({ entity: {} }))
+                    }
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
@@ -127,7 +135,16 @@ describe('DotContentletsComponent', () => {
                 LoginService,
                 DotGenerateSecurePasswordService,
                 DotDownloadBundleDialogService,
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                {
+                    provide: IframeOverlayService,
+                    useValue: {
+                        overlay: of(false),
+                        show: jest.fn(),
+                        hide: jest.fn(),
+                        toggle: jest.fn()
+                    }
+                }
             ]
         });
 
@@ -164,11 +181,12 @@ describe('DotContentletsComponent', () => {
     });
 
     it('should call dotCustomEventHandlerService on customEvent', () => {
-        jest.spyOn(dotCustomEventHandlerService, 'handle');
-        const edit = de.query(By.css('dot-edit-contentlet'));
-        edit.triggerEventHandler('custom', { data: 'test' });
-        expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
-            data: 'test'
+        jest.spyOn(dotCustomEventHandlerService, 'handle').mockImplementation(() => {
+            /* mock implementation */
         });
+        const edit = de.query(By.css('dot-edit-contentlet'));
+        const mockEvent = { detail: { name: 'test-event', data: 'test' } };
+        edit.triggerEventHandler('custom', mockEvent);
+        expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
     });
 });

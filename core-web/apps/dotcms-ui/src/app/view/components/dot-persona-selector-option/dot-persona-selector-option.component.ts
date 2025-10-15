@@ -6,13 +6,20 @@ import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 
 import { DotPersona } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-persona-selector-option',
     templateUrl: './dot-persona-selector-option.component.html',
     styleUrls: ['./dot-persona-selector-option.component.scss'],
-    imports: [CommonModule, AvatarModule, BadgeModule, ButtonModule, DotMessagePipe]
+    imports: [
+        CommonModule,
+        AvatarModule,
+        BadgeModule,
+        ButtonModule,
+        DotMessagePipe,
+        DotAvatarDirective
+    ]
 })
 export class DotPersonaSelectorOptionComponent {
     @Input() canDespersonalize = true;

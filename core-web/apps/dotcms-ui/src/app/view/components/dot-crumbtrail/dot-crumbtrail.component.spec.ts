@@ -38,12 +38,13 @@ describe('DotCrumbtrailComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotCrumbtrailComponent,
-        imports: [DotCrumbtrailComponent],
-        providers: [
+        componentProviders: [
             {
                 provide: DotCrumbtrailService,
                 useValue: mockService
-            },
+            }
+        ],
+        providers: [
             {
                 provide: DotNavigationService,
                 useClass: MockDotNavigationService

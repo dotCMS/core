@@ -33,6 +33,7 @@ import {
     DotEventsSocket,
     DotEventsSocketURL,
     DotPushPublishDialogService,
+    LoggerService,
     LoginService,
     SiteService,
     StringUtils
@@ -87,7 +88,6 @@ import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotListingDataTableModule } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
 
 const templatesMock: DotTemplate[] = [
     {
@@ -471,6 +471,7 @@ describe('DotTemplateListComponent', () => {
                 DotMessageDisplayService,
                 DialogService,
                 DotSiteBrowserService,
+                LoggerService,
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 {
                     provide: LoginService,
@@ -478,7 +479,7 @@ describe('DotTemplateListComponent', () => {
                 }
             ],
             imports: [
-                DotListingDataTableModule,
+                DotListingDataTableComponent,
                 CommonModule,
                 DotMessagePipe,
                 DotRelativeDatePipe,
@@ -519,11 +520,11 @@ describe('DotTemplateListComponent', () => {
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            jest.spyOn<any>(coreWebService, 'requestView').mockReturnValue(
+            jest.spyOn(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: templatesMock,
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
-                })
+                } as any)
             );
             fixture.detectChanges();
             tick(2);
@@ -533,9 +534,9 @@ describe('DotTemplateListComponent', () => {
             ).componentInstance;
             jest.spyOn(dotPushPublishDialogService, 'open');
 
-            jest.spyOn<any>(dialogService, 'open').mockReturnValue({
+            jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: dialogRefClose
-            });
+            } as any);
 
             mockGoToFolder = jest.spyOn(comp, 'goToFolder');
         }));
@@ -1136,11 +1137,11 @@ describe('DotTemplateListComponent', () => {
 
     describe('without data', () => {
         beforeEach(() => {
-            jest.spyOn<any>(coreWebService, 'requestView').mockReturnValue(
+            jest.spyOn(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: [],
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
-                })
+                } as any)
             );
             fixture.detectChanges();
         });

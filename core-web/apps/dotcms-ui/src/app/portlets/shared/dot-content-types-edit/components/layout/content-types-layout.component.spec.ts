@@ -13,8 +13,22 @@ import { MenuItem } from 'primeng/api';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import {
+    DotAlertConfirmService,
+    DotCurrentUserService,
+    DotEventsService,
+    DotHttpErrorManagerService,
+    DotIframeService,
+    DotMessageService,
+    DotRouterService,
+    DotUiColorsService
+} from '@dotcms/data-access';
+import {
+    CoreWebService,
+    DotcmsEventsService,
+    LoginService,
+    LoggerService
+} from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
@@ -23,6 +37,7 @@ import {
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
     createFakeEvent,
@@ -32,12 +47,15 @@ import {
 
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
+import { DotAddToMenuService } from '../../../../../api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditModule } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.module';
+import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotCopyLinkModule } from '../../../../../view/components/dot-copy-link/dot-copy-link.module';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
-import { FieldDragDropService } from '../fields/service';
+import { FieldDragDropService, FieldService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -58,7 +76,7 @@ class TestContentTypeFieldsRowListComponent {}
 @Component({
     selector: 'dot-iframe',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestDotIframeComponent {
     @Input() src: string;
@@ -95,6 +113,10 @@ class MockDotAddToMenuComponent {
 export class MockDotMenuService {
     getDotMenuId(): Observable<string> {
         return of('1234');
+    }
+
+    loadMenu(_reload?: boolean): Observable<any> {
+        return of([]);
     }
 }
 
@@ -135,7 +157,6 @@ describe('ContentTypesLayoutComponent', () => {
             declarations: [
                 TestContentTypeFieldsListComponent,
                 TestContentTypeFieldsRowListComponent,
-                TestDotIframeComponent,
                 TestContentTypesRelationshipListingComponent,
                 TestHostComponent,
                 MockDotAddToMenuComponent
@@ -162,8 +183,64 @@ describe('ContentTypesLayoutComponent', () => {
                 { provide: FieldDragDropService, useClass: FieldDragDropServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotCurrentUserService,
-                DotEventsService
+                DotEventsService,
+                DotAddToMenuService,
+                FieldService,
+                {
+                    provide: DotIframeService,
+                    useValue: {
+                        reloadData: jest.fn(),
+                        reloaded: jest.fn().mockReturnValue(of({})),
+                        ran: jest.fn().mockReturnValue(of({})),
+                        reloadedColors: jest.fn().mockReturnValue(of({}))
+                    }
+                },
+                {
+                    provide: DotRouterService,
+                    useValue: { currentPortlet: { id: 'test-portlet-id' } }
+                },
+                { provide: DotUiColorsService, useValue: { setColors: jest.fn() } },
+                {
+                    provide: DotcmsEventsService,
+                    useValue: {
+                        subscribeTo: jest.fn().mockReturnValue(of({})),
+                        subscribeToEvents: jest.fn().mockReturnValue(of({}))
+                    }
+                },
+                {
+                    provide: DotLoadingIndicatorService,
+                    useValue: {
+                        display: false,
+                        show: jest.fn(),
+                        hide: jest.fn()
+                    }
+                },
+                {
+                    provide: IframeOverlayService,
+                    useValue: {
+                        overlay: of(false),
+                        show: jest.fn(),
+                        hide: jest.fn(),
+                        toggle: jest.fn()
+                    }
+                },
+                { provide: LoggerService, useValue: { debug: jest.fn(), error: jest.fn() } },
+                { provide: LoginService, useValue: { isLogin$: of(true) } },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: { handle: jest.fn().mockReturnValue(of({})) }
+                },
+                {
+                    provide: DotAlertConfirmService,
+                    useValue: { confirm: jest.fn(), alert: jest.fn() }
+                }
             ]
+        });
+
+        // Override ContentTypesLayoutComponent to use the mock IframeComponent
+        TestBed.overrideComponent(ContentTypesLayoutComponent, {
+            remove: { imports: [IframeComponent] },
+            add: { imports: [TestDotIframeComponent] }
         });
 
         fixture = TestBed.createComponent(TestHostComponent);

@@ -82,7 +82,7 @@ class TestContentTypeLayoutComponent {
 @Component({
     selector: 'dot-content-types-form',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestContentTypesFormComponent {
     @Input() data: DotCMSContentType;
@@ -134,11 +134,11 @@ describe('DotContentTypesEditComponent', () => {
             declarations: [
                 DotContentTypesEditComponent,
                 TestContentTypeFieldsDropZoneComponent,
-                TestContentTypesFormComponent,
                 TestDotMenuComponent
             ],
             imports: [
                 TestContentTypeLayoutComponent,
+                TestContentTypesFormComponent,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'content-types-angular',

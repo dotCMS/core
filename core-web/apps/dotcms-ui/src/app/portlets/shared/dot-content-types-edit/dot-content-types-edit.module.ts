@@ -61,6 +61,8 @@ import { ContentTypesLayoutComponent } from './components/layout/content-types-l
 import { DotContentTypesEditRoutingModule } from './dot-content-types-edit-routing.module';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
+import { DotAddToMenuService } from '../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotDirectivesModule } from '../../../shared/dot-directives.module';
 import { DotInlineEditModule } from '../../../view/components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotMdIconSelectorModule } from '../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
@@ -75,11 +77,12 @@ import { SearchableDropdownComponent } from '../../../view/components/_common/se
 import { DotBaseTypeSelectorModule } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
 import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
 import { DotFieldHelperModule } from '../../../view/components/dot-field-helper/dot-field-helper.module';
+import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 import { DotPortletBoxComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotRelationshipTreeModule } from '../../../view/components/dot-relationship-tree/dot-relationship-tree.module';
 import { DotSecondaryToolbarComponent } from '../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotMaxlengthModule } from '../../../view/directives/dot-maxlength/dot-maxlength.module';
-import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.module';
+import { DotAddToMenuComponent } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 
 @NgModule({
     declarations: [
@@ -92,7 +95,6 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         ContentTypeFieldsPropertiesFormComponent,
         ContentTypeFieldsRowComponent,
         ContentTypeFieldsTabComponent,
-        ContentTypesFormComponent,
         DataTypePropertyComponent,
         DefaultValuePropertyComponent,
         DotContentTypesEditComponent,
@@ -106,6 +108,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
     exports: [DotContentTypesEditComponent],
     imports: [
         ContentTypesLayoutComponent,
+        ContentTypesFormComponent,
         ButtonModule,
         CheckboxModule,
         ConfirmDialogModule,
@@ -153,7 +156,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotRelationshipTreeModule,
         DotPortletBoxComponent,
         DotMdIconSelectorModule,
-        DotAddToMenuModule,
+        DotAddToMenuComponent,
         DotFieldRequiredDirective,
         DotCopyButtonComponent,
         OverlayPanelModule,
@@ -165,7 +168,10 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DragulaService,
         FieldDragDropService,
         FieldPropertyService,
-        FieldService
+        FieldService,
+        DotAddToMenuService,
+        DotMenuService,
+        DotNavigationService
     ],
     schemas: []
 })

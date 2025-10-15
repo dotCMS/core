@@ -45,7 +45,7 @@ import {
 import { DotContentTypeStore } from './dot-content-type.store';
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
 
-import { DotListingDataTableModule } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 const DELETE_MENU_ITEM_INDEX = 4;
 const ADD_TO_MENU_INDEX = 2;
@@ -112,6 +112,23 @@ class MockDotAddToBundleComponent {
     @Output() cancel = new EventEmitter<boolean>();
 }
 
+@Component({
+    selector: 'dot-portlet-base',
+    template: '<ng-content></ng-content>'
+})
+class MockDotPortletBaseComponent {
+    @Input() boxed = true;
+}
+
+@Component({
+    selector: 'dot-add-to-menu',
+    template: ''
+})
+class MockDotAddToMenuComponent {
+    @Input() contentType;
+    @Output() cancel = new EventEmitter<boolean>();
+}
+
 describe('DotContentTypesPortletComponent', () => {
     let comp: DotContentTypesPortletComponent;
     let fixture: ComponentFixture<DotContentTypesPortletComponent>;
@@ -155,9 +172,11 @@ describe('DotContentTypesPortletComponent', () => {
                     { path: 'test', component: DotContentTypesPortletComponent }
                 ]),
                 BrowserAnimationsModule,
-                DotListingDataTableModule,
+                DotListingDataTableComponent,
                 ReactiveFormsModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                MockDotPortletBaseComponent,
+                MockDotAddToMenuComponent
             ],
             providers: [
                 DotContentTypesInfoService,

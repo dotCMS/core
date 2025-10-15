@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
@@ -41,6 +43,7 @@ import { DotAddContentletComponent } from './dot-add-contentlet.component';
 
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
@@ -55,7 +58,14 @@ describe('DotAddContentletComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [DotAddContentletComponent, DotContentletWrapperComponent],
+            imports: [
+                DotAddContentletComponent,
+                DotContentletWrapperComponent,
+                DotIframeDialogModule,
+                BrowserAnimationsModule,
+                RouterTestingModule,
+                HttpClientTestingModule
+            ],
             providers: [
                 DotContentletEditorService,
                 DotMenuService,
@@ -77,6 +87,15 @@ describe('DotAddContentletComponent', () => {
                 ApiRoot,
                 DotIframeService,
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                {
+                    provide: IframeOverlayService,
+                    useValue: {
+                        overlay: of(false),
+                        show: jest.fn(),
+                        hide: jest.fn(),
+                        toggle: jest.fn()
+                    }
+                },
                 DotcmsEventsService,
                 DotEventsSocket,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
@@ -84,12 +103,6 @@ describe('DotAddContentletComponent', () => {
                 LoggerService,
                 StringUtils,
                 UserModel
-            ],
-            imports: [
-                DotIframeDialogModule,
-                BrowserAnimationsModule,
-                RouterTestingModule,
-                HttpClientTestingModule
             ]
         });
     }));

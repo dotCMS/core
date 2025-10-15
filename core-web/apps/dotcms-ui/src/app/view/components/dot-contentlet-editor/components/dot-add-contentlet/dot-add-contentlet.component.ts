@@ -1,8 +1,10 @@
 import { Observable } from 'rxjs';
 
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
+import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
 /**
  * Allow user to add a contentlet to DotCMS instance
@@ -14,7 +16,8 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 @Component({
     selector: 'dot-add-contentlet',
     templateUrl: './dot-add-contentlet.component.html',
-    styleUrls: ['./dot-add-contentlet.component.scss']
+    styleUrls: ['./dot-add-contentlet.component.scss'],
+    imports: [AsyncPipe, DotContentletWrapperComponent]
 })
 export class DotAddContentletComponent implements OnInit {
     private dotContentletEditorService = inject(DotContentletEditorService);

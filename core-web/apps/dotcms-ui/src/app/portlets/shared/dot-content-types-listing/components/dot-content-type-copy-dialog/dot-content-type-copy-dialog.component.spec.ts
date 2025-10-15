@@ -11,7 +11,7 @@ import { DotEventsService, DotMessageService, DotSystemConfigService } from '@do
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
 import { DotSystemConfig } from '@dotcms/dotcms-models';
 import {
-    DotDialogModule,
+    DotDialogComponent,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
@@ -84,7 +84,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
                 DotFieldValidationMessageComponent,
                 DotMdIconSelectorModule,
                 SiteSelectorFieldModule,
-                DotDialogModule,
+                DotDialogComponent,
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,

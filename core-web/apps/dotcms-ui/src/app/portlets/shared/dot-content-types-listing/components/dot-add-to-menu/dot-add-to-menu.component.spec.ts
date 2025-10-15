@@ -22,7 +22,6 @@ import {
 } from '../../../../../api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotNavigationService } from '../../../../../view/components/dot-navigation/services/dot-navigation.service';
-import { DotMenuServiceMock } from '../../../../../view/components/dot-navigation/services/dot-navigation.service.spec';
 import { DotFormSelectorModule } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 
 const contentTypeVar = {
@@ -50,7 +49,7 @@ class TestHostComponent {
     contentType = contentTypeVar;
 }
 
-export class DotAddToMenuServiceMock {
+class DotAddToMenuServiceMock {
     cleanUpPorletId(_portletName: string) {
         /* */
     }
@@ -61,6 +60,35 @@ export class DotAddToMenuServiceMock {
 
     addToLayout(_portletName: string, _layoutId: string) {
         /* */
+    }
+}
+
+class DotMenuServiceMock {
+    loadMenu(_force?: boolean) {
+        return of([
+            {
+                id: '123',
+                name: 'Menu 1',
+                tabName: 'Name',
+                tabDescription: 'Description',
+                tabIcon: 'icon',
+                url: '/url/index',
+                menuItems: []
+            },
+            {
+                id: '456',
+                name: 'Menu 2',
+                tabName: 'Name 2',
+                tabDescription: 'Description 2',
+                tabIcon: 'icon2',
+                url: '/url/456',
+                menuItems: []
+            }
+        ]);
+    }
+
+    getDotMenuId(_portletId: string) {
+        return of('123');
     }
 }
 
