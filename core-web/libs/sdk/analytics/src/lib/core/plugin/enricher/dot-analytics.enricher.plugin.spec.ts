@@ -47,9 +47,18 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Arrange
             const mockPayload = { event: 'pageview', properties: { page: '/test' } } as any;
             mockEnrichPagePayloadOptimized.mockReturnValue({
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                context: {
+                    site_key: 'test',
+                    session_id: 'session',
+                    user_id: 'user',
+                    device: {
+                        language: 'en',
+                        screen_resolution: '1920x1080',
+                        viewport_width: '1024',
+                        viewport_height: '768'
+                    }
+                },
                 page: { url: 'test' },
-                device: { language: 'en' },
                 local_time: '2024-01-01T10:00:00.000Z'
             } as any);
 
@@ -61,13 +70,22 @@ describe('dotAnalyticsEnricherPlugin', () => {
             expect(mockEnrichPagePayloadOptimized).toHaveBeenCalledTimes(1);
         });
 
-        it('should return the result from enrichPagePayloadOptimized', () => {
+        it('should return the result from enrichPagePayloadOptimized with device in context', () => {
             // Arrange
             const mockPayload = { event: 'pageview' } as any;
             const expectedEnriched = {
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                context: {
+                    site_key: 'test',
+                    session_id: 'session',
+                    user_id: 'user',
+                    device: {
+                        language: 'en',
+                        screen_resolution: '1920x1080',
+                        viewport_width: '1024',
+                        viewport_height: '768'
+                    }
+                },
                 page: { url: 'test', title: 'Test' },
-                device: { language: 'en' },
                 local_time: '2024-01-01T10:00:00.000Z'
             };
             mockEnrichPagePayloadOptimized.mockReturnValue(expectedEnriched as any);
@@ -83,8 +101,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
                         event_type: 'pageview',
                         local_time: expectedEnriched.local_time,
                         data: {
-                            page: expectedEnriched.page,
-                            device: expectedEnriched.device
+                            page: expectedEnriched.page
                         }
                     }
                 ]
