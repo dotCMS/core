@@ -104,7 +104,6 @@ export type DotKnownContentDriveFilters = {
     contentType: string[];
     title: string;
     languageId: string[];
-    ensuredContentTypes: string[];
 };
 
 /**

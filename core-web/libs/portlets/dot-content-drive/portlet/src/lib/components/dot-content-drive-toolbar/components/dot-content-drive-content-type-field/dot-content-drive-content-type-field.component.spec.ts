@@ -486,8 +486,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             triggerMultiSelectOnChange();
 
             expect(mockStore.patchFilters).toHaveBeenCalledWith({
-                contentType: ['blog', 'news'],
-                ensuredContentTypes: ['blog', 'news']
+                contentType: ['blog', 'news']
             });
         });
 
@@ -497,7 +496,6 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             triggerMultiSelectOnChange();
 
             expect(mockStore.removeFilter).toHaveBeenCalledWith('contentType');
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('ensuredContentTypes');
         });
 
         it('should handle null selected content types by removing filter', () => {
@@ -506,7 +504,6 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             triggerMultiSelectOnChange();
 
             expect(mockStore.removeFilter).toHaveBeenCalledWith('contentType');
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('ensuredContentTypes');
         });
 
         it('should handle undefined selected content types by removing filter', () => {
@@ -517,7 +514,6 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             triggerMultiSelectOnChange();
 
             expect(mockStore.removeFilter).toHaveBeenCalledWith('contentType');
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('ensuredContentTypes');
         });
 
         it('should correctly extract variable names from selected content types', () => {
@@ -531,8 +527,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             triggerMultiSelectOnChange(customContentTypes);
 
             expect(mockStore.patchFilters).toHaveBeenCalledWith({
-                contentType: ['custom1', 'custom2', 'custom3'],
-                ensuredContentTypes: ['custom1', 'custom2', 'custom3']
+                contentType: ['custom1', 'custom2', 'custom3']
             });
         });
     });
@@ -567,8 +562,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             spectator.component.$selectedContentTypes.set([MOCK_CONTENT_TYPES[0]]);
             triggerMultiSelectOnChange();
             expect(mockStore.patchFilters).toHaveBeenCalledWith({
-                contentType: ['blog'],
-                ensuredContentTypes: ['blog']
+                contentType: ['blog']
             });
 
             jest.clearAllMocks();
@@ -578,7 +572,6 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             triggerMultiSelectOnClear();
 
             expect(mockStore.removeFilter).toHaveBeenCalledWith('contentType');
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('ensuredContentTypes');
         });
     });
 
@@ -600,92 +593,6 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
             const emptyMessage = spectator.query('[data-testid="content-type-field"]');
             expect(emptyMessage).toBeTruthy();
-        });
-    });
-
-    describe('Ensured Content Types Integration', () => {
-        beforeEach(() => {
-            // Reset to default state before each test
-            mockStore.filters.mockReturnValue({
-                baseType: undefined,
-                ensuredContentTypes: undefined
-            });
-            jest.clearAllMocks();
-        });
-
-        it('should not include ensure parameter when ensuredContentTypes is undefined', () => {
-            spectator.detectChanges();
-            jest.clearAllMocks();
-
-            triggerMultiSelectOnFilter('test');
-            jest.advanceTimersByTime(500);
-
-            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
-                filter: 'test',
-                type: undefined
-            });
-        });
-
-        it('should update ensuredContentTypes when selecting content types', () => {
-            spectator.detectChanges();
-            const selectedContentTypes = [
-                { variable: 'blog' } as DotCMSContentType,
-                { variable: 'news' } as DotCMSContentType
-            ];
-
-            spectator.component.$selectedContentTypes.set(selectedContentTypes);
-            triggerMultiSelectOnChange();
-
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({
-                contentType: ['blog', 'news'],
-                ensuredContentTypes: ['blog', 'news']
-            });
-        });
-
-        it('should clear ensuredContentTypes when no content types are selected', () => {
-            spectator.detectChanges();
-            spectator.component.$selectedContentTypes.set([]);
-            triggerMultiSelectOnChange();
-
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('contentType');
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('ensuredContentTypes');
-        });
-
-        it('should use same values for contentType and ensuredContentTypes when updating store', () => {
-            spectator.detectChanges();
-            const selectedContentTypes = [
-                { variable: 'product' } as DotCMSContentType,
-                { variable: 'service' } as DotCMSContentType,
-                { variable: 'video' } as DotCMSContentType
-            ];
-
-            spectator.component.$selectedContentTypes.set(selectedContentTypes);
-            triggerMultiSelectOnChange();
-
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({
-                contentType: ['product', 'service', 'video'],
-                ensuredContentTypes: ['product', 'service', 'video']
-            });
-        });
-
-        it('should remove both filters when selection is cleared via onChange', () => {
-            spectator.detectChanges();
-
-            // First select some content types
-            spectator.component.$selectedContentTypes.set([
-                { variable: 'blog' } as DotCMSContentType
-            ]);
-            triggerMultiSelectOnChange();
-
-            jest.clearAllMocks();
-
-            // Then clear the selection
-            spectator.component.$selectedContentTypes.set([]);
-            triggerMultiSelectOnChange();
-
-            expect(mockStore.removeFilter).toHaveBeenCalledTimes(2);
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('contentType');
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('ensuredContentTypes');
         });
     });
 

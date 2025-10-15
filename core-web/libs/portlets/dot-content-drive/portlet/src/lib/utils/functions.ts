@@ -57,8 +57,7 @@ export const decodeByFilterKey: Record<
     // Should always return an array
     contentType: multiSelector,
     title: singleSelector,
-    languageId: multiSelector,
-    ensuredContentTypes: multiSelector
+    languageId: multiSelector
 };
 
 /**

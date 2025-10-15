@@ -221,21 +221,6 @@ describe('Utility Functions', () => {
 
             expect(titleResult).toEqual('');
         });
-
-        it('should decode ensuredContentTypes values as an array', () => {
-            const result = decodeByFilterKey.ensuredContentTypes('Blog,News,Article');
-            expect(result).toEqual(['Blog', 'News', 'Article']);
-        });
-
-        it('should decode ensuredContentTypes values with spaces correctly', () => {
-            const result = decodeByFilterKey.ensuredContentTypes('Blog, News , Article');
-            expect(result).toEqual(['Blog', 'News', 'Article']);
-        });
-
-        it('should filter out empty ensuredContentTypes values', () => {
-            const result = decodeByFilterKey.ensuredContentTypes('Blog,,Article,');
-            expect(result).toEqual(['Blog', 'Article']);
-        });
     });
 
     describe('encode and decode together', () => {

@@ -82,9 +82,8 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     });
 
     private readonly $mappedEnsuredContentTypes = computed<string>(() => {
-        const ensuredContentTypesString =
-            this.#store.filters().ensuredContentTypes?.join(',') ?? '';
-        return ensuredContentTypesString.length > 0 ? ensuredContentTypesString : undefined;
+        const contentType = this.#store.filters().contentType?.join(',') ?? '';
+        return contentType.length > 0 ? contentType : undefined;
     });
 
     // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991
@@ -161,15 +160,11 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         const value = this.$selectedContentTypes();
 
         if (value?.length) {
-            const contentTypeValues = value.map((item) => item.variable);
-
             this.#store.patchFilters({
-                contentType: contentTypeValues,
-                ensuredContentTypes: contentTypeValues
+                contentType: value.map((item) => item.variable)
             });
         } else {
             this.#store.removeFilter('contentType');
-            this.#store.removeFilter('ensuredContentTypes');
         }
     }
 

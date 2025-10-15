@@ -52,7 +52,9 @@ export class DotContentTypeService {
      * Creates HttpParams for retrieving content types with optional parameters
      * Only includes parameters that have meaningful values (not empty, null, or undefined)
      */
-    private contentTypePaginationParams(options: DotContentTypePaginationOptions = {}): HttpParams {
+    private getcontentTypePaginationParams(
+        options: DotContentTypePaginationOptions = {}
+    ): HttpParams {
         let params = new HttpParams();
 
         // Default parameters
@@ -98,7 +100,7 @@ export class DotContentTypeService {
         return this.#httpClient
             .get<{
                 entity: DotCMSContentType[];
-            }>('/api/v1/contenttype', { params: this.contentTypePaginationParams(options) })
+            }>('/api/v1/contenttype', { params: this.getcontentTypePaginationParams(options) })
             .pipe(pluck('entity'));
     }
 
@@ -118,7 +120,7 @@ export class DotContentTypeService {
             .get<{
                 entity: DotCMSContentType[];
                 pagination: DotPagination;
-            }>('/api/v1/contenttype', { params: this.contentTypePaginationParams(options) })
+            }>('/api/v1/contenttype', { params: this.getcontentTypePaginationParams(options) })
             .pipe(map((data) => ({ contentTypes: data.entity, pagination: data.pagination })));
     }
 
