@@ -1624,7 +1624,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
             return;
         }
-        if (user.isAdmin()) {
+        if (user != null && user.isAdmin()) {
             return;
         }
 

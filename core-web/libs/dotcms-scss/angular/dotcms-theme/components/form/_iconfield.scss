@@ -22,6 +22,22 @@
         }
     }
 
+    &-left:has(:nth-child(3)) {
+        > .p-inputtext {
+            padding-right: $spacing-6;
+        }
+
+        .p-input-icon-right {
+            color: $color-palette-primary;
+            cursor: pointer;
+            left: auto;
+            right: $spacing-1;
+            margin-top: 0;
+            transform: translateY(-50%);
+            -moz-transform: translateY(-50%);
+        }
+    }
+
     &-right {
         .p-input-icon:last-of-type {
             right: $spacing-2;

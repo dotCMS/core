@@ -33,7 +33,8 @@ describe('DotHistoryTimelineItemComponent', () => {
         languageId: 1,
         live: true,
         modDate: Date.now() - 86400000,
-        modUserName: 'Admin User',
+        modUser: 'admin@dotcms.com',
+        modUserName: 'admin@dotcms.com',
         title: 'Test Content Item',
         working: false
     };
@@ -105,7 +106,7 @@ describe('DotHistoryTimelineItemComponent', () => {
 
         it('should render user information', () => {
             const userName = spectator.query(byTestId('history-user'));
-            expect(userName.textContent?.trim()).toBe('Admin User');
+            expect(userName.textContent?.trim()).toBe('admin@dotcms.com');
         });
 
         it('should render menu button', () => {

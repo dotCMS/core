@@ -108,13 +108,65 @@ track(eventName: string, properties?: Record<string, unknown>): void
 
 ## ⚙️ Configuration Options
 
-<<<<<<< HEAD
 | Option | Type | Required | Default | Description |
 | -------------- | --------- | -------- | ----------------------------------- | -------------------------------------- |
 | `siteAuth` | `string` | ✅ | - | Site auth from dotCMS Analytics app |
 | `server` | `string` | ✅ | - | Your dotCMS server URL |
 | `debug` | `boolean` | ❌ | `false` | Enable verbose logging |
 | `autoPageView` | `boolean` | ❌ | React: `true` / Standalone: `false` | Auto track page views on route changes |
+| `queueConfig` | `QueueConfig` | ❌ | See below | Event batching configuration |
+
+### Queue Configuration
+
+The `queueConfig` option controls event batching:
+
+-   **`false`**: Disable queuing, send events immediately
+-   **`undefined` (default)**: Enable queuing with default settings
+-   **`QueueConfig` object**: Enable queuing with custom settings
+
+| Option           | Type     | Default | Description                                      |
+| ---------------- | -------- | ------- | ------------------------------------------------ |
+| `eventBatchSize` | `number` | `15`    | Max events per batch - auto-sends when reached   |
+| `flushInterval`  | `number` | `5000`  | Time between flushes - sends pending events (ms) |
+
+**How it works:**
+
+-   ✅ Send immediately when `eventBatchSize` reached (e.g., 15 events)
+-   ✅ Send pending events every `flushInterval` (e.g., 5 seconds)
+-   ✅ Auto-flush on page navigation/close using `visibilitychange` + `pagehide` events
+-   Example: If you have 10 events and 5 seconds pass → sends those 10
+
+**About page unload handling:**
+
+The SDK uses modern APIs (`visibilitychange` + `pagehide`) instead of `beforeunload`/`unload` to ensure:
+
+-   ✅ Better reliability on mobile devices
+-   ✅ Compatible with browser back/forward cache (bfcache)
+-   ✅ Events are sent via `navigator.sendBeacon()` for guaranteed delivery
+-   ✅ No negative impact on page performance
+
+**Example: Disable queuing for immediate sends**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    queue: false // Send events immediately without batching
+});
+```
+
+**Example: Custom queue config**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    queue: {
+        eventBatchSize: 10, // Auto-send when 10 events queued
+        flushInterval: 3000 // Or send every 3 seconds
+    }
+});
+```
 
 ## 🛠️ Usage Examples
 
@@ -262,6 +314,12 @@ When you call `pageView(customData?)`, the SDK **automatically enriches** the ev
         site_key: string;          //    Your site key
         session_id: string;        //    Current session ID
         user_id: string;           //    Anonymous user ID
+        device: {                  // 🤖 AUTOMATIC - Device & Browser Info
+            screen_resolution: string;  // Screen size
+            language: string;           // Browser language
+            viewport_width: string;     // Viewport width
+            viewport_height: string;    // Viewport height
+        }
     },
     events: [{
         event_type: "pageview",
@@ -277,12 +335,6 @@ When you call `pageView(customData?)`, the SDK **automatically enriches** the ev
                 doc_search: string;    //  Query string
                 doc_hash: string;      //  URL hash
                 doc_encoding: string;  //  Character encoding
-            },
-            device: {              // 🤖 AUTOMATIC - Device & Browser Info
-                screen_resolution: string;  // Screen size
-                language: string;           // Browser language
-                viewport_width: string;     // Viewport width
-                viewport_height: string;    // Viewport height
             },
             utm?: {                // 🤖 AUTOMATIC - Campaign Tracking (if present in URL)
                 source: string;    //    utm_source
@@ -319,6 +371,12 @@ When you call `track(eventName, properties)`, the following structure is sent:
         site_key: string;      // Your site key
         session_id: string;    // Current session ID
         user_id: string;       // Anonymous user ID
+        device: {              // 🤖 AUTOMATIC - Device & Browser Info
+            screen_resolution: string;  // Screen size
+            language: string;           // Browser language
+            viewport_width: string;     // Viewport width
+            viewport_height: string;    // Viewport height
+        }
     },
     events: [{
         event_type: string,    // Your custom event name
