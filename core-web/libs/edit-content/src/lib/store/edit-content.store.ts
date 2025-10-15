@@ -31,7 +31,12 @@ import { withWorkflow } from './features/workflow/workflow.feature';
 
 import { CurrentContentActionsWithScheme } from '../models/dot-edit-content-field.type';
 import { FormValues } from '../models/dot-edit-content-form.interface';
-import { Activity, DotContentletState, UIState } from '../models/dot-edit-content.model';
+import {
+    Activity,
+    DotContentletState,
+    UIState,
+    DotPushPublishHistoryItem
+} from '../models/dot-edit-content.model';
 
 export interface EditContentState {
     // Root state
@@ -115,6 +120,18 @@ export interface EditContentState {
         error: string | null;
     };
 
+    // Push Publish History state
+    pushPublishHistory: DotPushPublishHistoryItem[]; // All accumulated push publish history items
+    pushPublishHistoryPagination: {
+        currentPage: number;
+        perPage: number;
+        totalEntries: number;
+    } | null;
+    pushPublishHistoryStatus: {
+        status: ComponentStatus;
+        error: string | null;
+    };
+
     // Historical version viewing state
     isViewingHistoricalVersion: boolean;
     historicalVersionInode: string | null;
@@ -193,6 +210,14 @@ export const initialRootState: EditContentState = {
     versions: [], // All accumulated versions for infinite scroll
     versionsPagination: null,
     versionsStatus: {
+        status: ComponentStatus.INIT,
+        error: null
+    },
+
+    // Push Publish History state
+    pushPublishHistory: [], // All accumulated push publish history items
+    pushPublishHistoryPagination: null,
+    pushPublishHistoryStatus: {
         status: ComponentStatus.INIT,
         error: null
     },
