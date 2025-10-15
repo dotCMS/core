@@ -148,7 +148,6 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     element_id String,
     element_class String,
     element_attributes String
-    position_dom_index Int8
 ) Engine = MergeTree()
     PARTITION BY customer_id
     ORDER BY (_timestamp, customer_id)
