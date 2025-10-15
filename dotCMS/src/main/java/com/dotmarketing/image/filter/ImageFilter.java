@@ -154,9 +154,11 @@ public abstract class ImageFilter implements ImageFilterIf {
         boolean overwrite = !resultFile.exists() || resultFile.length() < 50 || parameters.get("overwrite") != null;
 
         if (overwrite) {
-
-            APILocator.getRequestCostAPI().incrementCost(Price.IMAGE_FILTER_TRANSFORM, overwriteMethod.get(),
-                    new Object[]{resultFile.toPath()});
+            // Try to increment cost, but don't fail if CDI is not initialized (e.g., in unit tests)
+            Try.run(() -> APILocator.getRequestCostAPI().incrementCost(Price.IMAGE_FILTER_TRANSFORM,
+                            overwriteMethod.get(), new Object[]{resultFile.toPath()}))
+                    .onFailure(e -> Logger.debug(ImageFilter.class,
+                            "Unable to increment request cost (CDI may not be initialized): " + e.getMessage()));
         }
 
 		return overwrite;
