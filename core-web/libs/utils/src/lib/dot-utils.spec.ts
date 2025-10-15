@@ -369,15 +369,53 @@ describe('Dot Utils', () => {
     });
 
     describe('hasValidValue', () => {
-        it('should return true when value is not empty string, null, or undefined', () => {
+        it('should return FALSE when value is null or undefined', () => {
+            expect(hasValidValue(null)).toEqual(false);
+            expect(hasValidValue(undefined)).toEqual(false);
+        });
+
+        it('should return TRUE when value is not empty string', () => {
             expect(hasValidValue('test')).toEqual(true);
         });
 
-        it('should return false when value is empty string, null, or undefined', () => {
+        it('should return FALSE when value is empty string', () => {
             expect(hasValidValue('')).toEqual(false);
+        });
+
+        it('should return FALSE when value is space string', () => {
             expect(hasValidValue('   ')).toEqual(false);
-            expect(hasValidValue(null)).toEqual(false);
-            expect(hasValidValue(undefined)).toEqual(false);
+        });
+
+        it('should return TRUE when value is not empty array', () => {
+            expect(hasValidValue(['test'])).toEqual(true);
+        });
+
+        it('should return FALSE when value is empty array', () => {
+            expect(hasValidValue([])).toEqual(false);
+        });
+
+        it('should return TRUE when value is not empty object', () => {
+            expect(hasValidValue({ test: 'test' })).toEqual(true);
+        });
+
+        it('should return FALSE when value is empty object', () => {
+            expect(hasValidValue({})).toEqual(false);
+        });
+
+        it('should return TRUE when value is a positive number', () => {
+            expect(hasValidValue(1)).toEqual(true);
+        });
+
+        it('should return TRUE when value is 0', () => {
+            expect(hasValidValue(0)).toEqual(true);
+        });
+
+        it('should return TRUE when value is true', () => {
+            expect(hasValidValue(true)).toEqual(true);
+        });
+
+        it('should return TRUE when value is false', () => {
+            expect(hasValidValue(false)).toEqual(true);
         });
     });
 });
