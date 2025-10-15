@@ -145,7 +145,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             component.folderForm.patchValue({ url: 'new-folder' });
             spectator.detectChanges();
 
-            expect(component.$finalPath()).toBe('demo.dotcms.com/new-folder');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/new-folder/');
         });
 
         it('should generate correct path with existing path', () => {
@@ -153,7 +153,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             component.folderForm.patchValue({ url: 'new-folder' });
             spectator.detectChanges();
 
-            expect(component.$finalPath()).toBe('demo.dotcms.com/documents/new-folder');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/new-folder/');
         });
     });
 
@@ -245,7 +245,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(createButton);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
-                assetPath: 'demo.dotcms.com/documents/test-folder',
+                assetPath: '//demo.dotcms.com/documents/test-folder/',
                 data: {
                     title: 'Test Folder',
                     showOnMenu: false,
@@ -267,7 +267,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(createButton);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
-                assetPath: 'demo.dotcms.com/documents/test-folder',
+                assetPath: '//demo.dotcms.com/documents/test-folder/',
                 data: {
                     title: 'Test Folder',
                     showOnMenu: false,
@@ -290,7 +290,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(createButton);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
-                assetPath: 'demo.dotcms.com/documents/test-folder',
+                assetPath: '//demo.dotcms.com/documents/test-folder/',
                 data: {
                     title: 'Test Folder',
                     showOnMenu: false,
@@ -312,7 +312,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(createButton);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
-                assetPath: 'demo.dotcms.com/documents/test-folder',
+                assetPath: '//demo.dotcms.com/documents/test-folder/',
                 data: {
                     title: 'Test Folder',
                     showOnMenu: false,
