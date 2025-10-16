@@ -35,10 +35,6 @@ export class DotContentDriveWorkflowActionsComponent {
     protected shouldHideAction(hideWhen?: ActionVisibilityConditions) {
         const allConditions = this.$actionVisibilityConditions();
 
-        if (hideWhen.emptySelection === allConditions.emptySelection) {
-            return true;
-        }
-
         if (hideWhen.contentSelected === allConditions.contentSelected) {
             return true;
         }

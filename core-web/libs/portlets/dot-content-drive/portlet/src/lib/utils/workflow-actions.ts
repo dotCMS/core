@@ -14,7 +14,6 @@ export enum ENUM_WORKFLOW_ACTIONS {
 }
 
 export interface ActionVisibilityConditions {
-    emptySelection?: boolean;
     contentSelected?: boolean;
     multiSelection?: boolean;
     assetsOnly?: boolean;
@@ -29,20 +28,11 @@ export interface WorkflowAction {
     hideWhen?: ActionVisibilityConditions;
 }
 
-const NEW_WORKFLOW_ACTIONS: WorkflowAction = {
-    name: 'new',
-    id: ENUM_WORKFLOW_ACTIONS.NEW,
-    hideWhen: {
-        contentSelected: true
-    }
-};
-
 const EDIT_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'edit',
     id: ENUM_WORKFLOW_ACTIONS.EDIT,
     hideWhen: {
-        multiSelection: true,
-        emptySelection: true
+        multiSelection: true
     }
 };
 
@@ -50,8 +40,7 @@ const PUBLISH_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'publish',
     id: ENUM_WORKFLOW_ACTIONS.PUBLISH,
     hideWhen: {
-        archived: true,
-        emptySelection: true
+        archived: true
     }
 };
 
@@ -60,8 +49,7 @@ const UNPUBLISH_WORKFLOW_ACTIONS: WorkflowAction = {
     id: ENUM_WORKFLOW_ACTIONS.UNPUBLISH,
     hideWhen: {
         lived: false,
-        archived: true,
-        emptySelection: true
+        archived: true
     }
 };
 
@@ -69,8 +57,7 @@ const ARCHIVE_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'archive',
     id: ENUM_WORKFLOW_ACTIONS.ARCHIVE,
     hideWhen: {
-        archived: true, // Hide when already archived
-        emptySelection: true // Hide when there is no selection
+        archived: true // Hide when already archived
     }
 };
 
@@ -78,17 +65,14 @@ const UNARCHIVE_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'unarchive',
     id: ENUM_WORKFLOW_ACTIONS.UNARCHIVE,
     hideWhen: {
-        archived: false, // Hide when NOT archived (only show when archived)
-        emptySelection: true // Hide when there is no selection
+        archived: false // Hide when NOT archived (only show when archived)
     }
 };
 
 const DELETE_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'delete',
     id: ENUM_WORKFLOW_ACTIONS.DELETE,
-    hideWhen: {
-        emptySelection: true
-    }
+    hideWhen: {}
 };
 
 const DESTROY_WORKFLOW_ACTIONS: WorkflowAction = {
@@ -103,7 +87,6 @@ const RENAME_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'rename',
     id: ENUM_WORKFLOW_ACTIONS.RENAME,
     hideWhen: {
-        emptySelection: true,
         multiSelection: true
     }
 };
@@ -117,7 +100,6 @@ const DOWNLOAD_WORKFLOW_ACTIONS: WorkflowAction = {
 };
 
 export const DEFAULT_WORKFLOW_ACTIONS = [
-    NEW_WORKFLOW_ACTIONS,
     EDIT_WORKFLOW_ACTIONS,
     RENAME_WORKFLOW_ACTIONS,
     PUBLISH_WORKFLOW_ACTIONS,
@@ -133,11 +115,13 @@ export const getActionVisibilityConditions = (
     selectedItems: DotContentDriveItem[]
 ): ActionVisibilityConditions => {
     return {
-        emptySelection: selectedItems.length === 0,
         contentSelected: selectedItems.length > 0,
         multiSelection: selectedItems.length > 1,
         archived: selectedItems.some((item) => item.archived),
         lived: selectedItems.some((item) => item.live),
-        working: selectedItems.some((item) => item.working)
+        working: selectedItems.some((item) => item.working),
+        assetsOnly: selectedItems.every(
+            (item) => item.baseType === 'FILEASSET' || item.baseType === 'DOTASSET'
+        )
     };
 };
