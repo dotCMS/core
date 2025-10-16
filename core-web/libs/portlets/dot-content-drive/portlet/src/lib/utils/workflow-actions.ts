@@ -8,13 +8,16 @@ export enum ENUM_WORKFLOW_ACTIONS {
     ARCHIVE = 'ARCHIVE',
     UNARCHIVE = 'UNARCHIVE',
     DELETE = 'DELETE',
-    DESTROY = 'DESTROY'
+    DESTROY = 'DESTROY',
+    RENAME = 'RENAME',
+    DOWNLOAD = 'DOWNLOAD'
 }
 
 export interface ActionVisibilityConditions {
     emptySelection?: boolean;
     contentSelected?: boolean;
     multiSelection?: boolean;
+    assetsOnly?: boolean;
     archived?: boolean;
     lived?: boolean;
     working?: boolean;
@@ -96,11 +99,30 @@ const DESTROY_WORKFLOW_ACTIONS: WorkflowAction = {
     }
 };
 
+const RENAME_WORKFLOW_ACTIONS: WorkflowAction = {
+    name: 'rename',
+    id: ENUM_WORKFLOW_ACTIONS.RENAME,
+    hideWhen: {
+        emptySelection: true,
+        multiSelection: true
+    }
+};
+
+const DOWNLOAD_WORKFLOW_ACTIONS: WorkflowAction = {
+    name: 'download-assets',
+    id: ENUM_WORKFLOW_ACTIONS.DOWNLOAD,
+    hideWhen: {
+        assetsOnly: false
+    }
+};
+
 export const DEFAULT_WORKFLOW_ACTIONS = [
     NEW_WORKFLOW_ACTIONS,
     EDIT_WORKFLOW_ACTIONS,
+    RENAME_WORKFLOW_ACTIONS,
     PUBLISH_WORKFLOW_ACTIONS,
     UNPUBLISH_WORKFLOW_ACTIONS,
+    DOWNLOAD_WORKFLOW_ACTIONS,
     ARCHIVE_WORKFLOW_ACTIONS,
     UNARCHIVE_WORKFLOW_ACTIONS,
     DELETE_WORKFLOW_ACTIONS,
