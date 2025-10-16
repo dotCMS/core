@@ -1,6 +1,6 @@
 <html>
-<title>Request Accounting </title>
 <head>
+    <title>Request Accounting</title>
     <style>
         body {
 
@@ -87,10 +87,11 @@
         }
 
     </style>
+
 </head>
 
 <body>
-<h2>URL: $url</h2>
+<h2>Request Accounting URL: $url</h2>
     #set($myCost=0)
     #foreach($account in $accounting)
         #set($myCost=$myCost + $account.get("cost"))
@@ -114,7 +115,7 @@
         #set($i = $i + 1)
 
         <tr>
-            <td style="text-align: center;vertical-align: top">$i </td>
+            <td style="text-align: center;vertical-align: top">$i</td>
             <td style=";vertical-align: top">$account.get("class")</td>
             <td style=";vertical-align: top">$account.get("method")</td>
             <td>

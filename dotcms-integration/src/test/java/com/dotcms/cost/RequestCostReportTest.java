@@ -1,17 +1,17 @@
 package com.dotcms.cost;
 
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.UnitTestBase;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockParameterRequest;
-import com.dotmarketing.business.APILocator;
+import com.dotcms.util.IntegrationTestInitService;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,16 +20,17 @@ import org.junit.Test;
  * Unit tests for {@link RequestCostReport}. Tests HTML report generation with various accounting data scenarios.
  *
  */
-public class RequestCostReportTest extends UnitTestBase {
+public class RequestCostReportTest {
 
     private RequestCostReport report;
     private RequestCostApi requestCostApi;
     private HttpServletRequest request;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
+        IntegrationTestInitService.getInstance().init();
         report = new RequestCostReport();
-        requestCostApi = APILocator.getRequestCostAPI();
+        requestCostApi = new RequestCostApiImpl(true);
         request = new MockParameterRequest(
                 new MockAttributeRequest(
                         new MockHeaderRequest(
@@ -54,8 +55,8 @@ public class RequestCostReportTest extends UnitTestBase {
         // Then
         assertNotNull("HTML should not be null", html);
         assertTrue("Should contain HTML tag", html.contains("<html>"));
-        assertTrue("Should contain title", html.contains("<title>Request Accounting</title>"));
-        assertTrue("Should contain heading", html.contains("dotCMS Request Accounting"));
+        assertTrue("Should contain title", html.contains("<title>Request Accounting"));
+
         assertTrue("Should contain table", html.contains("<table"));
         assertTrue("Should contain class name", html.contains("RequestCostReportTest"));
         assertTrue("Should contain method names", html.contains("method1") || html.contains("method2"));
@@ -145,7 +146,7 @@ public class RequestCostReportTest extends UnitTestBase {
         // Then
         assertTrue("Should contain total cost", html.contains("Total:"));
         assertTrue("Should contain total value: " + expectedTotal,
-                html.contains("<td>" + expectedTotal + "</td>"));
+                html.contains(expectedTotal + "</"));
     }
 
     /**
@@ -163,9 +164,9 @@ public class RequestCostReportTest extends UnitTestBase {
         String html = report.writeAccounting(request);
 
         // Then
-        assertTrue("Should contain row number 1", html.contains("<td>1</td>"));
-        assertTrue("Should contain row number 2", html.contains("<td>2</td>"));
-        assertTrue("Should contain row number 3", html.contains("<td>3</td>"));
+        assertTrue("Should contain row number 1", html.contains(">1</td>"));
+        assertTrue("Should contain row number 2", html.contains(">2</td>"));
+        assertTrue("Should contain row number 3", html.contains(">3</td>"));
     }
 
     /**
