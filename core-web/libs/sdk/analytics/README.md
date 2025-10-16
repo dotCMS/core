@@ -108,7 +108,6 @@ track(eventName: string, properties?: Record<string, unknown>): void
 
 ## ⚙️ Configuration Options
 
-<<<<<<< HEAD
 | Option | Type | Required | Default | Description |
 | -------------- | --------- | -------- | ----------------------------------- | -------------------------------------- |
 | `siteAuth` | `string` | ✅ | - | Site auth from dotCMS Analytics app |
