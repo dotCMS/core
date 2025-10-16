@@ -36,4 +36,12 @@ public class AiModelConfig {
     public Map<String, String> asMap() {
         return Map.copyOf(config);
     }
+
+    @Override
+    public String toString() {
+        return "AiModelConfig{" +
+                "name='" + name + '\'' +
+                ", config=" + config +
+                '}';
+    }
 }

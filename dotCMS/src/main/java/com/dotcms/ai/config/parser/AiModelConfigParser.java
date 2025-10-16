@@ -29,7 +29,7 @@ public final class AiModelConfigParser {
     public AiVendorCatalogData parse(final String json, final Map<String,String> context) {
         return parse(json, (key) -> {
             // default ValueResolver impl, based on dotCMS config and context (the context encapsulates the dotAI Secrets App
-            return Config.getStringProperty(key, context.get(key));
+            return Config.getStringProperty(key, context.getOrDefault(key, "UNKNOWN"));
         });
     }
 
@@ -168,7 +168,7 @@ public final class AiModelConfigParser {
         return out;
     }
 
-    private static final Pattern VAR = Pattern.compile("\\$\\{([^}]+)}");
+    private static final Pattern VAR = Pattern.compile("\\{\\{([^}]+)}}");
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> interpolateDeep(final Map<String, Object> node,
@@ -194,7 +194,6 @@ public final class AiModelConfigParser {
 
         if (value instanceof String) {
 
-            // todo: check if this is already implemented in dotCMS
             return interpolateString((String) value, resolver);
         }
         if (value instanceof Map) {

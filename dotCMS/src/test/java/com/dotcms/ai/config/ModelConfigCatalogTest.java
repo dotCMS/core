@@ -48,7 +48,7 @@ public class ModelConfigCatalogTest {
         final AiModelConfig modelConfig = modelConfigCatalog.getChatConfig(AiVendor.OPEN_AI);
 
         Assert.assertNotNull(modelConfig);
-        Assert.assertEquals("The default open ai model should be: gpt-4.1", "gpt-4.1", modelConfig.getName());
+        Assert.assertEquals("The default open ai model should be: gpt-4.1", "openai.chat.gpt-4o-mini", modelConfig.getName());
     }
 
 }

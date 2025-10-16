@@ -2481,15 +2481,34 @@ paths:
           description: default response
       tags:
       - AI
-  /v1/ai/configuration/loadmodelconfig:
+  /v1/ai/configuration/_loadmodelconfig/site/{siteId}/vendor/{vendor}:
     get:
       operationId: loadModelConfigCatalog
+      parameters:
+      - description: |+
+          Identifier of site.
+
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+      - description: |+
+          Identifier of vendor.
+
+        in: path
+        name: vendor
+        required: true
+        schema:
+          type: string
       responses:
         default:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AiModelConfig"
+                type: object
+                additionalProperties:
+                  type: object
           description: default response
       tags:
       - AI
@@ -18670,11 +18689,6 @@ components:
           $ref: "#/components/schemas/PushPublishBean"
         pushPublishBean:
           $ref: "#/components/schemas/PushPublishBean"
-    AiModelConfig:
-      type: object
-      properties:
-        name:
-          type: string
     Announcement:
       type: object
       properties:

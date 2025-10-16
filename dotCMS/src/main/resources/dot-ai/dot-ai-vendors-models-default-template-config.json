@@ -10,9 +10,9 @@
   },
   "config": {
     "openai": {
-      "apiKey": "${OPENAI_API_KEY}",
-      "organization": "${OPENAI_ORG}",
-      "project": "${OPENAI_PROJECT}",
+      "apiKey": "{{OPENAI_API_KEY}}",
+      "organization": "{{OPENAI_ORG}}",
+      "project": "{{OPENAI_PROJECT}}",
       "baseUrl": "https://api.openai.com/v1",
       "timeoutMs": 30000,
       "rateLimitQps": 5,
@@ -46,7 +46,7 @@
     },
 
     "anthropic": {
-      "apiKey": "${ANTHROPIC_API_KEY}",
+      "apiKey": "{{ANTHROPIC_API_KEY}}",
       "baseUrl": "https://api.anthropic.com",
       "timeoutMs": 30000,
       "rateLimitQps": 3,
@@ -66,7 +66,7 @@
     },
 
     "azureopenai": {
-      "apiKey": "${AZURE_OPENAI_API_KEY}",
+      "apiKey": "{{AZURE_OPENAI_API_KEY}}",
       "endpoint": "https://your-azure-openai-resource.openai.azure.com",
       "apiVersion": "2024-02-15-preview",
       "timeoutMs": 30000,
@@ -93,10 +93,10 @@
     },
 
     "bedrock": {
-      "region": "${AWS_REGION}",
-      "accessKeyId": "${AWS_ACCESS_KEY_ID}",
-      "secretAccessKey": "${AWS_SECRET_ACCESS_KEY}",
-      "sessionToken": "${AWS_SESSION_TOKEN}",
+      "region": "{{AWS_REGION}}",
+      "accessKeyId": "{{AWS_ACCESS_KEY_ID}}",
+      "secretAccessKey": "{{AWS_SECRET_ACCESS_KEY}}",
+      "sessionToken": "{{AWS_SESSION_TOKEN}}",
       "timeoutMs": 40000,
       "rateLimitQps": 10,
       "retries": 2,
@@ -123,20 +123,20 @@
     "vertex": {
       "projectId": "${GCP_PROJECT_ID}",
       "location": "us-central1",
-      "credentialsJsonPath": "${GOOGLE_APPLICATION_CREDENTIALS}",
+      "credentialsJsonPath": "{{GOOGLE_APPLICATION_CREDENTIALS}}",
       "timeoutMs": 30000,
       "rateLimitQps": 8,
       "retries": 2,
       "chat": {
         "gemini-1-5-pro": {
-          "model": "projects/${GCP_PROJECT_ID}/locations/us-central1/models/gemini-1.5-pro",
+          "model": "projects/{{GCP_PROJECT_ID}}/locations/us-central1/models/gemini-1.5-pro",
           "temperature": 0.2,
           "topP": 0.95,
           "topK": 40,
           "maxOutputTokens": 4096
         },
         "gemini-1-5-flash": {
-          "model": "projects/${GCP_PROJECT_ID}/locations/us-central1/models/gemini-1.5-flash",
+          "model": "projects/{{GCP_PROJECT_ID}}/locations/us-central1/models/gemini-1.5-flash",
           "temperature": 0.3,
           "topP": 0.95,
           "topK": 40,
@@ -145,7 +145,7 @@
       },
       "embeddings": {
         "text-embedding-004": {
-          "model": "projects/${GCP_PROJECT_ID}/locations/us-central1/models/text-embedding-004",
+          "model": "projects/{{GCP_PROJECT_ID}}/locations/us-central1/models/text-embedding-004",
           "dimensions": 768
         }
       }
