@@ -349,7 +349,7 @@ cube('request', {
       sql: `conversion_name`,
       type: `string`,
       title: 'Conversion Name',
-      description: 'Conversion Name'
+      description: 'A human-readable identifier used to label and distinguish a specific conversion type'
     },
 
     // Custom Attributes - Flexible fields for additional analytics data
