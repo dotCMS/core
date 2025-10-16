@@ -62,6 +62,7 @@ p-messages {
 
 dot-content-drive-dropzone {
     grid-area: list;
+    overflow: auto;
 }
 
 .detail-view {

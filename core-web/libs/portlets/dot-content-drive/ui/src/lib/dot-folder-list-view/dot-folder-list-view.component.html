@@ -45,9 +45,11 @@
         @let status = item | dotContentletStatus;
 
         @if ($loading()) {
-            <tr data-testId="loading-row">
+            <tr data-testId="loading-row" class="content-drive-table__loading-row">
                 <td [colSpan]="SKELETON_SPAN">
-                    <p-skeleton height="3rem" width="100%" />
+                    <span class="skeleton-wrapper">
+                        <p-skeleton height="3rem" width="100%" />
+                    </span>
                 </td>
             </tr>
         } @else {
@@ -83,6 +85,11 @@
                     } @else {
                         <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
                     }
+                </td>
+                <td data-testId="item-language">
+                    <p-chip
+                        styleClass="p-chip-sm p-chip-blue"
+                        [label]="item.languageId | dotLocaleTag: $languagesMap()" />
                 </td>
                 <td data-testId="item-base-type">{{ item.contentType | dm }}</td>
                 <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>

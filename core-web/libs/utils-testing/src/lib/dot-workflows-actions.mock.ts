@@ -62,6 +62,27 @@ export const mockWorkflowsActions: DotCMSWorkflowAction[] = [
         schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
         showOn: ['LOCKED'],
         actionInputs: []
+    },
+    {
+        assignable: false,
+        commentable: false,
+        condition: '',
+        icon: 'workflowIcon',
+        id: 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324',
+        name: 'Move',
+        nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+        nextStep: '',
+        nextStepCurrentStep: true,
+        order: 0,
+        roleHierarchyForAssign: true,
+        schemeId: '85c1515c-c4f3-463c-bac2-860b8fcacc34',
+        showOn: ['UNLOCKED', 'LOCKED'],
+        actionInputs: [
+            {
+                body: {},
+                id: 'moveable'
+            }
+        ]
     }
 ];
 

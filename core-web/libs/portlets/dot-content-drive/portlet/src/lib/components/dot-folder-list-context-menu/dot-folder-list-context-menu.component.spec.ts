@@ -218,6 +218,16 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
             expect(component.$items()).toHaveLength(5);
         });
+
+        it('should not include move to folder workflow action', async () => {
+            await component.getMenuItems(mockContextMenuData);
+
+            const items = component.$items();
+            expect(items).not.toContain({
+                label: 'Move',
+                command: expect.any(Function)
+            });
+        });
     });
 
     describe('statusEffect', () => {

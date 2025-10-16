@@ -14,7 +14,34 @@
                 }
 
                 .p-datatable-tbody {
+                    tr.content-drive-table__loading-row {
+                        cursor: default;
+
+                        td {
+                            text-align: center;
+                            vertical-align: middle;
+
+                            .skeleton-wrapper {
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                height: 100%;
+                            }
+                        }
+
+                        &:hover {
+                            cursor: default;
+                            background-color: transparent;
+                        }
+                    }
+
                     tr.content-drive-table__row {
+                        cursor: grab;
+
+                        td:nth-child(2) {
+                            min-width: 250px;
+                        }
+
                         .content-drive-table__actions-button {
                             opacity: 0;
                             transition: opacity 0.2s ease-in-out;
@@ -43,20 +70,9 @@
 
                     table {
                         height: 100%;
+                        width: 100%;
                     }
                 }
-            }
-        }
-
-        tr.content-drive-table__row {
-            cursor: grab;
-
-            &:hover {
-                cursor: pointer;
-            }
-
-            &:active[draggable="true"] {
-                cursor: grabbing;
             }
         }
     }
