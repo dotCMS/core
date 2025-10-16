@@ -1,4 +1,4 @@
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -28,7 +28,7 @@ import {
 
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
 
-import { DotAutocompleteTagsModule } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
+import { DotAutocompleteTagsComponent } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
 import { DotSiteSelectorFieldComponent } from '../../_common/dot-site-selector-field/dot-site-selector-field.component';
 
 const FROM_INITIAL_VALUE = {
@@ -71,7 +71,7 @@ describe('DotCreatePersonaFormComponent', () => {
                 InputTextModule,
                 DotFieldValidationMessageComponent,
                 DotAutofocusDirective,
-                MockModule(DotAutocompleteTagsModule),
+                MockComponent(DotAutocompleteTagsComponent),
                 HttpClientTestingModule,
                 DotMessagePipe
             ],

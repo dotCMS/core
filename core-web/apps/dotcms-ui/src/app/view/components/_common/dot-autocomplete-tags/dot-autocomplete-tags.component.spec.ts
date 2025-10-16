@@ -4,16 +4,13 @@ import { Observable, of } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
-import { ChipsModule } from 'primeng/chips';
+import { AutoComplete } from 'primeng/autocomplete';
 
 import { DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
-import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { createFakeEvent, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
@@ -41,16 +38,7 @@ describe('DotAutocompleteTagsComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotAutocompleteTagsComponent],
-            imports: [
-                BrowserAnimationsModule,
-                ChipsModule,
-                AutoCompleteModule,
-                FormsModule,
-                DotIconComponent,
-                DotSafeHtmlPipe,
-                DotMessagePipe
-            ],
+            imports: [DotAutocompleteTagsComponent, BrowserAnimationsModule],
             providers: [
                 { provide: DotTagsService, useClass: DotTagsServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock }

@@ -183,8 +183,8 @@ const PORTLETS_IFRAME = [
                     {
                         loadChildren: () =>
                             import(
-                                '@components/dot-contentlet-editor/dot-contentlet-editor.routing.module'
-                            ).then((m) => m.DotContentletEditorRoutingModule),
+                                '@components/dot-contentlet-editor/dot-contentlet-editor.routes'
+                            ).then((m) => m.dotContentletEditorRoutes),
                         path: 'new'
                     },
                     {
@@ -233,7 +233,7 @@ const appRoutes: Routes = [
             loginFormInfo: DotLoginPageResolver
         },
         loadChildren: () =>
-            import('@components/login/dot-login-page.module').then((m) => m.DotLoginPageModule)
+            import('@components/login/dot-login-page.routes').then((m) => m.dotLoginPageRoutes)
     },
     {
         path: 'fromCore',
@@ -272,6 +272,9 @@ const appRoutes: Routes = [
             onSameUrlNavigation: 'reload'
         })
     ],
-    providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
+    providers: [
+        { provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService },
+        DotLoginPageResolver
+    ]
 })
 export class AppRoutingModule {}

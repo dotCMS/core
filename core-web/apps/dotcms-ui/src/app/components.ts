@@ -10,7 +10,6 @@ import { MainComponentLegacyComponent } from './view/components/main-legacy/main
 // Non-standalone components (traditional NgModule components)
 export const COMPONENTS = [
     MainCoreLegacyComponent,
-    DotLoginPageComponent,
     DotLogOutContainerComponent,
     GlobalSearchComponent
 ];
@@ -20,5 +19,6 @@ export const STANDALONE_COMPONENTS = [
     AppComponent,
     MainComponentLegacyComponent,
     DotAlertConfirmComponent,
-    DotThemeSelectorDropdownComponent
+    DotThemeSelectorDropdownComponent,
+    DotLoginPageComponent
 ];

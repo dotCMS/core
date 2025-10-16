@@ -2,25 +2,58 @@ import { Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { FormControl, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Params } from '@angular/router';
+import {
+    FormControl,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators,
+    FormsModule,
+    ReactiveFormsModule
+} from '@angular/forms';
+import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 
 import { SelectItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { DotLoginParams, HttpCode, LoggerService, LoginService, User } from '@dotcms/dotcms-js';
 import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent
+} from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
+import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
+import { SharedModule } from '../../../../shared/shared.module';
+import { DotLoadingIndicatorModule } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 @Component({
     selector: 'dot-login-component',
     templateUrl: './dot-login.component.html',
     styleUrls: ['./dot-login.component.scss'],
-    standalone: false
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        ButtonModule,
+        CheckboxModule,
+        DropdownModule,
+        InputTextModule,
+        SharedModule,
+        DotLoadingIndicatorModule,
+        DotDirectivesModule,
+        DotFieldValidationMessageComponent,
+        DotAutofocusDirective,
+        DotFieldRequiredDirective,
+        RouterLink
+    ]
 })
 /**
  * The login component allows the user to fill all
