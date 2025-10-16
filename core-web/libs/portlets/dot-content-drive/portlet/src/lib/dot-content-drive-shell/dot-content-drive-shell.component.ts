@@ -398,4 +398,8 @@ export class DotContentDriveShellComponent {
             dragItemsInodes
         };
     }
+
+    protected onSelectItems(items: DotContentDriveItem[]) {
+        this.#store.setSelectedItems(items);
+    }
 }

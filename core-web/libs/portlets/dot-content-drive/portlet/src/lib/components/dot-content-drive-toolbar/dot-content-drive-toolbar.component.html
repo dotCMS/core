@@ -19,7 +19,9 @@
             <dot-content-drive-base-type-selector data-testid="base-type-selector" />
             <dot-content-drive-content-type-field data-testid="content-type-field" />
             <dot-content-drive-language-field data-testid="language-field" />
-            <dot-content-drive-workflow-actions data-testid="workflow-actions" />
+            <dot-content-drive-workflow-actions
+                data-testid="workflow-actions"
+                [selectedItems]="$selectedItems()" />
         </div>
     </div>
 </p-toolbar>

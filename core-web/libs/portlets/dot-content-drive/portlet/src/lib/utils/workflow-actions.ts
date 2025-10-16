@@ -1,3 +1,5 @@
+import { DotContentDriveItem } from '@dotcms/dotcms-models';
+
 export enum ENUM_WORKFLOW_ACTIONS {
     NEW = 'NEW',
     EDIT = 'EDIT',
@@ -9,18 +11,19 @@ export enum ENUM_WORKFLOW_ACTIONS {
     DESTROY = 'DESTROY'
 }
 
-export interface WorkflowActionVisibilityRules {
-    emptySelection?: boolean; // Hide when there is no selection
-    contentSelected?: boolean; // Hide when content is selected
-    multiSelection?: boolean; // Hide in multi-selection mode
-    archived?: boolean; // Hide when content is archived (true)
-    published?: boolean; // Hide when content is published (true)
+export interface ActionVisibilityConditions {
+    emptySelection?: boolean;
+    contentSelected?: boolean;
+    multiSelection?: boolean;
+    archived?: boolean;
+    lived?: boolean;
+    working?: boolean;
 }
 
 export interface WorkflowAction {
     name: string;
     id: ENUM_WORKFLOW_ACTIONS;
-    hideWhen?: WorkflowActionVisibilityRules;
+    hideWhen?: ActionVisibilityConditions;
 }
 
 const NEW_WORKFLOW_ACTIONS: WorkflowAction = {
@@ -35,8 +38,8 @@ const EDIT_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'edit',
     id: ENUM_WORKFLOW_ACTIONS.EDIT,
     hideWhen: {
-        multiSelection: true, // Edit should not be displayed in multi-selection
-        emptySelection: true // Edit should not be displayed when there is no selection
+        multiSelection: true,
+        emptySelection: true
     }
 };
 
@@ -44,9 +47,8 @@ const PUBLISH_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'publish',
     id: ENUM_WORKFLOW_ACTIONS.PUBLISH,
     hideWhen: {
-        archived: true, // Hide when archived
-        emptySelection: true, // Hide when there is no selection
-        published: true // Hide when already published (avoid duplication)
+        archived: true,
+        emptySelection: true
     }
 };
 
@@ -54,9 +56,9 @@ const UNPUBLISH_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'unpublish',
     id: ENUM_WORKFLOW_ACTIONS.UNPUBLISH,
     hideWhen: {
-        archived: true, // Hide when archived
-        published: false, // Hide when unpublished (avoid duplication)
-        emptySelection: true // Hide when there is no selection
+        lived: false,
+        archived: true,
+        emptySelection: true
     }
 };
 
@@ -82,8 +84,7 @@ const DELETE_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'delete',
     id: ENUM_WORKFLOW_ACTIONS.DELETE,
     hideWhen: {
-        archived: false, // Hide when NOT archived (only show when archived)
-        emptySelection: true // Hide when there is no selection
+        emptySelection: true
     }
 };
 
@@ -91,8 +92,7 @@ const DESTROY_WORKFLOW_ACTIONS: WorkflowAction = {
     name: 'destroy',
     id: ENUM_WORKFLOW_ACTIONS.DESTROY,
     hideWhen: {
-        archived: false, // Hide when NOT archived (only show when archived)
-        emptySelection: true // Hide when there is no selection
+        archived: false // Hide when NOT archived (only show when archived)
     }
 };
 
@@ -106,3 +106,16 @@ export const DEFAULT_WORKFLOW_ACTIONS = [
     DELETE_WORKFLOW_ACTIONS,
     DESTROY_WORKFLOW_ACTIONS
 ];
+
+export const getActionVisibilityConditions = (
+    selectedItems: DotContentDriveItem[]
+): ActionVisibilityConditions => {
+    return {
+        emptySelection: selectedItems.length === 0,
+        contentSelected: selectedItems.length > 0,
+        multiSelection: selectedItems.length > 1,
+        archived: selectedItems.some((item) => item.archived),
+        lived: selectedItems.some((item) => item.live),
+        working: selectedItems.some((item) => item.working)
+    };
+};

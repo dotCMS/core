@@ -61,4 +61,5 @@ export class DotContentDriveToolbarComponent {
     ]);
 
     readonly $treeExpanded = this.#store.isTreeExpanded;
+    readonly $selectedItems = this.#store.selectedItems;
 }
