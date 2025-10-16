@@ -1,11 +1,15 @@
+import { signalMethod } from '@ngrx/signals';
 import md5 from 'md5';
 
-import { ChangeDetectorRef, Directive, input, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Directive, input, inject, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Avatar } from 'primeng/avatar';
 
+/**
+ * Default letter to display when no email or Gravatar is available.
+ */
 const FALLBACK_AVATAR_LETTER = 'A';
-const DEFAULT_AVATAR_SHAPE = 'circle';
 /**
  * Directive that adds Gravatar functionality to PrimeNG Avatar component.
  * It generates a Gravatar URL from an email and applies it to the avatar.
@@ -15,39 +19,105 @@ const DEFAULT_AVATAR_SHAPE = 'circle';
     selector: 'p-avatar[dotGravatar]',
     standalone: true
 })
-export class DotGravatarDirective implements OnInit {
-    private avatar = inject(Avatar);
-    private cd = inject(ChangeDetectorRef);
+export class DotGravatarDirective {
+    /** Reference to the PrimeNG Avatar component instance. */
+    #avatar = inject(Avatar);
 
-    email = input<string>('');
+    /** Change detector reference for manual change detection. */
+    #cd = inject(ChangeDetectorRef);
 
-    private readonly GRAVATAR_URL = 'https://www.gravatar.com/avatar/';
-    private readonly DEFAULT_SIZE = 48;
-    private readonly DEFAULT_RATING = 'g';
+    /**
+     * Email address input signal used to generate the Gravatar.
+     * @required
+     */
+    $email = input.required<string>({ alias: 'email' });
 
-    constructor() {
-        this.avatar.shape = DEFAULT_AVATAR_SHAPE;
-    }
+    /** Base URL for Gravatar API. */
+    #GRAVATAR_URL = 'https://www.gravatar.com/avatar/';
 
-    ngOnInit(): void {
-        const email = this.email();
+    /** Default size for Gravatar images in pixels. */
+    #DEFAULT_SIZE = 48;
 
+    /** Default rating for Gravatar images (g = suitable for all audiences). */
+    #DEFAULT_RATING = 'g';
+
+    /**
+     * Computed signal that generates the Gravatar URL from the email input.
+     * Returns null if the email is invalid or doesn't contain '@'.
+     * The URL includes a 404 default parameter to detect if the Gravatar exists.
+     * @returns The Gravatar URL or null if email is invalid
+     */
+    $gravatarUrl = computed(() => {
+        const email = this.$email();
         if (!email) {
-            this.setFallbackAvatar(FALLBACK_AVATAR_LETTER);
-
-            return;
+            return null;
         }
+        const cleanedEmail = email.trim().toLowerCase();
+        const isEmail = cleanedEmail.includes('@');
+        if (!isEmail) {
+            return null;
+        }
+        const hash = md5(cleanedEmail);
+        return `${this.#GRAVATAR_URL}${hash}?s=${this.#DEFAULT_SIZE}&r=${this.#DEFAULT_RATING}&d=404`;
+    });
 
-        const hash = md5(email.trim().toLowerCase());
-        const gravatarUrl = `${this.GRAVATAR_URL}${hash}?s=${this.DEFAULT_SIZE}&r=${this.DEFAULT_RATING}`;
+    /**
+     * Computed signal that extracts the first letter from the email.
+     * Used as a fallback when Gravatar is not available.
+     * @returns The first letter of the email in uppercase, or 'A' if email is empty
+     */
+    $firstLetter = computed(() => {
+        const email = this.$email();
+        if (!email) {
+            return FALLBACK_AVATAR_LETTER;
+        }
+        const cleanedEmail = email.trim();
+        return cleanedEmail[0]?.toUpperCase();
+    });
 
-        this.avatar.image = gravatarUrl;
-        this.cd.detectChanges();
+    /**
+     * Sets the avatar to display a letter instead of an image.
+     * Clears any existing image and triggers change detection.
+     * @param letter - The letter to display in the avatar
+     */
+    #setLetter(): void {
+        const letter = this.$firstLetter();
+
+        this.#avatar.image = null;
+        this.#avatar.label = letter;
+        this.#cd.detectChanges();
     }
 
-    private setFallbackAvatar(letter: string): void {
-        this.avatar.image = null;
-        this.avatar.label = letter;
-        this.cd.detectChanges();
+    /**
+     * Sets the avatar to display an image.
+     * Clears any existing label and triggers change detection.
+     * @param avatar - The URL of the avatar image
+     */
+    #setAvatar(avatar: string): void {
+        this.#avatar.label = null;
+        this.#avatar.image = avatar;
+        this.#cd.detectChanges();
     }
+
+    /**
+     * Initializes the directive and starts the Gravatar query process.
+     */
+    constructor() {
+        this.handleGravatarQuery(this.$gravatarUrl);
+        this.#avatar.onImageError.pipe(takeUntilDestroyed()).subscribe(() => this.#setLetter());
+    }
+
+    /**
+     * Handles the Gravatar query logic.
+     * If the Gravatar URL is provided, sets the avatar to display an image.
+     * If the Gravatar URL is not provided, sets the avatar to display a letter.
+     * @param gravatarUrl - The URL of the Gravatar image
+     */
+    readonly handleGravatarQuery = signalMethod<string>((gravatarUrl) => {
+        if (gravatarUrl) {
+            this.#setAvatar(gravatarUrl);
+        } else {
+            this.#setLetter();
+        }
+    });
 }

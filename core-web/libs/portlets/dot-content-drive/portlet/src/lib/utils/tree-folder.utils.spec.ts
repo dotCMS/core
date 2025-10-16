@@ -1,11 +1,11 @@
 import { DotFolder } from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import {
     ALL_FOLDER,
     buildTreeFolderNodes,
     createTreeNode,
-    generateAllParentPaths,
-    TreeNodeItem
+    generateAllParentPaths
 } from './tree-folder.utils';
 
 describe('Sidebar Utils', () => {
@@ -110,7 +110,7 @@ describe('Sidebar Utils', () => {
         });
 
         it('should create a tree node with parent', () => {
-            const parentNode: TreeNodeItem = {
+            const parentNode: DotFolderTreeNodeItem = {
                 key: 'parent-123',
                 label: 'Parent',
                 data: {
@@ -188,7 +188,7 @@ describe('Sidebar Utils', () => {
         });
 
         it('should maintain parent reference correctly', () => {
-            const parentNode: TreeNodeItem = {
+            const parentNode: DotFolderTreeNodeItem = {
                 key: 'parent-456',
                 label: 'Parent Folder',
                 data: {
@@ -277,7 +277,11 @@ describe('Sidebar Utils', () => {
         ];
 
         it('should handle empty folder hierarchy', () => {
-            const result = buildTreeFolderNodes([], '/test/');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: [],
+                targetPath: '/test/',
+                rootNode: ALL_FOLDER
+            });
 
             expect(result.rootNodes).toEqual([]);
             expect(result.selectedNode).toEqual(ALL_FOLDER);
@@ -307,7 +311,11 @@ describe('Sidebar Utils', () => {
                 ]
             ];
 
-            const result = buildTreeFolderNodes(singleLevel, '/test/');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: singleLevel,
+                targetPath: '/test/',
+                rootNode: ALL_FOLDER
+            });
 
             expect(result.rootNodes).toHaveLength(2);
             expect(result.rootNodes[0]).toEqual({
@@ -338,7 +346,11 @@ describe('Sidebar Utils', () => {
         });
 
         it('should build complex tree structure with nested hierarchy', () => {
-            const result = buildTreeFolderNodes(mockFolderHierarchy, '/application/');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: mockFolderHierarchy,
+                targetPath: '/application/',
+                rootNode: ALL_FOLDER
+            });
 
             // Should have 4 root nodes (excluding the SYSTEM_FOLDER placeholder)
             expect(result.rootNodes).toHaveLength(4);
@@ -415,7 +427,11 @@ describe('Sidebar Utils', () => {
                 ]
             ];
 
-            const result = buildTreeFolderNodes(deepHierarchy, '/level1/level2/level3/');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: deepHierarchy,
+                targetPath: '/level1/level2/level3/',
+                rootNode: ALL_FOLDER
+            });
 
             // Should have 1 root node
             expect(result.rootNodes).toHaveLength(1);
@@ -440,7 +456,11 @@ describe('Sidebar Utils', () => {
         });
 
         it('should return ALL_FOLDER as selected when target path does not match any folder', () => {
-            const result = buildTreeFolderNodes(mockFolderHierarchy, '/nonexistent/');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: mockFolderHierarchy,
+                targetPath: '/nonexistent/',
+                rootNode: ALL_FOLDER
+            });
 
             expect(result.rootNodes).toHaveLength(4);
             expect(result.selectedNode).toEqual(ALL_FOLDER);
@@ -464,14 +484,22 @@ describe('Sidebar Utils', () => {
                 ]
             ];
 
-            const result = buildTreeFolderNodes(rootHierarchy, '/');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: rootHierarchy,
+                targetPath: '/',
+                rootNode: ALL_FOLDER
+            });
 
             expect(result.rootNodes).toHaveLength(1);
             expect(result.selectedNode).toEqual(ALL_FOLDER);
         });
 
         it('should properly handle folder nodes that are not on target path', () => {
-            const result = buildTreeFolderNodes(mockFolderHierarchy, '/application/');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: mockFolderHierarchy,
+                targetPath: '/application/',
+                rootNode: ALL_FOLDER
+            });
 
             // Other root nodes should not be expanded
             const activitiesNode = result.rootNodes.find(
@@ -493,14 +521,22 @@ describe('Sidebar Utils', () => {
         });
 
         it('should handle empty target path', () => {
-            const result = buildTreeFolderNodes(mockFolderHierarchy, '');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: mockFolderHierarchy,
+                targetPath: '',
+                rootNode: ALL_FOLDER
+            });
 
             expect(result.rootNodes).toHaveLength(4);
             expect(result.selectedNode).toEqual(ALL_FOLDER);
         });
 
         it('should correctly identify nodes on target path using generateAllParentPaths', () => {
-            const result = buildTreeFolderNodes(mockFolderHierarchy, '/application/');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: mockFolderHierarchy,
+                targetPath: '/application/',
+                rootNode: ALL_FOLDER
+            });
 
             // Verify that the correct node is identified as being on the target path
             const applicationNode = result.rootNodes.find(
@@ -540,13 +576,159 @@ describe('Sidebar Utils', () => {
                 // Missing second level that would match /test/deep/
             ];
 
-            const result = buildTreeFolderNodes(incompleteHierarchy, '/test/deep/');
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: incompleteHierarchy,
+                targetPath: '/test/deep/',
+                rootNode: ALL_FOLDER
+            });
 
             expect(result.rootNodes).toHaveLength(1);
             expect(result.rootNodes[0].key).toBe('folder-1');
             expect(result.rootNodes[0].expanded).toBe(true);
             expect(result.rootNodes[0].leaf).toBe(true);
             expect(result.selectedNode?.key).toBe('ALL_FOLDER');
+        });
+
+        describe('rootNode as selectedNode - Code Path Coverage', () => {
+            it('should set rootNode as selectedNode when folderHierarchyLevels is empty (early return path)', () => {
+                // This test explicitly covers the code path at line 79:
+                // if (folderHierarchyLevels.length === 0) {
+                //     return { rootNodes: [], selectedNode: rootNode };
+                // }
+
+                const customRootNode: DotFolderTreeNodeItem = {
+                    key: 'custom-root',
+                    label: 'Custom Root',
+                    loading: false,
+                    data: {
+                        type: 'folder',
+                        path: '/custom/',
+                        hostname: 'test.dotcms.com',
+                        id: 'custom-root-id'
+                    },
+                    leaf: false,
+                    expanded: true
+                };
+
+                const result = buildTreeFolderNodes({
+                    folderHierarchyLevels: [],
+                    targetPath: '/some/path/',
+                    rootNode: customRootNode
+                });
+
+                expect(result.rootNodes).toEqual([]);
+                expect(result.selectedNode).toBe(customRootNode);
+                expect(result.selectedNode.key).toBe('custom-root');
+            });
+
+            it('should set rootNode as selectedNode when no folder matches the target path (fallback path)', () => {
+                // This test explicitly covers the code path at line 126:
+                // const selectedNode = activeParents[folderHierarchyLevels.length - 1] || rootNode;
+                // When activeParents[folderHierarchyLevels.length - 1] is undefined,
+                // the || operator returns rootNode
+
+                const customRootNode: DotFolderTreeNodeItem = {
+                    key: 'fallback-root',
+                    label: 'Fallback Root',
+                    loading: false,
+                    data: {
+                        type: 'folder',
+                        path: '',
+                        hostname: 'example.dotcms.com',
+                        id: 'fallback-id'
+                    },
+                    leaf: false,
+                    expanded: false
+                };
+
+                const hierarchyWithNoMatch: DotFolder[][] = [
+                    [
+                        {
+                            addChildrenAllowed: true,
+                            hostName: 'demo.dotcms.com',
+                            id: 'SYSTEM_FOLDER',
+                            path: '/'
+                        },
+                        {
+                            addChildrenAllowed: true,
+                            hostName: 'demo.dotcms.com',
+                            id: 'folder-1',
+                            path: '/existing-folder/'
+                        },
+                        {
+                            addChildrenAllowed: true,
+                            hostName: 'demo.dotcms.com',
+                            id: 'folder-2',
+                            path: '/another-folder/'
+                        }
+                    ]
+                ];
+
+                const result = buildTreeFolderNodes({
+                    folderHierarchyLevels: hierarchyWithNoMatch,
+                    targetPath: '/nonexistent-path/',
+                    rootNode: customRootNode
+                });
+
+                // Root nodes should be created from the hierarchy
+                expect(result.rootNodes).toHaveLength(2);
+                expect(result.rootNodes[0].key).toBe('folder-1');
+                expect(result.rootNodes[1].key).toBe('folder-2');
+
+                // But since none match the target path, rootNode should be selected
+                expect(result.selectedNode).toBe(customRootNode);
+                expect(result.selectedNode.key).toBe('fallback-root');
+
+                // None of the root nodes should be expanded
+                expect(result.rootNodes[0].expanded).toBeUndefined();
+                expect(result.rootNodes[1].expanded).toBeUndefined();
+            });
+
+            it('should set rootNode as selectedNode when target path is empty string (fallback path)', () => {
+                // Another case for the fallback path at line 126
+                // Empty target path means generateAllParentPaths returns [],
+                // so no folder will ever be on the target path
+
+                const customRootNode: DotFolderTreeNodeItem = {
+                    key: 'empty-path-root',
+                    label: 'Empty Path Root',
+                    loading: false,
+                    data: {
+                        type: 'folder',
+                        path: '/root/',
+                        hostname: 'site.dotcms.com',
+                        id: 'empty-root-id'
+                    },
+                    leaf: false
+                };
+
+                const hierarchy: DotFolder[][] = [
+                    [
+                        {
+                            addChildrenAllowed: true,
+                            hostName: 'demo.dotcms.com',
+                            id: 'SYSTEM_FOLDER',
+                            path: '/'
+                        },
+                        {
+                            addChildrenAllowed: true,
+                            hostName: 'demo.dotcms.com',
+                            id: 'folder-1',
+                            path: '/folder/'
+                        }
+                    ]
+                ];
+
+                const result = buildTreeFolderNodes({
+                    folderHierarchyLevels: hierarchy,
+                    targetPath: '',
+                    rootNode: customRootNode
+                });
+
+                expect(result.rootNodes).toHaveLength(1);
+                expect(result.selectedNode).toBe(customRootNode);
+                expect(result.selectedNode.key).toBe('empty-path-root');
+            });
         });
     });
 });

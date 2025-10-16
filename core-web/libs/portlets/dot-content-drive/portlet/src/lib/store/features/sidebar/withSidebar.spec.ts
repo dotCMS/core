@@ -4,6 +4,7 @@ import { signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';
@@ -13,7 +14,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../../../shared/models';
-import { ALL_FOLDER, TreeNodeItem } from '../../../utils/tree-folder.utils';
+import { ALL_FOLDER } from '../../../utils/tree-folder.utils';
 
 const mockSite = createFakeSite();
 
@@ -38,7 +39,7 @@ const mockFolders = [
     })
 ];
 
-const mockTreeNodes: TreeNodeItem[] = [
+const mockTreeNodes: DotFolderTreeNodeItem[] = [
     {
         key: 'folder-1',
         label: '/documents/',
@@ -85,11 +86,21 @@ describe('withSidebar', () => {
     let store: InstanceType<typeof sidebarStoreMock>;
     let folderService: jest.Mocked<DotFolderService>;
 
+    const realAllFolder: DotFolderTreeNodeItem = {
+        ...ALL_FOLDER,
+        data: {
+            hostname: mockSite.hostname,
+            path: '',
+            type: 'folder',
+            id: mockSite.identifier
+        }
+    };
+
     const createService = createServiceFactory({
         service: sidebarStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                getFolders: jest.fn().mockReturnValueOnce(of([])).mockReturnValue(of(mockFolders))
             })
         ]
     });
@@ -101,10 +112,12 @@ describe('withSidebar', () => {
     });
 
     describe('initial state', () => {
-        it('should initialize with default sidebar state', () => {
-            expect(store.sidebarLoading()).toBe(true);
-            expect(store.folders()).toEqual([]);
-            expect(store.selectedNode()).toEqual(ALL_FOLDER);
+        it('should set initial after loading folders', () => {
+            expect(store.sidebarLoading()).toBe(false);
+            expect(store.folders()).toEqual([realAllFolder]);
+            expect(store.selectedNode()).toEqual({
+                ...realAllFolder
+            });
         });
     });
 
@@ -117,7 +130,9 @@ describe('withSidebar', () => {
                 setTimeout(() => {
                     expect(folderService.getFolders).toHaveBeenCalled();
                     expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContain(ALL_FOLDER);
+                    expect(store.folders()).toContainEqual({
+                        ...realAllFolder
+                    });
                     done();
                 }, 0);
             });
@@ -129,7 +144,9 @@ describe('withSidebar', () => {
 
                 setTimeout(() => {
                     expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContain(ALL_FOLDER);
+                    expect(store.folders()).toContainEqual({
+                        ...realAllFolder
+                    });
                     done();
                 }, 0);
             });
@@ -138,13 +155,14 @@ describe('withSidebar', () => {
         describe('loadChildFolders', () => {
             it('should load child folders for a specific path', (done) => {
                 const testPath = '/documents/images/';
+                const host = 'demo.dotcms.com';
 
                 folderService.getFolders.mockReturnValue(of(mockFolders));
 
-                store.loadChildFolders(testPath).subscribe((result) => {
+                store.loadChildFolders(testPath, host).subscribe((result) => {
                     expect(result.parent).toEqual(mockFolders[0]);
                     expect(result.folders).toHaveLength(2);
-                    expect(folderService.getFolders).toHaveBeenCalledWith(testPath);
+                    expect(folderService.getFolders).toHaveBeenCalledWith(`${host}${testPath}`);
                     done();
                 });
             });
@@ -158,6 +176,64 @@ describe('withSidebar', () => {
                     expect(result.folders[0]).toHaveProperty('label');
                     expect(result.folders[0]).toHaveProperty('data');
                     expect(result.folders[0].data.type).toBe('folder');
+                    done();
+                });
+            });
+
+            it('should not need to call loadChildFolders when node already has children', () => {
+                // Create a node that already has children
+                const nodeWithChildren: DotFolderTreeNodeItem = {
+                    key: 'folder-with-children',
+                    label: '/documents/',
+                    data: {
+                        id: 'folder-with-children',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    },
+                    leaf: false,
+                    expanded: false,
+                    children: [mockTreeNodes[0], mockTreeNodes[1]] // Already has children
+                };
+
+                // Reset the mock to count calls
+                folderService.getFolders.mockClear();
+
+                // Simulate component logic: check if node has children before calling loadChildFolders
+                const shouldLoadChildren =
+                    !nodeWithChildren.children || nodeWithChildren.children.length === 0;
+
+                if (!shouldLoadChildren) {
+                    // Don't call loadChildFolders if node already has children
+                    expect(nodeWithChildren.children.length).toBeGreaterThan(0);
+                    expect(folderService.getFolders).not.toHaveBeenCalled();
+                } else {
+                    // Only call loadChildFolders if node doesn't have children
+                    store.loadChildFolders(nodeWithChildren.data.path);
+                }
+
+                // Verify the service was not called since node has children
+                expect(folderService.getFolders).not.toHaveBeenCalled();
+            });
+
+            it('should update the store path when loadChildFolders is called', (done) => {
+                const testPath = '/documents/images/';
+                const host = 'demo.dotcms.com';
+
+                // Check initial path
+                const initialPath = store.path();
+                expect(initialPath).toBe('/test/path'); // From initialState
+
+                folderService.getFolders.mockReturnValue(of(mockFolders));
+
+                store.loadChildFolders(testPath, host).subscribe((result) => {
+                    // Verify the path was updated in the store
+                    expect(store.path()).toBe(testPath);
+                    expect(store.path()).not.toBe(initialPath);
+
+                    // Also verify the service was called and returned expected data
+                    expect(result.parent).toEqual(mockFolders[0]);
+                    expect(result.folders).toHaveLength(2);
                     done();
                 });
             });
@@ -186,7 +262,7 @@ describe('withSidebar', () => {
 
         describe('updateFolders', () => {
             it('should update the folders array', () => {
-                const newFolders = [ALL_FOLDER, ...mockTreeNodes];
+                const newFolders = [realAllFolder, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 
@@ -195,7 +271,7 @@ describe('withSidebar', () => {
 
             it('should create a new array reference', () => {
                 const originalFolders = store.folders();
-                const newFolders = [ALL_FOLDER, ...mockTreeNodes];
+                const newFolders = [realAllFolder, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 
@@ -206,28 +282,6 @@ describe('withSidebar', () => {
     });
 
     describe('integration scenarios', () => {
-        it('should handle complete folder loading workflow', (done) => {
-            // Initial state
-            expect(store.sidebarLoading()).toBe(true);
-            expect(store.folders()).toEqual([]);
-
-            // Load folders
-            store.loadFolders();
-
-            setTimeout(() => {
-                // Verify folders are loaded
-                expect(store.sidebarLoading()).toBe(false);
-                expect(store.folders()).toContain(ALL_FOLDER);
-
-                // Select a node
-                const nodeToSelect = mockTreeNodes[0];
-                store.setSelectedNode(nodeToSelect);
-
-                expect(store.selectedNode()).toEqual(nodeToSelect);
-                done();
-            }, 0);
-        });
-
         it('should handle child folder expansion workflow', (done) => {
             const parentPath = '/documents/';
 

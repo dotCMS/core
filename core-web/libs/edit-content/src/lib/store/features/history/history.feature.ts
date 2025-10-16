@@ -29,7 +29,8 @@ import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms
 import { ContentletIdentifier } from '../../../models/dot-edit-content-field.type';
 import {
     DotHistoryTimelineItemAction,
-    DotHistoryTimelineItemActionType
+    DotHistoryTimelineItemActionType,
+    DotPushPublishHistoryItem
 } from '../../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EditContentState } from '../../edit-content.store';
@@ -38,6 +39,11 @@ import { EditContentState } from '../../edit-content.store';
  * Default number of items per page for versions pagination. Need 40 so scroll works correctly in large viewports.
  */
 export const DEFAULT_VERSIONS_PER_PAGE = 40;
+
+/**
+ * Default number of items per page for push publish history pagination.
+ */
+export const DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE = 40;
 
 /**
  * Feature store for managing content versions state
@@ -383,12 +389,108 @@ export function withHistory() {
                     ),
 
                     /**
+                     * Loads push publish history with intelligent pagination and accumulation
+                     *
+                     * This method automatically handles:
+                     * - Initial loading (page 1 or new content): Replaces all push publish history
+                     * - Infinite scroll accumulation (page 2+): Appends new push publish history
+                     * - Loading states: Shows loading only on initial load
+                     * - Assumes endpoint provides unique items per page
+                     *
+                     * @param params Object containing identifier and page number
+                     * @param params.identifier - Content identifier to load push publish history for
+                     * @param params.page - Page number (1 for initial load, 2+ for infinite scroll)
+                     */
+                    loadPushPublishHistory: rxMethod<{
+                        identifier: ContentletIdentifier;
+                        page: number;
+                    }>(
+                        pipe(
+                            tap(({ page }) => {
+                                // Only show loading on initial load (page 1)
+                                if (page === 1) {
+                                    patchState(store, {
+                                        pushPublishHistoryStatus: {
+                                            status: ComponentStatus.LOADING,
+                                            error: null
+                                        }
+                                    });
+                                }
+                            }),
+                            switchMap(({ identifier, page }) => {
+                                const currentPagination = store.pushPublishHistoryPagination();
+                                const currentPushPublishHistory = store.pushPublishHistory();
+                                const limit =
+                                    currentPagination?.perPage ||
+                                    DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE;
+
+                                // Detect if we're switching content or starting fresh
+                                const isNewContent =
+                                    currentPagination === null ||
+                                    currentPushPublishHistory.length === 0;
+
+                                return dotEditContentService
+                                    .getPushPublishHistory(identifier, { offset: page, limit })
+                                    .pipe(
+                                        tapResponse({
+                                            next: (response) => {
+                                                let newPushPublishHistory: DotPushPublishHistoryItem[];
+
+                                                // Logic for accumulation:
+                                                // 1. If new content OR page 1: reset (initial load)
+                                                // 2. Otherwise: accumulate items (endpoint guarantees no duplicates)
+                                                if (isNewContent || page === 1) {
+                                                    newPushPublishHistory = response.entity;
+                                                } else {
+                                                    // Accumulate: append new items directly
+                                                    newPushPublishHistory = [
+                                                        ...currentPushPublishHistory,
+                                                        ...response.entity
+                                                    ];
+                                                }
+
+                                                patchState(store, {
+                                                    pushPublishHistory: newPushPublishHistory, // All accumulated items for display
+                                                    pushPublishHistoryPagination:
+                                                        response.pagination as DotPagination,
+                                                    pushPublishHistoryStatus: {
+                                                        status: ComponentStatus.LOADED,
+                                                        error: null
+                                                    }
+                                                });
+                                            },
+                                            error: (error: HttpErrorResponse) => {
+                                                errorManager.handle(error);
+                                                patchState(store, {
+                                                    pushPublishHistoryStatus: {
+                                                        status: ComponentStatus.ERROR,
+                                                        error: error.message
+                                                    }
+                                                });
+                                            }
+                                        })
+                                    );
+                            })
+                        )
+                    ),
+
+                    /**
                      * Resets versions to empty array
                      * Useful when switching content or starting fresh
                      */
                     resetVersions: () => {
                         patchState(store, {
                             versions: []
+                        });
+                    },
+
+                    /**
+                     * Resets push publish history to empty array
+                     * Useful when switching content or starting fresh
+                     */
+                    resetPushPublishHistory: () => {
+                        patchState(store, {
+                            pushPublishHistory: []
                         });
                     },
 
@@ -402,6 +504,93 @@ export function withHistory() {
                             versionsStatus: {
                                 status: ComponentStatus.INIT,
                                 error: null
+                            }
+                        });
+                    },
+
+                    /**
+                     * Clears the push publish history data and resets status to initial state
+                     */
+                    clearPushPublishHistory: () => {
+                        patchState(store, {
+                            pushPublishHistory: [],
+                            pushPublishHistoryPagination: null,
+                            pushPublishHistoryStatus: {
+                                status: ComponentStatus.INIT,
+                                error: null
+                            }
+                        });
+                    },
+
+                    /**
+                     * Deletes all push publish history for a content item
+                     * Shows confirmation dialog and clears local state on success
+                     * @param identifier - The content identifier
+                     */
+                    deletePushPublishHistory: (identifier: string) => {
+                        confirmationService.confirm({
+                            message: dotMessageService.get(
+                                'edit.content.sidebar.history.push.publish.delete.all.confirm.message'
+                            ),
+                            header: dotMessageService.get(
+                                'edit.content.sidebar.history.push.publish.delete.all.confirm.header'
+                            ),
+                            icon: 'pi pi-exclamation-triangle text-warning-yellow',
+                            acceptLabel: dotMessageService.get('delete'),
+                            rejectLabel: dotMessageService.get('cancel'),
+                            acceptIcon: 'hidden',
+                            rejectIcon: 'hidden',
+                            rejectButtonStyleClass: 'p-button-outlined',
+                            accept: () => {
+                                patchState(store, {
+                                    pushPublishHistoryStatus: {
+                                        status: ComponentStatus.LOADING,
+                                        error: null
+                                    }
+                                });
+
+                                dotEditContentService
+                                    .deletePushPublishHistory(identifier)
+                                    .subscribe({
+                                        next: () => {
+                                            // Clear the push publish history data on successful deletion
+                                            patchState(store, {
+                                                pushPublishHistory: [],
+                                                pushPublishHistoryPagination: null,
+                                                pushPublishHistoryStatus: {
+                                                    status: ComponentStatus.LOADED,
+                                                    error: null
+                                                }
+                                            });
+
+                                            // Show success message
+                                            messageService.add({
+                                                severity: 'success',
+                                                summary: dotMessageService.get('success'),
+                                                detail: dotMessageService.get(
+                                                    'edit.content.sidebar.history.push.publish.delete.all.success'
+                                                )
+                                            });
+                                        },
+                                        error: (error) => {
+                                            errorManager.handle(error);
+                                            patchState(store, {
+                                                pushPublishHistoryStatus: {
+                                                    status: ComponentStatus.ERROR,
+                                                    error: error.message
+                                                }
+                                            });
+
+                                            // Show error message
+                                            messageService.add({
+                                                severity: 'error',
+                                                summary: dotMessageService.get('error'),
+                                                detail: dotMessageService.get(
+                                                    'edit.content.sidebar.history.push.publish.delete.all.error'
+                                                )
+                                            });
+                                        }
+                                    });
                             }
                         });
                     },
@@ -500,20 +689,26 @@ export function withHistory() {
         withHooks({
             onInit(store) {
                 /**
-                 * Effect that automatically loads versions when contentlet or currentLocale changes
-                 * This ensures versions are refreshed when switching between different content or locales
+                 * Effect that automatically loads versions and push publish history when contentlet changes
+                 * This ensures both datasets are refreshed when switching between different content
                  */
                 effect(() => {
                     const contentlet = store.contentlet();
 
                     untracked(() => {
-                        // Only load versions if we have a contentlet with an identifier
+                        // Only load data if we have a contentlet with an identifier
                         if (contentlet?.identifier) {
-                            // Clear existing versions to avoid showing stale data during locale switches
+                            // Clear existing data to avoid showing stale data during content switches
                             store.clearVersions();
+                            store.clearPushPublishHistory();
 
-                            // Load fresh versions for the current contentlet and locale
+                            // Load fresh data for the current contentlet
                             store.loadVersions({
+                                identifier: contentlet.identifier,
+                                page: 1
+                            });
+
+                            store.loadPushPublishHistory({
                                 identifier: contentlet.identifier,
                                 page: 1
                             });
