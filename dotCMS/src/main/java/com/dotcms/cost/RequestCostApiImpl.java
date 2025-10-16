@@ -37,7 +37,7 @@ public class RequestCostApiImpl implements RequestCostApi {
     private ScheduledExecutorService scheduler;
 
     // make the request cost points look like $$
-    private int requestCostDenominator;
+    private float requestCostDenominator = 1;
 
     private final Optional<Boolean> enableForTests;
     public RequestCostApiImpl() {
@@ -51,7 +51,7 @@ public class RequestCostApiImpl implements RequestCostApi {
     @PostConstruct
     public void init() {
         this.requestCostTimeWindowSeconds = Config.getIntProperty("REQUEST_COST_TIME_WINDOW_SECONDS", 60);
-        this.requestCostDenominator = Config.getIntProperty("REQUEST_COST_DENOMINATOR", 100);
+        this.requestCostDenominator = Config.getFloatProperty("REQUEST_COST_DENOMINATOR", 100.0f);
 
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 r -> {
@@ -88,7 +88,7 @@ public class RequestCostApiImpl implements RequestCostApi {
 
 
     @Override
-    public int getRequestCostDenominator() {
+    public float getRequestCostDenominator() {
         return requestCostDenominator;
     }
 
@@ -124,12 +124,12 @@ public class RequestCostApiImpl implements RequestCostApi {
     }
 
     private boolean fullAccounting(HttpServletRequest request) {
-
-        if ("true".equalsIgnoreCase(request.getParameter(RequestCostApi.REQUEST_COST_FULL_ACCOUNTING))) {
-
+        boolean fullAccountingParam = Try.of(
+                        () -> "true".equalsIgnoreCase(request.getParameter(RequestCostApi.REQUEST_COST_FULL_ACCOUNTING)))
+                .getOrElse(false);
+        if (fullAccountingParam) {
             User user = Try.of(() -> new InitBuilder(request, null).requireAdmin(true).init().getUser()).getOrNull();
             return (user != null);
-
         }
         return false;
     }

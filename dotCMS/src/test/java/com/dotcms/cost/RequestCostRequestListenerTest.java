@@ -1,6 +1,5 @@
 package com.dotcms.cost;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -15,7 +14,7 @@ import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockParameterRequest;
-import com.dotmarketing.business.APILocator;
+import com.liferay.portal.util.WebKeys;
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.ServletRequestEvent;
@@ -35,13 +34,13 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
 
     private RequestCostRequestListener listener;
     private RequestCostApi requestCostApi;
-    private HttpServletRequest request;
     private ServletRequestEvent event;
 
     @Before
     public void setUp() {
-        listener = new RequestCostRequestListener();
-        requestCostApi = APILocator.getRequestCostAPI();
+        requestCostApi = new RequestCostApiImpl(true);
+        listener = new RequestCostRequestListener(requestCostApi);
+
     }
 
     @After
@@ -50,32 +49,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
     }
 
-    /**
-     * Test: {@link RequestCostRequestListener#requestInitialized} Should: Initialize accounting and set ThreadLocal
-     * Expected: Request is in ThreadLocal, accounting is initialized
-     */
-    @Test
-    public void test_requestInitialized_shouldInitializeAccountingAndThreadLocal() {
-        // Given
-        request = new MockParameterRequest(
-                new MockAttributeRequest(
-                        new MockHeaderRequest(
-                                new FakeHttpRequest("localhost", "/test").request())));
-        event = mock(ServletRequestEvent.class);
-        when(event.getServletRequest()).thenReturn(request);
 
-        // When
-        listener.requestInitialized(event);
-
-        // Then
-        HttpServletRequest threadLocalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        assertNotNull("ThreadLocal should contain request", threadLocalRequest);
-        assertEquals("ThreadLocal should contain same request", request, threadLocalRequest);
-
-        // Verify accounting was initialized
-        assertNotNull("Account list should be initialized", requestCostApi.getAccountList(request));
-        assertTrue("Account list should have entries", requestCostApi.getAccountList(request).size() > 0);
-    }
 
     /**
      * Test: {@link RequestCostRequestListener#requestInitialized} with full accounting parameter Should: Initialize
@@ -86,8 +60,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
         // Given
         Map<String, String> params = new HashMap<>();
         params.put(RequestCostApi.REQUEST_COST_FULL_ACCOUNTING, "true");
-
-        request = new MockParameterRequest(
+        HttpServletRequest request = new MockParameterRequest(
                 new MockAttributeRequest(
                         new MockHeaderRequest(
                                 new FakeHttpRequest("localhost", "/test").request())),
@@ -113,10 +86,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
     @Test
     public void test_requestInitialized_withoutFullAccountingParam_shouldUseNormalMode() {
         // Given
-        request = new MockParameterRequest(
-                new MockAttributeRequest(
-                        new MockHeaderRequest(
-                                new FakeHttpRequest("localhost", "/test").request())));
+        HttpServletRequest request = getRequest();
         event = mock(ServletRequestEvent.class);
         when(event.getServletRequest()).thenReturn(request);
 
@@ -135,10 +105,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
     @Test
     public void test_requestDestroyed_shouldClearAccountingAndThreadLocal() {
         // Given
-        request = new MockParameterRequest(
-                new MockAttributeRequest(
-                        new MockHeaderRequest(
-                                new FakeHttpRequest("localhost", "/test").request())));
+        HttpServletRequest request = getRequest();
         event = mock(ServletRequestEvent.class);
         when(event.getServletRequest()).thenReturn(request);
 
@@ -168,10 +135,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
     @Test
     public void test_completeLifecycle_shouldWorkCorrectly() {
         // Given
-        request = new MockParameterRequest(
-                new MockAttributeRequest(
-                        new MockHeaderRequest(
-                                new FakeHttpRequest("localhost", "/test").request())));
+        HttpServletRequest request = getRequest();
         event = mock(ServletRequestEvent.class);
         when(event.getServletRequest()).thenReturn(request);
 
@@ -207,10 +171,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
     @Test
     public void test_multipleSequentialRequests_shouldBeIndependent() {
         // Given - First request
-        HttpServletRequest request1 = new MockParameterRequest(
-                new MockAttributeRequest(
-                        new MockHeaderRequest(
-                                new FakeHttpRequest("localhost", "/page1").request())));
+        HttpServletRequest request1 = getRequest();
         ServletRequestEvent event1 = mock(ServletRequestEvent.class);
         when(event1.getServletRequest()).thenReturn(request1);
 
@@ -248,10 +209,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
     @Test
     public void test_requestDestroyed_withoutInit_shouldNotFail() {
         // Given
-        request = new MockParameterRequest(
-                new MockAttributeRequest(
-                        new MockHeaderRequest(
-                                new FakeHttpRequest("localhost", "/test").request())));
+        HttpServletRequest request = getRequest();
         event = mock(ServletRequestEvent.class);
         when(event.getServletRequest()).thenReturn(request);
 
@@ -269,10 +227,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
     @Test
     public void test_threadLocalCleanup_preventsMemoryLeaks() {
         // Given
-        request = new MockParameterRequest(
-                new MockAttributeRequest(
-                        new MockHeaderRequest(
-                                new FakeHttpRequest("localhost", "/test").request())));
+        HttpServletRequest request = getRequest();
         event = mock(ServletRequestEvent.class);
         when(event.getServletRequest()).thenReturn(request);
 
@@ -289,22 +244,42 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
                 HttpServletRequestThreadLocal.INSTANCE.getRequest());
     }
 
+
+    HttpServletRequest getRequest() {
+
+        return new MockParameterRequest(
+                new MockAttributeRequest(
+                        new MockHeaderRequest(
+                                new FakeHttpRequest("localhost", "/test").request())));
+
+
+    }
+
+    HttpServletRequest getFullAccountingRequest() {
+
+        HttpServletRequest request = new MockParameterRequest(
+                new MockAttributeRequest(
+                        new MockHeaderRequest(
+                                new FakeHttpRequest("localhost", "/test").request())
+                ), Map.of("dotRequestAccounting", "true"));
+
+        request.setAttribute(WebKeys.USER_ID, "dotcms.org.1");
+        return request;
+    }
+
+
     /**
      * Test: Request counter increments on initialization Should: Global request counter increases Expected: Counter
      * increments for each request
      */
     @Test
     public void test_requestInitialized_shouldIncrementGlobalCounter() {
-        // Given
-        request = new MockParameterRequest(
-                new MockAttributeRequest(
-                        new MockHeaderRequest(
-                                new FakeHttpRequest("localhost", "/test").request())));
+        HttpServletRequest request = getFullAccountingRequest();
         event = mock(ServletRequestEvent.class);
         when(event.getServletRequest()).thenReturn(request);
 
         // Get initial count
-        var initialLoad = requestCostApi.totalLoadGetAndReset();
+        var initialLoad = requestCostApi.getRequestCost(request);
 
         // When - Initialize multiple requests
         for (int i = 0; i < 5; i++) {

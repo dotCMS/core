@@ -92,11 +92,9 @@
 
 <body>
 <h2>Request Accounting URL: $url</h2>
-    #set($myCost=0)
-    #foreach($account in $accounting)
-        #set($myCost=$myCost + $account.get("cost"))
-    #end
-    #set($myCost = $myCost/100.00)
+
+    #set($myCost=$requestCost)
+
 <h3>Cost: $myCost </h3>
 
 
@@ -124,7 +122,8 @@
                     <hr/>
                 #end
             </td>
-            <td style="text-align: center;vertical-align: top">$account.get("cost")</td>
+            #set($rowCost = $account.get("cost") / $denominator)
+            <td style="text-align: center;vertical-align: top">$rowCost</td>
         </tr>
     #end
     <tr>

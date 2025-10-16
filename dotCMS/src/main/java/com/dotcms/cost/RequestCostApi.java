@@ -32,7 +32,7 @@ public interface RequestCostApi {
     public final static String ARGS = "args";
 
 
-    int getRequestCostDenominator();
+    float getRequestCostDenominator();
 
     /**
      * Returns the current load of the system. The first value is the current number of requests in the system. The

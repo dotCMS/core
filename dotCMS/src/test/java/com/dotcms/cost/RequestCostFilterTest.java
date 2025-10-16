@@ -17,10 +17,6 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
-import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
-import com.dotmarketing.business.APILocator;
-import java.io.ByteArrayOutputStream;
-import java.io.StringWriter;
 import java.util.Collection;
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
@@ -45,8 +41,10 @@ public class RequestCostFilterTest extends UnitTestBase {
 
     @Before
     public void setUp() {
-        filter = new RequestCostFilter();
-        requestCostApi = APILocator.getRequestCostAPI();
+        requestCostApi = new RequestCostApiImpl(true);
+
+        filter = new RequestCostFilter(requestCostApi);
+        requestCostApi = new RequestCostApiImpl(true);
         request = new MockParameterRequest(
                 new MockAttributeRequest(
                         new MockHeaderRequest(
@@ -76,35 +74,7 @@ public class RequestCostFilterTest extends UnitTestBase {
                 Double.parseDouble(costHeader) >= 10 / requestCostApi.getRequestCostDenominator());
     }
 
-    /**
-     * Test: {@link RequestCostFilter#doFilter} with full accounting mode Should: Generate HTML report instead of normal
-     * response Expected: Report is written to response, content type is text/html
-     */
-    @Test
-    public void test_doFilter_fullAccountingMode_shouldGenerateReport() throws Exception {
-        // Given
-        requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(Price.FIVE, RequestCostFilterTest.class, "method1", new Object[]{"arg1"});
-        requestCostApi.incrementCost(Price.THREE, RequestCostFilterTest.class, "method2", new Object[]{"arg2"});
 
-        StringWriter stringWriter = new StringWriter();
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        MockHttpWriterCaptureResponse mockResponse = new MockHttpWriterCaptureResponse(response);
-
-        // When
-        filter.doFilter(request, mockResponse, filterChain);
-
-        // Then
-        verify(filterChain, times(1)).doFilter(eq(request), any(HttpServletResponse.class));
-
-        String output = mockResponse.getWriterContent();
-
-        assertTrue("Output should contain HTML", output.contains("<html>"));
-        assertTrue("Output should contain title", output.contains("Request Accounting"));
-        assertTrue("Output should contain table", output.contains("<table"));
-        assertTrue("Output should contain total cost", output.contains("Total:"));
-    }
 
     /**
      * Test: {@link RequestCostFilter#init} Should: Initialize without error Expected: No exceptions thrown

@@ -21,7 +21,21 @@ import javax.servlet.http.HttpServletResponseWrapper;
 public class RequestCostFilter implements Filter {
 
 
-    private final RequestCostApi requestCostApi = APILocator.getRequestCostAPI();
+    private final RequestCostApi requestCostApi;
+
+    public RequestCostFilter() {
+        this(APILocator.getRequestCostAPI());
+    }
+
+
+    RequestCostFilter(RequestCostApi requestCostApi) {
+        this.requestCostApi = requestCostApi;
+
+    }
+
+
+
+
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)

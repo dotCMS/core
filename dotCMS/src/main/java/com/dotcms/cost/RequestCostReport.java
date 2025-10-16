@@ -15,11 +15,16 @@ public class RequestCostReport {
 
     String writeAccounting(HttpServletRequest request) {
         List<Map<String, Object>> accounting = requestCostApi.getAccountList(request);
-
+        int requestCost = requestCostApi.getRequestCost(request);
+        float denominator = requestCostApi.getRequestCostDenominator();
         String url = Xss.escapeHTMLAttrib(request.getRequestURI());
 
         requestCostApi.endAccounting(request);
         Context context = VelocityUtil.getBasicContext();
+
+        context.put("denominator", denominator);
+        context.put("requestCost", requestCost / denominator);
+
         context.put("url", url);
         context.put("accounting", accounting);
         String parse = VelocityUtil.getInstance().merge("/static/request-accounting.vtl", context);
