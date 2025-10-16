@@ -26,6 +26,11 @@ export interface DotFireActionOptions<T> {
     data?: T;
 }
 
+export interface DotFireDefaultActionOptions {
+    action: string;
+    inodes: string[];
+}
+
 enum ActionToFire {
     NEW = 'NEW',
     DESTROY = 'DESTROY',
@@ -67,6 +72,25 @@ export class DotWorkflowActionsFireService {
 
         return this.httpClient
             .put(url, data, { headers: this.defaultHeaders, params: urlParams })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Fire a default workflow action over one or multiple contentlets
+     *
+     * @param {DotFireDefaultActionOptions} options
+     * @return {*}  {Observable<DotCMSContentlet[]>}
+     * @memberof DotWorkflowActionsFireService
+     */
+    fireDefaultAction(options: DotFireDefaultActionOptions): Observable<DotCMSContentlet[]> {
+        const { action, inodes } = options;
+        const url = `${this.BASE_URL}/actions/default/fire/${action}`;
+        const body = {
+            contentlet: inodes.map((inode) => ({ inode }))
+        };
+
+        return this.httpClient
+            .post(url, body, { headers: this.defaultHeaders })
             .pipe(pluck('entity'));
     }
 

@@ -167,7 +167,8 @@ export const DotContentDriveStore = signalStore(
                         patchState(store, {
                             items: response.jsonObjectView.contentlets,
                             totalItems: response.resultsSize,
-                            status: DotContentDriveStatus.LOADED
+                            status: DotContentDriveStatus.LOADED,
+                            selectedItems: []
                         });
                     });
             },
