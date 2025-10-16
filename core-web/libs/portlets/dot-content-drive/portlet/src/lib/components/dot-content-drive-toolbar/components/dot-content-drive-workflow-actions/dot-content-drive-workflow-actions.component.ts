@@ -7,9 +7,10 @@ import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
-    ActionVisibilityConditions,
+    ActionShowConditions,
     DEFAULT_WORKFLOW_ACTIONS,
-    getActionVisibilityConditions
+    getActionConditions,
+    ContentDriveWorkflowAction
 } from '../../../../utils/workflow-actions';
 
 @Component({
@@ -23,38 +24,28 @@ export class DotContentDriveWorkflowActionsComponent {
     readonly $selectedItems = input.required<DotContentDriveItem[]>({ alias: 'selectedItems' });
     readonly $actionTriggered = output<string>({ alias: 'actionTriggered' });
 
-    readonly $actionVisibilityConditions = computed<ActionVisibilityConditions>(() =>
-        getActionVisibilityConditions(this.$selectedItems())
+    readonly $actionConditions = computed<ActionShowConditions>(() =>
+        getActionConditions(this.$selectedItems())
     );
     protected readonly DEFAULT_WORKFLOW_ACTIONS = DEFAULT_WORKFLOW_ACTIONS;
 
     onClick(id: string) {
         this.$actionTriggered.emit(id);
     }
+    /**
+     * Determines whether a workflow action should be visible
+     * based on the current selection conditions.
+     */
+    shouldShowAction = (action: ContentDriveWorkflowAction): boolean => {
+        const showWhen = action.showWhen;
+        const conditions = this.$actionConditions();
 
-    protected shouldHideAction(hideWhen?: ActionVisibilityConditions) {
-        const allConditions = this.$actionVisibilityConditions();
+        if (!showWhen) return true;
 
-        if (hideWhen.contentSelected === allConditions.contentSelected) {
-            return true;
-        }
-
-        if (hideWhen.multiSelection === allConditions.multiSelection) {
-            return true;
-        }
-
-        if (hideWhen.archived === allConditions.archived) {
-            return true;
-        }
-
-        if (hideWhen.lived === allConditions.lived) {
-            return true;
-        }
-
-        if (hideWhen.working === allConditions.working) {
-            return true;
-        }
-
-        return false;
-    }
+        // Check every defined condition in showWhen.
+        // Each must match the corresponding condition in the current state.
+        return Object.entries(showWhen).every(([key, expectedValue]) => {
+            return conditions[key as keyof ActionShowConditions] === expectedValue;
+        });
+    };
 }

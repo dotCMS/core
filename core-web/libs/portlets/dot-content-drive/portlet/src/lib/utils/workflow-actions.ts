@@ -1,6 +1,6 @@
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 
-export enum ENUM_WORKFLOW_ACTIONS {
+export enum WORKFLOW_ACTION_ID {
     NEW = 'NEW',
     EDIT = 'EDIT',
     PUBLISH = 'PUBLISH',
@@ -13,115 +13,154 @@ export enum ENUM_WORKFLOW_ACTIONS {
     DOWNLOAD = 'DOWNLOAD'
 }
 
-export interface ActionVisibilityConditions {
-    contentSelected?: boolean;
-    multiSelection?: boolean;
-    assetsOnly?: boolean;
-    archived?: boolean;
-    lived?: boolean;
-    working?: boolean;
+type SelectionStats = {
+    total: number;
+    archived: number;
+    live: number;
+    working: number;
+    assets: number;
+};
+
+export interface ActionShowConditions {
+    hasSelection?: boolean;
+    isSingleSelection?: boolean;
+    allAreAssets?: boolean;
+    allArchived?: boolean;
+    allLive?: boolean;
+    allWorking?: boolean;
+    noneArchived?: boolean;
+    noneLive?: boolean;
+    noneWorking?: boolean;
 }
 
-export interface WorkflowAction {
+export interface ContentDriveWorkflowAction {
     name: string;
-    id: ENUM_WORKFLOW_ACTIONS;
-    hideWhen?: ActionVisibilityConditions;
+    id: WORKFLOW_ACTION_ID;
+    showWhen?: ActionShowConditions;
 }
 
-const EDIT_WORKFLOW_ACTIONS: WorkflowAction = {
+const EDIT_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     name: 'edit',
-    id: ENUM_WORKFLOW_ACTIONS.EDIT,
-    hideWhen: {
-        multiSelection: true
+    id: WORKFLOW_ACTION_ID.EDIT,
+    showWhen: {
+        isSingleSelection: true,
+        noneArchived: true
     }
 };
 
-const PUBLISH_WORKFLOW_ACTIONS: WorkflowAction = {
+const PUBLISH_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     name: 'publish',
-    id: ENUM_WORKFLOW_ACTIONS.PUBLISH,
-    hideWhen: {
-        archived: true
+    id: WORKFLOW_ACTION_ID.PUBLISH,
+    showWhen: {
+        noneArchived: true,
+        noneLive: true
     }
 };
 
-const UNPUBLISH_WORKFLOW_ACTIONS: WorkflowAction = {
+const UNPUBLISH_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     name: 'unpublish',
-    id: ENUM_WORKFLOW_ACTIONS.UNPUBLISH,
-    hideWhen: {
-        lived: false,
-        archived: true
+    id: WORKFLOW_ACTION_ID.UNPUBLISH,
+    showWhen: {
+        noneArchived: true,
+        allLive: true
     }
 };
 
-const ARCHIVE_WORKFLOW_ACTIONS: WorkflowAction = {
+const ARCHIVE_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     name: 'archive',
-    id: ENUM_WORKFLOW_ACTIONS.ARCHIVE,
-    hideWhen: {
-        archived: true // Hide when already archived
+    id: WORKFLOW_ACTION_ID.ARCHIVE,
+    showWhen: {
+        noneArchived: true
     }
 };
 
-const UNARCHIVE_WORKFLOW_ACTIONS: WorkflowAction = {
+const UNARCHIVE_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     name: 'unarchive',
-    id: ENUM_WORKFLOW_ACTIONS.UNARCHIVE,
-    hideWhen: {
-        archived: false // Hide when NOT archived (only show when archived)
+    id: WORKFLOW_ACTION_ID.UNARCHIVE,
+    showWhen: {
+        allArchived: true
     }
 };
 
-const DELETE_WORKFLOW_ACTIONS: WorkflowAction = {
+const DELETE_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     name: 'delete',
-    id: ENUM_WORKFLOW_ACTIONS.DELETE,
-    hideWhen: {}
-};
-
-const DESTROY_WORKFLOW_ACTIONS: WorkflowAction = {
-    name: 'destroy',
-    id: ENUM_WORKFLOW_ACTIONS.DESTROY,
-    hideWhen: {
-        archived: false // Hide when NOT archived (only show when archived)
+    id: WORKFLOW_ACTION_ID.DELETE,
+    showWhen: {
+        allArchived: true
     }
 };
 
-const RENAME_WORKFLOW_ACTIONS: WorkflowAction = {
+const RENAME_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     name: 'rename',
-    id: ENUM_WORKFLOW_ACTIONS.RENAME,
-    hideWhen: {
-        multiSelection: true
+    id: WORKFLOW_ACTION_ID.RENAME,
+    showWhen: {
+        isSingleSelection: true,
+        noneArchived: true
     }
 };
 
-const DOWNLOAD_WORKFLOW_ACTIONS: WorkflowAction = {
+const DOWNLOAD_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     name: 'download-assets',
-    id: ENUM_WORKFLOW_ACTIONS.DOWNLOAD,
-    hideWhen: {
-        assetsOnly: false
+    id: WORKFLOW_ACTION_ID.DOWNLOAD,
+    showWhen: {
+        allAreAssets: true
     }
 };
 
 export const DEFAULT_WORKFLOW_ACTIONS = [
-    EDIT_WORKFLOW_ACTIONS,
-    RENAME_WORKFLOW_ACTIONS,
-    PUBLISH_WORKFLOW_ACTIONS,
-    UNPUBLISH_WORKFLOW_ACTIONS,
-    DOWNLOAD_WORKFLOW_ACTIONS,
-    ARCHIVE_WORKFLOW_ACTIONS,
-    UNARCHIVE_WORKFLOW_ACTIONS,
-    DELETE_WORKFLOW_ACTIONS,
-    DESTROY_WORKFLOW_ACTIONS
+    EDIT_WORKFLOW_ACTION,
+    RENAME_WORKFLOW_ACTION,
+    PUBLISH_WORKFLOW_ACTION,
+    UNPUBLISH_WORKFLOW_ACTION,
+    DOWNLOAD_WORKFLOW_ACTION,
+    ARCHIVE_WORKFLOW_ACTION,
+    UNARCHIVE_WORKFLOW_ACTION,
+    DELETE_WORKFLOW_ACTION
 ];
 
-export const getActionVisibilityConditions = (
-    selectedItems: DotContentDriveItem[]
-): ActionVisibilityConditions => {
+export const getActionConditions = (selectedItems: DotContentDriveItem[]): ActionShowConditions => {
+    const stats = countSelectionStats(selectedItems);
+
+    if (stats.total === 0) {
+        return {
+            hasSelection: false,
+            isSingleSelection: false,
+            allArchived: false,
+            allLive: false,
+            allWorking: false,
+            noneArchived: false,
+            noneLive: false,
+            noneWorking: false,
+            allAreAssets: false
+        };
+    }
+
     return {
-        contentSelected: selectedItems.length > 0,
-        multiSelection: selectedItems.length > 1,
-        archived: selectedItems.some((item) => item.archived),
-        lived: selectedItems.some((item) => item.live),
-        working: selectedItems.some((item) => item.working),
-        assetsOnly: selectedItems.every(
-            (item) => item.baseType === 'FILEASSET' || item.baseType === 'DOTASSET'
-        )
+        hasSelection: true,
+        isSingleSelection: stats.total === 1,
+        allArchived: stats.archived === stats.total,
+        allLive: stats.live === stats.total,
+        allWorking: stats.working === stats.total,
+        noneArchived: stats.archived === 0,
+        noneLive: stats.live === 0,
+        noneWorking: stats.working === 0,
+        allAreAssets: stats.assets === stats.total
     };
+};
+
+const countSelectionStats = (items: DotContentDriveItem[]): SelectionStats => {
+    const total = items.length;
+
+    const counters = items.reduce(
+        (acc, item) => {
+            if (item.archived) acc.archived++;
+            if (item.live) acc.live++;
+            if (item.working) acc.working++;
+            if (['FILEASSET', 'DOTASSET'].includes(item.baseType)) acc.assets++;
+            return acc;
+        },
+        { archived: 0, live: 0, working: 0, assets: 0 }
+    );
+
+    return { total, ...counters };
 };
