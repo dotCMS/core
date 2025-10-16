@@ -1,5 +1,3 @@
-import { SortableColumn } from 'primeng/table';
-
 import { DotFolderListViewColumn } from './models';
 
 export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
