@@ -49,7 +49,7 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         loadChildren: () =>
-            import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)
+            import('@portlets/dot-templates/dot-templates.routes').then((m) => m.DotTemplatesRoutes)
     },
     {
         path: 'content-types-angular',

@@ -12,6 +12,7 @@ import {
     ViewChild
 } from '@angular/core';
 
+import { DialogService } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
@@ -19,11 +20,21 @@ import { Observable } from 'rxjs/internal/Observable';
 import { filter, take, takeUntil } from 'rxjs/operators';
 
 import {
+    DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
     DotMessageDisplayService,
     DotPageRenderService,
-    DotRouterService
+    DotPageTypesService,
+    DotPageWorkflowsActionsService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotTempFileUploadService,
+    DotWorkflowActionsFireService,
+    DotWorkflowEventHandlerService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { HttpCode, SiteService } from '@dotcms/dotcms-js';
 import {
@@ -49,7 +60,23 @@ export interface DotActionsMenuEventParams {
 }
 
 @Component({
-    providers: [DotPageStore],
+    providers: [
+        DotPageStore,
+        DotSessionStorageService,
+        DialogService,
+        DotESContentService,
+        DotLanguagesService,
+        DotPageRenderService,
+        DotPageTypesService,
+        DotTempFileUploadService,
+        DotWorkflowsActionsService,
+        DotPageWorkflowsActionsService,
+        DotWorkflowActionsFireService,
+        DotWorkflowEventHandlerService,
+        DotRouterService,
+        DotFavoritePageService,
+        DotSessionStorageService
+    ],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
     templateUrl: './dot-pages.component.html',

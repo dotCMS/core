@@ -1,9 +1,16 @@
 import { Observable, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators,
+    ReactiveFormsModule
+} from '@angular/forms';
 
-import { DialogService } from 'primeng/dynamicdialog';
+import { ButtonModule } from 'primeng/button';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 
 import { takeUntil, tap } from 'rxjs/operators';
@@ -11,16 +18,31 @@ import { takeUntil, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
+import { DotApiLinkComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotTemplateBuilderModule } from './dot-template-builder/dot-template-builder.module';
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
+import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
 import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.store';
+
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
     styleUrls: ['./dot-template-create-edit.component.scss'],
     providers: [DotTemplateStore],
-    standalone: false
+    imports: [
+        ButtonModule,
+        CommonModule,
+        DotApiLinkComponent,
+        DotPortletBaseComponent,
+        DotTemplatePropsModule,
+        DynamicDialogModule,
+        DotMessagePipe,
+        DotTemplateBuilderModule,
+        ReactiveFormsModule
+    ]
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);

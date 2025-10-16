@@ -20,7 +20,7 @@ describe('DotTemplateNewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotTemplateNewComponent],
+            imports: [DotTemplateNewComponent],
             providers: [
                 DialogService,
                 {

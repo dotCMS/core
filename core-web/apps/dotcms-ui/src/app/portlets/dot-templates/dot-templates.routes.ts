@@ -1,14 +1,23 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
+
+import { CanDeactivateGuardService } from '@dotcms/data-access';
 
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit/resolvers/dot-template-create-edit.resolver';
 import { DotTemplateListResolver } from './dot-template-list/dot-template-list-resolver.service';
 import { DotTemplateListComponent } from './dot-template-list/dot-template-list.component';
 
-const routes: Routes = [
+import { DotTemplatesService } from '../../api/services/dot-templates/dot-templates.service';
+
+export const DotTemplatesRoutes: Routes = [
     {
         path: '',
         component: DotTemplateListComponent,
+        providers: [
+            DotTemplatesService,
+            DotTemplateListResolver,
+            DotTemplateCreateEditResolver,
+            CanDeactivateGuardService
+        ],
         resolve: {
             dotTemplateListResolverData: DotTemplateListResolver
         },
@@ -19,16 +28,15 @@ const routes: Routes = [
     {
         path: 'new',
         loadChildren: () =>
-            import('./dot-template-create-edit/dot-template-new/dot-template-new.module').then(
-                (m) => m.DotTemplateNewModule
+            import('./dot-template-create-edit/dot-template-new/dot-template-new.routes').then(
+                (m) => m.DotTemplateNewRoutes
             )
     },
     {
         path: 'edit/:id',
-
-        loadChildren: () =>
-            import('./dot-template-create-edit/dot-template-create-edit.module').then(
-                (m) => m.DotTemplateCreateEditModule
+        loadComponent: () =>
+            import('./dot-template-create-edit/dot-template-create-edit.component').then(
+                (m) => m.DotTemplateCreateEditComponent
             ),
         resolve: {
             template: DotTemplateCreateEditResolver
@@ -36,9 +44,9 @@ const routes: Routes = [
     },
     {
         path: 'edit/:id/inode/:inode',
-        loadChildren: () =>
-            import('./dot-template-create-edit/dot-template-create-edit.module').then(
-                (m) => m.DotTemplateCreateEditModule
+        loadComponent: () =>
+            import('./dot-template-create-edit/dot-template-create-edit.component').then(
+                (m) => m.DotTemplateCreateEditComponent
             ),
         data: {
             reuseRoute: false
@@ -48,9 +56,3 @@ const routes: Routes = [
         }
     }
 ];
-
-@NgModule({
-    imports: [RouterModule.forChild(routes)],
-    exports: [RouterModule]
-})
-export class DotTemplatesRoutingModule {}
