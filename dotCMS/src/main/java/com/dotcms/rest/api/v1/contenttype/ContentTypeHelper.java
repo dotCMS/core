@@ -782,4 +782,109 @@ public class ContentTypeHelper implements Serializable {
                         .collect(Collectors.toList());
     }
 
+    /**
+     * Sorts a list of Content Types based on the given orderBy parameter.
+     * <p>
+     * The orderBy parameter is the field and direction to sort by, it should be a valid property
+     * of the {@link ContentType} class such as "name", "variable", "description", etc. 
+     * If the field is not found, the Content Types are sorted by "name".
+     * <p>
+     * By default, the Content Types are sorted ascending, you can override this by adding a sort type suffix
+     * to any property name. The suffix can be ":asc" | " asc" for ascending or ":desc" | " desc" for descending.
+     * </p>
+     * <p>Example</p>
+     * <pre>
+     * List<ContentType> contentTypes = APILocator.getContentTypeAPI().findAll(user);
+     * List<ContentType> sortedContentTypes = ContentTypeHelper.sortContentTypes(contentTypes, "name:asc");
+     * </pre>
+     * @param contentTypes The list of Content Types to sort.
+     * @param orderBy The field and direction to sort the Content Types by.
+     * @return The sorted list of Content Types.
+     */
+    public static List<ContentType> sortContentTypes(final List<ContentType> contentTypes,
+            final String orderBy) {
+        if (contentTypes == null || contentTypes.isEmpty() || orderBy == null
+                || orderBy.isBlank()) {
+            return contentTypes;
+        }
+
+        String[] parts = orderBy.split("[:\\s]+");
+        String field = parts[0].trim().toLowerCase();
+        boolean ascending = parts.length < 2 || !"desc".equalsIgnoreCase(parts[1]);
+
+        Function<ContentType, Comparable> keyExtractor = c -> getComparableFieldValue(c, field);
+
+        Comparator<ContentType> comparator = Comparator.comparing(
+                keyExtractor,
+                Comparator.nullsLast(Comparator.naturalOrder()));
+
+        if (!ascending) {
+            comparator = comparator.reversed();
+        }
+
+        return contentTypes.stream()
+                .sorted(comparator)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieves the value of a field from a Content Type.
+     * <p>
+     * This method is used to get the value of a field from a Content Type.
+     * @param contentType The Content Type to get the field value from.
+     * @param field The field to get the value from.
+     * @return The value of the field.
+     */
+    private static Comparable<?> getComparableFieldValue(ContentType contentType, String field) {
+        switch (field.toLowerCase()) {
+            case "name":
+                String name = contentType.name();
+                return name != null ? name.toLowerCase() : null;
+            case "variable":
+                String variable = contentType.variable();
+                return variable != null ? variable.toLowerCase() : null;
+            case "description":
+                String desc = contentType.description();
+                return desc != null ? desc.toLowerCase() : null;
+            case "id":
+                return contentType.id();
+            case "moddate":
+            case "mod_date":
+                return contentType.modDate();
+            case "idate":
+            case "i_date":
+                return contentType.iDate();
+            case "sortorder":
+            case "sort_order":
+                return contentType.sortOrder();
+            case "system":
+                return contentType.system();
+            case "versionable":
+                return contentType.versionable();
+            case "multilingualable":
+                return contentType.multilingualable();
+            case "defaulttype":
+            case "default_type":
+                return contentType.defaultType();
+            case "fixed":
+                return contentType.fixed();
+            case "host":
+                return contentType.host();
+            case "sitename":
+            case "site_name":
+                return contentType.siteName();
+            case "icon":
+                return contentType.icon();
+            case "folder":
+                return contentType.folder();
+            default:
+                final var message = String.format(
+                        "Unknown sort field: [%s], using 'name' as fallback.", field);
+                Logger.warn(ContentTypeHelper.class, message);
+
+                String fallbackName = contentType.name();
+                return fallbackName != null ? fallbackName.toLowerCase() : null;
+        }
+    }
+
 } // E:O:F:ContentTypeHelper.
