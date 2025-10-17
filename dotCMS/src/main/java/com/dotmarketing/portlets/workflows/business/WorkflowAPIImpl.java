@@ -143,9 +143,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2418,14 +2416,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 		return fireWorkflowPreCheckin(contentlet, user, null);
 	}
-
-
-    private Lazy<Method> firePreActionMethod = Lazy.of(() -> {
-        return Try.of(() -> WorkFlowActionlet.class.getMethod("executePreAction", WorkflowProcessor.class, Map.class))
-                .getOrElseThrow(
-                        DotRuntimeException::new);
-    });
-
 
 	private WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user, final ConcurrentMap<String,Object> context) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 		WorkflowProcessor processor = new WorkflowProcessor(contentlet, user, context);
