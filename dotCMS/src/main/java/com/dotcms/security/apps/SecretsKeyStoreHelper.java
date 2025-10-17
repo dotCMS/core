@@ -133,7 +133,7 @@ public class SecretsKeyStoreHelper {
                 final File secretStoreFile = createStoreIfNeeded();
                 try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
                     keyStore.load(inputStream, passwordSupplier.get());
-                    Logger.info(SecretsKeyStoreHelper.class,
+                    Logger.debug(SecretsKeyStoreHelper.class,
                             String.format("KeyStore loaded successfully after `%d` tries.", tryCount));
                     break;
                 } catch (IOException gse) {
