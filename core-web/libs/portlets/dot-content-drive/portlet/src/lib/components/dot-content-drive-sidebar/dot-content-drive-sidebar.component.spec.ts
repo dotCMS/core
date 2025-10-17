@@ -217,6 +217,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
 
                 expect(contentDriveStore.setPath).toHaveBeenCalledWith('/documents/');
+                expect(contentDriveStore.setSelectedNode).toHaveBeenCalledWith(mockTreeNodes[1]);
             });
 
             it('should extract path from node data correctly', () => {
