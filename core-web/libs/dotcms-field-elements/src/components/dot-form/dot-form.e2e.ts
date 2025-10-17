@@ -1,6 +1,7 @@
 import { newE2EPage, E2EPage, E2EElement, EventSpy } from '@stencil/core/testing';
-import { dotTestUtil } from '../../utils';
+
 import { fieldMockNotRequired, dotFormLayoutMock } from '../../test';
+import { dotTestUtil } from '../../utils';
 
 describe('dot-form', () => {
     let page: E2EPage;

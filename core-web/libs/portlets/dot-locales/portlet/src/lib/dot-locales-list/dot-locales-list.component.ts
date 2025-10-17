@@ -14,6 +14,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 
+import { DotLanguagesService } from '@dotcms/data-access';
 import { DotActionMenuButtonComponent, DotMessagePipe, DotStateRestoreDirective } from '@dotcms/ui';
 
 import {
@@ -39,7 +40,7 @@ import {
     ],
     templateUrl: './dot-locales-list.component.html',
     styleUrl: './dot-locales-list.component.scss',
-    providers: [DotLocalesListStore, DialogService, MessageService],
+    providers: [DotLocalesListStore, DialogService, MessageService, DotLanguagesService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLocalesListComponent implements OnInit {

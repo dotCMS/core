@@ -12,7 +12,6 @@ import { DotApiLinkComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPortletBaseComponent } from './dot-portlet-base.component';
-import { DotPortletBaseModule } from './dot-portlet-base.module';
 
 const MessageMocks = new MockDotMessageService({
     cancel: 'Cancel',
@@ -34,7 +33,7 @@ const meta: Meta = {
                 BrowserAnimationsModule,
                 ButtonModule,
                 CheckboxModule,
-                DotPortletBaseModule,
+                DotPortletBaseComponent,
                 DotApiLinkComponent,
                 TabViewModule
             ]

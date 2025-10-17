@@ -12,7 +12,7 @@ import { DotMessagePipe, DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
 
-import { DotContentletEditorModule } from '../../../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotEditContentletComponent } from '../../../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 
 @NgModule({
     declarations: [DotEditPageStateControllerComponent, DotEditPageLockInfoComponent],
@@ -27,7 +27,7 @@ import { DotContentletEditorModule } from '../../../../../view/components/dot-co
         DotMessagePipe,
         DotTabButtonsComponent,
         MenuModule,
-        DotContentletEditorModule
+        DotEditContentletComponent
     ]
 })
 export class DotEditPageStateControllerModule {}

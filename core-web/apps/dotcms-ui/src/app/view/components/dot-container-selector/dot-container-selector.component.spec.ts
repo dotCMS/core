@@ -31,7 +31,7 @@ import {
     PaginationEvent,
     SearchableDropdownComponent
 } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
-import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+// import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module'; // Module deleted during standalone migration
 
 describe('ContainerSelectorComponent', () => {
     let fixture: ComponentFixture<DotContainerSelectorComponent>;
@@ -49,7 +49,7 @@ describe('ContainerSelectorComponent', () => {
         TestBed.configureTestingModule({
             declarations: [DotContainerSelectorComponent],
             imports: [
-                SearchableDropDownModule,
+                SearchableDropdownComponent,
                 BrowserAnimationsModule,
                 CommonModule,
                 FormsModule,

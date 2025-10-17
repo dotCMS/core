@@ -33,7 +33,7 @@ import { DotCategoriesListComponent } from './dot-categories-list.component';
 
 import { DotCategoriesService } from '../../../api/services/dot-categories/dot-categories.service';
 import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -110,7 +110,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 BreadcrumbModule,
-                DotPortletBaseModule,
+                DotPortletBaseComponent,
                 ButtonModule,
                 InputTextModule,
                 TableModule,

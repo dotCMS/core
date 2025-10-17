@@ -1,4 +1,5 @@
 import { Component, Prop, State, Element, Event, EventEmitter, h } from '@stencil/core';
+
 import { DotKeyValueField } from '../../../models';
 
 const DEFAULT_VALUE = { key: '', value: '' };

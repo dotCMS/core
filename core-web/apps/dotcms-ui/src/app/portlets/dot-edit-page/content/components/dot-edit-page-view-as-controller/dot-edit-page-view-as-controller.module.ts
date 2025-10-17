@@ -5,13 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
 
 import { DotDeviceSelectorModule } from '../../../../../view/components/dot-device-selector/dot-device-selector.module';
 import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
-import { DotPersonaSelectorModule } from '../../../../../view/components/dot-persona-selector/dot-persona.selector.module';
+import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
 
 @NgModule({
     imports: [
@@ -19,11 +19,11 @@ import { DotPersonaSelectorModule } from '../../../../../view/components/dot-per
         DropdownModule,
         FormsModule,
         TooltipModule,
-        DotPersonaSelectorModule,
+        DotPersonaSelectorComponent,
         DotLanguageSelectorComponent,
         DotDeviceSelectorModule,
         DotSafeHtmlPipe,
-        DotIconModule,
+        DotIconComponent,
         DotMessagePipe
     ],
     declarations: [DotEditPageViewAsControllerComponent],

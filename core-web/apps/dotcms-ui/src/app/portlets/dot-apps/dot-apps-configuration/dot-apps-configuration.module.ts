@@ -8,7 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import {
     DotCopyButtonComponent,
-    DotDialogModule,
+    DotDialogComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
@@ -18,7 +18,7 @@ import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
 
 import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
-import { DotActionButtonModule } from '../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 
@@ -27,12 +27,12 @@ import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialo
         InputTextModule,
         ButtonModule,
         CommonModule,
-        DotActionButtonModule,
+        DotActionButtonComponent,
         DotCopyButtonComponent,
         DotAppsConfigurationHeaderModule,
         DotAppsConfigurationListModule,
         DotAppsImportExportDialogModule,
-        DotDialogModule,
+        DotDialogComponent,
         DotSafeHtmlPipe,
         MarkdownModule.forChild(),
         DotMessagePipe

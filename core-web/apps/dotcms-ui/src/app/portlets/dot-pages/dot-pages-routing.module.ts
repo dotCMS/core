@@ -9,6 +9,7 @@ import {
 
 import { DotCreateContentletComponent } from '../../view/components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
 import { DotCreateContentletResolver } from '../../view/components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.resolver.service';
+import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 const routes: Routes = [
     {
@@ -16,9 +17,9 @@ const routes: Routes = [
         path: '',
         children: [
             {
-                loadChildren: () =>
-                    import('../dot-porlet-detail/dot-portlet-detail.module').then(
-                        (m) => m.DotPortletDetailModule
+                loadComponent: () =>
+                    import('../dot-porlet-detail/dot-portlet-detail.component').then(
+                        (m) => m.DotPortletDetailComponent
                     ),
                 path: ':asset',
                 canActivate: [newEditContentForContentletGuard],
@@ -40,6 +41,7 @@ const routes: Routes = [
 
 @NgModule({
     exports: [RouterModule],
-    imports: [RouterModule.forChild(routes)]
+    imports: [RouterModule.forChild(routes)],
+    providers: [DotCreateContentletResolver, DotContentletEditorService]
 })
 export class DotPagesRoutingModule {}

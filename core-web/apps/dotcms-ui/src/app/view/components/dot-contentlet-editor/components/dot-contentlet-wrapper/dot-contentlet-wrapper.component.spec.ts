@@ -41,6 +41,7 @@ import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.componen
 
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
@@ -65,12 +66,13 @@ describe('DotContentletWrapperComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentletWrapperComponent],
+            imports: [DotContentletWrapperComponent],
             providers: [
                 DotContentletEditorService,
                 DotIframeService,
                 DotAlertConfirmService,
                 DotEventsService,
+                IframeOverlayService,
                 ConfirmationService,
                 DotcmsEventsService,
                 DotEventsSocket,

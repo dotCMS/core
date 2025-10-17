@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output, Injectable } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -16,7 +16,8 @@ import {
     DotPageStateService,
     DotPersonalizeService,
     DotPersonasService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotDevice, DotLanguage, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
@@ -104,6 +105,11 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.default.device': 'Default Device'
 });
 
+@Injectable()
+class MockDotWorkflowActionsFireService {
+    fireWorkflowAction = jest.fn().mockReturnValue(of({}));
+}
+
 describe('DotEditPageViewAsControllerSeoComponent', () => {
     let componentHost: DotTestHostComponent;
     let fixtureHost: ComponentFixture<DotTestHostComponent>;
@@ -162,6 +168,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
+                },
+                {
+                    provide: DotWorkflowActionsFireService,
+                    useClass: MockDotWorkflowActionsFireService
                 }
             ]
         });

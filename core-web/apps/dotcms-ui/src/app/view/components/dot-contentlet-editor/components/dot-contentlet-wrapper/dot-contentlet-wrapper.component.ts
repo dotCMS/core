@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
@@ -9,6 +10,7 @@ import {
     DotIframeService
 } from '@dotcms/data-access';
 
+import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 export interface DotCMSEditPageEvent {
@@ -33,7 +35,7 @@ interface DotCSMSavePageEvent {
     selector: 'dot-contentlet-wrapper',
     templateUrl: './dot-contentlet-wrapper.component.html',
     styleUrls: ['./dot-contentlet-wrapper.component.scss'],
-    standalone: false
+    imports: [CommonModule, DotIframeDialogModule]
 })
 export class DotContentletWrapperComponent {
     private dotContentletEditorService = inject(DotContentletEditorService);

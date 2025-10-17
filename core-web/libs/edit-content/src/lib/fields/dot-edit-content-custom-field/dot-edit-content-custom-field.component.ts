@@ -19,7 +19,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
-import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
+import { SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
 import { CustomFieldConfig } from '../../models/dot-edit-content-custom-field.interface';
@@ -40,7 +40,6 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
     selector: 'dot-edit-content-custom-field',
     imports: [
         SafeUrlPipe,
-        DotIconModule,
         ButtonModule,
         InputTextModule,
         DialogModule,

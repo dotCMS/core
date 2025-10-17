@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil, DotIconModule } from '@dotcms/ui';
+import { DotClipboardUtil, DotIconComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCopyLinkComponent } from './dot-copy-link.component';
@@ -31,9 +31,14 @@ describe('DotCopyLinkComponent', () => {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                DotClipboardUtil
+                {
+                    provide: DotClipboardUtil,
+                    useValue: {
+                        copy: jest.fn()
+                    }
+                }
             ],
-            imports: [ButtonModule, TooltipModule, DotIconModule]
+            imports: [ButtonModule, TooltipModule, DotIconComponent]
         }).compileComponents();
     }));
 

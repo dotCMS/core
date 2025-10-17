@@ -4,12 +4,12 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotClipboardUtil, DotIconModule } from '@dotcms/ui';
+import { DotClipboardUtil, DotIconComponent } from '@dotcms/ui';
 
 import { DotCopyLinkComponent } from './dot-copy-link.component';
 
 @NgModule({
-    imports: [CommonModule, TooltipModule, DotIconModule, ButtonModule],
+    imports: [CommonModule, TooltipModule, DotIconComponent, ButtonModule],
     declarations: [DotCopyLinkComponent],
     exports: [DotCopyLinkComponent],
     providers: [DotClipboardUtil]

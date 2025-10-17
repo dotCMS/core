@@ -19,7 +19,7 @@ import { DotRelationshipsPropertyComponent } from './dot-relationships-property.
 import { DotEditContentTypeCacheService } from './services/dot-edit-content-type-cache.service';
 import { DotRelationshipService } from './services/dot-relationship.service';
 
-import { SearchableDropDownModule } from '../../../../../../../../view/components/_common/searchable-dropdown/searchable-dropdown.module';
+import { SearchableDropdownComponent } from '../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @NgModule({
     declarations: [
@@ -35,7 +35,7 @@ import { SearchableDropDownModule } from '../../../../../../../../view/component
         DotFieldValidationMessageComponent,
         FormsModule,
         RadioButtonModule,
-        SearchableDropDownModule,
+        SearchableDropdownComponent,
         DotSafeHtmlPipe,
         DotMessagePipe,
         DotFieldRequiredDirective

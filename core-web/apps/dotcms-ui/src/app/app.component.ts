@@ -1,4 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
 import { map, take } from 'rxjs/operators';
 
@@ -12,7 +13,7 @@ import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.serv
     selector: 'dot-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
-    standalone: false
+    imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit {
     private dotCmsConfigService = inject(DotcmsConfigService);

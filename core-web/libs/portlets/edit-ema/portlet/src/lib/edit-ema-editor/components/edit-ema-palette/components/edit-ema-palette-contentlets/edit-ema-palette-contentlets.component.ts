@@ -19,7 +19,7 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
-import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 
 import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
 
@@ -27,12 +27,12 @@ import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
     selector: 'dot-edit-ema-palette-contentlets',
     imports: [
         ReactiveFormsModule,
-        DotIconModule,
+        DotIconComponent,
         PaginatorModule,
         DotMessagePipe,
         JsonPipe,
         InputTextModule,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         ButtonModule
     ],
     templateUrl: './edit-ema-palette-contentlets.component.html',

@@ -31,10 +31,10 @@ import {
     FeaturedFlags,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotGlobalMessageModule } from '../../../../../view/components/_common/dot-global-message/dot-global-message.module';
-import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
+import { DotGlobalMessageComponent } from '../../../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotEditPageWorkflowsActionsModule } from '../../../content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
@@ -44,19 +44,18 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
     selector: 'dot-edit-page-toolbar-seo',
     templateUrl: './dot-edit-page-toolbar-seo.component.html',
     styleUrls: ['./dot-edit-page-toolbar-seo.component.scss'],
-    providers: [DialogService, DotPropertiesService],
+    providers: [DialogService],
     imports: [
         ButtonModule,
         CommonModule,
         CheckboxModule,
         DotEditPageWorkflowsActionsModule,
         DotEditPageViewAsControllerSeoComponent,
-        DotSecondaryToolbarModule,
+        DotSecondaryToolbarComponent,
         FormsModule,
         ToolbarModule,
         TooltipModule,
-        DotGlobalMessageModule,
-        DotIconModule,
+        DotGlobalMessageComponent,
         RouterLink,
         TagModule,
         DotEditPageInfoSeoComponent,

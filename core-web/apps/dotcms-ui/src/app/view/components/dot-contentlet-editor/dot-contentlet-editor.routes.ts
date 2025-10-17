@@ -1,10 +1,9 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 
 import { DotCreateContentletComponent } from './components/dot-create-contentlet/dot-create-contentlet.component';
 import { DotCreateContentletResolver } from './components/dot-create-contentlet/dot-create-contentlet.resolver.service';
 
-const routes: Routes = [
+export const dotContentletEditorRoutes: Routes = [
     {
         component: DotCreateContentletComponent,
         path: ':contentType',
@@ -18,9 +17,3 @@ const routes: Routes = [
         pathMatch: 'full'
     }
 ];
-
-@NgModule({
-    imports: [RouterModule.forChild(routes)],
-    exports: [RouterModule]
-})
-export class DotContentletEditorRoutingModule {}

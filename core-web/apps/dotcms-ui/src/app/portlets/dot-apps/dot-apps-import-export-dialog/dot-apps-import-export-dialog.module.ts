@@ -7,7 +7,7 @@ import { PasswordModule } from 'primeng/password';
 
 import {
     DotAutofocusDirective,
-    DotDialogModule,
+    DotDialogComponent,
     DotFieldRequiredDirective,
     DotMessagePipe,
     DotSafeHtmlPipe
@@ -22,7 +22,7 @@ import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service'
         InputTextModule,
         CommonModule,
         PasswordModule,
-        DotDialogModule,
+        DotDialogComponent,
         DotAutofocusDirective,
         ReactiveFormsModule,
         DotSafeHtmlPipe,

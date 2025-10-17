@@ -20,7 +20,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotResultsSeoToolComponent, DotSelectSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotCopyContentModalService, DotIconModule, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotCopyContentModalService, DotIconComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotEditPageStateControllerModule } from './components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
@@ -40,8 +40,8 @@ import { DotDirectivesModule } from '../../../shared/dot-directives.module';
 import { DotOverlayMaskModule } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
-import { DotPaletteModule } from '../components/dot-palette/dot-palette.module';
+import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
+import { DotPaletteComponent } from '../components/dot-palette/dot-palette.component';
 import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
 const routes: Routes = [
     {
@@ -58,20 +58,20 @@ const routes: Routes = [
         DialogModule,
         CheckboxModule,
         RouterModule.forChild(routes),
-        DotContentletEditorModule,
+        DotEditContentletComponent,
         DotSafeHtmlPipe,
         DotDirectivesModule,
         DotWhatsChangedModule,
         DotFormSelectorModule,
         TooltipModule,
-        DotContentletEditorModule,
+        DotEditContentletComponent,
         DotLoadingIndicatorModule,
         DotEditPageToolbarModule,
         DotEditPageViewAsControllerModule,
         DotEditPageStateControllerModule,
         DotOverlayMaskModule,
-        DotPaletteModule,
-        DotIconModule,
+        DotPaletteComponent,
+        DotIconComponent,
         DotEditPageToolbarSeoComponent,
         DotShowHideFeatureDirective,
         DotResultsSeoToolComponent,

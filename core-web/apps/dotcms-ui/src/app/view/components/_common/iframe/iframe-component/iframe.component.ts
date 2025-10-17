@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -20,13 +21,16 @@ import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
+import { DotOverlayMaskModule } from '../../dot-overlay-mask/dot-overlay-mask.module';
+import { DotLoadingIndicatorModule } from '../dot-loading-indicator/dot-loading-indicator.module';
+import { DotSafeUrlPipe } from '../pipes/dot-safe-url/dot-safe-url.pipe';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({
     selector: 'dot-iframe',
     styleUrls: ['./iframe.component.scss'],
     templateUrl: 'iframe.component.html',
-    standalone: false
+    imports: [CommonModule, DotLoadingIndicatorModule, DotOverlayMaskModule, DotSafeUrlPipe]
 })
 export class IframeComponent implements OnInit, OnDestroy {
     private dotIframeService = inject(DotIframeService);
