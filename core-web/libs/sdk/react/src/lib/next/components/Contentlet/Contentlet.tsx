@@ -69,10 +69,10 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
         [isDevMode, contentlet, container]
     );
 
-    // Analytics attributes - only when analytics is active
+    // Analytics attributes - only when analytics is active AND NOT in UVE editor
     const analyticsAttributes = useMemo(
-        () => (isAnalyticsActive ? getDotAnalyticsAttributes(contentlet) : {}),
-        [isAnalyticsActive, contentlet]
+        () => (isAnalyticsActive && !isDevMode ? getDotAnalyticsAttributes(contentlet) : {}),
+        [isAnalyticsActive, isDevMode, contentlet]
     );
 
     return (
