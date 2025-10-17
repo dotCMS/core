@@ -50,7 +50,7 @@ import java.util.List;
 
 public class BundlerUtil {
 
-    private static ObjectMapper objectMapper;
+
     private static ObjectMapper customMapper;
 
     public static final List<Status> STATUS_TO_RETRY = list(
@@ -320,14 +320,7 @@ public class BundlerUtil {
     }
 
     private static ObjectMapper getObjectMapper() {
-        if (objectMapper == null) {
-            objectMapper = new ObjectMapper();
-            final JavaTimeModule javaTimeModule = createJavaTimeModule();
-            objectMapper.registerModule(javaTimeModule);
-            objectMapper.registerModule(new Jdk8Module());
-            objectMapper.registerModule(new GuavaModule());
-        }
-        return objectMapper;
+        return DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
     }
 
     private static ObjectMapper getCustomMapper() {

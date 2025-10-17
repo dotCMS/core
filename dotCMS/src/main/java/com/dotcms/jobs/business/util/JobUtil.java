@@ -8,6 +8,7 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
@@ -42,14 +43,7 @@ public class JobUtil {
      * Jackson mapper configuration and lazy initialized instance.
      */
     private static final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        mapper.registerModule(new Jdk8Module());
-        mapper.registerModule(new GuavaModule());
-        mapper.registerModule(new JavaTimeModule());
-        mapper.registerModule(new VersioningModule());
-        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        return mapper;
+        return DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
     });
 
     private JobUtil() {
