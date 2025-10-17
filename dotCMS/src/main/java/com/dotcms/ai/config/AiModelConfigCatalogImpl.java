@@ -6,6 +6,7 @@ import com.dotcms.ai.config.parser.AiVendorNode;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 // todo: see if want to extract an interface to have an easier vision of the gets
 
@@ -108,6 +109,40 @@ public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
 
         throw new IllegalArgumentException("Unknown kind: " + kind);
     }
+
+    /**
+     * Returns the list of all chat model names available for a vendor.
+     *
+     * @param vendor the vendor name (e.g. "openai", "anthropic")
+     * @return a sorted list of chat model keys, never null
+     */
+    @Override
+    public List<String> getChatModelNames(final String vendor) {
+        final AiVendorNode node = getVendorOrThrow(vendor);
+        if (node.getChatModels() == null || node.getChatModels().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return node.getChatModels().keySet().stream()
+                .sorted()
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    /**
+     * Returns the list of all embeddings model names available for a vendor.
+     *
+     * @param vendor the vendor name (e.g. "openai", "azure")
+     * @return a sorted list of embeddings model keys, never null
+     */
+    public List<String> getEmbeddingsModelNames(final String vendor) {
+        final AiVendorNode node = getVendorOrThrow(vendor);
+        if (node.getEmbeddings() == null || node.getEmbeddings().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return node.getEmbeddings().keySet().stream()
+                .sorted()
+                .collect(Collectors.toUnmodifiableList());
+    }
+
 
     // -------------------- Mutation API (OSGi) --------------------
 

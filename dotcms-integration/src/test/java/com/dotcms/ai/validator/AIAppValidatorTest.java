@@ -2,7 +2,7 @@ package com.dotcms.ai.validator;
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.ai.AiTest;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -24,7 +24,6 @@ import javax.enterprise.context.ApplicationScoped;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -47,7 +46,7 @@ public class AIAppValidatorTest {
     private static WireMockServer wireMockServer;
     private static SystemMessageEventUtil systemMessageEventUtil;
     private Host host;
-    private AppConfig appConfig;
+    private AiAppConfig appConfig;
     private AIAppValidator validator = AIAppValidator.get();
 
     @BeforeClass

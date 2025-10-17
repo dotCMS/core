@@ -82,7 +82,7 @@ public class AIModelsTest {
         AiTest.aiAppSecrets(otherHost, "text-model-1", null, null);
 
         final String hostId = host.getHostname();
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final AiAppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Optional<AIModel> notFound = aiModels.findModel(appConfig, "some-invalid-model-name", AIModelType.TEXT);
         assertTrue(notFound.isEmpty());
@@ -112,7 +112,7 @@ public class AIModelsTest {
         final Optional<AIModel> embeddings3 = aiModels.findModel(hostId, AIModelType.EMBEDDINGS);
         assertSameModels(embeddings3, embeddings1, embeddings2);
 
-        final AppConfig otherAppConfig = ConfigService.INSTANCE.config(otherHost);
+        final AiAppConfig otherAppConfig = ConfigService.INSTANCE.config(otherHost);
         final Optional<AIModel> text4 = aiModels.findModel(otherAppConfig, "text-model-1", AIModelType.TEXT);
         assertTrue(text3.isPresent());
         assertNotSame(text1.get(), text4.get());
@@ -173,7 +173,7 @@ public class AIModelsTest {
     public void test_resolveAIModelOrThrow() throws Exception {
         AiTest.aiAppSecrets(host, "text-model-30", "image-model-31", "embeddings-model-32");
 
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final AiAppConfig appConfig = ConfigService.INSTANCE.config(host);
         final AIModel aiModel30 = aiModels.resolveAIModelOrThrow(appConfig, "text-model-30", AIModelType.TEXT);
         final AIModel aiModel31 = aiModels.resolveAIModelOrThrow(appConfig, "image-model-31", AIModelType.IMAGE);
         final AIModel aiModel32 = aiModels.resolveAIModelOrThrow(
@@ -208,7 +208,7 @@ public class AIModelsTest {
     public void test_resolveModelOrThrow() throws Exception {
         AiTest.aiAppSecrets(host, "text-model-40", "image-model-41", "embeddings-model-42");
 
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final AiAppConfig appConfig = ConfigService.INSTANCE.config(host);
         final Tuple2<AIModel, Model> modelTuple40 = aiModels.resolveModelOrThrow(
                 appConfig,
                 "text-model-40",
@@ -248,7 +248,7 @@ public class AIModelsTest {
     @Test
     public void test_getOrPullSupportedModels() {
         AIModels.get().cleanSupportedModelsCache();
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final AiAppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         Set<String> supported = aiModels.getOrPullSupportedModels(appConfig);
         assertNotNull(supported);
@@ -262,7 +262,7 @@ public class AIModelsTest {
      */
     @Test
     public void test_getOrPullSupportedModuels_withNetworkError() {
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final AiAppConfig appConfig = ConfigService.INSTANCE.config(host);
         AIModels.get().cleanSupportedModelsCache();
         IPUtils.disabledIpPrivateSubnet(false);
 
@@ -278,7 +278,7 @@ public class AIModelsTest {
     @Test
     public void test_getOrPullSupportedModels_noApiKey() throws Exception {
         AiTest.aiAppSecrets(host, null);
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final AiAppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         AIModels.get().cleanSupportedModelsCache();
         final Set<String> supported = aiModels.getOrPullSupportedModels(appConfig);

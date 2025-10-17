@@ -1,5 +1,7 @@
 package com.dotcms.ai.config;
 
+import java.util.List;
+
 /**
  * Model Config Catalog
  * Returns the ModelConfig for Chat and Embeddings based on vendor and model
@@ -19,4 +21,6 @@ public interface AiModelConfigCatalog {
 
     // Opcional: "openai.chat.gpt-4o-mini" / "openai.embeddings.text-embedding-3-small"
     AiModelConfig getByPath(String path);
+
+    List<String> getChatModelNames(String vendorName);
 }

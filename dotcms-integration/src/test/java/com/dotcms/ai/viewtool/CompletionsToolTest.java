@@ -1,7 +1,7 @@
 package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.AiTest;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
  */
 public class CompletionsToolTest {
 
-    private static AppConfig appConfig;
+    private static AiAppConfig appConfig;
     private static User user;
     private static WireMockServer wireMockServer;
     private static Host host;
@@ -180,7 +180,7 @@ public class CompletionsToolTest {
             }
 
             @Override
-            AppConfig config() {
+            AiAppConfig config() {
                 return appConfig;
             }
 

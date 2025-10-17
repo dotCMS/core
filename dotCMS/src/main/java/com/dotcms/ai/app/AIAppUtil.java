@@ -2,9 +2,15 @@ package com.dotcms.ai.app;
 
 import com.dotcms.ai.config.AiModelConfig;
 import com.dotcms.ai.config.AiModelConfigCatalog;
+import com.dotcms.ai.config.AiModelConfigCatalogImpl;
 import com.dotcms.ai.config.AiVendor;
+import com.dotcms.ai.config.parser.AiModelConfigParser;
+import com.dotcms.ai.config.parser.AiVendorCatalogData;
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.Type;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -28,13 +34,36 @@ import java.util.stream.Collectors;
 public class AIAppUtil {
 
     private static final Lazy<AIAppUtil> INSTANCE = Lazy.of(AIAppUtil::new);
-
+    // we will hold this by now until the json configuration is moved to official and only one
+    private static ThreadLocal<AiModelConfigCatalog> modelConfigCatalogThreadLocal = new ThreadLocal<>();
+    private static final AiModelConfigParser modelConfigParser  = new AiModelConfigParser();
     private AIAppUtil() {
         // Private constructor to prevent instantiation
     }
 
     public static AIAppUtil get() {
         return INSTANCE.get();
+    }
+
+    private Optional<AiModelConfigCatalog> getModelConfigCatalog(final Map<String, Secret> secrets, final AppKeys appKeys) {
+
+        if (modelConfigCatalogThreadLocal.get() == null) {
+
+            final String aiJsonConfiguration = this.discoverSecret(secrets, appKeys);
+            if (StringUtils.isSet(aiJsonConfiguration)) {
+
+                final AiVendorCatalogData vendorCatalogData = modelConfigParser.parse(aiJsonConfiguration,
+                        (key) -> {
+                            // default ValueResolver impl, based on dotCMS config and context (the context encapsulates the dotAI Secrets App
+                            return Config.getStringProperty(key, secrets.getOrDefault(key,
+                                    Secret.builder().withValue("UNKNOWN").withType(Type.STRING).build()).getString());
+                        });
+                final AiModelConfigCatalog modelConfigCatalog = AiModelConfigCatalogImpl.from(vendorCatalogData);
+                modelConfigCatalogThreadLocal.set(modelConfigCatalog);
+            }
+        }
+
+        return Optional.ofNullable(modelConfigCatalogThreadLocal.get());
     }
 
     /**
@@ -45,18 +74,7 @@ public class AIAppUtil {
      */
     public AIModel createTextModel(final Map<String, Secret> secrets) {
 
-        List<String> modelNames = getModelNamesFromCatalogs(secrets, AppKeys.ADVANCE_PROVIDER_SETTINGS_KEY);
-        int tokensPerMinute = 0;
-
-        if (UtilMethods.isSet(modelNames)) {
-
-            // it is hardcoded by now to open ai.
-            final AiModelConfig modelConfig = modelConfigCatalogOpt.get().getChatConfig(AiVendor.OPEN_AI.getVendorName());
-            if (modelConfig != null) {
-
-
-            }
-        }
+        List<String> modelNames = getModelNamesFromCatalogs(secrets, AppKeys.ADVANCE_PROVIDER_SETTINGS_KEY, AiVendor.OPEN_AI.getVendorName());
 
         if (modelNames == null) {
 
@@ -64,19 +82,30 @@ public class AIAppUtil {
             if (CollectionUtils.isEmpty(modelNames)) {
                 return AIModel.NOOP_MODEL;
             }
-
-            tokensPerMinute = discoverIntSecret(secrets, AppKeys.TEXT_MODEL_TOKENS_PER_MINUTE)
         }
 
         return AIModel.builder()
                 .withType(AIModelType.TEXT)
                 .withModelNames(modelNames)
-                .withTokensPerMinute(tokensPerMinute)
+                .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_MAX_TOKENS))
                 .withIsCompletion(discoverBooleanSecret(secrets, AppKeys.TEXT_MODEL_COMPLETION))
                 .build();
     }
+
+    private List<String> getModelNamesFromCatalogs(final Map<String, Secret> secrets, final AppKeys appKeys,
+                                                   final String vendorName) {
+
+        final Optional<AiModelConfigCatalog> modelConfigCatalogOpt = this.getModelConfigCatalog(secrets, appKeys);
+        if(modelConfigCatalogOpt.isPresent())  {
+            return modelConfigCatalogOpt.get().getChatModelNames(vendorName);
+        }
+
+        return null;
+    }
+
+
 
     /**
      * Creates an image model instance based on the provided secrets.
