@@ -1,6 +1,15 @@
 @use "variables" as *;
 
 :host {
+    /* Default height according to figma */
+    height: 7.125rem; //114px
+    transition: height $content-drive-animation-speed $content-drive-animation-ease;
+
+    /* Height when workflow actions are shown */
+    &:has(.p-toolbar-group-actions) {
+        height: 4.375rem; //70px
+    }
+
     ::ng-deep {
         .p-toolbar {
             padding: $spacing-1 $spacing-3;

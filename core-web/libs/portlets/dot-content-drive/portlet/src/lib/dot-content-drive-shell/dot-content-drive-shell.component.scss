@@ -5,19 +5,13 @@
     position: relative;
     grid-template-columns: min-content 1fr min-content;
 
-    /* This is the height according to figma for the first row */
-    grid-template-rows: min-content 7.125rem 1fr; //114px 1fr
+    /* Let the toolbar control its own height */
+    grid-template-rows: min-content min-content 1fr;
     grid-template-areas:
         "messages messages messages"
         "tree toolbar detail"
         "tree list    detail";
     height: 100%;
-    transition: grid-template-rows $content-drive-animation-speed $content-drive-animation-ease;
-
-    /* Animate toolbar height when workflow actions are shown */
-    &:has(.p-toolbar-group-actions) {
-        grid-template-rows: min-content 4.375rem 1fr; //70px 1fr
-    }
 }
 ::ng-deep {
     .p-dialog.content-drive-dialog {
