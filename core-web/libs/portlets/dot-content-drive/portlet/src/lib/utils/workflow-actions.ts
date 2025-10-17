@@ -2,7 +2,9 @@ import { DotContentDriveItem } from '@dotcms/dotcms-models';
 
 export enum WORKFLOW_ACTION_ID {
     NEW = 'NEW',
-    EDIT = 'EDIT',
+    SAVE_AS_DRAFT = 'EDIT',
+    GOT_TO_EDIT_CONTENTLET = 'GOT_TO_EDIT_CONTENTLET',
+    GOT_TO_EDIT_PAGE = 'GOT_TO_EDIT_PAGE',
     PUBLISH = 'PUBLISH',
     UNPUBLISH = 'UNPUBLISH',
     ARCHIVE = 'ARCHIVE',
@@ -39,17 +41,22 @@ export interface ContentDriveWorkflowAction {
     showWhen?: ActionShowConditions;
 }
 
-const EDIT_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
-    name: 'edit',
-    id: WORKFLOW_ACTION_ID.EDIT,
+const GOT_TO_EDIT_CONTENTLET_ACTION: ContentDriveWorkflowAction = {
+    name: 'Edit',
+    id: WORKFLOW_ACTION_ID.GOT_TO_EDIT_CONTENTLET,
     showWhen: {
         isSingleSelection: true,
         noneArchived: true
     }
 };
 
-const PUBLISH_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
-    name: 'publish',
+const GOT_TO_EDIT_PAGE_ACTION: ContentDriveWorkflowAction = {
+    name: 'Edit Page',
+    id: WORKFLOW_ACTION_ID.GOT_TO_EDIT_PAGE
+};
+
+const PUBLISH_ACTION: ContentDriveWorkflowAction = {
+    name: 'Publish',
     id: WORKFLOW_ACTION_ID.PUBLISH,
     showWhen: {
         noneArchived: true,
@@ -57,8 +64,8 @@ const PUBLISH_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     }
 };
 
-const UNPUBLISH_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
-    name: 'unpublish',
+const UNPUBLISH_ACTION: ContentDriveWorkflowAction = {
+    name: 'Unpublish',
     id: WORKFLOW_ACTION_ID.UNPUBLISH,
     showWhen: {
         noneArchived: true,
@@ -66,32 +73,40 @@ const UNPUBLISH_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     }
 };
 
-const ARCHIVE_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
-    name: 'archive',
+const SAVE_AS_DRAFT_ACTION: ContentDriveWorkflowAction = {
+    name: 'Save Draft',
+    id: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
+    showWhen: {
+        noneArchived: true
+    }
+};
+
+const ARCHIVE_ACTION: ContentDriveWorkflowAction = {
+    name: 'Archive',
     id: WORKFLOW_ACTION_ID.ARCHIVE,
     showWhen: {
         noneArchived: true
     }
 };
 
-const UNARCHIVE_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
-    name: 'unarchive',
+const UNARCHIVE_ACTION: ContentDriveWorkflowAction = {
+    name: 'Unarchive',
     id: WORKFLOW_ACTION_ID.UNARCHIVE,
     showWhen: {
         allArchived: true
     }
 };
 
-const DELETE_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
-    name: 'delete',
+const DELETE_ACTION: ContentDriveWorkflowAction = {
+    name: 'Delete',
     id: WORKFLOW_ACTION_ID.DELETE,
     showWhen: {
         allArchived: true
     }
 };
 
-const RENAME_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
-    name: 'rename',
+const RENAME_ACTION: ContentDriveWorkflowAction = {
+    name: 'Rename',
     id: WORKFLOW_ACTION_ID.RENAME,
     showWhen: {
         isSingleSelection: true,
@@ -99,8 +114,8 @@ const RENAME_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
     }
 };
 
-const DOWNLOAD_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
-    name: 'download-assets',
+const DOWNLOAD_ACTION: ContentDriveWorkflowAction = {
+    name: 'Download',
     id: WORKFLOW_ACTION_ID.DOWNLOAD,
     showWhen: {
         allAreAssets: true
@@ -108,14 +123,20 @@ const DOWNLOAD_WORKFLOW_ACTION: ContentDriveWorkflowAction = {
 };
 
 export const DEFAULT_WORKFLOW_ACTIONS = [
-    EDIT_WORKFLOW_ACTION,
-    RENAME_WORKFLOW_ACTION,
-    PUBLISH_WORKFLOW_ACTION,
-    UNPUBLISH_WORKFLOW_ACTION,
-    DOWNLOAD_WORKFLOW_ACTION,
-    ARCHIVE_WORKFLOW_ACTION,
-    UNARCHIVE_WORKFLOW_ACTION,
-    DELETE_WORKFLOW_ACTION
+    // Edit actions (most frequent)
+    GOT_TO_EDIT_CONTENTLET_ACTION,
+    GOT_TO_EDIT_PAGE_ACTION,
+    RENAME_ACTION,
+    // Content state (publication lifecycle)
+    SAVE_AS_DRAFT_ACTION,
+    PUBLISH_ACTION,
+    UNPUBLISH_ACTION,
+    // Asset operations
+    DOWNLOAD_ACTION,
+    // Removal actions (increasing severity)
+    ARCHIVE_ACTION,
+    UNARCHIVE_ACTION,
+    DELETE_ACTION
 ];
 
 export const getActionConditions = (selectedItems: DotContentDriveItem[]): ActionShowConditions => {
