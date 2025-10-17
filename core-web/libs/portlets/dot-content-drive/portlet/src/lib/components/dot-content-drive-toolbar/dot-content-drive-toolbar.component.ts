@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    output,
+    signal
+} from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -13,6 +20,7 @@ import { DotContentDriveContentTypeFieldComponent } from './components/dot-conte
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
+import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
@@ -22,13 +30,14 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
     imports: [
         ToolbarModule,
         ButtonModule,
+        MenuModule,
+        DotMessagePipe,
         DotContentDriveTreeTogglerComponent,
         DotContentDriveBaseTypeSelectorComponent,
         DotContentDriveContentTypeFieldComponent,
         DotContentDriveSearchInputComponent,
-        DotMessagePipe,
-        MenuModule,
-        DotContentDriveLanguageFieldComponent
+        DotContentDriveLanguageFieldComponent,
+        DotContentDriveWorkflowActionsComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     styleUrl: './dot-content-drive-toolbar.component.scss',
@@ -59,4 +68,5 @@ export class DotContentDriveToolbarComponent {
     ]);
 
     readonly $treeExpanded = this.#store.isTreeExpanded;
+    readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
 }

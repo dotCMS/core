@@ -18,23 +18,38 @@ export class DotContentDriveNavigationService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotRouterService = inject(DotRouterService);
     /**
-     * Navigates to the appropriate editor based on the content type
-     * @param contentlet The content item to edit
+     * Navigates to the appropriate editor based on the content type.
+     * Routes to the page editor for HTML pages, or the contentlet editor for other types.
+     *
+     * @param contentlet - The content item to edit
      */
     editContent(contentlet: DotContentDriveItem) {
         if (contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE) {
-            this.#editPage(contentlet);
+            this.editPage(contentlet);
         } else {
             this.#editContentlet(contentlet);
         }
     }
 
-    #editPage(contentlet: DotContentDriveItem) {
+    /**
+     * Navigates to the edit page editor for a page contentlet.
+     * Uses the contentlet's URL map or URL along with the language ID for routing.
+     *
+     * @param contentlet - The page content item to edit
+     */
+    editPage(contentlet: DotContentDriveItem) {
         const url = contentlet.urlMap || contentlet.url;
 
         this.#dotRouterService.goToEditPage({ url, language_id: contentlet.languageId });
     }
 
+    /**
+     * Navigates to the contentlet editor.
+     * Determines whether to use the new or legacy content editor based on
+     * the content type's feature flag settings.
+     *
+     * @param contentlet - The contentlet to edit
+     */
     #editContentlet(contentlet: DotContentDriveItem) {
         this.#dotContentTypeService
             .getContentType(contentlet.contentType)
