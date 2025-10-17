@@ -5,7 +5,6 @@ import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.lang.reflect.Method;
@@ -122,6 +121,14 @@ public class RequestCostApiImpl implements RequestCostApi {
     }
 
 
+    /**
+     * resolves the Accounting mode from the request Accounting.Header is the default accounting mode. Can also be
+     * Accounting.None   <-- No accounting Accounting.Log    <-- spits out accounting in the log Accounting.HTML   <--
+     * skips request and spits out an html report
+     *
+     * @param request
+     * @return
+     */
     @Override
     public Accounting resolveAccounting(HttpServletRequest request) {
         if (!isAccountingEnabled()) {
@@ -137,13 +144,23 @@ public class RequestCostApiImpl implements RequestCostApi {
                         ? (Accounting) request.getAttribute(REQUEST_COST_ACCOUNTING_TYPE)
                         : Accounting.HEADER;
 
-        if (finalAccounting.ordinal() > Accounting.HEADER.ordinal()) {
-            User user = Try.of(() -> new InitBuilder(request, null).requireAdmin(true).init().getUser()).getOrNull();
-            if (user != null) {
-                return finalAccounting;
-            }
+        if (finalAccounting.ordinal() <= Accounting.HEADER.ordinal()) {
+            return finalAccounting;
         }
-        return Accounting.HEADER;
+
+        // need to be an admin for special accounting
+        boolean admin = Try.of(() -> new InitBuilder(request, null)
+                        .requireAdmin(true)
+                        .init()
+                        .getUser()
+                        .isAdmin())
+                .getOrElse(false);
+
+        return admin
+                ? finalAccounting
+                : Accounting.HEADER;
+
+
     }
 
     @Override
