@@ -134,6 +134,7 @@ describe('EditContentLayoutComponent', () => {
 
         // Mock the initial UI state
         jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+            view: 'form',
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,

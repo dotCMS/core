@@ -1,10 +1,17 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, type, withMethods, withHooks } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withMethods,
+    withHooks,
+    withComputed
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject, effect, untracked } from '@angular/core';
+import { inject, effect, untracked, computed } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -44,6 +51,15 @@ export const DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE = 40;
 export function withHistory() {
     return signalStoreFeature(
         { state: type<EditContentState>() },
+        withComputed((store) => ({
+            compareData: computed(() => {
+                return {
+                    inode: store.compareContentlet()?.inode,
+                    identifier: store.compareContentlet()?.identifier,
+                    language: 'en-us'
+                };
+            })
+        })),
         withMethods(
             (
                 store,
@@ -193,6 +209,10 @@ export function withHistory() {
                                     next: (versionContent) => {
                                         const currentContentlet = store.contentlet();
                                         patchState(store, {
+                                            uiState: {
+                                                ...store.uiState(),
+                                                view: 'form'
+                                            },
                                             // Store original contentlet if not already stored
                                             originalContentlet: store.isViewingHistoricalVersion()
                                                 ? store.originalContentlet()
@@ -235,6 +255,44 @@ export function withHistory() {
                     }
                 };
 
+                const loadCompareVersionContent = rxMethod<string>(
+                    pipe(
+                        switchMap((inode) =>
+                            dotContentletService.getContentletByInode(inode).pipe(
+                                tapResponse({
+                                    next: (versionContent) => {
+                                        const currentContentlet = store.contentlet();
+                                        patchState(store, {
+                                            compareContentlet: versionContent,
+                                            uiState: {
+                                                ...store.uiState(),
+                                                view: 'compare'
+                                            },
+                                            // Store original contentlet if not already stored
+                                            originalContentlet: store.isViewingHistoricalVersion()
+                                                ? store.originalContentlet()
+                                                : currentContentlet,
+                                            isViewingHistoricalVersion: false,
+                                            historicalVersionInode: inode
+                                        });
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        // Handle load errors - show error toast and maintain current version
+                                        errorManager.handle(error);
+                                        messageService.add({
+                                            severity: 'error',
+                                            summary: dotMessageService.get('Error'),
+                                            detail: dotMessageService.get(
+                                                'edit.content.sidebar.history.load.error'
+                                            )
+                                        });
+                                    }
+                                })
+                            )
+                        )
+                    )
+                );
+
                 return {
                     /**
                      * Loads content versions with intelligent pagination and accumulation
@@ -255,6 +313,10 @@ export function withHistory() {
                                 // Only show loading on initial load (page 1)
                                 if (page === 1) {
                                     patchState(store, {
+                                        uiState: {
+                                            ...store.uiState(),
+                                            view: 'form'
+                                        },
                                         versionsStatus: {
                                             status: ComponentStatus.LOADING,
                                             error: null
@@ -298,6 +360,10 @@ export function withHistory() {
                                                 }
 
                                                 patchState(store, {
+                                                    uiState: {
+                                                        ...store.uiState(),
+                                                        view: 'form'
+                                                    },
                                                     versions: newVersions, // All accumulated items for display
                                                     versionsPagination:
                                                         response.pagination as DotPagination,
@@ -565,8 +631,7 @@ export function withHistory() {
                                 confirmAndRestoreVersion(action.item.inode);
                                 break;
                             case DotHistoryTimelineItemActionType.COMPARE:
-                                // TODO: Implement compare functionality
-
+                                loadCompareVersionContent(action.item.inode);
                                 break;
                             case DotHistoryTimelineItemActionType.DELETE:
                                 confirmationService.confirm({

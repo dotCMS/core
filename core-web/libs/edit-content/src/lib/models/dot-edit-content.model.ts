@@ -46,6 +46,7 @@ export interface DotWorkflowState extends DotCMSWorkflowStatus {
  * @interface UIState
  */
 export interface UIState {
+    view: 'form' | 'compare';
     activeTab: number;
     isSidebarOpen: boolean;
     activeSidebarTab: number;

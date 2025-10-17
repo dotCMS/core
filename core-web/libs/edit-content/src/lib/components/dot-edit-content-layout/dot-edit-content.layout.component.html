@@ -3,8 +3,8 @@
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
     @let lockWarningMessage = $store.lockWarningMessage();
     @let showBetaMessage = $store.isBetaMessageVisible();
+    @let view = $store.uiState().view;
     @let showInvalidMessage = $store.formStatus() === 'invalid';
-
     @let isEnabledNewContentEditor = $store.isEnabledNewContentEditor();
 
     @let topBarHasMessages =
@@ -112,10 +112,18 @@
         }
     </div>
 
-    <dot-edit-content-form
-        data-testId="edit-content-layout__body"
-        (changeValue)="onFormChange($event)"
-        class="edit-content-layout__body" />
+    @if (view === 'form') {
+        @defer (when view === 'form') {
+            <dot-edit-content-form
+                data-testId="edit-content-layout__body"
+                (changeValue)="onFormChange($event)"
+                class="edit-content-layout__body" />
+        }
+    } @else if (view === 'compare') {
+        @defer (when view === 'compare') {
+            <dot-edit-content-compare class="edit-content-layout__body" />
+        }
+    }
 
     @if (showSidebar) {
         @defer (when showSidebar) {
