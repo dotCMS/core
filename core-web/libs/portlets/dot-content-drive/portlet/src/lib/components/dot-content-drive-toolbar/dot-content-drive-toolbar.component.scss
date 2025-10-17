@@ -42,12 +42,17 @@
         ". toolbar-group-bottom";
 
     place-items: center;
-
     transition: column-gap $content-drive-animation-speed $content-drive-animation-ease;
 
     &:has(dot-content-drive-tree-toggler.sidebar-expanded) {
         column-gap: 0;
     }
+}
+
+.p-toolbar-group-actions {
+    row-gap: 0;
+    grid-template-areas: "tree-toogler toolbar-group-workflow";
+    grid-template-rows: 1fr;
 }
 
 .p-toolbar-group-top {
@@ -78,4 +83,10 @@
 .p-toolbar-group-top,
 .p-toolbar-group-bottom {
     gap: $spacing-1;
+}
+
+.p-toolbar-group-workflow {
+    width: 100%;
+    grid-area: toolbar-group-workflow;
+    justify-self: end;
 }

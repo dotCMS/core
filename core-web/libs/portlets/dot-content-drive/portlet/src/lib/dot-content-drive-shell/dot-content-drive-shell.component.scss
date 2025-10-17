@@ -12,6 +12,12 @@
         "tree toolbar detail"
         "tree list    detail";
     height: 100%;
+    transition: grid-template-rows $content-drive-animation-speed $content-drive-animation-ease;
+
+    /* Animate toolbar height when workflow actions are shown */
+    &:has(.p-toolbar-group-actions) {
+        grid-template-rows: min-content 4.375rem 1fr; //70px 1fr
+    }
 }
 ::ng-deep {
     .p-dialog.content-drive-dialog {
