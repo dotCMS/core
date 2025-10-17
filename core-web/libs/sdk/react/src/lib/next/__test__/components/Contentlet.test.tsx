@@ -150,7 +150,7 @@ describe('Contentlet', () => {
         expect(getDotAnalyticsAttributesMock).not.toHaveBeenCalled();
     });
 
-    test('should add both UVE and analytics attributes when both are active', () => {
+    test('should NOT add analytics attributes when in development mode (UVE)', () => {
         useIsAnalyticsActiveMock.mockReturnValue(true);
 
         const contextValue = {
@@ -160,8 +160,9 @@ describe('Contentlet', () => {
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
 
-        // Both should be called
+        // UVE attributes should be called in development
         expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
-        expect(getDotAnalyticsAttributesMock).toHaveBeenCalledWith(dummyContentlet);
+        // Analytics attributes should NOT be called in development mode (even if analytics is active)
+        expect(getDotAnalyticsAttributesMock).not.toHaveBeenCalled();
     });
 });
