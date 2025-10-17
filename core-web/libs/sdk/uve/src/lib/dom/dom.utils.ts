@@ -1,11 +1,12 @@
 import {
-    EditableContainerData,
-    DotCMSColumnContainer,
     DotCMSBasicContentlet,
+    DotCMSColumnContainer,
     DotCMSPageAsset,
-    DotPageAssetLayoutColumn
+    DotPageAssetLayoutColumn,
+    EditableContainerData
 } from '@dotcms/types';
 import {
+    DotAnalyticsAttributes,
     DotCMSContainerBound,
     DotCMSContentletBound,
     DotContainerAttributes,
@@ -280,6 +281,27 @@ export function getDotContentletAttributes(
         'data-dot-type': contentlet?.contentType,
         'data-dot-container': container,
         'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1'
+    };
+}
+
+/**
+ * Helper function that returns an object containing analytics-specific data attributes.
+ * These attributes are used by the DotCMS Analytics SDK to track content interactions.
+ *
+ * @param {DotCMSBasicContentlet} contentlet - The contentlet to get the analytics attributes for
+ * @returns {DotAnalyticsAttributes} The analytics data attributes
+ * @internal
+ */
+export function getDotAnalyticsAttributes(
+    contentlet: DotCMSBasicContentlet
+): DotAnalyticsAttributes {
+    return {
+        class: 'dotcms-analytics-contentlet',
+        'data-dot-analytics-identifier': contentlet?.identifier,
+        'data-dot-analytics-inode': contentlet?.inode,
+        'data-dot-analytics-basetype': contentlet?.baseType,
+        'data-dot-analytics-contenttype': contentlet?.contentType,
+        'data-dot-analytics-title': contentlet?.['widgetTitle'] || contentlet?.title
     };
 }
 

@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/globals';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 
 import { UVE_MODE, UVEEventType } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
-import { getUVEState, createUVESubscription } from './core.utils';
+import { createUVESubscription, getUVEState, isAnalyticsActive } from './core.utils';
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
@@ -439,5 +439,48 @@ describe('createUVESubscription', () => {
             'message',
             messageCallback
         );
+    });
+});
+
+describe('isAnalyticsActive', () => {
+    let windowSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        // Reset window.__dotAnalyticsActive__ before each test
+        delete (window as any).__dotAnalyticsActive__;
+    });
+
+    afterEach(() => {
+        windowSpy?.mockRestore();
+    });
+
+    it('should return true when __dotAnalyticsActive__ is true', () => {
+        (window as any).__dotAnalyticsActive__ = true;
+
+        const result = isAnalyticsActive();
+
+        expect(result).toBe(true);
+    });
+
+    it('should return false when __dotAnalyticsActive__ is false', () => {
+        (window as any).__dotAnalyticsActive__ = false;
+
+        const result = isAnalyticsActive();
+
+        expect(result).toBe(false);
+    });
+
+    it('should return false when __dotAnalyticsActive__ is undefined', () => {
+        const result = isAnalyticsActive();
+
+        expect(result).toBe(false);
+    });
+
+    it('should return false when window is not defined (SSR)', () => {
+        windowSpy = jest.spyOn(global, 'window', 'get').mockImplementation(() => undefined as any);
+
+        const result = isAnalyticsActive();
+
+        expect(result).toBe(false);
     });
 });
