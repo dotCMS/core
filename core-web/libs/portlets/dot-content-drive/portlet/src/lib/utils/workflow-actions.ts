@@ -43,6 +43,12 @@ export interface ContentDriveWorkflowAction {
     name: string;
     id: WORKFLOW_ACTION_ID;
     showWhen?: ActionShowConditions;
+    /**
+     * Optional confirmation message key to display before executing the action.
+     * When present, the user will be prompted to confirm before the action is executed.
+     * The value should be a message key that will be translated via DotMessageService.
+     */
+    confirmationMessage?: string;
 }
 
 const GOT_TO_EDIT_CONTENTLET_ACTION: ContentDriveWorkflowAction = {
@@ -112,7 +118,8 @@ const DELETE_ACTION: ContentDriveWorkflowAction = {
     id: WORKFLOW_ACTION_ID.DELETE,
     showWhen: {
         allArchived: true
-    }
+    },
+    confirmationMessage: 'content.drive.worflow.action.delete.confirm'
 };
 
 const RENAME_ACTION: ContentDriveWorkflowAction = {
