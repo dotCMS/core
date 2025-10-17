@@ -5,7 +5,7 @@
                 <th></th>
                 <th>
                     <span class="dot-content-compare-table__title" data-testId="table-tittle">
-                        Current
+                        {{ 'edit.content.sidebar.history.menu.current' | dm }}
                     </span>
                 </th>
                 <th>
@@ -14,7 +14,7 @@
                             <span
                                 class="dot-content-compare-table__title"
                                 data-testId="table-tittle">
-                                Previous
+                                {{ 'edit.content.sidebar.history.menu.previous' | dm }}
                             </span>
                         </div>
                         @if ($showActions()) {
