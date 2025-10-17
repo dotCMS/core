@@ -122,28 +122,44 @@ export function createUVESubscription<T extends UVEEventType>(
  * This function checks for the presence of the `__dotAnalyticsActive__` flag on the window object,
  * which is set by the `@dotcms/analytics` SDK when Analytics is successfully initialized.
  *
+ * This utility can be used in any JavaScript framework (React, Angular, Vue, etc.) to conditionally
+ * enable analytics-related features or data attributes.
+ *
  * @export
  * @returns {boolean} true if Analytics is initialized and active, false otherwise
  *
  * @example
  * ```ts
- * import { isAnalyticsActive } from '@dotcms/uve';
+ * // React example
+ * import { isAnalyticsActive } from '@dotcms/uve/internal';
  *
- * if (isAnalyticsActive()) {
- *   // Add analytics-specific data attributes
- *   console.log('Analytics is running');
+ * function MyComponent() {
+ *   const shouldTrack = isAnalyticsActive();
+ *
+ *   if (shouldTrack) {
+ *     // Add analytics tracking
+ *   }
  * }
  * ```
  *
  * @example
  * ```ts
- * // Use in conditional logic for data attributes
- * import { isAnalyticsActive, getDotContentletAttributes } from '@dotcms/uve/internal';
+ * // Angular example
+ * import { isAnalyticsActive } from '@dotcms/uve/internal';
  *
- * const attrs = getDotContentletAttributes(contentlet, container);
  * if (isAnalyticsActive()) {
- *   // Add additional analytics-specific attributes
- *   attrs['data-dot-name'] = contentlet.name;
+ *   // Apply analytics attributes to elements
+ *   element.setAttribute('data-dot-object', 'contentlet');
+ * }
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Vanilla JavaScript / Any framework
+ * import { isAnalyticsActive } from '@dotcms/uve/internal';
+ *
+ * if (isAnalyticsActive()) {
+ *   console.log('DotCMS Analytics is active');
  * }
  * ```
  */
