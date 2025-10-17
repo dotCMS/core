@@ -46,7 +46,7 @@ export interface ContentDriveWorkflowAction {
 }
 
 const GOT_TO_EDIT_CONTENTLET_ACTION: ContentDriveWorkflowAction = {
-    name: 'Edit',
+    name: 'content.drive.worflow.action.edit-content',
     id: WORKFLOW_ACTION_ID.GOT_TO_EDIT_CONTENTLET,
     showWhen: {
         isSingleSelection: true,
@@ -56,7 +56,7 @@ const GOT_TO_EDIT_CONTENTLET_ACTION: ContentDriveWorkflowAction = {
 };
 
 const GOT_TO_EDIT_PAGE_ACTION: ContentDriveWorkflowAction = {
-    name: 'Edit Page',
+    name: 'content.drive.worflow.action.edit-page',
     id: WORKFLOW_ACTION_ID.GOT_TO_EDIT_PAGE,
     showWhen: {
         isSingleSelection: true,
@@ -84,7 +84,7 @@ const UNPUBLISH_ACTION: ContentDriveWorkflowAction = {
 };
 
 const SAVE_AS_DRAFT_ACTION: ContentDriveWorkflowAction = {
-    name: 'Save Draft',
+    name: 'content.drive.worflow.action.save-draft',
     id: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
     showWhen: {
         noneArchived: true
@@ -116,7 +116,7 @@ const DELETE_ACTION: ContentDriveWorkflowAction = {
 };
 
 const RENAME_ACTION: ContentDriveWorkflowAction = {
-    name: 'Rename',
+    name: 'content.drive.worflow.action.rename',
     id: WORKFLOW_ACTION_ID.RENAME,
     showWhen: {
         isSingleSelection: true,
