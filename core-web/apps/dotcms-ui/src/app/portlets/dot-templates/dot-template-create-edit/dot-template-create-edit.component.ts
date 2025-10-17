@@ -25,13 +25,14 @@ import { DotTemplatePropsComponent } from './dot-template-props/dot-template-pro
 import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
 import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.store';
 
+import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
     styleUrls: ['./dot-template-create-edit.component.scss'],
-    providers: [DotTemplateStore],
+    providers: [DotTemplateStore, DotTemplatesService],
     imports: [
         ButtonModule,
         CommonModule,

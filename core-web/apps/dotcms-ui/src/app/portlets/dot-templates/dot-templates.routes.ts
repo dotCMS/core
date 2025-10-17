@@ -38,6 +38,7 @@ export const DotTemplatesRoutes: Routes = [
             import('./dot-template-create-edit/dot-template-create-edit.component').then(
                 (m) => m.DotTemplateCreateEditComponent
             ),
+        providers: [DotTemplateCreateEditResolver, DotTemplatesService],
         resolve: {
             template: DotTemplateCreateEditResolver
         }
@@ -48,6 +49,7 @@ export const DotTemplatesRoutes: Routes = [
             import('./dot-template-create-edit/dot-template-create-edit.component').then(
                 (m) => m.DotTemplateCreateEditComponent
             ),
+        providers: [DotTemplateCreateEditResolver, DotTemplatesService],
         data: {
             reuseRoute: false
         },
