@@ -1,8 +1,10 @@
 package com.dotcms.cost;
 
 
+
 import com.dotcms.cost.RequestPrices.Price;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -17,19 +19,30 @@ import javax.validation.constraints.NotNull;
  */
 public interface RequestCostApi {
 
-    // Reqye
-    public final static String REQUEST_COST_HEADER_NAME = "X-Request-Cost";
+    enum Accounting {
+        NONE,
+        HEADER,
+        LOG,
+        HTML;
 
-    public final static String REQUEST_COST_ATTRIBUTE = "dotRequestCost";
+        public static Accounting fromString(String text) {
+            return Try.of(() -> Accounting.valueOf(text.toUpperCase())).getOrElse(Accounting.HEADER);
+        }
+    }
+
+    // Reqye
+    String REQUEST_COST_HEADER_NAME = "X-Request-Cost";
+
+    String REQUEST_COST_ATTRIBUTE = "dotRequestCost";
 
     // this is the url parameter that needs to be set in order to show an accounting report
-    public final static String REQUEST_COST_FULL_ACCOUNTING = "dotRequestAccounting";
+    String REQUEST_COST_ACCOUNTING_TYPE = "dotAccounting";
 
     // Map Keys for full Accounting
-    public final static String COST = "cost";
-    public final static String METHOD = "method";
-    public final static String CLASS = "class";
-    public final static String ARGS = "args";
+    String COST = "cost";
+    String METHOD = "method";
+    String CLASS = "class";
+    String ARGS = "args";
 
 
     float getRequestCostDenominator();
@@ -51,15 +64,28 @@ public interface RequestCostApi {
     List<Map<String, Object>> getAccountList(@NotNull HttpServletRequest request);
 
     /**
-     * Returns true if the request is in full accounting mode
+     * Returns the mode set for accounting
      *
      * @param request
      * @return
      */
-    boolean isFullAccounting(@NotNull HttpServletRequest request);
+    Accounting resolveAccounting(@NotNull HttpServletRequest request);
 
+    /**
+     * Reolves Accounting using the ThreadLocal request
+     *
+     * @return
+     */
+    Accounting resolveAccounting();
 
-    void incrementCost(Price price, Method method, Object[] args);
+    /**
+     * Adds Price to the requests cost
+     *
+     * @param price
+     * @param method
+     * @param args
+     */
+    void incrementCost(@NotNull Price price, @NotNull Method method, @NotNull Object[] args);
 
 
     /**
@@ -84,13 +110,6 @@ public interface RequestCostApi {
      */
     void initAccounting(@NotNull HttpServletRequest request);
 
-    /**
-     * Initializes the accounting system for the current request.
-     *
-     * @param request
-     * @param fullAccounting
-     */
-    void initAccounting(@NotNull HttpServletRequest request, boolean fullAccounting);
 
     /**
      * Clears the accounting system for the current request.
@@ -102,6 +121,6 @@ public interface RequestCostApi {
      *
      * @param response
      */
-    void addCostHeader(@NotNull HttpServletRequest request, HttpServletResponse response);
+    void addCostHeader(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response);
 
 }

@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.cost.RequestCostApi.Accounting;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -58,16 +59,15 @@ public class RequestCostApiTest extends UnitTestBase {
     }
 
     /**
-     * Test: {@link RequestCostApi#initAccounting(HttpServletRequest, boolean)} Should: Initialize accounting with full
+     * Test: {@link RequestCostApi#initAccounting(HttpServletRequest)} Should: Initialize accounting with full
      * accounting mode enabled Expected: Full accounting attribute is set to true
      */
     @Test
     public void test_initAccounting_withFullAccounting_shouldEnableFullMode() {
-        // When
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
 
-        // Then
-        assertTrue("Full accounting should be enabled", requestCostApi.isFullAccounting(request));
+        assertFalse("Full accounting only enabled for admins",
+                requestCostApi.resolveAccounting(request) == Accounting.HTML);
     }
 
     /**
@@ -145,30 +145,7 @@ public class RequestCostApiTest extends UnitTestBase {
         assertEquals("Account list should have 2 more entries", initialSize + 2, accountList.size());
     }
 
-    /**
-     * Test: {@link RequestCostApi#getAccountList(HttpServletRequest)} with full accounting Should: Include method
-     * details in account entries Expected: Entries contain CLASS, METHOD, ARGS keys
-     */
-    @Test
-    public void test_getAccountList_withFullAccounting_shouldIncludeMethodDetails() {
-        // Given
-        requestCostApi.initAccounting(request, true);
 
-        // When
-        requestCostApi.incrementCost(Price.FIVE, RequestCostApiTest.class, "testMethod", new Object[]{"arg1", 123});
-
-        // Then
-        List<Map<String, Object>> accountList = requestCostApi.getAccountList(request);
-        Map<String, Object> lastEntry = accountList.get(accountList.size() - 1);
-
-        assertTrue("Entry should contain COST", lastEntry.containsKey(RequestCostApi.COST));
-        assertTrue("Entry should contain CLASS", lastEntry.containsKey(RequestCostApi.CLASS));
-        assertTrue("Entry should contain METHOD", lastEntry.containsKey(RequestCostApi.METHOD));
-        assertTrue("Entry should contain ARGS", lastEntry.containsKey(RequestCostApi.ARGS));
-        assertEquals("Cost should be 5", 5, lastEntry.get(RequestCostApi.COST));
-        assertEquals("Class should match", RequestCostApiTest.class, lastEntry.get(RequestCostApi.CLASS));
-        assertEquals("Method should match", "testMethod", lastEntry.get(RequestCostApi.METHOD));
-    }
 
     /**
      * Test: {@link RequestCostApi#getAccountList(HttpServletRequest)} without full accounting Should: Only include cost
@@ -177,7 +154,7 @@ public class RequestCostApiTest extends UnitTestBase {
     @Test
     public void test_getAccountList_withoutFullAccounting_shouldOnlyIncludeCost() {
         // Given
-        requestCostApi.initAccounting(request, false);
+        requestCostApi.initAccounting(request);
 
         // When
         requestCostApi.incrementCost(Price.FIVE, RequestCostApiTest.class, "testMethod", new Object[]{"arg1"});
@@ -193,57 +170,24 @@ public class RequestCostApiTest extends UnitTestBase {
     }
 
     /**
-     * Test: {@link RequestCostApi#isFullAccounting(HttpServletRequest)} Should: Return false when full accounting is
+     * Test: {@link RequestCostApi#resolveAccounting(HttpServletRequest)} Should: Return false when full accounting is
      * not enabled Expected: Returns false
      */
     @Test
     public void test_isFullAccounting_whenNotEnabled_shouldReturnFalse() {
         // Given
-        requestCostApi.initAccounting(request, false);
+        requestCostApi.initAccounting(request);
 
         // When
-        boolean isFullAccounting = requestCostApi.isFullAccounting(request);
+        boolean isFullAccounting = requestCostApi.resolveAccounting(request) != Accounting.HEADER;
 
         // Then
         assertFalse("Full accounting should be disabled", isFullAccounting);
     }
 
-    /**
-     * Test: {@link RequestCostApi#isFullAccounting(HttpServletRequest)} Should: Return true when full accounting is
-     * enabled Expected: Returns true
-     */
-    @Test
-    public void test_isFullAccounting_whenEnabled_shouldReturnTrue() {
-        // Given
-        requestCostApi.initAccounting(request, true);
 
-        // When
-        boolean isFullAccounting = requestCostApi.isFullAccounting(request);
 
-        // Then
-        assertTrue("Full accounting should be enabled", isFullAccounting);
-    }
 
-    /**
-     * Test: {@link RequestCostApi#endAccounting(HttpServletRequest)} Should: Clear all accounting attributes from
-     * request Expected: Attributes are removed
-     */
-    @Test
-    public void test_endAccounting_shouldClearAttributes() {
-        // Given
-        requestCostApi.initAccounting(request, true);
-        requestCostApi.incrementCost(Price.FIVE, RequestCostApiTest.class, "method", new Object[]{});
-
-        // When
-        requestCostApi.endAccounting(request);
-
-        // Then
-        Object costAttribute = request.getAttribute(RequestCostApi.REQUEST_COST_ATTRIBUTE);
-        Object fullAccountingAttribute = request.getAttribute(RequestCostApi.REQUEST_COST_FULL_ACCOUNTING);
-
-        assertEquals("Cost attribute should be null", null, costAttribute);
-        assertEquals("Full accounting attribute should be null", null, fullAccountingAttribute);
-    }
 
     /**
      * Test: {@link RequestCostApi#addCostHeader(HttpServletRequest, HttpServletResponse)} Should: Add X-Request-Cost

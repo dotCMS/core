@@ -1,5 +1,6 @@
 package com.dotcms.cost;
 
+import com.dotcms.cost.RequestCostApi.Accounting;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
@@ -12,7 +13,6 @@ import net.bytebuddy.asm.Advice;
  */
 public class RequestCostAdvice {
 
-
     @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
     public static void enter(
             final @Advice.Origin Method method,
@@ -20,15 +20,20 @@ public class RequestCostAdvice {
     ) {
         RequestCost annotation = method.getAnnotation(RequestCost.class);
         if (annotation != null) {
+            RequestCostApi api = APILocator.getRequestCostAPI();
             String callingMethod = method.getDeclaringClass().getSimpleName() + "." + method.getName();
             Price price = annotation.value();
-            Logger.debug(RequestCostAdvice.class,
-                    () -> "cost:" + callingMethod + " : "
-                            + annotation.value());
-            APILocator.getRequestCostAPI().incrementCost(price, method, args);
+            // log requests if a fuller accounting is enabled
+            if (api.resolveAccounting().ordinal() > Accounting.HEADER.ordinal()) {
+                Logger.info(RequestCostAdvice.class,
+                        () -> "cost:" + price.price + " , method" + callingMethod);
+            } else {
+                Logger.debug(RequestCostAdvice.class,
+                        () -> "cost:" + price.price + " , method" + callingMethod);
+            }
+
+            api.incrementCost(price, method, args);
         }
 
     }
-
-
 }

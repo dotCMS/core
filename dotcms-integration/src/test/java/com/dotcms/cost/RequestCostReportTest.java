@@ -6,12 +6,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.cost.RequestCostApi.Accounting;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,16 +29,21 @@ public class RequestCostReportTest {
     private RequestCostReport report;
     private RequestCostApi requestCostApi;
     private HttpServletRequest request;
+    private User adminUser;
 
     @Before
     public void setUp() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        adminUser = APILocator.systemUser();
         report = new RequestCostReport();
         requestCostApi = new RequestCostApiImpl(true);
         request = new MockParameterRequest(
                 new MockAttributeRequest(
                         new MockHeaderRequest(
                                 new FakeHttpRequest("localhost", "/test/page").request())));
+
+        request.setAttribute(WebKeys.USER, adminUser);
+        request.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
     }
 
     /**
@@ -44,7 +53,8 @@ public class RequestCostReportTest {
     @Test
     public void test_writeAccounting_withFullData_shouldGenerateCompleteReport() {
         // Given
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+        requestCostApi.initAccounting(request);
         requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "method1", new Object[]{"arg1", "arg2"});
         requestCostApi.incrementCost(Price.TEN, RequestCostReportTest.class, "method2", new Object[]{123, true});
         requestCostApi.incrementCost(Price.THREE, RequestCostReportTest.class, "method3", new Object[]{});
@@ -70,8 +80,8 @@ public class RequestCostReportTest {
      */
     @Test
     public void test_writeAccounting_withMinimalData_shouldGenerateBasicReport() {
-        // Given
-        requestCostApi.initAccounting(request, false);
+
+        requestCostApi.initAccounting(request);
         requestCostApi.incrementCost(Price.SEVEN, RequestCostReportTest.class, "method", new Object[]{});
 
         // When
@@ -90,8 +100,8 @@ public class RequestCostReportTest {
      */
     @Test
     public void test_writeAccounting_withEmptyAccounting_shouldGenerateEmptyReport() {
-        // Given
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+        requestCostApi.initAccounting(request);
         // Don't add any costs beyond initialization
 
         // When
@@ -115,7 +125,9 @@ public class RequestCostReportTest {
                 new MockAttributeRequest(
                         new MockHeaderRequest(
                                 new FakeHttpRequest("localhost", "/test<script>alert('xss')</script>").request())));
-        requestCostApi.initAccounting(xssRequest, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+
+        requestCostApi.initAccounting(xssRequest);
 
         // When
         String html = report.writeAccounting(xssRequest);
@@ -133,7 +145,8 @@ public class RequestCostReportTest {
     @Test
     public void test_writeAccounting_shouldCalculateTotalCorrectly() {
         // Given
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+        requestCostApi.initAccounting(request);
         requestCostApi.incrementCost(Price.TEN, RequestCostReportTest.class, "method1", new Object[]{});
         requestCostApi.incrementCost(Price.TWENTY, RequestCostReportTest.class, "method2", new Object[]{});
         requestCostApi.incrementCost(Price.THIRTY, RequestCostReportTest.class, "method3", new Object[]{});
@@ -155,7 +168,8 @@ public class RequestCostReportTest {
     @Test
     public void test_writeAccounting_shouldNumberRowsSequentially() {
         // Given
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+        requestCostApi.initAccounting(request);
         requestCostApi.incrementCost(Price.ONE, RequestCostReportTest.class, "method1", new Object[]{});
         requestCostApi.incrementCost(Price.TWO, RequestCostReportTest.class, "method2", new Object[]{});
         requestCostApi.incrementCost(Price.THREE, RequestCostReportTest.class, "method3", new Object[]{});
@@ -176,7 +190,8 @@ public class RequestCostReportTest {
     @Test
     public void test_writeAccounting_shouldDisplayArguments() {
         // Given
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+        requestCostApi.initAccounting(request);
         requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "testMethod",
                 new Object[]{"stringArg", 42, true, null});
 
@@ -196,7 +211,8 @@ public class RequestCostReportTest {
     @Test
     public void test_writeAccounting_withNullArguments_shouldNotFail() {
         // Given
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+        requestCostApi.initAccounting(request);
         requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "method",
                 new Object[]{null, "valid", null});
 
@@ -216,7 +232,8 @@ public class RequestCostReportTest {
     @Test
     public void test_writeAccounting_withManyEntries_shouldHandleAll() {
         // Given
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+        requestCostApi.initAccounting(request);
         int entryCount = 100;
         for (int i = 0; i < entryCount; i++) {
             requestCostApi.incrementCost(Price.ONE, RequestCostReportTest.class, "method" + i, new Object[]{i});
@@ -240,7 +257,8 @@ public class RequestCostReportTest {
     @Test
     public void test_writeAccounting_shouldGenerateValidHTML() {
         // Given
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+        requestCostApi.initAccounting(request);
         requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "method", new Object[]{});
 
         // When
@@ -270,7 +288,8 @@ public class RequestCostReportTest {
     @Test
     public void test_writeAccounting_withSpecialCharacters_shouldHandleGracefully() {
         // Given
-        requestCostApi.initAccounting(request, true);
+        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
+        requestCostApi.initAccounting(request);
         // Class and method names from Java won't have HTML special chars, but args might
         requestCostApi.incrementCost(Price.FIVE, RequestCostReportTest.class, "method",
                 new Object[]{"<test>", "&value", "\"quoted\""});

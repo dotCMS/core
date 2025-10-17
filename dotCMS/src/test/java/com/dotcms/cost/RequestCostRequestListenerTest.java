@@ -1,6 +1,5 @@
 package com.dotcms.cost;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -9,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.cost.RequestCostApi.Accounting;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -27,8 +27,6 @@ import org.junit.Test;
  * Unit tests for {@link RequestCostRequestListener}. Tests request lifecycle management, ThreadLocal handling, and full
  * accounting detection.
  *
- * @author Will Ezell
- * @since Oct 13th, 2024
  */
 public class RequestCostRequestListenerTest extends UnitTestBase {
 
@@ -59,7 +57,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
     public void test_requestInitialized_withFullAccountingParam_shouldEnableFullMode() {
         // Given
         Map<String, String> params = new HashMap<>();
-        params.put(RequestCostApi.REQUEST_COST_FULL_ACCOUNTING, "true");
+        params.put(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, "html");
         HttpServletRequest request = new MockParameterRequest(
                 new MockAttributeRequest(
                         new MockHeaderRequest(
@@ -74,9 +72,10 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
         // Then
         // Note: Full accounting requires admin user, so this will be false in unit tests
         // but the parameter detection logic is still tested
-        boolean isFullAccounting = requestCostApi.isFullAccounting(request);
+        Accounting accounting = requestCostApi.resolveAccounting(request);
         // In unit tests without proper user context, this will be false
-        assertFalse("Full accounting requires admin user (not available in unit test)", isFullAccounting);
+        assertTrue("Full accounting requires admin user (not available in unit test)",
+                accounting.ordinal() <= Accounting.LOG.ordinal());
     }
 
     /**
@@ -94,8 +93,8 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
         listener.requestInitialized(event);
 
         // Then
-        boolean isFullAccounting = requestCostApi.isFullAccounting(request);
-        assertFalse("Full accounting should be disabled", isFullAccounting);
+        Accounting accounting = requestCostApi.resolveAccounting(request);
+        assertTrue("Full accounting should be disabled", accounting.ordinal() <= Accounting.LOG.ordinal());
     }
 
     /**
@@ -125,7 +124,7 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
         assertNull("Cost attribute should be removed",
                 request.getAttribute(RequestCostApi.REQUEST_COST_ATTRIBUTE));
         assertNull("Full accounting attribute should be removed",
-                request.getAttribute(RequestCostApi.REQUEST_COST_FULL_ACCOUNTING));
+                request.getAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE));
     }
 
     /**

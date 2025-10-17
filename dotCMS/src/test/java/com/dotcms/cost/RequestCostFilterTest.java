@@ -28,8 +28,6 @@ import org.junit.Test;
  * Unit tests for {@link RequestCostFilter}. Tests the filter's behavior in normal and full accounting modes, response
  * wrapper functionality, and header injection.
  *
- * @author Will Ezell
- * @since Oct 13th, 2024
  */
 public class RequestCostFilterTest extends UnitTestBase {
 

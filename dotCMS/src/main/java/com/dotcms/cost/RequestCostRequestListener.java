@@ -23,9 +23,7 @@ public class RequestCostRequestListener implements ServletRequestListener {
     public void requestInitialized(ServletRequestEvent servletRequestEvent) {
         HttpServletRequest request = (HttpServletRequest) servletRequestEvent.getServletRequest();
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
-        boolean fullAccounting = requestCostApi.isFullAccounting(request);
-
-        requestCostApi.initAccounting(request, fullAccounting);
+        requestCostApi.initAccounting(request);
     }
 
 

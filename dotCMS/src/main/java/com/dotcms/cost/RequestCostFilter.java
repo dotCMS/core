@@ -1,5 +1,6 @@
 package com.dotcms.cost;
 
+import com.dotcms.cost.RequestCostApi.Accounting;
 import com.dotmarketing.business.APILocator;
 import com.liferay.util.servlet.NullServletResponse;
 import java.io.IOException;
@@ -44,14 +45,15 @@ public class RequestCostFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
-        boolean fullAccounting = requestCostApi.isFullAccounting(request);
+        Accounting fullAccounting = requestCostApi.resolveAccounting(request);
 
         HttpServletResponse wrapper =
-                fullAccounting ? new NullServletResponse(response) : new RequestCostResponseWrapper(request, response);
+                fullAccounting == Accounting.HTML ? new NullServletResponse(response)
+                        : new RequestCostResponseWrapper(request, response);
         requestCostApi.addCostHeader(request, wrapper);
         chain.doFilter(req, wrapper);
         requestCostApi.addCostHeader(request, wrapper);
-        if (fullAccounting) {
+        if (fullAccounting == Accounting.HTML) {
             response.setContentType("text/html");
             response.setStatus(HttpServletResponse.SC_OK);
             PrintWriter out = response.getWriter();
