@@ -1,7 +1,7 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.client.AIProxyClient;
@@ -75,7 +75,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                     .maximumSize(ConfigService.INSTANCE.config().getConfigInteger(AppKeys.EMBEDDINGS_CACHE_SIZE))
                     .build();
 
-    final AppConfig config;
+    final AiAppConfig config;
 
     public EmbeddingsAPIImpl(final Host host) {
         this.config = ConfigService.INSTANCE.config(host);

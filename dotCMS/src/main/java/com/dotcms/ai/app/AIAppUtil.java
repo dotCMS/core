@@ -1,5 +1,8 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.ai.config.AiModelConfig;
+import com.dotcms.ai.config.AiModelConfigCatalog;
+import com.dotcms.ai.config.AiVendor;
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.util.UtilMethods;
@@ -41,15 +44,34 @@ public class AIAppUtil {
      * @return the created text model instance
      */
     public AIModel createTextModel(final Map<String, Secret> secrets) {
-        final List<String> modelNames = splitDiscoveredSecret(secrets, AppKeys.TEXT_MODEL_NAMES);
-        if (CollectionUtils.isEmpty(modelNames)) {
-            return AIModel.NOOP_MODEL;
+
+        List<String> modelNames = getModelNamesFromCatalogs(secrets, AppKeys.ADVANCE_PROVIDER_SETTINGS_KEY);
+        int tokensPerMinute = 0;
+
+        if (UtilMethods.isSet(modelNames)) {
+
+            // it is hardcoded by now to open ai.
+            final AiModelConfig modelConfig = modelConfigCatalogOpt.get().getChatConfig(AiVendor.OPEN_AI.getVendorName());
+            if (modelConfig != null) {
+
+
+            }
+        }
+
+        if (modelNames == null) {
+
+            modelNames = splitDiscoveredSecret(secrets, AppKeys.TEXT_MODEL_NAMES);
+            if (CollectionUtils.isEmpty(modelNames)) {
+                return AIModel.NOOP_MODEL;
+            }
+
+            tokensPerMinute = discoverIntSecret(secrets, AppKeys.TEXT_MODEL_TOKENS_PER_MINUTE)
         }
 
         return AIModel.builder()
                 .withType(AIModelType.TEXT)
                 .withModelNames(modelNames)
-                .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_TOKENS_PER_MINUTE))
+                .withTokensPerMinute(tokensPerMinute)
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_MAX_TOKENS))
                 .withIsCompletion(discoverBooleanSecret(secrets, AppKeys.TEXT_MODEL_COMPLETION))
@@ -110,6 +132,7 @@ public class AIAppUtil {
      * @return the resolved secret value or the default value if the secret is not found
      */
     public String discoverSecret(final Map<String, Secret> secrets, final AppKeys key, final String defaultValue) {
+
         return Try.of(() -> secrets.get(key.key).getString()).getOrElse(defaultValue);
     }
 

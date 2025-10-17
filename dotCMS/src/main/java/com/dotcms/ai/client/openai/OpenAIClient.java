@@ -3,7 +3,7 @@ package com.dotcms.ai.client.openai;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModels;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.client.AIClient;
 import com.dotcms.ai.client.AIRequest;
@@ -14,10 +14,8 @@ import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
 import com.dotcms.ai.exception.DotAIClientConnectException;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.exception.DotAIModelNotOperationalException;
-import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.exception.GenericHttpStatusCodeException;
-import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
@@ -29,8 +27,6 @@ import javax.ws.rs.core.Response;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Implementation of the {@link AIClient} interface for interacting with the OpenAI service.
@@ -100,7 +96,7 @@ public class OpenAIClient implements AIClient {
     @Override
     public <T extends Serializable> void sendRequest(final AIRequest<T> request, final OutputStream output) {
         final JSONObjectAIRequest jsonRequest = AIClient.useRequestOrThrow(request);
-        final AppConfig appConfig = jsonRequest.getConfig();
+        final AiAppConfig appConfig = jsonRequest.getConfig();
 
         appConfig.debugLogger(
                 OpenAIClient.class,

@@ -1,7 +1,7 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.client.AIProxyClient;
 import com.dotcms.ai.client.JSONObjectAIRequest;
@@ -15,10 +15,10 @@ import java.util.Map;
 
 public class OpenAIChatAPIImpl implements ChatAPI {
 
-    private final AppConfig config;
+    private final AiAppConfig config;
     private final User user;
 
-    public OpenAIChatAPIImpl(final AppConfig appConfig, final User user) {
+    public OpenAIChatAPIImpl(final AiAppConfig appConfig, final User user) {
         this.config = appConfig;
         this.user = user;
     }

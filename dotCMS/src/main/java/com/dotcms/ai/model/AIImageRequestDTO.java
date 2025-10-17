@@ -1,7 +1,7 @@
 package com.dotcms.ai.model;
 
 
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
@@ -40,7 +40,7 @@ public class AIImageRequestDTO {
     }
 
     public static class Builder {
-        private AppConfig appConfig = ConfigService.INSTANCE.config();
+        private AiAppConfig appConfig = ConfigService.INSTANCE.config();
         @JsonSetter(nulls = Nulls.SKIP)
         private String prompt;
         @JsonSetter(nulls = Nulls.SKIP)

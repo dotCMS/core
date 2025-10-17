@@ -121,7 +121,7 @@
     },
 
     "vertex": {
-      "projectId": "${GCP_PROJECT_ID}",
+      "projectId": "{{GCP_PROJECT_ID}}",
       "location": "us-central1",
       "credentialsJsonPath": "{{GOOGLE_APPLICATION_CREDENTIALS}}",
       "timeoutMs": 30000,

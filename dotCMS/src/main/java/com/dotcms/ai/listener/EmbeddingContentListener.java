@@ -1,6 +1,6 @@
 package com.dotcms.ai.listener;
 
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
@@ -76,12 +76,12 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
         deleteFromIndexes(contentlet);
     }
 
-    private AppConfig getAppConfig(final String hostId) {
+    private AiAppConfig getAppConfig(final String hostId) {
         final Host host = Try
                 .of(() -> APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false))
                 .getOrElse(APILocator.systemHost());
 
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final AiAppConfig appConfig = ConfigService.INSTANCE.config(host);
         if (!appConfig.isEnabled()) {
             appConfig.debugLogger(
                     getClass(),

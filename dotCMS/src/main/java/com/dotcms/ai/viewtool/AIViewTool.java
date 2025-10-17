@@ -1,7 +1,7 @@
 package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.api.ChatAPI;
 import com.dotcms.ai.api.ImageAPI;
@@ -25,7 +25,7 @@ import java.util.function.Function;
 public class AIViewTool implements ViewTool {
 
     private ViewContext context;
-    private AppConfig config;
+    private AiAppConfig config;
     private ChatAPI chatService;
     private ImageAPI imageService;
     private User user;
@@ -45,7 +45,7 @@ public class AIViewTool implements ViewTool {
      * @return true if AI is enabled, false otherwise
      */
     public boolean isAiEnabled() {
-        return Optional.ofNullable(config).map(AppConfig::isEnabled).orElse(false);
+        return Optional.ofNullable(config).map(AiAppConfig::isEnabled).orElse(false);
     }
 
     /**
@@ -117,7 +117,7 @@ public class AIViewTool implements ViewTool {
     }
 
     @VisibleForTesting
-    AppConfig config() {
+    AiAppConfig config() {
         return ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(context.getRequest()));
     }
 

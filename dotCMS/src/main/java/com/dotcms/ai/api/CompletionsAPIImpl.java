@@ -3,7 +3,7 @@ package com.dotcms.ai.api;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.client.AIProxyClient;
@@ -14,7 +14,6 @@ import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.EncodingUtil;
-import com.dotcms.analytics.Util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
@@ -52,10 +51,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     public static final Lazy<Integer> DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE =
             Lazy.of(() -> Config.getIntProperty(DEFAULT_AI_MAX_NUMBER_OF_TOKENS, 16384));
 
-    private final AppConfig config;
+    private final AiAppConfig config;
 
-    public CompletionsAPIImpl(final AppConfig config) {
-        final Lazy<AppConfig> defaultConfig = Lazy.of(() -> ConfigService.INSTANCE.config(
+    public CompletionsAPIImpl(final AiAppConfig config) {
+        final Lazy<AiAppConfig> defaultConfig = Lazy.of(() -> ConfigService.INSTANCE.config(
                 Try.of(() -> WebAPILocator
                                 .getHostWebAPI()
                                 .getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
@@ -155,7 +154,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 output);
     }
 
-    private AIResponse sendRequest(final AppConfig appConfig, final JSONObject payload, final String userId) {
+    private AIResponse sendRequest(final AiAppConfig appConfig, final JSONObject payload, final String userId) {
         return AIProxyClient.get().callToAI(JSONObjectAIRequest.quickText(appConfig, payload, userId));
     }
 

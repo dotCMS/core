@@ -1,6 +1,6 @@
 package com.dotcms.ai.workflow;
 
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
@@ -29,7 +29,7 @@ public class OpenAIContentPromptActionlet extends WorkFlowActionlet {
                         new MultiKeyValue(Boolean.toString(false), Boolean.toString(false)),
                         new MultiKeyValue(Boolean.toString(true), Boolean.toString(true)))
         );
-        final AppConfig appConfig = ConfigService.INSTANCE.config();
+        final AiAppConfig appConfig = ConfigService.INSTANCE.config();
 
         return List.of(
                 new WorkflowActionletParameter(

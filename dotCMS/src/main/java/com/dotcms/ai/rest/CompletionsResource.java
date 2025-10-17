@@ -2,7 +2,7 @@ package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AIModels;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.model.SimpleModel;
@@ -16,7 +16,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -166,7 +165,7 @@ public class CompletionsResource {
                 .init()
                 .getUser();
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final AiAppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Map<String, Object> map = new HashMap<>();
         map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
