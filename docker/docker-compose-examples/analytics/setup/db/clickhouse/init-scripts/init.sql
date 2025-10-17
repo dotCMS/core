@@ -147,7 +147,12 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     element_type String,
     element_id String,
     element_class String,
-    element_attributes String
+    element_attributes String,
+
+    -- ######################################################
+    --              Used in conversion event
+    -- ######################################################
+    conversion_name String
 ) Engine = MergeTree()
     PARTITION BY customer_id
     ORDER BY (_timestamp, customer_id)
