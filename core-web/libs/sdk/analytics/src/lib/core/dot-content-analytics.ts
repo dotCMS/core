@@ -3,6 +3,7 @@ import { Analytics } from 'analytics';
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
+import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from './shared/constants';
 import { cleanupActivityTracking } from './shared/dot-content-analytics.utils';
 import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
 
@@ -18,11 +19,19 @@ export const initializeContentAnalytics = (
     if (!config.siteAuth) {
         console.error('DotCMS Analytics: Missing "siteAuth" in configuration');
 
+        if (typeof window !== 'undefined') {
+            window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
+        }
+
         return null;
     }
 
     if (!config.server) {
         console.error('DotCMS Analytics: Missing "server" in configuration');
+
+        if (typeof window !== 'undefined') {
+            window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
+        }
 
         return null;
     }
@@ -42,7 +51,8 @@ export const initializeContentAnalytics = (
 
     if (typeof window !== 'undefined') {
         window.addEventListener('beforeunload', cleanup);
-        window.__dotAnalyticsCleanup = cleanup;
+        window[ANALYTICS_WINDOWS_CLEANUP_KEY] = cleanup;
+        window[ANALYTICS_WINDOWS_ACTIVE_KEY] = true;
     }
 
     return {

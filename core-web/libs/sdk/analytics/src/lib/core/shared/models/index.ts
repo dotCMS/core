@@ -2,6 +2,8 @@
  * Central export point for all DotCMS Analytics models
  */
 
+import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '../constants';
+
 // Data models (Analytics data structures)
 export * from './data.model';
 
@@ -17,6 +19,7 @@ export * from './library.model';
 // Extend Window interface to include our custom properties
 declare global {
     interface Window {
-        __dotAnalyticsCleanup?: () => void;
+        [ANALYTICS_WINDOWS_CLEANUP_KEY]?: () => void;
+        [ANALYTICS_WINDOWS_ACTIVE_KEY]?: boolean;
     }
 }

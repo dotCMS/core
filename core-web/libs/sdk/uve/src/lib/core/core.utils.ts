@@ -1,13 +1,19 @@
 import {
     UVE_MODE,
-    UVEState,
+    UVEEventHandler,
+    UVEEventPayloadMap,
     UVEEventSubscription,
     UVEEventType,
-    UVEEventPayloadMap,
-    UVEEventHandler
+    UVEState
 } from '@dotcms/types';
 
-import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../../internal/constants';
+import { __UVE_EVENT_ERROR_FALLBACK__, __UVE_EVENTS__ } from '../../internal/constants';
+
+declare global {
+    interface Window {
+        __dotAnalyticsActive__?: boolean;
+    }
+}
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).
@@ -108,4 +114,39 @@ export function createUVESubscription<T extends UVEEventType>(
     }
 
     return eventCallback(callback as UVEEventHandler);
+}
+
+/**
+ * Checks if DotCMS Analytics is active by verifying the global window flag.
+ *
+ * This function checks for the presence of the `__dotAnalyticsActive__` flag on the window object,
+ * which is set by the `@dotcms/analytics` SDK when Analytics is successfully initialized.
+ *
+ * @export
+ * @returns {boolean} true if Analytics is initialized and active, false otherwise
+ *
+ * @example
+ * ```ts
+ * import { isAnalyticsActive } from '@dotcms/uve';
+ *
+ * if (isAnalyticsActive()) {
+ *   // Add analytics-specific data attributes
+ *   console.log('Analytics is running');
+ * }
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Use in conditional logic for data attributes
+ * import { isAnalyticsActive, getDotContentletAttributes } from '@dotcms/uve/internal';
+ *
+ * const attrs = getDotContentletAttributes(contentlet, container);
+ * if (isAnalyticsActive()) {
+ *   // Add additional analytics-specific attributes
+ *   attrs['data-dot-name'] = contentlet.name;
+ * }
+ * ```
+ */
+export function isAnalyticsActive(): boolean {
+    return typeof window !== 'undefined' && window.__dotAnalyticsActive__ === true;
 }
