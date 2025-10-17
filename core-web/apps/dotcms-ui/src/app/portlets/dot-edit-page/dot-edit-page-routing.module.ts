@@ -57,10 +57,10 @@ const dotEditPage: Routes = [
     },
     {
         path: 'layout/template/:id/:tabName',
-        loadChildren: () =>
+        loadComponent: () =>
             import(
-                './layout/components/dot-template-additional-actions/dot-template-additional-actions.module'
-            ).then((m) => m.DotTemplateAdditionalActionsModule)
+                './layout/components/dot-template-additional-actions/dot-legacy-template-additional-actions-iframe/dot-legacy-template-additional-actions-iframe.component'
+            ).then((m) => m.DotLegacyTemplateAdditionalActionsComponent)
     }
 ];
 

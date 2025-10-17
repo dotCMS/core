@@ -20,12 +20,12 @@ import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 import { DotApiLinkComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { DotTemplateBuilderModule } from './dot-template-builder/dot-template-builder.module';
+import { DotTemplateBuilderComponent } from './dot-template-builder/dot-template-builder.component';
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
-import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
 import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.store';
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
+import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
@@ -38,10 +38,10 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         CommonModule,
         DotApiLinkComponent,
         DotPortletBaseComponent,
-        DotTemplatePropsModule,
+        DotPortletToolbarComponent,
         DynamicDialogModule,
         DotMessagePipe,
-        DotTemplateBuilderModule,
+        DotTemplateBuilderComponent,
         ReactiveFormsModule
     ]
 })

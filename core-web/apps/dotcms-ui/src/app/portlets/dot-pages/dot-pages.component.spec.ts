@@ -50,10 +50,7 @@ import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
     DotcmsEventsServiceMock,
-    DotMessageDisplayServiceMock,
     LoginServiceMock,
-    MockDotHttpErrorManagerService,
-    MockDotRouterService,
     mockResponseView,
     SiteServiceMock
 } from '@dotcms/utils-testing';
@@ -203,7 +200,6 @@ describe('DotPagesComponent', () => {
             DotPageWorkflowsActionsService,
             HttpClient,
             HttpHandler,
-            DotPageRenderService,
             DotIframeService,
             DotFormatDateService,
             DotAlertConfirmService,
@@ -215,10 +211,7 @@ describe('DotPagesComponent', () => {
             ApiRoot,
             UserModel,
             { provide: LoginService, useClass: LoginServiceMock },
-            { provide: DotHttpErrorManagerService, useClass: MockDotHttpErrorManagerService },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-            { provide: DotRouterService, useClass: MockDotRouterService },
             {
                 provide: DotContentletEditorService,
                 useValue: new DotContentletEditorServiceMock()
@@ -238,11 +231,33 @@ describe('DotPagesComponent', () => {
     });
 
     beforeEach(() => {
+        // Mock the DOM scroll method
+        Element.prototype.scroll = jest.fn();
+
         siteServiceMock = new SiteServiceMock();
+
+        // Create spies for the services before creating the component
+        const dotPageRenderServiceSpy = {
+            checkPermission: jest.fn().mockReturnValue(of(true))
+        };
+        const dotHttpErrorManagerServiceSpy = {
+            handle: jest.fn().mockReturnValue(of(null))
+        };
+        const dotRouterServiceSpy = {
+            goToEditPage: jest.fn()
+        };
+        const dotMessageDisplayServiceSpy = {
+            push: jest.fn()
+        };
+
         spectator = createComponent({
             providers: [
                 { provide: DotPageStore, useValue: storeMock },
-                { provide: SiteService, useValue: siteServiceMock }
+                { provide: SiteService, useValue: siteServiceMock },
+                { provide: DotPageRenderService, useValue: dotPageRenderServiceSpy },
+                { provide: DotHttpErrorManagerService, useValue: dotHttpErrorManagerServiceSpy },
+                { provide: DotRouterService, useValue: dotRouterServiceSpy },
+                { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceSpy }
             ]
         });
 
@@ -255,9 +270,6 @@ describe('DotPagesComponent', () => {
         spectator.detectChanges();
         jest.spyOn(spectator.component.menu, 'hide');
         jest.spyOn(spectator.component, 'scrollToTop');
-        jest.spyOn(dotMessageDisplayService, 'push');
-        jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
-        jest.spyOn(dotHttpErrorManagerService, 'handle');
     });
 
     it('should init store', () => {
