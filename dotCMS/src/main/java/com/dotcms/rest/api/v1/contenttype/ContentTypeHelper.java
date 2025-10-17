@@ -810,7 +810,7 @@ public class ContentTypeHelper implements Serializable {
 
         String[] parts = orderBy.split("[:\\s]+");
         String field = parts[0].trim().toLowerCase();
-        boolean ascending = parts.length < 2 || !"desc".equalsIgnoreCase(parts[1]);
+        boolean ascending = parts.length < 2 || !"desc".equalsIgnoreCase(parts[1].trim());
 
         Function<ContentType, Comparable> keyExtractor = c -> getComparableFieldValue(c, field);
 
