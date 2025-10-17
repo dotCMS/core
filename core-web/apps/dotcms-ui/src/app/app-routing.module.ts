@@ -33,8 +33,8 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'containers',
         loadChildren: () =>
-            import('@dotcms/app/portlets/dot-containers/dot-containers.module').then(
-                (m) => m.DotContainersModule
+            import('@dotcms/app/portlets/dot-containers/dot-containers.routes').then(
+                (m) => m.dotContainersRoutes
             )
     },
     {

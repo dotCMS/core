@@ -1,13 +1,12 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 
 import { DotContainerEditResolver } from './dot-container-create/resolvers/dot-container-edit.resolver';
 
-const routes: Routes = [
+export const dotContainersRoutes: Routes = [
     {
         path: '',
         loadChildren: () =>
-            import('./container-list/container-list.module').then((m) => m.ContainerListModule)
+            import('./container-list/container-list.routes').then((m) => m.containerListRoutes)
     },
     {
         path: 'create',
@@ -31,11 +30,3 @@ const routes: Routes = [
         runGuardsAndResolvers: 'always'
     }
 ];
-
-@NgModule({
-    declarations: [],
-    imports: [RouterModule.forChild(routes)],
-    exports: [RouterModule],
-    providers: [DotContainerEditResolver]
-})
-export class DotContainersRoutingModule {}

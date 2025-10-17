@@ -75,7 +75,7 @@ import { DotActionButtonComponent } from '../../../../view/components/_common/do
 @Component({
     selector: 'dot-container-code',
     template: '<div></div>',
-    standalone: false
+    standalone: true
 })
 export class DotContentEditorComponent {}
 
@@ -89,7 +89,7 @@ export class DotContentEditorComponent {}
             multi: true
         }
     ],
-    standalone: false
+    standalone: true
 })
 export class DotLoopEditorComponent {
     writeValue() {
@@ -115,7 +115,7 @@ export class DotLoopEditorComponent {
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
     ],
-    standalone: false
+    standalone: true
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
@@ -245,7 +245,8 @@ describe('DotContainerPropertiesComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
+            declarations: [],
+            imports: [
                 DotContainerPropertiesComponent,
                 DotContentEditorComponent,
                 DotLoopEditorComponent,
@@ -386,8 +387,8 @@ describe('DotContainerPropertiesComponent', () => {
                 friendlyName: 'ASD',
                 maxContentlets: 0,
                 code: '',
-                preLoop: null,
-                postLoop: null,
+                preLoop: '',
+                postLoop: '',
                 containerStructures: []
             });
 
@@ -410,8 +411,8 @@ describe('DotContainerPropertiesComponent', () => {
                 friendlyName: 'ASD',
                 maxContentlets: 0,
                 code: '',
-                preLoop: null,
-                postLoop: null,
+                preLoop: '',
+                postLoop: '',
                 containerStructures: []
             });
             expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
