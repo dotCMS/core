@@ -1,7 +1,7 @@
 package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.AiTest;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -42,7 +42,7 @@ public class EmbeddingsToolTest {
     private static WireMockServer wireMockServer;
 
     private Host host;
-    private AppConfig appConfig;
+    private AiAppConfig appConfig;
     private User user;
     private EmbeddingsTool embeddingsTool;
 
@@ -135,7 +135,7 @@ public class EmbeddingsToolTest {
             }
 
             @Override
-            AppConfig appConfig() {
+            AiAppConfig appConfig() {
                 return appConfig;
             }
 

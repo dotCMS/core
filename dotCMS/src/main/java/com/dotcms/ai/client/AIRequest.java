@@ -1,7 +1,7 @@
 package com.dotcms.ai.client;
 
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 
 import javax.ws.rs.HttpMethod;
 import java.io.Serializable;
@@ -22,7 +22,7 @@ public class AIRequest<T extends Serializable> {
 
     private final String url;
     private final String method;
-    private final AppConfig config;
+    private final AiAppConfig config;
     private final AIModelType type;
     private final T payload;
     private final String userId;
@@ -46,7 +46,7 @@ public class AIRequest<T extends Serializable> {
      * @param <R> the type of the AIRequest
      * @return a new AIRequest instance
      */
-    public static <T extends Serializable, R extends AIRequest<T>> R quickText(final AppConfig appConfig,
+    public static <T extends Serializable, R extends AIRequest<T>> R quickText(final AiAppConfig appConfig,
                                                                                final T payload,
                                                                                final String userId) {
         return quick(AIModelType.TEXT, appConfig, payload, userId);
@@ -62,7 +62,7 @@ public class AIRequest<T extends Serializable> {
      * @param <R> the type of the AIRequest
      * @return a new AIRequest instance
      */
-    public static <T extends Serializable, R extends AIRequest<T>> R quickImage(final AppConfig appConfig,
+    public static <T extends Serializable, R extends AIRequest<T>> R quickImage(final AiAppConfig appConfig,
                                                                                 final T payload,
                                                                                 final String userId) {
         return quick(AIModelType.IMAGE, appConfig, payload, userId);
@@ -78,7 +78,7 @@ public class AIRequest<T extends Serializable> {
      * @param <R> the type of the AIRequest
      * @return a new AIRequest instance
      */
-    public static <T extends Serializable, R extends AIRequest<T>> R quickEmbeddings(final AppConfig appConfig,
+    public static <T extends Serializable, R extends AIRequest<T>> R quickEmbeddings(final AiAppConfig appConfig,
                                                                                      final T payload,
                                                                                      final String userId) {
         return quick(AIModelType.EMBEDDINGS, appConfig, payload, userId);
@@ -95,7 +95,7 @@ public class AIRequest<T extends Serializable> {
      * @param appConfig the application configuration
      * @return the resolved URL
      */
-    static String resolveUrl(final AIModelType type, final AppConfig appConfig) {
+    static String resolveUrl(final AIModelType type, final AiAppConfig appConfig) {
         final String resolved;
         switch (type) {
             case TEXT:
@@ -117,7 +117,7 @@ public class AIRequest<T extends Serializable> {
     @SuppressWarnings("unchecked")
     private static <T extends Serializable, B extends AIRequest.Builder<T, B>, R extends AIRequest<T>> R quick(
             final String url,
-            final AppConfig appConfig,
+            final AiAppConfig appConfig,
             final AIModelType type,
             final T payload,
             final String usderId) {
@@ -132,7 +132,7 @@ public class AIRequest<T extends Serializable> {
 
     private static <T extends Serializable, R extends AIRequest<T>> R quick(
             final AIModelType type,
-            final AppConfig appConfig,
+            final AiAppConfig appConfig,
             final T payload,
             final String userId) {
         return quick(resolveUrl(type, appConfig), appConfig, type, payload, userId);
@@ -146,7 +146,7 @@ public class AIRequest<T extends Serializable> {
         return method;
     }
 
-    public AppConfig getConfig() {
+    public AiAppConfig getConfig() {
         return config;
     }
 
@@ -182,7 +182,7 @@ public class AIRequest<T extends Serializable> {
 
         String url;
         String method = HttpMethod.POST;
-        AppConfig config;
+        AiAppConfig config;
         AIModelType type;
         T payload;
         String userId;
@@ -202,7 +202,7 @@ public class AIRequest<T extends Serializable> {
             return self();
         }
 
-        public B withConfig(final AppConfig config) {
+        public B withConfig(final AiAppConfig config) {
             this.config = config;
             return self();
         }

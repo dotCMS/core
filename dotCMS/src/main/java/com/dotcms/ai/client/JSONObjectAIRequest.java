@@ -1,7 +1,7 @@
 package com.dotcms.ai.client;
 
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotmarketing.util.json.JSONObject;
 
 /**
@@ -29,7 +29,7 @@ public class JSONObjectAIRequest extends AIRequest<JSONObject> {
      * @param userId the user ID
      * @return a new JSONObjectAIRequest instance
      */
-    public static JSONObjectAIRequest quickText(final AppConfig appConfig,
+    public static JSONObjectAIRequest quickText(final AiAppConfig appConfig,
                                                 final JSONObject payload,
                                                 final String userId) {
 
@@ -44,7 +44,7 @@ public class JSONObjectAIRequest extends AIRequest<JSONObject> {
      * @param userId the user ID
      * @return a new JSONObjectAIRequest instance
      */
-    public static JSONObjectAIRequest quickImage(final AppConfig appConfig,
+    public static JSONObjectAIRequest quickImage(final AiAppConfig appConfig,
                                                  final JSONObject payload,
                                                  final String userId) {
         return quick(AIModelType.IMAGE, appConfig, payload, userId);
@@ -58,14 +58,14 @@ public class JSONObjectAIRequest extends AIRequest<JSONObject> {
      * @param userId the user ID
      * @return a new JSONObjectAIRequest instance
      */
-    public static JSONObjectAIRequest quickEmbeddings(final AppConfig appConfig,
+    public static JSONObjectAIRequest quickEmbeddings(final AiAppConfig appConfig,
                                                       final JSONObject payload,
                                                       final String userId) {
         return quick(AIModelType.EMBEDDINGS, appConfig, payload, userId);
     }
 
     private static JSONObjectAIRequest quick(final String url,
-                                             final AppConfig appConfig,
+                                             final AiAppConfig appConfig,
                                              final AIModelType type,
                                              final JSONObject payload,
                                              final String userId) {
@@ -79,7 +79,7 @@ public class JSONObjectAIRequest extends AIRequest<JSONObject> {
     }
 
     private static JSONObjectAIRequest quick(final AIModelType type,
-                                             final AppConfig appConfig,
+                                             final AiAppConfig appConfig,
                                              final JSONObject payload,
                                              final String userId) {
         return quick(resolveUrl(type, appConfig), appConfig, type, payload, userId);

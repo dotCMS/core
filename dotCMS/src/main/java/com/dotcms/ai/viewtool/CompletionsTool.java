@@ -1,6 +1,6 @@
 package com.dotcms.ai.viewtool;
 
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.rest.forms.CompletionsForm;
@@ -30,7 +30,7 @@ public class CompletionsTool implements ViewTool {
     private final ViewContext context;
     private final HttpServletRequest request;
     private final Host host;
-    private final AppConfig config;
+    private final AiAppConfig config;
     private final User user;
 
     CompletionsTool(Object initData) {
@@ -150,7 +150,7 @@ public class CompletionsTool implements ViewTool {
     }
 
     @VisibleForTesting
-    AppConfig config() {
+    AiAppConfig config() {
         return ConfigService.INSTANCE.config(this.host);
     }
 

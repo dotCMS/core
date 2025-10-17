@@ -3,7 +3,7 @@ package com.dotcms.ai.workflow;
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.contenttype.model.field.Field;
@@ -76,7 +76,7 @@ public class OpenAIAutoTagActionletTest {
                         .withType(Type.STRING)
                         .withValue("{\"default\":\"blog\"}".toCharArray())
                         .build());
-        new AppConfig(host.getHostname(), secrets);
+        new AiAppConfig(host.getHostname(), secrets);
         DotAIAPIFacadeImpl.addCompletionsAPIImplementation("default", (Object... initArguments) -> new CompletionsAPI() {
             @Override
             public JSONObject summarize(CompletionsForm searcher) {

@@ -1,6 +1,6 @@
 package com.dotcms.ai.api;
 
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -52,11 +52,11 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
 
         @Override
         public ChatAPI getChatAPI(final Object... initArguments) {
-            if (Objects.nonNull(initArguments) && initArguments.length > 0 && initArguments[0] instanceof AppConfig) {
+            if (Objects.nonNull(initArguments) && initArguments.length > 0 && initArguments[0] instanceof AiAppConfig) {
                 final User user = initArguments.length > 1 && initArguments[1] instanceof User
                         ? (User) initArguments[1]
                         : null;
-                return new OpenAIChatAPIImpl((AppConfig) initArguments[0], user);
+                return new OpenAIChatAPIImpl((AiAppConfig) initArguments[0], user);
             }
 
             throw new IllegalArgumentException("To create a ChatAPI you need to provide an AppConfig");
@@ -71,11 +71,11 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         @Override
         public ImageAPI getImageAPI(final Object... initArguments) {
             if (Objects.nonNull(initArguments) && initArguments.length >= 4
-                    && initArguments[0] instanceof AppConfig
+                    && initArguments[0] instanceof AiAppConfig
                     && (Objects.isNull(initArguments[1]) || initArguments[1] instanceof User)
             ) {
 
-                final AppConfig config = (AppConfig) initArguments[0];
+                final AiAppConfig config = (AiAppConfig) initArguments[0];
                 final User user = (User) initArguments[1];
                 final HostAPI hostApi = APILocator.getHostAPI();
                 final TempFileAPI tempFileApi = APILocator.getTempFileAPI();
@@ -96,8 +96,8 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
             return new CompletionsAPIImpl(unwrap(initArguments));
         }
 
-        private AppConfig unwrap(final Object... initArguments) {
-            return DotAIAPIFacadeImpl.unwrap(AppConfig.class, initArguments);
+        private AiAppConfig unwrap(final Object... initArguments) {
+            return DotAIAPIFacadeImpl.unwrap(AiAppConfig.class, initArguments);
         }
     }
 

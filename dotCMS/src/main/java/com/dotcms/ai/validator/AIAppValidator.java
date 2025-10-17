@@ -2,10 +2,8 @@ package com.dotcms.ai.validator;
 
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModels;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.InvalidAIKeyException;
-import com.dotcms.ai.client.AIProxyClient;
-import com.dotcms.ai.client.AIRequest;
 import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -54,7 +52,7 @@ public class AIAppValidator {
      * @param appConfig the application configuration
      * @param userId the user ID
      */
-    public void validateAIConfig(final AppConfig appConfig, final String userId) {
+    public void validateAIConfig(final AiAppConfig appConfig, final String userId) {
         if (Objects.isNull(userId)) {
             appConfig.debugLogger(getClass(), () -> "User Id is null, skipping AI configuration validation");
             return;

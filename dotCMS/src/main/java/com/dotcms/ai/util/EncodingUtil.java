@@ -2,7 +2,7 @@ package com.dotcms.ai.util;
 
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.domain.ModelStatus;
@@ -32,7 +32,7 @@ public class EncodingUtil {
         return INSTANCE.get();
     }
 
-    public Optional<Encoding> getEncoding(final AppConfig appConfig, final AIModelType type) {
+    public Optional<Encoding> getEncoding(final AiAppConfig appConfig, final AIModelType type) {
         final AIModel aiModel = appConfig.resolveModel(type);
         final Model currentModel = aiModel.getCurrent();
 
@@ -54,7 +54,7 @@ public class EncodingUtil {
         return getEncoding(ConfigService.INSTANCE.config(), AIModelType.EMBEDDINGS);
     }
 
-    private Optional<Encoding> modelFallback(final AppConfig appConfig,
+    private Optional<Encoding> modelFallback(final AiAppConfig appConfig,
                                              final AIModel aiModel,
                                              final Model currentModel) {
         appConfig.debugLogger(

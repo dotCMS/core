@@ -1,6 +1,6 @@
 package com.dotcms.ai.rest.forms;
 
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.AiAppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.business.APILocator;
@@ -115,7 +115,7 @@ public class CompletionsForm {
         this.site = UtilMethods.isSet(builder.site) ? builder.site : null;
         this.language = validateLanguage(builder.language);
         this.searchOffset = builder.searchOffset;
-        this.contentType = UtilMethods.isSet(builder.contentType) ? AppConfig.SPLITTER.split(builder.contentType) : new String[0];
+        this.contentType = UtilMethods.isSet(builder.contentType) ? AiAppConfig.SPLITTER.split(builder.contentType) : new String[0];
         if (builder.temperature <= 0) {
             this.temperature = ConfigService.INSTANCE.config().getConfigFloat(AppKeys.COMPLETION_TEMPERATURE);
         } else {
