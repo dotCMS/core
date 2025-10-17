@@ -1,6 +1,7 @@
 @if (vm$ | async; as vm) {
     @if (vm.data) {
         <dot-content-compare-table
+            [showActions]="$showActions()"
             (changeDiff)="store.updateShowDiff($event)"
             (changeVersion)="store.updateCompare($event)"
             (bringBack)="bringBack($event)"

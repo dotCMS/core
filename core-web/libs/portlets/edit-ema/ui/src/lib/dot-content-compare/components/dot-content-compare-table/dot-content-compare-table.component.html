@@ -9,45 +9,53 @@
                     </span>
                 </th>
                 <th>
-                    <span class="dot-content-compare-table__title" data-testId="table-tittle">
-                        Previous
-                    </span>
-                    <!-- Versions
-          <div class="dot-content-compare-table__controls">
-            <p-dropdown
-              (onChange)="changeVersion.emit($event.value)"
-              [options]="data.versions"
-              data-testid="versions-dropdown"
-              appendTo="body">
-              <ng-template let-selected pTemplate="selectedItem">
-                {{
-                (selected.modDate | dotRelativeDate: 'MM/dd/yyyy - hh:mm aa') +
-                (' by ' | dm) +
-                selected.modUserName
-                }}
-              </ng-template>
-              <ng-template let-item pTemplate="item">
-                {{
-                (item.modDate | dotRelativeDate: 'MM/dd/yyyy - hh:mm aa') +
-                (' by ' | dm) +
-                item.modUserName
-                }}
-              </ng-template>
-            </p-dropdown>
-            <p-selectButton
-              (onChange)="changeDiff.emit($event.value)"
-              [(ngModel)]="showDiff"
-              [options]="displayOptions"
-              class="p-button-compact"
-            data-testid="show-diff"></p-selectButton>
-            <button
-              (click)="bringBack.emit(data.compare.inode)"
-              [label]="'Bring-Back' | dm"
-              class="p-button-sm p-button"
-              data-testId="table-bring-back"
-            pButton></button>
-          </div>
-          -->
+                    <div class="flex flex-column gap-2">
+                        <div class="flex">
+                            <span
+                                class="dot-content-compare-table__title"
+                                data-testId="table-tittle">
+                                Previous
+                            </span>
+                        </div>
+                        @if ($showActions()) {
+                            <div class="dot-content-compare-table__controls">
+                                <p-dropdown
+                                    (onChange)="changeVersion.emit($event.value)"
+                                    [options]="data.versions"
+                                    data-testid="versions-dropdown"
+                                    appendTo="body">
+                                    <ng-template let-selected pTemplate="selectedItem">
+                                        {{
+                                            (selected.modDate
+                                                | dotRelativeDate: 'MM/dd/yyyy - hh:mm aa') +
+                                                (' by ' | dm) +
+                                                selected.modUserName
+                                        }}
+                                    </ng-template>
+                                    <ng-template let-item pTemplate="item">
+                                        {{
+                                            (item.modDate
+                                                | dotRelativeDate: 'MM/dd/yyyy - hh:mm aa') +
+                                                (' by ' | dm) +
+                                                item.modUserName
+                                        }}
+                                    </ng-template>
+                                </p-dropdown>
+                                <p-selectButton
+                                    (onChange)="changeDiff.emit($event.value)"
+                                    [(ngModel)]="showDiff"
+                                    [options]="displayOptions"
+                                    class="p-button-compact"
+                                    data-testid="show-diff"></p-selectButton>
+                                <button
+                                    (click)="bringBack.emit(data.compare.inode)"
+                                    [label]="'Bring-Back' | dm"
+                                    class="p-button-sm p-button"
+                                    data-testId="table-bring-back"
+                                    pButton></button>
+                            </div>
+                        }
+                    </div>
                 </th>
             </tr>
         </ng-template>

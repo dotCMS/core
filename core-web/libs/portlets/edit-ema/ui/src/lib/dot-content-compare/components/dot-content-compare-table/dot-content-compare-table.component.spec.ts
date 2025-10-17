@@ -337,7 +337,7 @@ describe('DotContentCompareTableComponent', () => {
                 de
                     .query(By.css('[data-testId="table-tittle"]'))
                     .nativeElement.innerHTML.replace(/^\s+|\s+$/gm, '')
-            ).toEqual(dotContentCompareTableDataMock.working.identifier);
+            ).toEqual('Current');
         });
         it('should show dropdown', () => {
             const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;

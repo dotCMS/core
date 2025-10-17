@@ -105,6 +105,7 @@ export class DotHistoryTimelineItemComponent {
 
         if (!item.live) {
             items.push({
+                id: 'restore',
                 label: labels.restore,
                 command: () =>
                     this.actionTriggered.emit({
@@ -115,6 +116,7 @@ export class DotHistoryTimelineItemComponent {
         }
         if (!item.working) {
             items.push({
+                id: 'compare',
                 label: labels.compare,
                 command: () =>
                     this.actionTriggered.emit({
@@ -126,6 +128,7 @@ export class DotHistoryTimelineItemComponent {
 
         if (!item.working || !item.live) {
             items.push({
+                id: 'delete',
                 label: labels.delete,
                 command: () =>
                     this.actionTriggered.emit({
