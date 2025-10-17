@@ -1,12 +1,10 @@
-@let showWorkflowActions = $selectedItems().length > 0;
-
 <p-toolbar styleClass="dot-content-drive-toolbar">
-    <div class="p-toolbar-group" [class.p-toolbar-group-actions]="showWorkflowActions">
+    <div class="p-toolbar-group" [class.p-toolbar-group-actions]="$showWorkflowActions()">
         <dot-content-drive-tree-toggler
             data-testid="tree-toggler"
             [class.sidebar-expanded]="$treeExpanded()" />
 
-        @if (!showWorkflowActions) {
+        @if (!$showWorkflowActions()) {
             <div class="p-toolbar-group-top">
                 <dot-content-drive-search-input data-testid="search-input" class="search-input" />
                 <p-button
@@ -26,9 +24,7 @@
             </div>
         } @else {
             <div class="p-toolbar-group-workflow">
-                <dot-content-drive-workflow-actions
-                    data-testid="workflow-actions"
-                    [selectedItems]="$selectedItems()" />
+                <dot-content-drive-workflow-actions data-testid="workflow-actions" />
             </div>
         }
     </div>

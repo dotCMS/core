@@ -3,5 +3,5 @@
         styleClass="p-button-sm p-button-outlined"
         [ngStyle]="{ display: shouldShowAction(action) ? 'block' : 'none' }"
         [label]="action.name | dm"
-        (click)="onExecuteDefaultAction(action.id)" />
+        (click)="onExecuteAction(action.id)" />
 }

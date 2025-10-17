@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    output,
+    signal
+} from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -61,5 +68,5 @@ export class DotContentDriveToolbarComponent {
     ]);
 
     readonly $treeExpanded = this.#store.isTreeExpanded;
-    readonly $selectedItems = this.#store.selectedItems;
+    readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
 }

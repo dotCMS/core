@@ -21,6 +21,8 @@ type SelectionStats = {
     live: number;
     working: number;
     assets: number;
+    pages: number;
+    contentlets: number;
 };
 
 export interface ActionShowConditions {
@@ -33,6 +35,8 @@ export interface ActionShowConditions {
     noneArchived?: boolean;
     noneLive?: boolean;
     noneWorking?: boolean;
+    isPage?: boolean;
+    isContentlet?: boolean;
 }
 
 export interface ContentDriveWorkflowAction {
@@ -46,13 +50,19 @@ const GOT_TO_EDIT_CONTENTLET_ACTION: ContentDriveWorkflowAction = {
     id: WORKFLOW_ACTION_ID.GOT_TO_EDIT_CONTENTLET,
     showWhen: {
         isSingleSelection: true,
-        noneArchived: true
+        noneArchived: true,
+        isContentlet: true
     }
 };
 
 const GOT_TO_EDIT_PAGE_ACTION: ContentDriveWorkflowAction = {
     name: 'Edit Page',
-    id: WORKFLOW_ACTION_ID.GOT_TO_EDIT_PAGE
+    id: WORKFLOW_ACTION_ID.GOT_TO_EDIT_PAGE,
+    showWhen: {
+        isSingleSelection: true,
+        noneArchived: true,
+        isPage: true
+    }
 };
 
 const PUBLISH_ACTION: ContentDriveWorkflowAction = {
@@ -139,6 +149,13 @@ export const DEFAULT_WORKFLOW_ACTIONS = [
     DELETE_ACTION
 ];
 
+/**
+ * Analyzes the selected items and returns conditions that determine
+ * which workflow actions should be shown.
+ *
+ * @param selectedItems - Array of selected content drive items to analyze
+ * @returns An object containing boolean conditions for action visibility
+ */
 export const getActionConditions = (selectedItems: DotContentDriveItem[]): ActionShowConditions => {
     const stats = countSelectionStats(selectedItems);
 
@@ -152,7 +169,9 @@ export const getActionConditions = (selectedItems: DotContentDriveItem[]): Actio
             noneArchived: false,
             noneLive: false,
             noneWorking: false,
-            allAreAssets: false
+            allAreAssets: false,
+            isPage: false,
+            isContentlet: false
         };
     }
 
@@ -165,10 +184,20 @@ export const getActionConditions = (selectedItems: DotContentDriveItem[]): Actio
         noneArchived: stats.archived === 0,
         noneLive: stats.live === 0,
         noneWorking: stats.working === 0,
-        allAreAssets: stats.assets === stats.total
+        allAreAssets: stats.assets === stats.total,
+        isPage: stats.pages === stats.total,
+        isContentlet: stats.contentlets === stats.total
     };
 };
 
+/**
+ * Counts and categorizes the selected items by their properties.
+ * Tracks total count, archived status, publication states (live/working),
+ * and base types (assets, pages, contentlets).
+ *
+ * @param items - Array of content drive items to analyze
+ * @returns Statistics object with counts for each category
+ */
 const countSelectionStats = (items: DotContentDriveItem[]): SelectionStats => {
     const total = items.length;
 
@@ -177,10 +206,12 @@ const countSelectionStats = (items: DotContentDriveItem[]): SelectionStats => {
             if (item.archived) acc.archived++;
             if (item.live) acc.live++;
             if (item.working) acc.working++;
+            if (item.baseType === 'HTMLPAGE') acc.pages++;
+            if (item.baseType === 'CONTENT') acc.contentlets++;
             if (['FILEASSET', 'DOTASSET'].includes(item.baseType)) acc.assets++;
             return acc;
         },
-        { archived: 0, live: 0, working: 0, assets: 0 }
+        { archived: 0, live: 0, working: 0, assets: 0, pages: 0, contentlets: 0 }
     );
 
     return { total, ...counters };
