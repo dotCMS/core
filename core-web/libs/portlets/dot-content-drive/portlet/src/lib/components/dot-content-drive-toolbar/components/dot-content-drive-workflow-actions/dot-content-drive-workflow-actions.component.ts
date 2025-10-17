@@ -1,9 +1,10 @@
 import { NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -18,7 +19,7 @@ import {
 @Component({
     selector: 'dot-content-drive-workflow-actions',
     imports: [ButtonModule, DotMessagePipe, NgStyle],
-    providers: [DotContentDriveStore, DotWorkflowActionsFireService],
+    providers: [DotWorkflowActionsFireService],
     templateUrl: './dot-content-drive-workflow-actions.component.html',
     styleUrl: './dot-content-drive-workflow-actions.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -31,7 +32,10 @@ export class DotContentDriveWorkflowActionsComponent {
     );
 
     readonly #store = inject(DotContentDriveStore);
+    readonly #messageService = inject(MessageService);
+    readonly #dotMessageService = inject(DotMessageService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+
     protected readonly DEFAULT_WORKFLOW_ACTIONS = DEFAULT_WORKFLOW_ACTIONS;
 
     onExecuteDefaultAction(id: string) {
@@ -40,9 +44,26 @@ export class DotContentDriveWorkflowActionsComponent {
                 action: id,
                 inodes: this.$selectedItems().map((item) => item.inode)
             })
-            .subscribe(() => {
-                this.#store.loadItems();
-                alert('Workflow action executed');
+            .subscribe({
+                next: () => {
+                    this.#store.loadItems();
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: this.#dotMessageService.get(
+                            'content-drive.dialog.folder.message.create-success'
+                        )
+                    });
+                },
+                error: (error) => {
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
+                        detail: error.message
+                    });
+
+                    console.error('Error executing workflow action:', error);
+                }
             });
     }
     /**

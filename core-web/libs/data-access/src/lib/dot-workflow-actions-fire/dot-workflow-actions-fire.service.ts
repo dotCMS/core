@@ -85,12 +85,13 @@ export class DotWorkflowActionsFireService {
     fireDefaultAction(options: DotFireDefaultActionOptions): Observable<DotCMSContentlet[]> {
         const { action, inodes } = options;
         const url = `${this.BASE_URL}/actions/default/fire/${action}`;
+        const urlParams = new HttpParams().set('indexPolicy', 'WAIT_FOR');
         const body = {
             contentlet: inodes.map((inode) => ({ inode }))
         };
 
         return this.httpClient
-            .post(url, body, { headers: this.defaultHeaders })
+            .post(url, body, { headers: this.defaultHeaders, params: urlParams })
             .pipe(pluck('entity'));
     }
 
