@@ -46,11 +46,13 @@
 
         @if ($loading()) {
             <tr data-testId="loading-row" class="content-drive-table__loading-row">
-                <td [colSpan]="SKELETON_SPAN">
-                    <span class="skeleton-wrapper">
-                        <p-skeleton height="3rem" width="100%" />
-                    </span>
-                </td>
+                @for (i of HEADER_COLUMNS; track i) {
+                    <td>
+                        <span class="skeleton-wrapper">
+                            <p-skeleton height="1.5rem" width="100%" />
+                        </span>
+                    </td>
+                }
             </tr>
         } @else {
             <tr
@@ -91,7 +93,7 @@
                         styleClass="p-chip-sm p-chip-blue"
                         [label]="item.languageId | dotLocaleTag: $languagesMap()" />
                 </td>
-                <td data-testId="item-base-type">{{ item.contentType | dm }}</td>
+                <td data-testId="item-content-type">{{ item.contentType | dm }}</td>
                 <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
                 <td data-testId="item-actions" class="text-center">

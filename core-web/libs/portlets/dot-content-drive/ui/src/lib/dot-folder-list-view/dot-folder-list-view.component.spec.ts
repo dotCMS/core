@@ -320,10 +320,10 @@ describe('DotFolderListViewComponent', () => {
             expect(languageColumn).toBeTruthy();
         });
 
-        it('should have a base type column', () => {
-            const baseTypeColumn = spectator.query(byTestId('item-base-type'));
+        it('should have a content type column', () => {
+            const contentTypeColumn = spectator.query(byTestId('item-content-type'));
 
-            expect(baseTypeColumn).toBeTruthy();
+            expect(contentTypeColumn).toBeTruthy();
         });
 
         it('should have a mod user name column', () => {

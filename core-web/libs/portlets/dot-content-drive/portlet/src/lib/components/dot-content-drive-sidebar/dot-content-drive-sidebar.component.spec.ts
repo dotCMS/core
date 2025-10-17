@@ -125,7 +125,8 @@ describe('DotContentDriveSidebarComponent', () => {
                 sidebarLoading: jest.fn().mockReturnValue(false),
                 loadFolders: jest.fn(),
                 loadChildFolders: jest.fn(),
-                updateFolders: jest.fn()
+                updateFolders: jest.fn(),
+                setSelectedNode: jest.fn()
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
