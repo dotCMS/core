@@ -17,16 +17,12 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.cdi.CDIUtils;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.Key;
@@ -38,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -69,10 +66,7 @@ public class SecretsKeyStoreHelper {
 
     @VisibleForTesting
     public static String getSecretStorePath() {
-        final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + "server" + File.separator + "secrets" + File.separator + SECRETS_STORE_FILE;
-        final String dirPath = Config.getStringProperty(SECRETS_KEYSTORE_FILE_PATH_KEY, supplier.get());
-        return Paths.get(dirPath).normalize().toString();
+        return KeyStoreManager.getSecretStorePath();
     }
 
     private SecretsKeyStoreHelper(final String secretsKeyStorePath,
@@ -91,103 +85,53 @@ public class SecretsKeyStoreHelper {
    public SecretsKeyStoreHelper() {
        this(getSecretStorePath(),() -> Config
                .getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY,
-                       digest(ClusterFactory.getClusterSalt())).toCharArray(), ImmutableList.of());
+                       digest(ClusterFactory.getClusterSalt())).toCharArray(), List.of());
     }
 
-    /**
-     * This will create a Keystore file for reading/writing if there is not one already there,
-     * otherwise, it will return the one there
-     * 
-     * @return
-     */
-    private File createStoreIfNeeded() {
-        final File secretStoreFile = new File(secretsKeyStorePath);
-        if (!secretStoreFile.exists()) {
-            try {
-                final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
-                keyStore.load(null, passwordSupplier.get());
-                saveSecretsStore(keyStore);
-                //broadcast
-                for(final StoreCreatedListener listener: this.storeCreatedListeners){
-                    listener.onStoreCreated();
-                }
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "unable to create secrets store " + SECRETS_STORE_FILE + ": " + e);
-                throw new DotRuntimeException(e);
-            }
-        }
-        return secretStoreFile;
-    }
 
    /**
-    * loads up the Keystore from disk
+    * Gets the KeyStore using CDI ApplicationScoped KeyStoreManager.
+    * This provides automatic reloading when the file timestamp changes.
     */
     @VisibleForTesting
     KeyStore getSecretsStore() {
         try {
-            final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
-            final int maxLoadTries = Config.getIntProperty(SECRETS_STORE_LOAD_TRIES, 2);
-
-            int tryCount = 1;
-            while (tryCount <= maxLoadTries) {
-                final File secretStoreFile = createStoreIfNeeded();
-                try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
-                    keyStore.load(inputStream, passwordSupplier.get());
-                    Logger.info(SecretsKeyStoreHelper.class,
-                            String.format("KeyStore loaded successfully after `%d` tries.", tryCount));
-                    break;
-                } catch (IOException gse) {
-                    //IOException wraps the underlying UnrecoverableKeyException
-                    Try.of(() -> handleStorageLoadException(gse));
-                    tryCount++;
-                }
-            }
-
-            return keyStore;
-
+            final KeyStoreManager keyStoreManager = CDIUtils.getBeanThrows(KeyStoreManager.class);
+            return keyStoreManager.getKeyStore();
         } catch (Exception e) {
-            Logger.debug(this.getClass(),
-                    "Unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
-            throw new DotRuntimeException(e);
+            Logger.error(this.getClass(), "Failed to get KeyStore from CDI KeyStoreManager: " + e.getMessage(), e);
+            throw new DotRuntimeException("Unable to access KeyStore", e);
         }
-
     }
 
 
     /**
-     * Persists the keystore, tries to do a 2 phase commit, saving to a tmp file, copying that to the
-     * keystore file, then deleting the tmp file
-     * 
-     * @param keyStore
-     * @return
+     * Persists the keystore using CDI KeyStoreManager. Provides atomic write and automatic cache
+     * update.
+     *
+     * @param keyStore the KeyStore to save
      */
-    private KeyStore saveSecretsStore(final KeyStore keyStore) {
-        final File secretStoreFile = new File(secretsKeyStorePath);
-        final File secretStoreFileTmp = new File(secretStoreFile.getParent(), "dotSecretsStore_" + System.currentTimeMillis() + ".p12.tmp");
-
-        secretStoreFileTmp.getParentFile().mkdirs();
-        try (OutputStream fos = Files.newOutputStream(secretStoreFileTmp.toPath())) {
-            keyStore.store(fos, passwordSupplier.get());
-            FileUtil.copyFile(secretStoreFileTmp, secretStoreFile);
-            secretStoreFileTmp.delete();
+    private void saveSecretsStore(final KeyStore keyStore) {
+        try {
+            final KeyStoreManager keyStoreManager = CDIUtils.getBeanThrows(KeyStoreManager.class);
+            keyStoreManager.saveKeyStore(keyStore);
         } catch (Exception e) {
-            Logger.error(this.getClass(), "unable to save secrets store " + secretStoreFileTmp + ": " + e);
-            throw new DotRuntimeException(e);
+            Logger.error(this.getClass(), "Failed to save KeyStore using CDI KeyStoreManager: " + e.getMessage(), e);
+            throw new DotRuntimeException("Unable to save KeyStore", e);
         }
-        return keyStore;
     }
 
     /**
-     * secret values are stored encryped in cache for 30 seconds and are decrypted when requested. If
-     * value is not in cache, it will be read from the keystore
+     * secret values are stored encrypted in a cache for 30 seconds and are decrypted when requested. If
+     *  a value is not in the cache, it will be read from the keystore
      * 
      * @param variableKey
      * @return
      * @throws Exception
      */
     public char[] getValue(final String variableKey) {
-        final char[] fromStore = loadValueFromStore(variableKey);
-        return fromStore == null ? CACHE_404 : fromStore;
+        final Optional<char[]> chars = loadValueFromStore(variableKey);
+        return chars.orElse(CACHE_404);
     }
 
     /**
@@ -196,18 +140,18 @@ public class SecretsKeyStoreHelper {
      * @param variableKey
      * @return
      */
-    private char[] loadValueFromStore(final String variableKey) {
+    private Optional<char[]> loadValueFromStore(final String variableKey) {
         try {
            final KeyStore keyStore = getSecretsStore();
             if (keyStore.containsAlias(variableKey)) {
                 final PasswordProtection keyStorePP = new PasswordProtection(passwordSupplier.get());
                 final SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
                 final SecretKeyEntry secretKeyEntry = (SecretKeyEntry) keyStore.getEntry(variableKey, keyStorePP);
-                return ((PBEKeySpec) factory.getKeySpec(secretKeyEntry.getSecretKey(), PBEKeySpec.class)).getPassword();
+                final char[] chars = ((PBEKeySpec) factory.getKeySpec(secretKeyEntry.getSecretKey(), PBEKeySpec.class)).getPassword();
+                return Optional.of(chars);
             } else {
-                return null;
+                return Optional.empty();
             }
-
         } catch (Exception e) {
             Logger.error(SecretsKeyStoreHelper.class,e);
             throw new DotRuntimeException(e);
