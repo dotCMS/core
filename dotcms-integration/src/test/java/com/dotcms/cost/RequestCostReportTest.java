@@ -158,8 +158,11 @@ public class RequestCostReportTest {
 
         // Then
         assertTrue("Should contain total cost", html.contains("Total:"));
+
+        String substr = html.substring(html.indexOf("Total:"), html.length());
+
         assertTrue("Should contain total value: " + expectedTotal,
-                html.contains(expectedTotal + "</"));
+                substr.contains(String.valueOf(expectedTotal)));
     }
 
     /**
