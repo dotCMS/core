@@ -1,6 +1,8 @@
 package com.dotcms.cost;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.business.APILocator;
+import com.google.common.annotations.VisibleForTesting;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
@@ -10,12 +12,13 @@ public class RequestCostRequestListener implements ServletRequestListener {
     private final RequestCostApi requestCostApi;
 
 
+    @VisibleForTesting
     public RequestCostRequestListener(RequestCostApi requestCostApi) {
         this.requestCostApi = requestCostApi;
     }
 
     public RequestCostRequestListener() {
-        this.requestCostApi = new RequestCostApiImpl();
+        this(APILocator.getRequestCostAPI());
     }
 
 

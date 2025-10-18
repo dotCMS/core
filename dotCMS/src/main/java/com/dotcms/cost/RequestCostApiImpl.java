@@ -48,10 +48,11 @@ public class RequestCostApiImpl implements RequestCostApi {
         enableForTests = Optional.ofNullable(enable);
     }
 
+
     @PostConstruct
     public void init() {
         this.requestCostTimeWindowSeconds = Config.getIntProperty("REQUEST_COST_TIME_WINDOW_SECONDS", 60);
-        this.requestCostDenominator = Config.getFloatProperty("REQUEST_COST_DENOMINATOR", 100.0f);
+        this.requestCostDenominator = Config.getFloatProperty("REQUEST_COST_DENOMINATOR", 1.0f);
 
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 r -> {
@@ -65,22 +66,33 @@ public class RequestCostApiImpl implements RequestCostApi {
                 requestCostTimeWindowSeconds, TimeUnit.SECONDS);
     }
 
-
+    private volatile boolean skipZeroRequests = false;
     private void logRequestCost() {
         try {
             if (!isAccountingEnabled()) {
                 return;
             }
             Tuple2<Long, Long> load = totalLoadGetAndReset();
-            if (load._1 == 0) {
+
+            long totalRequests = load._1;
+            float totalCost = load._2 / getRequestCostDenominator();
+            float costPerRequest = totalRequests == 0
+                    ? 0
+                    : totalCost / totalRequests;
+
+            if (totalRequests == 0 && skipZeroRequests) {
                 return;
             }
-            Logger.info(this.getClass(),
+
+            skipZeroRequests = totalRequests == 0;
+
+            Logger.info("REQUEST COST MONITOR >",
                     String.format(
-                            "Request Cost Monitor: Window: %ds, Count: %d, Total Cost: %.2f¢, Cost/Request: %.2f¢",
+                            "Window: %ds, Count: %d, Total Cost: %.2f, Cost/Request: %.2f",
                             requestCostTimeWindowSeconds,
-                            load._1, load._2 / getRequestCostDenominator(),
-                            load._2 / load._1 / getRequestCostDenominator()));
+                            totalRequests,
+                            totalCost,
+                            costPerRequest));
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error logging request cost", e);
         }
@@ -95,7 +107,7 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     @Override
     public Tuple2<Long, Long> totalLoadGetAndReset() {
-        return new Tuple2<>(requestCountForWindow.getAndSet(0), requestCostForWindow.getAndSet(0));
+        return new Tuple2<>(this.requestCountForWindow.getAndSet(0), this.requestCostForWindow.getAndSet(0));
     }
 
 
@@ -207,16 +219,19 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     @Override
     public void initAccounting(HttpServletRequest request) {
-        Accounting accounting = resolveAccounting(request);
-
         if (!isAccountingEnabled()) {
             return;
         }
+
+        // Increment request counter for monitoring window
+        this.requestCountForWindow.incrementAndGet();
+
+        Accounting accounting = resolveAccounting(request);
         Logger.debug(this.getClass(), "<Starting request cost accounting---");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         request.setAttribute(REQUEST_COST_ATTRIBUTE, new ArrayList<>());
         request.setAttribute(REQUEST_COST_ACCOUNTING_TYPE, accounting);
-        requestCountForWindow.incrementAndGet();
+
         this.incrementCost(Price.COSTING_INIT, RequestCostApiImpl.class, "initAccounting",
                 new Object[]{request, accounting});
     }
