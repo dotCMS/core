@@ -340,55 +340,6 @@ describe('DotContentDriveStore', () => {
                 expect(store.selectedItems().length).toBe(1);
             });
         });
-
-        describe('updateSelectedItems', () => {
-            it('should add items to existing selection', () => {
-                // First set initial selection
-                store.setSelectedItems([MOCK_ITEMS[0]]);
-                expect(store.selectedItems().length).toBe(1);
-
-                // Then update with additional items
-                store.updateSelectedItems([MOCK_ITEMS[1], MOCK_ITEMS[2]]);
-
-                expect(store.selectedItems().length).toBe(3);
-                expect(store.selectedItems()).toEqual([
-                    MOCK_ITEMS[0],
-                    MOCK_ITEMS[1],
-                    MOCK_ITEMS[2]
-                ]);
-            });
-
-            it('should add to empty selection', () => {
-                expect(store.selectedItems()).toEqual([]);
-
-                store.updateSelectedItems([MOCK_ITEMS[0]]);
-
-                expect(store.selectedItems().length).toBe(1);
-                expect(store.selectedItems()).toEqual([MOCK_ITEMS[0]]);
-            });
-
-            it('should handle adding empty array', () => {
-                store.setSelectedItems([MOCK_ITEMS[0]]);
-                expect(store.selectedItems().length).toBe(1);
-
-                store.updateSelectedItems([]);
-
-                expect(store.selectedItems().length).toBe(1);
-                expect(store.selectedItems()).toEqual([MOCK_ITEMS[0]]);
-            });
-
-            it('should preserve order when adding items', () => {
-                store.setSelectedItems([MOCK_ITEMS[0]]);
-                store.updateSelectedItems([MOCK_ITEMS[1]]);
-                store.updateSelectedItems([MOCK_ITEMS[2]]);
-
-                expect(store.selectedItems()).toEqual([
-                    MOCK_ITEMS[0],
-                    MOCK_ITEMS[1],
-                    MOCK_ITEMS[2]
-                ]);
-            });
-        });
     });
 });
 describe('DotContentDriveStore - onInit', () => {

@@ -131,9 +131,6 @@ export const DotContentDriveStore = signalStore(
             setSelectedItems(items: DotContentDriveItem[]) {
                 patchState(store, { selectedItems: items });
             },
-            updateSelectedItems(items: DotContentDriveItem[]) {
-                patchState(store, { selectedItems: [...store.selectedItems(), ...items] });
-            },
             loadItems() {
                 const { query, pagination, sort, currentSite } = store.$searchParams();
                 const { limit, offset } = pagination;
