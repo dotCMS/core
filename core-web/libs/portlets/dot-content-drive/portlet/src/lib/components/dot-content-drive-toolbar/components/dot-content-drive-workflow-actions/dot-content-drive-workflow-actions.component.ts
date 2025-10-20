@@ -55,6 +55,12 @@ export class DotContentDriveWorkflowActionsComponent {
             case WORKFLOW_ACTION_ID.GOT_TO_EDIT_PAGE:
                 this.gotToEditPage();
                 break;
+            case WORKFLOW_ACTION_ID.DOWNLOAD:
+                this.download();
+                break;
+            case WORKFLOW_ACTION_ID.RENAME:
+                this.rename();
+                break;
             default:
                 this.executeWorkflowAction(action);
                 break;
@@ -157,5 +163,19 @@ export class DotContentDriveWorkflowActionsComponent {
                     console.error('Error executing workflow action:', error);
                 }
             });
+    }
+
+    /**
+     * Downloads the selected items.
+     */
+    private download() {
+        // TODO: Implement download
+    }
+
+    /**
+     * Renames the selected items.
+     */
+    private rename() {
+        // TODO: Implement rename
     }
 }
