@@ -11,6 +11,8 @@ export const WORKFLOW_ACTION_ID = {
     UNARCHIVE: 'UNARCHIVE',
     DELETE: 'DELETE',
     DESTROY: 'DESTROY',
+    COPY: 'COPY',
+    MOVE: 'MOVE',
     RENAME: 'RENAME',
     DOWNLOAD: 'DOWNLOAD'
 } as const;
@@ -22,6 +24,7 @@ type SelectionStats = {
     archived: number;
     live: number;
     working: number;
+    locked: number;
     assets: number;
     pages: number;
     contentlets: number;
@@ -34,9 +37,11 @@ export interface ActionShowConditions {
     allArchived?: boolean;
     allLive?: boolean;
     allWorking?: boolean;
+    allLocked?: boolean;
     noneArchived?: boolean;
     noneLive?: boolean;
     noneWorking?: boolean;
+    noneLocked?: boolean;
     isPage?: boolean;
     isContentlet?: boolean;
 }
@@ -73,24 +78,6 @@ const GOT_TO_EDIT_PAGE_ACTION: ContentDriveWorkflowAction = {
     }
 };
 
-const PUBLISH_ACTION: ContentDriveWorkflowAction = {
-    name: 'Publish',
-    id: WORKFLOW_ACTION_ID.PUBLISH,
-    showWhen: {
-        noneArchived: true,
-        noneLive: true
-    }
-};
-
-const UNPUBLISH_ACTION: ContentDriveWorkflowAction = {
-    name: 'Unpublish',
-    id: WORKFLOW_ACTION_ID.UNPUBLISH,
-    showWhen: {
-        noneArchived: true,
-        allLive: true
-    }
-};
-
 const SAVE_AS_DRAFT_ACTION: ContentDriveWorkflowAction = {
     name: 'content.drive.worflow.action.save-draft',
     id: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
@@ -99,9 +86,28 @@ const SAVE_AS_DRAFT_ACTION: ContentDriveWorkflowAction = {
     }
 };
 
+const PUBLISH_ACTION: ContentDriveWorkflowAction = {
+    name: 'Publish',
+    id: WORKFLOW_ACTION_ID.PUBLISH,
+    showWhen: {
+        noneArchived: true
+    }
+};
+
+const UNPUBLISH_ACTION: ContentDriveWorkflowAction = {
+    name: 'Unpublish',
+    id: WORKFLOW_ACTION_ID.UNPUBLISH,
+    // Unpublish: showOn: ["LISTING", "LOCKED", "PUBLISHED", "UNLOCKED"]
+    showWhen: {
+        noneArchived: true,
+        allLive: true
+    }
+};
+
 const ARCHIVE_ACTION: ContentDriveWorkflowAction = {
     name: 'Archive',
     id: WORKFLOW_ACTION_ID.ARCHIVE,
+    // Archive: showOn: ["LISTING", "ARCHIVED", "UNPUBLISHED", "UNLOCKED"]
     showWhen: {
         noneArchived: true
     },
@@ -177,9 +183,11 @@ export const getActionConditions = (selectedItems: DotContentDriveItem[]): Actio
             allArchived: false,
             allLive: false,
             allWorking: false,
+            allLocked: false,
             noneArchived: false,
             noneLive: false,
             noneWorking: false,
+            noneLocked: false,
             allAreAssets: false,
             isPage: false,
             isContentlet: false
@@ -192,9 +200,11 @@ export const getActionConditions = (selectedItems: DotContentDriveItem[]): Actio
         allArchived: stats.archived === stats.total,
         allLive: stats.live === stats.total,
         allWorking: stats.working === stats.total,
+        allLocked: stats.locked === stats.total,
         noneArchived: stats.archived === 0,
         noneLive: stats.live === 0,
         noneWorking: stats.working === 0,
+        noneLocked: stats.locked === 0,
         allAreAssets: stats.assets === stats.total,
         isPage: stats.pages === stats.total,
         isContentlet: stats.contentlets === stats.total
@@ -217,12 +227,13 @@ const countSelectionStats = (items: DotContentDriveItem[]): SelectionStats => {
             if (item.archived) acc.archived++;
             if (item.live) acc.live++;
             if (item.working) acc.working++;
+            if (item.locked) acc.locked++;
             if (item.baseType === 'HTMLPAGE') acc.pages++;
             if (item.baseType === 'CONTENT') acc.contentlets++;
             if (['FILEASSET', 'DOTASSET'].includes(item.baseType)) acc.assets++;
             return acc;
         },
-        { archived: 0, live: 0, working: 0, assets: 0, pages: 0, contentlets: 0 }
+        { archived: 0, live: 0, working: 0, locked: 0, assets: 0, pages: 0, contentlets: 0 }
     );
 
     return { total, ...counters };

@@ -14,9 +14,11 @@ describe('workflow-actions', () => {
                     allArchived: false,
                     allLive: false,
                     allWorking: false,
+                    allLocked: false,
                     noneArchived: false,
                     noneLive: false,
                     noneWorking: false,
+                    noneLocked: false,
                     allAreAssets: false,
                     isPage: false,
                     isContentlet: false
@@ -31,6 +33,7 @@ describe('workflow-actions', () => {
                         archived: true,
                         live: false,
                         working: false,
+                        locked: false,
                         baseType: 'CONTENT'
                     } as DotContentDriveItem
                 ];
@@ -43,9 +46,11 @@ describe('workflow-actions', () => {
                     allArchived: true,
                     allLive: false,
                     allWorking: false,
+                    allLocked: false,
                     noneArchived: false,
                     noneLive: true,
                     noneWorking: true,
+                    noneLocked: true,
                     allAreAssets: false,
                     isPage: false,
                     isContentlet: true
@@ -58,6 +63,7 @@ describe('workflow-actions', () => {
                         archived: false,
                         live: true,
                         working: true,
+                        locked: false,
                         baseType: 'HTMLPAGE'
                     } as DotContentDriveItem
                 ];
@@ -70,9 +76,11 @@ describe('workflow-actions', () => {
                     allArchived: false,
                     allLive: true,
                     allWorking: true,
+                    allLocked: false,
                     noneArchived: true,
                     noneLive: false,
                     noneWorking: false,
+                    noneLocked: true,
                     allAreAssets: false,
                     isPage: true,
                     isContentlet: false
@@ -85,6 +93,7 @@ describe('workflow-actions', () => {
                         archived: false,
                         live: true,
                         working: false,
+                        locked: false,
                         baseType: 'FILEASSET'
                     } as DotContentDriveItem
                 ];
@@ -97,9 +106,11 @@ describe('workflow-actions', () => {
                     allArchived: false,
                     allLive: true,
                     allWorking: false,
+                    allLocked: false,
                     noneArchived: true,
                     noneLive: false,
                     noneWorking: true,
+                    noneLocked: true,
                     allAreAssets: true,
                     isPage: false,
                     isContentlet: false
@@ -112,6 +123,7 @@ describe('workflow-actions', () => {
                         archived: false,
                         live: false,
                         working: true,
+                        locked: false,
                         baseType: 'DOTASSET'
                     } as DotContentDriveItem
                 ];
@@ -124,9 +136,11 @@ describe('workflow-actions', () => {
                     allArchived: false,
                     allLive: false,
                     allWorking: true,
+                    allLocked: false,
                     noneArchived: true,
                     noneLive: true,
                     noneWorking: false,
+                    noneLocked: true,
                     allAreAssets: true,
                     isPage: false,
                     isContentlet: false
@@ -141,12 +155,14 @@ describe('workflow-actions', () => {
                         archived: true,
                         live: false,
                         working: false,
+                        locked: false,
                         baseType: 'CONTENT'
                     } as DotContentDriveItem,
                     {
                         archived: true,
                         live: false,
                         working: false,
+                        locked: false,
                         baseType: 'CONTENT'
                     } as DotContentDriveItem
                 ];
@@ -159,9 +175,11 @@ describe('workflow-actions', () => {
                     allArchived: true,
                     allLive: false,
                     allWorking: false,
+                    allLocked: false,
                     noneArchived: false,
                     noneLive: true,
                     noneWorking: true,
+                    noneLocked: true,
                     allAreAssets: false,
                     isPage: false,
                     isContentlet: true
@@ -174,18 +192,21 @@ describe('workflow-actions', () => {
                         archived: false,
                         live: true,
                         working: false,
+                        locked: false,
                         baseType: 'HTMLPAGE'
                     } as DotContentDriveItem,
                     {
                         archived: false,
                         live: true,
                         working: true,
+                        locked: false,
                         baseType: 'HTMLPAGE'
                     } as DotContentDriveItem,
                     {
                         archived: false,
                         live: true,
                         working: false,
+                        locked: false,
                         baseType: 'HTMLPAGE'
                     } as DotContentDriveItem
                 ];
@@ -198,9 +219,11 @@ describe('workflow-actions', () => {
                     allArchived: false,
                     allLive: true,
                     allWorking: false,
+                    allLocked: false,
                     noneArchived: true,
                     noneLive: false,
                     noneWorking: false,
+                    noneLocked: true,
                     allAreAssets: false,
                     isPage: true,
                     isContentlet: false
@@ -213,12 +236,14 @@ describe('workflow-actions', () => {
                         archived: false,
                         live: false,
                         working: true,
+                        locked: false,
                         baseType: 'CONTENT'
                     } as DotContentDriveItem,
                     {
                         archived: false,
                         live: false,
                         working: true,
+                        locked: false,
                         baseType: 'CONTENT'
                     } as DotContentDriveItem
                 ];
@@ -231,9 +256,11 @@ describe('workflow-actions', () => {
                     allArchived: false,
                     allLive: false,
                     allWorking: true,
+                    allLocked: false,
                     noneArchived: true,
                     noneLive: true,
                     noneWorking: false,
+                    noneLocked: true,
                     allAreAssets: false,
                     isPage: false,
                     isContentlet: true
@@ -413,6 +440,7 @@ describe('workflow-actions', () => {
                         archived: false,
                         live: false,
                         working: false,
+                        locked: false,
                         baseType: 'CONTENT'
                     } as DotContentDriveItem
                 ];
@@ -425,9 +453,11 @@ describe('workflow-actions', () => {
                     allArchived: false,
                     allLive: false,
                     allWorking: false,
+                    allLocked: false,
                     noneArchived: true,
                     noneLive: true,
                     noneWorking: true,
+                    noneLocked: true,
                     allAreAssets: false,
                     isPage: false,
                     isContentlet: true
@@ -440,6 +470,7 @@ describe('workflow-actions', () => {
                         archived: true,
                         live: true,
                         working: true,
+                        locked: true,
                         baseType: 'CONTENT'
                     } as DotContentDriveItem
                 ];
@@ -452,9 +483,11 @@ describe('workflow-actions', () => {
                     allArchived: true,
                     allLive: true,
                     allWorking: true,
+                    allLocked: true,
                     noneArchived: false,
                     noneLive: false,
                     noneWorking: false,
+                    noneLocked: false,
                     allAreAssets: false,
                     isPage: false,
                     isContentlet: true
@@ -617,6 +650,98 @@ describe('workflow-actions', () => {
                 expect(result.isPage).toBe(false);
                 expect(result.allAreAssets).toBe(false);
                 expect(result.hasSelection).toBe(true);
+            });
+        });
+
+        describe('locked state tracking', () => {
+            it('should identify all locked items', () => {
+                const items: DotContentDriveItem[] = [
+                    {
+                        archived: false,
+                        live: true,
+                        working: false,
+                        locked: true,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem,
+                    {
+                        archived: false,
+                        live: false,
+                        working: true,
+                        locked: true,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem
+                ];
+
+                const result = getActionConditions(items);
+
+                expect(result.allLocked).toBe(true);
+                expect(result.noneLocked).toBe(false);
+            });
+
+            it('should identify none locked items', () => {
+                const items: DotContentDriveItem[] = [
+                    {
+                        archived: false,
+                        live: true,
+                        working: false,
+                        locked: false,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem,
+                    {
+                        archived: false,
+                        live: false,
+                        working: true,
+                        locked: false,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem
+                ];
+
+                const result = getActionConditions(items);
+
+                expect(result.allLocked).toBe(false);
+                expect(result.noneLocked).toBe(true);
+            });
+
+            it('should handle mixed locked and unlocked items', () => {
+                const items: DotContentDriveItem[] = [
+                    {
+                        archived: false,
+                        live: true,
+                        working: false,
+                        locked: true,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem,
+                    {
+                        archived: false,
+                        live: false,
+                        working: true,
+                        locked: false,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem
+                ];
+
+                const result = getActionConditions(items);
+
+                expect(result.allLocked).toBe(false);
+                expect(result.noneLocked).toBe(false);
+            });
+
+            it('should identify a single locked item', () => {
+                const items: DotContentDriveItem[] = [
+                    {
+                        archived: false,
+                        live: true,
+                        working: false,
+                        locked: true,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem
+                ];
+
+                const result = getActionConditions(items);
+
+                expect(result.allLocked).toBe(true);
+                expect(result.noneLocked).toBe(false);
+                expect(result.isSingleSelection).toBe(true);
             });
         });
 
