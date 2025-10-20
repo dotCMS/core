@@ -162,5 +162,6 @@ export function createUVESubscription<T extends UVEEventType>(
  * ```
  */
 export function isAnalyticsActive(): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return typeof window !== 'undefined' && (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY] === true;
 }

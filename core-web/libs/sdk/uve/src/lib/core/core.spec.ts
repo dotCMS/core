@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/gl
 import { UVE_MODE, UVEEventType } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
+import { ANALYTICS_WINDOWS_ACTIVE_KEY } from '../../internal/constants';
 import { createUVESubscription, getUVEState, isAnalyticsActive } from './core.utils';
 
 describe('getUVEStatus', () => {
@@ -447,7 +448,8 @@ describe('isAnalyticsActive', () => {
 
     beforeEach(() => {
         // Reset window.__dotAnalyticsActive__ before each test
-        delete (window as any).__dotAnalyticsActive__;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY];
     });
 
     afterEach(() => {
@@ -455,7 +457,8 @@ describe('isAnalyticsActive', () => {
     });
 
     it('should return true when __dotAnalyticsActive__ is true', () => {
-        (window as any).__dotAnalyticsActive__ = true;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY] = true;
 
         const result = isAnalyticsActive();
 
@@ -463,7 +466,8 @@ describe('isAnalyticsActive', () => {
     });
 
     it('should return false when __dotAnalyticsActive__ is false', () => {
-        (window as any).__dotAnalyticsActive__ = false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
 
         const result = isAnalyticsActive();
 
