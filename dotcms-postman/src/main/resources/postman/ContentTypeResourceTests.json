@@ -1952,7 +1952,323 @@
 						"description": "Requesting an invalid Base Content Type will return an error message and an HTTP Status 400."
 					},
 					"response": []
-				}
+				},
+				{
+                  "name": "Get ContentTypes without sending ensure param",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "// Parse the JSON response",
+                          "const response = pm.response.json();",
+                          "",
+                          "// Test 1: Check response status is 200",
+                          "pm.test(\"Status code is 200\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "",
+                          "// Test 2: Check response structure exists",
+                          "pm.test(\"Response has entity array\", function () {",
+                          "    pm.expect(response).to.have.property('entity');",
+                          "    pm.expect(response.entity).to.be.an('array');",
+                          "});",
+                          "",
+                          "// Test 3: Check total items in response is 10",
+                          "pm.test(\"Response contains exactly 10 items\", function () {",
+                          "    pm.expect(response.entity).to.have.lengthOf(10);",
+                          "});",
+                          "",
+                          "// Test 4: Check pagination shows 10 items",
+                          "pm.test(\"Pagination shows 10 items per page\", function () {",
+                          "    pm.expect(response.pagination.perPage).to.equal(10);",
+                          "});",
+                          "",
+                          "// Test 5: Check if 'dotAsset' content type is present (case-insensitive)",
+                          "pm.test(\"Response contains 'dotAsset' content type\", function () {",
+                          "    const hasDotAsset = response.entity.some(ct => ",
+                          "        ct.variable?.toLowerCase() === 'dotasset' ||",
+                          "        ct.name?.toLowerCase() === 'dotasset'",
+                          "    );",
+                          "    pm.expect(hasDotAsset, \"dotAsset content type not found\").to.be.true;",
+                          "});",
+                          "",
+                          "// Test 6: Verify no errors in response",
+                          "pm.test(\"Response has no errors\", function () {",
+                          "    pm.expect(response.errors).to.be.an('array').that.is.empty;",
+                          "});",
+                          "",
+                          "// Test 7: When 'ensure' param is NOT present, verify Video is NOT present in the list",
+                          "pm.test(\"WITHOUT 'ensure' param: 'video' content type is NOT present\", function () {",
+                          "    const hasVideo = response.entity.some(ct => ",
+                          "        ct.variable?.toLowerCase() === 'video' || ",
+                          "        ct.name?.toLowerCase() === 'video'",
+                          "    );",
+                          "    pm.expect(hasVideo, \"Video should NOT be present without ensure param\").to.be.false;",
+                          "});",
+                          "",
+                          "// Content types found: (for debugging).",
+                          "console.log(\"\\nContent Types found:\");",
+                          "response.entity.forEach(ct => {",
+                          "    console.log(`- Name: ${ct.name}, Variable: ${ct.variable}, BaseType: ${ct.baseType}`);",
+                          "});",
+                          "",
+                          "console.log(`\\nTotal content types: ${response.entity.length}`);",
+                          "console.log(`Pagination info: Page ${response.pagination.currentPage}, Total: ${response.pagination.totalEntries}`);"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "basic",
+                      "basic": [
+                        {
+                          "key": "username",
+                          "value": "admin@dotcms.com",
+                          "type": "string"
+                        },
+                        {
+                          "key": "password",
+                          "value": "admin",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/contenttype?filter=&orderby=name&direction=ASC&per_page=10",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "contenttype"
+                      ],
+                      "query": [
+                        {
+                          "key": "filter",
+                          "value": ""
+                        },
+                        {
+                          "key": "orderby",
+                          "value": "name"
+                        },
+                        {
+                          "key": "direction",
+                          "value": "ASC"
+                        },
+                        {
+                          "key": "per_page",
+                          "value": "10"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get ContentTypes sending ensure param",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "// Parse the JSON response",
+                          "const response = pm.response.json();",
+                          "",
+                          "// Test 1: Check response status is 200",
+                          "pm.test(\"Status code is 200\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "",
+                          "// Test 2: When 'ensure' param IS present, Check if 'video' content type is present (case-insensitive).",
+                          "pm.test(\"Response contains 'video' content type\", function () {",
+                          "    const hasVideo = response.entity.some(ct => ",
+                          "        ct.variable?.toLowerCase() === 'video' || ",
+                          "        ct.name?.toLowerCase() === 'video'",
+                          "    );",
+                          "    pm.expect(hasVideo, \"Video content type not found\").to.be.true;",
+                          "});",
+                          "",
+                          "// Test 3: Check if 'dotAsset' content type is present (case-insensitive)",
+                          "pm.test(\"Response contains 'dotAsset' content type\", function () {",
+                          "    const hasDotAsset = response.entity.some(ct => ",
+                          "        ct.variable?.toLowerCase() === 'dotasset' ||",
+                          "        ct.name?.toLowerCase() === 'dotasset'",
+                          "    );",
+                          "    pm.expect(hasDotAsset, \"dotAsset content type not found\").to.be.true;",
+                          "});",
+                          "",
+                          "// Test 4: Verify both 'video' and 'dotAsset' are present together",
+                          "pm.test(\"Response contains BOTH 'video' and 'dotAsset' content types\", function () {",
+                          "    const contentTypeNames = response.entity.map(ct => ct.name?.toLowerCase());",
+                          "    const contentTypeVariables = response.entity.map(ct => ct.variable?.toLowerCase());",
+                          "    ",
+                          "    const hasVideo = contentTypeNames.includes('video') || contentTypeVariables.includes('video')",
+                          "    const hasDotAsset = contentTypeNames.includes('dotasset') || contentTypeVariables.includes('dotasset');",
+                          "    ",
+                          "    pm.expect(hasVideo, \"Video not found\").to.be.true;",
+                          "    pm.expect(hasDotAsset, \"dotAsset not found\").to.be.true;",
+                          "});",
+                          "",
+                          "// Test 5: Verify no errors in response",
+                          "pm.test(\"Response has no errors\", function () {",
+                          "    pm.expect(response.errors).to.be.an('array').that.is.empty;",
+                          "});",
+                          "",
+                          "// Test 6: Verify the list is sorted in ascending order by name (case-insensitive)",
+                          "pm.test(\"Content types are sorted in ascending order by name\", function () {",
+                          "    const names = response.entity",
+                          "        .map(ct => ct.name?.toLowerCase())",
+                          "        .filter(name => !!name); // remove undefined/null",
+                          "",
+                          "    const sortedNames = [...names].sort((a, b) => a.localeCompare(b));",
+                          "",
+                          "    pm.expect(names, \"Content types are not in ascending order by name\").to.eql(sortedNames);",
+                          "});",
+                          "",
+                          "// Content types found: (for debugging).",
+                          "console.log(\"\\nContent Types found:\");",
+                          "response.entity.forEach(ct => {",
+                          "    console.log(`- Name: ${ct.name}, Variable: ${ct.variable}, BaseType: ${ct.baseType}`);",
+                          "});",
+                          "",
+                          "console.log(`\\nTotal content types: ${response.entity.length}`);",
+                          "console.log(`Pagination info: Page ${response.pagination.currentPage}, Total: ${response.pagination.totalEntries}`);"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "basic",
+                      "basic": [
+                        {
+                          "key": "username",
+                          "value": "admin@dotcms.com",
+                          "type": "string"
+                        },
+                        {
+                          "key": "password",
+                          "value": "admin",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/contenttype?filter=&orderby=name&direction=ASC&per_page=10&ensure=video,dotasset",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "contenttype"
+                      ],
+                      "query": [
+                        {
+                          "key": "filter",
+                          "value": ""
+                        },
+                        {
+                          "key": "orderby",
+                          "value": "name"
+                        },
+                        {
+                          "key": "direction",
+                          "value": "ASC"
+                        },
+                        {
+                          "key": "per_page",
+                          "value": "10"
+                        },
+                        {
+                          "key": "ensure",
+                          "value": "video,dotasset"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get All BaseTypes",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Response status code is 200\", function () {",
+                          "    pm.expect(pm.response.code).to.equal(200);",
+                          "});",
+                          "",
+                          "",
+                          "pm.test(\"Response contains required fields\", function () {",
+                          "    const responseData = pm.response.json();",
+                          "    ",
+                          "    pm.expect(responseData).to.be.an('object');",
+                          "    pm.expect(responseData).to.have.all.keys('entity', 'errors', 'i18nMessagesMap', 'messages', 'pagination', 'permissions');",
+                          "});",
+                          "",
+                          "",
+                          "pm.test(\"Entity is an array and contains at least one object\", function () {",
+                          "    const responseData = pm.response.json();",
+                          "    ",
+                          "    pm.expect(responseData).to.be.an('object');",
+                          "    pm.expect(responseData.entity).to.be.an('array').that.is.not.empty;",
+                          "    pm.expect(responseData.entity).to.satisfy(function(arr) {",
+                          "        return arr.every(item => typeof item === 'object' && item !== null);",
+                          "    });",
+                          "});",
+                          "",
+                          "pm.test(\"Validate the schema of the objects within the entity array\", function () {",
+                          "    const responseData = pm.response.json();",
+                          "    ",
+                          "    pm.expect(responseData).to.be.an('object');",
+                          "    pm.expect(responseData.entity).to.be.an('array');",
+                          "",
+                          "    responseData.entity.forEach(function(item) {",
+                          "        pm.expect(item).to.be.an('object');",
+                          "        pm.expect(item).to.have.all.keys('index', 'label', 'name', 'types');",
+                          "        pm.expect(item.index).to.be.a('number');",
+                          "        pm.expect(item.label).to.be.a('string');",
+                          "        pm.expect(item.name).to.be.a('string');",
+                          "        pm.expect(item.types).to.satisfy(function(value) {",
+                          "            return value === null || Array.isArray(value);",
+                          "        });",
+                          "    });",
+                          "});",
+                          ""
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/contenttype/basetypes",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "contenttype",
+                        "basetypes"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
 			]
 		},
 		{
