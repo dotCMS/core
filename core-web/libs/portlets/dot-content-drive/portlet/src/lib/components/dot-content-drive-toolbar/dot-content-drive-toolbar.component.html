@@ -4,9 +4,10 @@
             data-testid="tree-toggler"
             [class.sidebar-expanded]="$treeExpanded()" />
 
-        @if (!$showWorkflowActions()) {
-            <div class="p-toolbar-group-top">
-                <dot-content-drive-search-input data-testid="search-input" class="search-input" />
+        <div class="p-toolbar-group-top">
+            <dot-content-drive-search-input data-testid="search-input" class="search-input" />
+
+            @if (!$showWorkflowActions()) {
                 <p-button
                     [label]="'content-drive.add-new' | dm"
                     icon="pi pi-chevron-down"
@@ -15,18 +16,16 @@
                     data-testid="add-new-button"
                     (click)="menu.toggle($event)"
                     #button />
-            </div>
-
-            <div class="p-toolbar-group-bottom">
-                <dot-content-drive-base-type-selector data-testid="base-type-selector" />
-                <dot-content-drive-content-type-field data-testid="content-type-field" />
-                <dot-content-drive-language-field data-testid="language-field" />
-            </div>
-        } @else {
-            <div class="p-toolbar-group-workflow">
+            } @else {
                 <dot-content-drive-workflow-actions data-testid="workflow-actions" />
-            </div>
-        }
+            }
+        </div>
+
+        <div class="p-toolbar-group-bottom">
+            <dot-content-drive-base-type-selector data-testid="base-type-selector" />
+            <dot-content-drive-content-type-field data-testid="content-type-field" />
+            <dot-content-drive-language-field data-testid="language-field" />
+        </div>
     </div>
 </p-toolbar>
 

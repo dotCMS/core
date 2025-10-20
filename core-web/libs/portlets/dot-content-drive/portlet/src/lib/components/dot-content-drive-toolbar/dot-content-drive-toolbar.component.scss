@@ -5,11 +5,6 @@
     height: 7.125rem; //114px
     transition: height $content-drive-animation-speed $content-drive-animation-ease;
 
-    /* Height when workflow actions are shown */
-    &:has(.p-toolbar-group-actions) {
-        height: 4.375rem; //70px
-    }
-
     ::ng-deep {
         .p-toolbar {
             padding: $spacing-1 $spacing-3;
@@ -58,12 +53,6 @@
     }
 }
 
-.p-toolbar-group-actions {
-    row-gap: 0;
-    grid-template-areas: "tree-toogler toolbar-group-workflow";
-    grid-template-rows: 1fr;
-}
-
 .p-toolbar-group-top {
     display: grid;
     align-items: center;
@@ -76,7 +65,8 @@
         grid-column: 1 / 3;
     }
 
-    p-button {
+    p-button,
+    dot-content-drive-workflow-actions {
         grid-column: 4;
         justify-self: end;
     }
@@ -92,10 +82,4 @@
 .p-toolbar-group-top,
 .p-toolbar-group-bottom {
     gap: $spacing-1;
-}
-
-.p-toolbar-group-workflow {
-    width: 100%;
-    grid-area: toolbar-group-workflow;
-    justify-self: end;
 }
