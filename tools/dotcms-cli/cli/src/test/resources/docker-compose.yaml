@@ -22,7 +22,7 @@ services:
       - discovery.type=single-node
       - cluster.name=elastic-cluster
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx1g"
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx1g -XX:-UseContainerSupport"
       - plugins.security.disabled=true
     ulimits:
       memlock:
