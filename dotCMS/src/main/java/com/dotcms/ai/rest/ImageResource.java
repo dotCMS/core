@@ -2,7 +2,7 @@ package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.Marshaller;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.ai.api.ImageAPI;
@@ -99,7 +99,7 @@ public class ImageResource {
                 request.getRemoteAddr(), request.getRequestURL().toString(), request.getMethod(),
                 readParameters(request.getParameterMap()), Marshaller.marshal(aiImageRequestDTO)));
 
-        final AiAppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
+        final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
         if (UtilMethods.isEmpty(config.getApiKey())) {
             return Response
                     .status(Status.INTERNAL_SERVER_ERROR)

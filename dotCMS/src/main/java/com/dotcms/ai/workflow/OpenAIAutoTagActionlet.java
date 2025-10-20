@@ -1,6 +1,6 @@
 package com.dotcms.ai.workflow;
 
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -38,7 +38,7 @@ public class OpenAIAutoTagActionlet extends WorkFlowActionlet {
                 )
         );
 
-        final AiAppConfig appConfig = ConfigService.INSTANCE.config();
+        final AppConfig appConfig = ConfigService.INSTANCE.config();
         return List.of(
                 overwriteParameter,
                 limitTagsToHost,

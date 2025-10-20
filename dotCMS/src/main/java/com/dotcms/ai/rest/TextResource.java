@@ -1,7 +1,7 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.rest.WebResource;
@@ -84,7 +84,7 @@ public class TextResource {
                     .build();
         }
 
-        final AiAppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
+        final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
 
         return Response.ok(
                 APILocator.getDotAIAPI()
@@ -101,7 +101,7 @@ public class TextResource {
      * @param config the configuration for the AI text generation service
      * @return a JSONObject representing the request
      */
-    private JSONObject generateRequest(final CompletionsForm form, final AiAppConfig config) {
+    private JSONObject generateRequest(final CompletionsForm form, final AppConfig config) {
         final String model = form.model;
         final float temperature = form.temperature;
         final JSONObject request = new JSONObject();

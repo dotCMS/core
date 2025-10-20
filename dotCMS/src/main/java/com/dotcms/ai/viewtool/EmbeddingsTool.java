@@ -1,7 +1,7 @@
 package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotmarketing.beans.Host;
@@ -29,7 +29,7 @@ public class EmbeddingsTool implements ViewTool {
     private final ViewContext context;
     private final HttpServletRequest request;
     private final Host host;
-    private final AiAppConfig appConfig;
+    private final AppConfig appConfig;
     private final User user;
 
     /**
@@ -104,7 +104,7 @@ public class EmbeddingsTool implements ViewTool {
     }
 
     @VisibleForTesting
-    AiAppConfig appConfig() {
+    AppConfig appConfig() {
         return ConfigService.INSTANCE.config(host);
     }
 

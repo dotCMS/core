@@ -79,7 +79,7 @@ public class ConfigServiceTest {
     @Test
     public void test_config_hostWithSecrets() throws Exception {
         AiTest.aiAppSecrets(host, "text-model-0", "image-model-1", "embeddings-model-2");
-        final AiAppConfig appConfig = configService.config(host);
+        final AppConfig appConfig = configService.config(host);
 
         assertTrue(appConfig.getModel().isOperational());
         assertTrue(appConfig.getImageModel().isOperational());
@@ -95,7 +95,7 @@ public class ConfigServiceTest {
     @Test
     public void test_config_hostWithoutSecrets() throws Exception {
         AiTest.aiAppSecrets(APILocator.systemHost(), "text-model-10", "image-model-11", "embeddings-model-12");
-        final AiAppConfig appConfig = configService.config(host);
+        final AppConfig appConfig = configService.config(host);
 
         assertTrue(appConfig.getModel().isOperational());
         assertTrue(appConfig.getImageModel().isOperational());

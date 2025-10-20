@@ -36,7 +36,7 @@ public class ConfigService {
      * Gets the secrets from the App - this will check the current host then the SYSTEM_HOST for a valid configuration. This lookup is low overhead and cached
      * by dotCMS.
      */
-    public AiAppConfig config(final Host host) {
+    public AppConfig config(final Host host) {
         final User systemUser = APILocator.systemUser();
         final Host resolved = resolveHost(host);
         final Optional<AppSecrets> appSecrets = getAiSecrets(resolved, systemUser);
@@ -44,17 +44,17 @@ public class ConfigService {
         if (appSecrets.isEmpty() && !resolved.isSystemHost()) {
             final Host systemHost = APILocator.systemHost();
             final Optional<AppSecrets> systemSecrets = getAiSecrets(systemHost, systemUser);
-            return new AiAppConfig(systemHost.getHostname(), systemSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
+            return new AppConfig(systemHost.getHostname(), systemSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
         }
 
-        return new AiAppConfig(resolved.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
+        return new AppConfig(resolved.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
     }
 
     /**
      * Gets the secrets from the App - this will check the current host then the SYSTEM_HOST for a valid configuration. This lookup is low overhead and cached
      * by dotCMS.
      */
-    public AiAppConfig config() {
+    public AppConfig config() {
         return config(null);
     }
     /**

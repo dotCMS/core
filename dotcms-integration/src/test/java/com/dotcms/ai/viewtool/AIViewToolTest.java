@@ -2,7 +2,7 @@ package com.dotcms.ai.viewtool;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.ai.AiTest;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.mock;
  */
 public class AIViewToolTest extends IntegrationTestBase {
 
-    private static AiAppConfig config;
+    private static AppConfig config;
     private static WireMockServer wireMockServer;
 
     private User user;
@@ -187,7 +187,7 @@ public class AIViewToolTest extends IntegrationTestBase {
             }
 
             @Override
-            AiAppConfig config() {
+            AppConfig config() {
                 return config;
             }
         };

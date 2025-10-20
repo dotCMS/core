@@ -1,7 +1,7 @@
 package com.dotcms.ai.util;
 
 
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -194,7 +194,7 @@ public class ContentToStringUtil {
                 .filter(f ->
                         f.dataType().equals(DataTypes.LONG_TEXT)
                 ).collect(Collectors.toUnmodifiableList());
-        final AiAppConfig config = ConfigService.INSTANCE.config();
+        final AppConfig config = ConfigService.INSTANCE.config();
         config.debugLogger(this.getClass(), () -> String.format("Found %d indexable field(s) for Contentlet ID '%s': %s",
                 indexableFields.size(), contentlet.getIdentifier(), indexableFields.stream().map(Field::variable).collect(Collectors.toSet())));
         return indexableFields;
@@ -254,7 +254,7 @@ public class ContentToStringUtil {
             parseField(contentlet, field)
                     .ifPresent(s -> builder.append(s).append(SPACE));
         }
-        final AiAppConfig config = ConfigService.INSTANCE.config();
+        final AppConfig config = ConfigService.INSTANCE.config();
         final int embeddingsMinimumLength = config.getConfigInteger(AppKeys.EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX);
         if (builder.length() < embeddingsMinimumLength) {
             config.debugLogger(this.getClass(), () -> String.format("Parseable fields for Contentlet ID " +

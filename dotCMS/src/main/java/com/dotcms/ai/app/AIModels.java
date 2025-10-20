@@ -99,7 +99,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
      * @param appConfig app config
      * @param loading the list of AI models to load
      */
-    public void loadModels(final AiAppConfig appConfig, final List<AIModel> loading) {
+    public void loadModels(final AppConfig appConfig, final List<AIModel> loading) {
         final String host = appConfig.getHost();
 
        final List<Tuple2<AIModelType, AIModel>> currentModels = internalModels.get(host);
@@ -153,7 +153,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
      * @param type the type of the model to find
      * @return an Optional containing the found AIModel, or an empty Optional if not found
      */
-    public Optional<AIModel> findModel(final AiAppConfig appConfig,
+    public Optional<AIModel> findModel(final AppConfig appConfig,
                                        final String modelName,
                                        final AIModelType type) {
         final String lowered = modelName.toLowerCase();
@@ -197,7 +197,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
      * @param modelName the name of the model to find
      * @param type the type of the model to find
      */
-    public AIModel resolveAIModelOrThrow(final AiAppConfig appConfig, final String modelName, final AIModelType type) {
+    public AIModel resolveAIModelOrThrow(final AppConfig appConfig, final String modelName, final AIModelType type) {
         return findModel(appConfig, modelName, type)
                 .orElseThrow(() -> new DotAIModelNotFoundException(
                             String.format("Unable to find model: [%s] of type [%s].", modelName, type)));
@@ -212,7 +212,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
      * @param type the type of the model to find
      * @return  a Tuple2 containing the AIModel and the Model
      */
-    public Tuple2<AIModel, Model> resolveModelOrThrow(final AiAppConfig appConfig,
+    public Tuple2<AIModel, Model> resolveModelOrThrow(final AppConfig appConfig,
                                                       final String modelName,
                                                       final AIModelType type) {
         final AIModel aiModel = resolveAIModelOrThrow(appConfig, modelName, type);
@@ -243,7 +243,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
      *
      * @return a set of supported model names
      */
-    public Set<String> getOrPullSupportedModels(final AiAppConfig appConfig) {
+    public Set<String> getOrPullSupportedModels(final AppConfig appConfig) {
         final Set<String> cached = supportedModelsCache.getIfPresent(SUPPORTED_MODELS_KEY);
         if (CollectionUtils.isNotEmpty(cached)) {
             return cached;
@@ -311,7 +311,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
         supportedModelsCache.invalidate(SUPPORTED_MODELS_KEY);
     }
 
-    private CircuitBreakerUrl.Response<OpenAIModels> fetchOpenAIModels(final AiAppConfig appConfig) {
+    private CircuitBreakerUrl.Response<OpenAIModels> fetchOpenAIModels(final AppConfig appConfig) {
         final CircuitBreakerUrl.Response<OpenAIModels> response = CircuitBreakerUrl.builder()
                 .setMethod(CircuitBreakerUrl.Method.GET)
                 .setUrl(aiModelsApiUrl.get())

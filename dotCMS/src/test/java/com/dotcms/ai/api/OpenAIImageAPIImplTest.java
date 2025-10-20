@@ -2,7 +2,7 @@ package com.dotcms.ai.api;
 
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.ai.util.StopWordsUtil;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
@@ -32,7 +32,7 @@ public class OpenAIImageAPIImplTest {
     private static final String INVALID_RESPONSE_JSON = "{\"data\":[{\"value\":\"this is a response\"}]}";
     private static final String ERROR_RESPONSE_JSON = "{\"error\":\"this is an error\"}";
 
-    private AiAppConfig config;
+    private AppConfig config;
     private User user;
     private HostAPI hostApi;
     private TempFileAPI tempFileApi;
@@ -41,7 +41,7 @@ public class OpenAIImageAPIImplTest {
 
     @Before
     public void setUp() {
-        config = mock(AiAppConfig.class);
+        config = mock(AppConfig.class);
         user = mock(User.class);
         hostApi = mock(HostAPI.class);
         tempFileApi = mock(TempFileAPI.class);

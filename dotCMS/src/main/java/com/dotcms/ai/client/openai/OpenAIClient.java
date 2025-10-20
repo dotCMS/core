@@ -3,7 +3,7 @@ package com.dotcms.ai.client.openai;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModels;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.client.AIClient;
 import com.dotcms.ai.client.AIRequest;
@@ -96,7 +96,7 @@ public class OpenAIClient implements AIClient {
     @Override
     public <T extends Serializable> void sendRequest(final AIRequest<T> request, final OutputStream output) {
         final JSONObjectAIRequest jsonRequest = AIClient.useRequestOrThrow(request);
-        final AiAppConfig appConfig = jsonRequest.getConfig();
+        final AppConfig appConfig = jsonRequest.getConfig();
 
         appConfig.debugLogger(
                 OpenAIClient.class,

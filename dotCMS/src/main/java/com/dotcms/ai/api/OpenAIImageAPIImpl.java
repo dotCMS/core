@@ -1,7 +1,7 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.client.AIProxyClient;
 import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.model.AIImageRequestDTO;
@@ -33,12 +33,12 @@ public class OpenAIImageAPIImpl implements ImageAPI {
 
     private static StopWordsUtil stopWordsUtil = StopWordsUtil.get();
 
-    private final AiAppConfig config;
+    private final AppConfig config;
     private final User user;
     private final HostAPI hostApi;
     private final TempFileAPI tempFileApi;
 
-    public OpenAIImageAPIImpl(final AiAppConfig config,
+    public OpenAIImageAPIImpl(final AppConfig config,
                               final User user,
                               final HostAPI hostApi,
                               final TempFileAPI tempFileApi) {

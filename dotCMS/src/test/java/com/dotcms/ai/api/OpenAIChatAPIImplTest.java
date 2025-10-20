@@ -2,7 +2,7 @@ package com.dotcms.ai.api;
 
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
@@ -21,13 +21,13 @@ public class OpenAIChatAPIImplTest {
     private static final String RESPONSE_JSON =
             "{\"data\":[{\"url\":\"http://localhost:8080\",\"value\":\"this is a response\"}]}";
 
-    private AiAppConfig config;
+    private AppConfig config;
     private ChatAPI service;
     private User user;
 
     @Before
     public void setUp() {
-        config = mock(AiAppConfig.class);
+        config = mock(AppConfig.class);
         user = mock(User.class);
         service = prepareService(RESPONSE_JSON);
     }

@@ -5,7 +5,7 @@ import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AIModels;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.domain.AIResponse;
@@ -49,7 +49,7 @@ public class AIProxyClientTest {
     private static WireMockServer wireMockServer;
     private static User user;
     private Host host;
-    private AiAppConfig appConfig;
+    private AppConfig appConfig;
     private final AIProxyClient aiProxyClient = AIProxyClient.get();
 
     @BeforeClass

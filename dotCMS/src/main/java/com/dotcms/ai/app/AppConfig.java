@@ -23,7 +23,7 @@ import java.util.stream.Stream;
  * The AppConfig class provides a configuration for the AI application.
  * It includes methods for retrieving configuration values based on given keys.
  */
-public class AiAppConfig implements Serializable {
+public class AppConfig implements Serializable {
 
     private static final String AI_API_URL_KEY = "AI_API_URL";
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
@@ -47,7 +47,7 @@ public class AiAppConfig implements Serializable {
     private final String listenerIndexer;
     private final Map<String, Secret> configValues;
 
-    public AiAppConfig(final String host, final Map<String, Secret> secrets) {
+    public AppConfig(final String host, final Map<String, Secret> secrets) {
         this.host = host;
 
         final AIAppUtil aiAppUtil = AIAppUtil.get();
@@ -88,7 +88,7 @@ public class AiAppConfig implements Serializable {
      * @param clazz   The {@link Class} to log the message for.
      * @param message The {@link Supplier} with the message to log.
      */
-    public static void debugLogger(final AiAppConfig appConfig, final Class<?> clazz, final Supplier<String> message) {
+    public static void debugLogger(final AppConfig appConfig, final Class<?> clazz, final Supplier<String> message) {
         if (appConfig == null) {
             Logger.debug(clazz, message);
             return;

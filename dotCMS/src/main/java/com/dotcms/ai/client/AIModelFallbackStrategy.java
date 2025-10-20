@@ -3,7 +3,7 @@ package com.dotcms.ai.client;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModels;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.domain.AIResponseData;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIAllModelsExhaustedException;
@@ -73,7 +73,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
     }
 
     private static Tuple2<AIModel, Model> resolveModel(final JSONObjectAIRequest request) {
-        final AiAppConfig appConfig = request.getConfig();
+        final AppConfig appConfig = request.getConfig();
         final String modelName = request.getPayload().optString(AiKeys.MODEL);
         if (UtilMethods.isSet(modelName)) {
             return appConfig.resolveModelOrThrow(modelName, request.getType());
@@ -97,7 +97,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         return firstAttempt.equals(model);
     }
 
-    private static boolean isOperational(final Model model, final AiAppConfig config) {
+    private static boolean isOperational(final Model model, final AppConfig config) {
         if (!model.isOperational()) {
             config.debugLogger(
                     AIModelFallbackStrategy.class,
@@ -146,7 +146,7 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
 
         final AIModel aiModel = modelTuple._1;
         final Model model = modelTuple._2;
-        final AiAppConfig appConfig = request.getConfig();
+        final AppConfig appConfig = request.getConfig();
 
         appConfig.debugLogger(
                 AIModelFallbackStrategy.class,

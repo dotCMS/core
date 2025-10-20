@@ -3,7 +3,7 @@ package com.dotcms.ai.workflow;
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.ai.api.ImageAPI;
-import com.dotcms.ai.app.AiAppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -76,7 +76,7 @@ public class OpenAIGenerateImageActionletTest {
                         .withType(Type.STRING)
                         .withValue("{\"default\":\"blog\"}".toCharArray())
                         .build());
-        new AiAppConfig(host.getHostname(), secrets);
+        new AppConfig(host.getHostname(), secrets);
         DotAIAPIFacadeImpl.setDefaultImageAPIProvider(initArguments -> new ImageAPI() {
             @Override
             public JSONObject sendTextPrompt(String prompt) {
