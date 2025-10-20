@@ -20,6 +20,7 @@ public class RequestPrices {
         TEN_THOUSAND(10000),
 
 
+        // PRICED ITEMS
         COSTING_INIT(1),
         CONTENT_FROM_CACHE(1),
         CONTENT_FROM_DB(3),
@@ -42,7 +43,7 @@ public class RequestPrices {
         LOGIN_USERNAME_PASS(3),
         XML_FETCH_AND_PARSE(5),
         XSLT_PARSE(3),
-        XSLT_FETCH_AND_PARSE(7),
+        XSLT_FETCH_AND_PARSE(6),
         IMAGE_FILTER_TRANSFORM(2),
         ES_CACHE(1),
         ES_QUERY(3),

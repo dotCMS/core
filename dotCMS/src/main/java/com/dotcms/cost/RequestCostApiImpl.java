@@ -1,12 +1,13 @@
 package com.dotcms.cost;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.cost.RequestPrices.Price;
-import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import io.vavr.Tuple2;
-import io.vavr.control.Try;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -160,20 +161,17 @@ public class RequestCostApiImpl implements RequestCostApi {
             return finalAccounting;
         }
 
-        // need to be an admin for special accounting
-        boolean admin = Try.of(() -> new InitBuilder(request, null)
-                        .requireAdmin(true)
-                        .init()
-                        .getUser()
-                        .isAdmin())
-                .getOrElse(false);
+        // only admins can get a full accounting report
+        User user = PortalUtil.getUser(request) != null
+                ? PortalUtil.getUser(request)
+                : JsonWebTokenAuthCredentialProcessorImpl.getInstance().processAuthHeaderFromJWT(request);
 
-        return admin
+        return user != null && user.isAdmin()
                 ? finalAccounting
                 : Accounting.HEADER;
 
-
     }
+
 
     @Override
     public void incrementCost(Price price, Method method, Object[] args) {
@@ -199,7 +197,7 @@ public class RequestCostApiImpl implements RequestCostApi {
     private Map<String, Object> createCostEntry(Price price, Class clazz, String method,
             Object[] args, Accounting accounting) {
         if (accounting == Accounting.HTML) {
-            return Map.of(COST, price.price, METHOD, method, CLASS, clazz, ARGS, args);
+            return Map.of(COST, price.price, METHOD, method, CLASS, clazz.getCanonicalName(), ARGS, args);
         }
         return Map.of(COST, price.price);
     }
