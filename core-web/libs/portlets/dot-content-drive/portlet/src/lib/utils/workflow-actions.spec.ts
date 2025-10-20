@@ -786,12 +786,14 @@ describe('workflow-actions', () => {
                         archived: false,
                         live: false,
                         working: true,
+                        locked: false,
                         baseType: 'CONTENT'
                     } as DotContentDriveItem,
                     {
                         archived: false,
                         live: false,
                         working: true,
+                        locked: false,
                         baseType: 'CONTENT'
                     } as DotContentDriveItem
                 ];
@@ -800,6 +802,23 @@ describe('workflow-actions', () => {
 
                 expect(result.noneArchived).toBe(true);
                 expect(result.noneLive).toBe(true);
+            });
+
+            it('should hide "Publish" action when content is already published', () => {
+                const items: DotContentDriveItem[] = [
+                    {
+                        archived: false,
+                        live: true,
+                        working: false,
+                        locked: false,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem
+                ];
+
+                const result = getActionConditions(items);
+
+                expect(result.noneArchived).toBe(true);
+                expect(result.noneLive).toBe(false); // Already published, should hide Publish button
             });
 
             it('should support "Unpublish" action visibility (non-archived and all live items)', () => {
@@ -895,6 +914,190 @@ describe('workflow-actions', () => {
 
                 expect(result.isSingleSelection).toBe(true);
                 expect(result.noneArchived).toBe(true);
+            });
+        });
+
+        describe('acceptance criteria validation', () => {
+            describe('single selection - archived state rules', () => {
+                it('should hide Unarchive and Delete when content is NOT archived', () => {
+                    const items: DotContentDriveItem[] = [
+                        {
+                            archived: false,
+                            live: true,
+                            working: false,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem
+                    ];
+
+                    const result = getActionConditions(items);
+
+                    // Unarchive and Delete require allArchived: true
+                    expect(result.allArchived).toBe(false);
+                    expect(result.noneArchived).toBe(true);
+                });
+
+                it('should hide Publish, Unpublish, and Archive when content IS archived', () => {
+                    const items: DotContentDriveItem[] = [
+                        {
+                            archived: true,
+                            live: false,
+                            working: false,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem
+                    ];
+
+                    const result = getActionConditions(items);
+
+                    // These actions require noneArchived: true
+                    expect(result.noneArchived).toBe(false);
+                    expect(result.allArchived).toBe(true);
+                });
+            });
+
+            describe('single selection - published state rules', () => {
+                it('should hide Unpublish when content is not published', () => {
+                    const items: DotContentDriveItem[] = [
+                        {
+                            archived: false,
+                            live: false,
+                            working: true,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem
+                    ];
+
+                    const result = getActionConditions(items);
+
+                    // Unpublish requires allLive: true
+                    expect(result.allLive).toBe(false);
+                    expect(result.noneLive).toBe(true);
+                });
+            });
+
+            describe('multi-selection rules', () => {
+                it('should hide Edit actions in multi-selection', () => {
+                    const items: DotContentDriveItem[] = [
+                        {
+                            archived: false,
+                            live: true,
+                            working: false,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem,
+                        {
+                            archived: false,
+                            live: false,
+                            working: true,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem
+                    ];
+
+                    const result = getActionConditions(items);
+
+                    // Edit actions require isSingleSelection: true
+                    expect(result.isSingleSelection).toBe(false);
+                });
+
+                it('should hide Rename in multi-selection', () => {
+                    const items: DotContentDriveItem[] = [
+                        {
+                            archived: false,
+                            live: true,
+                            working: false,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem,
+                        {
+                            archived: false,
+                            live: true,
+                            working: false,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem
+                    ];
+
+                    const result = getActionConditions(items);
+
+                    // Rename requires isSingleSelection: true
+                    expect(result.isSingleSelection).toBe(false);
+                });
+
+                it('should hide Download when selection includes non-assets', () => {
+                    const items: DotContentDriveItem[] = [
+                        {
+                            archived: false,
+                            live: true,
+                            working: false,
+                            locked: false,
+                            baseType: 'FILEASSET'
+                        } as DotContentDriveItem,
+                        {
+                            archived: false,
+                            live: true,
+                            working: false,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem
+                    ];
+
+                    const result = getActionConditions(items);
+
+                    // Download requires allAreAssets: true
+                    expect(result.allAreAssets).toBe(false);
+                });
+
+                it('should show compatible actions for all selected items (intersection logic)', () => {
+                    const items: DotContentDriveItem[] = [
+                        {
+                            archived: false,
+                            live: false,
+                            working: true,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem,
+                        {
+                            archived: false,
+                            live: false,
+                            working: true,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem
+                    ];
+
+                    const result = getActionConditions(items);
+
+                    // All items are not archived and not live - Publish should be available
+                    expect(result.noneArchived).toBe(true);
+                    expect(result.noneLive).toBe(true);
+                });
+
+                it('should have no compatible actions when selecting mixed archived and non-archived', () => {
+                    const items: DotContentDriveItem[] = [
+                        {
+                            archived: true,
+                            live: false,
+                            working: false,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem,
+                        {
+                            archived: false,
+                            live: true,
+                            working: false,
+                            locked: false,
+                            baseType: 'CONTENT'
+                        } as DotContentDriveItem
+                    ];
+
+                    const result = getActionConditions(items);
+
+                    // Mixed archived state means most actions won't be available
+                    expect(result.noneArchived).toBe(false);
+                    expect(result.allArchived).toBe(false);
+                });
             });
         });
     });

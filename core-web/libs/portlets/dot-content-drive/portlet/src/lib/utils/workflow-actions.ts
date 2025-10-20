@@ -90,7 +90,8 @@ const PUBLISH_ACTION: ContentDriveWorkflowAction = {
     name: 'Publish',
     id: WORKFLOW_ACTION_ID.PUBLISH,
     showWhen: {
-        noneArchived: true
+        noneArchived: true,
+        noneLive: true
     }
 };
 
