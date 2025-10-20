@@ -3,12 +3,21 @@ import { Analytics } from 'analytics';
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
-import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from './shared/constants';
 import {
     cleanupActivityTracking,
     validateAnalyticsConfig
 } from './shared/dot-content-analytics.utils';
 import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
+
+import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '@dotcms/uve/internal';
+
+// Extend Window interface for analytics properties
+declare global {
+    interface Window {
+        [ANALYTICS_WINDOWS_ACTIVE_KEY]?: boolean;
+        [ANALYTICS_WINDOWS_CLEANUP_KEY]?: () => void;
+    }
+}
 
 /**
  * Creates an analytics instance for content analytics tracking.

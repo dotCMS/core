@@ -1,15 +1,12 @@
-import {
-    ACTIVITY_EVENTS,
-    ANALYTICS_WINDOWS_ACTIVE_KEY,
-    ANALYTICS_WINDOWS_CLEANUP_KEY,
-    DEFAULT_SESSION_TIMEOUT_MINUTES
-} from './constants';
+import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '@dotcms/uve/internal';
+import { ACTIVITY_EVENTS, DEFAULT_SESSION_TIMEOUT_MINUTES } from './constants';
 import { DotCMSAnalyticsConfig } from './models';
 
 // Extend window interface for cleanup function
 declare global {
     interface Window {
         [ANALYTICS_WINDOWS_CLEANUP_KEY]?: () => void;
+        [ANALYTICS_WINDOWS_ACTIVE_KEY]?: boolean;
     }
 }
 

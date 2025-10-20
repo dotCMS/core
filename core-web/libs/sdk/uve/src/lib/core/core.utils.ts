@@ -7,13 +7,11 @@ import {
     UVEState
 } from '@dotcms/types';
 
-import { __UVE_EVENT_ERROR_FALLBACK__, __UVE_EVENTS__ } from '../../internal/constants';
-
-declare global {
-    interface Window {
-        __dotAnalyticsActive__?: boolean;
-    }
-}
+import {
+    __UVE_EVENT_ERROR_FALLBACK__,
+    __UVE_EVENTS__,
+    ANALYTICS_WINDOWS_ACTIVE_KEY
+} from '../../internal/constants';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).
@@ -164,5 +162,5 @@ export function createUVESubscription<T extends UVEEventType>(
  * ```
  */
 export function isAnalyticsActive(): boolean {
-    return typeof window !== 'undefined' && window.__dotAnalyticsActive__ === true;
+    return typeof window !== 'undefined' && (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY] === true;
 }

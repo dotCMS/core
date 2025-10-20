@@ -1,12 +1,6 @@
 // Analytics windows key
 export const ANALYTICS_WINDOWS_KEY = 'dotAnalytics';
 
-// Analytics active flag key
-export const ANALYTICS_WINDOWS_ACTIVE_KEY = '__dotAnalyticsActive__';
-
-// Analytics cleanup function key
-export const ANALYTICS_WINDOWS_CLEANUP_KEY = '__dotAnalyticsCleanup';
-
 // Analytics source type
 export const ANALYTICS_SOURCE_TYPE = ANALYTICS_WINDOWS_KEY;
 
