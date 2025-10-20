@@ -4,7 +4,10 @@ import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from './shared/constants';
-import { cleanupActivityTracking } from './shared/dot-content-analytics.utils';
+import {
+    cleanupActivityTracking,
+    validateAnalyticsConfig
+} from './shared/dot-content-analytics.utils';
 import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
 
 /**
@@ -16,18 +19,10 @@ import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/mod
 export const initializeContentAnalytics = (
     config: DotCMSAnalyticsConfig
 ): DotCMSAnalytics | null => {
-    if (!config.siteAuth) {
-        console.error('DotCMS Analytics: Missing "siteAuth" in configuration');
-
-        if (typeof window !== 'undefined') {
-            window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
-        }
-
-        return null;
-    }
-
-    if (!config.server) {
-        console.error('DotCMS Analytics: Missing "server" in configuration');
+    // Validate required configuration
+    const missingFields = validateAnalyticsConfig(config);
+    if (missingFields) {
+        console.error(`DotCMS Analytics: Missing ${missingFields.join(' and ')} in configuration`);
 
         if (typeof window !== 'undefined') {
             window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;

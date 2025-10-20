@@ -13,7 +13,12 @@ jest.mock('analytics');
 jest.mock('./plugin/dot-analytics.plugin');
 jest.mock('./plugin/enricher/dot-analytics.enricher.plugin');
 jest.mock('./plugin/identity/dot-analytics.identity.plugin');
-jest.mock('./shared/dot-content-analytics.utils');
+
+// Partially mock utils - keep validateAnalyticsConfig but mock cleanupActivityTracking
+jest.mock('./shared/dot-content-analytics.utils', () => ({
+    ...jest.requireActual('./shared/dot-content-analytics.utils'),
+    cleanupActivityTracking: jest.fn()
+}));
 
 const mockAnalytics = Analytics as jest.MockedFunction<typeof Analytics>;
 const mockDotAnalytics = dotAnalytics as jest.MockedFunction<typeof dotAnalytics>;

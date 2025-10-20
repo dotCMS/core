@@ -1,10 +1,15 @@
-import { ACTIVITY_EVENTS, DEFAULT_SESSION_TIMEOUT_MINUTES } from './constants';
+import {
+    ACTIVITY_EVENTS,
+    ANALYTICS_WINDOWS_ACTIVE_KEY,
+    ANALYTICS_WINDOWS_CLEANUP_KEY,
+    DEFAULT_SESSION_TIMEOUT_MINUTES
+} from './constants';
 import { DotCMSAnalyticsConfig } from './models';
 
 // Extend window interface for cleanup function
 declare global {
     interface Window {
-        __dotAnalyticsCleanup?: () => void;
+        [ANALYTICS_WINDOWS_CLEANUP_KEY]?: () => void;
     }
 }
 
@@ -179,8 +184,8 @@ export const cleanupActivityTracking = (): void => {
 
     // Reset analytics state and cleanup window properties
     if (typeof window !== 'undefined') {
-        window.__dotAnalyticsActive__ = false;
-        window.__dotAnalyticsCleanup = undefined;
+        window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
+        window[ANALYTICS_WINDOWS_CLEANUP_KEY] = undefined;
 
         // Dispatch cleanup event to notify any subscribers
         window.dispatchEvent(new CustomEvent('dotcms:analytics:cleanup'));
