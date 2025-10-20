@@ -7,8 +7,9 @@
         <div class="p-toolbar-group-top">
             <dot-content-drive-search-input data-testid="search-input" class="search-input" />
 
-            @if (!$showWorkflowActions()) {
+            @if ($displayButton()) {
                 <p-button
+                    [@slideAnimation]
                     [label]="'content-drive.add-new' | dm"
                     icon="pi pi-chevron-down"
                     iconPos="right"
@@ -16,8 +17,12 @@
                     data-testid="add-new-button"
                     (click)="menu.toggle($event)"
                     #button />
-            } @else {
-                <dot-content-drive-workflow-actions data-testid="workflow-actions" />
+            }
+
+            @if ($displayActions()) {
+                <dot-content-drive-workflow-actions
+                    [@slideAnimation]
+                    data-testid="workflow-actions" />
             }
         </div>
 
