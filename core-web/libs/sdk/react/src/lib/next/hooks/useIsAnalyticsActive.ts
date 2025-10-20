@@ -2,66 +2,68 @@ import { useSyncExternalStore } from 'react';
 
 import { isAnalyticsActive } from '@dotcms/uve';
 
-// Store para manejar suscriptores
+// Subscriber store and state cache
 const subscribers = new Set<() => void>();
-let currentValue: boolean | null = null; // null = no inicializado
+let currentValue: boolean | null = null;
 
-// Event listener para el evento de Analytics ready
+// Event handlers for analytics lifecycle
 function handleAnalyticsReady() {
     currentValue = true;
-    // Notifica a todos los suscriptores
     subscribers.forEach((callback) => callback());
 }
 
-// Registra el listener una sola vez (a nivel de módulo)
+function handleAnalyticsCleanup() {
+    currentValue = null;
+    subscribers.forEach((callback) => callback());
+}
+
+// Register module-level event listeners
 if (typeof window !== 'undefined') {
     window.addEventListener('dotcms:analytics:ready', handleAnalyticsReady);
+    window.addEventListener('dotcms:analytics:cleanup', handleAnalyticsCleanup);
 }
 
 /**
  * @internal
- * A React hook that checks whether DotCMS Analytics is active.
+ * React hook that checks whether DotCMS Analytics is active.
  *
- * Uses React's useSyncExternalStore to subscribe to changes in the analytics state.
- * Components automatically re-render when analytics is initialized after initial mount.
+ * Uses useSyncExternalStore to subscribe to analytics state changes via custom events:
+ * - `dotcms:analytics:ready`: Fired when Analytics initializes
+ * - `dotcms:analytics:cleanup`: Fired on page unload
  *
- * This hook listens to the 'dotcms:analytics:ready' custom event that is dispatched
- * when Analytics completes initialization. This event-driven approach ensures:
- * - No polling overhead
- * - Components work regardless of initialization order
- * - Instant notification when analytics becomes active
+ * Components automatically re-render when analytics state changes. Works regardless
+ * of initialization order and returns false during SSR.
  *
  * @returns {boolean} True if analytics is active, false otherwise
  *
  * @example
  * ```tsx
- * const isAnalyticsActive = useIsAnalyticsActive()
+ * function Contentlet({ item }) {
+ *   const isAnalyticsActive = useIsAnalyticsActive()
  *
- * if (isAnalyticsActive) {
- *   // Analytics is active - add data attributes
+ *   const attrs = isAnalyticsActive
+ *     ? { 'data-dot-analytics-id': item.id }
+ *     : {}
+ *
+ *   return <div {...attrs}>{item.title}</div>
  * }
  * ```
  */
 export const useIsAnalyticsActive = (): boolean => {
     return useSyncExternalStore(
-        // subscribe: Add callback to be notified when analytics becomes ready
+        // Subscribe: register callback for state changes
         (callback) => {
             subscribers.add(callback);
-
-            // Cleanup: remove subscriber
-            return () => {
-                subscribers.delete(callback);
-            };
+            return () => subscribers.delete(callback);
         },
-        // getSnapshot: Get current analytics state (client-side)
+        // Get snapshot (client): return current analytics state
         () => {
-            // Initialize if necessary (in case analytics was ready before hook mounted)
             if (currentValue === null && typeof window !== 'undefined') {
                 currentValue = isAnalyticsActive();
             }
             return currentValue ?? false;
         },
-        // getServerSnapshot: Always false during SSR
+        // Get server snapshot (SSR): always false
         () => false
     );
 };

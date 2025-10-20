@@ -1,6 +1,13 @@
 import { ACTIVITY_EVENTS, DEFAULT_SESSION_TIMEOUT_MINUTES } from './constants';
 import { DotCMSAnalyticsConfig } from './models';
 
+// Extend window interface for cleanup function
+declare global {
+    interface Window {
+        __dotAnalyticsCleanup?: () => void;
+    }
+}
+
 /**
  * Activity tracking manager for DotCMS Analytics.
  * Handles user activity monitoring, session management, and inactivity detection.
@@ -165,10 +172,19 @@ export const initializeActivityTracking = (config: DotCMSAnalyticsConfig): void 
 };
 
 /**
- * Cleans up activity tracking listeners
+ * Cleans up activity tracking listeners and resets analytics state
  */
 export const cleanupActivityTracking = (): void => {
     activityTracker.cleanup();
+
+    // Reset analytics state and cleanup window properties
+    if (typeof window !== 'undefined') {
+        window.__dotAnalyticsActive__ = false;
+        window.__dotAnalyticsCleanup = undefined;
+
+        // Dispatch cleanup event to notify any subscribers
+        window.dispatchEvent(new CustomEvent('dotcms:analytics:cleanup'));
+    }
 };
 
 /**
