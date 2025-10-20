@@ -334,6 +334,7 @@
                                         <bootstrap.system_call_filter>false</bootstrap.system_call_filter>
                                         <bootstrap.memory_lock>true</bootstrap.memory_lock>
                                         <DISABLE_SECURITY_PLUGIN>true</DISABLE_SECURITY_PLUGIN>
+                                        <OPENSEARCH_JAVA_OPTS>-Xms1g -Xmx1g -XX:-UseContainerSupport</OPENSEARCH_JAVA_OPTS>
                                     </env>
                                     <ports>
                                         <port>es.port:9200</port>
