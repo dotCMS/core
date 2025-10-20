@@ -28,7 +28,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn(),
                 filters: jest.fn().mockReturnValue({}),
-                setDialog: jest.fn()
+                setDialog: jest.fn(),
+                selectedItems: jest.fn().mockReturnValue([])
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
