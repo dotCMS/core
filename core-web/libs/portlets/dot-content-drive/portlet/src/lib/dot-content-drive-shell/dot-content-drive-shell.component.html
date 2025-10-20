@@ -44,7 +44,7 @@
     <dot-folder-list-view
         [items]="$items()"
         [totalItems]="$totalItems()"
-        [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
+        [loading]="$loading()"
         (paginate)="onPaginate($event)"
         (sort)="onSort($event)"
         (rightClick)="onContextMenu($event)"

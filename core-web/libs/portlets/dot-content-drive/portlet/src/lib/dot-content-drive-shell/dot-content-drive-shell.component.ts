@@ -1,4 +1,5 @@
-import { of } from 'rxjs';
+import { patchState, signalState } from '@ngrx/signals';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import {
@@ -18,7 +19,7 @@ import { DialogModule } from 'primeng/dialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
-import { catchError } from 'rxjs/operators';
+import { catchError, delay, switchMap } from 'rxjs/operators';
 
 import {
     DotFolderService,
@@ -49,7 +50,8 @@ import {
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
-    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+    MINIMUM_LOADING_TIME
 } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
@@ -99,11 +101,16 @@ export class DotContentDriveShellComponent {
 
     readonly $dialog = this.#store.dialog;
 
-    readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
     readonly DIALOG_TYPE = DIALOG_TYPE;
 
-    // Default to false to avoid showing the message banner on init
-    readonly $showMessage = signal<boolean>(false);
+    // Component state for loading and showing message
+    readonly state = signalState({
+        $loading: this.$status() === DotContentDriveStatus.LOADING,
+        $showMessage: false
+    });
+
+    readonly $loading = this.state.$loading;
+    readonly $showMessage = this.state.$showMessage;
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
 
@@ -130,10 +137,50 @@ export class DotContentDriveShellComponent {
         this.#location.go(urlTree.toString());
     });
 
+    // We need to delay the loading to preserve a consistent loading with no flickering
+    readonly delayedLoading = new BehaviorSubject<{ loading: boolean; delayTime: number }>({
+        loading: this.$status() === DotContentDriveStatus.LOADING,
+        delayTime: 0
+    });
+
+    // Actual elapsedTime, starting on 0 for no delay on initialization
+    readonly elapsedTime = signal(0);
+
+    readonly delayedLoadingEffect = effect(() => {
+        const loading = this.$status() === DotContentDriveStatus.LOADING;
+
+        let delayTime = 0;
+
+        if (loading) {
+            // When transitioning to loading, show immediately and record start time
+            this.elapsedTime.set(Date.now());
+            delayTime = 0;
+        } else {
+            // When transitioning to loaded, ensure minimum 2 second display time
+            const elapsed = Date.now() - this.elapsedTime();
+
+            // Get the maximum time between 0 and the rest of the elapsed time to cover 1.2 second
+            // If the substraction of 1.2 second is negative, we dont need to delay, because we already waited more than 1.2 second
+            delayTime = Math.max(0, MINIMUM_LOADING_TIME - elapsed);
+        }
+
+        this.delayedLoading.next({ loading, delayTime });
+    });
+
     ngOnInit() {
-        this.$showMessage.set(
-            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY) // The existence of the key means the message banner has been hidden
-        );
+        patchState(this.state, {
+            $showMessage: !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY)
+        });
+
+        // Delay pipe to update the internal loading state
+        // Use switchMaps to prevent rapid changes
+        this.delayedLoading
+            .pipe(switchMap(({ loading, delayTime }) => of(loading).pipe(delay(delayTime))))
+            .subscribe((loading) =>
+                patchState(this.state, {
+                    $loading: loading
+                })
+            );
     }
 
     protected onPaginate(event: LazyLoadEvent) {
@@ -199,7 +246,10 @@ export class DotContentDriveShellComponent {
      * @memberof DotContentDriveShellComponent
      */
     protected onCloseMessage() {
-        this.$showMessage.set(false);
+        patchState(this.state, {
+            $showMessage: false
+        });
+
         this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
     }
 
