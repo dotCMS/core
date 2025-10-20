@@ -627,11 +627,10 @@ public class PublisherTest extends IntegrationTestBase {
 
             assertFalse("Content with publish date before previous job run should NOT be republished",
                     shouldPublish);
-
-            // Now test with a RECENT publish date (should be published)
-            final Calendar recentCalendar = Calendar.getInstance();
-            recentCalendar.add(Calendar.SECOND, -30); // 30 seconds ago
-            final Date recentPublishDate = recentCalendar.getTime();
+            
+            final long timeBetween = previousJobRunTime.getTime() +
+                    ((currentFireTime.getTime() - previousJobRunTime.getTime()) / 2);
+            final Date recentPublishDate = new Date(timeBetween);
 
             final Contentlet recentContentlet = new ContentletDataGen(contentType)
                     .setProperty(publishField.variable(), recentPublishDate)
@@ -640,9 +639,8 @@ public class PublisherTest extends IntegrationTestBase {
             final boolean shouldPublishRecent = PublishDateUpdater.shouldPublishContent(
                     recentContentlet, previousJobRunTime);
 
-            assertTrue("Content with recent publish date (after previous job run) SHOULD be published",
+            assertTrue("Content with publish date between previous job run and now SHOULD be published",
                     shouldPublishRecent);
-
 
             ContentletDataGen.remove(recentContentlet);
 
