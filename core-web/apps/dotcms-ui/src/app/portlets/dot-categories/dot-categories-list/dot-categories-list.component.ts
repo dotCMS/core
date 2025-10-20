@@ -1,20 +1,48 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
-import { Table } from 'primeng/table';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InplaceModule } from 'primeng/inplace';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
+import { PaginatorModule } from 'primeng/paginator';
+import { Table, TableModule } from 'primeng/table';
 
 import { DotCategory } from '@dotcms/dotcms-models';
+import { DotActionMenuButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoriesListState, DotCategoriesListStore } from './store/dot-categories-list-store';
+
+import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-categories-list',
     templateUrl: './dot-categories-list.component.html',
     styleUrls: ['./dot-categories-list.component.scss'],
     providers: [DotCategoriesListStore],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotPortletBaseComponent,
+        MenuModule,
+        ButtonModule,
+        InputTextModule,
+        TableModule,
+        PaginatorModule,
+        InplaceModule,
+        InputNumberModule,
+        DotActionMenuButtonComponent,
+        DotMessagePipe,
+        CheckboxModule,
+        BreadcrumbModule,
+        DotEmptyStateModule
+    ]
 })
 export class DotCategoriesListComponent {
     readonly #store = inject(DotCategoriesListStore);

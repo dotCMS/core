@@ -1,13 +1,16 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+import { DotCategoriesListComponent } from './dot-categories-list/dot-categories-list.component';
+import { DotCategoriesListStore } from './dot-categories-list/store/dot-categories-list-store';
+
+import { DotCategoriesService } from '../../api/services/dot-categories/dot-categories.service';
+
 const routes: Routes = [
     {
         path: '',
-        loadChildren: () =>
-            import('./dot-categories-list/dot-categories-list.module').then(
-                (m) => m.DotCategoriesListingModule
-            )
+        component: DotCategoriesListComponent,
+        providers: [DotCategoriesListStore, DotCategoriesService]
     }
 ];
 

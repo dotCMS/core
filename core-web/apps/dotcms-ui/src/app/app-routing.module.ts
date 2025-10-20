@@ -122,7 +122,7 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivateChild: [MenuGuardService],
         path: 'apps',
         loadChildren: () =>
-            import('@portlets/dot-apps/dot-apps.module').then((m) => m.DotAppsModule)
+            import('./portlets/dot-apps/dot-apps.routes').then((m) => m.dotAppsRoutes)
     },
     {
         path: 'edit-page',

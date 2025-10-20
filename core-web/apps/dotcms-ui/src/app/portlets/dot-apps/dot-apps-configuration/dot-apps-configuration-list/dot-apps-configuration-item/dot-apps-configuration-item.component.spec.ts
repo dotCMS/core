@@ -59,9 +59,10 @@ describe('DotAppsConfigurationItemComponent', () => {
                 HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 ButtonModule,
-                DotMessagePipe
+                DotMessagePipe,
+                DotAppsConfigurationItemComponent
             ],
-            declarations: [DotAppsConfigurationItemComponent],
+            declarations: [],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotAlertConfirmService,

@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -8,7 +9,7 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotAvatarDirective, DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
@@ -18,8 +19,7 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `,
-    standalone: false
+    `
 })
 class MockMarkdownComponent {}
 
@@ -35,19 +35,25 @@ describe('DotAppsCardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [
-                CardModule,
-                AvatarModule,
-                DotAvatarDirective,
-                BadgeModule,
-                DotIconComponent,
-                TooltipModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe
-            ],
-            declarations: [DotAppsCardComponent, MockMarkdownComponent],
+            imports: [DotAppsCardComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
+        })
+            .overrideComponent(DotAppsCardComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        CardModule,
+                        AvatarModule,
+                        BadgeModule,
+                        DotIconComponent,
+                        MockMarkdownComponent,
+                        TooltipModule,
+                        DotAvatarDirective,
+                        DotMessagePipe
+                    ]
+                }
+            })
+            .compileComponents();
     }));
 
     beforeEach(() => {

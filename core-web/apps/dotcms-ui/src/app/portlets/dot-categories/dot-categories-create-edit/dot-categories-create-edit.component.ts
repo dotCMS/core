@@ -1,14 +1,29 @@
+import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
+import { TabViewModule } from 'primeng/tabview';
+
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoriesCreateEditStore } from './store/dot-categories-create-edit.store';
+
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
+import { DotCategoriesListComponent } from '../dot-categories-list/dot-categories-list.component';
+import { DotCategoriesPermissionsModule } from '../dot-categories-permissions/dot-categories-permissions.module';
 @Component({
     selector: 'dot-categories-create-edit-list',
     templateUrl: './dot-categories-create-edit.component.html',
     styleUrls: ['./dot-categories-create-edit.component.scss'],
     providers: [DotCategoriesCreateEditStore],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotMessagePipe,
+        TabViewModule,
+        DotCategoriesListComponent,
+        DotPortletBaseComponent,
+        DotCategoriesPermissionsModule
+    ]
 })
 export class DotCategoriesCreateEditComponent {
     readonly #store = inject(DotCategoriesCreateEditStore);

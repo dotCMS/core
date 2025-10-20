@@ -1,14 +1,25 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 
 import { DotAppsSite } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+
+import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item/dot-apps-configuration-item.component';
 
 @Component({
     selector: 'dot-apps-configuration-list',
     templateUrl: './dot-apps-configuration-list.component.html',
     styleUrls: ['./dot-apps-configuration-list.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        ButtonModule,
+        DotAppsConfigurationItemComponent,
+        DotSafeHtmlPipe,
+        DotMessagePipe
+    ]
 })
 export class DotAppsConfigurationListComponent {
     @ViewChild('searchInput') searchInput: ElementRef;

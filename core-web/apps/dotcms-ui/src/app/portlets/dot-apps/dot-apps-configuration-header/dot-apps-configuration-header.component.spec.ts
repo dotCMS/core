@@ -17,6 +17,16 @@ import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-he
 import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'markdown',
+    template: `
+        <ng-content></ng-content>
+    `,
+    standalone: true
+})
+class MockMarkdownComponent {}
+
+@Component({
     template: `
         <dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>
     `,
@@ -55,6 +65,8 @@ describe('DotAppsConfigurationHeaderComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
+                DotAppsConfigurationHeaderComponent,
+                MockMarkdownComponent,
                 CommonModule,
                 DotCopyLinkModule,
                 DotSafeHtmlPipe,
@@ -62,7 +74,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                 DotAvatarDirective,
                 AvatarModule
             ],
-            declarations: [DotAppsConfigurationHeaderComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -72,7 +84,21 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                 MarkdownService
             ],
             schemas: [NO_ERRORS_SCHEMA]
-        }).compileComponents();
+        })
+            .overrideComponent(DotAppsConfigurationHeaderComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        AvatarModule,
+                        MockMarkdownComponent,
+                        DotAvatarDirective,
+                        DotCopyLinkModule,
+                        DotSafeHtmlPipe,
+                        DotMessagePipe
+                    ]
+                }
+            })
+            .compileComponents();
     }));
 
     beforeEach(() => {

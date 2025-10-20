@@ -1,5 +1,4 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 
 import { DotAppsConfigurationResolver } from './dot-apps-configuration/dot-apps-configuration-resolver.service';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration/dot-apps-configuration.component';
@@ -8,39 +7,39 @@ import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-de
 import { DotAppsListResolver } from './dot-apps-list/dot-apps-list-resolver.service';
 import { DotAppsListComponent } from './dot-apps-list/dot-apps-list.component';
 
-const routes: Routes = [
+import { DotAppsService } from '../../api/services/dot-apps/dot-apps.service';
+
+export const dotAppsRoutes: Routes = [
     {
         component: DotAppsConfigurationDetailComponent,
         path: ':appKey/create/:id',
         resolve: {
             data: DotAppsConfigurationDetailResolver
-        }
+        },
+        providers: [DotAppsService, DotAppsConfigurationDetailResolver]
     },
     {
         component: DotAppsConfigurationDetailComponent,
         path: ':appKey/edit/:id',
         resolve: {
             data: DotAppsConfigurationDetailResolver
-        }
+        },
+        providers: [DotAppsService, DotAppsConfigurationDetailResolver]
     },
     {
         component: DotAppsConfigurationComponent,
         path: ':appKey',
         resolve: {
             data: DotAppsConfigurationResolver
-        }
+        },
+        providers: [DotAppsService, DotAppsConfigurationResolver]
     },
     {
         path: '',
         component: DotAppsListComponent,
         resolve: {
             dotAppsListResolverData: DotAppsListResolver
-        }
+        },
+        providers: [DotAppsService, DotAppsListResolver]
     }
 ];
-
-@NgModule({
-    imports: [RouterModule.forChild(routes)],
-    exports: [RouterModule]
-})
-export class DotAppsRoutingModule {}

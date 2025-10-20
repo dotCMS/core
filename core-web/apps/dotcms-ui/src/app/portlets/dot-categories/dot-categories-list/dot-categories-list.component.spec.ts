@@ -101,7 +101,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             'message.category.empty.button.label': 'Add New Category'
         });
         TestBed.configureTestingModule({
-            declarations: [DotCategoriesListComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
                 SharedModule,
                 MenuModule,
@@ -119,7 +119,8 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 InputNumberModule,
                 DotActionMenuButtonComponent,
                 CheckboxModule,
-                DotEmptyStateModule
+                DotEmptyStateModule,
+                DotCategoriesListComponent
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
