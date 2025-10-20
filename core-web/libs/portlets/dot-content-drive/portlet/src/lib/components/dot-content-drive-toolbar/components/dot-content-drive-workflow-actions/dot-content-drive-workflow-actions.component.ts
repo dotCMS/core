@@ -138,39 +138,29 @@ export class DotContentDriveWorkflowActionsComponent {
      * @param action - The workflow action ID to perform
      */
     private performWorkflowAction(action: string) {
-        this.#messageService.add({
-            severity: 'info',
-            summary: 'Info',
-            detail: this.#dotMessageService.get('content.drive.worflow.action.processing.info')
+        const inodes = this.$selectedItems().map((item) => item.inode);
+        this.beforeExecuteWorkflowAction();
+        this.#dotWorkflowActionsFireService.fireDefaultAction({ action, inodes }).subscribe({
+            next: () => {
+                this.#store.loadItems();
+                this.#messageService.add({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: this.#dotMessageService.get(
+                        'content-drive.dialog.folder.message.create-success'
+                    )
+                });
+            },
+            error: (error) => {
+                this.#messageService.add({
+                    severity: 'error',
+                    summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
+                    detail: error.message
+                });
+
+                console.error('Error executing workflow action:', error);
+            }
         });
-
-        this.#store.setStatus(DotContentDriveStatus.LOADING);
-        this.#dotWorkflowActionsFireService
-            .fireDefaultAction({
-                action,
-                inodes: this.$selectedItems().map((item) => item.inode)
-            })
-            .subscribe({
-                next: () => {
-                    this.#store.loadItems();
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: 'Success',
-                        detail: this.#dotMessageService.get(
-                            'content-drive.dialog.folder.message.create-success'
-                        )
-                    });
-                },
-                error: (error) => {
-                    this.#messageService.add({
-                        severity: 'error',
-                        summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
-                        detail: error.message
-                    });
-
-                    console.error('Error executing workflow action:', error);
-                }
-            });
     }
 
     /**
@@ -186,5 +176,18 @@ export class DotContentDriveWorkflowActionsComponent {
      */
     private rename() {
         console.warn('Rename functionality is under development');
+    }
+
+    /**
+     * Resets the selected items and status to loading and displays a processing message before executing a workflow action.
+     */
+    private beforeExecuteWorkflowAction() {
+        this.#store.setStatus(DotContentDriveStatus.LOADING);
+        this.#store.setSelectedItems([]);
+        this.#messageService.add({
+            severity: 'info',
+            summary: 'Info',
+            detail: this.#dotMessageService.get('content.drive.worflow.action.processing.info')
+        });
     }
 }

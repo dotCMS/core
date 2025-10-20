@@ -37,7 +37,8 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
                 loadItems: jest.fn(),
-                setStatus: jest.fn()
+                setStatus: jest.fn(),
+                setSelectedItems: jest.fn()
             }),
             mockProvider(MessageService, {
                 add: jest.fn()
@@ -72,6 +73,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
         jest.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
         jest.spyOn(store, 'loadItems');
         jest.spyOn(store, 'setStatus');
+        jest.spyOn(store, 'setSelectedItems');
         jest.spyOn(messageService, 'add');
 
         // Reset selected items signal before each test

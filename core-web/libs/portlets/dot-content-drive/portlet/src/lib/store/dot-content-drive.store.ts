@@ -136,7 +136,7 @@ export const DotContentDriveStore = signalStore(
                 const { limit, offset } = pagination;
                 const { field, order } = sort;
 
-                patchState(store, { status: DotContentDriveStatus.LOADING });
+                patchState(store, { status: DotContentDriveStatus.LOADING, selectedItems: [] });
 
                 // Avoid fetching content for SYSTEM_HOST sites
                 if (currentSite?.identifier === SYSTEM_HOST.identifier) {
@@ -164,8 +164,7 @@ export const DotContentDriveStore = signalStore(
                         patchState(store, {
                             items: response.jsonObjectView.contentlets,
                             totalItems: response.resultsSize,
-                            status: DotContentDriveStatus.LOADED,
-                            selectedItems: []
+                            status: DotContentDriveStatus.LOADED
                         });
                     });
             },
