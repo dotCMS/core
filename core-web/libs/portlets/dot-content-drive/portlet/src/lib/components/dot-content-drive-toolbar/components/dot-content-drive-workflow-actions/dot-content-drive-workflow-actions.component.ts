@@ -8,6 +8,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotContentDriveStatus } from '../../../../shared/models';
 import { DotContentDriveNavigationService } from '../../../../shared/services';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 import {
@@ -112,7 +113,7 @@ export class DotContentDriveWorkflowActionsComponent {
      * @param action - The workflow action to execute
      */
     private executeWorkflowAction(action: ContentDriveWorkflowAction) {
-        const { confirmationMessage } = action;
+        const { confirmationMessage, id } = action;
 
         if (confirmationMessage) {
             this.#confirmationService.confirm({
@@ -121,11 +122,11 @@ export class DotContentDriveWorkflowActionsComponent {
                 acceptLabel: this.#dotMessageService.get('dot.common.yes'),
                 rejectLabel: this.#dotMessageService.get('dot.common.no'),
                 accept: () => {
-                    this.performWorkflowAction(action);
+                    this.performWorkflowAction(id);
                 }
             });
         } else {
-            this.performWorkflowAction(action);
+            this.performWorkflowAction(id);
         }
     }
 
@@ -134,12 +135,19 @@ export class DotContentDriveWorkflowActionsComponent {
      * Fires the workflow action through the service and handles the response
      * by displaying success or error messages and refreshing the item list on success.
      *
-     * @param action - The workflow action to perform
+     * @param action - The workflow action ID to perform
      */
-    private performWorkflowAction(action: ContentDriveWorkflowAction) {
+    private performWorkflowAction(action: string) {
+        this.#messageService.add({
+            severity: 'info',
+            summary: 'Info',
+            detail: this.#dotMessageService.get('content.drive.worflow.action.processing.info')
+        });
+
+        this.#store.setStatus(DotContentDriveStatus.LOADING);
         this.#dotWorkflowActionsFireService
             .fireDefaultAction({
-                action: action.id,
+                action,
                 inodes: this.$selectedItems().map((item) => item.inode)
             })
             .subscribe({
@@ -170,12 +178,13 @@ export class DotContentDriveWorkflowActionsComponent {
      */
     private download() {
         // TODO: Implement download
+        console.warn('Download functionality is under development');
     }
 
     /**
      * Renames the selected items.
      */
     private rename() {
-        // TODO: Implement rename
+        console.warn('Rename functionality is under development');
     }
 }

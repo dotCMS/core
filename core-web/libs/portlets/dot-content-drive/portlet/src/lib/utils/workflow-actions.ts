@@ -146,7 +146,8 @@ const DOWNLOAD_ACTION: ContentDriveWorkflowAction = {
     name: 'Download',
     id: WORKFLOW_ACTION_ID.DOWNLOAD,
     showWhen: {
-        allAreAssets: true
+        allAreAssets: true,
+        isSingleSelection: true
     }
 };
 

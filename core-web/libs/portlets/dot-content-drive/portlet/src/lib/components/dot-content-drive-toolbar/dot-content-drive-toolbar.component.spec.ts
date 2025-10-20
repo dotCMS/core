@@ -73,7 +73,11 @@ describe('DotContentDriveToolbarComponent', () => {
         expect(toggler).toBeTruthy();
     });
 
-    it('should render the Add New button', () => {
+    it('should render the Add New button', async () => {
+        // Wait for animation state to settle
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        spectator.detectChanges();
+
         const button = spectator.query('[data-testid="add-new-button"]');
         expect(button).toBeTruthy();
     });
