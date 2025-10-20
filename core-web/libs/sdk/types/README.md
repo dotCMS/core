@@ -1,7 +1,25 @@
-# DotCMS Type Definition Library
+# dotCMS Types Library
+
+The `@dotcms/types` package contains TypeScript type definitions for the dotCMS ecosystem. Use it to enable type safety and an enhanced developer experience when working with dotCMS APIs and structured content.
 
 📦 [@dotcms/types on npm](https://www.npmjs.com/package/@dotcms/types)
 🛠️ [View source on GitHub](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/types)
+
+## Overview
+
+### When to Use It
+
+- Building TypeScript applications with dotCMS
+- Enabling type safety in your dotCMS integrations
+- Getting better IDE autocomplete and error checking
+- Working with dotCMS Client SDK or other SDK packages
+
+### Key Benefits
+
+- **Type Safety**: Catch errors at compile time instead of runtime
+- **IDE Support**: Rich autocomplete and inline documentation
+- **Better Developer Experience**: Clear interfaces for all dotCMS data structures
+- **Framework Agnostic**: Works with any TypeScript project
 
 ## Installation
 
@@ -9,14 +27,10 @@
 npm install @dotcms/types@latest --save-dev
 ```
 
-## Overview
-
-This package contains TypeScript type definitions for the dotCMS ecosystem. Use it to enable type safety and an enhanced developer experience when working with dotCMS APIs and structured content.
-
 ## Table of Contents
 
-- [Installation](#installation)
 - [Overview](#overview)
+- [Installation](#installation)
 - [Commonly Used Types](#commonly-used-types)
 - [Type Hierarchy (Jump to Definitions)](#type-hierarchy-jump-to-definitions)
   - [dotCMS Content & Pages](#dotcms-content--pages)
@@ -24,10 +38,12 @@ This package contains TypeScript type definitions for the dotCMS ecosystem. Use 
   - [Block Editor](#block-editor)
   - [Client & HTTP](#client--http)
   - [Error Handling](#error-handling)
-- [Type Usage](#type-usage)
+- [Usage Examples](#usage-examples)
   - [Error Type Checking](#error-type-checking)
-- [About](#about)
+- [Support](#support)
+- [Contributing](#contributing)
 - [Changelog](#changelog)
+- [Licensing](#licensing)
 
 ## Commonly Used Types
 
@@ -151,7 +167,7 @@ import {
 | [DotErrorContent](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/content/public.ts#L7) | Content API specific error handling |
 | [DotErrorNavigation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/nav/public.ts#L7) | Navigation API error handling |
 
-## Type Usage
+## Usage Examples
 
 ### Error Type Checking
 
@@ -183,17 +199,33 @@ if (error instanceof DotErrorContent) {
 
 > **Note**: For complete implementation examples and usage patterns, see the [@dotcms/client](../client/README.md) package documentation.
 
-## About
+## Support
 
-This package is maintained as part of the [dotCMS core repository](https://github.com/dotCMS/core).
+We offer multiple channels to get help with the dotCMS Types library:
 
-### Keywords
+-   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository
+-   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions
+-   **Stack Overflow**: Use the tag `dotcms-types` when posting questions
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
 
-* dotcms
-* typescript
-* types
-* cms
-* content-management-system
+When reporting issues, please include:
+
+-   Package version you're using
+-   TypeScript version
+-   Minimal reproduction steps
+-   Expected vs. actual behavior
+
+## Contributing
+
+GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the dotCMS Types library! If you'd like to contribute, please follow these steps:
+
+1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your code follows the existing style and includes appropriate tests.
 
 ## Changelog
 
@@ -214,3 +246,9 @@ This package is maintained as part of the [dotCMS core repository](https://githu
 - Renamed `RequestOptions` to `DotRequestOptions` for better naming consistency
 - Renamed `DotCMSGraphQLPageResponse` to `DotGraphQLApiResponse` for clarity
 - Enhanced `DotCMSClientConfig` to support custom `httpClient` implementations
+
+## Licensing
+
+dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
+
+This package is part of dotCMS's dual-licensed platform (GPL 3.0 for Community, commercial license for Enterprise).
