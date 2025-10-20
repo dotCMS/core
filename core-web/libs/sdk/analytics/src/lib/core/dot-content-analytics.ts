@@ -53,6 +53,9 @@ export const initializeContentAnalytics = (
         window.addEventListener('beforeunload', cleanup);
         window[ANALYTICS_WINDOWS_CLEANUP_KEY] = cleanup;
         window[ANALYTICS_WINDOWS_ACTIVE_KEY] = true;
+
+        // Dispatch custom event to notify subscribers that analytics is ready
+        window.dispatchEvent(new CustomEvent('dotcms:analytics:ready'));
     }
 
     return {

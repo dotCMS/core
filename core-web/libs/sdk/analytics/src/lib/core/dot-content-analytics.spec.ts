@@ -50,6 +50,7 @@ describe('initializeContentAnalytics', () => {
         Object.defineProperty(global, 'window', {
             value: {
                 addEventListener: jest.fn(),
+                dispatchEvent: jest.fn(),
                 __dotAnalyticsCleanup: null
             },
             writable: true
@@ -82,9 +83,11 @@ describe('initializeContentAnalytics', () => {
 
     it('should setup window event listeners for cleanup', () => {
         const mockAddEventListener = jest.fn();
+        const mockDispatchEvent = jest.fn();
         Object.defineProperty(global, 'window', {
             value: {
-                addEventListener: mockAddEventListener
+                addEventListener: mockAddEventListener,
+                dispatchEvent: mockDispatchEvent
             },
             writable: true
         });
@@ -92,6 +95,7 @@ describe('initializeContentAnalytics', () => {
         initializeContentAnalytics(mockConfig);
 
         expect(mockAddEventListener).toHaveBeenCalledWith('beforeunload', expect.any(Function));
+        expect(mockDispatchEvent).toHaveBeenCalledWith(expect.any(CustomEvent));
     });
 
     it('should return null when siteAuth is missing', () => {
