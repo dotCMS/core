@@ -1566,6 +1566,130 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "conversion required fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(8);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(9);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.conversion.name\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: data.conversion.name\");",
+											"",
+											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.conversion\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: data.conversion\");",
+											"",
+											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(1);",
+											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[1].data.page.url\");",
+											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Required field is missing: data.page.url\");",
+											"",
+											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(2);",
+											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[2].data.page.title\");",
+											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Required field is missing: data.page.title\");",
+											"",
+											"",
+											"    pm.expect(responseBody.errors[4].eventIndex).to.be.eq(3);",
+											"    pm.expect(responseBody.errors[4].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[4].field).to.be.eq(\"events[3].data.element.text\");",
+											"    pm.expect(responseBody.errors[4].message).to.be.eq(\"Required field is missing: data.element.text\");",
+											"",
+											"    pm.expect(responseBody.errors[5].eventIndex).to.be.eq(4);",
+											"    pm.expect(responseBody.errors[5].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[5].field).to.be.eq(\"events[4].data.element.type\");",
+											"    pm.expect(responseBody.errors[5].message).to.be.eq(\"Required field is missing: data.element.type\");",
+											"",
+											"    pm.expect(responseBody.errors[6].eventIndex).to.be.eq(5);",
+											"    pm.expect(responseBody.errors[6].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[6].field).to.be.eq(\"events[5].data.element.id\");",
+											"    pm.expect(responseBody.errors[6].message).to.be.eq(\"Required field is missing: data.element.id\");",
+											"",
+											"    pm.expect(responseBody.errors[7].eventIndex).to.be.eq(6);",
+											"    pm.expect(responseBody.errors[7].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[7].field).to.be.eq(\"events[6].data.element.class\");",
+											"    pm.expect(responseBody.errors[7].message).to.be.eq(\"Required field is missing: data.element.class\");",
+											"",
+											"    pm.expect(responseBody.errors[8].eventIndex).to.be.eq(7);",
+											"    pm.expect(responseBody.errors[8].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[8].field).to.be.eq(\"events[7].data.element.attributes\");",
+											"    pm.expect(responseBody.errors[8].message).to.be.eq(\"Required field is missing: data.element.attributes\");",
+											"",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"www\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\"\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                    \"name\": \"purchase\",\n                    \"value\": 99.99,\n                    \"currency\": \"USD\",\n                    \"category\": \"ecommerce\"\n                }\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},

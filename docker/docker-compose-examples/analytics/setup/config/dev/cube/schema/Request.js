@@ -19,6 +19,7 @@ cube('request', {
             context_site_key, context_site_id, sessionid, context_user_id, request_id,
             cluster_id, customer_id, utc_time,
             content_identifier, content_inode, content_title, content_content_type,
+            conversion_name,
             position_viewport_offset_pct,position_dom_index,
             element_text, element_type, element_id, element_class, element_attributes,
             custom_1, custom_2, custom_3, custom_4, custom_5, custom_6, custom_7, custom_8, custom_9, custom_10,
@@ -343,6 +344,12 @@ cube('request', {
       type: `string`,
       title: 'Element Attributes',
       description: 'Attributes of the DOM Element that was clicked'
+    },
+    conversionName: {
+      sql: `conversion_name`,
+      type: `string`,
+      title: 'Conversion Name',
+      description: 'A human-readable identifier used to label and distinguish a specific conversion type'
     },
 
     // Custom Attributes - Flexible fields for additional analytics data
