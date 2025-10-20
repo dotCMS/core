@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+
 import { Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -15,6 +17,8 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
+
+import { catchError } from 'rxjs/operators';
 
 import {
     DotFolderService,
@@ -332,7 +336,9 @@ export class DotContentDriveShellComponent {
      * @param {DotContentDriveMoveItems} event - The move items event
      */
     protected onMoveItems(event: DotContentDriveMoveItems): void {
-        const { folderName, assetCount, pathToMove, dragItemsInodes } = this.getMoveMetadata(event);
+        const { folderName, assetCount, pathToMove, dragItems } = this.getMoveMetadata(event);
+
+        const dragItemsInodes = dragItems.map((item) => item.inode);
 
         this.#messageService.add({
             severity: 'info',
@@ -362,26 +368,60 @@ export class DotContentDriveShellComponent {
                 contentletIds: dragItemsInodes,
                 workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
             })
-            .subscribe(({ successCount }) => {
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get('content-drive.move-to-folder-success'),
-                    detail: this.#dotMessageService.get(
-                        'content-drive.move-to-folder-success-detail',
-                        successCount.toString(),
-                        `${successCount > 1 ? 's ' : ' '}`,
-                        folderName
-                    ),
-                    life: SUCCESS_MESSAGE_LIFE
+            .pipe(
+                catchError(() => {
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.move-to-folder-error'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-error-detail'
+                        ),
+                        life: ERROR_MESSAGE_LIFE
+                    });
+
+                    return of({ successCount: 0, fails: [] });
+                })
+            )
+            .subscribe(({ successCount, fails }) => {
+                if (successCount > 0) {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-success'
+                        ),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-success-detail',
+                            successCount.toString(),
+                            `${successCount > 1 ? 's ' : ' '}`,
+                            folderName
+                        ),
+                        life: SUCCESS_MESSAGE_LIFE
+                    });
+                    this.#store.loadItems();
+                }
+
+                fails.forEach(({ errorMessage, inode }) => {
+                    const item = dragItems.find((item) => item.inode === inode);
+
+                    const title = item?.title ?? inode;
+
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-error-with-title',
+                            title
+                        ),
+                        detail: errorMessage,
+                        life: ERROR_MESSAGE_LIFE
+                    });
                 });
 
                 this.#store.cleanDragItems();
-                this.#store.loadItems();
             });
     }
 
     protected getMoveMetadata(event: DotContentDriveMoveItems) {
-        const dragItemsInodes = this.#store.dragItems().map((item) => item.inode);
+        const dragItems = this.#store.dragItems();
 
         const path = event.targetFolder.path?.length > 0 ? event.targetFolder.path : '/';
 
@@ -394,8 +434,8 @@ export class DotContentDriveShellComponent {
         return {
             pathToMove: pathToMove,
             folderName: folderName,
-            assetCount: dragItemsInodes.length,
-            dragItemsInodes
+            assetCount: dragItems.length,
+            dragItems
         };
     }
 }

@@ -225,7 +225,7 @@ describe('DotContentDriveShellComponent', () => {
         it('should not include filters in query params when filters are empty', () => {
             store.isTreeExpanded.mockReturnValue(false);
             store.path.mockReturnValue('/another/path');
-            filtersSignal.set({ contentType: 'Blog', baseType: ['1', '2', '3'] });
+            filtersSignal.set({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
             spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
@@ -1155,6 +1155,147 @@ describe('DotContentDriveShellComponent', () => {
                     contentletIds: [mockDragItems[0].inode],
                     workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
                 });
+            });
+
+            it('should not show success message when successCount is 0', () => {
+                const mockDragItems = [MOCK_ITEMS[0]];
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 0, skippedCount: 0, fails: [] })
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                const successCalls = messageService.add.mock.calls.filter(
+                    (call) => call[0].severity === 'success'
+                );
+
+                expect(successCalls).toHaveLength(0);
+                expect(store.cleanDragItems).toHaveBeenCalled();
+            });
+
+            it('should show individual error messages for each failed item', () => {
+                const mockDragItems = [MOCK_ITEMS[0], MOCK_ITEMS[1]];
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    of({
+                        successCount: 0,
+                        skippedCount: 0,
+                        fails: [
+                            { inode: MOCK_ITEMS[0].inode, errorMessage: 'Error moving item 1' },
+                            { inode: MOCK_ITEMS[1].inode, errorMessage: 'Error moving item 2' }
+                        ]
+                    })
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                const errorCalls = messageService.add.mock.calls.filter(
+                    (call) => call[0].severity === 'error'
+                );
+
+                expect(errorCalls).toHaveLength(2);
+                expect(errorCalls[0][0]).toEqual({
+                    severity: 'error',
+                    summary: expect.any(String),
+                    detail: 'Error moving item 1',
+                    life: ERROR_MESSAGE_LIFE
+                });
+                expect(errorCalls[1][0]).toEqual({
+                    severity: 'error',
+                    summary: expect.any(String),
+                    detail: 'Error moving item 2',
+                    life: ERROR_MESSAGE_LIFE
+                });
+            });
+
+            it('should handle partial success with some fails', () => {
+                const mockDragItems = [MOCK_ITEMS[0], MOCK_ITEMS[1]];
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    of({
+                        successCount: 1,
+                        skippedCount: 0,
+                        fails: [{ inode: MOCK_ITEMS[1].inode, errorMessage: 'Error moving item' }]
+                    })
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                const successCalls = messageService.add.mock.calls.filter(
+                    (call) => call[0].severity === 'success'
+                );
+                const errorCalls = messageService.add.mock.calls.filter(
+                    (call) => call[0].severity === 'error'
+                );
+
+                expect(successCalls).toHaveLength(1);
+                expect(errorCalls).toHaveLength(1);
+                expect(store.loadItems).toHaveBeenCalled();
+                expect(store.cleanDragItems).toHaveBeenCalled();
+            });
+
+            it('should handle workflow service error', () => {
+                const mockDragItems = [MOCK_ITEMS[0]];
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    throwError(() => new Error('Workflow error'))
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                const errorCalls = messageService.add.mock.calls.filter(
+                    (call) => call[0].severity === 'error'
+                );
+
+                expect(errorCalls.length).toBeGreaterThanOrEqual(1);
+                expect(errorCalls[0][0]).toEqual({
+                    severity: 'error',
+                    summary: expect.any(String),
+                    detail: expect.any(String),
+                    life: ERROR_MESSAGE_LIFE
+                });
+                expect(store.cleanDragItems).toHaveBeenCalled();
             });
         });
     });
