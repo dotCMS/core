@@ -1,19 +1,21 @@
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 
-export enum WORKFLOW_ACTION_ID {
-    NEW = 'NEW',
-    SAVE_AS_DRAFT = 'EDIT',
-    GOT_TO_EDIT_CONTENTLET = 'GOT_TO_EDIT_CONTENTLET',
-    GOT_TO_EDIT_PAGE = 'GOT_TO_EDIT_PAGE',
-    PUBLISH = 'PUBLISH',
-    UNPUBLISH = 'UNPUBLISH',
-    ARCHIVE = 'ARCHIVE',
-    UNARCHIVE = 'UNARCHIVE',
-    DELETE = 'DELETE',
-    DESTROY = 'DESTROY',
-    RENAME = 'RENAME',
-    DOWNLOAD = 'DOWNLOAD'
-}
+export const WORKFLOW_ACTION_ID = {
+    NEW: 'NEW',
+    SAVE_AS_DRAFT: 'EDIT',
+    GOT_TO_EDIT_CONTENTLET: 'GOT_TO_EDIT_CONTENTLET',
+    GOT_TO_EDIT_PAGE: 'GOT_TO_EDIT_PAGE',
+    PUBLISH: 'PUBLISH',
+    UNPUBLISH: 'UNPUBLISH',
+    ARCHIVE: 'ARCHIVE',
+    UNARCHIVE: 'UNARCHIVE',
+    DELETE: 'DELETE',
+    DESTROY: 'DESTROY',
+    RENAME: 'RENAME',
+    DOWNLOAD: 'DOWNLOAD'
+} as const;
+
+export type WORKFLOW_ACTION_ID = (typeof WORKFLOW_ACTION_ID)[keyof typeof WORKFLOW_ACTION_ID];
 
 type SelectionStats = {
     total: number;
