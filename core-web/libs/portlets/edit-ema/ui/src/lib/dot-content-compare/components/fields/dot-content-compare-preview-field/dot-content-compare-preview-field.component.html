@@ -1,11 +1,8 @@
-<img
-    *ngIf="!imageError; else fallback"
-    (error)="handleError()"
-    [src]="fileURL"
-    data-testId="image" />
-<ng-template #fallback>
+@if (!imageError) {
+    <img (error)="handleError()" [src]="fileURL" data-testId="image" />
+} @else {
     <span [innerHTML]="label" data-testId="label"></span>
     <a [href]="fileURL" class="p-button p-button-outlined" data-testId="button" download>
         {{ 'Download' | dm }}
     </a>
-</ng-template>
+}
