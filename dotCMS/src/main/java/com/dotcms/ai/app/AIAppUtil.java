@@ -136,6 +136,8 @@ public class AIAppUtil {
      * @return the created embeddings model instance
      */
     public AIModel createEmbeddingsModel(final Map<String, Secret> secrets) {
+        // todo: we have to do the same here, taking the config from the json
+        // however I am not sure if it is worthy until to bring the embedding new langchain stuff
         final List<String> modelNames = splitDiscoveredSecret(secrets, AppKeys.EMBEDDINGS_MODEL_NAMES);
         if (CollectionUtils.isEmpty(modelNames)) {
             return AIModel.NOOP_MODEL;
@@ -235,4 +237,31 @@ public class AIAppUtil {
         return Try.of(() -> Integer.parseInt(value)).getOrElse(0);
     }
 
+    /**
+     * Discover the api key
+     * @param secrets
+     * @param appKeys
+     * @return
+     */
+    public String discoverApiKeySecret(final Map<String, Secret> secrets) {
+
+        final Optional<AiModelConfigCatalog> modelConfigCatalogOpt = this.getModelConfigCatalog(secrets, AppKeys.ADVANCE_PROVIDER_SETTINGS_KEY);
+        if(!modelConfigCatalogOpt.isPresent()) {
+
+            return this.discoverSecret(secrets, AppKeys.API_KEY);
+        }
+
+        return modelConfigCatalogOpt.get().getChatConfig(AiVendor.OPEN_AI.getVendorName()).get(AiModelConfig.API_KEY);
+    }
+
+    public String discoverApiUrlEnvSecret(final Map<String, Secret> secrets, final String aiApiUrlKey) {
+
+        final Optional<AiModelConfigCatalog> modelConfigCatalogOpt = this.getModelConfigCatalog(secrets, AppKeys.ADVANCE_PROVIDER_SETTINGS_KEY);
+        if(!modelConfigCatalogOpt.isPresent()) {
+
+            return this.discoverEnvSecret(secrets, AppKeys.API_URL, aiApiUrlKey);
+        }
+
+        return modelConfigCatalogOpt.get().getChatConfig(AiVendor.OPEN_AI.getVendorName()).get(AiModelConfig.API_KEY);
+    }
 }
