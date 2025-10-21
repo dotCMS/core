@@ -623,3 +623,14 @@ interface Relationships {
     isParentField: boolean;
     velocityVar: string;
 }
+
+/**
+ * Interface for pagination parameters when retrieving content types
+ * Used for filtering and pagination of content types
+ */
+export interface DotContentTypePaginationOptions {
+    filter?: string;
+    page?: number;
+    type?: string;
+    ensure?: string;
+}

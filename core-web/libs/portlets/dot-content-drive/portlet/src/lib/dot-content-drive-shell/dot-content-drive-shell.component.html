@@ -34,7 +34,10 @@
     class="tree-selector center-content"
     [class.expanded]="$treeExpanded()"
     data-testid="tree-selector">
-    <dot-content-drive-sidebar data-testid="sidebar" />
+    <dot-content-drive-sidebar
+        data-testid="sidebar"
+        (uploadFiles)="resolveFilesUpload($event)"
+        (moveItems)="onMoveItems($event)" />
 </div>
 
 <dot-content-drive-dropzone data-testid="dropzone" (uploadFiles)="resolveFilesUpload($event)">
@@ -44,8 +47,11 @@
         [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
         (paginate)="onPaginate($event)"
         (sort)="onSort($event)"
+        (selectionChange)="onSelectItems($event)"
         (rightClick)="onContextMenu($event)"
         (doubleClick)="onDoubleClick($event)"
+        (dragStart)="onDragStart($event)"
+        (dragEnd)="onDragEnd()"
         #listView />
 </dot-content-drive-dropzone>
 <dot-folder-list-context-menu />

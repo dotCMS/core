@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+
 import { Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -16,15 +18,23 @@ import { DialogModule } from 'primeng/dialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
+import { catchError } from 'rxjs/operators';
+
 import {
     DotFolderService,
     DotUploadFileService,
     DotLocalstorageService,
     DotWorkflowsActionsService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotFolderListViewComponent,
+    DotContentDriveUploadFiles,
+    DotFolderTreeNodeData,
+    DotContentDriveMoveItems
+} from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
@@ -38,13 +48,13 @@ import {
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
-    ERROR_MESSAGE_LIFE
+    ERROR_MESSAGE_LIFE,
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
-import { ALL_FOLDER } from '../utils/tree-folder.utils';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -78,7 +88,7 @@ export class DotContentDriveShellComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
-
+    readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
@@ -210,20 +220,38 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        this.resolveFilesUpload(files);
+        const targetFolder = this.#store.selectedNode()?.data;
+
+        this.resolveFilesUpload({ files, targetFolder });
+    }
+
+    /**
+     * Handles drag start event on a content item
+     */
+    protected onDragStart(event: DotContentDriveItem[]) {
+        this.#store.patchContextMenu({ triggeredEvent: null, contentlet: null });
+        this.#store.setDragItems(event);
+    }
+
+    /**
+     * Handles drag end event on a content item
+     */
+    protected onDragEnd() {
+        this.#store.cleanDragItems();
     }
 
     /**
      * Resolves the upload of multiple files or a single file
      * @param files The files to upload
      */
-    protected resolveFilesUpload(files: FileList) {
+    protected resolveFilesUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
         if (files.length > 1) {
-            this.uploadFiles(files);
+            this.uploadFiles({ files, targetFolder });
 
             return;
         }
-        this.uploadFile(files[0]);
+
+        this.uploadFile({ files, targetFolder });
     }
 
     /**
@@ -233,7 +261,7 @@ export class DotContentDriveShellComponent {
      * @param {FileList} files
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadFiles(files: FileList) {
+    protected uploadFiles({ files, targetFolder }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
@@ -241,29 +269,36 @@ export class DotContentDriveShellComponent {
             life: WARNING_MESSAGE_LIFE
         });
 
-        this.uploadFile(files[0]);
+        this.uploadFile({ files, targetFolder });
     }
 
     /**
      * Uploads a file to the content drive
      * @param file The file to upload
      */
-    protected uploadFile(file: File) {
+    protected uploadFile({ files, targetFolder }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'info',
             summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
             detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
         });
 
-        const hostFolder =
-            this.#store.selectedNode() === ALL_FOLDER
-                ? this.#store.currentSite()?.identifier
-                : this.#store.selectedNode()?.data.id;
+        this.uploadDotAsset(files[0], targetFolder);
+    }
 
+    /**
+     * Uploads a file to the content drive
+     *
+     * @protected
+     * @param {File} file
+     * @param {string} hostFolder
+     * @memberof DotContentDriveShellComponent
+     */
+    protected uploadDotAsset(file: File, hostFolder: DotFolderTreeNodeData) {
         this.#fileService
             .uploadDotAsset(file, {
                 baseType: 'dotAsset',
-                hostFolder,
+                hostFolder: hostFolder?.id,
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
@@ -291,8 +326,120 @@ export class DotContentDriveShellComponent {
                         ),
                         life: ERROR_MESSAGE_LIFE
                     });
-                    this.#store.setStatus(DotContentDriveStatus.LOADED);
                 }
             });
+    }
+
+    /**
+     * Handles when items are moved to a folder
+     *
+     * @param {DotContentDriveMoveItems} event - The move items event
+     */
+    protected onMoveItems(event: DotContentDriveMoveItems): void {
+        const { folderName, assetCount, pathToMove, dragItems } = this.getMoveMetadata(event);
+
+        const dragItemsInodes = dragItems.map((item) => item.inode);
+
+        this.#messageService.add({
+            severity: 'info',
+            summary: this.#dotMessageService.get(
+                'content-drive.move-to-folder-in-progress',
+                folderName
+            ),
+            detail: this.#dotMessageService.get(
+                'content-drive.move-to-folder-in-progress-detail',
+                assetCount.toString(),
+                `${assetCount > 1 ? 's ' : ' '}`
+            )
+        });
+
+        this.#dotWorkflowActionsFireService
+            .bulkFire({
+                additionalParams: {
+                    assignComment: {
+                        assign: '',
+                        comment: ''
+                    },
+                    pushPublish: {},
+                    additionalParamsMap: {
+                        _path_to_move: pathToMove
+                    }
+                },
+                contentletIds: dragItemsInodes,
+                workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+            })
+            .pipe(
+                catchError(() => {
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.move-to-folder-error'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-error-detail'
+                        ),
+                        life: ERROR_MESSAGE_LIFE
+                    });
+
+                    return of({ successCount: 0, fails: [] });
+                })
+            )
+            .subscribe(({ successCount, fails }) => {
+                if (successCount > 0) {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-success'
+                        ),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-success-detail',
+                            successCount.toString(),
+                            `${successCount > 1 ? 's ' : ' '}`,
+                            folderName
+                        ),
+                        life: SUCCESS_MESSAGE_LIFE
+                    });
+                    this.#store.loadItems();
+                }
+
+                fails.forEach(({ errorMessage, inode }) => {
+                    const item = dragItems.find((item) => item.inode === inode);
+
+                    const title = item?.title ?? inode;
+
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-error-with-title',
+                            title
+                        ),
+                        detail: errorMessage,
+                        life: ERROR_MESSAGE_LIFE
+                    });
+                });
+
+                this.#store.cleanDragItems();
+            });
+    }
+
+    protected getMoveMetadata(event: DotContentDriveMoveItems) {
+        const dragItems = this.#store.dragItems();
+
+        const path = event.targetFolder.path?.length > 0 ? event.targetFolder.path : '/';
+
+        const pathToMove = `//${event.targetFolder.hostname}${path}`;
+
+        const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
+
+        const folderName = cleanPath?.length > 0 ? cleanPath : pathToMove;
+
+        return {
+            pathToMove: pathToMove,
+            folderName: folderName,
+            assetCount: dragItems.length,
+            dragItems
+        };
+    }
+
+    protected onSelectItems(items: DotContentDriveItem[]) {
+        this.#store.setSelectedItems(items);
     }
 }

@@ -23,11 +23,16 @@ import {
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
 
-import { withHistory, DEFAULT_VERSIONS_PER_PAGE } from './history.feature';
+import {
+    withHistory,
+    DEFAULT_VERSIONS_PER_PAGE,
+    DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE
+} from './history.feature';
 
 import {
     DotHistoryTimelineItemAction,
-    DotHistoryTimelineItemActionType
+    DotHistoryTimelineItemActionType,
+    DotPushPublishHistoryItem
 } from '../../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { initialRootState } from '../../edit-content.store';
@@ -49,6 +54,7 @@ const mockContentletVersion: DotCMSContentletVersion = {
     live: true,
     modDate: 1701428400000, // 2023-12-01T10:00:00.000Z as timestamp
     modUser: 'dotcms.org.1',
+    modUserName: 'Admin User',
     title: 'Test Content Version 1',
     working: true
 };
@@ -121,6 +127,54 @@ const mockContentlet: DotCMSContentlet = {
     titleImage: 'test'
 };
 
+// Mock data for push publish history
+const mockPushPublishHistoryItem: DotPushPublishHistoryItem = {
+    bundleId: '01K6NY6Z8V92T6SAF582WMTKYQ',
+    environment: 'production',
+    pushDate: 1701428400000, // 2023-12-01T10:00:00.000Z as timestamp
+    pushedBy: 'Admin User'
+};
+
+const mockPushPublishHistoryItem2: DotPushPublishHistoryItem = {
+    bundleId: '01K6NY6Z8V92T6SAF582WMTLAB',
+    environment: 'staging',
+    pushDate: 1701514800000, // 2023-12-02T10:00:00.000Z as timestamp
+    pushedBy: 'Content Editor'
+};
+
+const mockPushPublishHistoryResponse: DotCMSResponse<DotPushPublishHistoryItem[]> = {
+    entity: [mockPushPublishHistoryItem, mockPushPublishHistoryItem2],
+    pagination: {
+        currentPage: 1,
+        perPage: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE,
+        totalEntries: 2
+    } as DotPagination,
+    errors: [],
+    i18nMessagesMap: {},
+    messages: [],
+    permissions: []
+};
+
+const mockPushPublishHistoryResponsePage2: DotCMSResponse<DotPushPublishHistoryItem[]> = {
+    entity: [
+        {
+            bundleId: '01K6NY6Z8V92T6SAF582WMTMCD',
+            environment: 'production',
+            pushDate: 1701601200000, // 2023-12-03T10:00:00.000Z as timestamp
+            pushedBy: 'Admin User'
+        }
+    ],
+    pagination: {
+        currentPage: 2,
+        perPage: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE,
+        totalEntries: 3
+    } as DotPagination,
+    errors: [],
+    i18nMessagesMap: {},
+    messages: [],
+    permissions: []
+};
+
 describe('HistoryFeature', () => {
     let spectator: SpectatorService<any>;
     let store: any;
@@ -148,6 +202,12 @@ describe('HistoryFeature', () => {
                 },
                 updateVersionsPagination: (pagination: DotPagination | null) => {
                     patchState(store, { versionsPagination: pagination });
+                },
+                updatePushPublishHistory: (pushPublishHistory: DotPushPublishHistoryItem[]) => {
+                    patchState(store, { pushPublishHistory });
+                },
+                updatePushPublishHistoryPagination: (pagination: DotPagination | null) => {
+                    patchState(store, { pushPublishHistoryPagination: pagination });
                 }
             }))
         );
@@ -182,6 +242,7 @@ describe('HistoryFeature', () => {
         dotMessageService.get.mockImplementation((key: string) => {
             const messages: Record<string, string> = {
                 Success: 'Success',
+                success: 'Success',
                 'edit.content.sidebar.history.version.deleted.successfully':
                     'Version deleted successfully',
                 'edit.content.sidebar.history.delete.confirm.message':
@@ -194,6 +255,14 @@ describe('HistoryFeature', () => {
                 'edit.content.sidebar.history.restore.confirm.header': 'Restore Version',
                 'edit.content.sidebar.history.restore.confirm.accept': 'Restore',
                 'edit.content.sidebar.history.restore.confirm.reject': 'Cancel',
+                'edit.content.sidebar.history.push.publish.delete.all.confirm.message':
+                    'Are you sure you want to delete all push publish history for this content?',
+                'edit.content.sidebar.history.push.publish.delete.all.confirm.header':
+                    'Delete All Push Publish History',
+                'edit.content.sidebar.history.push.publish.delete.all.success':
+                    'Push publish history deleted successfully',
+                'edit.content.sidebar.history.push.publish.delete.all.error':
+                    'Failed to delete push publish history',
                 Error: 'Error',
                 'edit.content.sidebar.history.load.error': 'Failed to load version content'
             };
@@ -206,6 +275,15 @@ describe('HistoryFeature', () => {
             expect(store.versions()).toEqual([]);
             expect(store.versionsPagination()).toBeNull();
             expect(store.versionsStatus()).toEqual({
+                status: ComponentStatus.INIT,
+                error: null
+            });
+        });
+
+        it('should initialize with empty push publish history state', () => {
+            expect(store.pushPublishHistory()).toEqual([]);
+            expect(store.pushPublishHistoryPagination()).toBeNull();
+            expect(store.pushPublishHistoryStatus()).toEqual({
                 status: ComponentStatus.INIT,
                 error: null
             });
@@ -331,6 +409,62 @@ describe('HistoryFeature', () => {
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
             expect(store.versionsStatus().status).toBe(ComponentStatus.ERROR);
+        }));
+    });
+
+    describe('loadPushPublishHistory', () => {
+        it('should load initial push publish history (page 1) and set loading state', fakeAsync(() => {
+            dotEditContentService.getPushPublishHistory.mockReturnValue(
+                of(mockPushPublishHistoryResponse)
+            );
+
+            store.loadPushPublishHistory({ identifier: 'test-identifier', page: 1 });
+            tick();
+
+            expect(dotEditContentService.getPushPublishHistory).toHaveBeenCalledWith(
+                'test-identifier',
+                {
+                    offset: 1,
+                    limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE
+                }
+            );
+            expect(store.pushPublishHistory()).toEqual(mockPushPublishHistoryResponse.entity);
+            expect(store.pushPublishHistoryPagination()).toEqual(
+                mockPushPublishHistoryResponse.pagination
+            );
+            expect(store.pushPublishHistoryStatus()).toEqual({
+                status: ComponentStatus.LOADED,
+                error: null
+            });
+        }));
+
+        it('should accumulate push publish history on subsequent pages', fakeAsync(() => {
+            // Setup initial state with existing push publish history
+            store.updatePushPublishHistory([mockPushPublishHistoryItem]);
+            store.updatePushPublishHistoryPagination(mockPushPublishHistoryResponse.pagination);
+
+            dotEditContentService.getPushPublishHistory.mockReturnValue(
+                of(mockPushPublishHistoryResponsePage2)
+            );
+
+            store.loadPushPublishHistory({ identifier: 'test-identifier', page: 2 });
+            tick();
+
+            expect(store.pushPublishHistory()).toEqual([
+                mockPushPublishHistoryItem,
+                ...mockPushPublishHistoryResponsePage2.entity
+            ]);
+        }));
+
+        it('should handle errors and update error state', fakeAsync(() => {
+            const error = new HttpErrorResponse({ error: 'Test error', status: 500 });
+            dotEditContentService.getPushPublishHistory.mockReturnValue(throwError(() => error));
+
+            store.loadPushPublishHistory({ identifier: 'test-identifier', page: 1 });
+            tick();
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+            expect(store.pushPublishHistoryStatus().status).toBe(ComponentStatus.ERROR);
         }));
     });
 
@@ -556,6 +690,81 @@ describe('HistoryFeature', () => {
         });
     });
 
+    describe('resetPushPublishHistory', () => {
+        it('should reset push publish history to empty array', () => {
+            store.updatePushPublishHistory([
+                mockPushPublishHistoryItem,
+                mockPushPublishHistoryItem2
+            ]);
+
+            store.resetPushPublishHistory();
+
+            expect(store.pushPublishHistory()).toEqual([]);
+        });
+
+        it('should not affect other push publish history state properties', () => {
+            const initialPagination = mockPushPublishHistoryResponse.pagination;
+            const initialStatus = { status: ComponentStatus.LOADED, error: null };
+
+            store.updatePushPublishHistoryPagination(initialPagination);
+            patchState(store, { pushPublishHistoryStatus: initialStatus });
+
+            store.resetPushPublishHistory();
+
+            expect(store.pushPublishHistoryPagination()).toEqual(initialPagination);
+            expect(store.pushPublishHistoryStatus()).toEqual(initialStatus);
+        });
+    });
+
+    describe('clearPushPublishHistory', () => {
+        it('should clear all push publish history state', () => {
+            store.updatePushPublishHistory([
+                mockPushPublishHistoryItem,
+                mockPushPublishHistoryItem2
+            ]);
+            store.updatePushPublishHistoryPagination(mockPushPublishHistoryResponse.pagination);
+            patchState(store, {
+                pushPublishHistoryStatus: { status: ComponentStatus.LOADED, error: null }
+            });
+
+            store.clearPushPublishHistory();
+
+            expect(store.pushPublishHistory()).toEqual([]);
+            expect(store.pushPublishHistoryPagination()).toBeNull();
+            expect(store.pushPublishHistoryStatus()).toEqual({
+                status: ComponentStatus.INIT,
+                error: null
+            });
+        });
+    });
+
+    describe('deletePushPublishHistory', () => {
+        it('should delete push publish history successfully', fakeAsync(() => {
+            // Mock service call
+            dotEditContentService.deletePushPublishHistory.mockReturnValue(of({}));
+
+            // Mock confirmation service to auto-accept
+            confirmationService.confirm.mockImplementation((config: any) => {
+                if (config.accept) {
+                    config.accept();
+                }
+                return confirmationService;
+            });
+
+            store.deletePushPublishHistory('test-identifier');
+            tick();
+
+            // Verify service was called
+            expect(dotEditContentService.deletePushPublishHistory).toHaveBeenCalledWith(
+                'test-identifier'
+            );
+
+            // Verify state was cleared
+            expect(store.pushPublishHistory()).toEqual([]);
+            expect(store.pushPublishHistoryPagination()).toBeNull();
+        }));
+    });
+
     describe('Edge Cases and Integration', () => {
         it('should handle multiple rapid loadVersions calls', fakeAsync(() => {
             dotEditContentService.getVersions.mockReturnValue(of(mockVersionsResponse));
@@ -617,6 +826,9 @@ describe('HistoryFeature', () => {
     describe('Automatic Version Loading Effect', () => {
         beforeEach(() => {
             dotEditContentService.getVersions.mockReturnValue(of(mockVersionsResponse));
+            dotEditContentService.getPushPublishHistory.mockReturnValue(
+                of(mockPushPublishHistoryResponse)
+            );
         });
 
         it('should automatically load versions when contentlet changes', fakeAsync(() => {
@@ -639,6 +851,25 @@ describe('HistoryFeature', () => {
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
         }));
 
+        it('should automatically load push publish history when contentlet changes', fakeAsync(() => {
+            const newContentlet = {
+                ...mockContentlet,
+                identifier: 'new-identifier-123',
+                inode: 'new-inode-456',
+                languageId: 2
+            };
+
+            store.updateContentlet(newContentlet);
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getPushPublishHistory).toHaveBeenCalledWith(
+                'new-identifier-123',
+                { offset: 1, limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE }
+            );
+            expect(store.pushPublishHistory()).toEqual(mockPushPublishHistoryResponse.entity);
+        }));
+
         it('should automatically load versions when contentlet languageId changes', fakeAsync(() => {
             const updatedContentlet = {
                 ...mockContentlet,
@@ -657,10 +888,12 @@ describe('HistoryFeature', () => {
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
         }));
 
-        it('should clear versions before loading new ones', fakeAsync(() => {
-            // Setup initial versions
+        it('should clear versions and push publish history before loading new ones', fakeAsync(() => {
+            // Setup initial data
             store.updateVersions([mockContentletVersion]);
+            store.updatePushPublishHistory([mockPushPublishHistoryItem]);
             expect(store.versions()).toHaveLength(1);
+            expect(store.pushPublishHistory()).toHaveLength(1);
 
             const newContentlet = {
                 ...mockContentlet,
@@ -672,11 +905,12 @@ describe('HistoryFeature', () => {
             spectator.flushEffects();
             tick();
 
-            // Versions should be cleared and then reloaded
+            // Both datasets should be cleared and then reloaded
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
+            expect(store.pushPublishHistory()).toEqual(mockPushPublishHistoryResponse.entity);
         }));
 
-        it('should not load versions if contentlet has no identifier', fakeAsync(() => {
+        it('should not load data if contentlet has no identifier', fakeAsync(() => {
             const contentletWithoutIdentifier = {
                 ...mockContentlet,
                 identifier: null
@@ -687,14 +921,16 @@ describe('HistoryFeature', () => {
             tick();
 
             expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+            expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
         }));
 
-        it('should not load versions if contentlet is null', fakeAsync(() => {
+        it('should not load data if contentlet is null', fakeAsync(() => {
             store.updateContentlet(null);
             spectator.flushEffects();
             tick();
 
             expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+            expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
         }));
     });
 

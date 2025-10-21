@@ -54,6 +54,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     public static final String VARIABLE = "variable";
     public static final String WORKFLOWS = "workflows";
     public static final String SYSTEM_ACTION_MAPPINGS = "systemActionMappings";
+    public static final String ENSURE = "ensure";
 
 
     private final ContentTypeAPI contentTypeAPI;
@@ -128,6 +129,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             final OrderDirection direction, final Map<String, Object> extraParams) {
         final List<String> varNamesList = Try.of(() -> (List<String>) extraParams.get(TYPES_PARAMETER_NAME)).getOrNull();
         final List<String> siteList = Try.of(() -> (List<String>) extraParams.get(SITES_PARAMETER_NAME)).getOrNull();
+        final List<String> requestedContentTypes = Try.of(() -> (List<String>) extraParams.get(ENSURE)).getOrNull();
         final String orderByParam = SQLUtil.getOrderByAndDirectionSql(orderBy, direction);
         final String siteId = Try.of(() -> extraParams.get(HOST_PARAMETER_ID).toString()).getOrElse(BLANK);
         final List<String> baseTypeNames = getBaseTypeNames(extraParams);
@@ -154,7 +156,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                     collectedContentTypes.addAll(this.contentTypeAPI.search(siteList, filter, type, orderByParam, limit, offset));
                     totalRecords += this.getTotalRecords(BLANK, type, siteList);
                 } else {
-                    collectedContentTypes.addAll(this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId));
+                    collectedContentTypes.addAll(this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId, requestedContentTypes));
                     totalRecords += getTotalRecords(filter, type, List.of(siteId));
                 }
             }

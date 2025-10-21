@@ -9,8 +9,10 @@ import {
     signal
 } from '@angular/core';
 
+import { DotContentDriveUploadFiles, DOT_DRAG_ITEM } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DROPZONE_STATE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 @Component({
@@ -21,11 +23,11 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentDriveDropzoneComponent {
-    readonly uploadFiles = output<FileList>();
+    readonly uploadFiles = output<DotContentDriveUploadFiles>();
 
     readonly elementRef = inject(ElementRef);
 
-    readonly $isActive = signal(false);
+    readonly state = signal<string>(DROPZONE_STATE.INACTIVE);
 
     readonly #store = inject(DotContentDriveStore);
 
@@ -34,7 +36,26 @@ export class DotContentDriveDropzoneComponent {
      * @returns {boolean} - The active state of the dropzone
      */
     @HostBinding('class.active') get active(): boolean {
-        return this.$isActive();
+        return this.state() === DROPZONE_STATE.ACTIVE;
+    }
+
+    /**
+     * @description Set the dropzone as internal drag
+     * @memberof DotContentDriveDropzoneComponent
+     */
+    @HostListener('window:dragstart')
+    onWindowDragStart() {
+        this.state.set(DROPZONE_STATE.INTERNAL_DRAG);
+    }
+
+    /**
+     * @description Set the dropzone as not internal drag
+     * @memberof DotContentDriveDropzoneComponent
+     */
+    @HostListener('window:dragend')
+    @HostListener('window:drop')
+    onWindowDragEnd() {
+        this.state.set(DROPZONE_STATE.INACTIVE);
     }
 
     /**
@@ -42,15 +63,18 @@ export class DotContentDriveDropzoneComponent {
      * @param event - DragEvent
      */
     @HostListener('dragenter', ['$event'])
-    onDragEnter(event: DragEvent & { fromElement: HTMLElement }) {
+    onDragEnter(event: DragEvent) {
         event.stopPropagation();
         event.preventDefault();
 
-        if (event.fromElement) {
+        if (
+            this.state() === DROPZONE_STATE.INTERNAL_DRAG ||
+            event.dataTransfer?.types.includes(DOT_DRAG_ITEM)
+        ) {
             return;
         }
 
-        this.$isActive.set(true);
+        this.state.set(DROPZONE_STATE.ACTIVE);
 
         // Reset the context menu
         this.#store.resetContextMenu();
@@ -82,7 +106,7 @@ export class DotContentDriveDropzoneComponent {
         }
 
         // Drag has left the dropzone
-        this.$isActive.set(false);
+        this.state.set(DROPZONE_STATE.INACTIVE);
     }
 
     /**
@@ -92,7 +116,7 @@ export class DotContentDriveDropzoneComponent {
     @HostListener('dragend', ['$event'])
     onDragEnd(event: DragEvent) {
         event.preventDefault();
-        this.$isActive.set(false);
+        this.state.set(DROPZONE_STATE.INACTIVE);
     }
 
     /**
@@ -107,10 +131,10 @@ export class DotContentDriveDropzoneComponent {
 
         const files = event.dataTransfer?.files ?? undefined;
 
-        this.$isActive.set(false);
+        this.state.set(DROPZONE_STATE.INACTIVE);
 
         if (files?.length) {
-            this.uploadFiles.emit(files);
+            this.uploadFiles.emit({ files, targetFolder: this.#store.selectedNode()?.data });
         }
     }
 }
