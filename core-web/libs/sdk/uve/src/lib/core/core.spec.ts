@@ -7,8 +7,6 @@ import { createUVESubscription, getUVEState, isAnalyticsActive } from './core.ut
 
 import { ANALYTICS_WINDOWS_ACTIVE_KEY } from '../../internal/constants';
 
-
-
 describe('getUVEStatus', () => {
     beforeAll(() => {
         jest.spyOn(global, 'window', 'get').mockReset();

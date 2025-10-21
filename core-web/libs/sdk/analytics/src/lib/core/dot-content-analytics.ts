@@ -11,7 +11,6 @@ import {
 } from './shared/dot-content-analytics.utils';
 import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
 
-
 // Extend Window interface for analytics properties
 declare global {
     interface Window {
