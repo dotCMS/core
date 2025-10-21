@@ -1,11 +1,12 @@
 import { CommonModule, Location } from '@angular/common';
-import { Component, DestroyRef, effect, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
+import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import {
@@ -23,7 +24,7 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { UVE_MODE } from '@dotcms/types';
-import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
+import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
@@ -78,7 +79,9 @@ import {
         DotPageToolsSeoComponent,
         DotEmaDialogComponent,
         DotInfoPageComponent,
-        DotNotLicenseComponent
+        DotNotLicenseComponent,
+        MessagesModule,
+        DotMessagePipe
     ]
 })
 export class DotEmaShellComponent implements OnInit {
@@ -93,6 +96,9 @@ export class DotEmaShellComponent implements OnInit {
     readonly #location = inject(Location);
 
     protected readonly $shellProps = this.uveStore.$shellProps;
+    protected readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+
+    protected readonly $showBanner = signal<boolean>(true);
 
     /**
      * Handle the update of the page params
@@ -187,6 +193,22 @@ export class DotEmaShellComponent implements OnInit {
      */
     reloadFromDialog() {
         this.uveStore.reloadCurrentPage();
+    }
+
+    /**
+     * Handles closing the banner message by setting showBanner to false
+     */
+    onCloseMessage() {
+        this.$showBanner.set(false);
+    }
+
+    /**
+     * Toggles the lock state of the current page
+     * Gets lock options from toggleLockOptions signal and calls store method to handle the lock/unlock
+     */
+    toggleLock() {
+        const { inode, isLocked, isLockedByCurrentUser } = this.$toggleLockOptions();
+        this.uveStore.toggleLock(inode, isLocked, isLockedByCurrentUser);
     }
 
     /**

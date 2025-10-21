@@ -13,11 +13,13 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { UVE_FEATURE_FLAGS } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import { DotPageAssetParams } from '../../../shared/models';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
+import { withFlags } from '../flags/withFlags';
 import { withWorkflow } from '../workflow/withWorkflow';
 
 /**
@@ -33,6 +35,7 @@ export function withLoad() {
         },
         withClient(),
         withWorkflow(),
+        withFlags(UVE_FEATURE_FLAGS),
         withMethods((store) => {
             return {
                 updatePageParams: (params: Partial<DotPageAssetParams>) => {
@@ -148,15 +151,20 @@ export function withLoad() {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
+                                            const isFeatureFlagEnabled =
+                                                store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
+
                                             const canEditPage = computeCanEditPage(
                                                 pageAsset?.page,
                                                 currentUser,
-                                                experiment
+                                                experiment,
+                                                isFeatureFlagEnabled
                                             );
 
                                             const pageIsLocked = computePageIsLocked(
                                                 pageAsset?.page,
-                                                currentUser
+                                                currentUser,
+                                                isFeatureFlagEnabled
                                             );
                                             const isTraditionalPage = !pageParams.clientHost;
 
@@ -207,7 +215,13 @@ export function withLoad() {
 
                             return pageRequest.pipe(
                                 tap((pageAPIResponse) => {
-                                    patchState(store, { pageAPIResponse });
+                                    const canEditPage = computeCanEditPage(
+                                        pageAPIResponse.page,
+                                        store.currentUser(),
+                                        store.experiment(),
+                                        store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
+                                    );
+                                    patchState(store, { pageAPIResponse, canEditPage });
                                     store.getWorkflowActions(pageAPIResponse.page.inode);
                                 }),
                                 switchMap((pageAPIResponse) => {

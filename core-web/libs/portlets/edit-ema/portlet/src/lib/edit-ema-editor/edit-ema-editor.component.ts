@@ -56,6 +56,7 @@ import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 
+import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
@@ -121,7 +122,8 @@ import {
         DotResultsSeoToolComponent,
         DotUveToolbarComponent,
         DotBlockEditorSidebarComponent,
-        DotUvePageVersionNotFoundComponent
+        DotUvePageVersionNotFoundComponent,
+        DotUveLockOverlayComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -165,6 +167,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
 
     readonly $paletteOpen = this.uveStore.paletteOpen;
+    readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
     readonly UVE_STATUS = UVE_STATUS;
 
     get contentWindow(): Window {

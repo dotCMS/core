@@ -1,4 +1,4 @@
-import { DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import { CommonErrors } from './enums';
@@ -67,7 +67,7 @@ export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
 };
 
 // Add the Feature flags we want to fetch for UVE
-export const UVE_FEATURE_FLAGS = [];
+export const UVE_FEATURE_FLAGS = [FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK];
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {
     icon: 'pi pi-desktop',
