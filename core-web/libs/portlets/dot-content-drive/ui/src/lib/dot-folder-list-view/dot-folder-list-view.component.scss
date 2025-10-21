@@ -16,6 +16,10 @@
                 .p-datatable-tbody {
                     tr.content-drive-table__loading-row {
                         cursor: default;
+                        // This is the height of the row in the table
+                        // We need to set it to the same height as the row in the table
+                        // to avoid the row from being too tall or too short
+                        height: 4.3125rem;
 
                         td {
                             text-align: center;
