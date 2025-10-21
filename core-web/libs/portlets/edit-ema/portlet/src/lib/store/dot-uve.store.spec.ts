@@ -10,10 +10,11 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
     DotAnalyticsTrackerService,
+    DotContentletLockerService,
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
@@ -71,6 +72,7 @@ describe('UVEStore', () => {
         service: UVEStore,
         providers: [
             MessageService,
+            ConfirmationService,
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             {
@@ -104,6 +106,13 @@ describe('UVEStore', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
+            },
+            {
+                provide: DotContentletLockerService,
+                useValue: {
+                    lock: jest.fn().mockReturnValue(of({})),
+                    unlock: jest.fn().mockReturnValue(of({}))
+                }
             },
             {
                 provide: DotExperimentsService,
