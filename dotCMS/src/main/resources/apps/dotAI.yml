@@ -183,19 +183,4 @@ params:
       indexed into the `blogsOnly` index. The list of content types is a comma separated list content types and can optionally 
       include the field that should be indexed when a contentlet is published.  All unpublished content will be removed from the index.
     required: false
-  advanceProviderSettings:
-    value: ""
-    hidden: false
-    type: "STRING"
-    label: "Custom AI Provider Settings"
-    hint: |
-      See ....
-    required: false
-  buttonParam:
-    hidden: false
-    type: "BUTTON"
-    label: "Load Default Custom AI Provider Settings"
-    hint: "Click me if the custom ai provider field is empty to load the vendors/models template"
-    required: true
-    value: "/api/v1/ai/configuration/_loadcustomproviders/$siteId"
 
