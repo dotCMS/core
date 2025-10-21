@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotPropertiesService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
@@ -16,7 +17,6 @@ import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
-import { DotPropertiesService } from '@dotcms/data-access';
 
 const pageParams = {
     url: 'test-url',

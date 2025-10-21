@@ -159,7 +159,6 @@ describe('DotUveToolbarComponent', () => {
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
     let devicesService: DotDevicesService;
-    let dotContentletLockerService: DotContentletLockerService;
     let personalizeService: DotPersonalizeService;
 
     const fixedDate = new Date('2024-01-01');
@@ -251,7 +250,6 @@ describe('DotUveToolbarComponent', () => {
             messageService = spectator.inject(MessageService, true);
             devicesService = spectator.inject(DotDevicesService);
             confirmationService = spectator.inject(ConfirmationService, true);
-            dotContentletLockerService = spectator.inject(DotContentletLockerService);
             personalizeService = spectator.inject(DotPersonalizeService, true);
         });
 

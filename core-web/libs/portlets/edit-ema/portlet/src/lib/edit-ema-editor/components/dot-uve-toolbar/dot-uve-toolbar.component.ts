@@ -1,5 +1,3 @@
-import { tapResponse } from '@ngrx/operators';
-
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass } from '@angular/common';
 import {

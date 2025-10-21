@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotPropertiesService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
@@ -26,7 +27,6 @@ import {
 } from '../../../shared/mocks';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { UVEState } from '../../models';
-import { DotPropertiesService } from '@dotcms/data-access';
 
 const emptyParams = {} as DotPageApiParams;
 

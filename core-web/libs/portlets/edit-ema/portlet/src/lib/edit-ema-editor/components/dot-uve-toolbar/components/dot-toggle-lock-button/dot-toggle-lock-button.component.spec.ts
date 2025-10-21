@@ -1,4 +1,5 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+
 import { signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -10,8 +11,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotToggleLockButtonComponent } from './dot-toggle-lock-button.component';
 
-import { UVEStore } from '../../../../../store/dot-uve.store';
 import { ToggleLockOptions, UnlockOptions } from '../../../../../shared/models';
+import { UVEStore } from '../../../../../store/dot-uve.store';
 
 describe('DotToggleLockButtonComponent', () => {
     let spectator: Spectator<DotToggleLockButtonComponent>;
