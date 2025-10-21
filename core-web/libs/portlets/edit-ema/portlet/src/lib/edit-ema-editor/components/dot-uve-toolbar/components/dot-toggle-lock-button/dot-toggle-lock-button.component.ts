@@ -35,7 +35,11 @@ export class DotToggleLockButtonComponent {
      * If the page is locked by another user, it will attempt to take over the lock.
      */
     toggleLock() {
-        const { inode, isLocked, isLockedByCurrentUser } = this.$toggleLockOptions();
+        const { inode, isLocked, isLockedByCurrentUser, canLock } = this.$toggleLockOptions();
+
+        if (!canLock) {
+            return;
+        }
 
         this.#store.toggleLock(inode, isLocked, isLockedByCurrentUser);
     }

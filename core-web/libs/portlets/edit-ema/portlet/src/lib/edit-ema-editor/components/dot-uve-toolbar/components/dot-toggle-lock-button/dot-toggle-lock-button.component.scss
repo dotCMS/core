@@ -35,6 +35,13 @@
         }
     }
 
+    &--disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background: $white;
+        color: $color-palette-gray-900;
+    }
+
     // Disabled state
     &:disabled {
         opacity: 0.6;
