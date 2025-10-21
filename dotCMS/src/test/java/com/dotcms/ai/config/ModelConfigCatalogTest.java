@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,6 +50,27 @@ public class ModelConfigCatalogTest {
 
         Assert.assertNotNull(modelConfig);
         Assert.assertEquals("The default open ai model should be: gpt-4.1", "openai.chat.gpt-4o-mini", modelConfig.getName());
+
+        final List<String> chatModelNames = modelConfigCatalog.getChatModelNames(AiVendor.OPEN_AI.getVendorName());
+        Assert.assertTrue("Open AI should be include gpt-4o-mini", chatModelNames.contains("gpt-4o-mini"));
+        Assert.assertTrue("Open AI should be include gpt-4.1", chatModelNames.contains("gpt-4.1"));
+
+        Assert.assertEquals("Open AI key should be OPENAI_K", "OPENAI_K",modelConfig.get("apiKey"));
+        Assert.assertEquals("Open AI baseUrl should be https://api.openai.com/v1", "https://api.openai.com/v1",modelConfig.get("baseUrl"));
+
+        final AiModelConfig modelConfigGptMini = modelConfigCatalog.getChatConfig(AiVendor.OPEN_AI.getVendorName(), AiModel.OPEN_AI_GPT_4O_MINI.getModel());
+
+        Assert.assertEquals("Open AI timeoutMs should be 30000", "30000",modelConfig.get("timeoutMs"));
+        Assert.assertEquals("Open AI rateLimitQps should be 5", "5",modelConfig.get("rateLimitQps"));
+        Assert.assertEquals("Open AI temperature should be 0.3", "0.3",modelConfig.get("temperature"));
+
+
+        final List<String> vendorNames = modelConfigCatalog.getVendorNames();
+        Assert.assertTrue("Open AI should be include in : " + vendorNames, vendorNames.contains("openai"));
+        Assert.assertTrue("Anthropic should be include in " + vendorNames, vendorNames.contains("anthropic"));
+
+
+
     }
 
 }

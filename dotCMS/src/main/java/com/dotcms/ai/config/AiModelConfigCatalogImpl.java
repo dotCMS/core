@@ -3,6 +3,7 @@ package com.dotcms.ai.config;
 
 import com.dotcms.ai.config.parser.AiVendorCatalogData;
 import com.dotcms.ai.config.parser.AiVendorNode;
+import com.google.common.collect.ImmutableList;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -125,6 +126,18 @@ public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
         return node.getChatModels().keySet().stream()
                 .sorted()
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    @Override
+    public List<String> getVendorNames() {
+
+        final ImmutableList.Builder<String> vendorNamesBuilder = ImmutableList.builder();
+
+        for (final String vendorName : this.vendors.keySet()) {
+            vendorNamesBuilder.add(vendorName);
+        }
+
+        return vendorNamesBuilder.build();
     }
 
     /**
