@@ -47,6 +47,7 @@
         [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
         (paginate)="onPaginate($event)"
         (sort)="onSort($event)"
+        (selectionChange)="onSelectItems($event)"
         (rightClick)="onContextMenu($event)"
         (doubleClick)="onDoubleClick($event)"
         (dragStart)="onDragStart($event)"
