@@ -65,14 +65,14 @@ p-messages {
     line-height: 1.5;
 
     strong {
-        font-weight: 600;
+        font-weight: $font-weight-medium-bold;
     }
 }
 
 .unlock-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: $spacing-0;
     background: none;
     border: none;
     padding: 0;

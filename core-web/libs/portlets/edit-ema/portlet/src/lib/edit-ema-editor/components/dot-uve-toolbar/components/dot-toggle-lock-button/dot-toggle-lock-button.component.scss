@@ -14,7 +14,7 @@
     transition: all 0.2s ease;
     border: 1px solid $color-palette-gray-400;
     outline: none;
-    font-weight: 500;
+    font-weight: $font-weight-semi-bold;
     gap: $spacing-1;
     font-size: $font-size-sm;
     height: $spacing-5;
@@ -24,7 +24,6 @@
         color: $color-palette-blue;
     }
 
-    // Unlocked state - Gray/White
     &--unlocked {
         background: $white;
         color: $color-palette-gray-900;
@@ -42,7 +41,6 @@
         color: $color-palette-gray-900;
     }
 
-    // Disabled state
     &:disabled {
         opacity: 0.6;
         cursor: not-allowed;
