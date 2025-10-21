@@ -54,7 +54,7 @@ public class DotObjectMapperProvider {
 
         boolean alphaKeys = Config.getBooleanProperty("dotcms.rest.sort.json.properties", true);
         boolean useBlackbird = Config.getBooleanProperty("jackson.module.blackbird.enable", true);
-        boolean useJdk8Module = Config.getBooleanProperty("jackson.module.jdk8module.enable", false);
+        boolean useJdk8Module = Config.getBooleanProperty("jackson.module.jdk8module.enable", true);
 
 
         final ObjectMapper result = new ObjectMapper();
