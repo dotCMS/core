@@ -8,13 +8,13 @@ import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotAppsSite } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotCopyLinkModule } from '../../../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 @Component({
     selector: 'dot-apps-configuration-item',
     templateUrl: './dot-apps-configuration-item.component.html',
     styleUrls: ['./dot-apps-configuration-item.component.scss'],
-    imports: [CommonModule, DotCopyLinkModule, TooltipModule, DotMessagePipe, ButtonModule]
+    imports: [CommonModule, DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule]
 })
 export class DotAppsConfigurationItemComponent {
     private dotMessageService = inject(DotMessageService);

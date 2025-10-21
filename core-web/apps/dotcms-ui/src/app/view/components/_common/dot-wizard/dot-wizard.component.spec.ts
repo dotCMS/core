@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { MockModule, MockProvider } from 'ng-mocks';
+import { MockComponent, MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -42,8 +42,8 @@ import { DotWizardComponent } from './dot-wizard.component';
 import { DotParseHtmlService } from '../../../../api/services/dot-parse-html/dot-parse-html.service';
 import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
 import { PushPublishServiceMock } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import { DotCommentAndAssignFormModule } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.module';
-import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-push-publish-form.module';
+import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
+import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
 const messageServiceMock = new MockDotMessageService({
     send: 'Send',
@@ -119,8 +119,8 @@ describe('DotWizardComponent', () => {
                 BrowserAnimationsModule,
                 DialogModule,
                 ButtonModule,
-                MockModule(DotCommentAndAssignFormModule),
-                MockModule(DotPushPublishFormModule)
+                MockComponent(DotCommentAndAssignFormComponent),
+                MockComponent(DotPushPublishFormComponent)
             ],
             providers: [
                 LoggerService,

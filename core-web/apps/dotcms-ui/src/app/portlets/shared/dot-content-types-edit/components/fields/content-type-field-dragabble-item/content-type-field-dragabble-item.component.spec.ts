@@ -15,7 +15,7 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
 
-import { DotCopyLinkModule } from '../../../../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy-link/dot-copy-link.component';
 import { FieldService } from '../service';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
@@ -36,7 +36,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             declarations: [ContentTypesFieldDragabbleItemComponent],
             imports: [
                 DotIconComponent,
-                DotCopyLinkModule,
+                DotCopyLinkComponent,
                 HttpClientTestingModule,
                 DotMessagePipe,
                 OverlayPanelModule,

@@ -30,7 +30,7 @@ import {
 
 import { DotLoginComponent } from './dot-login.component';
 
-import { DotLoadingIndicatorModule } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotLoadingIndicatorComponent } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 const mockLoginInfo = {
@@ -81,7 +81,7 @@ describe('DotLoginComponent', () => {
                 ButtonModule,
                 CheckboxModule,
                 DropdownModule,
-                DotLoadingIndicatorModule,
+                DotLoadingIndicatorComponent,
                 DotFieldValidationMessageComponent,
                 RouterTestingModule,
                 FormsModule,

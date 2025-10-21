@@ -49,10 +49,10 @@ import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
 import { DotAddToMenuService } from '../../../../../api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { DotInlineEditModule } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.module';
+import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
-import { DotCopyLinkModule } from '../../../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { FieldDragDropService, FieldService } from '../fields/service';
@@ -168,11 +168,11 @@ describe('ContentTypesLayoutComponent', () => {
                 DotSecondaryToolbarComponent,
                 RouterTestingModule,
                 DotApiLinkComponent,
-                DotCopyLinkModule,
+                DotCopyLinkComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 SplitButtonModule,
-                DotInlineEditModule,
+                DotInlineEditComponent,
                 HttpClientTestingModule,
                 DotPortletBoxComponent,
                 DotCopyButtonComponent

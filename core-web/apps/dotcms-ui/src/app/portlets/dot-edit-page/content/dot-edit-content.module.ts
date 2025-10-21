@@ -37,8 +37,8 @@ import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-conte
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotDirectivesModule } from '../../../shared/dot-directives.module';
-import { DotOverlayMaskModule } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.module';
-import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotOverlayMaskComponent } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.component';
+import { DotLoadingIndicatorComponent } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotPaletteComponent } from '../components/dot-palette/dot-palette.component';
@@ -65,11 +65,11 @@ const routes: Routes = [
         DotFormSelectorModule,
         TooltipModule,
         DotEditContentletComponent,
-        DotLoadingIndicatorModule,
+        DotLoadingIndicatorComponent,
         DotEditPageToolbarModule,
         DotEditPageViewAsControllerModule,
         DotEditPageStateControllerModule,
-        DotOverlayMaskModule,
+        DotOverlayMaskComponent,
         DotPaletteComponent,
         DotIconComponent,
         DotEditPageToolbarSeoComponent,

@@ -13,7 +13,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
 
-import { DotCopyLinkModule } from '../../../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 const messages = {
     'apps.key': 'Key',
@@ -54,7 +54,7 @@ describe('DotAppsConfigurationItemComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 CommonModule,
-                DotCopyLinkModule,
+                DotCopyLinkComponent,
                 TooltipModule,
                 HttpClientTestingModule,
                 DotSafeHtmlPipe,

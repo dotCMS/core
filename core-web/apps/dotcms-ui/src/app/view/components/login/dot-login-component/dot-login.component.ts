@@ -32,7 +32,7 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
 import { SharedModule } from '../../../../shared/shared.module';
-import { DotLoadingIndicatorModule } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotLoadingIndicatorComponent } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 @Component({
@@ -47,7 +47,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
         DropdownModule,
         InputTextModule,
         SharedModule,
-        DotLoadingIndicatorModule,
+        DotLoadingIndicatorComponent,
         DotDirectivesModule,
         DotFieldValidationMessageComponent,
         DotAutofocusDirective,

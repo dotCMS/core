@@ -32,9 +32,7 @@ import { DotFormModel } from '../../../../shared/models/dot-form/dot-form.model'
 import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
 import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
-import { DotCommentAndAssignFormModule } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.module';
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
-import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-push-publish-form.module';
 
 @Component({
     selector: 'dot-wizard',
@@ -45,8 +43,8 @@ import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-pus
         DialogModule,
         ButtonModule,
         DotContainerReferenceModule,
-        DotCommentAndAssignFormModule,
-        DotPushPublishFormModule
+        DotCommentAndAssignFormComponent,
+        DotPushPublishFormComponent
     ],
     providers: [DotWizardService]
 })

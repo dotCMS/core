@@ -33,7 +33,6 @@ import {
 
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
-import { DotInlineEditModule } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.module';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
@@ -58,7 +57,7 @@ import { FieldDragDropService } from '../fields/service';
         DotCopyButtonComponent,
         DotMessagePipe,
         DotAutofocusDirective,
-        DotInlineEditModule,
+        DotInlineEditComponent,
         DotPortletBoxComponent,
         IframeComponent,
         DotAddToMenuComponent,

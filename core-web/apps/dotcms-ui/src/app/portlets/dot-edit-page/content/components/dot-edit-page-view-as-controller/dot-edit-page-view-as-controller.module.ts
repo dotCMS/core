@@ -9,7 +9,7 @@ import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
 
-import { DotDeviceSelectorModule } from '../../../../../view/components/dot-device-selector/dot-device-selector.module';
+import { DotDeviceSelectorComponent } from '../../../../../view/components/dot-device-selector/dot-device-selector.component';
 import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
 import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
 
@@ -21,7 +21,7 @@ import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-
         TooltipModule,
         DotPersonaSelectorComponent,
         DotLanguageSelectorComponent,
-        DotDeviceSelectorModule,
+        DotDeviceSelectorComponent,
         DotSafeHtmlPipe,
         DotIconComponent,
         DotMessagePipe

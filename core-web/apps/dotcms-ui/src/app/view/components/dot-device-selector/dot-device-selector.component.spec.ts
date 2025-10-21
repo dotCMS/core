@@ -53,20 +53,32 @@ describe('DotDeviceSelectorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotDeviceSelectorComponent],
-            imports: [BrowserAnimationsModule, DotIconComponent, DotMessagePipe],
+            declarations: [TestHostComponent],
+            imports: [
+                DotDeviceSelectorComponent,
+                BrowserAnimationsModule,
+                DotIconComponent,
+                DotMessagePipe
+            ],
             providers: [
-                {
-                    provide: DotDevicesService,
-                    useClass: DotDevicesServiceMock
-                },
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
-        }).compileComponents();
+        })
+            .overrideComponent(DotDeviceSelectorComponent, {
+                set: {
+                    providers: [
+                        {
+                            provide: DotDevicesService,
+                            useClass: DotDevicesServiceMock
+                        }
+                    ]
+                }
+            })
+            .compileComponents();
     });
     beforeEach(() => {
         fixtureHost = TestBed.createComponent(TestHostComponent);
@@ -74,7 +86,7 @@ describe('DotDeviceSelectorComponent', () => {
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-device-selector'));
         component = de.componentInstance;
-        dotDeviceService = TestBed.inject(DotDevicesService);
+        dotDeviceService = de.injector.get(DotDevicesService);
     });
 
     it('should have icon', () => {

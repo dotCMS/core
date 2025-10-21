@@ -25,7 +25,7 @@ describe('DotCopyLinkComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotCopyLinkComponent],
+            imports: [DotCopyLinkComponent, ButtonModule, TooltipModule, DotIconComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -37,8 +37,7 @@ describe('DotCopyLinkComponent', () => {
                         copy: jest.fn()
                     }
                 }
-            ],
-            imports: [ButtonModule, TooltipModule, DotIconComponent]
+            ]
         }).compileComponents();
     }));
 

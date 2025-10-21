@@ -48,8 +48,7 @@ import { DotContainerListStore } from './store/dot-container-list.store';
 
 import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
-import { DotContentTypeSelectorModule } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.module';
+import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
 import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
@@ -61,12 +60,11 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         CommonModule,
         DotPortletBaseComponent,
         TableModule,
-        DotContentTypeSelectorModule,
+        DotContentTypeSelectorComponent,
         DotMessagePipe,
         ButtonModule,
         CheckboxModule,
         MenuModule,
-        DotEmptyStateModule,
         DotAddToBundleComponent,
         DotActionMenuButtonComponent,
         DotRelativeDatePipe,

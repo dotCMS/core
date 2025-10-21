@@ -24,8 +24,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotDialogComponent } from '@dotcms/ui';
 
-import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
-import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-push-publish-form.module';
+import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
 @Component({
     selector: 'dot-push-publish-dialog',
@@ -39,8 +38,7 @@ import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-pus
         DropdownModule,
         SelectButtonModule,
         DotDialogComponent,
-        PushPublishEnvSelectorModule,
-        DotPushPublishFormModule
+        DotPushPublishFormComponent
     ],
     providers: [DotPushPublishFiltersService]
 })

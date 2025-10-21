@@ -21,7 +21,7 @@ import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing
 
 import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 
-import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-push-publish-form.module';
+import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
 class PushPublishServiceMock {
     pushPublishContent(): Observable<any> {
@@ -96,7 +96,7 @@ describe('DotPushPublishDialogComponent', () => {
         // Override the standalone component to replace injected services and replace the real form with our mock
         TestBed.overrideComponent(DotPushPublishDialogComponent, {
             remove: {
-                imports: [DotPushPublishFormModule]
+                imports: [DotPushPublishFormComponent]
             },
             add: {
                 imports: [TestDotPushPublishFormComponent],

@@ -19,7 +19,7 @@ import { DotActionMenuButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoriesListState, DotCategoriesListStore } from './store/dot-categories-list-store';
 
-import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
+import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
@@ -41,7 +41,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotMessagePipe,
         CheckboxModule,
         BreadcrumbModule,
-        DotEmptyStateModule
+        DotEmptyStateComponent
     ]
 })
 export class DotCategoriesListComponent {

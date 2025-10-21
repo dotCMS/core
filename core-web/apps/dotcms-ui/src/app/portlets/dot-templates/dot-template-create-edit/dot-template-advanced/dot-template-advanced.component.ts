@@ -22,7 +22,7 @@ import { DotContainer } from '@dotcms/dotcms-models';
 import { DotPortletToolbarActions } from '../../../../shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
-import { DotContainerSelectorModule } from '../../../../view/components/dot-container-selector/dot-container-selector.module';
+import { DotContainerSelectorComponent } from '../../../../view/components/dot-container-selector/dot-container-selector.component';
 import { DotPortletToolbarComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
 import { DotPortletBaseComponent } from '../../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotTemplateItem } from '../store/dot-template.store';
@@ -49,7 +49,7 @@ interface MonacoEditor {
     styleUrls: ['./dot-template-advanced.scss'],
     imports: [
         CommonModule,
-        DotContainerSelectorModule,
+        DotContainerSelectorComponent,
         DotTextareaContentComponent,
         DotPortletBaseComponent,
         DotPortletToolbarComponent,

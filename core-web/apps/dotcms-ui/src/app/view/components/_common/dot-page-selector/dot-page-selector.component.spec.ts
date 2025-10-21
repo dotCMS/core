@@ -1,13 +1,14 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, Injectable, inject } from '@angular/core';
+import { Component, DebugElement, Injectable, inject, forwardRef } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     FormsModule,
     ReactiveFormsModule,
     UntypedFormBuilder,
-    UntypedFormGroup
+    UntypedFormGroup,
+    NG_VALUE_ACCESSOR
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -169,8 +170,9 @@ describe('DotPageSelectorComponent', () => {
         });
 
         TestBed.configureTestingModule({
-            declarations: [FakeFormComponent, DotPageSelectorComponent],
+            declarations: [FakeFormComponent],
             imports: [
+                DotPageSelectorComponent,
                 DotDirectivesModule,
                 DotFieldHelperModule,
                 DotSafeHtmlPipe,
@@ -182,11 +184,23 @@ describe('DotPageSelectorComponent', () => {
                 BrowserAnimationsModule
             ],
             providers: [
-                { provide: DotPageSelectorService, useClass: MockDotPageSelectorService },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
-        }).compileComponents();
+        })
+            .overrideComponent(DotPageSelectorComponent, {
+                set: {
+                    providers: [
+                        {
+                            multi: true,
+                            provide: NG_VALUE_ACCESSOR,
+                            useExisting: forwardRef(() => DotPageSelectorComponent)
+                        },
+                        { provide: DotPageSelectorService, useClass: MockDotPageSelectorService }
+                    ]
+                }
+            })
+            .compileComponents();
     }));
 
     beforeEach(async () => {

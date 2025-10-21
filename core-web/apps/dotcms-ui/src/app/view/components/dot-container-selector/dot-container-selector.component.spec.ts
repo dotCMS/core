@@ -1,14 +1,10 @@
 import { of as observableOf } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-
-import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import {
@@ -20,7 +16,6 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
@@ -47,15 +42,9 @@ describe('ContainerSelectorComponent', () => {
         });
 
         TestBed.configureTestingModule({
-            declarations: [DotContainerSelectorComponent],
             imports: [
-                SearchableDropdownComponent,
+                DotContainerSelectorComponent,
                 BrowserAnimationsModule,
-                CommonModule,
-                FormsModule,
-                ButtonModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe,
                 HttpClientTestingModule
             ],
             providers: [

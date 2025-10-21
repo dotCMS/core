@@ -20,8 +20,8 @@ import { CoreWebServiceMock, MockDotMessageService, SiteServiceMock } from '@dot
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
 
-import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
-import { SiteSelectorFieldModule } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
+import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
+import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotFormSelectorModule } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 
 @Component({
@@ -82,8 +82,8 @@ describe('DotContentTypeCloneDialogComponent', () => {
                 DotFormSelectorModule,
                 BrowserAnimationsModule,
                 DotFieldValidationMessageComponent,
-                DotMdIconSelectorModule,
-                SiteSelectorFieldModule,
+                DotMdIconSelectorComponent,
+                DotSiteSelectorFieldComponent,
                 DotDialogComponent,
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,

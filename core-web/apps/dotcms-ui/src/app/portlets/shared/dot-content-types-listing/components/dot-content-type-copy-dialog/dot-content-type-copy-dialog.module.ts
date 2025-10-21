@@ -15,9 +15,9 @@ import {
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
 
-import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
-import { SiteSelectorFieldModule } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotBaseTypeSelectorModule } from '../../../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
+import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
+import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
+import { DotBaseTypeSelectorComponent } from '../../../../../view/components/dot-base-type-selector/dot-base-type-selector.component';
 import { DotListingDataTableComponent } from '../../../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 @NgModule({
@@ -26,12 +26,12 @@ import { DotListingDataTableComponent } from '../../../../../view/components/dot
         ReactiveFormsModule,
         InputTextModule,
         DotListingDataTableComponent,
-        DotBaseTypeSelectorModule,
+        DotBaseTypeSelectorComponent,
         DotSafeHtmlPipe,
         DotFieldValidationMessageComponent,
         DotDialogComponent,
-        DotMdIconSelectorModule,
-        SiteSelectorFieldModule,
+        DotMdIconSelectorComponent,
+        DotSiteSelectorFieldComponent,
         DotAutofocusDirective,
         DotFieldRequiredDirective,
         DotMessagePipe

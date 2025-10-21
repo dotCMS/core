@@ -28,7 +28,12 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { filter, startWith, take, takeUntil } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService, DotWorkflowService } from '@dotcms/data-access';
+import {
+    DotLicenseService,
+    DotMessageService,
+    DotWorkflowService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
@@ -47,10 +52,11 @@ import {
 } from '@dotcms/ui';
 import { isEqual, FieldUtil } from '@dotcms/utils';
 
-import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
-import { DotPageSelectorModule } from '../../../../../view/components/_common/dot-page-selector/dot-page-selector.module';
-import { SiteSelectorFieldModule } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotWorkflowsActionsSelectorFieldModule } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
+import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
+import { DotPageSelectorComponent } from '../../../../../view/components/_common/dot-page-selector/dot-page-selector.component';
+import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
+import { DotWorkflowsActionsSelectorFieldComponent } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.component';
+import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 import { DotWorkflowsSelectorFieldModule } from '../../../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { DotFieldHelperModule } from '../../../../../view/components/dot-field-helper/dot-field-helper.module';
 
@@ -62,7 +68,7 @@ import { DotFieldHelperModule } from '../../../../../view/components/dot-field-h
  * @implements {OnInit}
  */
 @Component({
-    providers: [],
+    providers: [DotWorkflowsActionsService, DotWorkflowsActionsSelectorFieldService],
     selector: 'dot-content-types-form',
     styleUrls: ['./content-types-form.component.scss'],
     templateUrl: 'content-types-form.component.html',
@@ -77,11 +83,11 @@ import { DotFieldHelperModule } from '../../../../../view/components/dot-field-h
         DotFieldRequiredDirective,
         DotAutofocusDirective,
         DotFieldValidationMessageComponent,
-        DotMdIconSelectorModule,
-        SiteSelectorFieldModule,
+        DotMdIconSelectorComponent,
+        DotSiteSelectorFieldComponent,
         DotWorkflowsSelectorFieldModule,
-        DotWorkflowsActionsSelectorFieldModule,
-        DotPageSelectorModule,
+        DotWorkflowsActionsSelectorFieldComponent,
+        DotPageSelectorComponent,
         DotFieldHelperModule
     ]
 })

@@ -26,7 +26,7 @@ import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-de
 
 import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotKeyValue } from '../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
 import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
 
 const messages = {
@@ -222,7 +222,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                         AvatarModule,
                         MockMarkdownComponent,
                         DotAvatarDirective,
-                        DotCopyLinkModule,
+                        DotCopyLinkComponent,
                         DotSafeHtmlPipe,
                         DotMessagePipe
                     ]

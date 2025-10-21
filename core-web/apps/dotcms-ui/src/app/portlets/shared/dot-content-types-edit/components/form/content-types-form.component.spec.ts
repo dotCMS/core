@@ -22,6 +22,7 @@ import {
     DotMessageService,
     DotSystemConfigService,
     DotWorkflowService,
+    DotWorkflowsActionsService,
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
@@ -47,6 +48,7 @@ import {
 import { ContentTypesFormComponent } from './content-types-form.component';
 
 import { MockDotSystemConfigService } from '../../../../../test/dot-test-bed';
+import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 
 @Component({
     selector: 'dot-site-selector-field',
@@ -180,7 +182,15 @@ describe('ContentTypesFormComponent', () => {
             PaginatorService,
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotAlertConfirmService),
-            mockProvider(ConfirmationService)
+            mockProvider(ConfirmationService),
+            mockProvider(DotWorkflowsActionsService),
+            {
+                provide: DotWorkflowsActionsSelectorFieldService,
+                useValue: {
+                    get: () => of([]),
+                    load: jest.fn()
+                }
+            }
         ],
         detectChanges: false
     });

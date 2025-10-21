@@ -14,7 +14,7 @@ import { DotContentTypesPortletComponent } from './dot-content-types.component';
 
 import { DotAddToMenuService } from '../../../api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { DotBaseTypeSelectorModule } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
+import { DotBaseTypeSelectorComponent } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.component';
 import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
@@ -23,7 +23,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
     imports: [
         CommonModule,
         DotListingDataTableComponent,
-        DotBaseTypeSelectorModule,
+        DotBaseTypeSelectorComponent,
         DotAddToBundleComponent,
         DotAddToMenuComponent,
         DotContentTypeCopyDialogModule,

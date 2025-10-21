@@ -103,9 +103,9 @@ import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-e
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
-import { DotOverlayMaskModule } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.module';
+import { DotOverlayMaskComponent } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.component';
 import { DotWizardComponent } from '../../../view/components/_common/dot-wizard/dot-wizard.component';
-import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotLoadingIndicatorComponent } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -306,9 +306,9 @@ describe('DotEditContentComponent', () => {
                 DialogModule,
                 DotEditContentletComponent,
                 DotEditPageInfoModule,
-                DotLoadingIndicatorModule,
+                DotLoadingIndicatorComponent,
                 DotEditPageWorkflowsActionsModule,
-                DotOverlayMaskModule,
+                DotOverlayMaskComponent,
                 DotWizardComponent,
                 RouterTestingModule.withRoutes([
                     {

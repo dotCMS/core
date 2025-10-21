@@ -9,7 +9,7 @@ import { DotRouterService } from '@dotcms/data-access';
 import { DotApp } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
 
 @Component({
     selector: 'dot-apps-configuration-header',
@@ -20,7 +20,7 @@ import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-co
         AvatarModule,
         MarkdownComponent,
         DotAvatarDirective,
-        DotCopyLinkModule,
+        DotCopyLinkComponent,
         DotMessagePipe
     ]
 })

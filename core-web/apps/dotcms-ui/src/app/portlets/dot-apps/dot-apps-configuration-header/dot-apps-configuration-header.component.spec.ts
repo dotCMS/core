@@ -14,7 +14,7 @@ import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testi
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 
-import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -68,7 +68,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                 DotAppsConfigurationHeaderComponent,
                 MockMarkdownComponent,
                 CommonModule,
-                DotCopyLinkModule,
+                DotCopyLinkComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotAvatarDirective,
@@ -92,7 +92,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                         AvatarModule,
                         MockMarkdownComponent,
                         DotAvatarDirective,
-                        DotCopyLinkModule,
+                        DotCopyLinkComponent,
                         DotSafeHtmlPipe,
                         DotMessagePipe
                     ]

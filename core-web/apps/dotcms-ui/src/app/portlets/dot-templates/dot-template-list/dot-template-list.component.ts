@@ -41,8 +41,7 @@ import { DotTemplatesService } from '../../../api/services/dot-templates/dot-tem
 import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
 import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotBulkInformationModule } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.module';
-import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
+import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
 import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 @Component({
@@ -61,8 +60,8 @@ import { DotListingDataTableComponent } from '../../../view/components/dot-listi
         DotActionMenuButtonComponent,
         DotAddToBundleComponent,
         DynamicDialogModule,
-        DotBulkInformationModule,
-        DotEmptyStateModule,
+        DotBulkInformationComponent,
+        DotEmptyStateComponent,
         AutoFocusModule
     ],
     providers: [DotTemplatesService, DialogService, DotSiteBrowserService]

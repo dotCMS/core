@@ -17,7 +17,11 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
+import {
+    DotContentTypesInfoService,
+    DotWorkflowService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import {
     DotAddToBundleComponent,
     DotApiLinkComponent,
@@ -64,18 +68,19 @@ import { DotContentTypesEditComponent } from './dot-content-types-edit.component
 import { DotAddToMenuService } from '../../../api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotDirectivesModule } from '../../../shared/dot-directives.module';
-import { DotInlineEditModule } from '../../../view/components/_common/dot-inline-edit/dot-inline-edit.module';
-import { DotMdIconSelectorModule } from '../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
-import { DotPageSelectorModule } from '../../../view/components/_common/dot-page-selector/dot-page-selector.module';
-import { SiteSelectorFieldModule } from '../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
+import { DotInlineEditComponent } from '../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
+import { DotMdIconSelectorComponent } from '../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
+import { DotPageSelectorComponent } from '../../../view/components/_common/dot-page-selector/dot-page-selector.component';
+import { DotSiteSelectorFieldComponent } from '../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotTextareaContentComponent } from '../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
-import { DotWorkflowsActionsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
+import { DotWorkflowsActionsSelectorFieldComponent } from '../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.component';
+import { DotWorkflowsActionsSelectorFieldService } from '../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 import { DotWorkflowsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
-import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotLoadingIndicatorComponent } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { IframeComponent } from '../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { SearchableDropdownComponent } from '../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
-import { DotBaseTypeSelectorModule } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
-import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotBaseTypeSelectorComponent } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.component';
+import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
 import { DotFieldHelperModule } from '../../../view/components/dot-field-helper/dot-field-helper.module';
 import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 import { DotPortletBoxComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
@@ -118,10 +123,10 @@ import { DotAddToMenuComponent } from '../dot-content-types-listing/components/d
         DotAddToBundleComponent,
         DotApiLinkComponent,
         DotAutofocusDirective,
-        DotBaseTypeSelectorModule,
+        DotBaseTypeSelectorComponent,
         DotContentTypeFieldsVariablesModule,
         DotContentTypesEditRoutingModule,
-        DotCopyLinkModule,
+        DotCopyLinkComponent,
         DotDialogComponent,
         DotDirectivesModule,
         DotSafeHtmlPipe,
@@ -133,29 +138,29 @@ import { DotAddToMenuComponent } from '../dot-content-types-listing/components/d
         DotIconComponent,
         DotMaxlengthModule,
         DotMenuComponent,
-        DotPageSelectorModule,
+        DotPageSelectorComponent,
         DotRelationshipsModule,
         DotTextareaContentComponent,
-        DotWorkflowsActionsSelectorFieldModule,
+        DotWorkflowsActionsSelectorFieldComponent,
         DotWorkflowsSelectorFieldModule,
         DragulaModule,
         DropdownModule,
         FormsModule,
         IframeComponent,
-        DotInlineEditModule,
-        DotLoadingIndicatorModule,
+        DotInlineEditComponent,
+        DotLoadingIndicatorComponent,
         InputTextModule,
         MultiSelectModule,
         OverlayPanelModule,
         RadioButtonModule,
         ReactiveFormsModule,
         SearchableDropdownComponent,
-        SiteSelectorFieldModule,
+        DotSiteSelectorFieldComponent,
         SplitButtonModule,
         TabViewModule,
         DotRelationshipTreeModule,
         DotPortletBoxComponent,
-        DotMdIconSelectorModule,
+        DotMdIconSelectorComponent,
         DotAddToMenuComponent,
         DotFieldRequiredDirective,
         DotCopyButtonComponent,
@@ -171,7 +176,9 @@ import { DotAddToMenuComponent } from '../dot-content-types-listing/components/d
         FieldService,
         DotAddToMenuService,
         DotMenuService,
-        DotNavigationService
+        DotNavigationService,
+        DotWorkflowsActionsService,
+        DotWorkflowsActionsSelectorFieldService
     ],
     schemas: []
 })
