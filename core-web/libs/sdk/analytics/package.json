@@ -23,6 +23,7 @@
         "analytics": "^0.8.0",
         "@analytics/core": "^0.13.0",
         "@analytics/storage-utils": "^0.4.0",
+        "@analytics/queue-utils": "^0.1.3",
         "@dotcms/uve": "latest"
     },
     "peerDependencies": {

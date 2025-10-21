@@ -1,8 +1,19 @@
-import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    inject,
+    output,
+    untracked
+} from '@angular/core';
 
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
-import { DotTreeFolderComponent } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotContentDriveMoveItems,
+    DotContentDriveUploadFiles,
+    DotTreeFolderComponent
+} from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
@@ -21,6 +32,9 @@ export class DotContentDriveSidebarComponent {
     readonly $folders = this.#store.folders;
     readonly $selectedNode = this.#store.selectedNode;
     readonly $currentSite = this.#store.currentSite;
+
+    readonly uploadFiles = output<DotContentDriveUploadFiles>();
+    readonly moveItems = output<DotContentDriveMoveItems>();
 
     readonly getSiteFoldersEffect = effect(() => {
         const currentSite = this.$currentSite();
@@ -55,7 +69,6 @@ export class DotContentDriveSidebarComponent {
     protected onNodeExpand(event: TreeNodeExpandEvent): void {
         const { node } = event;
         const { hostname, path } = node.data;
-        const fullPath = `${hostname}${path}`;
 
         if (node.children?.length > 0 || node.leaf) {
             node.expanded = true;
@@ -63,7 +76,7 @@ export class DotContentDriveSidebarComponent {
         }
 
         node.loading = true;
-        this.#store.loadChildFolders(fullPath).subscribe(({ folders }) => {
+        this.#store.loadChildFolders(path, hostname).subscribe(({ folders }) => {
             node.loading = false;
             node.expanded = true;
             node.leaf = folders.length === 0;

@@ -2,10 +2,11 @@
 
 :host {
     display: grid;
+    position: relative;
     grid-template-columns: min-content 1fr min-content;
 
-    /* This is the height according to figma for the first row */
-    grid-template-rows: min-content 7.125rem 1fr; //114px 1fr
+    /* Let the toolbar control its own height */
+    grid-template-rows: min-content min-content 1fr;
     grid-template-areas:
         "messages messages messages"
         "tree toolbar detail"
@@ -59,7 +60,7 @@ p-messages {
     }
 }
 
-dot-folder-list-view {
+dot-content-drive-dropzone {
     grid-area: list;
 }
 

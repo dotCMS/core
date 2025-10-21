@@ -37,6 +37,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -46,6 +48,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -123,7 +126,7 @@ public class WebAssetHelper {
      * @param path the path to the asset
      * @param user current user
      * @return the asset view
-     * @throws DotDataException any data related exception
+     * @throws DotDataException any data-related exception
      * @throws DotSecurityException any security violation exception
      */
     public WebAssetView getAssetInfo(final String path, final User user)
@@ -165,7 +168,7 @@ public class WebAssetHelper {
                 .sortByDesc(true)
         ;
 
-        //We're not really looking at system but / is mapped as system folder therefore
+        //We're not really looking at system but / is mapped as system folder, therefore,
         //whenever system folder pops up we need to find the folders straight under host
         if (folder.isSystemFolder()) {
             builder.withHostOrFolderId(host.getIdentifier());
@@ -175,7 +178,7 @@ public class WebAssetHelper {
 
         if (null != assetName) {
             Logger.debug(this, String.format("Asset name: [%s]" , assetName));
-            //We're requesting an asset specifically therefore we need to find it and  build the response
+            //We're requesting an asset specifically, therefore, we need to find it and  build the response
             builder.withFileName(assetName);
 
             final List<Contentlet> folderContent = sortByIdentifier(
@@ -198,7 +201,7 @@ public class WebAssetHelper {
             //We're requesting a folder and all of its contents
             final List<Folder> subFolders = folderContent.stream().filter(Folder.class::isInstance)
                     .map(f -> (Folder) f).collect(Collectors.toList());
-            //Once we get the folder contents we need to include all other versions per identifier
+            //Once we get the folder contents, we need to include all other versions per identifier
             final Set<String> identifiers = folderContent.stream().filter(Contentlet.class::isInstance)
                     .map(f -> (Contentlet) f).map(Contentlet::getIdentifier)
                     .collect(Collectors.toSet());
@@ -934,6 +937,73 @@ public class WebAssetHelper {
             return Optional.of("_");
         }
         return Optional.empty();
+    }
+
+    /**
+     * This endpoint is intended to be used to feed content-drive it behaves quite similar to BrowserResource
+     * except that this can take a site/folder path expressed in the form //site/folder/subfolder/
+     * The set of params that can be passed here is wider as it can take multiple languages and content-types making it more flexible
+     * This is also set to use ES for text filtering while BrowserResource relies entirely on the db
+     * @param requestForm Json body request
+     * @param user Current logged in user
+     * @return a Map with all requested properties
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public Map<String, Object> driveSearch(final DriveRequestForm requestForm, final User user)
+            throws DotDataException, DotSecurityException {
+        final List<Long> langIds = requestForm.language().stream().map(LanguageUtil::getLanguageId).collect(Collectors.toList());
+        List<BaseContentType> baseContentTypes = BaseContentType.allBaseTypes();
+        if(null != requestForm.baseTypes()) {
+                 baseContentTypes = requestForm.baseTypes().stream()
+                    .map(s -> BaseContentType.getBaseContentType(s.toUpperCase()))
+                    .collect(Collectors.toList());
+        }
+        final ContentTypeAPI myContentTypeAPI = APILocator.getContentTypeAPI(user);
+        List<String> contentTypeIds = List.of();
+        if(null != requestForm.contentTypes()){
+            contentTypeIds = requestForm.contentTypes().stream().map(s ->
+                Try.of(() -> myContentTypeAPI.find(s).id()).getOrNull()
+            ).filter(Objects::nonNull).collect(Collectors.toList());
+        }
+
+        final AssetPathResolver resolver = AssetPathResolver.newInstance();
+        final String assetPath = requestForm.assetPath();
+
+            final ResolvedAssetAndPath assetAndPath = resolver.resolve(assetPath, user, false);
+            final Host host = assetAndPath.resolvedHost();
+            final Folder folder = assetAndPath.resolvedFolder();
+
+            final Builder builder = BrowserQuery.builder();
+            builder.withUser(user)
+                    .withContentTypes(contentTypeIds)
+                    .withBaseTypes(baseContentTypes)
+                    .showDotAssets(requestForm.showDotAssets())
+                    .showFiles(requestForm.showFiles())
+                    .showFolders(requestForm.showFolders())
+                    .showArchived(requestForm.showArchived())
+                    .showWorking(requestForm.showWorking())
+                    .showLinks(requestForm.showLinks())
+                    .withLanguageIds(langIds)
+                    .showImages(requestForm.showImages())
+                    .showContent(requestForm.showContent())
+                    .offset(requestForm.offset())
+                    .maxResults(requestForm.maxResults())
+                    .sortBy(requestForm.sortBy());
+
+            //We're requesting an asset specifically therefore we need to find it and  build the response
+            if (folder.isSystemFolder()) {
+                builder.withHostOrFolderId(host.getIdentifier());
+            } else {
+                builder.withHostOrFolderId(folder.getInode());
+            }
+
+            if(null != requestForm.filter()) {
+                builder.withUseElasticsearchFiltering(true) //We rely on ES here when filtering text
+                .withFilter(requestForm.filter());
+            }
+
+        return browserAPI.getPaginatedFolderContents(builder.build());
     }
 
     /**

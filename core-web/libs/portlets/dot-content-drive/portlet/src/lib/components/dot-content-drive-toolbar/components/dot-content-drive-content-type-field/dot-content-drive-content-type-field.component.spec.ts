@@ -108,9 +108,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
         it('should trigger initial content types API request on component initialization', () => {
             spectator.detectChanges();
-            expect(mockContentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
-                filter: ''
-            });
+            expect(mockContentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({});
         });
 
         it('should filter out forms and system content types after initial load', async () => {
@@ -196,9 +194,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         it('should call initial content types API with pagination on component initialization', () => {
             spectator.detectChanges();
 
-            expect(mockContentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
-                filter: ''
-            });
+            expect(mockContentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({});
             expect(mockContentTypeService.getContentTypes).not.toHaveBeenCalled();
         });
 
@@ -211,7 +207,6 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
             // Due to TODO in component, type parameter is always undefined
             expect(mockContentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
-                filter: '',
                 type: 'CONTENT,WIDGET'
             });
         });
