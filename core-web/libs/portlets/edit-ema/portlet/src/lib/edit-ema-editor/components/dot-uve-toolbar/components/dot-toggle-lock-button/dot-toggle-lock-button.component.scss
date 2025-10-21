@@ -20,20 +20,15 @@
     height: $spacing-5;
 
     &--locked {
-        background: #e0edff;
-        color: #3b5fd5;
-
-        &:hover:not(:disabled) {
-            background: #d0e3ff;
-            border-color: #a0bfff;
-        }
+        background: $color-palette-blue-tint;
+        color: $color-palette-blue;
     }
 
     // Unlocked state - Gray/White
     &--unlocked {
         background: $white;
-        color: #3d404d;
-        border-color: #d1d4db;
+        color: $color-palette-gray-900;
+        border-color: $color-palette-gray-400;
 
         &:hover:not(:disabled) {
             background: $color-palette-gray-200;
