@@ -101,35 +101,44 @@ export class DotHistoryTimelineItemComponent {
         const labels = this.$labels();
         const item = this.$item();
 
-        return [
-            {
+        const items = [];
+
+        if (!item.live) {
+            items.push({
+                id: 'restore',
                 label: labels.restore,
-                disabled: item.live,
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.RESTORE,
                         item
                     })
-            },
-            // {
-            //     label: labels.compare,
-            //     disabled: true,
-            //     command: () =>
-            //         this.actionTriggered.emit({
-            //             type: DotHistoryTimelineItemActionType.COMPARE,
-            //             item
-            //         })
-            // },
-            {
+            });
+        }
+        if (!item.working) {
+            items.push({
+                id: 'compare',
+                label: labels.compare,
+                command: () =>
+                    this.actionTriggered.emit({
+                        type: DotHistoryTimelineItemActionType.COMPARE,
+                        item
+                    })
+            });
+        }
+
+        if (!item.working || !item.live) {
+            items.push({
+                id: 'delete',
                 label: labels.delete,
-                disabled: item.working || item.live, // disable the delete button for working or live versions
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.DELETE,
                         item
                     })
-            }
-        ];
+            });
+        }
+
+        return items;
     });
 
     /**
