@@ -44,6 +44,7 @@ const initialState: DotContentDriveState = {
     path: DEFAULT_PATH,
     filters: {},
     items: [],
+    selectedItems: [],
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
@@ -127,12 +128,15 @@ export const DotContentDriveStore = signalStore(
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
+            setSelectedItems(items: DotContentDriveItem[]) {
+                patchState(store, { selectedItems: items });
+            },
             loadItems() {
                 const { query, pagination, sort, currentSite } = store.$searchParams();
                 const { limit, offset } = pagination;
                 const { field, order } = sort;
 
-                patchState(store, { status: DotContentDriveStatus.LOADING });
+                patchState(store, { status: DotContentDriveStatus.LOADING, selectedItems: [] });
 
                 // Avoid fetching content for SYSTEM_HOST sites
                 if (currentSite?.identifier === SYSTEM_HOST.identifier) {

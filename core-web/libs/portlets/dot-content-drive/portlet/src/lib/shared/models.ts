@@ -86,6 +86,7 @@ export interface DotContentDriveDialog {
  */
 export interface DotContentDriveState extends DotContentDriveInit {
     items: DotContentDriveItem[];
+    selectedItems: DotContentDriveItem[];
     status: DotContentDriveStatus;
     totalItems: number;
     pagination: DotContentDrivePagination;

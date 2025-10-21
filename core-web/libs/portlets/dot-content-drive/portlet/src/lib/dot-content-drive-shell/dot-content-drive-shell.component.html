@@ -47,6 +47,7 @@
         [loading]="$loading()"
         (paginate)="onPaginate($event)"
         (sort)="onSort($event)"
+        (selectionChange)="onSelectItems($event)"
         (rightClick)="onContextMenu($event)"
         (doubleClick)="onDoubleClick($event)"
         (dragStart)="onDragStart($event)"
