@@ -151,4 +151,100 @@ describe('DotContentDriveNavigationService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['c/content/test-inode-000']);
         });
     });
+
+    describe('editPage', () => {
+        it('should navigate to edit page with urlMap when available', () => {
+            const mockContentlet = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                urlMap: '/about-us',
+                url: '/fallback-url',
+                languageId: 1
+            });
+
+            service.editPage(mockContentlet);
+
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/about-us',
+                language_id: 1
+            });
+        });
+
+        it('should navigate to edit page with url when urlMap is not available', () => {
+            const mockContentlet = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                url: '/contact',
+                languageId: 2
+            });
+
+            service.editPage(mockContentlet);
+
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/contact',
+                language_id: 2
+            });
+        });
+
+        it('should prefer urlMap over url when both are available', () => {
+            const mockContentlet = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                urlMap: '/primary-url',
+                url: '/secondary-url',
+                languageId: 3
+            });
+
+            service.editPage(mockContentlet);
+
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/primary-url',
+                language_id: 3
+            });
+        });
+
+        it('should handle empty urlMap and fallback to url', () => {
+            const mockContentlet = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                urlMap: '',
+                url: '/home',
+                languageId: 1
+            });
+
+            service.editPage(mockContentlet);
+
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/home',
+                language_id: 1
+            });
+        });
+
+        it('should handle undefined urlMap and use url', () => {
+            const mockContentlet = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                urlMap: undefined,
+                url: '/services',
+                languageId: 4
+            });
+
+            service.editPage(mockContentlet);
+
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/services',
+                language_id: 4
+            });
+        });
+
+        it('should pass correct language_id parameter', () => {
+            const mockContentlet = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                urlMap: '/blog-post',
+                languageId: 5
+            });
+
+            service.editPage(mockContentlet);
+
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/blog-post',
+                language_id: 5
+            });
+        });
+    });
 });
