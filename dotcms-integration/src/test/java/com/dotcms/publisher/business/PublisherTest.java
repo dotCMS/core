@@ -575,6 +575,81 @@ public class PublisherTest extends IntegrationTestBase {
 
     }
 
+
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.PublishDateUpdater#shouldPublishContent(Contentlet, Date)}
+     *
+     * Given Scenario: Content with a publish date in the past
+     * Expected Result: Should be auto-published or not depending on the content publish date field  
+     *
+     * @throws Exception
+     */
+    @Test
+    public void test_shouldNotRepublish() throws Exception {
+
+
+        final Field publishField = new FieldDataGen().defaultValue(null)
+                .type(DateTimeField.class).next();
+
+        ContentType contentType = new ContentTypeDataGen()
+                .field(publishField)
+                .publishDateFieldVarName(publishField.variable())
+                .nextPersisted();
+
+        Contentlet contentlet = null;
+
+        try {
+            // Create a publish date 10 minutes in the past (simulating content that should have been published)
+            final Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.MINUTE, -10);
+            final Date publishDateInPast = calendar.getTime();
+
+            // Create contentlet with publish date in the past
+            contentlet = new ContentletDataGen(contentType)
+                    .setProperty(publishField.variable(), publishDateInPast)
+                    .nextPersisted();
+
+
+            assertFalse("Content should not be live initially", contentlet.isLive());
+
+
+            final Date currentFireTime = new Date();
+
+
+            final Date previousJobRunTime = PublishDateUpdater.getPreviousJobRunTime(currentFireTime);
+            assertNotNull("Previous job run time should be calculated", previousJobRunTime);
+            assertTrue("Previous run time should be before current time",
+                    previousJobRunTime.before(currentFireTime));
+
+
+            final boolean shouldPublish = PublishDateUpdater.shouldPublishContent(contentlet, previousJobRunTime);
+
+            assertFalse("Content with publish date before previous job run should NOT be republished",
+                    shouldPublish);
+            
+            final long timeBetween = previousJobRunTime.getTime() +
+                    ((currentFireTime.getTime() - previousJobRunTime.getTime()) / 2);
+            final Date recentPublishDate = new Date(timeBetween);
+
+            final Contentlet recentContentlet = new ContentletDataGen(contentType)
+                    .setProperty(publishField.variable(), recentPublishDate)
+                    .nextPersisted();
+
+            final boolean shouldPublishRecent = PublishDateUpdater.shouldPublishContent(
+                    recentContentlet, previousJobRunTime);
+
+            assertTrue("Content with publish date between previous job run and now SHOULD be published",
+                    shouldPublishRecent);
+
+            ContentletDataGen.remove(recentContentlet);
+
+        } finally {
+            ContentletDataGen.remove(contentlet);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
     private PushResult pushFolderPage(final String bundleName, final FolderPage folderPage, final User user, final PPBean ppBean)
             throws DotDataException, DotPublisherException, InstantiationException, IllegalAccessException, DotSecurityException {
 
