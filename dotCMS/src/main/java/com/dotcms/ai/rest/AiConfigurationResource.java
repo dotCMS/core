@@ -1,11 +1,5 @@
 package com.dotcms.ai.rest;
 
-import com.dotcms.ai.config.AiModelConfig;
-import com.dotcms.ai.config.AiModelConfigCatalog;
-import com.dotcms.ai.config.AiModelConfigCatalogImpl;
-import com.dotcms.ai.config.AiVendor;
-import com.dotcms.ai.config.parser.AiModelConfigParser;
-import com.dotcms.ai.config.parser.AiVendorCatalogData;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
@@ -14,14 +8,12 @@ import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Secret;
-import com.dotcms.security.apps.Type;
 import com.dotcms.util.ClasspathResourceLoader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.StringUtils;
@@ -39,9 +31,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Helper class for AI configuration
+ * @author jsanca
+ */
 @Path("/v1/ai/configuration")
 @Tag(name = "AI", description = "AI to support configuration endpoints")
 public class AiConfigurationResource {
