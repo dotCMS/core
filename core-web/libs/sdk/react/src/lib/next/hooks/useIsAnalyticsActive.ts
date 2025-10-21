@@ -5,6 +5,7 @@ import { isAnalyticsActive } from '@dotcms/uve';
 // Subscriber store and state cache
 const subscribers = new Set<() => void>();
 let currentValue: boolean | null = null;
+let isInitialized = false;
 
 // Event handlers for analytics lifecycle
 function handleAnalyticsReady() {
@@ -17,10 +18,15 @@ function handleAnalyticsCleanup() {
     subscribers.forEach((callback) => callback());
 }
 
-// Register module-level event listeners
-if (typeof window !== 'undefined') {
+// Lazy initialization: only set up event listeners when first hook is used
+function initializeAnalyticsListeners() {
+    if (isInitialized || typeof window === 'undefined') {
+        return;
+    }
+
     window.addEventListener('dotcms:analytics:ready', handleAnalyticsReady);
     window.addEventListener('dotcms:analytics:cleanup', handleAnalyticsCleanup);
+    isInitialized = true;
 }
 
 /**
@@ -53,6 +59,7 @@ export const useIsAnalyticsActive = (): boolean => {
     return useSyncExternalStore(
         // Subscribe: register callback for state changes
         (callback) => {
+            initializeAnalyticsListeners(); // Lazy init on first subscription
             subscribers.add(callback);
             return () => subscribers.delete(callback);
         },
