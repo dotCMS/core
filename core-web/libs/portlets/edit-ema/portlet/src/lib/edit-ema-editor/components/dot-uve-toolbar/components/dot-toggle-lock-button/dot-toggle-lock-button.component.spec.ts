@@ -160,7 +160,7 @@ describe('DotToggleLockButtonComponent', () => {
                 inode: 'test-inode-locked-other',
                 isLocked: true,
                 lockedBy: 'another-user',
-                canLock: false,
+                canLock: true,
                 isLockedByCurrentUser: false,
                 showBanner: true,
                 showOverlay: true
