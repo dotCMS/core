@@ -26,6 +26,7 @@ import {
 } from '../../../shared/mocks';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { UVEState } from '../../models';
+import { DotPropertiesService } from '@dotcms/data-access';
 
 const emptyParams = {} as DotPageApiParams;
 
@@ -74,6 +75,9 @@ describe('withEditor', () => {
             mockProvider(ActivatedRoute),
             mockProvider(Router),
             mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
             {
                 provide: DotPageApiService,
                 useValue: {

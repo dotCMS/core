@@ -42,10 +42,8 @@ export function withFlags(flags: FeaturedFlags[]) {
                 propertiesService
                     .getFeatureFlags(flags)
                     .pipe(take(1))
-                    .subscribe((_flags) => {
-                        store.setFlags({
-                            FEATURE_FLAG_UVE_TOGGLE_LOCK: true
-                        });
+                    .subscribe((flags) => {
+                        store.setFlags(flags);
                     });
             }
         })

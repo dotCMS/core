@@ -16,6 +16,7 @@ import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
+import { DotPropertiesService } from '@dotcms/data-access';
 
 const pageParams = {
     url: 'test-url',
@@ -61,6 +62,9 @@ describe('withEditor', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(Router),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
             {
                 provide: DotPageApiService,
                 useValue: {
