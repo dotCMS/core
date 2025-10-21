@@ -5,6 +5,24 @@ The `@dotcms/types` package contains TypeScript type definitions for the dotCMS 
 📦 [@dotcms/types on npm](https://www.npmjs.com/package/@dotcms/types)
 🛠️ [View source on GitHub](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/types)
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Installation](#installation)
+- [Commonly Used Types](#commonly-used-types)
+- [Type Hierarchy (Jump to Definitions)](#type-hierarchy-jump-to-definitions)
+  - [dotCMS Content & Pages](#dotcms-content--pages)
+  - [Universal Visual Editor (UVE)](#universal-visual-editor-uve)
+  - [Block Editor](#block-editor)
+  - [Client & HTTP](#client--http)
+  - [Error Handling](#error-handling)
+- [Usage Examples](#usage-examples)
+  - [Error Type Checking](#error-type-checking)
+- [Support](#support)
+- [Contributing](#contributing)
+- [Licensing](#licensing)
+- [Changelog](#changelog)
+
 ## Overview
 
 ### When to Use It
@@ -26,24 +44,6 @@ The `@dotcms/types` package contains TypeScript type definitions for the dotCMS 
 ```bash
 npm install @dotcms/types@latest --save-dev
 ```
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Installation](#installation)
-- [Commonly Used Types](#commonly-used-types)
-- [Type Hierarchy (Jump to Definitions)](#type-hierarchy-jump-to-definitions)
-  - [dotCMS Content & Pages](#dotcms-content--pages)
-  - [Universal Visual Editor (UVE)](#universal-visual-editor-uve)
-  - [Block Editor](#block-editor)
-  - [Client & HTTP](#client--http)
-  - [Error Handling](#error-handling)
-- [Usage Examples](#usage-examples)
-  - [Error Type Checking](#error-type-checking)
-- [Support](#support)
-- [Contributing](#contributing)
-- [Changelog](#changelog)
-- [Licensing](#licensing)
 
 ## Commonly Used Types
 
