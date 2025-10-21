@@ -126,6 +126,8 @@ describe('DotContentDriveShellComponent', () => {
                     setStatus: jest.fn(),
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
+                    selectedItems: jest.fn().mockReturnValue([]),
+                    setSelectedItems: jest.fn(),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: jest.fn().mockReturnValue(undefined),
@@ -402,6 +404,52 @@ describe('DotContentDriveShellComponent', () => {
                 field: 'modDate',
                 order: DotContentDriveSortOrder.ASC
             });
+        });
+    });
+
+    describe('onSelectItems', () => {
+        it('should update selectedItems in store when selectionChange is emitted', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            const selectedItems = [MOCK_ITEMS[0], MOCK_ITEMS[1]];
+
+            spectator.triggerEventHandler(folderListView, 'selectionChange', selectedItems);
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith(selectedItems);
+        });
+
+        it('should update store with empty array when selection is cleared', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'selectionChange', []);
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+        });
+
+        it('should update store with single item when one item is selected', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            const singleItem = [MOCK_ITEMS[0]];
+
+            spectator.triggerEventHandler(folderListView, 'selectionChange', singleItem);
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith(singleItem);
+        });
+
+        it('should update store with all items when all items are selected', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'selectionChange', MOCK_ITEMS);
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith(MOCK_ITEMS);
         });
     });
 
