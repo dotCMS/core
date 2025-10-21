@@ -92,6 +92,10 @@
     .p-message-text {
         color: $color-accessible-text-yellow;
     }
+
+    .p-button-icon {
+        color: $color-accessible-text-yellow !important;
+    }
 }
 
 .p-message.p-message-error {

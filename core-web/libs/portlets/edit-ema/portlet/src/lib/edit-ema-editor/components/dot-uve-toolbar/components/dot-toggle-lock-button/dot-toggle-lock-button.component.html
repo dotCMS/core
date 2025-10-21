@@ -1,0 +1,25 @@
+@if ($toggleLockOptions()) {
+    <button
+        class="lock-button"
+        [class.lock-button--locked]="$toggleLockOptions().isLocked"
+        [class.lock-button--unlocked]="!$toggleLockOptions().isLocked"
+        [disabled]="$lockLoading()"
+        (click)="toggleLock()"
+        data-testId="toggle-lock-button">
+        <i [class]="$toggleLockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"></i>
+        <span>{{ $buttonLabel() | dm }}</span>
+    </button>
+} @else {
+    @if ($unlockButton(); as unlockButton) {
+        <p-button
+            [disabled]="unlockButton.disabled"
+            [pTooltip]="unlockButton.info.message | dm: unlockButton.info.args"
+            [escape]="false"
+            tooltipPosition="bottom"
+            icon="pi pi-lock"
+            styleClass="p-button-text p-button-sm p-button-rounded unlock-button"
+            [loading]="unlockButton.loading"
+            (click)="unlockPage(unlockButton.inode)"
+            data-testId="uve-toolbar-unlock-button"></p-button>
+    }
+}

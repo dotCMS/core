@@ -1,4 +1,41 @@
 @if ($shellProps()?.canRead) {
+    @if ($toggleLockOptions()?.showBanner && $showBanner()) {
+        <p-messages severity="warning" data-testid="message">
+            <ng-template pTemplate="content">
+                <div class="flex align-items-center justify-content-between gap-2 w-full">
+                    <div class="flex align-items-center gap-2">
+                        <i class="pi pi-info-circle"></i>
+                        <span class="lock-message" data-testid="message-content">
+                            {{
+                                'uve.shell.page.locked.locked.by'
+                                    | dm: [$toggleLockOptions().lockedBy]
+                            }}
+                            @if ($toggleLockOptions().canLock) {
+                                <button class="unlock-link" type="button" (click)="toggleLock()">
+                                    {{ 'uve.shell.page.locked.unlock.to.start.editing' | dm }}
+                                </button>
+                                {{
+                                    'uve.shell.page.locked.unlock.to.start.editing.description' | dm
+                                }}
+                            } @else {
+                                {{
+                                    'uve.shell.page.locked.you.dont.have.permissions.to.unlock.this.content'
+                                        | dm
+                                }}
+                            }
+                        </span>
+                    </div>
+                    <p-button
+                        styleClass="p-button-text p-button-sm p-button-icon-only clear-button"
+                        type="button"
+                        icon="pi pi-times"
+                        data-testid="close-message"
+                        (click)="onCloseMessage()" />
+                </div>
+            </ng-template>
+        </p-messages>
+    }
+
     <router-outlet></router-outlet>
     <dot-edit-ema-navigation-bar
         [items]="$shellProps().items"

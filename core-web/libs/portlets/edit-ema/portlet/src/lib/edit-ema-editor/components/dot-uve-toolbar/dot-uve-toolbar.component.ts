@@ -39,6 +39,7 @@ import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-sel
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
@@ -69,7 +70,8 @@ import { convertLocalTimeToUTC } from '../../../utils';
         DotMessagePipe,
         DotUveWorkflowActionsComponent,
         ChipModule,
-        DotEditorModeSelectorComponent
+        DotEditorModeSelectorComponent,
+        DotToggleLockButtonComponent
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -314,41 +316,5 @@ export class DotUveToolbarComponent {
         currentDate.setHours(0, 0, 0, 0);
 
         return currentDate;
-    }
-
-    /**
-     * Unlocks a page with the specified inode.
-     *
-     * @param {string} inode
-     * @memberof EditEmaToolbarComponent
-     */
-    unlockPage(inode: string) {
-        this.#messageService.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-            detail: this.#dotMessageService.get('edit.ema.page.is.being.unlocked')
-        });
-
-        this.#dotContentletLockerService
-            .unlock(inode)
-            .pipe(
-                tapResponse({
-                    next: () => {
-                        this.#messageService.add({
-                            severity: 'success',
-                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-                            detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
-                        });
-                    },
-                    error: () => {
-                        this.#messageService.add({
-                            severity: 'error',
-                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-                            detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
-                        });
-                    }
-                })
-            )
-            .subscribe(() => this.#store.reloadCurrentPage());
     }
 }
