@@ -153,30 +153,35 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(timeDisplay.textContent?.trim()).not.toBe('Current');
         });
 
-        it('should disable delete action for live items', () => {
-            // Item is live by default
+        it('should show compare and delete actions for live items', () => {
+            // Item is live by default (live: true, working: false)
             const menuItems = spectator.component.$menuItems();
-            expect(menuItems[0].disabled).toBe(true); // Delete should be disabled for live items
+            expect(menuItems).toHaveLength(2);
+            expect(menuItems[0].id).toBe('compare');
+            expect(menuItems[1].id).toBe('delete');
         });
 
-        it('should disable delete action for working items', () => {
-            // Set item to working
+        it('should show restore and delete actions for working items', () => {
+            // Set item to working (live: false, working: true)
             spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
             spectator.detectChanges();
 
             const menuItems = spectator.component.$menuItems();
-            const deleteItem = menuItems.find((item) => item.label === 'Delete');
-            expect(deleteItem?.disabled).toBe(true); // Delete should be disabled for working items
+            expect(menuItems).toHaveLength(2);
+            expect(menuItems[0].id).toBe('restore');
+            expect(menuItems[1].id).toBe('delete');
         });
 
-        it('should enable delete action for archived items', () => {
+        it('should show all actions (restore, compare, delete) for archived items', () => {
             // Set item to archived (neither live nor working)
             spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
             spectator.detectChanges();
 
             const menuItems = spectator.component.$menuItems();
-            const deleteItem = menuItems.find((item) => item.label === 'Delete');
-            expect(deleteItem?.disabled).toBe(false); // Delete should be enabled for archived items
+            expect(menuItems).toHaveLength(3);
+            expect(menuItems[0].id).toBe('restore');
+            expect(menuItems[1].id).toBe('compare');
+            expect(menuItems[2].id).toBe('delete');
         });
     });
 
@@ -199,13 +204,14 @@ describe('DotHistoryTimelineItemComponent', () => {
         });
 
         it('should compute menu items with correct actions for live item', () => {
-            // Item is live by default
+            // Item is live by default (live: true, working: false)
             const menuItems = spectator.component.$menuItems();
 
             expect(menuItems).toHaveLength(2);
-            expect(menuItems[0].label).toBe('Restore');
+            expect(menuItems[0].id).toBe('compare');
+            expect(menuItems[0].label).toBe('Compare');
+            expect(menuItems[1].id).toBe('delete');
             expect(menuItems[1].label).toBe('Delete');
-            expect(menuItems[1].disabled).toBe(true); // Live item should have delete disabled
         });
 
         it('should compute menu items with correct actions for archived item', () => {
@@ -215,10 +221,13 @@ describe('DotHistoryTimelineItemComponent', () => {
 
             const menuItems = spectator.component.$menuItems();
 
-            expect(menuItems).toHaveLength(2);
+            expect(menuItems).toHaveLength(3);
+            expect(menuItems[0].id).toBe('restore');
             expect(menuItems[0].label).toBe('Restore');
-            expect(menuItems[1].label).toBe('Delete');
-            expect(menuItems[1].disabled).toBe(false); // Archived item should have delete enabled
+            expect(menuItems[1].id).toBe('compare');
+            expect(menuItems[1].label).toBe('Compare');
+            expect(menuItems[2].id).toBe('delete');
+            expect(menuItems[2].label).toBe('Delete');
         });
     });
 
@@ -258,6 +267,25 @@ describe('DotHistoryTimelineItemComponent', () => {
                 item: { ...mockVersionItem, live: false, working: false }
             });
         });
+
+        it('should emit COMPARE action when compare menu item is triggered', () => {
+            // Set item to live (working: false) to enable compare action
+            spectator.setInput('item', { ...mockVersionItem, live: true, working: false });
+            spectator.detectChanges();
+
+            const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
+            const menuItems = spectator.component.$menuItems();
+
+            // Find and trigger compare action
+            const compareMenuItem = menuItems.find((item) => item.label === 'Compare');
+            expect(compareMenuItem).toBeDefined();
+            compareMenuItem?.command();
+
+            expect(actionSpy).toHaveBeenCalledWith({
+                type: DotHistoryTimelineItemActionType.COMPARE,
+                item: { ...mockVersionItem, live: true, working: false }
+            });
+        });
     });
 
     describe('Active State', () => {
@@ -289,14 +317,34 @@ describe('DotHistoryTimelineItemComponent', () => {
     });
 
     describe('Menu Items Configuration', () => {
-        it('should disable restore action for live items', () => {
+        it('should not show restore action for live items', () => {
             spectator.setInput('item', { ...mockVersionItem, live: true });
             spectator.detectChanges();
 
             const menuItems = spectator.component.$menuItems();
-            const restoreItem = menuItems.find((item) => item.label === 'Restore');
+            const restoreItem = menuItems.find((item) => item.id === 'restore');
 
-            expect(restoreItem?.disabled).toBe(true);
+            expect(restoreItem).toBeUndefined();
+        });
+
+        it('should not show compare action for working items', () => {
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+            const compareItem = menuItems.find((item) => item.id === 'compare');
+
+            expect(compareItem).toBeUndefined();
+        });
+
+        it('should not show delete action for items that are both live and working', () => {
+            spectator.setInput('item', { ...mockVersionItem, live: true, working: true });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+            const deleteItem = menuItems.find((item) => item.id === 'delete');
+
+            expect(deleteItem).toBeUndefined();
         });
     });
 
@@ -310,14 +358,16 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(timeDisplay.textContent?.trim()).toBe('Current');
         });
 
-        it('should disable delete action for working versions', () => {
+        it('should show delete action for working versions (non-live)', () => {
             spectator.setInput('item', { ...mockVersionItem, working: true, live: false });
             spectator.detectChanges();
 
             const menuItems = spectator.component.$menuItems();
-            const deleteItem = menuItems.find((item) => item.label === 'Delete');
+            const deleteItem = menuItems.find((item) => item.id === 'delete');
 
-            expect(deleteItem?.disabled).toBe(true);
+            // Delete shows for working versions when they're not live
+            expect(deleteItem).toBeDefined();
+            expect(deleteItem?.label).toBe('Delete');
         });
 
         it('should apply draft marker class for working versions', () => {
