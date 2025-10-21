@@ -17,8 +17,10 @@ import {
     getSessionId,
     getUserId,
     getUtmData,
-    initializeActivityTracking
+    initializeActivityTracking,
+    validateAnalyticsConfig
 } from './dot-content-analytics.utils';
+import { DotCMSAnalyticsConfig } from './models';
 
 describe('Analytics Utils', () => {
     let mockLocation: Location;
@@ -42,6 +44,99 @@ describe('Analytics Utils', () => {
 
         // Clean up any previous script tags
         document.querySelectorAll('script').forEach((script) => script.remove());
+    });
+
+    describe('validateAnalyticsConfig', () => {
+        it('should return null when all required fields are present', () => {
+            const validConfig: DotCMSAnalyticsConfig = {
+                server: 'https://example.com',
+                siteAuth: 'test-auth-key',
+                debug: false,
+                autoPageView: false
+            };
+
+            const result = validateAnalyticsConfig(validConfig);
+
+            expect(result).toBeNull();
+        });
+
+        it('should return ["siteAuth"] when siteAuth is missing', () => {
+            const invalidConfig: DotCMSAnalyticsConfig = {
+                server: 'https://example.com',
+                siteAuth: '',
+                debug: false,
+                autoPageView: false
+            };
+
+            const result = validateAnalyticsConfig(invalidConfig);
+
+            expect(result).toEqual(['"siteAuth"']);
+        });
+
+        it('should return ["server"] when server is missing', () => {
+            const invalidConfig: DotCMSAnalyticsConfig = {
+                server: '',
+                siteAuth: 'test-auth-key',
+                debug: false,
+                autoPageView: false
+            };
+
+            const result = validateAnalyticsConfig(invalidConfig);
+
+            expect(result).toEqual(['"server"']);
+        });
+
+        it('should return both fields when both are missing', () => {
+            const invalidConfig: DotCMSAnalyticsConfig = {
+                server: '',
+                siteAuth: '',
+                debug: false,
+                autoPageView: false
+            };
+
+            const result = validateAnalyticsConfig(invalidConfig);
+
+            expect(result).toEqual(['"siteAuth"', '"server"']);
+        });
+
+        it('should treat whitespace-only strings as invalid', () => {
+            const invalidConfig: DotCMSAnalyticsConfig = {
+                server: '   ',
+                siteAuth: '  ',
+                debug: false,
+                autoPageView: false
+            };
+
+            const result = validateAnalyticsConfig(invalidConfig);
+
+            expect(result).toEqual(['"siteAuth"', '"server"']);
+        });
+
+        it('should handle undefined values', () => {
+            const invalidConfig: DotCMSAnalyticsConfig = {
+                server: undefined as any,
+                siteAuth: undefined as any,
+                debug: false,
+                autoPageView: false
+            };
+
+            const result = validateAnalyticsConfig(invalidConfig);
+
+            expect(result).toEqual(['"siteAuth"', '"server"']);
+        });
+
+        it('should validate only siteAuth when server is valid but siteAuth is whitespace', () => {
+            const invalidConfig: DotCMSAnalyticsConfig = {
+                server: 'https://example.com',
+                siteAuth: '   ',
+                debug: false,
+                autoPageView: false
+            };
+
+            const result = validateAnalyticsConfig(invalidConfig);
+
+            expect(result).toEqual(['"siteAuth"']);
+        });
     });
 
     describe('getAnalyticsConfig', () => {
