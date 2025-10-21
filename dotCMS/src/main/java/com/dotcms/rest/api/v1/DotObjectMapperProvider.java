@@ -14,10 +14,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import com.google.common.annotations.VisibleForTesting;
-import io.vavr.Lazy;
 import java.io.IOException;
 import java.time.Instant;
 
@@ -27,16 +26,18 @@ import java.time.Instant;
  */
 public class DotObjectMapperProvider {
 
-    final static Lazy<Boolean> ALPHA_KEYS = Lazy.of(()->Config.getBooleanProperty("dotcms.rest.sort.json.properties", true));
-    final static Lazy<Boolean> USE_BLACKBIRD = Lazy.of(()->Config.getBooleanProperty("jackson.module.blackbird.enable", true));
-    final static Lazy<Boolean> USE_JDK8_MODULE = Lazy.of(()->Config.getBooleanProperty("jackson.module.jdk8module.enable", false));
+
     private final ObjectMapper defaultObjectMapper;
 
     /**
-     * Get's the default object mapper.
+     * Gets the default object mapper.
      * @return ObjectMapper
      */
     public ObjectMapper getDefaultObjectMapper() {
+        return defaultObjectMapper;
+    }
+
+    public ObjectMapper getObjectMapper() {
         return defaultObjectMapper;
     }
 
@@ -49,17 +50,24 @@ public class DotObjectMapperProvider {
         this.defaultObjectMapper = defaultObjectMapper;
     }
 
-    public static ObjectMapper createDefaultMapper() {
+    private static ObjectMapper createDefaultMapper() {
+
+        boolean alphaKeys = Config.getBooleanProperty("dotcms.rest.sort.json.properties", true);
+        boolean useBlackbird = Config.getBooleanProperty("jackson.module.blackbird.enable", true);
+        boolean useJdk8Module = Config.getBooleanProperty("jackson.module.jdk8module.enable", false);
+
 
         final ObjectMapper result = new ObjectMapper();
         result.disable(DeserializationFeature.WRAP_EXCEPTIONS);
 
-        result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, ALPHA_KEYS.get());
-        result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, ALPHA_KEYS.get());
-        if(USE_BLACKBIRD.get()) {
+        result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, alphaKeys);
+        result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, alphaKeys);
+        result.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
+        if (useBlackbird) {
             result.registerModule(new BlackbirdModule());
         }
-        if(USE_JDK8_MODULE.get()){
+        if (useJdk8Module) {
             result.registerModule(new Jdk8Module());
         }
 

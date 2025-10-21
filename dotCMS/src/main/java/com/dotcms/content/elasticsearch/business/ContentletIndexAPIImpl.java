@@ -109,7 +109,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
-    private static ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+    private static ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     public ContentletIndexAPIImpl() {
         queueApi = APILocator.getReindexQueueAPI();

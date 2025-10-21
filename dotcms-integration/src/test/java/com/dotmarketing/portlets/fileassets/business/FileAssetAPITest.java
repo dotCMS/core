@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNotEquals;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -13,9 +17,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -24,20 +26,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertNotEquals;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class FileAssetAPITest extends IntegrationTestBase {
 
@@ -63,7 +58,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
         final Contentlet fileAssetContentlet = fileAssetDataGen.nextPersisted();
         final FileAssetMap fileAssetMap = FileAssetMap.of(fileAssetContentlet);
         // First test using a jackson mapper
-        final ObjectMapper defaultMapper = DotObjectMapperProvider.createDefaultMapper();
+        final ObjectMapper defaultMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
          String asString = defaultMapper.writeValueAsString(fileAssetMap);
         Assert.assertNotNull(asString);
         Assert.assertTrue(asString.startsWith("{"));
