@@ -3,8 +3,11 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/gl
 import { UVE_MODE, UVEEventType } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
-import { ANALYTICS_WINDOWS_ACTIVE_KEY } from '../../internal/constants';
 import { createUVESubscription, getUVEState, isAnalyticsActive } from './core.utils';
+
+import { ANALYTICS_WINDOWS_ACTIVE_KEY } from '../../internal/constants';
+
+
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
@@ -481,6 +484,7 @@ describe('isAnalyticsActive', () => {
     });
 
     it('should return false when window is not defined (SSR)', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         windowSpy = jest.spyOn(global, 'window', 'get').mockImplementation(() => undefined as any);
 
         const result = isAnalyticsActive();

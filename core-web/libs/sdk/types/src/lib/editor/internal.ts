@@ -132,6 +132,4 @@ type AnalyticsAttributeKey = 'identifier' | 'inode' | 'basetype' | 'contenttype'
  */
 export type DotAnalyticsAttributes = {
     [K in AnalyticsAttributeKey as AnalyticsAttribute<K>]: string;
-} & {
-    class: string;
 };
