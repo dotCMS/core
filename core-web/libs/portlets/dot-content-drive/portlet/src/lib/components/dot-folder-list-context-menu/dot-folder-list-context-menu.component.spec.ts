@@ -19,7 +19,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { createFakeContentlet, mockWorkflowsActions } from '@dotcms/utils-testing';
+import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
 
@@ -38,7 +38,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
     const mockContentlet = createFakeContentlet();
 
-    const mockWorkflowActions = mockWorkflowsActions; // 3 mocked workflow actions
+    const mockWorkflowActions = mockWorkflowsActionsWithMove; // 3 mocked workflow actions + 1 Move workflow action
 
     const createComponent = createComponentFactory({
         component: DotFolderListViewContextMenuComponent,
