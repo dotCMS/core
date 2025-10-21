@@ -296,7 +296,6 @@ export function getDotAnalyticsAttributes(
     contentlet: DotCMSBasicContentlet
 ): DotAnalyticsAttributes {
     return {
-        class: 'dotcms-analytics-contentlet',
         'data-dot-analytics-identifier': contentlet?.identifier,
         'data-dot-analytics-inode': contentlet?.inode,
         'data-dot-analytics-basetype': contentlet?.baseType,

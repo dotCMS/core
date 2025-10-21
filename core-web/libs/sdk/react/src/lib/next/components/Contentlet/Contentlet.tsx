@@ -75,11 +75,24 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
         [isAnalyticsActive, isDevMode, contentlet]
     );
 
+    // Build container class name
+    const containerClassName = useMemo(() => {
+        const classes: string[] = [];
+
+        // Add analytics class if active
+        if (isAnalyticsActive && !isDevMode) {
+            classes.push('dotcms-analytics-contentlet');
+        }
+
+        return classes.length > 0 ? classes.join(' ') : undefined;
+    }, [isAnalyticsActive, isDevMode]);
+
     return (
         <div
             {...dotAttributes}
             {...analyticsAttributes}
             data-dot-object="contentlet"
+            className={containerClassName}
             ref={ref}
             style={style}>
             <CustomComponent contentlet={contentlet} />
