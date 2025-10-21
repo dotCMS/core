@@ -145,9 +145,10 @@ export class DotContentDriveWorkflowActionsComponent {
                 this.#store.loadItems();
                 this.#messageService.add({
                     severity: 'success',
-                    summary: 'Success',
+                    summary: this.#dotMessageService.get('content-drive.toast.workflow-executed'),
                     detail: this.#dotMessageService.get(
-                        'content-drive.dialog.folder.message.create-success'
+                        'content-drive.toast.workflow-executed-detail',
+                        action
                     )
                 });
             },
@@ -186,8 +187,8 @@ export class DotContentDriveWorkflowActionsComponent {
         this.#store.setSelectedItems([]);
         this.#messageService.add({
             severity: 'info',
-            summary: 'Info',
-            detail: this.#dotMessageService.get('content.drive.worflow.action.processing.info')
+            summary: this.#dotMessageService.get('content-drive.toast.workflow-in-progress'),
+            detail: this.#dotMessageService.get('content-drive.toast.workflow-in-progress-detail')
         });
     }
 }

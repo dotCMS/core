@@ -29,7 +29,7 @@ import {
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 
-import { ERROR_MESSAGE_LIFE } from '../../shared/constants';
+import { ERROR_MESSAGE_LIFE, MOVE_TO_FOLDER_WORKFLOW_ACTION_ID } from '../../shared/constants';
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
@@ -141,14 +141,19 @@ export class DotFolderListViewContextMenuComponent {
             }
         });
 
-        workflowActions.map((action) => {
-            const menuItem = {
-                label: `${this.#dotMessageService.get(action.name)}`,
-                command: () => this.#executeWorkflowActions(action, contentlet)
-            };
+        workflowActions
+            .filter(
+                (action) =>
+                    action.name !== 'Move' || action.id !== MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+            )
+            .map((action) => {
+                const menuItem = {
+                    label: `${this.#dotMessageService.get(action.name)}`,
+                    command: () => this.#executeWorkflowActions(action, contentlet)
+                };
 
-            actionsMenu.push(menuItem);
-        });
+                actionsMenu.push(menuItem);
+            });
 
         actionsMenu.push({
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),

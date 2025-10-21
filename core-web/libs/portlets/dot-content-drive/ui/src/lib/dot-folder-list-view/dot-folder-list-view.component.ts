@@ -6,6 +6,7 @@ import {
     effect,
     inject,
     input,
+    OnInit,
     output,
     Renderer2,
     signal
@@ -17,8 +18,14 @@ import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
-import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotLanguagesService } from '@dotcms/data-access';
+import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotContentletStatusPipe,
+    DotLocaleTagPipe,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 
 import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
 
@@ -31,15 +38,17 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
-        TableModule
+        TableModule,
+        DotLocaleTagPipe
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
     styleUrl: './dot-folder-list-view.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotFolderListViewComponent {
+export class DotFolderListViewComponent implements OnInit {
     private readonly renderer = inject(Renderer2);
+    private readonly dotLanguagesService = inject(DotLanguagesService);
 
     $items = input<DotContentDriveItem[]>([], { alias: 'items' });
     $totalItems = input<number>(0, { alias: 'totalItems' });
@@ -73,6 +82,14 @@ export class DotFolderListViewComponent {
     protected readonly $currentPageFirstRowIndex = signal<number>(0);
 
     /**
+     * Map of languages for the current user.
+     *
+     * @protected
+     * @memberof DotFolderListViewComponent
+     */
+    readonly $languagesMap = signal<Map<number, DotLanguage>>(new Map());
+
+    /**
      * Effect that handles pagination state management
      */
     protected readonly firstEffect = effect(() => {
@@ -89,6 +106,19 @@ export class DotFolderListViewComponent {
         this.$items();
         this.selectedItems = [];
     });
+
+    ngOnInit(): void {
+        // We should be getting this from the Global Store
+        // But it gets out of scope for the ticket.
+        this.dotLanguagesService.get().subscribe((languages) => {
+            const languagesMap = new Map<number, DotLanguage>();
+            languages.forEach((language) => {
+                languagesMap.set(language.id, language);
+            });
+
+            this.$languagesMap.set(languagesMap);
+        });
+    }
 
     /**
      * Handles right click on a content item to show context menu

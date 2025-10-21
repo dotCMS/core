@@ -38,7 +38,6 @@ import {
     ContentTypeHiddenField,
     DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
-
 import { EMPTY_SYSTEM_FIELD } from '@dotcms/utils';
 
 export const dotcmsContentTypeBasicMock = {
