@@ -1,7 +1,12 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
         <div class="flex flex-column gap-2">
             @for (option of $options(); track $index) {
@@ -9,7 +14,7 @@
                     [class.ng-invalid]="hasError"
                     [class.ng-dirty]="hasError"
                     [name]="field.variable"
-                    [formControl]="formControl"
+                    [formControlName]="field.variable"
                     [value]="option.value"
                     [label]="option.label || null"
                     [inputId]="field.variable + '-' + option.value"

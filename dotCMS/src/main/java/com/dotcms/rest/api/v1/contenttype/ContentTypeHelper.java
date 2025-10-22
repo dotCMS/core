@@ -36,11 +36,7 @@ import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple2;
 import java.io.Serializable;
 import java.net.URISyntaxException;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -671,14 +667,18 @@ public class ContentTypeHelper implements Serializable {
      * @throws LanguageException
      */
     public List<BaseContentTypesView> getTypes(HttpServletRequest request)
-            throws LanguageException {
+            throws LanguageException, IllegalArgumentException{
         List<BaseContentTypesView> result = list();
 
         Locale locale = LocaleUtil.getLocale(request);
         Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
 
-        for(Map.Entry<String,String> baseType : baseContentTypeNames.entrySet()){
-            result.add(new BaseContentTypesView(baseType.getKey(),baseType.getValue(),null));
+        for (Map.Entry<String, String> baseType : baseContentTypeNames.entrySet()) {
+            result.add(new BaseContentTypesView(
+                    baseType.getKey(),
+                    baseType.getValue(),
+                    null,
+                    this.getBaseTypeIndex(baseType.getKey())));
         }
 
         return result;
@@ -709,6 +709,29 @@ public class ContentTypeHelper implements Serializable {
         return contentTypesLabelsMap;
 
     } // getBaseContentTypeNames.
+
+    /**
+     * Retrieves the index for a given base content type name.
+     * <p>
+     * This method searches for a match in the predefined {@BaseContentType} enum
+     * and returns its corresponding index.
+     * <p>
+     * @param baseTypeName The name of the base content type to find. (e.g., "CONTENT", "WIDGET").
+     * @return The integer corresponding to the base type, otherwise throws an IllegalArgumentException.
+     * @see BaseContentType
+     */
+    public int getBaseTypeIndex(String baseTypeName) throws IllegalArgumentException {
+        try {
+            return BaseContentType.getBaseContentType(baseTypeName).getType();
+        } catch (IllegalArgumentException e) {
+            final var message = String.format(
+                    "No enum BaseContentType with name [%s] was found",
+                    baseTypeName
+            );
+            Logger.warn(this, message);
+            throw new IllegalArgumentException(message);
+        }
+    }
 
     @VisibleForTesting
     boolean isStandardOrEnterprise() {
@@ -741,6 +764,22 @@ public class ContentTypeHelper implements Serializable {
         }
 
         return key;
+    }
+
+    /**
+     * Maps a comma-separated Content Types (String) to a List of Content Types (List<String>)
+     * <p>
+     *
+     * @param ensuredContentTypes List of Content Types requested to be included in the response
+     * @return List of Content Types names in lowercase (e.g. [video, content]).
+     */
+    public List<String> getEnsuredContentTypes(final String ensuredContentTypes) {
+        return ensuredContentTypes == null || ensuredContentTypes.isBlank()
+                ? Collections.emptyList()
+                : Arrays.stream(ensuredContentTypes.split("\\s*,\\s*"))
+                        .map(s -> s.trim().toLowerCase())
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
     }
 
 } // E:O:F:ContentTypeHelper.

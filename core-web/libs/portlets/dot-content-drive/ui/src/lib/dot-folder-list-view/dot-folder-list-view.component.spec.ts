@@ -1,15 +1,64 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
-import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
+import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFolderListViewComponent } from './dot-folder-list-view.component';
 
+import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
 import { mockItems } from '../shared/mocks';
+
+// Mock DragEvent since it's not available in Jest environment
+class DragEventMock extends Event {
+    override preventDefault = jest.fn();
+    override stopPropagation = jest.fn();
+    dataTransfer: {
+        effectAllowed?: string;
+        setData?: ReturnType<typeof jest.fn>;
+        setDragImage?: ReturnType<typeof jest.fn>;
+    } | null = null;
+
+    constructor(type: string) {
+        super(type);
+        this.dataTransfer = {
+            effectAllowed: '',
+            setData: jest.fn(),
+            setDragImage: jest.fn()
+        };
+    }
+}
+
+// Override global DragEvent with our mock
+(global as unknown as { DragEvent: typeof DragEventMock }).DragEvent = DragEventMock;
+
+// Helper function to create properly mocked drag event
+function createDragStartEvent(): DragEvent {
+    return new DragEvent('dragstart');
+}
+
+const mockLanguages: DotLanguage[] = [
+    {
+        id: 1,
+        language: 'English',
+        languageCode: 'en',
+        countryCode: 'US',
+        country: 'United States'
+    },
+    {
+        id: 2,
+        language: 'Spanish',
+        languageCode: 'es',
+        countryCode: 'ES',
+        country: 'Spain'
+    }
+];
 
 describe('DotFolderListViewComponent', () => {
     let spectator: Spectator<DotFolderListViewComponent>;
@@ -21,6 +70,9 @@ describe('DotFolderListViewComponent', () => {
             mockProvider(DotMessageService, new MockDotMessageService({})),
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
             mockProvider(DotFormatDateService),
+            mockProvider(DotLanguagesService, {
+                get: jest.fn(() => of(mockLanguages))
+            }),
             provideHttpClient()
         ],
         declarations: [],
@@ -50,6 +102,31 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', true);
 
             expect(spectator.component.$loading()).toBe(true);
+        });
+    });
+
+    describe('Languages Service', () => {
+        it('should call languages service on init', () => {
+            const languagesService = spectator.inject(DotLanguagesService);
+
+            expect(languagesService.get).toHaveBeenCalled();
+        });
+
+        it('should populate languagesMap with languages from service', () => {
+            const languagesMap = spectator.component['$languagesMap']();
+
+            expect(languagesMap.size).toBe(2);
+            expect(languagesMap.get(1)).toEqual(mockLanguages[0]);
+            expect(languagesMap.get(2)).toEqual(mockLanguages[1]);
+        });
+
+        it('should convert languages array to Map with id as key', () => {
+            const languagesMap = spectator.component['$languagesMap']();
+
+            expect(languagesMap.get(1)?.language).toBe('English');
+            expect(languagesMap.get(1)?.languageCode).toBe('en');
+            expect(languagesMap.get(2)?.language).toBe('Spanish');
+            expect(languagesMap.get(2)?.languageCode).toBe('es');
         });
     });
 
@@ -100,20 +177,24 @@ describe('DotFolderListViewComponent', () => {
                 expect(header).toBeTruthy();
             });
 
-            it('should show 2 sortable columns with sort icon', () => {
+            it('should show sortable columns with sort icon', () => {
+                const sortableColumnsCount = HEADER_COLUMNS.filter((col) => col.sortable).length;
                 const sortableColumns = spectator.queryAll(byTestId('header-column-sortable'));
                 const sortIcons = spectator.queryAll(byTestId('sort-icon'));
 
-                expect(sortableColumns.length).toBe(2);
-                expect(sortIcons.length).toBe(2);
+                expect(sortableColumns.length).toBe(sortableColumnsCount);
+                expect(sortIcons.length).toBe(sortableColumnsCount);
             });
 
-            it('should show 3 not sortable columns', () => {
+            it('should show not sortable columns', () => {
+                const notSortableColumnsCount = HEADER_COLUMNS.filter(
+                    (col) => !col.sortable
+                ).length;
                 const notSortableColumns = spectator.queryAll(
                     byTestId('header-column-not-sortable')
                 );
 
-                expect(notSortableColumns.length).toBe(4);
+                expect(notSortableColumns.length).toBe(notSortableColumnsCount);
             });
 
             it('should have one checkbox column', () => {
@@ -233,10 +314,16 @@ describe('DotFolderListViewComponent', () => {
             expect(statusColumn).toBeTruthy();
         });
 
-        it('should have a base type column', () => {
-            const baseTypeColumn = spectator.query(byTestId('item-base-type'));
+        it('should have a language column', () => {
+            const languageColumn = spectator.query(byTestId('item-language'));
 
-            expect(baseTypeColumn).toBeTruthy();
+            expect(languageColumn).toBeTruthy();
+        });
+
+        it('should have a content type column', () => {
+            const contentTypeColumn = spectator.query(byTestId('item-content-type'));
+
+            expect(contentTypeColumn).toBeTruthy();
         });
 
         it('should have a mod user name column', () => {
@@ -267,7 +354,7 @@ describe('DotFolderListViewComponent', () => {
             const itemTitleText = spectator.query(byTestId('item-title-text'));
 
             expect(itemTitleText).toBeTruthy();
-            expect(itemTitleText).toHaveClass('truncate-text');
+            expect(itemTitleText.classList.contains('truncate-text')).toBe(true);
         });
 
         it('should not have max-width: 100% style on item-title td', () => {
@@ -313,6 +400,143 @@ describe('DotFolderListViewComponent', () => {
                 const statusColumn = spectator.query(byTestId('item-status'));
 
                 expect(statusColumn.textContent.trim()).toBe('Draft');
+            });
+        });
+    });
+
+    describe('Selection Management', () => {
+        it('should clear selected items when items input changes', () => {
+            const firstItem = mockItems[0];
+            const secondItem = mockItems[1];
+
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            // Set some selected items
+            spectator.component.selectedItems = [firstItem, secondItem];
+            expect(spectator.component.selectedItems.length).toBe(2);
+
+            // Change items input
+            const newItems = [mockItems[2], mockItems[3]];
+            spectator.setInput('items', newItems);
+            spectator.detectChanges();
+
+            // Selected items should be cleared
+            expect(spectator.component.selectedItems).toEqual([]);
+        });
+
+        it('should clear selected items even when items array is empty', () => {
+            const firstItem = mockItems[0];
+
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            // Set some selected items
+            spectator.component.selectedItems = [firstItem];
+            expect(spectator.component.selectedItems.length).toBe(1);
+
+            // Change to empty items
+            spectator.setInput('items', []);
+            spectator.detectChanges();
+
+            // Selected items should be cleared
+            expect(spectator.component.selectedItems).toEqual([]);
+        });
+    });
+
+    describe('Drag Events', () => {
+        const firstItem = mockItems[0];
+        const secondItem = mockItems[1];
+        let dragStartSpy: ReturnType<typeof jest.spyOn>;
+
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        describe('onDragStart', () => {
+            describe('single drag', () => {
+                it('should handle drag of a single item not in selection', () => {
+                    const dragEvent = createDragStartEvent();
+
+                    spectator.component.selectedItems = [];
+                    spectator.component.onDragStart(dragEvent, firstItem);
+
+                    expect(dragEvent.stopPropagation).toHaveBeenCalled();
+                    expect(dragEvent.dataTransfer?.effectAllowed).toBe('move');
+                    expect(dragEvent.dataTransfer?.setData).toHaveBeenCalledWith(DOT_DRAG_ITEM, '');
+                    expect(dragStartSpy).toHaveBeenCalledWith([firstItem]);
+                });
+
+                it('should not proceed when dataTransfer is null', () => {
+                    const dragEvent = createDragStartEvent();
+                    // Override dataTransfer to null for testing
+                    Object.defineProperty(dragEvent, 'dataTransfer', {
+                        value: null,
+                        writable: true
+                    });
+
+                    spectator.component.selectedItems = [];
+                    spectator.component.onDragStart(dragEvent, firstItem);
+
+                    expect(dragEvent.stopPropagation).not.toHaveBeenCalled();
+                    expect(dragStartSpy).not.toHaveBeenCalled();
+                });
+            });
+
+            describe('multiple selection', () => {
+                it('should handle drag of multiple selected items', () => {
+                    const dragEvent = createDragStartEvent();
+
+                    spectator.component.selectedItems = [firstItem, secondItem];
+                    spectator.component.onDragStart(dragEvent, firstItem);
+
+                    expect(dragEvent.stopPropagation).toHaveBeenCalled();
+                    expect(dragEvent.dataTransfer?.effectAllowed).toBe('move');
+                    expect(dragEvent.dataTransfer?.setData).toHaveBeenCalledWith(DOT_DRAG_ITEM, '');
+                    expect(dragStartSpy).toHaveBeenCalledWith([firstItem, secondItem]);
+                });
+
+                it('should drag all selected items when dragging one of them', () => {
+                    const dragEvent = createDragStartEvent();
+
+                    spectator.component.selectedItems = [firstItem, secondItem];
+                    // Drag the second item which is in selection
+                    spectator.component.onDragStart(dragEvent, secondItem);
+
+                    expect(dragStartSpy).toHaveBeenCalledWith([firstItem, secondItem]);
+                });
+            });
+
+            describe('multiple selection but single drag', () => {
+                it('should not drag selected items when dragging a different item', () => {
+                    const dragEvent = createDragStartEvent();
+                    const thirdItem = mockItems[2];
+
+                    spectator.component.selectedItems = [firstItem, secondItem];
+                    spectator.component.onDragStart(dragEvent, thirdItem);
+
+                    // Should emit only the third item, not the selected items
+                    expect(dragStartSpy).toHaveBeenCalledWith([thirdItem]);
+                    expect(dragStartSpy).not.toHaveBeenCalledWith([firstItem, secondItem]);
+                });
+            });
+        });
+
+        describe('onDragEnd', () => {
+            it('should emit dragEnd with void', () => {
+                const dragEndSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
+
+                spectator.component.onDragEnd();
+
+                expect(dragEndSpy).toHaveBeenCalledWith();
             });
         });
     });

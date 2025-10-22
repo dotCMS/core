@@ -45,17 +45,24 @@
         @let status = item | dotContentletStatus;
 
         @if ($loading()) {
-            <tr data-testId="loading-row">
-                <td [colSpan]="SKELETON_SPAN">
-                    <p-skeleton height="3rem" width="100%" />
-                </td>
+            <tr data-testId="loading-row" class="content-drive-table__loading-row">
+                @for (i of HEADER_COLUMNS; track i) {
+                    <td>
+                        <span class="skeleton-wrapper">
+                            <p-skeleton height="1.5rem" width="100%" />
+                        </span>
+                    </td>
+                }
             </tr>
         } @else {
             <tr
                 class="content-drive-table__row"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
-                (dblclick)="onDoubleClick(item)">
+                (dblclick)="onDoubleClick(item)"
+                [draggable]="true"
+                (dragstart)="onDragStart($event, item)"
+                (dragend)="onDragEnd()">
                 <td data-testId="item-checkbox">
                     <p-tableCheckbox [value]="item" />
                 </td>
@@ -65,7 +72,8 @@
                             [fieldVariable]="item?.contentType"
                             [iconSize]="'48px'"
                             [contentlet]="item"
-                            data-testId="contentlet-thumbnail" />
+                            data-testId="contentlet-thumbnail"
+                            [attr.data-id]="item.identifier" />
                     </div>
                     <span data-testId="item-title-text" class="truncate-text">
                         {{ item.title }}
@@ -80,7 +88,12 @@
                         <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
                     }
                 </td>
-                <td data-testId="item-base-type">{{ item.contentType | dm }}</td>
+                <td data-testId="item-language">
+                    <p-chip
+                        styleClass="p-chip-sm p-chip-blue"
+                        [label]="item.languageId | dotLocaleTag: $languagesMap()" />
+                </td>
+                <td data-testId="item-content-type">{{ item.contentType | dm }}</td>
                 <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
                 <td data-testId="item-actions" class="text-center">
@@ -117,5 +130,3 @@
         </tr>
     </ng-template>
 </p-table>
-
-<!-- <p-contextMenu #contextMenu [model]="items" /> -->

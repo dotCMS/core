@@ -19,7 +19,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { createFakeContentlet, mockWorkflowsActions } from '@dotcms/utils-testing';
+import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
 
@@ -38,7 +38,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
     const mockContentlet = createFakeContentlet();
 
-    const mockWorkflowActions = mockWorkflowsActions; // 3 mocked workflow actions
+    const mockWorkflowActions = mockWorkflowsActionsWithMove; // 3 mocked workflow actions + 1 Move workflow action
 
     const createComponent = createComponentFactory({
         component: DotFolderListViewContextMenuComponent,
@@ -218,6 +218,16 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
             expect(component.$items()).toHaveLength(5);
         });
+
+        it('should not include move to folder workflow action', async () => {
+            await component.getMenuItems(mockContextMenuData);
+
+            const items = component.$items();
+            expect(items).not.toContain({
+                label: 'Move',
+                command: expect.any(Function)
+            });
+        });
     });
 
     describe('statusEffect', () => {
@@ -243,6 +253,65 @@ describe('DotFolderListViewContextMenuComponent', () => {
             spectator.detectChanges();
 
             expect(component.$memoizedMenuItems()).toEqual({});
+        });
+    });
+
+    describe('closeOnContextMenuReset', () => {
+        it('should hide context menu when contentlet is null and menu is visible', () => {
+            const mockContextMenu = {
+                hide: jest.fn(),
+                visible: jest.fn().mockReturnValue(true)
+            } as unknown as ContextMenu;
+
+            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+            store.patchContextMenu({
+                contentlet: null,
+                triggeredEvent: null,
+                showAddToBundle: false
+            });
+
+            spectator.detectChanges();
+
+            expect(mockContextMenu.hide).toHaveBeenCalled();
+        });
+
+        it('should not hide context menu when contentlet is null and menu is not visible', () => {
+            const mockContextMenu = {
+                hide: jest.fn(),
+                visible: jest.fn().mockReturnValue(false)
+            } as unknown as ContextMenu;
+
+            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+            store.patchContextMenu({
+                contentlet: null,
+                triggeredEvent: null,
+                showAddToBundle: false
+            });
+
+            spectator.detectChanges();
+
+            expect(mockContextMenu.hide).not.toHaveBeenCalled();
+        });
+
+        it('should not hide context menu when contentlet exists', () => {
+            const mockContextMenu = {
+                hide: jest.fn(),
+                visible: jest.fn().mockReturnValue(true)
+            } as unknown as ContextMenu;
+
+            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+            store.patchContextMenu({
+                contentlet: mockContentlet,
+                triggeredEvent: null,
+                showAddToBundle: false
+            });
+
+            spectator.detectChanges();
+
+            expect(mockContextMenu.hide).not.toHaveBeenCalled();
         });
     });
 

@@ -1,6 +1,13 @@
 package com.dotmarketing.portlets.htmlpages.business.render;
 
 
+import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -35,6 +42,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -60,27 +68,19 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import javax.enterprise.context.ApplicationScoped;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.enterprise.context.ApplicationScoped;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @ApplicationScoped
 @RunWith(JUnit4WeldRunner.class)
@@ -2855,5 +2855,84 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A template has containers with LEGACY_RELATION_TYPE UUIDs
+     * Should: Transform UUIDs to consistent values in both layout and rendered container fields
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void shouldTransformLegacyContainerUUIDs() throws DotDataException, DotSecurityException, WebAssetException {
+        init();
+        
+        final Host site = new SiteDataGen().nextPersisted();
+        final User systemUser = APILocator.systemUser();
+        
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+                
+
+        final Container container = new ContainerDataGen()
+                .site(site)
+                .withContentType(contentType, "$!{title}")
+                .nextPersisted();
+        ContainerDataGen.publish(container, systemUser);
+        
+
+        final Template template = new TemplateDataGen()
+                .host(site)
+                .withContainer(container.getIdentifier(), ContainerUUID.UUID_LEGACY_VALUE)
+                .theme(Theme.SYSTEM_THEME)
+                .drawed(true)
+                .nextPersisted();
+        TemplateDataGen.publish(template, systemUser);
+
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template)
+                .nextPersisted();
+        HTMLPageDataGen.publish(page);
+        
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(site)
+                .setProperty("title", "Test Content")
+                .nextPersistedAndPublish();
+        
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(request.getRequestURI()).thenReturn(page.getURI());
+        
+
+        final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPI = new HTMLPageAssetRenderedAPIImpl();
+        final PageView pageView = htmlPageAssetRenderedAPI.getPageRendered(
+                request, response, systemUser, page.getURI(), PageMode.ADMIN_MODE);
+        
+        
+        boolean foundLegacyTransformation = pageView.getLayout() != null 
+                && pageView.getLayout().getBody() != null
+                && pageView.getLayout().getBody().getRows().stream()
+                    .flatMap(row -> row.getColumns().stream())
+                    .flatMap(column -> column.getContainers().stream())
+                    .filter(containerUUID -> container.getIdentifier().equals(containerUUID.getIdentifier()))
+                    .peek(containerUUID -> assertEquals("Legacy container UUID should be transformed to '1'", 
+                            ContainerUUID.UUID_START_VALUE, containerUUID.getUUID()))
+                    .findAny()
+                    .isPresent();
+        
+        assertTrue("Should have found and transformed legacy container UUID", foundLegacyTransformation);
     }
 }

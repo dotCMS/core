@@ -2,20 +2,26 @@
 
 :host {
     display: grid;
+    position: relative;
     grid-template-columns: min-content 1fr min-content;
 
-    /* This is the height according to figma for the first row */
-    grid-template-rows: min-content 7.125rem 1fr; //114px 1fr
+    /* Let the toolbar control its own height */
+    grid-template-rows: min-content min-content 1fr;
     grid-template-areas:
         "messages messages messages"
         "tree toolbar detail"
         "tree list    detail";
     height: 100%;
 }
-
 ::ng-deep {
-    .p-dialog-content {
-        width: 43.75rem; //700px
+    .p-dialog.content-drive-dialog {
+        .p-dialog-content {
+            width: 43.75rem; //700px
+
+            // Let the content to set the desired padding to not mess with overlaps and overflows
+            padding: $spacing-4 0;
+            padding-top: 0;
+        }
     }
 }
 
@@ -54,8 +60,9 @@ p-messages {
     }
 }
 
-dot-folder-list-view {
+dot-content-drive-dropzone {
     grid-area: list;
+    overflow: auto;
 }
 
 .detail-view {

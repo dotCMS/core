@@ -81,6 +81,17 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         return contentTypes ?? [];
     });
 
+    /**
+     * Maps the ensured content types to a string
+     * @returns {string} The ensured content types in comma separated string
+     * @private
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
+    private readonly $mappedEnsuredContentTypes = computed<string>(() => {
+        const contentType = this.#store.filters().contentType?.join(',') ?? '';
+        return contentType.length > 0 ? contentType : undefined;
+    });
+
     // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991
     // This prevents the effect from being triggered when the base types are the same or filters changes
     private readonly $mappedBaseTypes = computed<string>(
@@ -108,7 +119,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         if (baseType?.length) {
             untracked(() => {
                 this.$selectedContentTypes.update((selectedContentTypes) =>
-                    selectedContentTypes.filter(({ baseType: baseTypeItem }) =>
+                    selectedContentTypes?.filter(({ baseType: baseTypeItem }) =>
                         baseType.split(',').includes(baseTypeItem)
                     )
                 );
@@ -198,24 +209,11 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      * @param contentTypes - Array of content types to process
      * @returns Filtered and deduplicated array of content types
      */
-    private filterAndDeduplicateContentTypes(
-        contentTypes: DotCMSContentType[]
-    ): DotCMSContentType[] {
-        const uniqueIds = new Set<string>();
-
-        return contentTypes.filter((contentType) => {
-            // Skip if already seen, is system type, or is form type
-            if (
-                uniqueIds.has(contentType.variable) ||
-                contentType.system ||
-                contentType.baseType === DotCMSBaseTypesContentTypes.FORM
-            ) {
-                return false;
-            }
-
-            uniqueIds.add(contentType.variable);
-            return true;
-        });
+    private filterContentTypes(contentTypes: DotCMSContentType[]): DotCMSContentType[] {
+        return contentTypes.filter(
+            (contentType) =>
+                !contentType.system && contentType.baseType !== DotCMSBaseTypesContentTypes.FORM
+        );
     }
 
     /**
@@ -223,8 +221,8 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      *
      * This method:
      * - Fetches all available content types without any filter
-     * - Processes URL query parameters to pre-select content types
-     * - Sets the initial state for both available and selected content types
+     * - Uses the 'ensure' parameter to include selected content types from store
+     * - Sets the initial state for available content types
      * - Executes immediately without debounce for fast initial load
      *
      * @private
@@ -232,7 +230,10 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      */
     private loadInitialContentTypes() {
         this.#contentTypesService
-            .getContentTypesWithPagination({ filter: '', type: this.$mappedBaseTypes() })
+            .getContentTypesWithPagination({
+                type: this.$mappedBaseTypes(),
+                ensure: this.$mappedEnsuredContentTypes()
+            })
             .pipe(
                 tap(() => this.updateState({ loading: true })),
                 catchError(() =>
@@ -250,18 +251,14 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                     contentTypes: DotCMSContentType[];
                     pagination: DotPagination;
                 }) => {
-                    const dotCMSContentTypes = this.filterAndDeduplicateContentTypes(contentTypes);
-                    const storeVariables = this.getVariablesFromStore();
+                    const dotCMSContentTypes = this.filterContentTypes(contentTypes);
                     const canLoadMore = pagination.currentPage < pagination.totalEntries;
-                    const selectedItems = dotCMSContentTypes.filter(({ variable }) =>
-                        storeVariables.includes(variable)
-                    );
+
                     this.updateState({
                         contentTypes: dotCMSContentTypes,
                         canLoadMore,
                         loading: false
                     });
-                    this.$selectedContentTypes.set(selectedItems);
                 }
             );
     }
@@ -273,8 +270,8 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      * - Listens to filter changes triggered by user input in the multiselect component
      * - Applies debouncing to prevent excessive API calls during typing
      * - Skips the initial emission to avoid duplicate requests (initial load is handled separately)
-     * - Merges filtered results with currently selected content types
-     * - Updates the available content types list while preserving user selections
+     * - Uses the 'ensure' parameter to automatically include selected content types in results
+     * - Updates the available content types list
      *
      * @private
      * @memberof DotContentDriveContentTypeFieldComponent
@@ -288,33 +285,18 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 takeUntilDestroyed(this.#destroyRef),
                 switchMap(({ filter, baseType: type }) =>
                     this.#contentTypesService
-                        .getContentTypes({ filter, type })
+                        .getContentTypes({
+                            filter,
+                            type,
+                            ensure: this.$mappedEnsuredContentTypes()
+                        })
                         .pipe(catchError(() => of([])))
                 )
             )
             .subscribe((dotCMSContentTypes: DotCMSContentType[] = []) => {
-                const selectedContentTypes = this.$selectedContentTypes();
-
-                const allContentTypes = [...selectedContentTypes, ...dotCMSContentTypes];
-                const contentTypes = this.filterAndDeduplicateContentTypes(allContentTypes);
+                const contentTypes = this.filterContentTypes(dotCMSContentTypes);
 
                 this.updateState({ contentTypes, loading: false });
             });
-    }
-
-    /**
-     * Retrieves the content type variables from the store.
-     *
-     * @returns The content type variables from the store.
-     * @private
-     * @memberof DotContentDriveContentTypeFieldComponent
-     */
-    private getVariablesFromStore() {
-        try {
-            return (this.#store.getFilterValue('contentType') as string[]) ?? [];
-        } catch (error) {
-            console.warn('Error retrieving content type filters from store:', error);
-            return [];
-        }
     }
 }

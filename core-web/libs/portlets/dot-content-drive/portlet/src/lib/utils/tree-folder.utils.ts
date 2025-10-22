@@ -1,19 +1,11 @@
-import { TreeNode } from 'primeng/api';
-
 import { DotFolder } from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
-export type TreeNodeData = {
-    type: 'site' | 'folder';
-    path: string;
-    hostname: string;
-    id: string;
-};
+import { BuildTreeFolderNodesParams } from '../shared/models';
 
-export type TreeNodeItem = TreeNode<TreeNodeData>;
-
-export const ALL_FOLDER: TreeNodeItem = {
+export const ALL_FOLDER: DotFolderTreeNodeItem = {
     key: 'ALL_FOLDER',
-    label: 'Root',
+    label: 'All',
     loading: false,
     data: {
         type: 'folder',
@@ -48,10 +40,13 @@ export const generateAllParentPaths = (path: string): string[] => {
  * Transforms a DotFolder into a TreeNodeItem
  *
  * @param {DotFolder} folder - The folder to transform
- * @returns {TreeNodeItem} The tree node item
+ * @returns {DotFolderTreeNodeItem} The tree node item
  */
-export const createTreeNode = (folder: DotFolder, parent?: TreeNodeItem): TreeNodeItem => {
-    let node: TreeNodeItem = {
+export const createTreeNode = (
+    folder: DotFolder,
+    parent?: DotFolderTreeNodeItem
+): DotFolderTreeNodeItem => {
+    let node: DotFolderTreeNodeItem = {
         key: folder.id,
         label: folder.path,
         data: {
@@ -75,25 +70,29 @@ export const createTreeNode = (folder: DotFolder, parent?: TreeNodeItem): TreeNo
  *
  * @param {DotFolder[][]} folderHierarchyLevels - The folder hierarchy levels
  * @param {string} targetPath - The target path
- * @returns {TreeNodeItem[]} The tree folder nodes
- * @returns {TreeNodeItem} The selected node
+ * @returns {DotFolderTreeNodeItem[]} The tree folder nodes
+ * @returns {DotFolderTreeNodeItem} The selected node
  */
-export const buildTreeFolderNodes = (
-    folderHierarchyLevels: DotFolder[][],
-    targetPath: string
-): { rootNodes: TreeNodeItem[]; selectedNode?: TreeNodeItem } => {
+export const buildTreeFolderNodes = ({
+    folderHierarchyLevels,
+    targetPath,
+    rootNode
+}: BuildTreeFolderNodesParams): {
+    rootNodes: DotFolderTreeNodeItem[];
+    selectedNode: DotFolderTreeNodeItem;
+} => {
     if (folderHierarchyLevels.length === 0) {
-        return { rootNodes: [], selectedNode: ALL_FOLDER };
+        return { rootNodes: [], selectedNode: rootNode };
     }
 
-    const rootNodes: TreeNodeItem[] = [];
+    const rootNodes: DotFolderTreeNodeItem[] = [];
     const expectedPaths = generateAllParentPaths(targetPath);
-    const activeParents: Record<number, TreeNodeItem> = {};
+    const activeParents: Record<number, DotFolderTreeNodeItem> = {};
 
     /**
      * Checks if a folder node belongs to the active target path
      */
-    const isOnTargetPath = (levelIndex: number, node: TreeNodeItem) =>
+    const isOnTargetPath = (levelIndex: number, node: DotFolderTreeNodeItem) =>
         expectedPaths[levelIndex] === node.data.path;
 
     /**
@@ -130,7 +129,7 @@ export const buildTreeFolderNodes = (
     });
 
     // The last expanded parent is the "selected" node
-    const selectedNode = activeParents[folderHierarchyLevels.length - 1] || ALL_FOLDER;
+    const selectedNode = activeParents[folderHierarchyLevels.length - 1] || rootNode;
 
     return { rootNodes, selectedNode };
 };

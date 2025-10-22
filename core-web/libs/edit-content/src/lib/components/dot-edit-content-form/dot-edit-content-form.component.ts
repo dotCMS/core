@@ -113,7 +113,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 })
 export class DotEditContentFormComponent implements OnInit {
     readonly #rootStore = inject(GlobalStore);
-    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly $store = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
@@ -222,12 +222,14 @@ export class DotEditContentFormComponent implements OnInit {
          */
         effect(() => {
             const isLoading = this.$store.isLoading();
-            const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
+            // const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
             const contentlet = this.$store.contentlet();
 
             // Only apply state changes if form exists
             if (this.form && contentlet) {
-                if (isLoading || isViewingHistoricalVersion) {
+                // TODO: put back isViewingHistoricalVersion in the
+                // condition after all fields have disabled state
+                if (isLoading) {
                     this.form.disable();
                 } else {
                     this.form.enable();
@@ -307,6 +309,7 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
             this.changeDetectorRef.detectChanges();
+            this.$store.setFormStatus('invalid');
             requestAnimationFrame(() => {
                 this.scrollToFirstError();
             });
