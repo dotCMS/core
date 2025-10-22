@@ -20,21 +20,10 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.XMLUtils;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -43,7 +32,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
-import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -325,7 +313,7 @@ public class BundlerUtil {
 
     private static ObjectMapper getCustomMapper() {
         if (customMapper == null) {
-            customMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+            customMapper = getObjectMapper();
         }
         return customMapper;
     }
@@ -517,32 +505,6 @@ public class BundlerUtil {
     public static boolean tarGzipExists(final String bundleId) {
         final File bundleTarGzip = TarGzipBundleOutput.getBundleTarGzipFile(bundleId);
         return bundleTarGzip.exists();
-    }
-
-    private static JavaTimeModule createJavaTimeModule() {
-        final JavaTimeModule javaTimeModule = new JavaTimeModule();
-        javaTimeModule.addSerializer(Instant.class, new JsonSerializer<Instant>() {
-            @Override
-            public void serialize(final Instant value, final JsonGenerator genarator,
-                    final SerializerProvider serializers)
-                    throws IOException {
-                genarator.writeNumber(String.valueOf(value.toEpochMilli()));
-            }
-        });
-
-        javaTimeModule.addDeserializer(Instant.class, new JsonDeserializer<Instant>() {
-            @Override
-            public Instant deserialize(final JsonParser parser, final DeserializationContext ctxt)
-                    throws IOException {
-                try {
-                    final long longValue = parser.getLongValue();
-                    return Instant.ofEpochMilli(longValue);
-                } catch (JsonParseException e) {
-                    return Instant.parse(parser.getValueAsString());
-                }
-            }
-        });
-        return javaTimeModule;
     }
 
 }
