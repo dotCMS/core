@@ -29,7 +29,8 @@ export class DotNavItemComponent {
     @Input() data: DotMenu;
 
     @Output()
-    menuClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenu }> = new EventEmitter();
+    menuClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenu; toggleOnly?: boolean }> =
+        new EventEmitter();
 
     @Output()
     itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
@@ -60,6 +61,23 @@ export class DotNavItemComponent {
         this.menuClick.emit({
             originalEvent: $event,
             data: data
+        });
+    }
+
+    /**
+     * Handle toggle click on the last third of the nav item
+     * Only toggles the menu open/close state without navigation
+     *
+     * @param MouseEvent $event
+     * @param DotMenu data
+     * @memberof DotNavItemComponent
+     */
+    toggleHandler($event: MouseEvent, data: DotMenu): void {
+        $event.stopPropagation();
+        this.menuClick.emit({
+            originalEvent: $event,
+            data: data,
+            toggleOnly: true
         });
     }
 
