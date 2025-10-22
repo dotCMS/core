@@ -16,6 +16,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
+import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.time.Instant;
@@ -59,6 +60,11 @@ public class DotObjectMapperProvider {
 
         final ObjectMapper result = new ObjectMapper();
         result.disable(DeserializationFeature.WRAP_EXCEPTIONS);
+        result.registerModule(new VersioningModule());
+        result.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+
+
 
         result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, alphaKeys);
         result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, alphaKeys);
