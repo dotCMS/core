@@ -5,7 +5,7 @@ import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import { DotAppsSite } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item/dot-apps-configuration-item.component';
 
@@ -13,13 +13,7 @@ import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item
     selector: 'dot-apps-configuration-list',
     templateUrl: './dot-apps-configuration-list.component.html',
     styleUrls: ['./dot-apps-configuration-list.component.scss'],
-    imports: [
-        CommonModule,
-        ButtonModule,
-        DotAppsConfigurationItemComponent,
-        DotSafeHtmlPipe,
-        DotMessagePipe
-    ]
+    imports: [CommonModule, ButtonModule, DotAppsConfigurationItemComponent, DotMessagePipe]
 })
 export class DotAppsConfigurationListComponent {
     @ViewChild('searchInput') searchInput: ElementRef;

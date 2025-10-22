@@ -75,16 +75,16 @@ import { DotSiteSelectorFieldComponent } from '../../../view/components/_common/
 import { DotTextareaContentComponent } from '../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotWorkflowsActionsSelectorFieldComponent } from '../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from '../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
-import { DotWorkflowsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
+import { DotWorkflowsSelectorFieldComponent } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.component';
 import { DotLoadingIndicatorComponent } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { IframeComponent } from '../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { SearchableDropdownComponent } from '../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotBaseTypeSelectorComponent } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.component';
 import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
-import { DotFieldHelperModule } from '../../../view/components/dot-field-helper/dot-field-helper.module';
+import { DotFieldHelperComponent } from '../../../view/components/dot-field-helper/dot-field-helper.component';
 import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 import { DotPortletBoxComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
-import { DotRelationshipTreeModule } from '../../../view/components/dot-relationship-tree/dot-relationship-tree.module';
+import { DotRelationshipTreeComponent } from '../../../view/components/dot-relationship-tree/dot-relationship-tree.component';
 import { DotSecondaryToolbarComponent } from '../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotMaxlengthModule } from '../../../view/directives/dot-maxlength/dot-maxlength.module';
 import { DotAddToMenuComponent } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
@@ -131,7 +131,7 @@ import { DotAddToMenuComponent } from '../dot-content-types-listing/components/d
         DotDirectivesModule,
         DotSafeHtmlPipe,
         DotSecondaryToolbarComponent,
-        DotFieldHelperModule,
+        DotFieldHelperComponent,
         DotFieldValidationMessageComponent,
         DotBinarySettingsComponent,
         TooltipModule,
@@ -142,7 +142,7 @@ import { DotAddToMenuComponent } from '../dot-content-types-listing/components/d
         DotRelationshipsModule,
         DotTextareaContentComponent,
         DotWorkflowsActionsSelectorFieldComponent,
-        DotWorkflowsSelectorFieldModule,
+        DotWorkflowsSelectorFieldComponent,
         DragulaModule,
         DropdownModule,
         FormsModule,
@@ -158,7 +158,7 @@ import { DotAddToMenuComponent } from '../dot-content-types-listing/components/d
         DotSiteSelectorFieldComponent,
         SplitButtonModule,
         TabViewModule,
-        DotRelationshipTreeModule,
+        DotRelationshipTreeComponent,
         DotPortletBoxComponent,
         DotMdIconSelectorComponent,
         DotAddToMenuComponent,

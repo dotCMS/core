@@ -14,6 +14,7 @@ import { ConfirmationService } from 'primeng/api';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotEventsService,
     DotFormatDateService,
     DotGenerateSecurePasswordService,
@@ -27,7 +28,8 @@ import {
     DotUiColorsService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    DotSystemConfigService
+    DotSystemConfigService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -163,6 +165,8 @@ describe('MainLegacyComponent', () => {
                 // Add missing services for standalone components
                 DotDownloadBundleDialogService,
                 DotPushPublishDialogService,
+                PushPublishService,
+                DotCurrentUserService,
                 DotWorkflowEventHandlerService,
                 DotNavigationService,
                 IframeOverlayService,

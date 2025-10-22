@@ -57,8 +57,8 @@ import { DotPageSelectorComponent } from '../../../../../view/components/_common
 import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldComponent } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
-import { DotWorkflowsSelectorFieldModule } from '../../../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
-import { DotFieldHelperModule } from '../../../../../view/components/dot-field-helper/dot-field-helper.module';
+import { DotWorkflowsSelectorFieldComponent } from '../../../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.component';
+import { DotFieldHelperComponent } from '../../../../../view/components/dot-field-helper/dot-field-helper.component';
 
 /**
  * Form component to create or edit content types
@@ -85,10 +85,10 @@ import { DotFieldHelperModule } from '../../../../../view/components/dot-field-h
         DotFieldValidationMessageComponent,
         DotMdIconSelectorComponent,
         DotSiteSelectorFieldComponent,
-        DotWorkflowsSelectorFieldModule,
+        DotWorkflowsSelectorFieldComponent,
         DotWorkflowsActionsSelectorFieldComponent,
         DotPageSelectorComponent,
-        DotFieldHelperModule
+        DotFieldHelperComponent
     ]
 })
 export class ContentTypesFormComponent implements OnInit, OnDestroy {

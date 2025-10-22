@@ -30,7 +30,7 @@ import {
 } from './service/dot-page-selector.service.spec';
 
 import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
-import { DotFieldHelperModule } from '../../dot-field-helper/dot-field-helper.module';
+import { DotFieldHelperComponent } from '../../dot-field-helper/dot-field-helper.component';
 
 export const mockDotPageSelectorResults = {
     type: 'page',
@@ -174,7 +174,7 @@ describe('DotPageSelectorComponent', () => {
             imports: [
                 DotPageSelectorComponent,
                 DotDirectivesModule,
-                DotFieldHelperModule,
+                DotFieldHelperComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 AutoCompleteModule,

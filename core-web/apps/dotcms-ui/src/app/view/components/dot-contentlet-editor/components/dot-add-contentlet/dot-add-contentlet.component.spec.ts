@@ -44,7 +44,7 @@ import { DotAddContentletComponent } from './dot-add-contentlet.component';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
@@ -61,7 +61,7 @@ describe('DotAddContentletComponent', () => {
             imports: [
                 DotAddContentletComponent,
                 DotContentletWrapperComponent,
-                DotIframeDialogModule,
+                DotIframeDialogComponent,
                 BrowserAnimationsModule,
                 RouterTestingModule,
                 HttpClientTestingModule

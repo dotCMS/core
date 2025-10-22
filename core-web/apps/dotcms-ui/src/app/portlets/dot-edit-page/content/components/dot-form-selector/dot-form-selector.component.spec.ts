@@ -63,7 +63,7 @@ describe('DotFormSelectorComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotFormSelectorComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 PaginatorService,
                 {
@@ -73,6 +73,7 @@ describe('DotFormSelectorComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock }
             ],
             imports: [
+                DotFormSelectorComponent,
                 DotDialogComponent,
                 BrowserAnimationsModule,
                 HttpClientTestingModule,

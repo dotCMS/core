@@ -31,8 +31,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotDeviceSelectorComponent } from '../../../../../view/components/dot-device-selector/dot-device-selector.component';
-import { DotIframeDialogModule } from '../../../../../view/components/dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotIframeDialogComponent } from '../../../../../view/components/dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
 import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
 
@@ -47,10 +46,9 @@ import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-
         TooltipModule,
         DotPersonaSelectorComponent,
         DotLanguageSelectorComponent,
-        DotDeviceSelectorComponent,
         CheckboxModule,
         ConfirmDialogModule,
-        DotIframeDialogModule,
+        DotIframeDialogComponent,
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush

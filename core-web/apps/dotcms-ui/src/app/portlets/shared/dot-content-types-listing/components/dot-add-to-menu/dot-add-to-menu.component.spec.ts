@@ -22,7 +22,7 @@ import {
 } from '../../../../../api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotNavigationService } from '../../../../../view/components/dot-navigation/services/dot-navigation.service';
-import { DotFormSelectorModule } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
+import { DotFormSelectorComponent } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.component';
 
 const contentTypeVar = {
     ...dotcmsContentTypeBasicMock,
@@ -117,7 +117,7 @@ describe('DotAddToMenuComponent', () => {
             imports: [
                 DotAddToMenuComponent,
                 BrowserAnimationsModule,
-                DotFormSelectorModule,
+                DotFormSelectorComponent,
                 HttpClientTestingModule
             ],
             providers: [

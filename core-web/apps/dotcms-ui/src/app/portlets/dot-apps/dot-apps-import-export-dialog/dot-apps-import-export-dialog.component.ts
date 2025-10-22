@@ -39,8 +39,7 @@ import {
     DotAutofocusDirective,
     DotDialogComponent,
     DotFieldRequiredDirective,
-    DotMessagePipe,
-    DotSafeHtmlPipe
+    DotMessagePipe
 } from '@dotcms/ui';
 
 import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
@@ -56,7 +55,6 @@ import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service'
         PasswordModule,
         DotDialogComponent,
         DotAutofocusDirective,
-        DotSafeHtmlPipe,
         DotFieldRequiredDirective,
         DotMessagePipe
     ]

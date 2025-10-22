@@ -38,14 +38,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
-    imports: [
-        CommonModule,
-        DialogModule,
-        ButtonModule,
-        DotContainerReferenceModule,
-        DotCommentAndAssignFormComponent,
-        DotPushPublishFormComponent
-    ],
+    imports: [CommonModule, DialogModule, ButtonModule, DotContainerReferenceModule],
     providers: [DotWizardService]
 })
 export class DotWizardComponent implements AfterViewInit {

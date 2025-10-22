@@ -60,7 +60,6 @@ import { DotListingDataTableComponent } from '../../../view/components/dot-listi
         DotActionMenuButtonComponent,
         DotAddToBundleComponent,
         DynamicDialogModule,
-        DotBulkInformationComponent,
         DotEmptyStateComponent,
         AutoFocusModule
     ],

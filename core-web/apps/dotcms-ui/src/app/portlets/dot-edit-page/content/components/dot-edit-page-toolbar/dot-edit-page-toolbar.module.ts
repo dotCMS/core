@@ -18,7 +18,7 @@ import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 
 import { DotGlobalMessageComponent } from '../../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
-import { DotEditPageInfoModule } from '../../../components/dot-edit-page-info/dot-edit-page-info.module';
+import { DotEditPageInfoComponent } from '../../../components/dot-edit-page-info/dot-edit-page-info.component';
 import { DotEditPageNavDirective } from '../../../main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
@@ -30,7 +30,7 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
         CommonModule,
         CheckboxModule,
         DotEditPageWorkflowsActionsModule,
-        DotEditPageInfoModule,
+        DotEditPageInfoComponent,
         DotEditPageViewAsControllerModule,
         DotEditPageStateControllerModule,
         DotSecondaryToolbarComponent,

@@ -25,8 +25,8 @@ import { DotCopyContentModalService, DotIconComponent, DotSafeHtmlPipe } from '@
 import { DotEditPageStateControllerModule } from './components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotEditPageViewAsControllerModule } from './components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
-import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-selector.module';
-import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
+import { DotFormSelectorComponent } from './components/dot-form-selector/dot-form-selector.component';
+import { DotWhatsChangedComponent } from './components/dot-whats-changed/dot-whats-changed.component';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
@@ -61,8 +61,8 @@ const routes: Routes = [
         DotEditContentletComponent,
         DotSafeHtmlPipe,
         DotDirectivesModule,
-        DotWhatsChangedModule,
-        DotFormSelectorModule,
+        DotWhatsChangedComponent,
+        DotFormSelectorComponent,
         TooltipModule,
         DotEditContentletComponent,
         DotLoadingIndicatorComponent,

@@ -23,6 +23,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
+    DotCurrentUserService,
     DotDevicesService,
     DotESContentService,
     DotEventsService,
@@ -38,7 +39,8 @@ import {
     DotIframeService,
     DotFormatDateService,
     DotPageStateService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -262,6 +264,8 @@ describe('DotEditPageToolbarSeoComponent', () => {
             DialogService,
             DotESContentService,
             DotPropertiesService,
+            DotCurrentUserService,
+            PushPublishService,
             { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock },
             { provide: DotPropertiesService, useClass: MockDotPropertiesService },
             provideHttpClient(),

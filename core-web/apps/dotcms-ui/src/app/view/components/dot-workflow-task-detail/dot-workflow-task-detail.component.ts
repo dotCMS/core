@@ -5,7 +5,7 @@ import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 
-import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
 
 /**
  * Allow user to view a workflow task to a DotCMS instance
@@ -17,7 +17,7 @@ import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.mo
 @Component({
     selector: 'dot-workflow-task-detail',
     templateUrl: './dot-workflow-task-detail.component.html',
-    imports: [CommonModule, DotIframeDialogModule],
+    imports: [CommonModule, DotIframeDialogComponent],
     providers: [DotWorkflowTaskDetailService]
 })
 export class DotWorkflowTaskDetailComponent implements OnInit {

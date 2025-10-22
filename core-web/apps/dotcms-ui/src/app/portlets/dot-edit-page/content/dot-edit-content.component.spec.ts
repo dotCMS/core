@@ -21,6 +21,7 @@ import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotEditPageService,
     DotESContentService,
     DotEventsService,
@@ -42,7 +43,8 @@ import {
     DotSessionStorageService,
     DotUiColorsService,
     DotWorkflowActionsFireService,
-    DotWorkflowService
+    DotWorkflowService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -109,7 +111,7 @@ import { DotLoadingIndicatorComponent } from '../../../view/components/_common/i
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
+import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';
 import { DotPaletteComponent } from '../components/dot-palette/dot-palette.component';
 
 // Suppress console logs during this test
@@ -305,7 +307,7 @@ describe('DotEditContentComponent', () => {
                 ButtonModule,
                 DialogModule,
                 DotEditContentletComponent,
-                DotEditPageInfoModule,
+                DotEditPageInfoComponent,
                 DotLoadingIndicatorComponent,
                 DotEditPageWorkflowsActionsModule,
                 DotOverlayMaskComponent,
@@ -328,6 +330,8 @@ describe('DotEditContentComponent', () => {
                 DotEditContentToolbarHtmlService,
                 DotDOMHtmlUtilService,
                 DotAlertConfirmService,
+                PushPublishService,
+                DotCurrentUserService,
                 {
                     provide: DotEditContentHtmlService,
                     useValue: {

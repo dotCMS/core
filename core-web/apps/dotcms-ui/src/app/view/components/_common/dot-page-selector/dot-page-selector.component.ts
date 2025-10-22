@@ -29,7 +29,7 @@ import {
 import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
 
 import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
-import { DotFieldHelperModule } from '../../dot-field-helper/dot-field-helper.module';
+import { DotFieldHelperComponent } from '../../dot-field-helper/dot-field-helper.component';
 
 const NO_SPECIAL_CHAR = /^[a-zA-Z0-9._/-]*$/g;
 const REPLACE_SPECIAL_CHAR = /[^a-zA-Z0-9._/-]/g;
@@ -54,6 +54,7 @@ enum SearchType {
     templateUrl: './dot-page-selector.component.html',
     styleUrls: ['./dot-page-selector.component.scss'],
     providers: [
+        DotPageSelectorService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -65,7 +66,7 @@ enum SearchType {
         FormsModule,
         AutoCompleteModule,
         DotDirectivesModule,
-        DotFieldHelperModule,
+        DotFieldHelperComponent,
         DotMessagePipe
     ]
 })

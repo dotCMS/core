@@ -15,7 +15,7 @@ import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
@@ -29,7 +29,13 @@ describe('DotEditContentletComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            imports: [DotEditContentletComponent, DotContentletWrapperComponent],
+            imports: [
+                DotEditContentletComponent,
+                DotContentletWrapperComponent,
+                DotIframeDialogComponent,
+                BrowserAnimationsModule,
+                RouterTestingModule
+            ],
             providers: [
                 DotContentletEditorService,
                 IframeOverlayService,
@@ -49,8 +55,7 @@ describe('DotEditContentletComponent', () => {
                     provide: LoginService,
                     useClass: LoginServiceMock
                 }
-            ],
-            imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
+            ]
         });
     }));
 

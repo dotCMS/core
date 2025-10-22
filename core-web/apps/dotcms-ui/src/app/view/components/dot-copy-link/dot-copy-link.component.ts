@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil, DotIconComponent } from '@dotcms/ui';
+import { DotClipboardUtil } from '@dotcms/ui';
 
 /**
  * Icon button to copy to clipboard the string you pass to it,
@@ -19,7 +19,7 @@ import { DotClipboardUtil, DotIconComponent } from '@dotcms/ui';
     selector: 'dot-copy-link',
     templateUrl: './dot-copy-link.component.html',
     styleUrls: ['./dot-copy-link.component.scss'],
-    imports: [CommonModule, TooltipModule, DotIconComponent, ButtonModule],
+    imports: [CommonModule, TooltipModule, ButtonModule],
     providers: [DotClipboardUtil]
 })
 export class DotCopyLinkComponent implements OnInit {

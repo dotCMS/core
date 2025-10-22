@@ -50,8 +50,9 @@ describe('DotRelationshipTreeComponent', () => {
 
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotRelationshipTreeComponent],
+                declarations: [TestHostComponent],
                 imports: [
+                    DotRelationshipTreeComponent,
                     DotIconComponent,
                     DotSafeHtmlPipe,
                     DotMessagePipe,
@@ -100,8 +101,9 @@ describe('DotRelationshipTreeComponent', () => {
 
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotRelationshipTreeComponent],
+                declarations: [TestHostComponent],
                 imports: [
+                    DotRelationshipTreeComponent,
                     DotIconComponent,
                     DotSafeHtmlPipe,
                     DotMessagePipe,

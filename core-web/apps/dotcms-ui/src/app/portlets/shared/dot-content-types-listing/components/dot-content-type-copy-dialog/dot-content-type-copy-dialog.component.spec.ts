@@ -22,7 +22,7 @@ import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialo
 
 import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
 import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
-import { DotFormSelectorModule } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
+import { DotFormSelectorComponent } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.component';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -79,7 +79,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
         TestBed.configureTestingModule({
             declarations: [DotContentTypeCopyDialogComponent, TestHostComponent],
             imports: [
-                DotFormSelectorModule,
+                DotFormSelectorComponent,
                 BrowserAnimationsModule,
                 DotFieldValidationMessageComponent,
                 DotMdIconSelectorComponent,

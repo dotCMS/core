@@ -42,7 +42,7 @@ import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.componen
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 const messageServiceMock = new MockDotMessageService({
@@ -66,7 +66,13 @@ describe('DotContentletWrapperComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [DotContentletWrapperComponent],
+            imports: [
+                DotContentletWrapperComponent,
+                DotIframeDialogComponent,
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                HttpClientTestingModule
+            ],
             providers: [
                 DotContentletEditorService,
                 DotIframeService,
@@ -109,12 +115,6 @@ describe('DotContentletWrapperComponent', () => {
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService }
-            ],
-            imports: [
-                DotIframeDialogModule,
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                HttpClientTestingModule
             ]
         });
     }));
