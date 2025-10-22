@@ -59,6 +59,7 @@ export class DotContentDriveSidebarComponent {
         const { path } = node.data;
 
         this.#store.setPath(path);
+        this.#store.setSelectedNode(node);
     }
 
     /**
