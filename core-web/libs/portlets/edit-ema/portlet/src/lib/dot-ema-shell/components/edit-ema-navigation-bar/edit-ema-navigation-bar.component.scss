@@ -72,7 +72,7 @@
     }
 
     &.open {
-        left: -17.5rem;
+        left: -23.875rem;
         border: 1px solid $color-palette-gray-200; // Same as the border of the palette to create a blending illusion
         border-right: 1px solid $white;
         ::ng-deep {

@@ -9,6 +9,7 @@
 
 .p-tabview .p-tabview-nav li {
     margin-right: 0;
+    flex: 1;
 }
 
 .p-tabview-title {
@@ -24,6 +25,7 @@
     margin: 0;
     white-space: nowrap;
     height: 100%;
+    justify-content: center;
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link:not(.p-disabled):focus {

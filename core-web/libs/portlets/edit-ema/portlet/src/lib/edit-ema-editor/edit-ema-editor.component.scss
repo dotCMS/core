@@ -19,15 +19,19 @@
     height: 0;
 }
 
-dot-edit-ema-palette {
+dot-uve-palette {
     transition: all $basic-speed ease-in-out;
+
+    grid-column: 2 / -1;
+    grid-row: 1 / -1;
 
     &.closed {
         width: 0;
+        border-left: none;
     }
 
     &.open {
-        width: 15.5rem;
+        width: 21.875rem;
     }
 }
 
@@ -42,7 +46,7 @@ dot-ema-page-dropzone {
 
 dot-edit-ema-toolbar,
 dot-uve-toolbar {
-    grid-column: 1 / -1;
+    grid-column: 1 / 1;
 }
 
 dot-ema-device-display {
