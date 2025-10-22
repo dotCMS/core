@@ -783,40 +783,37 @@ public class ContentTypeHelper implements Serializable {
     }
 
     /**
-     * Sorts a list of Content Types based on the given orderBy parameter.
+     * Sorts a list of Content Types based on the given orderBy parameter. Sorting is case-insensitive for string fields.
      * <p>
-     * The orderBy parameter is the field and direction to sort by, it should be a valid property
-     * of the {@link ContentType} class such as "name", "variable", "description", etc. 
-     * If the field is not found, the Content Types are sorted by "name".
+     * It will order for a valid property of the {@link ContentType} class such as "name",
+     * "variable", "description", etc. If the field is not found, the Content Types are sorted by "name".
      * <p>
-     * By default, the Content Types are sorted ascending, you can override this by adding a sort type suffix
-     * to any property name. The suffix can be ":asc" | " asc" for ascending or ":desc" | " desc" for descending.
+     * By default, the Content Types are sorted ascending, you can override this by adding a sort
+     * type suffix to any property. Supports ':' and 'space-separated' order syntax. e.g.
+     * - "name:asc"
+     * - "variable desc"
      * </p>
-     * <p>Example</p>
-     * <pre>
-     * List<ContentType> contentTypes = APILocator.getContentTypeAPI().findAll(user);
-     * List<ContentType> sortedContentTypes = ContentTypeHelper.sortContentTypes(contentTypes, "name:asc");
-     * </pre>
      * @param contentTypes The list of Content Types to sort.
      * @param orderBy The field and direction to sort the Content Types by.
      * @return The sorted list of Content Types.
      */
     public static List<ContentType> sortContentTypes(final List<ContentType> contentTypes,
             final String orderBy) {
-        if (contentTypes == null || contentTypes.isEmpty() || orderBy == null
-                || orderBy.isBlank()) {
+
+        if (contentTypes == null || contentTypes.isEmpty() || orderBy == null || orderBy.isBlank()) {
             return contentTypes;
         }
 
         String[] parts = orderBy.split("[:\\s]+");
-        String field = parts[0].trim().toLowerCase();
+        String field = parts[0].trim().toLowerCase(Locale.ROOT);
         boolean ascending = parts.length < 2 || !"desc".equalsIgnoreCase(parts[1].trim());
 
-        Function<ContentType, Comparable> keyExtractor = c -> getComparableFieldValue(c, field);
+        Function<ContentType, Comparable> keyExtractor = c -> getFieldValue(c, field);
 
         Comparator<ContentType> comparator = Comparator.comparing(
                 keyExtractor,
-                Comparator.nullsLast(Comparator.naturalOrder()));
+                Comparator.nullsLast(Comparator.naturalOrder())
+        );
 
         if (!ascending) {
             comparator = comparator.reversed();
@@ -828,24 +825,25 @@ public class ContentTypeHelper implements Serializable {
     }
 
     /**
-     * Retrieves the value of a field from a Content Type.
+     * Retrieves the comparable filed value for sorting.
      * <p>
-     * This method is used to get the value of a field from a Content Type.
      * @param contentType The Content Type to get the field value from.
      * @param field The field to get the value from.
      * @return The value of the field.
      */
-    private static Comparable<?> getComparableFieldValue(ContentType contentType, String field) {
-        switch (field.toLowerCase()) {
+    private static Comparable<?> getFieldValue(final ContentType contentType, final String field) {
+        if (contentType == null) {
+            return null;
+        }
+
+        switch (field) {
             case "name":
-                String name = contentType.name();
-                return name != null ? name.toLowerCase() : null;
+                return lower(contentType.name());
             case "variable":
-                String variable = contentType.variable();
-                return variable != null ? variable.toLowerCase() : null;
+            case "velocity_var_name":
+                return lower(contentType.variable());
             case "description":
-                String desc = contentType.description();
-                return desc != null ? desc.toLowerCase() : null;
+                return  lower(contentType.description());
             case "id":
                 return contentType.id();
             case "moddate":
@@ -878,13 +876,22 @@ public class ContentTypeHelper implements Serializable {
             case "folder":
                 return contentType.folder();
             default:
-                final var message = String.format(
-                        "Unknown sort field: [%s], using 'name' as fallback.", field);
-                Logger.warn(ContentTypeHelper.class, message);
+                Logger.warn(
+                        ContentTypeHelper.class,
+                        String.format("Unknown sort field: [%s], using 'name' as fallback.", field)
+                );
 
-                String fallbackName = contentType.name();
-                return fallbackName != null ? fallbackName.toLowerCase() : null;
+                return lower(contentType.name());
         }
+    }
+
+    /**
+     * Converts a string to lowercase using a consistent locale.
+     * @param field field name of the class attributes in the {@link ContentType} class.
+     * @return The lowercase string.
+     */
+    private static String lower(final String field) {
+        return field != null ? field.toLowerCase(Locale.ROOT) : null;
     }
 
 } // E:O:F:ContentTypeHelper.
