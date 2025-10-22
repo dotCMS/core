@@ -1,5 +1,4 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 
 import { portletHaveLicenseResolver } from '@dotcms/ui';
 
@@ -7,7 +6,7 @@ import { DotFormBuilderComponent } from './dot-form-builder.component';
 
 import { DotContentTypeEditResolver } from '../shared/dot-content-types-edit/dot-content-types-edit-resolver.service';
 
-const routes: Routes = [
+export const dotFormBuilderRoutes: Routes = [
     {
         component: DotFormBuilderComponent,
         path: '',
@@ -44,10 +43,3 @@ const routes: Routes = [
         }
     }
 ];
-
-@NgModule({
-    exports: [RouterModule],
-    imports: [RouterModule.forChild(routes)],
-    providers: [DotContentTypeEditResolver]
-})
-export class DotFormBuilderRoutingModule {}

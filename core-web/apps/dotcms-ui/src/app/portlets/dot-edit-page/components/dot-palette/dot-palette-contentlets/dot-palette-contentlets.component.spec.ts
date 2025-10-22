@@ -16,7 +16,7 @@ import { DotIconComponent, DotMessagePipe, DotSpinnerComponent } from '@dotcms/u
 import { DotPaletteContentletsComponent } from './dot-palette-contentlets.component';
 
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotFilterPipeModule } from '../../../../../view/pipes/dot-filter/dot-filter-pipe.module';
+import { DotFilterPipe } from '../../../../../view/pipes/dot-filter/dot-filter.pipe';
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 export const contentletFormDataMock = {
@@ -108,7 +108,7 @@ describe('DotPaletteContentletsComponent', () => {
                 DotMessagePipe,
                 DotSpinnerComponent,
                 DotIconComponent,
-                DotFilterPipeModule,
+                DotFilterPipe,
                 FormsModule,
                 DotPaletteInputFilterComponent,
                 HttpClientTestingModule,

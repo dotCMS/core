@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 import {
     DotContentletLockerService,
@@ -18,7 +19,7 @@ import {
 } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotEnterpriseLicenseResolver, DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
 
-import { DotEditPageRoutingModule } from './dot-edit-page-routing.module';
+import { dotEditPageRoutes } from './dot-edit-page.routes';
 import { DotEditLayoutModule } from './layout/dot-edit-layout.module';
 import { DotEditPageMainModule } from './main/dot-edit-page-main/dot-edit-page-main.module';
 
@@ -31,7 +32,7 @@ import { DotFeatureFlagResolver } from '../shared/resolvers/dot-feature-flag-res
         CommonModule,
         DotEditLayoutModule,
         DotEditPageMainModule,
-        DotEditPageRoutingModule,
+        RouterModule.forChild(dotEditPageRoutes),
         DotDirectivesModule
     ],
     declarations: [],

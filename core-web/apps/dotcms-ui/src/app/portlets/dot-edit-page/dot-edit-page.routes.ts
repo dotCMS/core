@@ -1,5 +1,4 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 
 import { CanDeactivateGuardService, DotEditPageResolver } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
@@ -9,7 +8,7 @@ import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-pag
 
 import { DotFeatureFlagResolver } from '../shared/resolvers/dot-feature-flag-resolver.service';
 
-const dotEditPage: Routes = [
+export const dotEditPageRoutes: Routes = [
     {
         component: DotEditPageMainComponent,
         path: '',
@@ -63,9 +62,3 @@ const dotEditPage: Routes = [
             ).then((m) => m.DotLegacyTemplateAdditionalActionsComponent)
     }
 ];
-
-@NgModule({
-    exports: [RouterModule],
-    imports: [RouterModule.forChild(dotEditPage)]
-})
-export class DotEditPageRoutingModule {}

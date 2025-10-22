@@ -1,10 +1,9 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
 
-const routes: Routes = [
+export const dotStarterRoutes: Routes = [
     {
         component: DotStarterComponent,
         path: '',
@@ -13,9 +12,3 @@ const routes: Routes = [
         }
     }
 ];
-
-@NgModule({
-    imports: [RouterModule.forChild(routes)],
-    exports: [RouterModule]
-})
-export class DotStarterRoutingModule {}

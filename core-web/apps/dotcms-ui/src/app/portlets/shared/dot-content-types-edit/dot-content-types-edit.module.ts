@@ -3,6 +3,7 @@ import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -62,8 +63,8 @@ import { FieldPropertyService } from './components/fields/service/field-properti
 import { FieldService } from './components/fields/service/field.service';
 import { ContentTypesFormComponent } from './components/form/content-types-form.component';
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';
-import { DotContentTypesEditRoutingModule } from './dot-content-types-edit-routing.module';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
+import { dotContentTypesEditRoutes } from './dot-content-types-edit.routes';
 
 import { DotAddToMenuService } from '../../../api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
@@ -86,8 +87,9 @@ import { DotNavigationService } from '../../../view/components/dot-navigation/se
 import { DotPortletBoxComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotRelationshipTreeComponent } from '../../../view/components/dot-relationship-tree/dot-relationship-tree.component';
 import { DotSecondaryToolbarComponent } from '../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
-import { DotMaxlengthModule } from '../../../view/directives/dot-maxlength/dot-maxlength.module';
+import { DotMaxlengthDirective } from '../../../view/directives/dot-maxlength/dot-maxlength.directive';
 import { DotAddToMenuComponent } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
+import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.service';
 
 @NgModule({
     declarations: [
@@ -125,7 +127,7 @@ import { DotAddToMenuComponent } from '../dot-content-types-listing/components/d
         DotAutofocusDirective,
         DotBaseTypeSelectorComponent,
         DotContentTypeFieldsVariablesModule,
-        DotContentTypesEditRoutingModule,
+        RouterModule.forChild(dotContentTypesEditRoutes),
         DotCopyLinkComponent,
         DotDialogComponent,
         DotDirectivesModule,
@@ -136,7 +138,7 @@ import { DotAddToMenuComponent } from '../dot-content-types-listing/components/d
         DotBinarySettingsComponent,
         TooltipModule,
         DotIconComponent,
-        DotMaxlengthModule,
+        DotMaxlengthDirective,
         DotMenuComponent,
         DotPageSelectorComponent,
         DotRelationshipsModule,
@@ -178,7 +180,8 @@ import { DotAddToMenuComponent } from '../dot-content-types-listing/components/d
         DotMenuService,
         DotNavigationService,
         DotWorkflowsActionsService,
-        DotWorkflowsActionsSelectorFieldService
+        DotWorkflowsActionsSelectorFieldService,
+        DotFeatureFlagResolver
     ],
     schemas: []
 })

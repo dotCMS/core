@@ -30,7 +30,6 @@ import {
 
 import { DotFormModel } from '../../../../shared/models/dot-form/dot-form.model';
 import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
-import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
@@ -38,7 +37,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
-    imports: [CommonModule, DialogModule, ButtonModule, DotContainerReferenceModule],
+    imports: [CommonModule, DialogModule, ButtonModule, DotContainerReferenceDirective],
     providers: [DotWizardService]
 })
 export class DotWizardComponent implements AfterViewInit {

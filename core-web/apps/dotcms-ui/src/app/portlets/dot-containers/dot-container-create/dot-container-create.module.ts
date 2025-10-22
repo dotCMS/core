@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotContainerCreateRoutingModule } from './dot-container-create-routing.module';
 import { DotContainerCreateComponent } from './dot-container-create.component';
+import { dotContainerCreateRoutes } from './dot-container-create.routes';
 import { DotContainerHistoryComponent } from './dot-container-history/dot-container-history.component';
 import { DotContainerPermissionsComponent } from './dot-container-permissions/dot-container-permissions.component';
 import { DotContainerPropertiesComponent } from './dot-container-properties/dot-container-properties.component';
@@ -18,7 +19,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
     declarations: [DotContainerCreateComponent],
     imports: [
         CommonModule,
-        DotContainerCreateRoutingModule,
+        RouterModule.forChild(dotContainerCreateRoutes),
         DotPortletBaseComponent,
         TabViewModule,
         DotMessagePipe,

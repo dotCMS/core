@@ -15,7 +15,7 @@ import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type.component';
 
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotFilterPipeModule } from '../../../../../view/pipes/dot-filter/dot-filter-pipe.module';
+import { DotFilterPipe } from '../../../../../view/pipes/dot-filter/dot-filter.pipe';
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 export const contentTypeDataMock = [
@@ -95,7 +95,7 @@ describe('DotPaletteContentTypeComponent', () => {
                 DotIconComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
-                DotFilterPipeModule,
+                DotFilterPipe,
                 FormsModule,
                 HttpClientTestingModule
             ],

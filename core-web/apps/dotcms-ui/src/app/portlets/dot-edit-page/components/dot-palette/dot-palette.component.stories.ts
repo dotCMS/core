@@ -17,7 +17,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPaletteComponent } from './dot-palette.component';
 
 import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotFilterPipeModule } from '../../../../view/pipes/dot-filter/dot-filter-pipe.module';
+import { DotFilterPipe } from '../../../../view/pipes/dot-filter/dot-filter.pipe';
 
 const data = [
     {
@@ -133,7 +133,7 @@ const meta: Meta<DotPaletteComponent> = {
             imports: [
                 CommonModule,
                 DotIconComponent,
-                DotFilterPipeModule,
+                DotFilterPipe,
                 DotPaletteComponent,
                 DotMessagePipe,
                 BrowserAnimationsModule

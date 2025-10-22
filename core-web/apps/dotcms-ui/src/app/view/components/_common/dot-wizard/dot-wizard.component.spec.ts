@@ -40,7 +40,7 @@ import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotWizardComponent } from './dot-wizard.component';
 
 import { DotParseHtmlService } from '../../../../api/services/dot-parse-html/dot-parse-html.service';
-import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
+import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
 import { PushPublishServiceMock } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
@@ -110,7 +110,7 @@ describe('DotWizardComponent', () => {
                 DotWizardComponent,
                 DotDialogComponent,
                 CommonModule,
-                DotContainerReferenceModule,
+                DotContainerReferenceDirective,
                 HttpClientTestingModule,
                 FormsModule,
                 ReactiveFormsModule,
