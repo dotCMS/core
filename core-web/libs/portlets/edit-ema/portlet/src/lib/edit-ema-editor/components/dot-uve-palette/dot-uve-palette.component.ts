@@ -14,4 +14,5 @@ import { DotMessagePipe } from '@dotcms/ui';
 export class DotUvePaletteComponent {
     $languageId = input.required<number>({ alias: 'languageId' });
     $variantId = input.required<string>({ alias: 'variantId' });
+    $pagePath = input.required<string>({ alias: 'pagePath' });
 }

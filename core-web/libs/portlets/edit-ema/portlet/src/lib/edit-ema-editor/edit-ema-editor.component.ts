@@ -60,7 +60,6 @@ import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/do
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
-import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
@@ -117,7 +116,6 @@ import {
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EmaPageDropzoneComponent,
-        EditEmaPaletteComponent,
         EmaContentletToolsComponent,
         ProgressBarModule,
         DotResultsSeoToolComponent,
