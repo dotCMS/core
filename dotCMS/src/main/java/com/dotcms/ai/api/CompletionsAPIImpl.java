@@ -14,7 +14,6 @@ import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.EncodingUtil;
-import com.dotcms.analytics.Util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
