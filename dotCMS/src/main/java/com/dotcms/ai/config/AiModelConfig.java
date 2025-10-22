@@ -1,17 +1,21 @@
 package com.dotcms.ai.config;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * Encapsulates the Configuration for a model
  * @author jsanca
  */
-public class AiModelConfig {
+public class AiModelConfig implements Serializable {
 
     public static final String API_KEY = "key";
     public static final String VENDOR  = "vendor";
     public static final String MODEL   = "model";
     public static final String API_URL = "apiUrl";
+    public static final String TEMPERATURE = "temperature";
+    public static final String MAX_OUTPUT_TOKENS = "maxOutputTokens";
+    public static final String TIMEOUT_MS = "timeoutMs";
 
     private final String name;
     private final Map<String, String> config;

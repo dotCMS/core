@@ -1,6 +1,7 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.api.provider.VendorModelProviderFactory;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
@@ -13,8 +14,10 @@ import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.rest.forms.CompletionsForm;
+import com.dotcms.ai.util.AIUtil;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -22,9 +25,16 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -52,14 +62,21 @@ public class CompletionsAPIImpl implements CompletionsAPI {
             Lazy.of(() -> Config.getIntProperty(DEFAULT_AI_MAX_NUMBER_OF_TOKENS, 16384));
 
     private final AppConfig config;
+    private final VendorModelProviderFactory modelProviderFactory;
 
     public CompletionsAPIImpl(final AppConfig config) {
+        this(config, CDIUtils.getBeanThrows(VendorModelProviderFactory.class));
+    }
+
+    public CompletionsAPIImpl(final AppConfig config,
+                              final VendorModelProviderFactory modelProviderFactory) {
         final Lazy<AppConfig> defaultConfig = Lazy.of(() -> ConfigService.INSTANCE.config(
                 Try.of(() -> WebAPILocator
                                 .getHostWebAPI()
                                 .getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
                         .getOrElse(APILocator.systemHost())));
         this.config = Optional.ofNullable(config).orElse(defaultConfig.get());
+        this.modelProviderFactory = modelProviderFactory;
     }
 
     @Override
@@ -141,6 +158,26 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     public JSONObject raw(final CompletionsForm promptForm) {
         JSONObject jsonObject = buildRequestJson(promptForm);
         return raw(jsonObject, UtilMethods.extractUserIdOrNull(promptForm.user));
+    }
+
+    @Override
+    public Object raw(final CompletionRequest completionRequest) {
+
+        Logger.debug(this, ()-> "Doing raw request: " + completionRequest);
+        final String vendorName = AIUtil.getVendorFromPath(completionRequest.getVendorModelPath());
+        final float temperature = completionRequest.getTemperature();
+
+        // todo: I need to pass the temparature if applies to the factory (as a map of customuserProps)
+        final ChatModel chatModel = this.modelProviderFactory.get(vendorName,
+                completionRequest.getChatModelConfig());
+        final String userPrompt = completionRequest.getPrompt();
+
+        final String systemPrompt = completionRequest.getSystemPrompt();
+        final UserMessage userMessage     = new UserMessage(userPrompt);
+        final List<ChatMessage> messages = StringUtils.isSet(systemPrompt)?
+                List.of(new SystemMessage(systemPrompt), userMessage):List.of(userMessage);
+        final ChatResponse chatResponse = chatModel.chat(messages);
+        return chatResponse;
     }
 
     @Override

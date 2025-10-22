@@ -93,23 +93,55 @@ public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
     @Override
     public AiModelConfig getByPath(final String path) {
 
+        if (path == null || path.trim().isEmpty()) {
+            throw new IllegalArgumentException("Path cannot be null or empty");
+        }
+
         final String[] parts = path.split("\\.");
-        if (parts.length != 3){
-            throw new IllegalArgumentException("Path must be vendor.kind.modelKey");
+
+        final String vendor;
+        final String kind;
+        final String modelKey;
+
+        switch (parts.length) {
+
+            // ✅ Case 1: vendor only → default chat model
+            case 1:
+                vendor = parts[0];
+                kind = "chat";
+                modelKey = resolveDefaultModelKey(vendor, true);
+                break;
+
+            // ✅ Case 2: vendor.kind → default model of that kind
+            case 2:
+                vendor = parts[0];
+                kind = parts[1];
+                modelKey = resolveDefaultModelKey(vendor, "chat".equals(kind));
+                break;
+
+            // ✅ Case 3: vendor.kind.modelKey → explicit
+            case 3:
+                vendor = parts[0];
+                kind = parts[1];
+                modelKey = parts[2];
+                break;
+
+            default:
+                throw new IllegalArgumentException(
+                        "Invalid path format. Expected one of: " +
+                                "vendor | vendor.kind | vendor.kind.modelKey"
+                );
         }
 
-        final String vendor = parts[0], kind = parts[1], modelKey = parts[2];
-
-        if ("chat".equals(kind)) {
+        if ("chat".equalsIgnoreCase(kind)) {
             return getChatConfig(vendor, modelKey);
-        }
-
-        if ("embeddings".equals(kind)) {
+        } else if ("embeddings".equalsIgnoreCase(kind)) {
             return getEmbeddingsConfig(vendor, modelKey);
-        }
+        } // todo: when more add here
 
         throw new IllegalArgumentException("Unknown kind: " + kind);
     }
+
 
     /**
      * Returns the list of all chat model names available for a vendor.
