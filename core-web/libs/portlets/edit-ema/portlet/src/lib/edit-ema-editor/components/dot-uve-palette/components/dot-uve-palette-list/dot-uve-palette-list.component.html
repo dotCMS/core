@@ -1,5 +1,26 @@
 <div class="dot-uve-palette-list">
-    @for (contenttype of contenttypes(); track contenttype.id) {
-        <dot-uve-palette-item [contenttype]="contenttype" />
-    }
+    <!-- Controls -->
+    <div class="dot-uve-palette-list__controls">
+        <p-iconField iconPosition="left" [style]="{ width: '100%' }">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                type="text"
+                placeholder="Search"
+                pInputText
+                [style]="{ width: '100%' }"
+                styleClass="input-text-sm" />
+        </p-iconField>
+        <p-button
+            icon="pi pi-arrow-right-arrow-left"
+            [text]="true"
+            [rounded]="true"
+            styleClass="sort-button"></p-button>
+    </div>
+
+    <!-- Grid -->
+    <div class="dot-uve-palette-list__grid">
+        @for (contenttype of contenttypes(); track contenttype.id) {
+            <dot-uve-palette-item [contenttype]="contenttype" />
+        }
+    </div>
 </div>

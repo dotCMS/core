@@ -6,18 +6,39 @@
 }
 
 .dot-uve-palette-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); // Two equal columns
-    gap: 14px; // 12px gap between grid items
+    display: flex;
+    flex-direction: column;
     width: 100%;
 
-    // Responsive behavior - single column on smaller screens
-    @media (max-width: 768px) {
-        grid-template-columns: 1fr;
+    &__controls {
+        display: flex;
+        gap: 7px;
+        margin-bottom: $spacing-2;
     }
 
-    // Ensure grid items fill their containers
-    & > * {
-        width: 100%;
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); // Two equal columns
+        gap: 14px; // 12px gap between grid items
+
+        // Ensure grid items fill their containers
+        & > * {
+            width: 100%;
+        }
+    }
+}
+
+::ng-deep .sort-button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+
+    .p-button-icon {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+        transform: rotate(90deg);
+        color: $color-palette-bluegray-800 !important; // Override the default color
     }
 }
