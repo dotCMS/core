@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -216,6 +217,12 @@ public class HostFactoryImpl implements HostFactory {
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
+                    // Check if siteName is a UUID and try to find by ID
+                    final Host siteById = findSiteByIdIfUUID(siteName, retrieveLiveVersion);
+                    if (siteById != null) {
+                        return siteById;
+                    }
+                    // Site not found by name or ID, add to 404 cache
                     siteCache.add404HostByName(siteName);
                     return null;
                 }
@@ -1077,6 +1084,29 @@ public class HostFactoryImpl implements HostFactory {
             }
         }
         return String.format(baseQuery, fields);
+    }
+
+    /**
+     * Attempts to find a site by ID if the provided siteName is a valid UUID.
+     *
+     * @param siteName The site name that may be a UUID identifier.
+     * @param retrieveLiveVersion If the live version of the Site must be retrieved.
+     * @return The {@link Host} object if found by ID, otherwise {@code null}.
+     */
+    private Host findSiteByIdIfUUID(final String siteName, final boolean retrieveLiveVersion) {
+        if (UUIDUtil.isUUID(siteName)) {
+            try {
+                // siteName is a valid UUID, try to find by ID
+                final Host siteById = DBSearch(siteName, retrieveLiveVersion);
+                if (siteById != null) {
+                    Logger.debug(this, () -> String.format("Site found by ID '%s'", siteName));
+                    return siteById;
+                }
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.warn(this, String.format("Error searching for site by ID '%s'", siteName), e);
+            }
+        }
+        return null;
     }
 
     /**
