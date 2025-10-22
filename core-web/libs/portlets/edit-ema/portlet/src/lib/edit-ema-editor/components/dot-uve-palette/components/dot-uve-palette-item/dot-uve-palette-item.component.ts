@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
@@ -11,5 +11,5 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePaletteItemComponent {
-    @Input() contenttype!: DotCMSContentType;
+    $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 }

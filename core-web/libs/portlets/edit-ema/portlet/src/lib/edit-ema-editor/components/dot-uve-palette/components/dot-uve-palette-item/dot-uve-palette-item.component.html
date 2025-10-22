@@ -1,22 +1,24 @@
-<div class="dot-uve-palette-item" *ngIf="contenttype">
+<div class="dot-uve-palette-item" *ngIf="$contentType()">
     <!-- Left side - Drag handle / More options -->
     <div class="dot-uve-palette-item__drag-handle">
-        <i class="material-icons">more_vert</i>
+        <i class="pi pi-ellipsis-v"></i>
     </div>
 
     <!-- Center - Content type icon and name -->
     <div class="dot-uve-palette-item__content">
         <div class="dot-uve-palette-item__icon">
-            <i class="material-icons material-icons-outlined" *ngIf="contenttype.icon">
-                {{ contenttype.icon }}
+            <i class="material-icons material-icons-outlined" *ngIf="$contentType().icon">
+                {{ $contentType().icon }}
             </i>
-            <i class="material-icons material-icons-outlined" *ngIf="!contenttype.icon">palette</i>
+            <i class="material-icons material-icons-outlined" *ngIf="!$contentType().icon">
+                palette
+            </i>
         </div>
-        <div class="dot-uve-palette-item__name">{{ contenttype.name }}</div>
+        <div class="dot-uve-palette-item__name">{{ $contentType().name }}</div>
     </div>
 
     <!-- Right side - Chevron -->
     <div class="dot-uve-palette-item__chevron">
-        <i class="material-icons">chevron_right</i>
+        <i class="pi pi-chevron-right"></i>
     </div>
 </div>

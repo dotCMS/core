@@ -62,6 +62,12 @@
     color: $black;
     border-bottom-right-radius: $border-radius-xs;
     border-bottom-left-radius: $border-radius-xs;
+
+    p-tabpanel {
+        .p-tabview-panel {
+            height: 100%;
+        }
+    }
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link > .p-ink {

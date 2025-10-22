@@ -1,26 +1,34 @@
-<div class="dot-uve-palette-list">
-    <!-- Controls -->
-    <div class="dot-uve-palette-list__controls">
-        <p-iconField iconPosition="left" [style]="{ width: '100%' }">
-            <p-inputIcon styleClass="pi pi-search" />
-            <input
-                type="text"
-                placeholder="Search"
-                pInputText
-                [style]="{ width: '100%' }"
-                styleClass="input-text-sm" />
-        </p-iconField>
-        <p-button
-            icon="pi pi-arrow-right-arrow-left"
-            [text]="true"
-            [rounded]="true"
-            styleClass="sort-button"></p-button>
-    </div>
-
-    <!-- Grid -->
-    <div class="dot-uve-palette-list__grid">
-        @for (contenttype of contenttypes(); track contenttype.id) {
-            <dot-uve-palette-item [contenttype]="contenttype" />
-        }
-    </div>
+<div class="dot-uve-palette-list__controls">
+    <p-iconField iconPosition="left" [style]="{ width: '100%' }">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input
+            type="text"
+            placeholder="Search"
+            pInputText
+            [style]="{ width: '100%' }"
+            styleClass="input-text-sm" />
+    </p-iconField>
+    <p-button
+        icon="pi pi-arrow-right-arrow-left"
+        [text]="true"
+        [rounded]="true"
+        styleClass="sort-button"></p-button>
 </div>
+
+<div class="dot-uve-palette-list__grid">
+    @for (contentType of $paginatedContentTypes(); track contentType.id) {
+        <dot-uve-palette-item [contentType]="contentType" />
+    }
+</div>
+<p-paginator
+    (onPageChange)="onPageChange($event)"
+    [first]="$first()"
+    [rows]="$rows()"
+    [totalRecords]="$totalRecords()"
+    [showPageLinks]="false"
+    [showJumpToPageDropdown]="false"
+    [showCurrentPageReport]="true"
+    [showFirstLastIcon]="false"
+    [currentPageReportTemplate]="
+        '{first} - {last} ' + ('uve.palette.pagination.of' | dm) + ' {totalRecords}'
+    " />

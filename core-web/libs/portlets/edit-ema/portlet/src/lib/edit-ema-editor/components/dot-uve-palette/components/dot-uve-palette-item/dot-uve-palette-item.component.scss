@@ -4,14 +4,14 @@
 .dot-uve-palette-item {
     display: flex;
     width: 100%;
-    height: 110px;
+    height: 6.875rem;
     padding: 0 $spacing-1;
     justify-content: center;
     align-items: center;
     align-self: stretch;
 
-    border-radius: 7px;
     border: 1px solid $color-palette-border-light;
+    border-radius: $border-radius-md;
     background: $white;
 
     cursor: pointer;
@@ -23,7 +23,7 @@
         box-shadow: $shadow-s;
     }
 
-    &__content {
+    .dot-uve-palette-item__content {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -32,34 +32,33 @@
         gap: $spacing-1;
     }
 
-    &__icon {
+    .dot-uve-palette-item__icon {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-bluegray-800;
-        width: 38px;
-        height: 38px;
+        width: 2.375rem;
+        height: 2.375rem;
 
         .material-icons {
-            font-size: 28px;
+            font-size: $font-size-xxl;
         }
     }
 
-    &__name {
+    .dot-uve-palette-item__name {
         font-size: $font-size-md;
-        font-weight: 500;
         color: $color-palette-bluegray-800;
+        font-weight: $font-weight-semi-bold;
         line-height: 1.2;
         font-weight: 700;
     }
 
-    &__drag-handle {
+    .dot-uve-palette-item__drag-handle {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 14px;
-        height: 14px;
         color: $color-palette-bluegray-300; // #9FA9B7
+        width: 0.875rem;
+        height: 0.875rem;
         cursor: grab;
 
         &:active {
@@ -67,12 +66,13 @@
         }
     }
 
-    &__chevron {
+    .dot-uve-palette-item__chevron {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 14px;
-        height: 14px;
         color: $color-palette-bluegray-300; // #9FA9B7
+        width: 0.875rem;
+        height: 0.875rem;
+        color: $color-palette-gray-300;
     }
 }
