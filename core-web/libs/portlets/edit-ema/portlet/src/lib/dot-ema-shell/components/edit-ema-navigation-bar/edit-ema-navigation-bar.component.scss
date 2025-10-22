@@ -36,6 +36,7 @@
 }
 
 .p-button.p-button-outlined.toggle-palette {
+    display: none;
     align-self: flex-start;
     border: 1px solid $color-palette-primary-300;
     background-color: $white;

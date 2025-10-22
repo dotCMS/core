@@ -14,6 +14,18 @@
         data-testId="results-seo-tool"></dot-results-seo-tool>
 }
 
+@if ($editorProps().palette; as palette) {
+    <!-- This is to hold the place for the button that is on the nav bar -->
+    <!-- <div class="toggle-palette-placeholder" data-testId="toggle-palette-placeholder"></div> -->
+
+    <dot-uve-palette
+        [ngClass]="palette.paletteClass"
+        [languageId]="palette.languageId"
+        [variantId]="palette.variantId"
+        [pagePath]="palette.pagePath"
+        data-testId="palette" />
+}
+
 <div
     class="editor-content"
     [ngStyle]="$editorContentStyles()"
@@ -79,17 +91,6 @@
     </div>
 </div>
 
-@if ($editorProps().palette; as palette) {
-    <!-- This is to hold the place for the button that is on the nav bar -->
-    <div class="toggle-palette-placeholder" data-testId="toggle-palette-placeholder"></div>
-
-    <dot-uve-palette
-        [ngClass]="palette.paletteClass"
-        [languageId]="palette.languageId"
-        [variantId]="palette.variantId"
-        [pagePath]="palette.pagePath"
-        data-testId="palette" />
-}
 @if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"

@@ -2,6 +2,8 @@
 
 :host {
     overflow: auto;
-    border-left: 1px solid $color-palette-gray-200;
+    border-right: 1px solid $color-palette-gray-200;
     position: relative;
+
+    width: 21.875rem;
 }

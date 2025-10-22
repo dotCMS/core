@@ -6,11 +6,11 @@
     height: 100%;
 
     // Default state (no palette)
-    grid-template-columns: 1fr;
+    grid-template-columns: min-content 1fr;
 
-    &:has(.toggle-palette-placeholder) {
-        grid-template-columns: 1fr 2rem min-content;
-    }
+    // &:has(.toggle-palette-placeholder) {
+    //     grid-template-columns: min 1fr 2rem min-content;
+    // }
 }
 
 // To generate the space for the palette toggle button
@@ -22,8 +22,8 @@
 dot-uve-palette {
     transition: all $basic-speed ease-in-out;
 
-    grid-column: 2 / -1;
-    grid-row: 1 / -1;
+    grid-column: 1 / 2;
+    grid-row: 2 / -1;
 
     &.closed {
         width: 0;
@@ -46,7 +46,7 @@ dot-ema-page-dropzone {
 
 dot-edit-ema-toolbar,
 dot-uve-toolbar {
-    grid-column: 1 / 1;
+    grid-column: 1 /-1;
 }
 
 dot-ema-device-display {
@@ -65,6 +65,8 @@ dot-results-seo-tool {
     align-items: center;
     gap: $spacing-1;
     overflow: auto;
+
+    grid-column: 2 / -1;
 }
 
 .editor-content-preview {
