@@ -1,0 +1,93 @@
+@use "sass:math";
+@use "variables" as *;
+
+.dot-uve-palette-item {
+    display: flex;
+    width: 140px;
+    height: 110px;
+    padding: 0 $spacing-1; // 0 vertical, 8px horizontal
+    justify-content: center;
+    align-items: center;
+    align-self: stretch;
+    gap: 0;
+    flex: 1 0 0;
+
+    // Style
+    border-radius: 7px;
+    border: 1px solid $color-palette-border-light; // #E5E7EB
+    background: $white; // Using available white instead of --surface-0
+
+    cursor: pointer;
+    transition: all $basic-speed ease-in-out;
+
+    &:hover {
+        border-color: $color-palette-primary;
+        background: $color-palette-primary-100;
+        box-shadow: $shadow-s;
+    }
+
+    &__drag-handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        color: $color-palette-bluegray-300; // #9FA9B7
+        cursor: grab;
+
+        &:active {
+            cursor: grabbing;
+        }
+
+        .material-icons {
+            font-size: $md-icon-size-normal; // 18px
+        }
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        gap: $spacing-1; // 8px gap between icon and text
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        color: $color-palette-bluegray-800; // #37404C
+
+        .material-icons {
+            font-size: $md-icon-size-big; // 24px
+        }
+    }
+
+    &__name {
+        font-size: $font-size-sm; // 14px
+        font-weight: 500;
+        color: $color-palette-bluegray-800; // #37404C
+        text-align: center;
+        line-height: 1.2;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__chevron {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        color: $color-palette-bluegray-300; // #9FA9B7
+
+        .material-icons {
+            font-size: $md-icon-size-normal; // 18px
+        }
+    }
+}

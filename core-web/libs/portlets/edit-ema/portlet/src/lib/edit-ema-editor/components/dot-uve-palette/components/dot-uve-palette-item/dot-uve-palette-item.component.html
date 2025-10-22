@@ -1,1 +1,20 @@
-<p>dot-uve-palette-item works!</p>
+<div class="dot-uve-palette-item" *ngIf="contenttype">
+    <!-- Left side - Drag handle / More options -->
+    <div class="dot-uve-palette-item__drag-handle">
+        <i class="material-icons">more_vert</i>
+    </div>
+
+    <!-- Center - Content type icon and name -->
+    <div class="dot-uve-palette-item__content">
+        <div class="dot-uve-palette-item__icon">
+            <i class="material-icons" *ngIf="contenttype.icon">{{ contenttype.icon }}</i>
+            <i class="material-icons" *ngIf="!contenttype.icon">palette</i>
+        </div>
+        <div class="dot-uve-palette-item__name">{{ contenttype.name }}</div>
+    </div>
+
+    <!-- Right side - Chevron -->
+    <div class="dot-uve-palette-item__chevron">
+        <i class="material-icons">chevron_right</i>
+    </div>
+</div>

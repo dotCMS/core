@@ -1,1 +1,5 @@
-<p>dot-uve-palette-list works!</p>
+<div class="dot-uve-palette-list">
+    @for (contenttype of contenttypes(); track contenttype.id) {
+        <dot-uve-palette-item [contenttype]="contenttype" />
+    }
+</div>

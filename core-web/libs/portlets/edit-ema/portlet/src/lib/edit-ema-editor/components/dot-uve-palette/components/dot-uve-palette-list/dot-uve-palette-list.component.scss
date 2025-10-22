@@ -1,0 +1,23 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    padding: 17.5px 28px;
+}
+
+.dot-uve-palette-list {
+    display: grid;
+    grid-template-columns: repeat(2, min-content); // Two equal columns
+    gap: 14px; // 12px gap between grid items
+    width: 100%;
+
+    // Responsive behavior - single column on smaller screens
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
+
+    // Ensure grid items fill their containers
+    & > * {
+        width: 100%;
+    }
+}
