@@ -782,4 +782,116 @@ public class ContentTypeHelper implements Serializable {
                         .collect(Collectors.toList());
     }
 
+    /**
+     * Sorts a list of Content Types based on the given orderBy parameter. Sorting is case-insensitive for string fields.
+     * <p>
+     * It will order for a valid property of the {@link ContentType} class such as "name",
+     * "variable", "description", etc. If the field is not found, the Content Types are sorted by "name".
+     * <p>
+     * By default, the Content Types are sorted ascending, you can override this by adding a sort
+     * type suffix to any property. Supports ':' and 'space-separated' order syntax. e.g.
+     * - "name:asc"
+     * - "variable desc"
+     * </p>
+     * @param contentTypes The list of Content Types to sort.
+     * @param orderBy The field and direction to sort the Content Types by.
+     * @return The sorted list of Content Types.
+     */
+    public static List<ContentType> sortContentTypes(final List<ContentType> contentTypes,
+            final String orderBy) {
+
+        if (contentTypes == null || contentTypes.isEmpty() || orderBy == null || orderBy.isBlank()) {
+            return contentTypes;
+        }
+
+        String[] parts = orderBy.split("[:\\s]+");
+        String field = parts[0].trim().toLowerCase(Locale.ROOT);
+        boolean ascending = parts.length < 2 || !"desc".equalsIgnoreCase(parts[1].trim());
+
+        Function<ContentType, Comparable> keyExtractor = c -> getFieldValue(c, field);
+
+        Comparator<ContentType> comparator = Comparator.comparing(
+                keyExtractor,
+                Comparator.nullsLast(Comparator.naturalOrder())
+        );
+
+        if (!ascending) {
+            comparator = comparator.reversed();
+        }
+
+        return contentTypes.stream()
+                .sorted(comparator)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieves the comparable filed value for sorting.
+     * <p>
+     * @param contentType The Content Type to get the field value from.
+     * @param field The field to get the value from.
+     * @return The value of the field.
+     */
+    private static Comparable<?> getFieldValue(final ContentType contentType, final String field) {
+        if (contentType == null) {
+            return null;
+        }
+
+        switch (field) {
+            case "name":
+                return lower(contentType.name());
+            case "variable":
+            case "velocity_var_name":
+                return lower(contentType.variable());
+            case "description":
+                return  lower(contentType.description());
+            case "id":
+                return contentType.id();
+            case "moddate":
+            case "mod_date":
+                return contentType.modDate();
+            case "idate":
+            case "i_date":
+                return contentType.iDate();
+            case "sortorder":
+            case "sort_order":
+                return contentType.sortOrder();
+            case "system":
+                return contentType.system();
+            case "versionable":
+                return contentType.versionable();
+            case "multilingualable":
+                return contentType.multilingualable();
+            case "defaulttype":
+            case "default_type":
+                return contentType.defaultType();
+            case "fixed":
+                return contentType.fixed();
+            case "host":
+                return contentType.host();
+            case "sitename":
+            case "site_name":
+                return contentType.siteName();
+            case "icon":
+                return contentType.icon();
+            case "folder":
+                return contentType.folder();
+            default:
+                Logger.warn(
+                        ContentTypeHelper.class,
+                        String.format("Unknown sort field: [%s], using 'name' as fallback.", field)
+                );
+
+                return lower(contentType.name());
+        }
+    }
+
+    /**
+     * Converts a string to lowercase using a consistent locale.
+     * @param field field name of the class attributes in the {@link ContentType} class.
+     * @return The lowercase string.
+     */
+    private static String lower(final String field) {
+        return field != null ? field.toLowerCase(Locale.ROOT) : null;
+    }
+
 } // E:O:F:ContentTypeHelper.
