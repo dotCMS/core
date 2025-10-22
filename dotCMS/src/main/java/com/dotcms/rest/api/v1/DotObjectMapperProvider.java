@@ -10,31 +10,37 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
+import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.time.Instant;
 
 /**
- * Encapsulates the configuration for the Object Mapper on the Resources. 
+ * Encapsulates the configuration for the Object Mapper on the Resources.
  * @author jsanca
  */
 public class DotObjectMapperProvider {
 
+
     private final ObjectMapper defaultObjectMapper;
 
     /**
-     * Get's the default object mapper.
+     * Gets the default object mapper.
      * @return ObjectMapper
      */
     public ObjectMapper getDefaultObjectMapper() {
         return defaultObjectMapper;
     }
 
+    public ObjectMapper getObjectMapper() {
+        return defaultObjectMapper;
+    }
 
     private DotObjectMapperProvider() {
         this(createDefaultMapper());
@@ -45,22 +51,33 @@ public class DotObjectMapperProvider {
         this.defaultObjectMapper = defaultObjectMapper;
     }
 
-    public static ObjectMapper createDefaultMapper() {
+    private static ObjectMapper createDefaultMapper() {
 
-        final ObjectMapper result = new ObjectMapper();
-        result.disable(DeserializationFeature.WRAP_EXCEPTIONS);
+        boolean alphaKeys = Config.getBooleanProperty("dotcms.rest.sort.json.properties", true);
+        boolean useBlackbird = Config.getBooleanProperty("jackson.module.blackbird.enable", true);
+        boolean useJdk8Module = Config.getBooleanProperty("jackson.module.jdk8module.enable", true);
 
-        if (Config.getBooleanProperty("dotcms.rest.sort.json.properties", true)) {
-            result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
-            result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+        final ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.disable(DeserializationFeature.WRAP_EXCEPTIONS);
+        objectMapper.registerModule(new VersioningModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true);
+        objectMapper.enable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);  // To serialize as timestamp (default)
+
+        objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, alphaKeys);
+        objectMapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, alphaKeys);
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
+        if (useBlackbird) {
+            objectMapper.registerModule(new BlackbirdModule());
         }
-        result.registerModule(new Jdk8Module());
-        final JavaTimeModule javaTimeModule = createJavaTimeModule();
+        if (useJdk8Module) {
+            objectMapper.registerModule(new Jdk8Module());
+        }
 
-        result.registerModule(javaTimeModule);
-        result.registerModule(new GuavaModule());
+        objectMapper.registerModule(createJavaTimeModule());
+        objectMapper.registerModule(new GuavaModule());
 
-        return result;
+        return objectMapper;
     }
 
     private static JavaTimeModule createJavaTimeModule() {
@@ -102,5 +119,3 @@ public class DotObjectMapperProvider {
     } // getInstance.
 
 } // E:O:F:DotObjectMapperProvider.
-
-

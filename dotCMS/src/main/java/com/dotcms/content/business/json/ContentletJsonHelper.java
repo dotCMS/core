@@ -1,15 +1,11 @@
 package com.dotcms.content.business.json;
 
 import com.dotcms.content.model.Contentlet;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.BufferedInputStream;
@@ -31,14 +27,7 @@ public class ContentletJsonHelper {
      * Jackson mapper configuration and lazy initialized instance.
      */
     private final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.registerModule(new GuavaModule());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.registerModule(new VersioningModule());
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        return objectMapper;
+        return DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
     });
 
     /**
