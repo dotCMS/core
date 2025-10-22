@@ -7,8 +7,10 @@
     <!-- Center - Content type icon and name -->
     <div class="dot-uve-palette-item__content">
         <div class="dot-uve-palette-item__icon">
-            <i class="material-icons" *ngIf="contenttype.icon">{{ contenttype.icon }}</i>
-            <i class="material-icons" *ngIf="!contenttype.icon">palette</i>
+            <i class="material-icons material-icons-outlined" *ngIf="contenttype.icon">
+                {{ contenttype.icon }}
+            </i>
+            <i class="material-icons material-icons-outlined" *ngIf="!contenttype.icon">palette</i>
         </div>
         <div class="dot-uve-palette-item__name">{{ contenttype.name }}</div>
     </div>

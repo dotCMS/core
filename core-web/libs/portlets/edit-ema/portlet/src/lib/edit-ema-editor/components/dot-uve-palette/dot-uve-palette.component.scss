@@ -5,5 +5,31 @@
     border-right: 1px solid $color-palette-gray-200;
     position: relative;
     background: $color-palette-surface-light; // #F9FAFB
-    width: 21.875rem;
+    width: 20rem;
+}
+
+// Tab header styling
+::ng-deep .p-tabview .p-tabview-nav li {
+    .p-tabview-nav-link {
+        height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+
+        .pi {
+            width: 14px;
+            height: 14px;
+            font-size: 14px;
+            color: $color-palette-bluegray-300; // #9FA9B7
+        }
+    }
+
+    &.p-highlight .p-tabview-nav-link {
+        border-bottom: 2px solid $color-palette-blue-shade;
+
+        .pi {
+            color: $color-palette-blue-shade; // #18186D
+        }
+    }
 }

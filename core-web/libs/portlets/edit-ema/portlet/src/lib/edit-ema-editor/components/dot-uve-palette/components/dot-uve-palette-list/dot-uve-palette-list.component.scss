@@ -2,12 +2,12 @@
 
 :host {
     display: block;
-    padding: 17.5px 28px;
+    padding: 17.5px;
 }
 
 .dot-uve-palette-list {
     display: grid;
-    grid-template-columns: repeat(2, min-content); // Two equal columns
+    grid-template-columns: repeat(2, 1fr); // Two equal columns
     gap: 14px; // 12px gap between grid items
     width: 100%;
 

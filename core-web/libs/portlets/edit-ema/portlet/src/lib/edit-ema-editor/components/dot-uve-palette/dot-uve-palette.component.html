@@ -1,5 +1,20 @@
 <p-tabView>
-    <p-tabPanel [header]="'uve.palette.content.title' | dm"><dot-uve-palette-list /></p-tabPanel>
-    <p-tabPanel [header]="'uve.palette.widgets.title' | dm"><div>Widgets</div></p-tabPanel>
-    <p-tabPanel [header]="'uve.palette.favorites.title' | dm"><div>Favorites</div></p-tabPanel>
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <i class="pi pi-stop"></i>
+        </ng-template>
+        <dot-uve-palette-list />
+    </p-tabPanel>
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <i class="pi pi-th-large"></i>
+        </ng-template>
+        <div>Widgets</div>
+    </p-tabPanel>
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <i class="pi pi-star"></i>
+        </ng-template>
+        <div>Favorites</div>
+    </p-tabPanel>
 </p-tabView>

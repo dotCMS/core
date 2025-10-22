@@ -3,7 +3,7 @@
 
 .dot-uve-palette-item {
     display: flex;
-    width: 140px;
+    width: 100%;
     height: 110px;
     padding: 0 $spacing-1; // 0 vertical, 8px horizontal
     justify-content: center;
@@ -30,8 +30,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 24px;
-        height: 24px;
+        width: 14px;
+        height: 14px;
         color: $color-palette-bluegray-300; // #9FA9B7
         cursor: grab;
 
@@ -39,7 +39,8 @@
             cursor: grabbing;
         }
 
-        .material-icons {
+        .material-icons,
+        .material-icons-outlined {
             font-size: $md-icon-size-normal; // 18px
         }
     }
@@ -50,43 +51,39 @@
         align-items: center;
         justify-content: center;
         flex: 1;
-        gap: $spacing-1; // 8px gap between icon and text
+        gap: 0.4px; // 8px gap between icon and text
     }
 
     &__icon {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
-        color: $color-palette-bluegray-800; // #37404C
+        width: 38px;
+        height: 38px;
+        color: $color-palette-bluegray-800;
 
-        .material-icons {
-            font-size: $md-icon-size-big; // 24px
+        .material-icons-outlined {
+            font-size: $md-icon-size-big;
         }
     }
 
     &__name {
-        font-size: $font-size-sm; // 14px
+        font-size: $font-size-sm;
         font-weight: 500;
-        color: $color-palette-bluegray-800; // #37404C
-        text-align: center;
+        color: $color-palette-bluegray-800;
         line-height: 1.2;
-        max-width: 120px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        font-weight: 700;
     }
 
     &__chevron {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 24px;
-        height: 24px;
+        width: 14px;
+        height: 14px;
         color: $color-palette-bluegray-300; // #9FA9B7
 
-        .material-icons {
+        .material-icons-outlined {
             font-size: $md-icon-size-normal; // 18px
         }
     }
