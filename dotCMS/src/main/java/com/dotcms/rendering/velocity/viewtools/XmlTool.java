@@ -19,6 +19,8 @@ package com.dotcms.rendering.velocity.viewtools;
  * under the License.
  */
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rendering.velocity.viewtools.bean.XmlToolDoc;
 import com.dotcms.rendering.velocity.viewtools.cache.XmlToolCache;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
@@ -147,6 +149,7 @@ public class XmlTool implements ViewTool {
 	 * Reads, parses and creates a {@link Document} from the given {@link URL} and uses it as the root {@link Node} for
 	 * this instance.
 	 */
+    @RequestCost(Price.XML_FETCH_AND_PARSE)
 	protected void read(URL url) throws Exception {
 	    
 	    
