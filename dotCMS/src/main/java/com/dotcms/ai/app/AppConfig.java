@@ -51,8 +51,8 @@ public class AppConfig implements Serializable {
         this.host = host;
 
         final AIAppUtil aiAppUtil = AIAppUtil.get();
-        apiKey = aiAppUtil.discoverSecret(secrets, AppKeys.API_KEY);
-        apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL, AI_API_URL_KEY);
+        apiKey = aiAppUtil.discoverApiKeySecret(secrets);
+        apiUrl = aiAppUtil.discoverApiUrlEnvSecret(secrets, AI_API_URL_KEY);
         apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL, AI_IMAGE_API_URL_KEY);
         apiEmbeddingsUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL, AI_EMBEDDINGS_API_URL_KEY);
 
