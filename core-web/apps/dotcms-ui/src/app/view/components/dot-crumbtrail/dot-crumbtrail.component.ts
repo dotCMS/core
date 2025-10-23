@@ -1,7 +1,7 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 
-import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
+import { GlobalStore } from '@dotcms/store';
+
 @Component({
     selector: 'dot-crumbtrail',
     templateUrl: './dot-crumbtrail.component.html',
@@ -10,13 +10,11 @@ import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
     standalone: false
 })
 export class DotCrumbtrailComponent {
-    /** Service responsible for managing breadcrumb data */
-    readonly #crumbTrailService = inject(DotCrumbtrailService);
+    /** Global store instance for accessing breadcrumb state */
+    readonly #globalStore = inject(GlobalStore);
 
-    /** Signal containing the complete breadcrumb menu items */
-    $breadcrumbsMenu = toSignal(this.#crumbTrailService.crumbTrail$, {
-        initialValue: []
-    });
+    /** Signal containing the complete breadcrumb menu items from the global store */
+    $breadcrumbsMenu = this.#globalStore.breadcrumbs;
 
     /**
      * Computed signal containing collapsed breadcrumb items.
