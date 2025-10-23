@@ -30,8 +30,12 @@ import {
 } from '../../service/dot-page-contenttype.service';
 import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-palette-item.component';
 
-type SortOption = 'popular' | 'name-asc' | 'name-desc';
 type ViewOption = 'grid' | 'list';
+
+interface SortOption {
+    orderby: 'name' | 'usage';
+    direction: 'ASC' | 'DESC';
+}
 
 interface DotUVEPaletteListState {
     contentTypes: DotCMSContentType[];
@@ -71,21 +75,21 @@ export class DotUvePaletteListComponent {
     $pagePath = input.required<string>({ alias: 'pagePath' });
 
     readonly LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index + 1);
-    readonly menuItems = computed<MenuItem[]>(() => [
+    readonly menuItems = signal<MenuItem[]>([
         {
             label: 'Sort by',
             items: [
                 {
                     label: 'Most Popular',
-                    command: () => this.onSortSelect('popular')
+                    command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' })
                 },
                 {
                     label: 'A to Z',
-                    command: () => this.onSortSelect('name-asc')
+                    command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' })
                 },
                 {
                     label: 'Z to A',
-                    command: () => this.onSortSelect('name-desc')
+                    command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' })
                 }
             ]
         },
@@ -184,8 +188,10 @@ export class DotUvePaletteListComponent {
         });
     }
 
-    onSortSelect(_sortOption: SortOption) {
-        //
+    onSortSelect({ orderby, direction }: SortOption) {
+        patchState(this.$state, {
+            sort: { orderby, direction }
+        });
     }
 
     onViewSelect(_viewOption: ViewOption) {
