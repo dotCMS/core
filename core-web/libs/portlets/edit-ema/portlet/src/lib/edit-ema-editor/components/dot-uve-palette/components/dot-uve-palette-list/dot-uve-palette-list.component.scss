@@ -80,12 +80,7 @@ $icon-size: 0.875rem;
 
         // Active menu item styling
         .active-menu-item {
-            background-color: $color-palette-primary-100;
-            color: $color-palette-primary-700;
-
-            &:hover {
-                background-color: $color-palette-primary-200;
-            }
+            background-color: $color-palette-primary-200;
         }
     }
 
