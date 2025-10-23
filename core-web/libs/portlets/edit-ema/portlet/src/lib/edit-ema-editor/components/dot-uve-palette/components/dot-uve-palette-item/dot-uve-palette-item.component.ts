@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostBinding, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, input, output } from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
@@ -16,6 +16,8 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 export class DotUvePaletteItemComponent {
     $view = input<'grid' | 'list'>('grid', { alias: 'view' });
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
+
+    selectContentType = output<string>();
 
     @HostBinding('class.list-view')
     get isListView() {

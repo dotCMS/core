@@ -1,4 +1,13 @@
 <div class="dot-uve-palette-list__controls">
+    @if ($selectedContentType()?.length) {
+        <p-button
+            icon="pi pi-chevron-left"
+            [text]="true"
+            [rounded]="true"
+            styleClass="options-menu-button"
+            (onClick)="onBackToContentTypes()"></p-button>
+    }
+
     <p-iconField iconPosition="left" [style]="{ width: '100%' }">
         <p-inputIcon styleClass="pi pi-search" />
         <input
@@ -10,31 +19,43 @@
             (input)="onSearch($event)"
             [value]="$state.filter()" />
     </p-iconField>
-    <p-button
-        icon="pi pi-arrow-right-arrow-left"
-        [text]="true"
-        [rounded]="true"
-        styleClass="options-menu-button"
-        (onClick)="menu.toggle($event)"></p-button>
-    <p-menu
-        #menu
-        [model]="$menuItems()"
-        [popup]="true"
-        appendTo="body"
-        styleClass="options-menu-popup"
-        showTransitionOptions="0ms" />
+
+    @if (!$selectedContentType()?.length) {
+        <p-button
+            icon="pi pi-arrow-right-arrow-left"
+            [text]="true"
+            [rounded]="true"
+            styleClass="options-menu-button"
+            (onClick)="menu.toggle($event)"></p-button>
+        <p-menu
+            #menu
+            [model]="$menuItems()"
+            [popup]="true"
+            appendTo="body"
+            styleClass="options-menu-popup"
+            showTransitionOptions="0ms" />
+    }
 </div>
 
 <div
     class="dot-uve-palette-list__grid"
-    [class.dot-uve-palette-list__grid--list]="$view() === 'list'">
+    [class.dot-uve-palette-list__grid--list]="$view() === 'list' || $selectedContentType()?.length">
     @if ($loading()) {
         @for (i of LOADING_ROWS_MOCK; track i) {
             <p-skeleton width="100%" height="6.875rem"></p-skeleton>
         }
     } @else {
-        @for (contentType of $contentTypes(); track contentType.id) {
-            <dot-uve-palette-item [contentType]="contentType" [view]="$view()" />
+        @if ($selectedContentType()) {
+            @for (contentlet of $contentlets(); track contentlet.identifier) {
+                <dot-uve-palette-contentlet [contentlet]="contentlet" />
+            }
+        } @else {
+            @for (contentType of $contentTypes(); track contentType.id) {
+                <dot-uve-palette-item
+                    [contentType]="contentType"
+                    [view]="$view()"
+                    (selectContentType)="onSelectContentType($event)" />
+            }
         }
     }
 </div>

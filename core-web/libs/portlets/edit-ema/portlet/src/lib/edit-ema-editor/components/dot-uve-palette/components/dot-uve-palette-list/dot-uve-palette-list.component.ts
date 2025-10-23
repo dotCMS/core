@@ -1,4 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
+import { of } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -18,6 +19,10 @@ import { MenuModule } from 'primeng/menu';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 
+import { catchError } from 'rxjs/operators';
+
+import { DotESContentService } from '@dotcms/data-access';
+import { DEFAULT_VARIANT_ID, ESContent } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUVEPaletteListState, SortOption, ViewOption } from './model';
@@ -27,6 +32,7 @@ import {
     DotPageContentTypeParams,
     DotPageContentTypeService
 } from '../../service/dot-page-contenttype.service';
+import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-palette-item.component';
 
 /** Default number of items per page */
@@ -34,6 +40,7 @@ const DEFAULT_PER_PAGE = 30;
 
 const DEFAULT_STATE: DotUVEPaletteListState = {
     contentTypes: [],
+    contentlets: [],
     pagination: {
         currentPage: 1,
         perPage: DEFAULT_PER_PAGE
@@ -44,7 +51,8 @@ const DEFAULT_STATE: DotUVEPaletteListState = {
     },
     filter: '',
     totalEntries: 0,
-    loading: true
+    loading: true,
+    selectedContentType: undefined
 };
 
 /**
@@ -64,6 +72,7 @@ const DEFAULT_STATE: DotUVEPaletteListState = {
     selector: 'dot-uve-palette-list',
     imports: [
         DotUvePaletteItemComponent,
+        DotUvePaletteContentletComponent,
         ButtonModule,
         IconFieldModule,
         InputIconModule,
@@ -73,7 +82,7 @@ const DEFAULT_STATE: DotUVEPaletteListState = {
         DotMessagePipe,
         SkeletonModule
     ],
-    providers: [DotPageContentTypeService],
+    providers: [DotPageContentTypeService, DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
     styleUrl: './dot-uve-palette-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -84,6 +93,7 @@ export class DotUvePaletteListComponent {
     $pagePath = input.required<string>({ alias: 'pagePath' });
 
     readonly #pageContentTypeService = inject(DotPageContentTypeService);
+    readonly #dotESContentService = inject(DotESContentService);
 
     /** Component state */
     readonly $state = signalState<DotUVEPaletteListState>(DEFAULT_STATE);
@@ -92,6 +102,8 @@ export class DotUvePaletteListComponent {
     readonly $pagination = this.$state.pagination;
     readonly $totalRecords = this.$state.totalEntries;
     readonly $loading = this.$state.loading;
+    readonly $selectedContentType = this.$state.selectedContentType;
+    readonly $contentlets = this.$state.contentlets;
 
     readonly LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index + 1);
     readonly $view = signal<ViewOption>('grid');
@@ -163,6 +175,8 @@ export class DotUvePaletteListComponent {
         const sort = this.$state.sort();
         const pagination = this.$state.pagination();
 
+        const selectedContentType = this.$state.selectedContentType();
+
         const params: DotPageContentTypeParams = {
             pagePathOrId: this.$pagePath(),
             language: this.$languageId().toString(),
@@ -178,13 +192,30 @@ export class DotUvePaletteListComponent {
             loading: true
         });
 
-        this.#pageContentTypeService.get(params).subscribe(({ contenttypes, pagination }) => {
-            patchState(this.$state, {
-                contentTypes: contenttypes,
-                totalEntries: pagination.totalEntries,
-                loading: false
+        if (selectedContentType) {
+            this.fetchContentlets(
+                filter,
+                selectedContentType,
+                this.$languageId().toString(),
+                DEFAULT_VARIANT_ID,
+                pagination.currentPage,
+                pagination.perPage
+            ).subscribe((contentlets) => {
+                patchState(this.$state, {
+                    contentlets: contentlets.jsonObjectView.contentlets,
+                    totalEntries: contentlets.resultsSize,
+                    loading: false
+                });
             });
-        });
+        } else {
+            this.#pageContentTypeService.get(params).subscribe(({ contenttypes, pagination }) => {
+                patchState(this.$state, {
+                    contentTypes: contenttypes,
+                    totalEntries: pagination.totalEntries,
+                    loading: false
+                });
+            });
+        }
     });
 
     /**
@@ -253,5 +284,65 @@ export class DotUvePaletteListComponent {
         const isActive = sameOrderby && sameDirection;
 
         return isActive ? 'active-menu-item' : '';
+    }
+
+    /**
+     * Handles the selection of a content type.
+     *
+     * @param {string} contentType
+     * @memberof DotUvePaletteListComponent
+     */
+    onSelectContentType(contentType: string) {
+        patchState(this.$state, {
+            selectedContentType: contentType
+        });
+    }
+
+    /**
+     * Handles the back to content types action.
+     * Resets the state to the initial state.
+     */
+    onBackToContentTypes() {
+        patchState(this.$state, {
+            selectedContentType: undefined,
+            contentlets: [],
+            totalEntries: 0,
+            loading: true
+        });
+    }
+
+    private fetchContentlets(
+        filter: string,
+        contenttypeName: string,
+        languageId: string,
+        variantId: string,
+        page: number,
+        perPage: number
+    ) {
+        const variantTerm = variantId
+            ? `+variant:(${DEFAULT_VARIANT_ID} OR ${variantId})`
+            : `+variant:${DEFAULT_VARIANT_ID}`;
+
+        return this.#dotESContentService
+            .get({
+                itemsPerPage: perPage,
+                lang: languageId || '1',
+                filter: filter || '',
+                offset: ((page - 1) * perPage).toString(),
+                query: `+contentType:${contenttypeName} +deleted:false ${variantTerm}`.trim()
+            })
+            .pipe(
+                catchError((error) => {
+                    console.error(error);
+                    return of({
+                        jsonObjectView: {
+                            contentlets: []
+                        },
+                        resultsSize: 0,
+                        queryTook: 0,
+                        contentTook: 0
+                    } as ESContent);
+                })
+            );
     }
 }

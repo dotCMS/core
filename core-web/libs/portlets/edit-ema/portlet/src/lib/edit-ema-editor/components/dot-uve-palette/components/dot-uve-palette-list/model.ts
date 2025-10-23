@@ -1,4 +1,4 @@
-import { DotCMSContentType, DotPagination } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType, DotPagination } from '@dotcms/dotcms-models';
 
 /**
  * View display mode for content types
@@ -21,6 +21,7 @@ export interface SortOption {
 export interface DotUVEPaletteListState {
     /** List of content types to display */
     contentTypes: DotCMSContentType[];
+    contentlets: DotCMSContentlet[];
     /** Pagination configuration (excluding total entries) */
     pagination?: Omit<DotPagination, 'totalEntries'>;
     /** Current sort configuration */
@@ -31,4 +32,5 @@ export interface DotUVEPaletteListState {
     totalEntries: number;
     /** Loading state indicator */
     loading: boolean;
+    selectedContentType?: string;
 }

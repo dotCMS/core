@@ -3,6 +3,7 @@
 <!-- Drag handle -->
 <div class="drag-handle">
     <i class="pi pi-ellipsis-v"></i>
+    <i class="pi pi-ellipsis-v"></i>
 </div>
 
 <!-- Content type icon and name -->
@@ -20,6 +21,6 @@
 </div>
 
 <!-- Chevron -->
-<div class="chevron">
+<div class="chevron" (click)="selectContentType.emit(contentType.variable)">
     <i class="pi pi-chevron-right"></i>
 </div>

@@ -53,39 +53,42 @@ $icon-size: 0.875rem;
     p-paginator {
         flex-shrink: 0;
     }
-}
 
-// PrimeNG component overrides
-::ng-deep {
-    // Options menu button (sort & view toggle)
-    .options-menu-button {
-        width: $button-size;
-        height: $button-size;
-        min-width: $button-size;
-        padding: 0;
+    // PrimeNG component overrides
+    ::ng-deep {
+        // Options menu button (sort & view toggle)
+        .options-menu-button {
+            width: $button-size;
+            height: $button-size;
+            min-width: $button-size;
+            padding: 0;
 
-        .p-button-icon {
-            width: $icon-size;
-            height: $icon-size;
-            font-size: $icon-size;
-            transform: rotate(90deg);
-            color: $color-palette-gray-800 !important;
+            .p-button-icon {
+                width: $icon-size;
+                height: $icon-size;
+                font-size: $icon-size;
+                color: $color-palette-gray-800 !important;
+
+                &.pi-arrow-right-arrow-left {
+                    transform: rotate(90deg);
+                }
+            }
         }
-    }
 
-    // Options menu popup positioning
-    .options-menu-popup.p-menu {
-        transform: translateX(-100%);
-        margin-left: $button-size;
+        // Options menu popup positioning
+        .options-menu-popup.p-menu {
+            transform: translateX(-100%);
+            margin-left: $button-size;
 
-        // Active menu item styling
-        .active-menu-item {
-            background-color: $color-palette-primary-200;
+            // Active menu item styling
+            .active-menu-item {
+                background-color: $color-palette-primary-200;
+            }
         }
-    }
 
-    // Paginator styling
-    .p-paginator {
-        background: transparent;
+        // Paginator styling
+        .p-paginator {
+            background: transparent;
+        }
     }
 }
