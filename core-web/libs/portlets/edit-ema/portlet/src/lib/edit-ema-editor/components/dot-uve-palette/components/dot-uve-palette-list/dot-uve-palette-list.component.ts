@@ -2,10 +2,12 @@ import { patchState, signalState } from '@ngrx/signals';
 
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -19,6 +21,9 @@ import {
     DotPagination
 } from '../../service/dot-page-contenttype.service';
 import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-palette-item.component';
+
+type SortOption = 'popular' | 'name-asc' | 'name-desc';
+type ViewOption = 'grid' | 'list';
 
 interface DotUVEPaletteListState {
     contentTypes: DotCMSContentType[];
@@ -42,6 +47,7 @@ const DEFAULT_PER_PAGE = 30;
         IconFieldModule,
         InputIconModule,
         InputTextModule,
+        MenuModule,
         PaginatorModule,
         DotMessagePipe,
         SkeletonModule
@@ -57,6 +63,41 @@ export class DotUvePaletteListComponent {
     $pagePath = input.required<string>({ alias: 'pagePath' });
 
     readonly LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index + 1);
+    readonly menuItems = computed<MenuItem[]>(() => [
+        {
+            label: 'Sort by',
+            items: [
+                {
+                    label: 'Most Popular',
+                    command: () => this.onSortSelect('popular')
+                },
+                {
+                    label: 'A to Z',
+                    command: () => this.onSortSelect('name-asc')
+                },
+                {
+                    label: 'Z to A',
+                    command: () => this.onSortSelect('name-desc')
+                }
+            ]
+        },
+        {
+            separator: true
+        },
+        {
+            label: 'View',
+            items: [
+                {
+                    label: 'Grid',
+                    command: () => this.onViewSelect('grid')
+                },
+                {
+                    label: 'List',
+                    command: () => this.onViewSelect('list')
+                }
+            ]
+        }
+    ]);
 
     // Computed signal for paginated content types
     readonly $start = computed(() => {
@@ -131,5 +172,13 @@ export class DotUvePaletteListComponent {
         patchState(this.$state, {
             filter: value
         });
+    }
+
+    onSortSelect(_sortOption: SortOption) {
+        //
+    }
+
+    onViewSelect(_viewOption: ViewOption) {
+        //
     }
 }

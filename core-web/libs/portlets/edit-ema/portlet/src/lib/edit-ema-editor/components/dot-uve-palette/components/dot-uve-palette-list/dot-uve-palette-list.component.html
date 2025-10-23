@@ -14,7 +14,9 @@
         icon="pi pi-arrow-right-arrow-left"
         [text]="true"
         [rounded]="true"
-        styleClass="sort-button"></p-button>
+        styleClass="sort-button"
+        (onClick)="menu.toggle($event)"></p-button>
+    <p-menu #menu [model]="menuItems()" [popup]="true" appendTo="body" />
 </div>
 
 <div class="dot-uve-palette-list__grid">
