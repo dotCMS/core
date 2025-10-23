@@ -5038,4 +5038,180 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given Scenario:
+     * - ContentType with a text field (slug) and a HostFolderField (site)
+     * - Multilingual CSV file with 3 languages using site NAME (not identifier)
+     * - Both "slug" and "site" fields as key fields
+     * Expected result:
+     * - Create only ONE contentlet with the same identifier
+     * - Create 3 different inodes (one per language version)
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void testImportMultilingualWithSiteNameAsKeyField() throws DotSecurityException, DotDataException, IOException {
+        ContentType contentType = null;
+        Host testSite = null;
+        Language spanish = null;
+        Language french = null;
+
+        try {
+            // Create a test site with a name
+            testSite = new SiteDataGen().name("test-site-" + System.currentTimeMillis()).nextPersisted();
+
+            // Create additional languages
+            spanish = new LanguageDataGen().languageCode("es").countryCode("ES").nextPersisted();
+            french = new LanguageDataGen().languageCode("fr").countryCode("FR").nextPersisted();
+
+            // Create ContentType with slug and site fields
+            com.dotcms.contenttype.model.field.Field slugField = new FieldDataGen()
+                    .name("slug")
+                    .velocityVarName("slug")
+                    .type(TextField.class)
+                    .next();
+
+            com.dotcms.contenttype.model.field.Field siteField = new FieldDataGen()
+                    .name("site")
+                    .velocityVarName("site")
+                    .type(HostFolderField.class)
+                    .next();
+
+            contentType = new ContentTypeDataGen()
+                    .field(slugField)
+                    .field(siteField)
+                    .nextPersisted();
+
+            slugField = fieldAPI.byContentTypeAndVar(contentType, slugField.variable());
+            siteField = fieldAPI.byContentTypeAndVar(contentType, siteField.variable());
+
+
+            String csvContent = "languageCode,countryCode,slug,site\r\n" +
+                    "en,US,test-article," + testSite.getHostname() + "\r\n" +
+                    "es,ES,test-article," + testSite.getHostname() + "\r\n" +
+                    "fr,FR,test-article," + testSite.getHostname() + "\r\n";
+
+            final Reader reader = createTempFile(csvContent);
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+
+
+            final String[] csvHeaders = new String[]{"languageCode", "countryCode", slugField.variable(), siteField.variable()};
+
+            final HashMap<String, List<String>> imported = ImportUtil.importFile(
+                    0L,
+                    testSite.getIdentifier(),
+                    contentType.inode(),
+                    new String[]{slugField.id(), siteField.id()},
+                    false,
+                    true,
+                    user,
+                    -1,    // language from CSV
+                    csvHeaders,
+                    csvreader,
+                    0,
+                    1,
+                    reader,
+                    schemeStepActionResult1.getAction().getId(),
+                    getHttpRequest()
+            );
+
+            // Validate import results
+            final List<String> results = imported.get("results");
+            assertNotNull("Import results should not be null", results);
+            assertFalse("Import results should not be empty", results.isEmpty());
+
+            final List<String> errors = imported.get("errors");
+            assertTrue("Import should have no errors: " + errors, errors == null || errors.isEmpty());
+
+
+            final List<Contentlet> contentlets = contentletAPI.findByStructure(
+                    contentType.inode(),
+                    user,
+                    false,
+                    0,
+                    -1
+            );
+
+            // Verify we have 3 contentlets
+            assertEquals("Should have 3 language versions", 3, contentlets.size());
+
+
+            final String firstIdentifier = contentlets.get(0).getIdentifier();
+
+            for (Contentlet contentlet : contentlets) {
+                assertEquals("All contentlets should have the same identifier",
+                        firstIdentifier,
+                        contentlet.getIdentifier());
+            }
+
+
+            final List<Long> languageIds = contentlets.stream()
+                    .map(Contentlet::getLanguageId)
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            assertTrue("Should have English version", languageIds.contains(defaultLanguage.getId()));
+            assertTrue("Should have Spanish version", languageIds.contains(spanish.getId()));
+            assertTrue("Should have French version", languageIds.contains(french.getId()));
+
+
+            final List<String> inodes = contentlets.stream()
+                    .map(Contentlet::getInode)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            assertEquals("All 3 versions should have unique inodes", 3, inodes.size());
+
+        } finally {
+            // Cleanup
+            if (contentType != null) {
+                try {
+                    List<Contentlet> contentlets = contentletAPI.findByStructure(
+                            contentType.inode(),
+                            user,
+                            false,
+                            0,
+                            -1
+                    );
+                    for (Contentlet contentlet : contentlets) {
+                        contentletAPI.archive(contentlet, user, false);
+                        contentletAPI.delete(contentlet, user, false);
+                    }
+                    contentTypeApi.delete(contentType);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up content type", e);
+                }
+            }
+
+            if (testSite != null) {
+                try {
+                    APILocator.getHostAPI().archive(testSite, user, false);
+                    APILocator.getHostAPI().delete(testSite, user, false);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up test site", e);
+                }
+            }
+
+            if (spanish != null) {
+                try {
+                    APILocator.getLanguageAPI().deleteLanguage(spanish);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up Spanish language", e);
+                }
+            }
+
+            if (french != null) {
+                try {
+                    APILocator.getLanguageAPI().deleteLanguage(french);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up French language", e);
+                }
+            }
+        }
+    }
+
 }
