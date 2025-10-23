@@ -6973,6 +6973,36 @@ paths:
           enum:
           - ASC
           - DESC
+      - description: "List of variable names of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
+        in: query
+        name: type
+        schema:
+          type: array
+          enum:
+          - ANY
+          - CONTENT
+          - WIDGET
+          - FORM
+          - FILEASSET
+          - HTMLPAGE
+          - PERSONA
+          - VANITY_URL
+          - KEY_VALUE
+          - DOTASSET
+          items:
+            type: string
+            enum:
+            - ANY
+            - CONTENT
+            - WIDGET
+            - FORM
+            - FILEASSET
+            - HTMLPAGE
+            - PERSONA
+            - VANITY_URL
+            - KEY_VALUE
+            - DOTASSET
+        style: form
       - description: Filter by site identifier.
         in: query
         name: host

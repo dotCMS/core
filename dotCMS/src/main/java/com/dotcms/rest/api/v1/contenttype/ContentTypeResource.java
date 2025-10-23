@@ -10,6 +10,7 @@ import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
@@ -71,6 +72,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.LinkedHashSet;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -1767,6 +1769,18 @@ public class ContentTypeResource implements Serializable {
 												  ),
 												  description = "Sort direction: choose between ascending or descending."
 										  ) String direction,
+										   @QueryParam("type") @Parameter(
+												  schema = @Schema(
+														  type = "array",
+														  allowableValues = {
+														  	"ANY", "CONTENT", "WIDGET",
+														  	"FORM", "FILEASSET", "HTMLPAGE", "PERSONA",
+														  	"VANITY_URL", "KEY_VALUE", "DOTASSET"
+														  }
+												  ),
+												  style = ParameterStyle.FORM,
+												  description = "List of variable names of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
+										  ) List<String> types,
 										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
 												  description = "Filter by site identifier."
 										  ) final String siteId) throws DotDataException, DotSecurityException {
@@ -1781,6 +1795,26 @@ public class ContentTypeResource implements Serializable {
 			throw new BadRequestException("The 'pagePathOrId' parameter is required.");
 		}
 
+		//If set, we need to consider only the content types that belong to the specific base types
+		List<String> byBaseType = Collections.emptyList();
+
+		if (UtilMethods.isSet(types)) {
+			ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+
+			byBaseType = types.stream()
+					.map(BaseContentType::getBaseContentType)
+					.flatMap(baseType -> {
+						try {
+							return contentTypeAPI.findByType(baseType).stream();
+						} catch (Exception e) {
+							Logger.error(getClass(), "Error finding content type for baseType: " + baseType, e);
+							return Stream.empty(); // Skip this type if there's an error
+						}
+					})
+					.map(ContentType::variable)
+					.collect(Collectors.toList());
+		}
+
 		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId);
 
 		final Map<String, Object> extraParams = new HashMap<>();
@@ -1789,7 +1823,7 @@ public class ContentTypeResource implements Serializable {
 		final Host site = getSite(siteId, user, pageMode.respectAnonPerms); // wondering if this should be current or default
 		final String orderBy = this.getOrderByRealName(orderByParam);
 		List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrIdAndFilter(pagePathOrId, site,
-				languageId, pageMode, user, filter);
+				languageId, pageMode, user, filter, byBaseType);
 		final boolean isUsage = "usage".equalsIgnoreCase(orderBy);
 
 		if (isUsage) {
@@ -1884,7 +1918,8 @@ public class ContentTypeResource implements Serializable {
 																				   final long languageId,
 																				   final PageMode pageMode,
 																				   final User user,
-																				   final String filter) throws DotDataException, DotSecurityException {
+																				   final String filter,
+																				   final List<String> byBaseTypes) throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId +
 				" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
@@ -1922,6 +1957,7 @@ public class ContentTypeResource implements Serializable {
 				.filter(Objects::nonNull)
 				.filter(Predicate.not(this.contentPaletteHiddenTypes.get()::contains))
 				.filter(repeatedTypes::add)
+				.filter(byBaseTypes::contains)
 				.filter(varname -> filter == null || varname.toLowerCase().contains(filter.toLowerCase()))
 				.collect(Collectors.toList());
 	} // findPageContainersContentTypesVarnamesByPathOrIdAndFilter
