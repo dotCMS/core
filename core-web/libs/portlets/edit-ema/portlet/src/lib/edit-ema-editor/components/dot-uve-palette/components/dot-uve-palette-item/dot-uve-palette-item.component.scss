@@ -56,12 +56,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-300; // #9FA9B7
+        color: $color-palette-gray-400;
         width: 0.875rem;
         height: 0.875rem;
         cursor: grab;
         opacity: 0;
         transition: opacity $basic-speed ease-in-out;
+
+        .pi:first-child {
+            margin-right: -$spacing-1;
+        }
 
         &:active {
             cursor: grabbing;
@@ -72,10 +76,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-300; // #9FA9B7
+        color: $color-palette-gray-400;
         width: 0.875rem;
         height: 0.875rem;
-        color: $color-palette-gray-300;
         opacity: 0;
         transition: opacity $basic-speed ease-in-out;
     }
