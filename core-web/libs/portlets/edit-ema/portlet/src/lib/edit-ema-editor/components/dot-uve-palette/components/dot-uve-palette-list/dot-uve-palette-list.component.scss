@@ -63,4 +63,10 @@
     .p-paginator {
         background: transparent;
     }
+
+    // Right-align the menu popup with the button
+    .sort-menu-popup.p-menu {
+        transform: translateX(-100%);
+        margin-left: 2.5rem;
+    }
 }
