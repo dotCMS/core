@@ -17,6 +17,7 @@ import { switchMap } from 'rxjs/operators';
 import { DotSiteService } from '@dotcms/data-access';
 import { SiteEntity } from '@dotcms/dotcms-models';
 
+import { withBreadcrumbs } from './breadcrumb.feature';
 import { withSystem } from './with-system.feature';
 
 /**
@@ -80,6 +81,7 @@ export const GlobalStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withSystem(),
+    withBreadcrumbs(),
     withMethods((store, siteService = inject(DotSiteService)) => {
         return {
             /**
@@ -163,6 +165,27 @@ export const GlobalStore = signalStore(
             // Load current site on store initialization
             // System configuration is automatically loaded by withSystem feature
             store.loadCurrentSite();
+
+            // TODO: Remove fake breadcrumb data once real implementation is complete
+            // Setting fake breadcrumbs for testing purposes
+            store.setBreadcrumbs([
+                {
+                    label: 'Content',
+                    icon: 'pi pi-home',
+                    target: '_self',
+                    url: '#/content'
+                },
+                {
+                    label: 'Blog Posts',
+                    target: '_self',
+                    url: '#/content/blog-posts'
+                },
+                {
+                    label: 'Edit Post',
+                    target: '_self',
+                    url: ''
+                }
+            ]);
         }
     })
 );
