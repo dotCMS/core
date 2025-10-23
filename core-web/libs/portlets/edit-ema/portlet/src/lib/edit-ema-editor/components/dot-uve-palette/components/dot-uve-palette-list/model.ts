@@ -24,10 +24,7 @@ export interface DotUVEPaletteListState {
     /** Pagination configuration (excluding total entries) */
     pagination?: Omit<DotPagination, 'totalEntries'>;
     /** Current sort configuration */
-    sort: {
-        orderby: 'name' | 'usage' | 'modified';
-        direction: 'ASC' | 'DESC';
-    };
+    sort: SortOption;
     /** Search filter text */
     filter?: string;
     /** Total number of entries available */

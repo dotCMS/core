@@ -10,7 +10,6 @@ import {
     signal
 } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -86,47 +85,6 @@ export class DotUvePaletteListComponent {
 
     readonly #pageContentTypeService = inject(DotPageContentTypeService);
 
-    readonly menuItems = signal<MenuItem[]>([
-        {
-            label: 'Sort by',
-            items: [
-                {
-                    label: 'Most Popular',
-                    id: 'most-popular',
-                    command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' })
-                },
-                {
-                    label: 'A to Z',
-                    id: 'a-to-z',
-                    command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' })
-                },
-                {
-                    label: 'Z to A',
-                    id: 'z-to-a',
-                    command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' })
-                }
-            ]
-        },
-        {
-            separator: true
-        },
-        {
-            label: 'View',
-            items: [
-                {
-                    label: 'Grid',
-                    id: 'grid',
-                    command: () => this.onViewSelect('grid')
-                },
-                {
-                    label: 'List',
-                    id: 'list',
-                    command: () => this.onViewSelect('list')
-                }
-            ]
-        }
-    ]);
-
     /** Component state */
     readonly $state = signalState<DotUVEPaletteListState>(DEFAULT_STATE);
 
@@ -144,6 +102,57 @@ export class DotUvePaletteListComponent {
     );
     /** Number of rows per page */
     readonly $rowsPerPage = computed(() => this.$pagination().perPage);
+
+    /** Computed menu items with active state based on current sort and view */
+    readonly $menuItems = computed(() => {
+        const currentView = this.$view();
+
+        return [
+            {
+                label: 'Sort by',
+                items: [
+                    {
+                        label: 'Most Popular',
+                        id: 'most-popular',
+                        command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
+                        styleClass: this.isSortActive({ orderby: 'usage', direction: 'ASC' })
+                    },
+                    {
+                        label: 'A to Z',
+                        id: 'a-to-z',
+                        command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
+                        styleClass: this.isSortActive({ orderby: 'name', direction: 'ASC' })
+                    },
+                    {
+                        label: 'Z to A',
+                        id: 'z-to-a',
+                        command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
+                        styleClass: this.isSortActive({ orderby: 'name', direction: 'DESC' })
+                    }
+                ]
+            },
+            {
+                separator: true
+            },
+            {
+                label: 'View',
+                items: [
+                    {
+                        label: 'Grid',
+                        id: 'grid',
+                        command: () => this.onViewSelect('grid'),
+                        styleClass: currentView === 'grid' ? 'active-menu-item' : ''
+                    },
+                    {
+                        label: 'List',
+                        id: 'list',
+                        command: () => this.onViewSelect('list'),
+                        styleClass: currentView === 'list' ? 'active-menu-item' : ''
+                    }
+                ]
+            }
+        ];
+    });
 
     /**
      * Effect that fetches content types whenever filter, sort, or pagination changes.
@@ -226,5 +235,23 @@ export class DotUvePaletteListComponent {
      */
     onViewSelect(viewOption: ViewOption) {
         this.$view.set(viewOption);
+    }
+
+    /**
+     * Determines the CSS class for sort menu items based on current sort state.
+     * Returns 'active-menu-item' if the item matches the current sort configuration.
+     *
+     * @param orderby - Sort field to check
+     * @param direction - Sort direction to check
+     * @param currentSort - Current sort state
+     * @returns CSS class string for the menu item
+     */
+    private isSortActive(itemSort: SortOption): string {
+        const activeSort = this.$state.sort();
+        const sameOrderby = activeSort.orderby === itemSort.orderby;
+        const sameDirection = activeSort.direction === itemSort.direction;
+        const isActive = sameOrderby && sameDirection;
+
+        return isActive ? 'active-menu-item' : '';
     }
 }

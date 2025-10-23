@@ -77,6 +77,16 @@ $icon-size: 0.875rem;
     .options-menu-popup.p-menu {
         transform: translateX(-100%);
         margin-left: $button-size;
+
+        // Active menu item styling
+        .active-menu-item {
+            background-color: $color-palette-primary-100;
+            color: $color-palette-primary-700;
+
+            &:hover {
+                background-color: $color-palette-primary-200;
+            }
+        }
     }
 
     // Paginator styling

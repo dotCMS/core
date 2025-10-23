@@ -18,7 +18,7 @@
         (onClick)="menu.toggle($event)"></p-button>
     <p-menu
         #menu
-        [model]="menuItems()"
+        [model]="$menuItems()"
         [popup]="true"
         appendTo="body"
         styleClass="options-menu-popup"
