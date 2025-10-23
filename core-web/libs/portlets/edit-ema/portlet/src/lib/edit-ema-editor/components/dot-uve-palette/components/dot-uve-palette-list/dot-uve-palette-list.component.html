@@ -16,19 +16,22 @@
 </div>
 
 <div class="dot-uve-palette-list__grid">
-    @for (contentType of $paginatedContentTypes(); track contentType.id) {
+    @for (contentType of $contentTypes(); track contentType.id) {
         <dot-uve-palette-item [contentType]="contentType" />
     }
 </div>
-<p-paginator
-    (onPageChange)="onPageChange($event)"
-    [first]="$first()"
-    [rows]="$rows()"
-    [totalRecords]="$totalRecords()"
-    [showPageLinks]="false"
-    [showJumpToPageDropdown]="false"
-    [showCurrentPageReport]="true"
-    [showFirstLastIcon]="false"
-    [currentPageReportTemplate]="
-        '{first} - {last} ' + ('uve.palette.pagination.of' | dm) + ' {totalRecords}'
-    " />
+
+@if ($pagination()) {
+    <p-paginator
+        (onPageChange)="onPageChange($event)"
+        [first]="$start()"
+        [rows]="$rowsPerPage()"
+        [totalRecords]="$totalRecords()"
+        [showPageLinks]="false"
+        [showJumpToPageDropdown]="false"
+        [showCurrentPageReport]="true"
+        [showFirstLastIcon]="false"
+        [currentPageReportTemplate]="
+            '{first} - {last} ' + ('uve.palette.pagination.of' | dm) + ' {totalRecords}'
+        " />
+}

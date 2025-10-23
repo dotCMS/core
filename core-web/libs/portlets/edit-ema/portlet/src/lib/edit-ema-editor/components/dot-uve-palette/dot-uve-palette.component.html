@@ -3,7 +3,9 @@
         <ng-template pTemplate="header">
             <i class="pi pi-stop"></i>
         </ng-template>
-        <dot-uve-palette-list />
+        <dot-uve-palette-list
+            [contentTypes]="$state().contenttypes"
+            [pagination]="$state().pagination" />
     </p-tabPanel>
     <p-tabPanel>
         <ng-template pTemplate="header">
