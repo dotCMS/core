@@ -14,25 +14,27 @@
         icon="pi pi-arrow-right-arrow-left"
         [text]="true"
         [rounded]="true"
-        styleClass="sort-button"
+        styleClass="options-menu-button"
         (onClick)="menu.toggle($event)"></p-button>
     <p-menu
         #menu
         [model]="menuItems()"
         [popup]="true"
         appendTo="body"
-        styleClass="sort-menu-popup"
+        styleClass="options-menu-popup"
         showTransitionOptions="none" />
 </div>
 
-<div class="dot-uve-palette-list__grid">
+<div
+    class="dot-uve-palette-list__grid"
+    [class.dot-uve-palette-list__grid--list]="$view() === 'list'">
     @if ($loading()) {
         @for (i of LOADING_ROWS_MOCK; track i) {
             <p-skeleton width="100%" height="6.875rem"></p-skeleton>
         }
     } @else {
         @for (contentType of $contentTypes(); track contentType.id) {
-            <dot-uve-palette-item [contentType]="contentType" />
+            <dot-uve-palette-item [contentType]="contentType" [view]="$view()" />
         }
     }
 </div>

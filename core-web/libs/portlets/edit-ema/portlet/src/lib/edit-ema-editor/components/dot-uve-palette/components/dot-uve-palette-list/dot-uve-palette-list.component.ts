@@ -1,6 +1,14 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    signal
+} from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -99,6 +107,8 @@ export class DotUvePaletteListComponent {
         }
     ]);
 
+    readonly $view = signal<ViewOption>('grid');
+
     // Computed signal for paginated content types
     readonly $start = computed(() => {
         return (this.$pagination().currentPage - 1) * this.$pagination().perPage;
@@ -179,6 +189,6 @@ export class DotUvePaletteListComponent {
     }
 
     onViewSelect(_viewOption: ViewOption) {
-        //
+        this.$view.set(_viewOption);
     }
 }
