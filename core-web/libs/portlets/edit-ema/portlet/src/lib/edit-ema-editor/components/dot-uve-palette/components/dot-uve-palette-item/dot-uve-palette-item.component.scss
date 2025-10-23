@@ -20,7 +20,7 @@
     &:hover {
         border-color: $color-palette-primary;
         background: $color-palette-primary-100;
-        box-shadow: $shadow-s;
+        box-shadow: $shadow-m;
 
         .dot-uve-palette-item__drag-handle {
             opacity: 1;
@@ -63,7 +63,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-500;
+        color: $color-palette-gray-700;
         width: 0.875rem;
         height: 0.875rem;
         cursor: grab;
@@ -79,7 +79,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-500;
+        color: $color-palette-gray-700;
         width: 0.875rem;
         height: 0.875rem;
         opacity: 0;
