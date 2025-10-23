@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -38,6 +38,7 @@ export class DotContentCompareTableComponent {
 
     @Input() data: DotContentCompareTableData;
     @Input() showDiff: boolean;
+    $showActions = input<boolean>(true, { alias: 'showActions' });
 
     @Output() changeVersion = new EventEmitter<DotCMSContentlet>();
     @Output() changeDiff = new EventEmitter<boolean>();
