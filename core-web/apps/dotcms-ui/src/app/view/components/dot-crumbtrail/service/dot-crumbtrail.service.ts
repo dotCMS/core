@@ -1,10 +1,14 @@
-import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, merge, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
-import { ActivatedRoute, Data, NavigationEnd, Router } from '@angular/router';
+import { Injectable, inject, computed, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Data, Event, NavigationEnd, Router } from '@angular/router';
+
+import { MenuItem } from 'primeng/api';
 
 import { filter, map, switchMap, take } from 'rxjs/operators';
 
+import { DotRouterService } from '@dotcms/data-access';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import {
@@ -15,7 +19,11 @@ import {
 @Injectable()
 export class DotCrumbtrailService {
     dotNavigationService = inject(DotNavigationService);
+    #dotRouterService = inject(DotRouterService);
     private activeRoute = inject(ActivatedRoute);
+    private router = inject(Router);
+    newBreadcrumb$ = new Subject<MenuItem>();
+    $breadcrumbs = signal<MenuItem[]>([]);
 
     private URL_EXCLUDES = ['/content-types-angular/create/content'];
     private crumbTrail: Subject<DotCrumb[]> = new BehaviorSubject([]);
@@ -27,26 +35,117 @@ export class DotCrumbtrailService {
         templates: 'template.title'
     };
 
+    readonly $history = this.#dotRouterService.$history;
+    history$ = toObservable(this.$history);
+    readonly $flattenMenuItems = this.dotNavigationService.$flattenMenuItems;
+
+    readonly $breadcrumbTrail = computed<MenuItem[]>(() => {
+        const menu = this.$flattenMenuItems();
+        const history = this.$history();
+        const mainItemIndex = history.reduce((index, url, currentIndex) => {
+            const menuIndex = menu.findIndex((item) => item.menuLink === url);
+            if (menuIndex !== -1) {
+                return currentIndex;
+            }
+            return index;
+        }, 0);
+        const breadcrumbTrail = history.slice(mainItemIndex).reduce((acc, url, index) => {
+            const item = menu.find((item) => item.menuLink === url);
+            if (item) {
+                if (index === 0) {
+                    acc.push({
+                        label: item?.labelParent,
+                        target: '_self',
+                        url: `#/${item.menuLink}`
+                    });
+                }
+                acc.push({
+                    label: item?.label,
+                    target: '_self',
+                    url: `#/${item.menuLink}`
+                });
+            } else {
+                if (url.includes('/content?filter=')) {
+                    const filter = url.split('/content?filter=')[1];
+                    acc.push({
+                        label: filter,
+                        target: '_self',
+                        url: url
+                    });
+                }
+            }
+            return acc;
+        }, []);
+        return breadcrumbTrail;
+        /*
+        const breadcrumbTrail = history.map(url => {
+            const item = menu.find(item => item.menuLink === url);
+            return {
+                label: item?.labelParent || item?.label,
+                target: '_self',
+                url: `#/${item.menuLink}`
+            };
+        });
+        */
+        return [];
+    });
+
     constructor() {
-        const router = inject(Router);
-
-        this.dotNavigationService
-            .onNavigationEnd()
-            .pipe(
-                map((event: NavigationEnd) => {
-                    if (this.URL_EXCLUDES.includes(event.url)) {
-                        return this.splitURL(event.url)[0];
-                    } else {
-                        return event.url;
-                    }
-                }),
-                switchMap((url: string) => this.getCrumbtrail(url))
+        merge(
+            this.newBreadcrumb$,
+            this.router.events.pipe(
+                filter((event: Event) => event instanceof NavigationEnd),
+                map((event: NavigationEnd) => event.urlAfterRedirects)
             )
-            .subscribe((crumbTrail: DotCrumb[]) => this.crumbTrail.next(crumbTrail));
+        )
+            .pipe(
+                map((data) => {
+                    if (typeof data === 'string') {
+                        return {
+                            type: 'history',
+                            url: data as string
+                        };
+                    }
+                    return {
+                        type: 'breadcrumb',
+                        item: data as MenuItem
+                    };
+                })
+            )
+            .subscribe((data) => {
+                const menu = this.$flattenMenuItems();
 
-        this.getCrumbtrail(router.url).subscribe((crumbTrail: DotCrumb[]) =>
-            this.crumbTrail.next(crumbTrail)
-        );
+                if (data.type === 'history') {
+                    const item = menu.find((item) => item.menuLink === data.url);
+                    if (item) {
+                        this.$breadcrumbs.set([
+                            {
+                                label: item.labelParent,
+                                target: '_self'
+                            },
+                            {
+                                label: item.label,
+                                target: '_self',
+                                url: `/dotAdmin/#/${data.url}`
+                            }
+                        ]);
+                    } else {
+                        if (data.url.includes('/content?filter=')) {
+                            const filter = data.url.split('/content?filter=')[1];
+                            this.$breadcrumbs.update((breadcrumb) => [
+                                ...breadcrumb,
+                                {
+                                    label: filter,
+                                    target: '_self',
+                                    url: `/dotAdmin/#/${data.url}`
+                                }
+                            ]);
+                        }
+                    }
+                } else {
+                    this.$breadcrumbs.update((breadcrumb) => [...breadcrumb, data.item]);
+                }
+            });
     }
 
     get crumbTrail$(): Observable<DotCrumb[]> {
@@ -192,6 +291,10 @@ export class DotCrumbtrailService {
         const sections: string[] = this.splitURL(url);
 
         return !!this.portletsTitlePathFinder[sections[0]];
+    }
+
+    addBreadcrumb(breadcrumb: MenuItem) {
+        this.newBreadcrumb$.next(breadcrumb);
     }
 }
 

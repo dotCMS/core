@@ -1,5 +1,4 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
 @Component({
@@ -14,9 +13,7 @@ export class DotCrumbtrailComponent {
     readonly #crumbTrailService = inject(DotCrumbtrailService);
 
     /** Signal containing the complete breadcrumb menu items */
-    $breadcrumbsMenu = toSignal(this.#crumbTrailService.crumbTrail$, {
-        initialValue: []
-    });
+    $breadcrumbsMenu = this.#crumbTrailService.$breadcrumbs;
 
     /**
      * Computed signal containing collapsed breadcrumb items.
@@ -46,4 +43,12 @@ export class DotCrumbtrailComponent {
 
         return last?.label ?? null;
     });
+
+    addBreadcrumb() {
+        this.#crumbTrailService.addBreadcrumb({
+            label: 'New Breadcrumb',
+            target: '_self',
+            url: '#/new-breadcrumb'
+        });
+    }
 }

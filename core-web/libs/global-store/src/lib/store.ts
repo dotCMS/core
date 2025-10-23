@@ -33,6 +33,8 @@ export interface GlobalState {
      * Contains the complete site entity from the API endpoint. Set to `null` when no site is selected.
      */
     siteDetails: SiteEntity | null;
+    // bread --
+    // navigation --
 }
 
 /**

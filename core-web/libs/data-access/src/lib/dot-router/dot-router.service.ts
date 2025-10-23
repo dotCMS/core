@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import {
     ActivatedRoute,
     Event,
@@ -19,9 +19,10 @@ import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-mo
 export class DotRouterService {
     private router = inject(Router);
     private route = inject(ActivatedRoute);
+    readonly $history = signal<string[]>([]);
 
     portletReload$ = new Subject();
-    private _storedRedirectUrl: string;
+    private _storedRedirectUrl = '';
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
     private _routeCanBeDeactivated = new BehaviorSubject(true);
@@ -29,6 +30,9 @@ export class DotRouterService {
 
     constructor() {
         this._routeHistory.url = this.router.url;
+        if (this.router.url !== '/') {
+            this.$history.set([this.router.url]);
+        }
         this.router.events
             .pipe(filter((event: Event) => event instanceof NavigationEnd))
             .subscribe((event: NavigationEnd) => {
@@ -36,6 +40,10 @@ export class DotRouterService {
                     url: event.url,
                     previousUrl: this._routeHistory.url
                 };
+                this.$history.update((currentHistory) => [
+                    ...currentHistory,
+                    event.urlAfterRedirects
+                ]);
             });
     }
 

@@ -1,6 +1,7 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
@@ -172,6 +173,19 @@ export class DotNavigationService {
     private _collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
     private _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
     private _appMainTitle: string;
+
+    readonly $menuItems = toSignal(this._items$, { initialValue: [] });
+
+    readonly $flattenMenuItems = computed(() => {
+        const menu = this.$menuItems();
+        return menu.reduce((acc, menu) => {
+            const items = menu.menuItems.map((item) => ({
+                ...item,
+                labelParent: menu.tabName
+            }));
+            return [...acc, ...items];
+        }, []);
+    });
 
     constructor() {
         this._appMainTitle = this.titleService.getTitle();
