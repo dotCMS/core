@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import {
     AfterViewInit,
@@ -11,17 +12,29 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { Menu } from 'primeng/menu';
+import { DialogService } from 'primeng/dynamicdialog';
+import { Menu, MenuModule } from 'primeng/menu';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { Observable } from 'rxjs/internal/Observable';
 import { filter, take, takeUntil } from 'rxjs/operators';
 
 import {
+    DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
     DotMessageDisplayService,
     DotPageRenderService,
-    DotRouterService
+    DotPageTypesService,
+    DotPageWorkflowsActionsService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotTempFileUploadService,
+    DotWorkflowActionsFireService,
+    DotWorkflowEventHandlerService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { HttpCode, SiteService } from '@dotcms/dotcms-js';
 import {
@@ -30,7 +43,10 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
+import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel/dot-pages-favorite-panel.component';
+import { DotPagesListingPanelComponent } from './dot-pages-listing-panel/dot-pages-listing-panel.component';
 import {
     DotPagesState,
     DotPageStore,
@@ -44,11 +60,34 @@ export interface DotActionsMenuEventParams {
 }
 
 @Component({
-    providers: [DotPageStore],
+    providers: [
+        DotPageStore,
+        DotSessionStorageService,
+        DialogService,
+        DotESContentService,
+        DotLanguagesService,
+        DotPageRenderService,
+        DotPageTypesService,
+        DotTempFileUploadService,
+        DotWorkflowsActionsService,
+        DotPageWorkflowsActionsService,
+        DotWorkflowActionsFireService,
+        DotWorkflowEventHandlerService,
+        DotRouterService,
+        DotFavoritePageService,
+        DotSessionStorageService
+    ],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
     templateUrl: './dot-pages.component.html',
-    standalone: false
+    imports: [
+        CommonModule,
+        DotAddToBundleComponent,
+        DotPagesFavoritePanelComponent,
+        DotPagesListingPanelComponent,
+        MenuModule,
+        ProgressSpinnerModule
+    ]
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
     private dotRouterService = inject(DotRouterService);

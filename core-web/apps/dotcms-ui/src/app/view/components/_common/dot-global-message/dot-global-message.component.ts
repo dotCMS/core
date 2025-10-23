@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectorRef,
     Component,
@@ -13,6 +14,7 @@ import { filter, takeUntil } from 'rxjs/operators';
 
 import { DotEventsService } from '@dotcms/data-access';
 import { DotEvent, DotGlobalMessage } from '@dotcms/dotcms-models';
+import { DotSpinnerComponent } from '@dotcms/ui';
 
 /**
  * Set a listener to display Global Messages in the main top toolbar
@@ -24,7 +26,7 @@ import { DotEvent, DotGlobalMessage } from '@dotcms/dotcms-models';
     selector: 'dot-global-message',
     templateUrl: './dot-global-message.component.html',
     styleUrls: ['./dot-global-message.component.scss'],
-    standalone: false
+    imports: [CommonModule, DotSpinnerComponent]
 })
 export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     private dotEventsService = inject(DotEventsService);

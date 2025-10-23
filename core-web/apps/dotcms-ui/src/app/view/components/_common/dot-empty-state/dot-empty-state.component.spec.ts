@@ -2,8 +2,6 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule } from 'primeng/button';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -25,9 +23,8 @@ describe('DotEmptyStateComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotEmptyStateComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
-            imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule]
+            imports: [DotEmptyStateComponent, DotSafeHtmlPipe, DotMessagePipe]
         }).compileComponents();
     });
 

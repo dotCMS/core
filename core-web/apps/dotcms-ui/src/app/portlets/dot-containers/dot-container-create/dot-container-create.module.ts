@@ -1,31 +1,32 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotContainerCreateRoutingModule } from './dot-container-create-routing.module';
 import { DotContainerCreateComponent } from './dot-container-create.component';
-import { DotContainerHistoryModule } from './dot-container-history/dot-container-history.module';
-import { DotContainerPermissionsModule } from './dot-container-permissions/dot-container-permissions.module';
-import { DotContainerPropertiesModule } from './dot-container-properties/dot-container-properties.module';
+import { dotContainerCreateRoutes } from './dot-container-create.routes';
+import { DotContainerHistoryComponent } from './dot-container-history/dot-container-history.component';
+import { DotContainerPermissionsComponent } from './dot-container-permissions/dot-container-permissions.component';
+import { DotContainerPropertiesComponent } from './dot-container-properties/dot-container-properties.component';
 
-import { DotGlobalMessageModule } from '../../../view/components/_common/dot-global-message/dot-global-message.module';
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotGlobalMessageComponent } from '../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @NgModule({
     declarations: [DotContainerCreateComponent],
     imports: [
         CommonModule,
-        DotContainerCreateRoutingModule,
-        DotPortletBaseModule,
+        RouterModule.forChild(dotContainerCreateRoutes),
+        DotPortletBaseComponent,
         TabViewModule,
         DotMessagePipe,
-        DotContainerPropertiesModule,
-        DotContainerPermissionsModule,
-        DotContainerHistoryModule,
-        DotGlobalMessageModule
+        DotContainerPropertiesComponent,
+        DotContainerPermissionsComponent,
+        DotContainerHistoryComponent,
+        DotGlobalMessageComponent
     ]
 })
 export class DotContainerCreateModule {}

@@ -29,12 +29,11 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotDeviceSelectorModule } from '../../../../../view/components/dot-device-selector/dot-device-selector.module';
-import { DotIframeDialogModule } from '../../../../../view/components/dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotIframeDialogComponent } from '../../../../../view/components/dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
-import { DotPersonaSelectorModule } from '../../../../../view/components/dot-persona-selector/dot-persona.selector.module';
+import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller-seo',
@@ -45,13 +44,11 @@ import { DotPersonaSelectorModule } from '../../../../../view/components/dot-per
         DropdownModule,
         FormsModule,
         TooltipModule,
-        DotPersonaSelectorModule,
+        DotPersonaSelectorComponent,
         DotLanguageSelectorComponent,
-        DotDeviceSelectorModule,
-        DotIconModule,
         CheckboxModule,
         ConfirmDialogModule,
-        DotIframeDialogModule,
+        DotIframeDialogComponent,
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush

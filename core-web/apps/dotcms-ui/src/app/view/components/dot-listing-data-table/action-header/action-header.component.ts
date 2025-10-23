@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     Component,
     Input,
@@ -7,17 +8,21 @@ import {
     inject
 } from '@angular/core';
 
+import { SplitButtonModule } from 'primeng/splitbutton';
+
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { ActionHeaderOptions } from '../../../../shared/models/action-header/action-header-options.model';
 import { ButtonAction } from '../../../../shared/models/action-header/button-action.model';
+import { DotActionButtonComponent } from '../../_common/dot-action-button/dot-action-button.component';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-action-header',
     styleUrls: ['./action-header.component.scss'],
     templateUrl: 'action-header.component.html',
-    standalone: false
+    imports: [CommonModule, SplitButtonModule, DotActionButtonComponent, DotMessagePipe]
 })
 export class ActionHeaderComponent implements OnChanges {
     private dotMessageService = inject(DotMessageService);

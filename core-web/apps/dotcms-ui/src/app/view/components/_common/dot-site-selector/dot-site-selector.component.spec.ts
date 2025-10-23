@@ -29,7 +29,6 @@ import { DotSiteSelectorComponent } from './dot-site-selector.component';
 
 import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
-import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 
 const sites: Site[] = [
     {
@@ -117,9 +116,10 @@ describe('SiteSelectorComponent', () => {
             search: 'Search'
         });
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotSiteSelectorComponent],
+            declarations: [TestHostComponent],
             imports: [
-                SearchableDropDownModule,
+                DotSiteSelectorComponent,
+                SearchableDropdownComponent,
                 BrowserAnimationsModule,
                 HttpClientTestingModule,
                 CommonModule,

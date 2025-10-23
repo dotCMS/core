@@ -37,7 +37,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { createFakeEvent, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotAddVariableModule } from './dot-add-variable/dot-add-variable.module';
+import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
 import { DotContentEditorComponent } from './dot-container-code.component';
 
 const mockContentTypes: DotCMSContentType[] = [
@@ -96,7 +96,8 @@ const mockContentTypes: DotCMSContentType[] = [
     template: `
         <dot-container-code [contentTypes]="contentTypes" [fg]="form"></dot-container-code>
     `,
-    standalone: false
+    imports: [DotContentEditorComponent],
+    standalone: true
 })
 class HostTestComponent {
     private fb = inject_1(FormBuilder);
@@ -121,7 +122,7 @@ class HostTestComponent {
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
     ],
-    standalone: false
+    standalone: true
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
@@ -185,16 +186,15 @@ describe('DotContentEditorComponent', () => {
         Element.prototype.scrollIntoView = jest.fn();
 
         await TestBed.configureTestingModule({
-            declarations: [
+            declarations: [],
+            imports: [
                 HostTestComponent,
                 DotContentEditorComponent,
-                DotTextareaContentMockComponent
-            ],
-            imports: [
+                DotTextareaContentMockComponent,
                 ReactiveFormsModule,
                 FormsModule,
                 DynamicDialogModule,
-                DotAddVariableModule,
+                DotAddVariableComponent,
                 TabViewModule,
                 MenuModule,
                 ButtonModule,
@@ -404,12 +404,11 @@ describe('DotContentEditorComponent', () => {
             };
             comp.monacoEditors[mockContentTypes[0].id] = mockEditor as any;
 
-            const dialogService = TestBed.inject(DialogService);
-            jest.spyOn(dialogService, 'open');
+            jest.spyOn(comp['dialogService'], 'open');
 
             comp.handleAddVariable(mockContentType);
 
-            expect(dialogService.open).toHaveBeenCalledWith(
+            expect(comp['dialogService'].open).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({
                     width: '25rem',

@@ -1,5 +1,5 @@
-import { DotFieldStatus } from './dot-field-status.model';
 import { DotBinaryMessageError } from './dot-binary-message-error.model';
+import { DotFieldStatus } from './dot-field-status.model';
 
 export interface DotFieldEvent {
     name: string;

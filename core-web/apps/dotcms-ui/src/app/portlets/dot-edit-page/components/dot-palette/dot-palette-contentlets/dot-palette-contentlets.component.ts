@@ -1,8 +1,11 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, ViewChild, inject } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
+import { PaginatorModule } from 'primeng/paginator';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
@@ -11,7 +14,13 @@ import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-
     selector: 'dot-palette-contentlets',
     templateUrl: './dot-palette-contentlets.component.html',
     styleUrls: ['./dot-palette-contentlets.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotPaletteInputFilterComponent,
+        PaginatorModule,
+        DotSpinnerComponent,
+        DotMessagePipe
+    ]
 })
 export class DotPaletteContentletsComponent {
     private dotContentletEditorService = inject(DotContentletEditorService);

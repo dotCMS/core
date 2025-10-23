@@ -21,6 +21,7 @@ import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotEditPageService,
     DotESContentService,
     DotEventsService,
@@ -35,6 +36,7 @@ import {
     DotMessageService,
     DotPageRenderService,
     DotPageStateService,
+    DotPersonalizeService,
     DotPropertiesService,
     DotRouterService,
     DotSeoMetaTagsService,
@@ -42,7 +44,11 @@ import {
     DotSessionStorageService,
     DotUiColorsService,
     DotWorkflowActionsFireService,
-    DotWorkflowService
+    DotWorkflowsActionsService,
+    DotWizardService,
+    DotWorkflowEventHandlerService,
+    DotWorkflowService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -88,7 +94,7 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
-import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
+import { DotEditPageWorkflowsActionsComponent } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.component';
 import {
     DotEditContentComponent,
     EDIT_BLOCK_EDITOR_CUSTOM_EVENT
@@ -103,13 +109,13 @@ import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-e
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
-import { DotOverlayMaskModule } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.module';
-import { DotWizardModule } from '../../../view/components/_common/dot-wizard/dot-wizard.module';
-import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotOverlayMaskComponent } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.component';
+import { DotWizardComponent } from '../../../view/components/_common/dot-wizard/dot-wizard.component';
+import { DotLoadingIndicatorComponent } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
+import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';
 import { DotPaletteComponent } from '../components/dot-palette/dot-palette.component';
 
 // Suppress console logs during this test
@@ -132,26 +138,30 @@ afterAll(() => {
     console.error = originalConsoleError;
 });
 
-const EXPERIMENT_MOCK = getExperimentMock(1);
+const EXPERIMENT_MOCK = {
+    ...getExperimentMock(1),
+    scheduling: { startDate: 1, endDate: 2 }
+};
 
 @Component({
     selector: 'dot-global-message',
     template: '',
-    standalone: false
+    standalone: true
 })
 class MockGlobalMessageComponent {}
 
 @Component({
     selector: 'dot-test',
     template: '<dot-edit-content></dot-edit-content>',
-    standalone: false
+    standalone: true,
+    imports: [DotEditContentComponent]
 })
 class HostTestComponent {}
 
 @Component({
     selector: 'dot-icon',
     template: '',
-    standalone: false
+    standalone: true
 })
 class MockDotIconComponent {
     @Input() name: string;
@@ -160,7 +170,7 @@ class MockDotIconComponent {
 @Component({
     selector: 'dot-whats-changed',
     template: '',
-    standalone: false
+    standalone: true
 })
 class MockDotWhatsChangedComponent {
     @Input() pageId: string;
@@ -170,7 +180,7 @@ class MockDotWhatsChangedComponent {
 @Component({
     selector: 'dot-form-selector',
     template: '',
-    standalone: false
+    standalone: true
 })
 export class MockDotFormSelectorComponent {
     @Input() show = false;
@@ -181,7 +191,7 @@ export class MockDotFormSelectorComponent {
 @Component({
     selector: 'dot-edit-page-toolbar',
     template: '',
-    standalone: false
+    standalone: true
 })
 export class MockDotEditPageToolbarComponent {
     @Input() pageState = mockDotRenderedPageState;
@@ -196,7 +206,7 @@ export class MockDotEditPageToolbarComponent {
 @Component({
     selector: 'dot-edit-page-toolbar-seo',
     template: '',
-    standalone: false
+    standalone: true
 })
 export class MockDotEditPageToolbarSeoComponent {
     @Input() pageState = mockDotRenderedPageState;
@@ -211,11 +221,21 @@ export class MockDotEditPageToolbarSeoComponent {
 @Component({
     selector: 'dot-palette',
     template: '',
-    standalone: false
+    standalone: true
 })
 export class MockDotPaletteComponent {
     @Input() languageId = '1';
     @Input() allowedContent: string[];
+}
+
+@Component({
+    selector: 'dot-reorder-menu',
+    template: '',
+    standalone: true
+})
+export class MockDotReorderMenuComponent {
+    @Input() url = '';
+    @Output() shutdown = new EventEmitter<void>();
 }
 
 const mockRenderedPageState = new DotPageRenderState(
@@ -277,35 +297,34 @@ describe('DotEditContentComponent', () => {
         });
 
         TestBed.configureTestingModule({
-            declarations: [
-                DotEditContentComponent,
-                MockDotWhatsChangedComponent,
-                MockDotFormSelectorComponent,
-                MockDotEditPageToolbarComponent,
-                MockDotIconComponent,
-                MockDotPaletteComponent,
-                HostTestComponent,
-                MockGlobalMessageComponent,
-                MockDotEditPageToolbarSeoComponent
-            ],
             imports: [
                 HttpClientTestingModule,
                 BrowserAnimationsModule,
                 ButtonModule,
                 DialogModule,
-                DotContentletEditorModule,
-                DotEditPageInfoModule,
-                DotLoadingIndicatorModule,
-                DotEditPageWorkflowsActionsModule,
-                DotOverlayMaskModule,
-                DotWizardModule,
+                DotEditContentletComponent,
+                DotEditPageInfoComponent,
+                DotLoadingIndicatorComponent,
+                DotEditPageWorkflowsActionsComponent,
+                DotOverlayMaskComponent,
+                DotWizardComponent,
+                DotEditContentComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotEditContentComponent,
                         path: 'test'
                     }
                 ]),
-                DotShowHideFeatureDirective
+                DotShowHideFeatureDirective,
+                MockDotWhatsChangedComponent,
+                MockDotFormSelectorComponent,
+                MockDotEditPageToolbarComponent,
+                MockDotIconComponent,
+                MockDotPaletteComponent,
+                MockDotReorderMenuComponent,
+                HostTestComponent,
+                MockGlobalMessageComponent,
+                MockDotEditPageToolbarSeoComponent
             ],
             providers: [
                 DotSessionStorageService,
@@ -317,6 +336,8 @@ describe('DotEditContentComponent', () => {
                 DotEditContentToolbarHtmlService,
                 DotDOMHtmlUtilService,
                 DotAlertConfirmService,
+                PushPublishService,
+                DotCurrentUserService,
                 {
                     provide: DotEditContentHtmlService,
                     useValue: {
@@ -373,6 +394,9 @@ describe('DotEditContentComponent', () => {
                     }
                 },
                 DotWorkflowActionsFireService,
+                DotWorkflowsActionsService,
+                DotWizardService,
+                DotWorkflowEventHandlerService,
                 DotGenerateSecurePasswordService,
                 DotCustomEventHandlerService,
                 DotPropertiesService,
@@ -383,6 +407,7 @@ describe('DotEditContentComponent', () => {
                 DotExperimentsService,
                 DotSeoMetaTagsService,
                 DotSeoMetaTagsUtilService,
+                DotPersonalizeService,
                 mockProvider(DotContentTypeService),
                 {
                     provide: LoginService,
@@ -442,7 +467,9 @@ describe('DotEditContentComponent', () => {
                 LoggerService,
                 StringUtils,
                 ApiRoot,
-                UserModel
+                UserModel,
+                DotContentletEditorService,
+                IframeOverlayService
             ]
         });
 

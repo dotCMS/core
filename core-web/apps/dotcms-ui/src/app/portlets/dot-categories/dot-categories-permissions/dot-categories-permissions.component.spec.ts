@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotCategoriesPermissionsComponent } from './dot-categories-permissions.component';
 
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-iframe',
@@ -23,7 +23,7 @@ describe('CategoriesPermissionsComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotCategoriesPermissionsComponent, IframeMockComponent],
-            imports: [DotPortletBaseModule],
+            imports: [DotPortletBaseComponent],
             providers: [{ provide: ComponentFixtureAutoDetect, useValue: true }]
         }).compileComponents();
 

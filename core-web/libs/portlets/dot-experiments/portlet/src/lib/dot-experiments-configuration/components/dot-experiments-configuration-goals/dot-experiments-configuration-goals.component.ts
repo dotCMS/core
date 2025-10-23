@@ -21,7 +21,7 @@ import {
     GoalsLevels,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDynamicDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
@@ -36,7 +36,7 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
         CommonModule,
         DotMessagePipe,
         DotDynamicDirective,
-        DotIconModule,
+        DotIconComponent,
         DotExperimentsDetailsTableComponent,
         // PrimeNg
         ButtonModule,

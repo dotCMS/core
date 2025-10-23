@@ -1,5 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -11,12 +12,28 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
+
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType, DotDialogActions, DotMenu } from '@dotcms/dotcms-models';
+import {
+    DotAutofocusDirective,
+    DotDialogComponent,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import {
     DotAddToMenuService,
@@ -27,7 +44,18 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 @Component({
     selector: 'dot-add-to-menu',
     templateUrl: 'dot-add-to-menu.component.html',
-    standalone: false
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        DropdownModule,
+        InputTextModule,
+        RadioButtonModule,
+        DotAutofocusDirective,
+        DotDialogComponent,
+        DotFieldValidationMessageComponent,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotAddToMenuComponent implements OnInit, OnDestroy {
     fb = inject(UntypedFormBuilder);

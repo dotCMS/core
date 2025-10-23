@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
@@ -10,8 +12,9 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService, DotEventsService } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { MockDotMessageService, CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
@@ -103,20 +106,26 @@ describe('DotTemplateAdvancedComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
+            imports: [DotTemplateAdvancedComponent, FormsModule, ReactiveFormsModule],
             declarations: [
-                DotTemplateAdvancedComponent,
                 DotPortletBaseMockComponent,
                 DotPortletToolbarMockComponent,
                 DotContainerSelectorMockComponent,
                 DotTextareaContentMockComponent,
                 MockDotGlobalMessageComponent
             ],
-            imports: [FormsModule, ReactiveFormsModule],
             providers: [
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                }
+                },
+                {
+                    provide: CoreWebService,
+                    useClass: CoreWebServiceMock
+                },
+                DotEventsService,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ]
         });
     });

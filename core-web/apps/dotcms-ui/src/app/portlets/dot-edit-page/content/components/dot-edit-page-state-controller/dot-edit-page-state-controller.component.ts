@@ -1,5 +1,6 @@
 import { from, Observable, of } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -11,9 +12,13 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { MenuItem, SelectItem } from 'primeng/api';
-import { Menu } from 'primeng/menu';
+import { InputSwitchModule } from 'primeng/inputswitch';
+import { Menu, MenuModule } from 'primeng/menu';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { switchMap, take } from 'rxjs/operators';
 
@@ -32,6 +37,7 @@ import {
     DotVariantData,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 
@@ -47,7 +53,17 @@ enum DotConfirmationType {
     selector: 'dot-edit-page-state-controller',
     templateUrl: './dot-edit-page-state-controller.component.html',
     styleUrls: ['./dot-edit-page-state-controller.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        FormsModule,
+        InputSwitchModule,
+        SelectButtonModule,
+        TooltipModule,
+        DotMessagePipe,
+        DotTabButtonsComponent,
+        MenuModule,
+        DotEditPageLockInfoComponent
+    ]
 })
 export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
     private dotAlertConfirmService = inject(DotAlertConfirmService);

@@ -1,7 +1,8 @@
 import { throwError } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, forwardRef, inject } from '@angular/core';
+import { Component, forwardRef, inject, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { finalize, switchMap, take } from 'rxjs/operators';
@@ -13,6 +14,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
     assetVersion: string;
@@ -23,6 +25,7 @@ export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
     selector: 'dot-template-thumbnail-field',
     templateUrl: './dot-template-thumbnail-field.component.html',
     styleUrls: ['./dot-template-thumbnail-field.component.scss'],
+    imports: [CommonModule, DotMessagePipe],
     providers: [
         {
             multi: true,
@@ -30,7 +33,7 @@ export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
             useExisting: forwardRef(() => DotTemplateThumbnailFieldComponent)
         }
     ],
-    standalone: false
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor {
     private dotTempFileUploadService = inject(DotTempFileUploadService);
