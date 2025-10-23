@@ -171,7 +171,6 @@ export const GlobalStore = signalStore(
             store.setBreadcrumbs([
                 {
                     label: 'Content',
-                    icon: 'pi pi-home',
                     target: '_self',
                     url: '#/content'
                 },
