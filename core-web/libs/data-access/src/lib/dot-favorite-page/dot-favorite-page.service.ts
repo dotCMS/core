@@ -33,12 +33,13 @@ export class DotFavoritePageService {
         sortOrder?: ESOrderDirection | string;
     }): Observable<ESContent> {
         const { limit, userId, identifier, url, offset, sortField, sortOrder } = params;
+        const urlRaw = url === '/' ? '/index' : url;
 
         let extraQueryParams = '';
         if (identifier) {
             extraQueryParams = `+identifier:${identifier}`;
         } else if (url) {
-            extraQueryParams = `+DotFavoritePage.url_dotraw:${url}`;
+            extraQueryParams = `+DotFavoritePage.url_dotraw:${urlRaw}*`;
         }
 
         return this.dotESContentService.get({

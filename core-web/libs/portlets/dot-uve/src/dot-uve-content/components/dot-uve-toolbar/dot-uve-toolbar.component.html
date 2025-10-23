@@ -1,0 +1,46 @@
+<p-toolbar styleClass="uve-toolbar">
+    <div class="p-toolbar-group-start gap-2" [ngClass]="{ 'p-0': true }">
+        <dot-uve-mode-selector />
+        <dot-uve-bookmark />
+        <p-button
+            icon="pi pi-copy"
+            styleClass="p-button-text p-button-sm p-button-rounded"
+            tooltipPosition="bottom"
+            [pTooltip]="'editpage.header.copy' | dm"
+            (cdkCopyToClipboardCopied)="copyURLToast()"
+            [cdkCopyToClipboard]="$copyUrl()" />
+        <a
+            pButton
+            label="API"
+            target="_blank"
+            [href]="$apiURL()"
+            [pTooltip]="'uve.toolbar.page.api.url' | dm"
+            tooltipPosition="bottom"
+            class="p-button-icon-only p-button-text p-button-sm p-button-rounded"></a>
+
+        <dot-uve-device-selector />
+    </div>
+
+    <div class="p-toolbar-group-center gap-2">
+        <p-calendar
+            inputStyleClass="p-inputtext-sm"
+            dataType="date"
+            [ngModel]="$SELECTED_DATE()"
+            (ngModelChange)="onCalendarChange()"
+            [showTime]="true"
+            [hourFormat]="'12'"
+            [minDate]="$MIN_DATE()"
+            [readonlyInput]="true" />
+        <p-button
+            styleClass="p-button-sm"
+            alt="Page Day"
+            [label]="'Today' | dm"
+            (click)="onCalendarChange()" />
+    </div>
+
+    <div class="p-toolbar-group-end gap-2">
+        <dot-uve-language-selector />
+        <dot-uve-persona-selector />
+        <dot-uve-workflow-actions />
+    </div>
+</p-toolbar>
