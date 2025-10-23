@@ -18,10 +18,12 @@
 </div>
 
 <div class="dot-uve-palette-list__grid">
-    @for (contentType of $contentTypes(); track contentType.id) {
-        @if ($loading()) {
+    @if ($loading()) {
+        @for (i of LOADING_ROWS_MOCK; track i) {
             <p-skeleton width="100%" height="6.875rem"></p-skeleton>
-        } @else {
+        }
+    } @else {
+        @for (contentType of $contentTypes(); track contentType.id) {
             <dot-uve-palette-item [contentType]="contentType" />
         }
     }

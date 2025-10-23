@@ -56,6 +56,8 @@ export class DotUvePaletteListComponent {
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
 
+    readonly LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index + 1);
+
     // Computed signal for paginated content types
     readonly $start = computed(() => {
         return (this.$pagination().currentPage - 1) * this.$pagination().perPage;
@@ -78,7 +80,7 @@ export class DotUvePaletteListComponent {
         },
         filter: '',
         totalEntries: 0,
-        loading: false
+        loading: true
     });
 
     readonly $contentTypes = this.$state.contentTypes;
