@@ -1,50 +1,40 @@
 @use "sass:math";
 @use "variables" as *;
 
-.dot-uve-palette-item {
+// Host element - common styles
+:host {
     display: flex;
     width: 100%;
-    height: 6.875rem;
-    padding: 0 $spacing-1;
-    justify-content: center;
     align-items: center;
-    align-self: stretch;
-
     border: 1px solid $color-palette-border-light;
     border-radius: $border-radius-md;
     background: $white;
-
     cursor: pointer;
     transition: all $basic-speed ease-in-out;
 
     &:hover {
         border-color: $color-palette-primary;
         background: $color-palette-primary-100;
-        box-shadow: $shadow-m;
+        box-shadow: $shadow-s;
 
-        .dot-uve-palette-item__drag-handle {
-            opacity: 1;
-        }
-        .dot-uve-palette-item__chevron {
+        .drag-handle,
+        .chevron {
             opacity: 1;
         }
     }
 
-    .dot-uve-palette-item__content {
+    // Child elements
+    .content {
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
         flex: 1;
-        gap: $spacing-1;
     }
 
-    .dot-uve-palette-item__icon {
+    .icon {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 2.375rem;
-        height: 2.375rem;
         color: $color-palette-gray-800;
 
         .material-icons {
@@ -52,18 +42,18 @@
         }
     }
 
-    .dot-uve-palette-item__name {
+    .name {
         font-size: $font-size-md;
-        color: $color-palette-gray-800;
+        color: $color-palette-bluegray-800;
         font-weight: $font-weight-semi-bold;
         line-height: 1.2;
     }
 
-    .dot-uve-palette-item__drag-handle {
+    .drag-handle {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-700;
+        color: $color-palette-bluegray-300;
         width: 0.875rem;
         height: 0.875rem;
         cursor: grab;
@@ -73,20 +63,67 @@
         .pi:first-child {
             margin-right: -$spacing-1;
         }
+
+        &:active {
+            cursor: grabbing;
+        }
     }
 
-    .dot-uve-palette-item__chevron {
+    .chevron {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-700;
+        color: $color-palette-gray-300;
         width: 0.875rem;
         height: 0.875rem;
         opacity: 0;
         transition: opacity $basic-speed ease-in-out;
+        .pi {
+            color: $color-palette-bluegray-300;
+        }
+    }
+}
+
+// Grid view (default)
+:host {
+    height: 6.875rem;
+    padding: 0 $spacing-1;
+    justify-content: center;
+
+    .content {
+        flex-direction: column;
+        gap: $spacing-1;
     }
 
-    &:active {
-        cursor: grabbing;
+    .icon {
+        width: 2.375rem;
+        height: 2.375rem;
+    }
+
+    .name {
+        text-align: center;
+    }
+}
+
+// List view override
+:host(.list-view) {
+    height: 4rem;
+    gap: $spacing-1;
+    justify-content: space-between;
+
+    .content {
+        flex-direction: row;
+        gap: $spacing-1;
+    }
+
+    .icon {
+        width: auto;
+        height: auto;
+        flex-shrink: 0;
+    }
+
+    .name {
+        flex: 1;
+        text-align: left;
     }
 }
