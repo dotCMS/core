@@ -20,7 +20,7 @@
 <div class="dot-uve-palette-list__grid">
     @for (contentType of $contentTypes(); track contentType.id) {
         @if ($loading()) {
-            <p-skeleton [size]="'100%'" [height]="'6.875rem'"></p-skeleton>
+            <p-skeleton width="100%" height="6.875rem"></p-skeleton>
         } @else {
             <dot-uve-palette-item [contentType]="contentType" />
         }

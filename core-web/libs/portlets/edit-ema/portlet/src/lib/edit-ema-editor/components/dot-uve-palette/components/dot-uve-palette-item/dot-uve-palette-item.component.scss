@@ -47,7 +47,7 @@
 
     .dot-uve-palette-item__name {
         font-size: $font-size-md;
-        color: $color-palette-bluegray-800;
+        color: $color-palette-gray-800;
         font-weight: $font-weight-semi-bold;
         line-height: 1.2;
     }
@@ -56,7 +56,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-bluegray-300; // #9FA9B7
+        color: $color-palette-gray-300; // #9FA9B7
         width: 0.875rem;
         height: 0.875rem;
         cursor: grab;
@@ -72,7 +72,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-bluegray-300; // #9FA9B7
+        color: $color-palette-gray-300; // #9FA9B7
         width: 0.875rem;
         height: 0.875rem;
         color: $color-palette-gray-300;
