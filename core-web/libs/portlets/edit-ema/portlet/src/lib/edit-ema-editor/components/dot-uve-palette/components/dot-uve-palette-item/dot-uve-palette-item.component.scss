@@ -21,6 +21,13 @@
         border-color: $color-palette-primary;
         background: $color-palette-primary-100;
         box-shadow: $shadow-s;
+
+        .dot-uve-palette-item__drag-handle {
+            opacity: 1;
+        }
+        .dot-uve-palette-item__chevron {
+            opacity: 1;
+        }
     }
 
     .dot-uve-palette-item__content {
@@ -56,7 +63,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-400;
+        color: $color-palette-gray-500;
         width: 0.875rem;
         height: 0.875rem;
         cursor: grab;
@@ -66,29 +73,20 @@
         .pi:first-child {
             margin-right: -$spacing-1;
         }
-
-        &:active {
-            cursor: grabbing;
-        }
     }
 
     .dot-uve-palette-item__chevron {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-400;
+        color: $color-palette-gray-500;
         width: 0.875rem;
         height: 0.875rem;
         opacity: 0;
         transition: opacity $basic-speed ease-in-out;
     }
 
-    &:hover {
-        .dot-uve-palette-item__drag-handle {
-            opacity: 1;
-        }
-        .dot-uve-palette-item__chevron {
-            opacity: 1;
-        }
+    &:active {
+        cursor: grabbing;
     }
 }

@@ -36,31 +36,18 @@
                 .pi {
                     width: 14px;
                     height: 14px;
-                    color: $color-palette-bluegray-300; // #9FA9B7
+                    color: $color-palette-gray-600;
                     font-size: $font-size-default;
                 }
             }
 
             &.p-highlight .p-tabview-nav-link {
-                border-bottom: 2px solid $color-palette-blue-shade;
+                border-bottom: 2px solid $color-palette-primary;
 
                 .pi {
-                    color: $color-palette-blue-shade; // #18186D
+                    color: $color-palette-gray-800;
                 }
             }
         }
-    }
-}
-
-// Responsive adjustments
-@media (max-height: 600px) {
-    :host {
-        max-height: 400px; // Smaller height for smaller screens
-    }
-}
-
-@media (max-height: 400px) {
-    :host {
-        max-height: 300px; // Even smaller for very small screens
     }
 }
