@@ -128,6 +128,7 @@ public class TextResource {
         final CompletionRequest.Builder builder = CompletionRequest.builder()
                 .vendorModelPath(form.model)
                 .prompt(form.prompt)
+                .chatModelConfig(aiModelConfig)
                 .temperature(form.temperature);
 
         // todo: we need to figured out how to set the system prompts per functionality

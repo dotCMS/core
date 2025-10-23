@@ -77,7 +77,7 @@ public class AiModelConfigFactory {
 
         modelConfigCatalog = this.aiModelConfigCatalogMap.get(siteId);
 
-        return null != modelConfigCatalog? modelConfigCatalog.getChatConfig(vendorModelPath):null;
+        return null != modelConfigCatalog? modelConfigCatalog.getByPath(vendorModelPath):null;
     }
 
     private boolean loadVendorModelFromAppBySiteId(final String siteId) throws DotDataException, DotSecurityException {
