@@ -21,7 +21,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { catchError } from 'rxjs/operators';
 
-import { DotESContentService } from '@dotcms/data-access';
+import { DotESContentService, DotMessageService} from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, ESContent } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -94,6 +94,7 @@ export class DotUvePaletteListComponent {
 
     readonly #pageContentTypeService = inject(DotPageContentTypeService);
     readonly #dotESContentService = inject(DotESContentService);
+    readonly #dotMessageService = inject(DotMessageService);
 
     /** Component state */
     readonly $state = signalState<DotUVEPaletteListState>(DEFAULT_STATE);
@@ -121,22 +122,22 @@ export class DotUvePaletteListComponent {
 
         return [
             {
-                label: 'Sort by',
+                label: this.#dotMessageService.get('uve.palette.menu.sort.title'),
                 items: [
                     {
-                        label: 'Most Popular',
+                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.popular'),
                         id: 'most-popular',
                         command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
                         styleClass: this.isSortActive({ orderby: 'usage', direction: 'ASC' })
                     },
                     {
-                        label: 'A to Z',
+                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.a-to-z'),
                         id: 'a-to-z',
                         command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
                         styleClass: this.isSortActive({ orderby: 'name', direction: 'ASC' })
                     },
                     {
-                        label: 'Z to A',
+                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.z-to-a'),
                         id: 'z-to-a',
                         command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
                         styleClass: this.isSortActive({ orderby: 'name', direction: 'DESC' })
@@ -147,16 +148,16 @@ export class DotUvePaletteListComponent {
                 separator: true
             },
             {
-                label: 'View',
+                label: this.#dotMessageService.get('uve.palette.menu.view.title'),
                 items: [
                     {
-                        label: 'Grid',
+                        label: this.#dotMessageService.get('uve.palette.menu.view.option.grid'),
                         id: 'grid',
                         command: () => this.onViewSelect('grid'),
                         styleClass: currentView === 'grid' ? 'active-menu-item' : ''
                     },
                     {
-                        label: 'List',
+                        label: this.#dotMessageService.get('uve.palette.menu.view.option.list'),
                         id: 'list',
                         command: () => this.onViewSelect('list'),
                         styleClass: currentView === 'list' ? 'active-menu-item' : ''
