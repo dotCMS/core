@@ -5088,11 +5088,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             slugField = fieldAPI.byContentTypeAndVar(contentType, slugField.variable());
             siteField = fieldAPI.byContentTypeAndVar(contentType, siteField.variable());
 
-
+            // Create CSV with multilingual content using site NAME (not identifier)
             String csvContent = "languageCode,countryCode,slug,site\r\n" +
-                    "en,US,test-article," + testSite.getHostname() + "\r\n" +
-                    "es,ES,test-article," + testSite.getHostname() + "\r\n" +
-                    "fr,FR,test-article," + testSite.getHostname() + "\r\n";
+                    defaultLanguage.getLanguageCode() + "," + defaultLanguage.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
+                    spanish.getLanguageCode() + "," + spanish.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
+                    french.getLanguageCode() + "," + french.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n";
 
             final Reader reader = createTempFile(csvContent);
             final CsvReader csvreader = new CsvReader(reader);
