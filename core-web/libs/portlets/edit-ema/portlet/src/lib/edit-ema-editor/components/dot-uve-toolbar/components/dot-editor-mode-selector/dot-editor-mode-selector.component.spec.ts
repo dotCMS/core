@@ -32,7 +32,8 @@ describe('DotEditorModeSelectorComponent', () => {
             }
         },
         hasLiveVersion: true,
-        pageParams
+        pageParams,
+        isLockFeatureEnabled: false
     };
 
     const mockStore = {
@@ -42,7 +43,8 @@ describe('DotEditorModeSelectorComponent', () => {
         $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
         clearDeviceAndSocialMedia: jest.fn(),
         loadPageAsset: jest.fn(),
-        trackUVEModeChange: jest.fn()
+        trackUVEModeChange: jest.fn(),
+        $isLockFeatureEnabled: signal(mockStoreState.isLockFeatureEnabled)
     };
 
     const createComponent = createComponentFactory({

@@ -45,10 +45,9 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
     -   [Key Concepts](#key-concepts)
     -   [Choosing the Right Method](#choosing-the-right-method)
     -   [Architecture Overview](#architecture-overview)
--   [Support & Contributing](#support--contributing)
-    -   [dotCMS Support](#dotcms-support)
-    -   [How To Contribute](#how-to-contribute)
-    -   [Licensing Information](#licensing-information)
+-   [Support](#support)
+-   [Contributing](#contributing)
+-   [Licensing](#licensing)
 -   [Changelog](#changelog)
     -   [v1.1.1](#v111)
 
@@ -607,15 +606,14 @@ All APIs support:
 - Localization and personalization
 - Browser and Node.js compatibility
 
-## Support & Contributing
-
-### dotCMS Support
+## Support
 
 We offer multiple channels to get help with the dotCMS Client SDK:
 
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-client` when posting questions.
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
 
 When reporting issues, please include:
 
@@ -624,11 +622,9 @@ When reporting issues, please include:
 -   Minimal reproduction steps
 -   Expected vs. actual behavior
 
-Enterprise customers can access premium support through the [dotCMS Support Portal](https://dev.dotcms.com/docs/help).
+## Contributing
 
-### How To Contribute
-
-GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
+GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the dotCMS Client SDK! If you'd like to contribute, please follow these steps:
 
 1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -748,7 +744,7 @@ import { RequestOptions } from '@dotcms/types';
 import { DotRequestOptions } from '@dotcms/types';
 ```
 
-### Licensing Information
+## Licensing
 
 dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
 
