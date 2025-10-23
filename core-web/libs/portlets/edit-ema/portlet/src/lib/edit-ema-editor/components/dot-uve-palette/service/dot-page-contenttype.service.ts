@@ -28,6 +28,7 @@ export interface DotPageContentTypeParams {
     orderby?: 'name' | 'usage' | 'modified';
     /** Sort direction - ASC|DESC (default: "ASC") */
     direction?: 'ASC' | 'DESC';
+    type?: string;
 }
 
 /**
@@ -110,6 +111,10 @@ export class DotPageContentTypeService {
 
         if (params.direction) {
             httpParams = httpParams.set('direction', params.direction);
+        }
+
+        if (params.type) {
+            httpParams = httpParams.set('type', params.type);
         }
 
         return this.http

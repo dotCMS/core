@@ -79,7 +79,6 @@ export interface EditorProps {
     };
     palette?: {
         languageId: number;
-        variantId: string;
         paletteClass: PALETTE_CLASSES;
         pagePath: string;
     };

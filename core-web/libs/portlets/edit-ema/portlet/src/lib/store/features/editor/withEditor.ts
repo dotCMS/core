@@ -197,9 +197,8 @@ export function withEditor() {
                             : null,
                         palette: showPalette
                             ? {
-                                  variantId: params?.variantName,
                                   languageId: pageAPIResponse?.viewAs.language.id,
-                                  pagePath: pageAPIResponse?.page.pageUrl,
+                                  pagePath: pageAPIResponse?.page.pageURI,
                                   paletteClass: paletteOpen
                                       ? PALETTE_CLASSES.OPEN
                                       : PALETTE_CLASSES.CLOSED

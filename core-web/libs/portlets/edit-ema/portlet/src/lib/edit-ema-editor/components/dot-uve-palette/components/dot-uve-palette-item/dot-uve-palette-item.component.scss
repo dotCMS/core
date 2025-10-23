@@ -60,6 +60,8 @@
         width: 0.875rem;
         height: 0.875rem;
         cursor: grab;
+        opacity: 0;
+        transition: opacity $basic-speed ease-in-out;
 
         &:active {
             cursor: grabbing;
@@ -74,5 +76,16 @@
         width: 0.875rem;
         height: 0.875rem;
         color: $color-palette-gray-300;
+        opacity: 0;
+        transition: opacity $basic-speed ease-in-out;
+    }
+
+    &:hover {
+        .dot-uve-palette-item__drag-handle {
+            opacity: 1;
+        }
+        .dot-uve-palette-item__chevron {
+            opacity: 1;
+        }
     }
 }

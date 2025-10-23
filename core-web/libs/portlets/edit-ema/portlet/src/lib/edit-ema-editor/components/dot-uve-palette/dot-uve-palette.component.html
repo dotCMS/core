@@ -1,22 +1,37 @@
-<p-tabView>
+<p-tabView (activeIndexChange)="$currentIndex.set($event)">
     <p-tabPanel>
         <ng-template pTemplate="header">
             <i class="pi pi-stop"></i>
         </ng-template>
-        <dot-uve-palette-list
-            [contentTypes]="$state().contenttypes"
-            [pagination]="$state().pagination" />
+        <!-- Without this constrain, primeng is instanciating the component even if the tab is not active.
+        creating triple renders and triple requests to the server. -->
+        @if ($currentIndex() === 0) {
+            <dot-uve-palette-list
+                [type]="$type()"
+                [languageId]="$languageId()"
+                [pagePath]="$pagePath()" />
+        }
     </p-tabPanel>
     <p-tabPanel>
         <ng-template pTemplate="header">
             <i class="pi pi-th-large"></i>
         </ng-template>
-        <div>Widgets</div>
+        @if ($currentIndex() === 1) {
+            <dot-uve-palette-list
+                [type]="$type()"
+                [languageId]="$languageId()"
+                [pagePath]="$pagePath()" />
+        }
     </p-tabPanel>
     <p-tabPanel>
         <ng-template pTemplate="header">
             <i class="pi pi-star"></i>
         </ng-template>
-        <div>Favorites</div>
+        @if ($currentIndex() === 2) {
+            <dot-uve-palette-list
+                [type]="$type()"
+                [languageId]="$languageId()"
+                [pagePath]="$pagePath()" />
+        }
     </p-tabPanel>
 </p-tabView>
