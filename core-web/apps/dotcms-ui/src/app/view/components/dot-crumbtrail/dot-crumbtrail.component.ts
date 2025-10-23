@@ -31,17 +31,7 @@ export class DotCrumbtrailComponent {
     });
 
     /**
-     * Computed signal containing the last breadcrumb item.
-     *
-     * Returns the label of the last breadcrumb item, which represents
-     * the current page. If no breadcrumbs exist, returns null.
-     *
-     * @returns The label of the current page breadcrumb, or null if no breadcrumbs exist
+     * Label of the last breadcrumb, provided by the GlobalStore.
      */
-    $lastBreadcrumb = computed(() => {
-        const crumbs = this.$breadcrumbsMenu();
-        const last = crumbs.length ? crumbs.at(-1) : null;
-
-        return last?.label ?? null;
-    });
+    $lastBreadcrumb = this.#globalStore.selectLastBreadcrumbLabel;
 }

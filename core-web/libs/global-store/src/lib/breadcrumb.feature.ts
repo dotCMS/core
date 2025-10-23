@@ -89,7 +89,17 @@ export function withBreadcrumbs() {
              *
              * @returns `true` if there are breadcrumbs, `false` if empty
              */
-            hasBreadcrumbs: computed(() => breadcrumbs().length > 0)
+            hasBreadcrumbs: computed(() => breadcrumbs().length > 0),
+
+            /**
+             * Computed signal returning the label of the last breadcrumb item.
+             * Returns null if there are no breadcrumbs.
+             */
+            selectLastBreadcrumbLabel: computed(() => {
+                const crumbs = breadcrumbs();
+                const last = crumbs.length ? crumbs[crumbs.length - 1] : null;
+                return last?.label ?? null;
+            })
         }))
     );
 }
