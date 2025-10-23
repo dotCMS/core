@@ -8,14 +8,13 @@
     overflow: hidden;
     min-height: 0; // Important: allows the container to shrink
 
-    gap: $spacing-3;
-
     .dot-uve-palette-list__controls {
         flex-shrink: 0; // Don't shrink the controls
         display: flex;
         gap: $spacing-1;
         padding: $spacing-3;
         padding-bottom: 0;
+        margin-bottom: $spacing-3;
     }
 
     .dot-uve-palette-list__grid {
@@ -52,5 +51,11 @@
         font-size: 0.875rem;
         transform: rotate(90deg);
         color: $color-palette-bluegray-800 !important; // Override the default color
+    }
+}
+
+::ng-deep {
+    .p-paginator {
+        background: transparent;
     }
 }

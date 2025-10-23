@@ -15,7 +15,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
  */
 export interface DotPageContentTypeParams {
     /** The URL of the page to filter content types for the palette */
-    pagePath: string;
+    pagePathOrId: string;
     /** Language ID for content type analysis (default: "-1") */
     language?: string;
     /** Filter content types by name or description */
@@ -85,7 +85,7 @@ export class DotPageContentTypeService {
         contenttypes: DotCMSContentType[];
         pagination: DotPagination;
     }> {
-        let httpParams = new HttpParams().set('pagePath', params.pagePath);
+        let httpParams = new HttpParams().set('pagePathOrId', params.pagePathOrId);
 
         // Add optional parameters if provided
         if (params.language) {

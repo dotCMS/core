@@ -38,6 +38,7 @@
         justify-content: center;
         width: 2.375rem;
         height: 2.375rem;
+        color: $color-palette-gray-800;
 
         .material-icons {
             font-size: $font-size-xxl;
@@ -49,7 +50,6 @@
         color: $color-palette-bluegray-800;
         font-weight: $font-weight-semi-bold;
         line-height: 1.2;
-        font-weight: 700;
     }
 
     .dot-uve-palette-item__drag-handle {
