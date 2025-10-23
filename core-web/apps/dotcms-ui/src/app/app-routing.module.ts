@@ -157,6 +157,15 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
     },
     {
+        path: 'dashboard-grafana',
+        // canActivate: [MenuGuardService],
+        // canActivateChild: [MenuGuardService],
+        loadComponent: () =>
+            import('@dotcms/app/portlets/dot-hackathon-test/dot-hackathon-test.component').then(
+                (m) => m.DotHackathonTestComponent
+            )
+    },
+    {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'content-drive',

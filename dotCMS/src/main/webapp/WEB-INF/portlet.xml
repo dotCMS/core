@@ -515,4 +515,9 @@
         <display-name>Content Drive</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
+    <portlet>
+        <portlet-name>dashboard-grafana</portlet-name>
+        <display-name>Dashboard Grafana</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
 </portlet-app>
