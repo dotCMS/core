@@ -40,6 +40,9 @@ import {
     DotFormatDateService,
     DotPageStateService,
     DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
+    DotWizardService,
+    DotWorkflowEventHandlerService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -93,8 +96,8 @@ import { DotContentletEditorService } from '../../../../../view/components/dot-c
 import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotExperimentClassDirective } from '../../../../shared/directives/dot-experiment-class.directive';
-import { DotEditPageViewAsControllerModule } from '../../../content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
-import { DotEditPageWorkflowsActionsModule } from '../../../content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
+import { DotEditPageViewAsControllerComponent } from '../../../content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.component';
+import { DotEditPageWorkflowsActionsComponent } from '../../../content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.component';
 import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 
@@ -181,10 +184,10 @@ describe('DotEditPageToolbarSeoComponent', () => {
             DotSecondaryToolbarComponent,
             FormsModule,
             ToolbarModule,
-            DotEditPageViewAsControllerModule,
+            DotEditPageViewAsControllerComponent,
             DotEditPageStateControllerSeoComponent,
             DotEditPageInfoSeoComponent,
-            DotEditPageWorkflowsActionsModule,
+            DotEditPageWorkflowsActionsComponent,
             DotSafeHtmlPipe,
             DotMessagePipe,
             DotWizardComponent,
@@ -266,6 +269,9 @@ describe('DotEditPageToolbarSeoComponent', () => {
             DotPropertiesService,
             DotCurrentUserService,
             PushPublishService,
+            DotWorkflowsActionsService,
+            DotWizardService,
+            DotWorkflowEventHandlerService,
             { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock },
             { provide: DotPropertiesService, useClass: MockDotPropertiesService },
             provideHttpClient(),

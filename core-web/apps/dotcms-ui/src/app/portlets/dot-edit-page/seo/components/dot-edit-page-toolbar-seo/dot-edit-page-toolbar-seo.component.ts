@@ -35,7 +35,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotGlobalMessageComponent } from '../../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
-import { DotEditPageWorkflowsActionsModule } from '../../../content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
+import { DotEditPageWorkflowsActionsComponent } from '../../../content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.component';
 import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-as-controller-seo/dot-edit-page-view-as-controller-seo.component';
@@ -49,7 +49,7 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
         ButtonModule,
         CommonModule,
         CheckboxModule,
-        DotEditPageWorkflowsActionsModule,
+        DotEditPageWorkflowsActionsComponent,
         DotEditPageViewAsControllerSeoComponent,
         DotSecondaryToolbarComponent,
         FormsModule,

@@ -62,6 +62,7 @@ import { DotCustomEventHandlerService } from '../../../../api/services/dot-custo
 import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../../../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
+import { IframeOverlayService } from '../../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotExperimentClassDirective } from '../../../shared/directives/dot-experiment-class.directive';
 import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
@@ -133,9 +134,10 @@ describe('DotEditPageMainComponent', () => {
                 HttpClientTestingModule,
                 DotExperimentClassDirective,
                 DotEditPageNavDirective,
-                DotBlockEditorSidebarComponent
+                DotBlockEditorSidebarComponent,
+                DotEditPageMainComponent
             ],
-            declarations: [DotEditPageMainComponent, MockDotEditContentletComponent],
+            declarations: [MockDotEditContentletComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -195,7 +197,15 @@ describe('DotEditPageMainComponent', () => {
                 Title,
                 mockProvider(DotSessionStorageService),
                 mockProvider(DotContentTypeService),
-                mockProvider(DotDownloadBundleDialogService)
+                mockProvider(DotDownloadBundleDialogService),
+                {
+                    provide: IframeOverlayService,
+                    useValue: {
+                        overlay: of(false),
+                        show: jest.fn(),
+                        hide: jest.fn()
+                    }
+                }
             ]
         });
     }));

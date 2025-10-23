@@ -29,6 +29,9 @@ import {
     DotFormatDateService,
     DotPageStateService,
     DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
+    DotWizardService,
+    DotWorkflowEventHandlerService,
     PushPublishService,
     DotCurrentUserService
 } from '@dotcms/data-access';
@@ -68,7 +71,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
-import { DotEditPageToolbarModule } from './dot-edit-page-toolbar.module';
 
 import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -151,7 +153,7 @@ describe('DotEditPageToolbarComponent', () => {
                 MockGlobalMessageComponent
             ],
             imports: [
-                DotEditPageToolbarModule,
+                DotEditPageToolbarComponent,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'edit-page/experiments/pageId/id/reports',
@@ -212,6 +214,9 @@ describe('DotEditPageToolbarComponent', () => {
                 provideHttpClient(),
                 provideHttpClientTesting(),
                 DotWorkflowActionsFireService,
+                DotWorkflowsActionsService,
+                DotWizardService,
+                DotWorkflowEventHandlerService,
                 PushPublishService,
                 DotCurrentUserService
             ]

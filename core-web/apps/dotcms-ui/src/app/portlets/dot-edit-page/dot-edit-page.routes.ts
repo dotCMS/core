@@ -33,13 +33,17 @@ export const dotEditPageRoutes: Routes = [
             },
             {
                 path: 'content',
-                loadChildren: () =>
-                    import('./content/dot-edit-content.module').then((m) => m.DotEditContentModule)
+                loadComponent: () =>
+                    import('./content/dot-edit-content.component').then(
+                        (m) => m.DotEditContentComponent
+                    )
             },
             {
                 path: 'layout',
-                loadChildren: () =>
-                    import('./layout/dot-edit-layout.module').then((m) => m.DotEditLayoutModule),
+                loadComponent: () =>
+                    import('./layout/dot-edit-layout/dot-edit-layout.component').then(
+                        (m) => m.DotEditLayoutComponent
+                    ),
                 canDeactivate: [CanDeactivateGuardService]
             },
             {

@@ -1,5 +1,6 @@
 import { of } from 'rxjs';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -21,7 +22,8 @@ import {
     DotRouterService,
     DotSessionStorageService,
     DotGlobalMessageService,
-    DotPageStateService
+    DotPageStateService,
+    DotEventsService
 } from '@dotcms/data-access';
 import { DotLayout, DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockDotRenderedPage } from '@dotcms/utils-testing';
@@ -63,13 +65,19 @@ describe('DotEditLayoutComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotEditLayoutComponent, MockTemplateBuilderComponent],
-            imports: [DotShowHideFeatureDirective, RouterTestingModule],
+            declarations: [MockTemplateBuilderComponent],
+            imports: [
+                HttpClientTestingModule,
+                DotEditLayoutComponent,
+                DotShowHideFeatureDirective,
+                RouterTestingModule
+            ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
             providers: [
                 RouterTestingModule,
                 DotSessionStorageService,
                 DotRouterService,
+                DotEventsService,
                 {
                     provide: DotPageStateService,
                     useValue: {
