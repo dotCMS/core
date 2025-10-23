@@ -78,13 +78,6 @@ export function withBreadcrumbs() {
         })),
         withComputed(({ breadcrumbs }) => ({
             /**
-             * Computed signal that returns the current breadcrumb items.
-             *
-             * @returns Array of MenuItem objects representing the breadcrumbs
-             */
-            selectBreadcrumbs: computed(() => breadcrumbs()),
-
-            /**
              * Computed signal that returns the number of breadcrumb items.
              *
              * @returns The count of breadcrumb items
