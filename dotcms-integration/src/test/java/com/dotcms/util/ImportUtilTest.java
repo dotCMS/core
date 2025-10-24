@@ -5042,13 +5042,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
      * Given Scenario:
      * - ContentType with a text field (slug) and a HostFolderField (site)
-     * - Single multilingual CSV file with 3 languages using site NAME (not identifier) as key field
+     * - Single multilingual CSV file with 2 languages (default language + Spanish) using site NAME (not identifier) as key field
      * - Both "slug" and "site" fields are set as key fields
-     * - All 3 CSV rows have the same slug value and same site name
+     * - Both CSV rows have the same slug value and same site name
      * Expected result:
-     * - Create only ONE contentlet with the same identifier (3 language versions of same content)
-     * - Create 3 different inodes (one per language version)
-     * - All 3 versions should be published
+     * - Create only ONE contentlet with the same identifier (2 language versions of same content)
+     * - Create 2 different inodes (one per language version)
+     * - Both versions should be published
      *
      * This test validates that the HostFolderField comparison works correctly when comparing
      * site names (from CSV) with site identifiers (stored in contentlets) during multilingual import.
@@ -5063,16 +5063,23 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         Host testSite = null;
         Language lang1 = null;
         Language lang2 = null;
-        Language lang3 = null;
 
         try {
             // Create a test site with a name
-            testSite = new SiteDataGen().name("test-site-" + System.currentTimeMillis()).nextPersisted();
+            String siteName = "testsite" + System.currentTimeMillis();
+            testSite = new SiteDataGen()
+                    .name(siteName)
+                    .nextPersisted();
 
-            // Create 3 languages with unique codes (LanguageDataGen creates random 5-char codes)
-            lang1 = new LanguageDataGen().nextPersisted();
-            lang2 = new LanguageDataGen().nextPersisted();
-            lang3 = new LanguageDataGen().nextPersisted();
+            lang1 = defaultLanguage;
+
+
+
+            lang2 = APILocator.getLanguageAPI().getLanguage("es", "ES");
+            if (lang2 == null) {
+                lang2 = new LanguageDataGen().languageCode("es").countryCode("ES")
+                        .languageName("Spanish").country("Spain").nextPersisted();
+            }
 
             // Create ContentType with slug and site fields
             com.dotcms.contenttype.model.field.Field slugField = new FieldDataGen()
@@ -5095,31 +5102,31 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             slugField = fieldAPI.byContentTypeAndVar(contentType, slugField.variable());
             siteField = fieldAPI.byContentTypeAndVar(contentType, siteField.variable());
 
-            // Create CSV with multilingual content using site NAME (not identifier)
             String csvContent = "languageCode,countryCode,slug,site\r\n" +
-                    lang1.getLanguageCode() + "," + lang1.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
-                    lang2.getLanguageCode() + "," + lang2.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
-                    lang3.getLanguageCode() + "," + lang3.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n";
+                    lang1.getLanguageCode().trim() + "," + lang1.getCountryCode().trim() + ",test-article," + testSite.getHostname().trim() + "\r\n" +
+                    lang2.getLanguageCode().trim() + "," + lang2.getCountryCode().trim() + ",test-article," + testSite.getHostname().trim() + "\r\n";
+
+            Logger.info(this, "CSV Content:\n" + csvContent);
 
             final Reader reader = createTempFile(csvContent);
             final CsvReader csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
 
-            final String[] csvHeaders = new String[]{"languageCode", "countryCode", slugField.variable(), siteField.variable()};
+            final String[] csvHeaders = csvreader.getHeaders();
 
             final HashMap<String, List<String>> imported = ImportUtil.importFile(
                     0L,
                     testSite.getIdentifier(),
                     contentType.inode(),
                     new String[]{slugField.id(), siteField.id()}, // Key fields: slug + site
-                    false, // not preview
-                    true,  // multilingual
+                    false,
+                    true,
                     user,
-                    -1,    // language from CSV
+                    -1,
                     csvHeaders,
                     csvreader,
-                    0, // languageCodeHeaderColumn
-                    1, // countryCodeHeaderColumn
+                    0,
+                    1,
                     reader,
                     schemeStepActionResult1.getAction().getId(),
                     getHttpRequest()
@@ -5142,9 +5149,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     -1
             );
 
-            // Verify we have 3 contentlets
-            assertEquals("Should have 3 language versions", 3, contentlets.size());
-
+            assertEquals("Should have 2 language versions", 2, contentlets.size());
 
             final String firstIdentifier = contentlets.get(0).getIdentifier();
 
@@ -5152,6 +5157,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 assertEquals("All contentlets should have the same identifier",
                         firstIdentifier,
                         contentlet.getIdentifier());
+                
+                assertEquals("Slug should be 'test-article'",
+                        "test-article",
+                        contentlet.getStringProperty(slugField.variable()));
             }
 
 
@@ -5160,9 +5169,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .sorted()
                     .collect(Collectors.toList());
 
-            assertTrue("Should have language 1 version", languageIds.contains(lang1.getId()));
-            assertTrue("Should have language 2 version", languageIds.contains(lang2.getId()));
-            assertTrue("Should have language 3 version", languageIds.contains(lang3.getId()));
+            assertTrue("Should have default language version", languageIds.contains(lang1.getId()));
+            assertTrue("Should have Spanish version", languageIds.contains(lang2.getId()));
 
 
             final List<String> inodes = contentlets.stream()
@@ -5170,7 +5178,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .distinct()
                     .collect(Collectors.toList());
 
-            assertEquals("All 3 versions should have unique inodes", 3, inodes.size());
+            assertEquals("Both versions should have unique inodes", 2, inodes.size());
 
         } finally {
             // Cleanup
@@ -5202,9 +5210,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 }
             }
 
+            // Clean up languages if we created them (only if they didn't exist before)
             if (lang1 != null) {
                 try {
-                    APILocator.getLanguageAPI().deleteLanguage(lang1);
+                    // Check if this language has ID > 1 (meaning we created it, not a default language)
+                    if (lang1.getId() > 1) {
+                        APILocator.getLanguageAPI().deleteLanguage(lang1);
+                    }
                 } catch (Exception e) {
                     Logger.warn(ImportUtilTest.class, "Error cleaning up language 1", e);
                 }
@@ -5212,17 +5224,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             if (lang2 != null) {
                 try {
-                    APILocator.getLanguageAPI().deleteLanguage(lang2);
+                    // Spanish is typically ID 2, but if we created it, clean it up
+                    // Check if this is not a system default language
+                    if (lang2.getId() > 2) {
+                        APILocator.getLanguageAPI().deleteLanguage(lang2);
+                    }
                 } catch (Exception e) {
                     Logger.warn(ImportUtilTest.class, "Error cleaning up language 2", e);
-                }
-            }
-
-            if (lang3 != null) {
-                try {
-                    APILocator.getLanguageAPI().deleteLanguage(lang3);
-                } catch (Exception e) {
-                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 3", e);
                 }
             }
         }
