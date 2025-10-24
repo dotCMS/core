@@ -15,3 +15,4 @@ Release-25.07.10 LTS
 9. https://github.com/dotCMS/core/issues/32224 : UVE Query Parameters Are Being Filtered Breaking Widget Logic #32224
 10. https://github.com/dotCMS/core/issues/33138 : Add Step Id to GET /api/v1/workflow/tasks/history/comments/{contentletIdentifier} endpoint #33138
 11. https://github.com/dotCMS/core/issues/32860 : dotcms.log file stops receiving log data #32860
+12. https://github.com/dotCMS/core/issues/33628 : [TASK] Update java-base to include native java.net.http module #33628
