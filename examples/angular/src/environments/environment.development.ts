@@ -1,6 +1,6 @@
 export const environment = {
   dotcmsUrl: 'http://localhost:8080',
   authToken:
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkxMjNhYjk2Mi1lYWY3LTRiNmUtOTA3Ni0zNDczYTExMTAxOWEiLCJ4bW9kIjoxNzU5NDMyMTI0MDAwLCJuYmYiOjE3NTk0MzIxMjQsImlzcyI6ImU2MDVkMGZlZWYiLCJsYWJlbCI6Im5ldyIsImV4cCI6MTg1NDA3MjAwMCwiaWF0IjoxNzU5NDMyMTI0LCJqdGkiOiJlODE2ODY2Mi00Y2ZkLTQyOWEtYWZjNC0zZjFhYzdlZmEyNzMifQ.w28ryYex1gLEQm65oCz2eABOpd9Bx9bHL5Tmsn3lkCU',
+    'YOUR_TOKEN_HERE',
   siteId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
 };
