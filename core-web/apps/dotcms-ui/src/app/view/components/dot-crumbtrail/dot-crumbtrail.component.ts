@@ -1,6 +1,7 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 
-import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
+import { GlobalStore } from '@dotcms/store';
+
 @Component({
     selector: 'dot-crumbtrail',
     templateUrl: './dot-crumbtrail.component.html',
@@ -9,11 +10,11 @@ import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
     standalone: false
 })
 export class DotCrumbtrailComponent {
-    /** Service responsible for managing breadcrumb data */
-    readonly #crumbTrailService = inject(DotCrumbtrailService);
+    /** Global store instance for accessing breadcrumb state */
+    readonly #globalStore = inject(GlobalStore);
 
-    /** Signal containing the complete breadcrumb menu items */
-    $breadcrumbsMenu = this.#crumbTrailService.$breadcrumbs;
+    /** Signal containing the complete breadcrumb menu items from the global store */
+    $breadcrumbsMenu = this.#globalStore.breadcrumbs;
 
     /**
      * Computed signal containing collapsed breadcrumb items.
@@ -30,25 +31,7 @@ export class DotCrumbtrailComponent {
     });
 
     /**
-     * Computed signal containing the last breadcrumb item.
-     *
-     * Returns the label of the last breadcrumb item, which represents
-     * the current page. If no breadcrumbs exist, returns null.
-     *
-     * @returns The label of the current page breadcrumb, or null if no breadcrumbs exist
+     * Label of the last breadcrumb, provided by the GlobalStore.
      */
-    $lastBreadcrumb = computed(() => {
-        const crumbs = this.$breadcrumbsMenu();
-        const last = crumbs.length ? crumbs.at(-1) : null;
-
-        return last?.label ?? null;
-    });
-
-    addBreadcrumb() {
-        this.#crumbTrailService.addBreadcrumb({
-            label: 'New Breadcrumb',
-            target: '_self',
-            url: '#/new-breadcrumb'
-        });
-    }
+    $lastBreadcrumb = this.#globalStore.selectLastBreadcrumbLabel;
 }

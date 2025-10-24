@@ -16,6 +16,24 @@ import {
     replaceSectionsMap
 } from '../../dot-navigation/services/dot-navigation.service';
 
+/**
+ * @deprecated This service is deprecated. Breadcrumb state is now managed centrally
+ * in the GlobalStore using the withBreadcrumbs feature. Components should inject the
+ * GlobalStore and consume the `breadcrumbs` signal instead of using this service.
+ *
+ * Migration:
+ * - Remove DotCrumbtrailService injections/providers
+ * - Inject `GlobalStore` from `@dotcms/store`
+ * - Replace usages of `crumbTrail$` with the `breadcrumbs` signal
+ *
+ * Example:
+ * ```ts
+ * readonly #globalStore = inject(GlobalStore);
+ * readonly breadcrumbs = this.#globalStore.breadcrumbs;
+ * ```
+ *
+ * This service will be removed in a future release after the migration period.
+ */
 @Injectable()
 export class DotCrumbtrailService {
     dotNavigationService = inject(DotNavigationService);
@@ -148,6 +166,9 @@ export class DotCrumbtrailService {
             });
     }
 
+    /**
+     * @deprecated Use `GlobalStore.breadcrumbs` (signal) instead.
+     */
     get crumbTrail$(): Observable<DotCrumb[]> {
         return this.crumbTrail.asObservable();
     }
@@ -298,6 +319,9 @@ export class DotCrumbtrailService {
     }
 }
 
+/**
+ * @deprecated Prefer using PrimeNG's `MenuItem` for breadcrumb items.
+ */
 export interface DotCrumb {
     label: string;
     target?: string;
