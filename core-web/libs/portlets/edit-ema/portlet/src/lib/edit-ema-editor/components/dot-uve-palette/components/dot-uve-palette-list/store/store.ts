@@ -9,6 +9,7 @@ import {
     DotPageContentTypeParams,
     DotPageContentTypeService
 } from '../../../service/dot-page-contenttype.service';
+import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
 import { DotESContentParams, SortOption } from '../model';
 
 /**
@@ -26,16 +27,17 @@ export const DEFAULT_PER_PAGE = 30;
 /**
  * Component state interface for palette list
  */
-export interface DotUVEPaletteListState {
+export interface DotPaletteListState {
     currentContentType: string;
     contenttypes: DotCMSContentType[];
     contentlets: DotCMSContentlet[];
     pagination: DotPagination;
     sort: SortOption;
     currentView: DotUVEPaletteListView;
+    favoriteContentTypes: DotCMSContentType[];
 }
 
-export const DEFAULT_STATE: DotUVEPaletteListState = {
+export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
     contentlets: [],
     pagination: {
@@ -48,11 +50,12 @@ export const DEFAULT_STATE: DotUVEPaletteListState = {
         direction: 'ASC'
     },
     currentContentType: '',
-    currentView: DotUVEPaletteListView.LOADING
+    currentView: DotUVEPaletteListView.LOADING,
+    favoriteContentTypes: []
 };
 
-export const PaletteListStore = signalStore(
-    withState<DotUVEPaletteListState>(DEFAULT_STATE),
+export const DotPaletteListStore = signalStore(
+    withState<DotPaletteListState>(DEFAULT_STATE),
     withComputed((store) => {
         return {
             $start: computed(() => {
@@ -64,6 +67,7 @@ export const PaletteListStore = signalStore(
     withMethods((store) => {
         const pageContentTypeService = inject(DotPageContentTypeService);
         const dotESContentService = inject(DotESContentService);
+        const dotPageFavoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
         return {
             setCurrentContentType(contentTypeName: string) {
                 patchState(store, {
@@ -133,6 +137,33 @@ export const PaletteListStore = signalStore(
                             currentView: DotUVEPaletteListView.CONTENTLETS
                         });
                     });
+            },
+            getFavoriteContentTypes(pagePathOrId: string, filter: string) {
+                patchState(store, {
+                    currentView: DotUVEPaletteListView.LOADING
+                });
+
+                const response = dotPageFavoriteContentTypeService.get(pagePathOrId, {
+                    orderby: 'name',
+                    direction: store.sort().direction,
+                    filter
+                });
+
+                patchState(store, {
+                    contenttypes: response.contenttypes,
+                    pagination: response.pagination,
+                    currentView: DotUVEPaletteListView.CONTENT_TYPES
+                });
+            },
+
+            getIsFavoriteContentType(pagePathOrId: string, contentTypeId: string) {
+                return dotPageFavoriteContentTypeService.isFavorite(pagePathOrId, contentTypeId);
+            },
+            addFavoriteContentType(pagePathOrId: string, contentType: DotCMSContentType) {
+                dotPageFavoriteContentTypeService.add(pagePathOrId, contentType);
+            },
+            removeFavoriteContentType(pagePathOrId: string, contentTypeId: string) {
+                dotPageFavoriteContentTypeService.remove(pagePathOrId, contentTypeId);
             }
         };
     })

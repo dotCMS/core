@@ -11,6 +11,7 @@ import { DotUVEPaletteListType } from '../../../shared/models';
 @Component({
     selector: 'dot-uve-palette',
     imports: [TabViewModule, DotUvePaletteListComponent],
+
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

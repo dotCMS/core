@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -24,17 +25,22 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotESContentService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { SortOption, ViewOption } from './model';
-import { DotUVEPaletteListView, PaletteListStore, DEFAULT_PER_PAGE } from './store/store';
+import { DotUVEPaletteListView, DotPaletteListStore, DEFAULT_PER_PAGE } from './store/store';
 
 import { DotUVEPaletteListType } from '../../../../../shared/models';
 import {
     DotPageContentTypeParams,
     DotPageContentTypeService
 } from '../../service/dot-page-contenttype.service';
+import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { BASETYPES_FOR_CONTENT, BASETYPES_FOR_WIDGET } from '../../utils';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-palette-item.component';
@@ -66,7 +72,12 @@ import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-pale
         DotMessagePipe,
         SkeletonModule
     ],
-    providers: [DotPageContentTypeService, DotESContentService, PaletteListStore],
+    providers: [
+        DotPaletteListStore,
+        DotPageContentTypeService,
+        DotESContentService,
+        DotPageFavoriteContentTypeService
+    ],
     templateUrl: './dot-uve-palette-list.component.html',
     styleUrl: './dot-uve-palette-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -75,8 +86,9 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     $type = input.required<DotUVEPaletteListType>({ alias: 'type' });
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
+    $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
 
-    readonly #paletteListStore = inject(PaletteListStore);
+    readonly #paletteListStore = inject(DotPaletteListStore);
     readonly #dotMessageService = inject(DotMessageService);
 
     readonly $start = this.#paletteListStore.$start;
@@ -89,6 +101,10 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
 
     readonly $showViewList = computed(() => {
         return this.$view() === 'list' || this.$currentView() === DotUVEPaletteListView.CONTENTLETS;
+    });
+
+    readonly $skeletonHeight = computed(() => {
+        return this.$showViewList() ? '4rem' : '6.875rem';
     });
     readonly allowedBaseTypes = computed(() => {
         return this.$type() === DotCMSBaseTypesContentTypes.CONTENT
@@ -153,6 +169,8 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
             }
         ];
     });
+
+    readonly $favoriteMenuItems = signal<MenuItem[]>([]);
 
     ngOnInit() {
         this.getContentTypes();
@@ -271,7 +289,11 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      * @param params - The parameters for the content types.
      */
     private getContentTypes(params: Partial<DotPageContentTypeParams> = {}) {
-        this.#paletteListStore.getContentTypes({ ...this.getSearchParams(), ...params });
+        if (this.$type() === 'FAVORITES') {
+            this.#paletteListStore.getFavoriteContentTypes(this.$pagePath(), params.filter || '');
+        } else {
+            this.#paletteListStore.getContentTypes({ ...this.getSearchParams(), ...params });
+        }
     }
 
     /**
@@ -279,14 +301,65 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      * @param params - The parameters for the content lets.
      */
     private getContentlets({ contentTypeName, filter = '', page = 1 }) {
+        const variantTerm = this.$variantId()
+            ? `+variant:(${DEFAULT_VARIANT_ID} OR ${this.$variantId()})`
+            : `+variant:${DEFAULT_VARIANT_ID}`;
+
         this.#paletteListStore.getContentlets({
             filter,
             itemsPerPage: DEFAULT_PER_PAGE,
             lang: this.$languageId().toString(),
             offset: ((page - 1) * DEFAULT_PER_PAGE).toString(),
-            query: `+contentType:${contentTypeName} +deleted:false`.trim()
+            query: `+contentType:${contentTypeName} +deleted:false ${variantTerm}`.trim()
         });
         this.#paletteListStore.setCurrentContentType(contentTypeName);
+    }
+
+    protected onAddFavoriteContentType() {
+        // console.log('onAddFavoriteContentType');
+    }
+
+    protected onRightClick(contentType: DotCMSContentType) {
+        const isFavorite = this.#paletteListStore.getIsFavoriteContentType(
+            this.$pagePath(),
+            contentType.id
+        );
+
+        if (isFavorite) {
+            this.$favoriteMenuItems.set([
+                {
+                    label: this.#dotMessageService.get('uve.palette.menu.favorite.option.remove'),
+                    id: 'remove',
+                    command: () => {
+                        this.#paletteListStore.removeFavoriteContentType(
+                            this.$pagePath(),
+                            contentType.id
+                        );
+
+                        if (this.$type() === 'FAVORITES') {
+                            this.getContentTypes();
+                        }
+                    }
+                }
+            ]);
+        } else {
+            this.$favoriteMenuItems.set([
+                {
+                    label: this.#dotMessageService.get('uve.palette.menu.favorite.option.add'),
+                    id: 'add',
+                    command: () => {
+                        this.#paletteListStore.addFavoriteContentType(
+                            this.$pagePath(),
+                            contentType
+                        );
+
+                        if (this.$type() === 'FAVORITES') {
+                            this.getContentTypes();
+                        }
+                    }
+                }
+            ]);
+        }
     }
 
     /**

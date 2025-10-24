@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, HostBinding, input, output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    HostBinding,
+    HostListener,
+    input,
+    output
+} from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
@@ -19,6 +26,8 @@ export class DotUvePaletteItemComponent {
 
     selectContentType = output<string>();
 
+    readonly rightClick = output<MouseEvent>();
+
     @HostBinding('class.list-view')
     get isListView() {
         return this.$view() === 'list';
@@ -35,5 +44,11 @@ export class DotUvePaletteItemComponent {
             },
             move: false
         });
+    }
+
+    @HostListener('contextmenu', ['$event'])
+    protected onRightClick(event: MouseEvent) {
+        event.preventDefault();
+        this.rightClick.emit(event);
     }
 }
