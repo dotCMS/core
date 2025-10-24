@@ -1819,7 +1819,7 @@ public class ContentTypeResource implements Serializable {
 
 		if (isUsage) {
 
-			typeVarNames = doUsage(page, perPage, direction, user, typeVarNames, extraParams);
+			typeVarNames = doUsage(page, siteId, perPage, direction, user, typeVarNames, extraParams);
 		}
 
 		if (null != siteId) {
@@ -1858,6 +1858,7 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	private List<String> doUsage(final int page,
+								 final String siteId,
 								 final int perPage,
 								 final String direction,
 								 final User user, List<String> typeVarNames,
@@ -1865,7 +1866,7 @@ public class ContentTypeResource implements Serializable {
 
 		final boolean isAscending =  OrderDirection.ASC.name().equalsIgnoreCase(direction);
 		final Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI
-				(user, true).getEntriesByContentTypes();
+				(user, true).getEntriesByContentTypes(siteId);
 		// here are filtered and sorted, but we need to paginate them.
 		this.sort(typeVarNames, isAscending, user, entriesByContentTypes);
 		typeVarNames = this.paginate(typeVarNames, page, perPage);

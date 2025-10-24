@@ -754,9 +754,28 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
-  public Map<String, Long> getEntriesByContentTypes() throws DotDataException {
-    String query = "{" + "  \"aggs\" : {" + "    \"entries\" : {" + "       \"terms\" : { \"field\" : \"contenttype_dotraw\",  \"size\" : " + Integer.MAX_VALUE + "}"
-        + "     }" + "   }," + "   \"size\":0}";
+  public Map<String, Long> getEntriesByContentTypes(final String siteId) throws DotStateException {
+
+    StringBuilder queryBuilder = new StringBuilder();
+    queryBuilder.append("{");
+    if (UtilMethods.isSet(siteId)) {
+        queryBuilder.append("\"query\": {")
+                .append("\"bool\": {")
+                .append("\"filter\": [")
+                .append("{ \"term\": { \"conhost\": \"").append(siteId).append("\" } }")
+                .append("]")
+                .append("}")
+                .append("},");
+    }
+    queryBuilder.append("\"aggs\": {")
+            .append("\"entries\": {")
+            .append("\"terms\": { \"field\": \"contenttype_dotraw\",  \"size\": ").append(Integer.MAX_VALUE).append(" }")
+            .append("}")
+            .append("},")
+            .append("\"size\": 0")
+            .append("}");
+
+    String query = queryBuilder.toString();
 
     try {
       SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
@@ -778,6 +797,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     } catch (Exception e) {
       throw new DotStateException(e);
     }
+  }
+
+  public Map<String, Long> getEntriesByContentTypes() throws DotStateException {
+    return getEntriesByContentTypes(null);
   }
 
 

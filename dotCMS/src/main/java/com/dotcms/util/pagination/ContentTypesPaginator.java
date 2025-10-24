@@ -225,7 +225,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             entriesByContentTypes = Objects.nonNull(extraParams) && extraParams.containsKey(ENTRIES_BY_CONTENT_TYPES)?
                     (Map<String, Long>)extraParams.get(ENTRIES_BY_CONTENT_TYPES):
                     APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
-        } catch (final DotStateException | DotDataException e) {
+        } catch (final DotStateException e) {
             final String errorMsg = String.format("Error trying to retrieve total entries by Content Type: %s", e.getMessage());
             Logger.error(ContentTypesPaginator.class, errorMsg, e);
             Logger.debug(ContentTypesPaginator.class, e, () -> errorMsg);
