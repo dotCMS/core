@@ -56,6 +56,10 @@ $icon-size: 0.875rem;
             grid-template-rows: 1fr;
         }
 
+        &.dot-uve-palette-list__grid--loading {
+            overflow-y: hidden;
+        }
+
         .dot-uve-palette-list__empty {
             display: flex;
             flex-direction: column;
@@ -123,17 +127,6 @@ $icon-size: 0.875rem;
             }
         }
 
-        // Options menu popup positioning
-        .options-menu-popup.p-menu {
-            transform: translateX(-100%);
-            margin-left: $button-size;
-
-            // Active menu item styling
-            .active-menu-item {
-                background-color: $color-palette-primary-200;
-            }
-        }
-
         // Paginator styling
         .p-paginator {
             background: transparent;
@@ -145,6 +138,18 @@ $icon-size: 0.875rem;
     .favorite-selector-overlaypanel {
         .p-overlaypanel-content {
             padding: 0;
+        }
+    }
+    // Options menu popup positioning
+    .options-menu-popup.p-menu {
+        transform: translateX(-100%);
+        margin-left: $button-size;
+
+        // Active menu item styling
+        .p-menu-list {
+            .active-menu-item {
+                background-color: $color-palette-primary-200;
+            }
         }
     }
 }

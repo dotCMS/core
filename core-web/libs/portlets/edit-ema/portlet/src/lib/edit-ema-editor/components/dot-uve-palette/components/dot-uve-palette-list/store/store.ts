@@ -212,7 +212,7 @@ export const DotPaletteListStore = signalStore(
 
                 const response = dotPageFavoriteContentTypeService.get(pagePathOrId, {
                     orderby: 'name',
-                    direction: store.sort().direction,
+                    direction: 'ASC',
                     filter
                 });
 
@@ -228,7 +228,9 @@ export const DotPaletteListStore = signalStore(
             },
             getAllFavoriteContentTypes(pagePathOrId: string, filter: string) {
                 return dotPageFavoriteContentTypeService.get(pagePathOrId, {
-                    filter
+                    filter,
+                    orderby: 'name',
+                    direction: 'ASC'
                 });
             },
             getIsFavoriteContentType(pagePathOrId: string, contentTypeId: string) {
@@ -241,7 +243,11 @@ export const DotPaletteListStore = signalStore(
                 dotPageFavoriteContentTypeService.save(pagePathOrId, contentTypes);
 
                 patchState(store, {
-                    contenttypes: contentTypes
+                    contenttypes: contentTypes,
+                    status:
+                        contentTypes.length > 0
+                            ? DotPaletteListStatus.LOADED
+                            : DotPaletteListStatus.EMPTY
                 });
             },
             removeFavoriteContentType(pagePathOrId: string, contentTypeId: string) {

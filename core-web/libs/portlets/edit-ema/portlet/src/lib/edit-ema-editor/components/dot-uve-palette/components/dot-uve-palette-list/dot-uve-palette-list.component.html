@@ -37,7 +37,10 @@
     }
 </div>
 
-<div class="dot-uve-palette-list__grid" [class.dot-uve-palette-list__grid--list]="$showViewList()">
+<div
+    class="dot-uve-palette-list__grid"
+    [class.dot-uve-palette-list__grid--list]="$showViewList()"
+    [class.dot-uve-palette-list__grid--loading]="$status() === DotPaletteListStatus.LOADING">
     @if ($status() === DotPaletteListStatus.LOADING) {
         @for (i of LOADING_ROWS_MOCK; track i) {
             <p-skeleton width="100%" [height]="$skeletonHeight()"></p-skeleton>
@@ -47,10 +50,25 @@
             <div class="dot-uve-palette-list__empty-icon">
                 <i class="pi pi-plus"></i>
             </div>
-            <p class="dot-uve-palette-list__empty-text">
-                <span class="dot-uve-palette-list__empty-link">Add</span>
-                new content to this list for easy access.
-            </p>
+
+            @if ($type() === 'FAVORITES') {
+                <p class="dot-uve-palette-list__empty-text">
+                    <span
+                        class="dot-uve-palette-list__empty-link"
+                        (click)="overlayPanel.toggle($event)">
+                        Add
+                    </span>
+                    new favorite to this list for easy access.
+                </p>
+            } @else if ($currentView() === DotUVEPaletteListView.CONTENT_TYPES) {
+                <p class="dot-uve-palette-list__empty-text">
+                    Add new content type to this list for easy access.
+                </p>
+            } @else if ($currentView() === DotUVEPaletteListView.CONTENTLETS) {
+                <p class="dot-uve-palette-list__empty-text">
+                    Add new contentlet to this list for easy access.
+                </p>
+            }
         </div>
     } @else {
         @switch ($currentView()) {
