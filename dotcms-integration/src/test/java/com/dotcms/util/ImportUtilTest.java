@@ -5042,11 +5042,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
      * Given Scenario:
      * - ContentType with a text field (slug) and a HostFolderField (site)
-     * - Multilingual CSV file with 3 languages using site NAME (not identifier)
-     * - Both "slug" and "site" fields as key fields
+     * - Single multilingual CSV file with 3 languages using site NAME (not identifier) as key field
+     * - Both "slug" and "site" fields are set as key fields
+     * - All 3 CSV rows have the same slug value and same site name
      * Expected result:
-     * - Create only ONE contentlet with the same identifier
+     * - Create only ONE contentlet with the same identifier (3 language versions of same content)
      * - Create 3 different inodes (one per language version)
+     * - All 3 versions should be published
+     *
+     * This test validates that the HostFolderField comparison works correctly when comparing
+     * site names (from CSV) with site identifiers (stored in contentlets) during multilingual import.
      *
      * @throws DotSecurityException
      * @throws DotDataException
@@ -5063,9 +5068,21 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // Create a test site with a name
             testSite = new SiteDataGen().name("test-site-" + System.currentTimeMillis()).nextPersisted();
 
-            // Create additional languages
-            spanish = new LanguageDataGen().languageCode("es").countryCode("ES").nextPersisted();
-            french = new LanguageDataGen().languageCode("fr").countryCode("FR").nextPersisted();
+            // Create additional languages with unique codes
+            long timestamp = System.currentTimeMillis();
+            spanish = new LanguageDataGen()
+                    .languageCode("ts" + timestamp)
+                    .countryCode("TS")
+                    .languageName("Test Spanish " + timestamp)
+                    .country("Test Spain")
+                    .nextPersisted();
+
+            french = new LanguageDataGen()
+                    .languageCode("tf" + timestamp)
+                    .countryCode("TF")
+                    .languageName("Test French " + timestamp)
+                    .country("Test France")
+                    .nextPersisted();
 
             // Create ContentType with slug and site fields
             com.dotcms.contenttype.model.field.Field slugField = new FieldDataGen()
@@ -5098,22 +5115,21 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             final CsvReader csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
 
-
             final String[] csvHeaders = new String[]{"languageCode", "countryCode", slugField.variable(), siteField.variable()};
 
             final HashMap<String, List<String>> imported = ImportUtil.importFile(
                     0L,
                     testSite.getIdentifier(),
                     contentType.inode(),
-                    new String[]{slugField.id(), siteField.id()},
-                    false,
-                    true,
+                    new String[]{slugField.id(), siteField.id()}, // Key fields: slug + site
+                    false, // not preview
+                    true,  // multilingual
                     user,
                     -1,    // language from CSV
                     csvHeaders,
                     csvreader,
-                    0,
-                    1,
+                    0, // languageCodeHeaderColumn
+                    1, // countryCodeHeaderColumn
                     reader,
                     schemeStepActionResult1.getAction().getId(),
                     getHttpRequest()
