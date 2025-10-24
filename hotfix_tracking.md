@@ -16,3 +16,4 @@ Release-25.07.10 LTS
 10. https://github.com/dotCMS/core/issues/33138 : Add Step Id to GET /api/v1/workflow/tasks/history/comments/{contentletIdentifier} endpoint #33138
 11. https://github.com/dotCMS/core/issues/32860 : dotcms.log file stops receiving log data #32860
 12. https://github.com/dotCMS/core/issues/33628 : [TASK] Update java-base to include native java.net.http module #33628
+13. https://github.com/dotCMS/core/issues/33473 : [DEFECT] Putting host in 404 cache when it actually exists and it's active #33473
