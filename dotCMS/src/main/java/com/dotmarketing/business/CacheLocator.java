@@ -231,8 +231,12 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (BlockDirectiveCache)getInstance(CacheIndex.Block_Directive);
 	}
 
-	public static BlockPageCache getBlockPageCache() {
-		return (BlockPageCache) getInstance(CacheIndex.Block_Page);
+	public static StaticPageCache getBlockPageCache() {
+		return getStaticPageCache();
+	}
+
+	public static StaticPageCache getStaticPageCache() {
+		return (StaticPageCache) getInstance(CacheIndex.Block_Page);
 	}
 
 	public static VersionableCache getVersionableCache() {
@@ -514,7 +518,7 @@ enum CacheIndex
 	      	case Identifier : return new IdentifierCacheImpl();
 	      	case HostVariables : return new HostVariablesCacheImpl();
 	      	case Block_Directive : return new BlockDirectiveCacheImpl();
-	      	case Block_Page : return new BlockPageCacheImpl();
+			case Block_Page: return new StaticPageCacheImpl();
 	      	case Versionable : return new VersionableCacheImpl();
 	      	case FolderCache : return new FolderCacheImpl();
 	      	case WorkflowCache : return new WorkflowCacheImpl();

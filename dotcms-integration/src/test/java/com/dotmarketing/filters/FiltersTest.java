@@ -662,7 +662,7 @@ public class FiltersTest {
      * This tests the demo site for its 404 image
      */
     @Test
-    public void shouldRedirect401() throws IOException {
+    public void shouldRedirect401() throws Exception {
 
         HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
         MockResponseWrapper response = new MockResponseWrapper(res);
@@ -671,7 +671,8 @@ public class FiltersTest {
         when(response.getOutputStream()).thenReturn(servletOutputStream);
 
         FilterChain chain = Mockito.mock(FilterChain.class);
-        HttpServletRequest request = getMockRequest(site.getHostname(), "/intranet/", APILocator.systemUser());
+        HttpServletRequest request = getMockRequest(site.getHostname(), "/intranet/",
+                APILocator.getUserAPI().getAnonymousUser());
 
         try {
             new CMSFilter().doFilter(request, response, chain);

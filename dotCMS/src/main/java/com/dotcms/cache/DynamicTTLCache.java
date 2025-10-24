@@ -1,6 +1,7 @@
 package com.dotcms.cache;
 
 
+import com.dotmarketing.util.Logger;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
@@ -33,7 +34,7 @@ public class DynamicTTLCache<K, V>  {
             .expireAfter(new Expiry<K, CacheValue>() {
                 @Override
                 public long expireAfterCreate(@NotNull K key, @NotNull CacheValue value, long currentTime) {
-                    return TimeUnit.MILLISECONDS.toNanos(value.ttlInMillis);
+                    return TimeUnit.MILLISECONDS.toNanos(value.getTtlInMillis());
                 }
 
                 @Override
@@ -48,6 +49,21 @@ public class DynamicTTLCache<K, V>  {
                 }
             })
             .recordStats()
+                .evictionListener((key, value, cause) -> {
+                    switch (cause) {
+                        case SIZE:
+                            Logger.debug(this.getClass(), () -> "TTLCache entry evicted due to size: " + key);
+                            break;
+                        case EXPIRED:
+                            Logger.debug(this.getClass(), () -> "TTLCache entry evicted due to expired: " + key);
+                            break;
+                        case REPLACED:
+                            Logger.debug(this.getClass(), () -> "TTLCache entry evicted due to replaced: " + key);
+                            break;
+
+                    }
+
+                })
             .maximumSize(maxCapacity)
             .build();
     }
@@ -57,7 +73,7 @@ public class DynamicTTLCache<K, V>  {
         if(value instanceof CacheValue) {
             cache.put(key, (CacheValue) value);
         }else{
-            cache.put(key, new CacheValue(value, ttlInMillis ));
+            cache.put(key, new CacheValueImpl(value, ttlInMillis));
         }
 
     }
@@ -69,7 +85,7 @@ public class DynamicTTLCache<K, V>  {
     public V getIfPresent(K key) {
         CacheValue cacheValue = cache.getIfPresent(key);
 
-        return cacheValue != null ? (V) cacheValue.value : null;
+        return cacheValue != null ? (V) cacheValue.getValue() : null;
     }
 
 
@@ -95,7 +111,8 @@ public class DynamicTTLCache<K, V>  {
     }
 
     public Map<K,V> copyAsMap() {
-        return cache.asMap().entrySet().stream().collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> (V)e.getValue().value));
+        return cache.asMap().entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> (V) e.getValue().getValue()));
     }
 
 }

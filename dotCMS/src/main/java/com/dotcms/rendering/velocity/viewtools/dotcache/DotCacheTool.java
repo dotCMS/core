@@ -11,6 +11,7 @@ import io.vavr.Lazy;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -83,7 +84,7 @@ public class DotCacheTool implements ViewTool {
         }
         final Serializable correctedValue = value instanceof Serializable ? (Serializable) value : value.toString();
         final Map<String, Serializable> map = Map.of(key, correctedValue);
-        cache.get().add(DOT_CACHE_PREFIX + key, map, ttl);
+        cache.get().add(DOT_CACHE_PREFIX + key, map, Duration.ofSeconds(ttl));
     }
     
     /**

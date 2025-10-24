@@ -5,6 +5,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import java.io.File;
 import java.io.Serializable;
 import java.io.Writer;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringTokenizer;
@@ -207,7 +208,7 @@ public class DotParse extends DotDirective {
         if (arguments.length > 1) {
             try {
                 int ttl = Integer.parseInt(arguments[1]);
-                CacheLocator.getBlockDirectiveCache().add(getTTLCacheKey(arguments), Map.of(RENDER, render), ttl);
+                CacheLocator.getBlockDirectiveCache().add(getTTLCacheKey(arguments), Map.of(RENDER, render), Duration.ofSeconds(ttl));
             } catch (NumberFormatException e) {
                 Logger.debug(this.getClass(), "Invalid TTL value in dotParse: " + arguments[1]);
             }

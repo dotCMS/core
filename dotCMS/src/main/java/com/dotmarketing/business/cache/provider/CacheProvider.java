@@ -54,6 +54,10 @@ public abstract class CacheProvider implements Serializable {
      */
     public abstract boolean isDistributed();
 
+    public boolean isSingleton() {
+        return true;
+    }
+
     /**
      * Initializes the provider
      *
