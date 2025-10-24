@@ -1,0 +1,221 @@
+import { signalStore, withState } from '@ngrx/signals';
+
+import { TestBed } from '@angular/core/testing';
+
+import { MenuItem } from 'primeng/api';
+
+import { withBreadcrumbs } from './breadcrumb.feature';
+
+describe('withBreadcrumbs Feature', () => {
+    // Create a test store that uses the withBreadcrumbs feature
+    const TestStore = signalStore(withState({}), withBreadcrumbs());
+
+    let store: InstanceType<typeof TestStore>;
+
+    const mockBreadcrumbs: MenuItem[] = [
+        { label: 'Home', url: '/home', icon: 'pi pi-home' },
+        { label: 'Products', url: '/products' },
+        { label: 'Details', url: '/products/123' }
+    ];
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            providers: [TestStore]
+        });
+
+        store = TestBed.inject(TestStore);
+    });
+
+    describe('Initial State', () => {
+        it('should initialize with empty breadcrumbs array', () => {
+            expect(store.breadcrumbs()).toEqual([]);
+        });
+
+        it('should have breadcrumbCount as 0', () => {
+            expect(store.breadcrumbCount()).toBe(0);
+        });
+
+        it('should have hasBreadcrumbs as false', () => {
+            expect(store.hasBreadcrumbs()).toBe(false);
+        });
+
+        it('should have selectLastBreadcrumbLabel as null', () => {
+            expect(store.selectLastBreadcrumbLabel()).toBeNull();
+        });
+    });
+
+    describe('Set Breadcrumbs', () => {
+        it('should set breadcrumbs array', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(store.breadcrumbs()).toEqual(mockBreadcrumbs);
+        });
+
+        it('should replace existing breadcrumbs', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+            const newBreadcrumbs: MenuItem[] = [{ label: 'New', url: '/new' }];
+            store.setBreadcrumbs(newBreadcrumbs);
+            expect(store.breadcrumbs()).toEqual(newBreadcrumbs);
+        });
+
+        it('should update breadcrumbCount', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(store.breadcrumbCount()).toBe(3);
+        });
+
+        it('should update hasBreadcrumbs to true', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(store.hasBreadcrumbs()).toBe(true);
+        });
+
+        it('should update selectLastBreadcrumbLabel', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Details');
+        });
+    });
+
+    describe('Append Breadcrumb', () => {
+        it('should append a breadcrumb to empty array', () => {
+            const crumb: MenuItem = { label: 'Home', url: '/home' };
+            store.appendCrumb(crumb);
+            expect(store.breadcrumbs()).toEqual([crumb]);
+        });
+
+        it('should append a breadcrumb to existing array', () => {
+            store.setBreadcrumbs([{ label: 'Home', url: '/home' }]);
+            store.appendCrumb({ label: 'Products', url: '/products' });
+            expect(store.breadcrumbs().length).toBe(2);
+            expect(store.breadcrumbs()[1].label).toBe('Products');
+        });
+
+        it('should update breadcrumbCount after appending', () => {
+            store.appendCrumb({ label: 'First', url: '/first' });
+            expect(store.breadcrumbCount()).toBe(1);
+            store.appendCrumb({ label: 'Second', url: '/second' });
+            expect(store.breadcrumbCount()).toBe(2);
+        });
+
+        it('should update selectLastBreadcrumbLabel after appending', () => {
+            store.appendCrumb({ label: 'First', url: '/first' });
+            expect(store.selectLastBreadcrumbLabel()).toBe('First');
+            store.appendCrumb({ label: 'Second', url: '/second' });
+            expect(store.selectLastBreadcrumbLabel()).toBe('Second');
+        });
+    });
+
+    describe('Clear Breadcrumbs', () => {
+        beforeEach(() => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+        });
+
+        it('should clear breadcrumbs array', () => {
+            store.clearBreadcrumbs();
+            expect(store.breadcrumbs()).toEqual([]);
+        });
+
+        it('should reset breadcrumbCount to 0', () => {
+            store.clearBreadcrumbs();
+            expect(store.breadcrumbCount()).toBe(0);
+        });
+
+        it('should reset hasBreadcrumbs to false', () => {
+            store.clearBreadcrumbs();
+            expect(store.hasBreadcrumbs()).toBe(false);
+        });
+
+        it('should reset selectLastBreadcrumbLabel to null', () => {
+            store.clearBreadcrumbs();
+            expect(store.selectLastBreadcrumbLabel()).toBeNull();
+        });
+    });
+
+    describe('Computed: breadcrumbCount', () => {
+        it('should return correct count for various array sizes', () => {
+            expect(store.breadcrumbCount()).toBe(0);
+
+            store.setBreadcrumbs([{ label: 'One', url: '/one' }]);
+            expect(store.breadcrumbCount()).toBe(1);
+
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(store.breadcrumbCount()).toBe(3);
+        });
+    });
+
+    describe('Computed: hasBreadcrumbs', () => {
+        it('should return false for empty array', () => {
+            expect(store.hasBreadcrumbs()).toBe(false);
+        });
+
+        it('should return true for non-empty array', () => {
+            store.setBreadcrumbs([{ label: 'Home', url: '/home' }]);
+            expect(store.hasBreadcrumbs()).toBe(true);
+        });
+    });
+
+    describe('Computed: selectLastBreadcrumbLabel', () => {
+        it('should return null for empty breadcrumbs', () => {
+            expect(store.selectLastBreadcrumbLabel()).toBeNull();
+        });
+
+        it('should return label of single breadcrumb', () => {
+            store.setBreadcrumbs([{ label: 'Home', url: '/home' }]);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Home');
+        });
+
+        it('should return label of last breadcrumb in array', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Details');
+        });
+
+        it('should return null if last breadcrumb has no label', () => {
+            store.setBreadcrumbs([{ label: 'Home', url: '/home' }, { url: '/no-label' }]);
+            expect(store.selectLastBreadcrumbLabel()).toBeNull();
+        });
+
+        it('should update when breadcrumbs change', () => {
+            store.setBreadcrumbs([{ label: 'First', url: '/first' }]);
+            expect(store.selectLastBreadcrumbLabel()).toBe('First');
+
+            store.setBreadcrumbs([
+                { label: 'First', url: '/first' },
+                { label: 'Second', url: '/second' }
+            ]);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Second');
+        });
+    });
+
+    describe('Complex Scenarios', () => {
+        it('should handle full breadcrumb workflow', () => {
+            // Start empty
+            expect(store.breadcrumbs()).toEqual([]);
+
+            // Add breadcrumbs one by one
+            store.appendCrumb({ label: 'Home', url: '/home' });
+            store.appendCrumb({ label: 'Products', url: '/products' });
+            expect(store.breadcrumbCount()).toBe(2);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Products');
+
+            // Replace with new set
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Details');
+
+            // Clear all
+            store.clearBreadcrumbs();
+            expect(store.hasBreadcrumbs()).toBe(false);
+        });
+
+        it('should handle multiple operations in sequence', () => {
+            store.setBreadcrumbs([{ label: 'First', url: '/first' }]);
+            store.appendCrumb({ label: 'Second', url: '/second' });
+            store.appendCrumb({ label: 'Third', url: '/third' });
+            expect(store.breadcrumbCount()).toBe(3);
+
+            store.clearBreadcrumbs();
+            expect(store.breadcrumbCount()).toBe(0);
+
+            store.appendCrumb({ label: 'New', url: '/new' });
+            expect(store.breadcrumbs().length).toBe(1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('New');
+        });
+    });
+});
