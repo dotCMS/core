@@ -40,7 +40,7 @@
             [text]="true"
             [rounded]="true"
             styleClass="options-menu-button"
-            (onClick)="onAddFavoriteContentType()"></p-button>
+            (onClick)="overlayPanel.toggle($event)"></p-button>
     }
 </div>
 
@@ -90,3 +90,7 @@
     appendTo="body"
     styleClass="options-menu-popup"
     showTransitionOptions="0ms" />
+
+<p-overlayPanel #overlayPanel styleClass="favorite-selector-overlaypanel">
+    <dot-favorite-selector [pagePath]="$pagePath()" />
+</p-overlayPanel>

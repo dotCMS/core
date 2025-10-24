@@ -92,3 +92,11 @@ $icon-size: 0.875rem;
         }
     }
 }
+
+::ng-deep {
+    .favorite-selector-overlaypanel {
+        .p-overlaypanel-content {
+            padding: 0;
+        }
+    }
+}

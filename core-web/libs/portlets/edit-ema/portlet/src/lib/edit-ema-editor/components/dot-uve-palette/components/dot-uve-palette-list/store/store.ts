@@ -3,9 +3,15 @@ import { signalStore, withMethods, withState, patchState, withComputed } from '@
 import { computed, inject } from '@angular/core';
 
 import { DotESContentService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentType, DotPagination } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotPagination
+} from '@dotcms/dotcms-models';
 
 import {
+    DotContentTypeParams,
     DotPageContentTypeParams,
     DotPageContentTypeService
 } from '../../../service/dot-page-contenttype.service';
@@ -34,7 +40,6 @@ export interface DotPaletteListState {
     pagination: DotPagination;
     sort: SortOption;
     currentView: DotUVEPaletteListView;
-    favoriteContentTypes: DotCMSContentType[];
 }
 
 export const DEFAULT_STATE: DotPaletteListState = {
@@ -50,8 +55,7 @@ export const DEFAULT_STATE: DotPaletteListState = {
         direction: 'ASC'
     },
     currentContentType: '',
-    currentView: DotUVEPaletteListView.LOADING,
-    favoriteContentTypes: []
+    currentView: DotUVEPaletteListView.LOADING
 };
 
 export const DotPaletteListStore = signalStore(
@@ -122,6 +126,12 @@ export const DotPaletteListStore = signalStore(
                         });
                     });
             },
+            getAllContentTypes(params: DotContentTypeParams) {
+                return pageContentTypeService.getAllContentTypes({
+                    ...params,
+                    types: [DotCMSBaseTypesContentTypes.CONTENT, DotCMSBaseTypesContentTypes.WIDGET]
+                });
+            },
             getContentlets(params: DotESContentParams) {
                 const { itemsPerPage, lang, filter, offset, query } = params;
                 patchState(store, {
@@ -166,12 +176,23 @@ export const DotPaletteListStore = signalStore(
                     currentView: DotUVEPaletteListView.CONTENT_TYPES
                 });
             },
-
+            getAllFavoriteContentTypes(pagePathOrId: string, filter: string) {
+                return dotPageFavoriteContentTypeService.get(pagePathOrId, {
+                    filter
+                });
+            },
             getIsFavoriteContentType(pagePathOrId: string, contentTypeId: string) {
                 return dotPageFavoriteContentTypeService.isFavorite(pagePathOrId, contentTypeId);
             },
             addFavoriteContentType(pagePathOrId: string, contentType: DotCMSContentType) {
                 dotPageFavoriteContentTypeService.add(pagePathOrId, contentType);
+            },
+            saveFavoriteContentTypes(pagePathOrId: string, contentTypes: DotCMSContentType[]) {
+                dotPageFavoriteContentTypeService.save(pagePathOrId, contentTypes);
+
+                patchState(store, {
+                    contenttypes: contentTypes
+                });
             },
             removeFavoriteContentType(pagePathOrId: string, contentTypeId: string) {
                 dotPageFavoriteContentTypeService.remove(pagePathOrId, contentTypeId);

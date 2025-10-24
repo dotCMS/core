@@ -41,11 +41,13 @@ export class DotPageFavoriteContentTypeService {
      * @param {DotCMSContentType[]} contentTypes - The content types to save
      * @memberof DotPageFavoriteContentTypeService
      */
-    save(pagePathOrId: string, contentTypes: DotCMSContentType[]): void {
+    save(pagePathOrId: string, contentTypes: DotCMSContentType[]): DotCMSContentType[] {
         this.localStorageService.setItem<DotCMSContentType[]>(
             this.getStorageKey(pagePathOrId),
             contentTypes
         );
+
+        return contentTypes;
     }
 
     /**

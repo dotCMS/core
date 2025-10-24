@@ -19,6 +19,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -42,6 +43,7 @@ import {
 } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { BASETYPES_FOR_CONTENT, BASETYPES_FOR_WIDGET } from '../../utils';
+import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-palette-item.component';
 
@@ -70,7 +72,9 @@ import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-pale
         MenuModule,
         PaginatorModule,
         DotMessagePipe,
-        SkeletonModule
+        SkeletonModule,
+        OverlayPanelModule,
+        DotFavoriteSelectorComponent
     ],
     providers: [
         DotPaletteListStore,
