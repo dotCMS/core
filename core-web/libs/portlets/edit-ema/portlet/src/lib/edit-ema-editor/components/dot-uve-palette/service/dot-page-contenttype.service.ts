@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 
 /**
  * Query parameters for fetching page content types.
@@ -28,7 +28,7 @@ export interface DotPageContentTypeParams {
     orderby?: 'name' | 'usage' | 'modified';
     /** Sort direction - ASC|DESC (default: "ASC") */
     direction?: 'ASC' | 'DESC';
-    type?: string;
+    types?: DotCMSBaseTypesContentTypes[];
 }
 
 /**
@@ -113,8 +113,10 @@ export class DotPageContentTypeService {
             httpParams = httpParams.set('direction', params.direction);
         }
 
-        if (params.type) {
-            httpParams = httpParams.set('type', params.type);
+        if (params.types) {
+            params.types.forEach((type: DotCMSBaseTypesContentTypes) => {
+                httpParams = httpParams.append('type', type);
+            });
         }
 
         return this.http

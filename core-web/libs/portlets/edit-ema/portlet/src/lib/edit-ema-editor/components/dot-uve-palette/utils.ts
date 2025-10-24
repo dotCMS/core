@@ -1,4 +1,8 @@
-import { DotCMSClazzes, DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSClazzes,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
 
 export const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
     {
@@ -146,3 +150,11 @@ export const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
         workflows: []
     }
 ];
+
+export const BASETYPES_FOR_CONTENT = [
+    DotCMSBaseTypesContentTypes.CONTENT,
+    DotCMSBaseTypesContentTypes.FILEASSET,
+    DotCMSBaseTypesContentTypes.DOTASSET
+];
+
+export const BASETYPES_FOR_WIDGET = [DotCMSBaseTypesContentTypes.WIDGET];

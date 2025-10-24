@@ -21,8 +21,8 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { catchError } from 'rxjs/operators';
 
-import { DotESContentService, DotMessageService} from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, ESContent } from '@dotcms/dotcms-models';
+import { DotESContentService, DotMessageService } from '@dotcms/data-access';
+import { DEFAULT_VARIANT_ID, DotCMSBaseTypesContentTypes, ESContent } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUVEPaletteListState, SortOption, ViewOption } from './model';
@@ -32,6 +32,7 @@ import {
     DotPageContentTypeParams,
     DotPageContentTypeService
 } from '../../service/dot-page-contenttype.service';
+import { BASETYPES_FOR_CONTENT, BASETYPES_FOR_WIDGET } from '../../utils';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-palette-item.component';
 
@@ -175,13 +176,14 @@ export class DotUvePaletteListComponent {
         const filter = this.$state.filter();
         const sort = this.$state.sort();
         const pagination = this.$state.pagination();
+        const isWidget = this.$type() === DotCMSBaseTypesContentTypes.WIDGET;
 
         const selectedContentType = this.$state.selectedContentType();
 
         const params: DotPageContentTypeParams = {
             pagePathOrId: this.$pagePath(),
             language: this.$languageId().toString(),
-            type: this.$type(),
+            types: isWidget ? BASETYPES_FOR_WIDGET : BASETYPES_FOR_CONTENT,
             filter: filter,
             page: pagination.currentPage,
             per_page: pagination.perPage,
