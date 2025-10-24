@@ -81,6 +81,7 @@ export interface EditorProps {
         languageId: number;
         paletteClass: PALETTE_CLASSES;
         pagePath: string;
+        variantId?: string;
     };
     showDialogs: boolean;
     progressBar: boolean;
