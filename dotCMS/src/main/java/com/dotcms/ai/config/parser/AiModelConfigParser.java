@@ -137,6 +137,12 @@ public final class AiModelConfigParser {
                 catalogBuilder.putVendor(vendorName, vendorNodeBuilder.build());
             }
 
+            final Object routingRoot = root.get("routing");
+            if (!(routingRoot instanceof Map)) {
+                throw new IllegalArgumentException("'routing' object is required");
+            }
+
+            catalogBuilder.routing(Map.class.cast(routingRoot));
             return catalogBuilder.build();
         } catch (Exception e) {
 

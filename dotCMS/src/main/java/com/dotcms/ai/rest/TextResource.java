@@ -12,6 +12,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -99,15 +100,21 @@ public class TextResource {
         }
 
         final Host site = WebAPILocator.getHostWebAPI().getHost(request);
-        final Optional<AiModelConfig> modelConfigOpt = this.modelConfigFactory.getAiModelConfig(site, form.model);
+        final Optional<AiModelConfig> modelConfigOpt = this.modelConfigFactory.getAiModelConfigOrDefaultChat(site, form.model);
 
-        if(modelConfigOpt.isPresent()){
+        if(modelConfigOpt.isPresent()) {
+
+            CompletionsForm finalForm = form;
+            if (StringUtils.isNotSet(form.model)) {
+                // probably get the default one
+                finalForm = CompletionsForm.copy(form).model(modelConfigOpt.get().getName()).build();
+            }
 
             Logger.debug(this, ()-> "Using new AI api for the text resource");
             return Response.ok(
                             APILocator.getDotAIAPI()
                                     .getCompletionsAPI()
-                                    .raw(toCompletionRequest(form, modelConfigOpt.get()))
+                                    .raw(toCompletionRequest(finalForm, modelConfigOpt.get()))
                                     .toString())
                     .build();
         }

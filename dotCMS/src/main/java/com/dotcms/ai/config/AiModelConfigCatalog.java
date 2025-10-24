@@ -66,4 +66,7 @@ public interface AiModelConfigCatalog {
      * @return
      */
     List<String> getVendorNames();
+
+    AiModelConfig getDefaultChatModel();
+
 }

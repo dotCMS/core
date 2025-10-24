@@ -77,7 +77,7 @@ public class AIUtil {
     public static String getVendorFromPath(final String vendorModelPath) {
 
         final String[] parts = vendorModelPath.split("\\.");
-        final String vendor = parts.length>1 ? parts[0] : null ; // todo: any default vendor?
+        final String vendor = parts.length>0 ? parts[0] : null ; // todo: any default vendor?
         return vendor;
     }
 

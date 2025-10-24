@@ -18,15 +18,17 @@ import java.util.stream.Collectors;
 public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
 
     private final Map<String, AiVendorNode> vendors = new ConcurrentHashMap<>();
+    private final Map<String, String> routing = new ConcurrentHashMap<>();
 
-    private AiModelConfigCatalogImpl(final Map<String, AiVendorNode> initial) {
+    private AiModelConfigCatalogImpl(final Map<String, AiVendorNode> initial, final Map<String, String> routing ) {
 
         this.vendors.putAll(initial);
+        this.routing.putAll(routing);
     }
 
     public static AiModelConfigCatalogImpl from(final AiVendorCatalogData data) {
 
-        return new AiModelConfigCatalogImpl(data.getVendors());
+        return new AiModelConfigCatalogImpl(data.getVendors(), data.getRouting());
     }
 
     // -------------------- read API --------------------
@@ -170,6 +172,13 @@ public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
         }
 
         return vendorNamesBuilder.build();
+    }
+
+    @Override
+    public AiModelConfig getDefaultChatModel() {
+
+        final String vendorModelPath = this.routing.get("default-chat");
+        return this.getByPath(vendorModelPath);
     }
 
     /**

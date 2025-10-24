@@ -43,6 +43,12 @@ public class AiModelConfigFactory {
 
     public Optional<AiModelConfig> getAiModelConfig(final String siteId, final String vendorModelPath) {
 
+        final boolean useDefaultModelWhenNotFound = Config.getBooleanProperty("AI_USE_DEFAULT_CHAT_MODEL_FALLBACK", true);
+        return getAiModelConfig(siteId, vendorModelPath, useDefaultModelWhenNotFound);
+    }
+
+    private Optional<AiModelConfig> getAiModelConfig(final String siteId, final String vendorModelPath, boolean useDefaultModelWhenNotFound) {
+
         final SystemCache systemCache = CacheLocator.getSystemCache();
         final AiModelConfig configFromCache = (AiModelConfig) systemCache.get(key(siteId, vendorModelPath));
         if (null == configFromCache) {
@@ -58,6 +64,13 @@ public class AiModelConfigFactory {
         }
 
         if (configFromCache == configCache404 || null == configFromCache) {
+
+            // try the default model from routing
+            if (useDefaultModelWhenNotFound) {
+                final AiModelConfig configFromApp = Try.of(() -> findDefaultAiModelFromRoutingApp(siteId)).getOrNull();
+
+                return Optional.ofNullable(configFromApp);
+            }
 
             return Optional.empty();
         }
@@ -78,6 +91,22 @@ public class AiModelConfigFactory {
         modelConfigCatalog = this.aiModelConfigCatalogMap.get(siteId);
 
         return null != modelConfigCatalog? modelConfigCatalog.getByPath(vendorModelPath):null;
+    }
+
+    private AiModelConfig findDefaultAiModelFromRoutingApp(final String siteId) throws DotDataException, DotSecurityException {
+
+        AiModelConfigCatalog modelConfigCatalog = null;
+        if (!this.aiModelConfigCatalogMap.containsKey(siteId)) {
+
+            if (!loadVendorModelFromAppBySiteId(siteId)) {
+                return null;
+            }
+        }
+
+        modelConfigCatalog = this.aiModelConfigCatalogMap.get(siteId);
+
+
+        return null != modelConfigCatalog? modelConfigCatalog.getDefaultChatModel():null;
     }
 
     private boolean loadVendorModelFromAppBySiteId(final String siteId) throws DotDataException, DotSecurityException {
@@ -113,5 +142,11 @@ public class AiModelConfigFactory {
 
     private String key(final String siteId, final String vendorModelPath) {
         return "ai_model_config"+siteId +"_"+vendorModelPath;
+    }
+
+    public Optional<AiModelConfig> getAiModelConfigOrDefaultChat(final Host site, final String vendorModelPath) {
+
+        final boolean useDefaultModelWhenNotFound = true;
+        return getAiModelConfig(site.getIdentifier(), vendorModelPath, useDefaultModelWhenNotFound);
     }
 }
