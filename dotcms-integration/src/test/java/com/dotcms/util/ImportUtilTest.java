@@ -5069,10 +5069,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // Create a test site with a name
             testSite = new SiteDataGen().name("test-site-" + System.currentTimeMillis()).nextPersisted();
 
-            // Create 3 languages with unique codes (LanguageDataGen creates random 5-char codes)
-            lang1 = new LanguageDataGen().nextPersisted();
-            lang2 = new LanguageDataGen().nextPersisted();
-            lang3 = new LanguageDataGen().nextPersisted();
+            // Use existing languages that are pre-configured in dotCMS
+            // English (default language)
+            lang1 = APILocator.getLanguageAPI().getLanguage("en", "US");
+            // Spanish
+            lang2 = APILocator.getLanguageAPI().getLanguage("es", "ES");
+            // Italian
+            lang3 = APILocator.getLanguageAPI().getLanguage("it", "IT");
 
             // Create ContentType with slug and site fields
             com.dotcms.contenttype.model.field.Field slugField = new FieldDataGen()
@@ -5202,29 +5205,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 }
             }
 
-            if (lang1 != null) {
-                try {
-                    APILocator.getLanguageAPI().deleteLanguage(lang1);
-                } catch (Exception e) {
-                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 1", e);
-                }
-            }
-
-            if (lang2 != null) {
-                try {
-                    APILocator.getLanguageAPI().deleteLanguage(lang2);
-                } catch (Exception e) {
-                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 2", e);
-                }
-            }
-
-            if (lang3 != null) {
-                try {
-                    APILocator.getLanguageAPI().deleteLanguage(lang3);
-                } catch (Exception e) {
-                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 3", e);
-                }
-            }
+            // No need to clean up languages - they are system languages
         }
     }
 
