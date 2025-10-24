@@ -129,7 +129,12 @@ export const DotPaletteListStore = signalStore(
             getAllContentTypes(params: DotContentTypeParams) {
                 return pageContentTypeService.getAllContentTypes({
                     ...params,
-                    types: [DotCMSBaseTypesContentTypes.CONTENT, DotCMSBaseTypesContentTypes.WIDGET]
+                    types: [
+                        DotCMSBaseTypesContentTypes.CONTENT,
+                        DotCMSBaseTypesContentTypes.FILEASSET,
+                        DotCMSBaseTypesContentTypes.DOTASSET,
+                        DotCMSBaseTypesContentTypes.WIDGET
+                    ]
                 });
             },
             getContentlets(params: DotESContentParams) {

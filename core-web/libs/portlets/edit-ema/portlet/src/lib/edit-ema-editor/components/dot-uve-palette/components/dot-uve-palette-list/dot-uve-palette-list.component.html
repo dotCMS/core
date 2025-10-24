@@ -26,21 +26,14 @@
             [text]="true"
             [rounded]="true"
             styleClass="options-menu-button"
-            (onClick)="menu.toggle($event)"></p-button>
-        <p-menu
-            #menu
-            [model]="$menuItems()"
-            [popup]="true"
-            appendTo="body"
-            styleClass="options-menu-popup"
-            showTransitionOptions="0ms" />
+            (onClick)="sortMenu.toggle($event)" />
     } @else if ($type() === 'FAVORITES') {
         <p-button
             icon="pi pi-plus"
             [text]="true"
             [rounded]="true"
             styleClass="options-menu-button"
-            (onClick)="overlayPanel.toggle($event)"></p-button>
+            (onClick)="overlayPanel.toggle($event)" />
     }
 </div>
 
@@ -84,6 +77,14 @@
 }
 
 <p-menu
+    #sortMenu
+    [model]="$menuItems()"
+    [popup]="true"
+    appendTo="body"
+    styleClass="options-menu-popup"
+    showTransitionOptions="0ms" />
+
+<p-menu
     #cm
     [model]="$favoriteMenuItems()"
     [popup]="true"
@@ -94,3 +95,5 @@
 <p-overlayPanel #overlayPanel styleClass="favorite-selector-overlaypanel">
     <dot-favorite-selector [pagePath]="$pagePath()" />
 </p-overlayPanel>
+
+<p-toast />

@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -22,6 +22,7 @@ import { MenuModule } from 'primeng/menu';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
+import { ToastModule } from 'primeng/toast';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -74,12 +75,14 @@ import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-pale
         DotMessagePipe,
         SkeletonModule,
         OverlayPanelModule,
-        DotFavoriteSelectorComponent
+        DotFavoriteSelectorComponent,
+        ToastModule
     ],
     providers: [
+        MessageService,
         DotPaletteListStore,
-        DotPageContentTypeService,
         DotESContentService,
+        DotPageContentTypeService,
         DotPageFavoriteContentTypeService
     ],
     templateUrl: './dot-uve-palette-list.component.html',
@@ -94,6 +97,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
 
     readonly #paletteListStore = inject(DotPaletteListStore);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #messageService = inject(MessageService);
 
     readonly $start = this.#paletteListStore.$start;
     readonly $contenttypes = this.#paletteListStore.contenttypes;
@@ -330,41 +334,10 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
             this.$pagePath(),
             contentType.id
         );
-
         if (isFavorite) {
-            this.$favoriteMenuItems.set([
-                {
-                    label: this.#dotMessageService.get('uve.palette.menu.favorite.option.remove'),
-                    id: 'remove',
-                    command: () => {
-                        this.#paletteListStore.removeFavoriteContentType(
-                            this.$pagePath(),
-                            contentType.id
-                        );
-
-                        if (this.$type() === 'FAVORITES') {
-                            this.getContentTypes();
-                        }
-                    }
-                }
-            ]);
+            this.setRemoveFavoriteMenuItem(contentType);
         } else {
-            this.$favoriteMenuItems.set([
-                {
-                    label: this.#dotMessageService.get('uve.palette.menu.favorite.option.add'),
-                    id: 'add',
-                    command: () => {
-                        this.#paletteListStore.addFavoriteContentType(
-                            this.$pagePath(),
-                            contentType
-                        );
-
-                        if (this.$type() === 'FAVORITES') {
-                            this.getContentTypes();
-                        }
-                    }
-                }
-            ]);
+            this.setAddFavoriteMenuItem(contentType);
         }
     }
 
@@ -386,5 +359,54 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
                     });
                 }
             });
+    }
+
+    private setRemoveFavoriteMenuItem(contentType: DotCMSContentType) {
+        this.$favoriteMenuItems.set([
+            {
+                label: this.#dotMessageService.get('uve.palette.menu.favorite.option.remove'),
+                id: 'remove',
+                command: () => {
+                    this.#paletteListStore.removeFavoriteContentType(
+                        this.$pagePath(),
+                        contentType.id
+                    );
+
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: 'Removed from favorites',
+                        detail: 'You have removed it from your favorites',
+                        life: 3000
+                    });
+
+                    if (this.$type() === 'FAVORITES') {
+                        this.getContentTypes();
+                    }
+                }
+            }
+        ]);
+    }
+
+    private setAddFavoriteMenuItem(contentType: DotCMSContentType) {
+        this.$favoriteMenuItems.set([
+            {
+                label: this.#dotMessageService.get('uve.palette.menu.favorite.option.add'),
+                id: 'add',
+                command: () => {
+                    this.#paletteListStore.addFavoriteContentType(this.$pagePath(), contentType);
+
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: 'Added to favorites',
+                        detail: 'You have added it to your favorites',
+                        life: 3000
+                    });
+
+                    if (this.$type() === 'FAVORITES') {
+                        this.getContentTypes();
+                    }
+                }
+            }
+        ]);
     }
 }
