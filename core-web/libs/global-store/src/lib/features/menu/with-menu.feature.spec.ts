@@ -45,12 +45,6 @@ describe('withMenu Feature (PrimeNG MenuItem)', () => {
         it('should initialize with no active menu item', () => {
             expect(store.activeMenuItemId()).toBeNull();
         });
-
-        it('should have allMenuItems computed returning menu items', () => {
-            const items = store.allMenuItems();
-            expect(items).toBeDefined();
-            expect(Array.isArray(items)).toBe(true);
-        });
     });
 
     describe('Set Menu Items', () => {

@@ -33,20 +33,6 @@ export function withMenu() {
         withState(initialMenuSlice),
         withComputed(({ menuItems, activeMenuItemId }) => ({
             /**
-             * Computed signal that returns all menu items.
-             *
-             * @returns Array of MenuItem objects
-             */
-            allMenuItems: computed(() => menuItems()),
-
-            /**
-             * Computed signal that returns the active menu item ID.
-             *
-             * @returns The active menu item ID or null
-             */
-            activeMenuItemIdComputed: computed(() => activeMenuItemId()),
-
-            /**
              * Computed signal that finds and returns the active menu item.
              * Searches recursively through all menu items.
              *

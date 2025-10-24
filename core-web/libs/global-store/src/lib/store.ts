@@ -17,9 +17,9 @@ import { switchMap } from 'rxjs/operators';
 import { DotSiteService } from '@dotcms/data-access';
 import { SiteEntity } from '@dotcms/dotcms-models';
 
-import { withBreadcrumbs } from './breadcrumb.feature';
+import { withBreadcrumbs } from './features/breadcrumb/breadcrumb.feature';
 import { withMenu } from './features/menu/with-menu.feature';
-import { withSystem } from './with-system.feature';
+import { withSystem } from './features/with-system/with-system.feature';
 
 /**
  * Represents the global application state.
