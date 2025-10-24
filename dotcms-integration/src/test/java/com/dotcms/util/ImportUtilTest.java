@@ -5061,9 +5061,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public void testImportMultilingualWithSiteNameAsKeyField() throws DotSecurityException, DotDataException, IOException {
         ContentType contentType = null;
         Host testSite = null;
-        Language lang1;
-        Language lang2;
-        Language lang3;
+        Language lang1 = null;
+        Language lang2 = null;
+        Language lang3 = null;
 
         try {
             // Create a test site with a name
