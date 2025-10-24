@@ -291,6 +291,8 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     private getContentTypes(params: Partial<DotPageContentTypeParams> = {}) {
         if (this.$type() === 'FAVORITES') {
             this.#paletteListStore.getFavoriteContentTypes(this.$pagePath(), params.filter || '');
+        } else if (this.$type() === DotCMSBaseTypesContentTypes.WIDGET) {
+            this.#paletteListStore.getWidgets({ ...this.getSearchParams(), ...params });
         } else {
             this.#paletteListStore.getContentTypes({ ...this.getSearchParams(), ...params });
         }

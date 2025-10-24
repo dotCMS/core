@@ -111,6 +111,17 @@ export const DotPaletteListStore = signalStore(
                     });
                 });
             },
+            getWidgets(params: DotPageContentTypeParams) {
+                pageContentTypeService
+                    .getAllContentTypes(params)
+                    .subscribe(({ contenttypes, pagination }) => {
+                        patchState(store, {
+                            contenttypes,
+                            pagination,
+                            currentView: DotUVEPaletteListView.CONTENT_TYPES
+                        });
+                    });
+            },
             getContentlets(params: DotESContentParams) {
                 const { itemsPerPage, lang, filter, offset, query } = params;
                 patchState(store, {
