@@ -25,7 +25,7 @@ export interface DotPageContentTypeParams {
     /** Items per page - max: 100 (default: 20) */
     per_page?: number;
     /** Sort field - "name", "usage", "modified" (default: "usage") */
-    orderby?: 'name' | 'usage' | 'modified';
+    orderby?: 'name' | 'usage';
     /** Sort direction - ASC|DESC (default: "ASC") */
     direction?: 'ASC' | 'DESC';
     types?: DotCMSBaseTypesContentTypes[];

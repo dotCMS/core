@@ -34,3 +34,11 @@ export interface DotUVEPaletteListState {
     loading: boolean;
     selectedContentType?: string;
 }
+
+export interface DotESContentParams {
+    itemsPerPage: number;
+    lang: string;
+    filter: string;
+    offset: string;
+    query: string;
+}
