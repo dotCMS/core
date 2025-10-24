@@ -48,7 +48,9 @@ export class DotRouterService {
             });
         this.buildBreadcrumbs();
         effect(() => {
-            sessionStorage.setItem('breadcrumbs', JSON.stringify(this.#globalStore.breadcrumbs()));
+            const breadcrumbs = this.#globalStore.breadcrumbs();
+            console.log('breadcrumbs', breadcrumbs);
+            sessionStorage.setItem('breadcrumbs', JSON.stringify(breadcrumbs));
         });
     }
 
@@ -479,8 +481,12 @@ export class DotRouterService {
                     if (item) {
                         this.#globalStore.setBreadcrumbs([
                             {
+                                label: 'dotCMS',
+                                disabled: true,
+                            },
+                            {
                                 label: item.labelParent,
-                                target: '_self'
+                                disabled: true,
                             },
                             {
                                 label: item.label,
