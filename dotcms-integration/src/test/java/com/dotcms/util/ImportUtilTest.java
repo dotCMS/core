@@ -5068,21 +5068,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // Create a test site with a name
             testSite = new SiteDataGen().name("test-site-" + System.currentTimeMillis()).nextPersisted();
 
-            // Create additional languages with unique codes
-            long timestamp = System.currentTimeMillis();
-            spanish = new LanguageDataGen()
-                    .languageCode("ts" + timestamp)
-                    .countryCode("TS")
-                    .languageName("Test Spanish " + timestamp)
-                    .country("Test Spain")
-                    .nextPersisted();
-
-            french = new LanguageDataGen()
-                    .languageCode("tf" + timestamp)
-                    .countryCode("TF")
-                    .languageName("Test French " + timestamp)
-                    .country("Test France")
-                    .nextPersisted();
+            
+            spanish = new LanguageDataGen().nextPersisted();
+            french = new LanguageDataGen().nextPersisted();
 
             // Create ContentType with slug and site fields
             com.dotcms.contenttype.model.field.Field slugField = new FieldDataGen()
