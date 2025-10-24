@@ -199,6 +199,17 @@ $color-accessible-text-blue-bg: $color-palette-blue-op-08;
 $color-alert-blue: $color-palette-blue;
 $color-alert-blue-light: $color-palette-blue-tint;
 
+// Blue Gray sass variables
+$color-palette-bluegray-300: #9fa9b7;
+$color-palette-bluegray-400: #818ea1;
+$color-palette-bluegray-800: #37404c;
+
+// Surface colors
+$color-palette-surface-light: #f9fafb;
+
+// Border colors
+$color-palette-border-light: #e5e7eb;
+
 // LEGACY COLORS
 $brand-background: var(--color-palette-primary-800);
 $deleted-content-color: #fdb8c0;
