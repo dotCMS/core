@@ -18,6 +18,7 @@ import { DotSiteService } from '@dotcms/data-access';
 import { SiteEntity } from '@dotcms/dotcms-models';
 
 import { withBreadcrumbs } from './breadcrumb.feature';
+import { withMenu } from './features/menu/with-menu.feature';
 import { withSystem } from './with-system.feature';
 
 /**
@@ -58,6 +59,7 @@ const initialState: GlobalState = {
  * - Provides currentSiteId computed for any services that need site context
  * - Stores complete site entity from API endpoint
  * - Includes withSystem feature for system configuration management
+ * - Includes withMenu feature for menu state management
  *
  * Example usage:
  * ```typescript
@@ -82,6 +84,7 @@ export const GlobalStore = signalStore(
     withState(initialState),
     withSystem(),
     withBreadcrumbs(),
+    withMenu(),
     withMethods((store, siteService = inject(DotSiteService)) => {
         return {
             /**
