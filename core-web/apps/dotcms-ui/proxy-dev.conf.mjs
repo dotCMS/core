@@ -22,7 +22,7 @@ export default [
             '/tinymce',
             '/ext'
         ],
-        target: 'http://localhost:8082',
+        target: 'http://localhost:8080',
         secure: false,
         changeOrigin: true, // Essential for Firefox compatibility
         logLevel: 'debug',

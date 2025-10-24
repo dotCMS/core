@@ -1,15 +1,19 @@
+import { of, Subject } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ChangeDetectorRef, signal } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+
+import { finalize, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
 import {
     GrafanaService,
     GrafanaDashboard,
     GrafanaFolder
 } from './services/grafana.service';
-import { finalize, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { of, Subject } from 'rxjs';
+
 
 type ConnectionStatus = 'loading' | 'connected' | 'disconnected' | null;
 
@@ -92,16 +96,12 @@ export class DotHackathonTestComponent implements OnInit {
      * Test connection to Grafana
      */
     testConnection() {
-        console.log('🚀 === USER ACTION: Test Grafana Connection ===');
-        console.log('🚀 Timestamp:', new Date().toISOString());
-
         this.connectionStatus = 'loading';
         this.cdr.detectChanges();
 
         this.grafanaService.testConnection()
             .pipe(
-                catchError((error) => {
-                    console.error('Grafana connection test failed:', error);
+                catchError((_error) => {
                     return of(false);
                 }),
                 finalize(() => {
@@ -115,8 +115,7 @@ export class DotHackathonTestComponent implements OnInit {
                         this.loadInitialDashboards();
                     }
                 },
-                error: (error) => {
-                    console.error('Connection test error:', error);
+                error: (_error) => {
                     this.connectionStatus = 'disconnected';
                 }
             });
@@ -132,8 +131,7 @@ export class DotHackathonTestComponent implements OnInit {
 
         this.grafanaService.getFolders(50)
             .pipe(
-                catchError((error) => {
-                    console.error('Error loading folders:', error);
+                catchError((_error) => {
                     return of([]);
                 })
             )
@@ -186,8 +184,7 @@ export class DotHackathonTestComponent implements OnInit {
 
         this.grafanaService.searchDashboards(searchParams)
             .pipe(
-                catchError((error) => {
-                    console.error('Error searching dashboards:', error);
+                catchError((_error) => {
                     return of([]);
                 }),
                 finalize(() => {
@@ -199,7 +196,6 @@ export class DotHackathonTestComponent implements OnInit {
             .subscribe({
                 next: (dashboards) => {
                     this.dashboards = dashboards;
-                    console.log(`Found ${dashboards.length} dashboards`);
                 }
             });
     }
@@ -208,14 +204,6 @@ export class DotHackathonTestComponent implements OnInit {
      * Select a dashboard for display
      */
     selectDashboard(dashboard: GrafanaDashboard) {
-        console.log('🎯 === USER ACTION: Select Dashboard ===');
-        console.log('🎯 Dashboard Title:', dashboard.title);
-        console.log('🎯 Dashboard UID:', dashboard.uid);
-        console.log('🎯 Dashboard Type:', dashboard.type);
-        console.log('🎯 Dashboard Folder:', dashboard.folderTitle);
-        console.log('🎯 Dashboard Tags:', dashboard.tags);
-        console.log('🎯 Timestamp:', new Date().toISOString());
-
         this.selectedDashboard = dashboard;
 
         // Set the dashboard UID in options automatically
@@ -223,8 +211,6 @@ export class DotHackathonTestComponent implements OnInit {
             ...this.dashboardOptions,
             dashboardUid: dashboard.uid
         };
-
-        console.log('🎯 Updated Dashboard Options:', this.dashboardOptions);
 
         this.cdr.detectChanges();
     }
@@ -257,8 +243,6 @@ export class DotHackathonTestComponent implements OnInit {
         setTimeout(() => {
             this.scrollToDashboard();
         }, 500);
-
-        console.log('Loading dashboard URL:', this.currentDashboardUrl);
     }
 
     /**
@@ -322,7 +306,6 @@ export class DotHackathonTestComponent implements OnInit {
     onIframeLoad() {
         this.iframeLoading = false;
         this.cdr.detectChanges();
-        console.log('Dashboard loaded successfully');
     }
 
     /**
@@ -331,7 +314,6 @@ export class DotHackathonTestComponent implements OnInit {
     onIframeError() {
         this.iframeLoading = false;
         this.cdr.detectChanges();
-        console.error('Error loading dashboard iframe');
     }
 
     /**

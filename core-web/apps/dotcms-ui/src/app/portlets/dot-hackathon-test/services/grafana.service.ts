@@ -1,7 +1,9 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+
+import { map } from 'rxjs/operators';
 
 export interface GrafanaDashboard {
     id: number;
@@ -36,7 +38,7 @@ export interface GrafanaFolder {
 }
 
 export interface DashboardDetail {
-    dashboard: Record<string, any>;
+    dashboard: Record<string, unknown>;
     meta: {
         type: string;
         canSave: boolean;
@@ -63,10 +65,10 @@ export interface DashboardDetail {
 
 export interface ApiResponse<T> {
     entity: T;
-    errors: any[];
+    errors: unknown[];
     i18nMessagesMap: Record<string, string>;
-    messages: any[];
-    pagination: any;
+    messages: unknown[];
+    pagination: unknown;
     permissions: string[];
 }
 
@@ -81,30 +83,9 @@ export class GrafanaService {
      * Test connectivity to Grafana
      */
     testConnection(): Observable<boolean> {
-        const url = `${this.baseUrl}/test-connection`;
-        console.log('🔗 === GRAFANA REQUEST: Test Connection ===');
-        console.log('📤 URL:', url);
-        console.log('📤 Method: GET');
-        console.log('📤 Timestamp:', new Date().toISOString());
-
-        return this.http.get<ApiResponse<boolean>>(url)
+        return this.http.get<ApiResponse<boolean>>(`${this.baseUrl}/test-connection`)
             .pipe(
-                map(response => {
-                    console.log('📥 === GRAFANA RESPONSE: Test Connection ===');
-                    console.log('📥 Status: SUCCESS');
-                    console.log('📥 Full Response:', response);
-                    console.log('📥 Connection Result:', response.entity);
-                    console.log('📥 Timestamp:', new Date().toISOString());
-                    return response.entity;
-                }),
-                catchError(error => {
-                    console.error('❌ === GRAFANA ERROR: Test Connection ===');
-                    console.error('❌ Error Details:', error);
-                    console.error('❌ Status:', error.status);
-                    console.error('❌ Message:', error.message);
-                    console.error('❌ Timestamp:', new Date().toISOString());
-                    throw error;
-                })
+                map(response => response.entity)
             );
     }
 
@@ -140,42 +121,9 @@ export class GrafanaService {
             httpParams = httpParams.set('limit', params.limit.toString());
         }
 
-        const url = `${this.baseUrl}/dashboards/search`;
-        const fullUrl = httpParams.toString() ? `${url}?${httpParams.toString()}` : url;
-        console.log('🔍 === GRAFANA REQUEST: Search Dashboards ===');
-        console.log('📤 Base URL:', url);
-        console.log('📤 Full Request URL:', fullUrl);
-        console.log('📤 Method: GET');
-        console.log('📤 Parameters:', params);
-        console.log('📤 HTTP Params:', httpParams.toString());
-        console.log('📤 Timestamp:', new Date().toISOString());
-
-        return this.http.get<ApiResponse<GrafanaDashboard[]>>(url, { params: httpParams })
+        return this.http.get<ApiResponse<GrafanaDashboard[]>>(`${this.baseUrl}/dashboards/search`, { params: httpParams })
             .pipe(
-                map(response => {
-                    const dashboards = response.entity || [];
-                    console.log('📥 === GRAFANA RESPONSE: Search Dashboards ===');
-                    console.log('📥 Status: SUCCESS');
-                    console.log('📥 Dashboards Count:', dashboards.length);
-                    console.log('📥 Full Response:', response);
-                    if (dashboards.length > 0) {
-                        console.log('📥 Sample Dashboards:');
-                        dashboards.slice(0, 3).forEach((dashboard, index) => {
-                            console.log(`📥   [${index + 1}] ${dashboard.title} (UID: ${dashboard.uid}, Type: ${dashboard.type})`);
-                        });
-                    }
-                    console.log('📥 Timestamp:', new Date().toISOString());
-                    return dashboards;
-                }),
-                catchError(error => {
-                    console.error('❌ === GRAFANA ERROR: Search Dashboards ===');
-                    console.error('❌ Error Details:', error);
-                    console.error('❌ Status:', error.status);
-                    console.error('❌ Message:', error.message);
-                    console.error('❌ Parameters:', params);
-                    console.error('❌ Timestamp:', new Date().toISOString());
-                    throw error;
-                })
+                map(response => response.entity || [])
             );
     }
 
@@ -198,42 +146,9 @@ export class GrafanaService {
             httpParams = httpParams.set('limit', limit.toString());
         }
 
-        const url = `${this.baseUrl}/folders`;
-        const fullUrl = httpParams.toString() ? `${url}?${httpParams.toString()}` : url;
-        console.log('📁 === GRAFANA REQUEST: Get Folders ===');
-        console.log('📤 Base URL:', url);
-        console.log('📤 Full Request URL:', fullUrl);
-        console.log('📤 Method: GET');
-        console.log('📤 Limit:', limit);
-        console.log('📤 HTTP Params:', httpParams.toString());
-        console.log('📤 Timestamp:', new Date().toISOString());
-
-        return this.http.get<ApiResponse<GrafanaFolder[]>>(url, { params: httpParams })
+        return this.http.get<ApiResponse<GrafanaFolder[]>>(`${this.baseUrl}/folders`, { params: httpParams })
             .pipe(
-                map(response => {
-                    const folders = response.entity || [];
-                    console.log('📥 === GRAFANA RESPONSE: Get Folders ===');
-                    console.log('📥 Status: SUCCESS');
-                    console.log('📥 Folders Count:', folders.length);
-                    console.log('📥 Full Response:', response);
-                    if (folders.length > 0) {
-                        console.log('📥 Sample Folders:');
-                        folders.slice(0, 3).forEach((folder, index) => {
-                            console.log(`📥   [${index + 1}] ${folder.title} (UID: ${folder.uid})`);
-                        });
-                    }
-                    console.log('📥 Timestamp:', new Date().toISOString());
-                    return folders;
-                }),
-                catchError(error => {
-                    console.error('❌ === GRAFANA ERROR: Get Folders ===');
-                    console.error('❌ Error Details:', error);
-                    console.error('❌ Status:', error.status);
-                    console.error('❌ Message:', error.message);
-                    console.error('❌ Limit:', limit);
-                    console.error('❌ Timestamp:', new Date().toISOString());
-                    throw error;
-                })
+                map(response => response.entity || [])
             );
     }
 
@@ -271,16 +186,10 @@ export class GrafanaService {
         orgId?: number;
         panelId?: number;
     } = {}): string {
-        console.log('🔨 === GRAFANA URL BUILDER: Build Dashboard URL ===');
-        console.log('📤 Dashboard UID:', dashboardUid);
-        console.log('📤 Options:', options);
-        console.log('📤 Timestamp:', new Date().toISOString());
-
         // Get base Grafana URL from configuration (this should match the grafana.api.url config)
         const baseGrafanaUrl = 'http://localhost:3000'; // This should come from config
 
         let url = `${baseGrafanaUrl}/d/${dashboardUid}`;
-        console.log('📤 Base URL:', url);
 
         const queryParams: string[] = [];
 
@@ -323,17 +232,10 @@ export class GrafanaService {
             queryParams.push('viewPanel=1'); // Enable panel view mode
         }
 
-        console.log('📤 Query Parameters:', queryParams);
-
         // Append query parameters
         if (queryParams.length > 0) {
             url += '?' + queryParams.join('&');
         }
-
-        console.log('📥 === GRAFANA URL BUILDER RESULT ===');
-        console.log('📥 Final URL:', url);
-        console.log('📥 URL Length:', url.length);
-        console.log('📥 Timestamp:', new Date().toISOString());
 
         return url;
     }
