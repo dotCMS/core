@@ -95,7 +95,7 @@ export function withMenu() {
                         if (item.id === id) return item.expanded ?? false;
                         if (item.items) {
                             const result = findItem(item.items);
-                            if (item.id === id || result !== false) return result;
+                            if (item.id === id || result) return result;
                         }
                     }
                     return false;
