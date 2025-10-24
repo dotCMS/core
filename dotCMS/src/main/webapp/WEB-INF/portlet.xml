@@ -1,11 +1,6 @@
 <?xml version="1.0"?>
-
 <portlet-app>
-
-
-
-
-
+    <!-- Struts Portlets -->
     <portlet>
         <portlet-name>categories</portlet-name>
         <display-name>Category Manager</display-name>
@@ -14,14 +9,8 @@
             <name>view-action</name>
             <value>/ext/categories/view_categories</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
     </portlet>
-
-
 
     <portlet>
         <portlet-name>site-browser</portlet-name>
@@ -45,34 +34,6 @@
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
-
-
-    <!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->
-    <portlet>
-        <portlet-name>publishing-queue</portlet-name>
-        <display-name>Content Publishing Tools</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
-        <init-param>
-            <name>view-jsp</name>
-            <value>/portlet/ext/contentlet/publishing/view_publish_tool.jsp</value>
-        </init-param>
-        <init-param>
-            <name>useWEBINFDIR</name>
-            <value>false</value>
-        </init-param>
-
-
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-    </portlet>
-    <!-- END: PORTLET CONTENT PUBLISHING FRAMEWORK -->
-
-    <portlet>
-        <portlet-name>containers</portlet-name>
-        <display-name>Container Manager</display-name>
-        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-
-    </portlet>
     <portlet>
         <portlet-name>containers-legacy</portlet-name>
         <display-name>Container Manager (Legacy)</display-name>
@@ -81,23 +42,9 @@
             <name>view-action</name>
             <value>/ext/containers/view_containers</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
     </portlet>
 
-    <portlet>
-        <portlet-name>templates</portlet-name>
-        <display-name>Templates Manager</display-name>
-        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-    </portlet>
-
-    <portlet>
-        <portlet-name>pages</portlet-name>
-        <display-name>Pages</display-name>
-        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-    </portlet>
     <portlet>
         <portlet-name>html-pages</portlet-name>
         <display-name>HTML Pages Manager</display-name>
@@ -106,14 +53,8 @@
             <name>view-action</name>
             <value>/ext/htmlpages/view_htmlpages</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
     </portlet>
-
-
 
     <portlet>
         <portlet-name>links</portlet-name>
@@ -123,11 +64,7 @@
             <name>view-action</name>
             <value>/ext/links/view_links</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
     </portlet>
 
     <portlet>
@@ -138,13 +75,8 @@
             <name>view-action</name>
             <value>/ext/workflows/view_workflow_tasks</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
     </portlet>
-
 
     <portlet>
         <portlet-name>vanity-urls</portlet-name>
@@ -221,18 +153,6 @@
     </portlet>
 
     <portlet>
-        <portlet-name>roles</portlet-name>
-        <display-name>Roles Admin</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
-        <init-param>
-            <name>view-jsp</name>
-            <value>/portlet/ext/roleadmin/view_roles.jsp</value>
-        </init-param>
-    </portlet>
-
-
-
-    <portlet>
         <portlet-name>maintenance</portlet-name>
         <display-name>CMS Maintenance</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
@@ -241,9 +161,7 @@
             <value>/ext/cmsmaintenance/view_cms_maintenance</value>
         </init-param>
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
     </portlet>
-
 
     <portlet>
         <portlet-name>jobs</portlet-name>
@@ -253,10 +171,7 @@
             <name>view-action</name>
             <value>/ext/scheduler/view_schedulers</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
     </portlet>
 
     <portlet>
@@ -267,10 +182,7 @@
             <name>view-action</name>
             <value>/ext/calendar/view_calendar</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
     </portlet>
 
     <portlet>
@@ -281,15 +193,47 @@
             <name>view-action</name>
             <value>/ext/hostadmin/view_hosts</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
     </portlet>
 
+    <portlet>
+        <portlet-name>dashboard</portlet-name>
+        <display-name>Dashboard</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/dashboard/view_dashboard</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
 
-    <!-- JSP PORTLETS -->
+    <!-- JSP Portlets -->
+
+    <portlet>
+        <portlet-name>publishing-queue</portlet-name>
+        <display-name>Content Publishing Tools</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/contentlet/publishing/view_publish_tool.jsp</value>
+        </init-param>
+        <init-param>
+            <name>useWEBINFDIR</name>
+            <value>false</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>roles</portlet-name>
+        <display-name>Roles Admin</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/roleadmin/view_roles.jsp</value>
+        </init-param>
+    </portlet>
+
     <portlet>
         <portlet-name>query-tool</portlet-name>
         <display-name>Lucene Test Tool</display-name>
@@ -302,10 +246,7 @@
             <name>useWEBINFDIR</name>
             <value>true</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
     </portlet>
 
     <portlet>
@@ -316,24 +257,7 @@
             <name>view-jsp</name>
             <value>/portlet/ext/sitesearch/site_search.jsp</value>
         </init-param>
-
     </portlet>
-
-    <portlet>
-        <portlet-name>dashboard</portlet-name>
-        <display-name>Dashboard</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/dashboard/view_dashboard</value>
-        </init-param>
-
-
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
-    </portlet>
-
 
     <portlet>
         <portlet-name>workflow-schemes</portlet-name>
@@ -343,9 +267,6 @@
             <name>view-jsp</name>
             <value>/portlet/ext/workflows/schemes/workflow_main.jsp</value>
         </init-param>
-
-
-
     </portlet>
 
     <portlet>
@@ -356,9 +277,6 @@
             <name>view-jsp</name>
             <value>/portlet/ext/osgi/main.jsp</value>
         </init-param>
-
-
-
     </portlet>
 
     <portlet>
@@ -384,8 +302,6 @@
             <name>useWEBINFDIR</name>
             <value>true</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
 
     </portlet>
@@ -417,12 +333,64 @@
         </init-param>
     </portlet>
 
-
+    <!-- ESContentResource Portlets -->
 
     <portlet>
         <portlet-name>es-search</portlet-name>
         <display-name>ES Query Tool</display-name>
         <portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>
+    </portlet>
+
+    <!-- REST JSP Portlets -->
+
+    <portlet>
+        <portlet-name>embedded-dashboard</portlet-name>
+        <display-name>Embedded Analytics Dashboard</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>graphql</portlet-name>
+        <display-name>graphql</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>api_playground</portlet-name>
+        <display-name>API Playground</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>velocity_playground</portlet-name>
+        <display-name>Velocity Playground</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>dotai</portlet-name>
+        <display-name>dotAI</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+
+    <!-- Angular Portlets -->
+
+    <portlet>
+        <portlet-name>containers</portlet-name>
+        <display-name>Container Manager</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+
+    </portlet>
+    <portlet>
+        <portlet-name>templates</portlet-name>
+        <display-name>Templates Manager</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>pages</portlet-name>
+        <display-name>Pages</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
     <portlet>
         <portlet-name>rules</portlet-name>
@@ -449,12 +417,6 @@
     </portlet>
 
     <portlet>
-        <portlet-name>embedded-dashboard</portlet-name>
-        <display-name>Embedded Analytics Dashboard</display-name>
-        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
-    </portlet>
-
-    <portlet>
         <portlet-name>forms</portlet-name>
         <display-name>Forms</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
@@ -464,33 +426,6 @@
         <portlet-name>starter</portlet-name>
         <display-name>Getting Started</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-    </portlet>
-
-
-    <portlet>
-        <portlet-name>graphql</portlet-name>
-        <display-name>graphql</display-name>
-        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
-    </portlet>
-
-
-
-    <portlet>
-        <portlet-name>api_playground</portlet-name>
-        <display-name>API Playground</display-name>
-        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
-    </portlet>
-
-    <portlet>
-        <portlet-name>velocity_playground</portlet-name>
-        <display-name>Velocity Playground</display-name>
-        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
-    </portlet>
-
-    <portlet>
-        <portlet-name>dotai</portlet-name>
-        <display-name>dotAI</display-name>
-        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
 
     <portlet>
@@ -503,16 +438,20 @@
         <portlet-name>analytics-search</portlet-name>
         <display-name>Analytics Search</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/analytics/search</portlet-url>
     </portlet>
 
     <portlet>
         <portlet-name>analytics-dashboard</portlet-name>
         <display-name>Analytics Dashboard</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/analytics/dashboard</portlet-url>
     </portlet>
+
     <portlet>
         <portlet-name>content-drive</portlet-name>
         <display-name>Content Drive</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
+
 </portlet-app>

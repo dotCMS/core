@@ -17,7 +17,9 @@ import { switchMap } from 'rxjs/operators';
 import { DotSiteService } from '@dotcms/data-access';
 import { SiteEntity } from '@dotcms/dotcms-models';
 
-import { withSystem } from './with-system.feature';
+import { withBreadcrumbs } from './features/breadcrumb/breadcrumb.feature';
+import { withMenu } from './features/menu/with-menu.feature';
+import { withSystem } from './features/with-system/with-system.feature';
 
 /**
  * Represents the global application state.
@@ -57,6 +59,7 @@ const initialState: GlobalState = {
  * - Provides currentSiteId computed for any services that need site context
  * - Stores complete site entity from API endpoint
  * - Includes withSystem feature for system configuration management
+ * - Includes withMenu feature for menu state management
  *
  * Example usage:
  * ```typescript
@@ -80,6 +83,8 @@ export const GlobalStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withSystem(),
+    withBreadcrumbs(),
+    withMenu(),
     withMethods((store, siteService = inject(DotSiteService)) => {
         return {
             /**
@@ -163,6 +168,26 @@ export const GlobalStore = signalStore(
             // Load current site on store initialization
             // System configuration is automatically loaded by withSystem feature
             store.loadCurrentSite();
+
+            // TODO: Remove fake breadcrumb data once real implementation is complete
+            // Setting fake breadcrumbs for testing purposes
+            store.setBreadcrumbs([
+                {
+                    label: 'Content',
+                    target: '_self',
+                    url: '#/content'
+                },
+                {
+                    label: 'Blog Posts',
+                    target: '_self',
+                    url: '#/content/blog-posts'
+                },
+                {
+                    label: 'Edit Post',
+                    target: '_self',
+                    url: ''
+                }
+            ]);
         }
     })
 );
