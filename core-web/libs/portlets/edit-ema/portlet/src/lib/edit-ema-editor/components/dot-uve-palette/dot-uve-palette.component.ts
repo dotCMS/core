@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
 
@@ -18,6 +18,7 @@ import { DotUVEPaletteListType } from '../../../shared/models';
 export class DotUvePaletteComponent {
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
+    $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
 
     readonly TYPES_ARRAY: Array<DotUVEPaletteListType> = [
         DotCMSBaseTypesContentTypes.CONTENT,
