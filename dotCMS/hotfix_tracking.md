@@ -75,4 +75,5 @@ This maintenance release includes the following code fixes:
 69. https://github.com/dotCMS/core/issues/32860 : dotcms.log file stops receiving log data #32860
 70. https://github.com/dotCMS/core/issues/32224 : UVE Query Parameters Are Being Filtered Breaking Widget Logic #32224
 71. https://github.com/dotCMS/core/issues/33473 : [DEFECT] Putting host in 404 cache when it actually exists and it's active #33473
+72. https://github.com/dotCMS/core/issues/33302 : [DEFECT] Cache Provider Init problem #33302
 

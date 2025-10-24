@@ -1,7 +1,10 @@
 package com.dotcms.cdi;
 
 import com.dotmarketing.util.Logger;
+
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.enterprise.inject.spi.CDI;
 
 /**
@@ -41,6 +44,23 @@ public class CDIUtils {
             return CDI.current().select(clazz).get();
         } catch (Exception e) {
             String errorMessage = String.format("Unable to find bean of class [%s]: %s", clazz, e.getMessage());
+            Logger.error(CDIUtils.class, errorMessage);
+            throw new IllegalStateException(errorMessage, e);
+        }
+    }
+
+    /**
+     * Get all beans of a given type from CDI container
+     * @param clazz the class of the beans
+     * @return a List containing all beans of the given type
+     * @param <T> the type of the beans
+     */
+    public static <T> List<T> getBeans(Class<T> clazz) {
+        try {
+            return CDI.current().select(clazz).stream()
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            String errorMessage = String.format("Unable to find beans of class [%s]: %s", clazz, e.getMessage());
             Logger.error(CDIUtils.class, errorMessage);
             throw new IllegalStateException(errorMessage, e);
         }

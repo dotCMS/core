@@ -1,9 +1,10 @@
 package com.dotmarketing.business.cache.provider.h22;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import com.dotcms.cache.CacheValue;
+import com.dotcms.cache.CacheValueImpl;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -23,7 +24,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.lang.RandomStringUtils;
+import org.awaitility.Awaitility;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -65,7 +69,33 @@ public class H22CacheTest {
             throw new DotRuntimeException(e);
         }
 	}
-	
+
+
+	@Test
+	public void test_CacheValue_TTL() throws Exception {
+
+		String group = "testCacheValueTTL";
+		String key = "testKey";
+
+		// Live in cache for max 5 seconds
+		CacheValue cacheValue = new CacheValueImpl("test my Content!!!", 5000);
+
+		cache.put(group, key, cacheValue);
+
+		Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> cache.get(group, key) != null);
+		Object val = cache.get(group, key);
+
+		assertThat("We have a CacheValue", val instanceof CacheValue);
+
+		CacheValue cacheValueFromCache = (CacheValue) val;
+
+		assertEquals("Test Cache hit", cacheValueFromCache.getValue(), cacheValue.getValue());
+
+		Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> cache.get(group, key) == null);
+		assertNull(cache.get(group, key));
+
+
+	}
 	
 	
     @Test

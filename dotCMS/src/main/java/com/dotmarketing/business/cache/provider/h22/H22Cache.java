@@ -25,6 +25,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.dotcms.cache.CacheValue;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import com.dotmarketing.business.cache.provider.CacheProvider;
@@ -53,8 +56,8 @@ public class H22Cache extends CacheProvider {
     final private LinkedBlockingQueue<Runnable> asyncTaskQueue = new LinkedBlockingQueue<>();
     final private ExecutorService executorService = new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10, TimeUnit.SECONDS, asyncTaskQueue ,namedThreadFactory);
 
-    
-	private Boolean isInitialized = false;
+
+	private AtomicBoolean isInitialized = new AtomicBoolean(false);
 
 	final static String TABLE_PREFIX = "cach_table_";
 
@@ -112,17 +115,18 @@ public class H22Cache extends CacheProvider {
 	@Override
 	public void init() throws Exception {
 
-		// init the databases
-		for (int i = 0; i < numberOfDbs; i++) {
-			getPool(i, true);
+		if (isInitialized.compareAndSet(false, true)) {
+			// init the databases
+			for (int i = 0; i < numberOfDbs; i++) {
+				getPool(i, true);
+			}
 		}
-		isInitialized = true;
 
 	}
 
 	@Override
 	public boolean isInitialized() throws Exception {
-		return isInitialized;
+		return isInitialized.get();
 	}
 
 	@Override
@@ -160,29 +164,37 @@ public class H22Cache extends CacheProvider {
             }
          });
     }
-	
-	
-	
-	
+
+
+
+
 	@Override
 	public Object get(String group, String key) {
-
+		// Don't accept new cache operations during shutdown
+		if (!isInitialized.get() || com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+			return null;
+		}
 
 		Object foundObject = null;
 		long start = System.nanoTime();
 		final Fqn fqn = new Fqn(group, key);
-		
+
 		try {
 			// Get the content from the group and for a given key;
 			foundObject = doSelect(fqn);
+
+			if (foundObject instanceof CacheValue && ((CacheValue) foundObject).isExpired()) {
+				removeAsync(fqn);
+				foundObject = null;
+			}
+
 			stats.group(fqn.group).hitOrMiss(foundObject);
 			stats.group(fqn.group).readTime(System.nanoTime() - start);
 		} catch (Exception e) {
 			foundObject=null;
 			handleError(e, fqn);
 		}
-		
-		
+
 
 		return foundObject;
 	}
@@ -395,7 +407,7 @@ public class H22Cache extends CacheProvider {
 
 	@Override
 	public void shutdown() {
-		isInitialized = false;
+		isInitialized.set(false);
 		// don't trash on shutdown
 		dispose(false);
 	}
@@ -429,6 +441,11 @@ public class H22Cache extends CacheProvider {
 	private final Semaphore building = new Semaphore(1, true);
 
 	private Optional<H22HikariPool> getPool(final int dbNum, final boolean startup) throws SQLException {
+
+		// Don't create new pools during shutdown
+		if (!isInitialized.get() && com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+			return Optional.empty();
+		}
 
 		H22HikariPool source = pools[dbNum];
 		if (source == null) {

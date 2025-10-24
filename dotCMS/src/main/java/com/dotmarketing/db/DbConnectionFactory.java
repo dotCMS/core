@@ -703,4 +703,30 @@ public class DbConnectionFactory {
         return isConstraintViolationException;
     } // isConstraintViolationException.
 
+
+    /**
+     * Shuts down the default DataSource to stop connection pool threads and prevent memory leaks.
+     * This should be called during application shutdown to properly close the HikariCP connection pool.
+     */
+    public static void shutdownDataSource() {
+        if (defaultDataSource != null) {
+            try {
+                // Check if it's a HikariDataSource and close it properly
+                if (defaultDataSource instanceof com.zaxxer.hikari.HikariDataSource) {
+                    Logger.info(DbConnectionFactory.class, "Shutting down HikariCP DataSource");
+                    ((com.zaxxer.hikari.HikariDataSource) defaultDataSource).close();
+                    Logger.info(DbConnectionFactory.class, "HikariCP DataSource shutdown completed");
+                } else {
+                    Logger.debug(DbConnectionFactory.class, "DataSource is not HikariDataSource, no shutdown needed");
+                }
+            } catch (Exception e) {
+                Logger.warn(DbConnectionFactory.class, "Error shutting down DataSource: " + e.getMessage(), e);
+            } finally {
+                defaultDataSource = null;
+            }
+        } else {
+            Logger.debug(DbConnectionFactory.class, "No DataSource to shutdown");
+        }
+    }
+
 }

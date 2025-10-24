@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Jonathan Gamba
@@ -81,6 +82,7 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
     private static final Cache<String, List<CacheProvider>> configuredChainsPerRegion = Caffeine.newBuilder().maximumSize(10000).build();
     private final List<String> noLicenseProviders = List.of(CaffineCache.class.getCanonicalName());
 
+    private Map<String, CacheProvider> singletonProviders = new ConcurrentHashMap<>();
 
     public CacheProviderAPIImpl () {
 
@@ -90,7 +92,11 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
     private Optional<CacheProvider> getInstanceFor ( String providerClassName ) {
         return Try.of(() -> {
             Class<CacheProvider> providerClass = (Class<CacheProvider>) Class.forName(providerClassName.trim());
-            return providerClass.newInstance();
+            CacheProvider provider = providerClass.newInstance();
+            if (provider.isSingleton()) {
+                return singletonProviders.computeIfAbsent(providerClassName, k -> provider);
+            }
+            return provider;
         }).onFailure(e -> Logger.error(this, "Error creating CacheProvider [" + providerClassName + "].", e)).toJavaOptional();
     }
 
@@ -423,6 +429,7 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
     private void shutdownProviders(Collection<CacheProvider> providers) {
         for ( CacheProvider provider : providers ) {
             Try.run(provider::shutdown).onFailure(e -> Logger.error(this, "Error shutting down CacheProvider [" + provider.getName() + "].", e));
+            singletonProviders.remove(provider.getClass().getCanonicalName());
         }
     }
 
