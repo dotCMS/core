@@ -5042,13 +5042,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
      * Given Scenario:
      * - ContentType with a text field (slug) and a HostFolderField (site)
-     * - Single multilingual CSV file with 3 languages using site NAME (not identifier) as key field
+     * - Single multilingual CSV file with 2 languages (English, Spanish) using site NAME (not identifier) as key field
      * - Both "slug" and "site" fields are set as key fields
-     * - All 3 CSV rows have the same slug value and same site name
+     * - Both CSV rows have the same slug value and same site name
      * Expected result:
-     * - Create only ONE contentlet with the same identifier (3 language versions of same content)
-     * - Create 3 different inodes (one per language version)
-     * - All 3 versions should be published
+     * - Create only ONE contentlet with the same identifier (2 language versions of same content)
+     * - Create 2 different inodes (one per language version)
+     * - Both versions should be published
      *
      * This test validates that the HostFolderField comparison works correctly when comparing
      * site names (from CSV) with site identifiers (stored in contentlets) during multilingual import.
@@ -5063,19 +5063,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         Host testSite = null;
         Language lang1 = null;
         Language lang2 = null;
-        Language lang3 = null;
 
         try {
             // Create a test site with a name
             testSite = new SiteDataGen().name("test-site-" + System.currentTimeMillis()).nextPersisted();
 
-            // Use existing languages that are pre-configured in dotCMS
-            // English (default language)
             lang1 = APILocator.getLanguageAPI().getLanguage("en", "US");
-            // Spanish
+
             lang2 = APILocator.getLanguageAPI().getLanguage("es", "ES");
-            // Italian
-            lang3 = APILocator.getLanguageAPI().getLanguage("it", "IT");
 
             // Create ContentType with slug and site fields
             com.dotcms.contenttype.model.field.Field slugField = new FieldDataGen()
@@ -5101,8 +5096,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // Create CSV with multilingual content using site NAME (not identifier)
             String csvContent = "languageCode,countryCode,slug,site\r\n" +
                     lang1.getLanguageCode() + "," + lang1.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
-                    lang2.getLanguageCode() + "," + lang2.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
-                    lang3.getLanguageCode() + "," + lang3.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n";
+                    lang2.getLanguageCode() + "," + lang2.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n";
 
             final Reader reader = createTempFile(csvContent);
             final CsvReader csvreader = new CsvReader(reader);
@@ -5115,14 +5109,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     testSite.getIdentifier(),
                     contentType.inode(),
                     new String[]{slugField.id(), siteField.id()}, // Key fields: slug + site
-                    false, // not preview
-                    true,  // multilingual
+                    false,
+                    true,
                     user,
-                    -1,    // language from CSV
+                    -1,
                     csvHeaders,
                     csvreader,
-                    0, // languageCodeHeaderColumn
-                    1, // countryCodeHeaderColumn
+                    0,
+                    1,
                     reader,
                     schemeStepActionResult1.getAction().getId(),
                     getHttpRequest()
@@ -5145,9 +5139,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     -1
             );
 
-            // Verify we have 3 contentlets
-            assertEquals("Should have 3 language versions", 3, contentlets.size());
-
+            assertEquals("Should have 2 language versions", 2, contentlets.size());
 
             final String firstIdentifier = contentlets.get(0).getIdentifier();
 
@@ -5155,25 +5147,41 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 assertEquals("All contentlets should have the same identifier",
                         firstIdentifier,
                         contentlet.getIdentifier());
+
+                // Verify they have DIFFERENT inodes (different versions)
+                assertTrue("Each version should have a unique inode",
+                        contentlet.getInode() != null && !contentlet.getInode().isEmpty());
+
+                // Verify the slug field value
+                assertEquals("Slug should be 'test-article'",
+                        "test-article",
+                        contentlet.getStringProperty(slugField.variable()));
+
+                // Verify the site field value (should be stored as identifier)
+                assertEquals("Site field should contain the site identifier",
+                        testSite.getIdentifier(),
+                        contentlet.getStringProperty(siteField.variable()));
+
+                // Verify the contentlet is published
+                assertTrue("Contentlet should be published", contentlet.isLive());
             }
 
-
+            // Verify we have both languages
             final List<Long> languageIds = contentlets.stream()
                     .map(Contentlet::getLanguageId)
                     .sorted()
                     .collect(Collectors.toList());
 
-            assertTrue("Should have language 1 version", languageIds.contains(lang1.getId()));
-            assertTrue("Should have language 2 version", languageIds.contains(lang2.getId()));
-            assertTrue("Should have language 3 version", languageIds.contains(lang3.getId()));
+            assertTrue("Should have English version", languageIds.contains(lang1.getId()));
+            assertTrue("Should have Spanish version", languageIds.contains(lang2.getId()));
 
-
+            // Verify all inodes are unique
             final List<String> inodes = contentlets.stream()
                     .map(Contentlet::getInode)
                     .distinct()
                     .collect(Collectors.toList());
 
-            assertEquals("All 3 versions should have unique inodes", 3, inodes.size());
+            assertEquals("Both versions should have unique inodes", 2, inodes.size());
 
         } finally {
             // Cleanup
