@@ -1,37 +1,45 @@
 import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
-import { Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { signal } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
+
+import { GlobalStore } from '@dotcms/store';
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
 import { DotCrumbtrailComponent } from './dot-crumbtrail.component';
-import { DotCrumb, DotCrumbtrailService } from './service/dot-crumbtrail.service';
 
-@Injectable()
-class MockDotCrumbtrailService {
-    private crumbTrail: Subject<DotCrumb[]> = new Subject();
+class MockGlobalStore {
+    breadcrumbsSignal = signal<MenuItem[]>([]);
+    breadcrumbs = this.breadcrumbsSignal.asReadonly();
 
-    get crumbTrail$(): Observable<DotCrumb[]> {
-        return this.crumbTrail.asObservable();
-    }
+    selectCollapsedBreadcrumbsSignal = signal<MenuItem[]>([]);
+    selectCollapsedBreadcrumbs = this.selectCollapsedBreadcrumbsSignal.asReadonly();
 
-    trigger(crumbs: DotCrumb[]): void {
-        this.crumbTrail.next(crumbs);
+    selectLastBreadcrumbLabelSignal = signal<string | null>(null);
+    selectLastBreadcrumbLabel = this.selectLastBreadcrumbLabelSignal.asReadonly();
+
+    setBreadcrumbs(crumbs: MenuItem[]): void {
+        this.breadcrumbsSignal.set(crumbs);
+        // Update computed signals
+        this.selectCollapsedBreadcrumbsSignal.set(crumbs.length > 1 ? crumbs.slice(0, -1) : []);
+        this.selectLastBreadcrumbLabelSignal.set(
+            crumbs.length ? (crumbs[crumbs.length - 1]?.label ?? null) : null
+        );
     }
 }
 
 describe('DotCrumbtrailComponent', () => {
     let spectator: Spectator<DotCrumbtrailComponent>;
-    const mockService = new MockDotCrumbtrailService();
+    const mockStore = new MockGlobalStore();
 
     const createComponent = createComponentFactory({
         component: DotCrumbtrailComponent,
         imports: [DotCollapseBreadcrumbComponent],
         providers: [
             {
-                provide: DotCrumbtrailService,
-                useValue: mockService
+                provide: GlobalStore,
+                useValue: mockStore
             }
         ],
         detectChanges: false
@@ -60,7 +68,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Last', url: '/last' }
         ];
 
-        mockService.trigger(crumbs);
+        mockStore.setBreadcrumbs(crumbs);
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
@@ -77,7 +85,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Last', url: '/last' }
         ];
 
-        mockService.trigger(crumbs);
+        mockStore.setBreadcrumbs(crumbs);
         spectator.detectChanges();
 
         const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
@@ -87,7 +95,7 @@ describe('DotCrumbtrailComponent', () => {
     it('should display empty collapsed breadcrumbs when only one item is provided', () => {
         const crumbs = [{ label: 'Single Item', url: '/single' }];
 
-        mockService.trigger(crumbs);
+        mockStore.setBreadcrumbs(crumbs);
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
@@ -97,7 +105,7 @@ describe('DotCrumbtrailComponent', () => {
     it('should display single item as last breadcrumb when only one item is provided', () => {
         const crumbs = [{ label: 'Single Item', url: '/single' }];
 
-        mockService.trigger(crumbs);
+        mockStore.setBreadcrumbs(crumbs);
         spectator.detectChanges();
 
         const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
@@ -105,9 +113,9 @@ describe('DotCrumbtrailComponent', () => {
     });
 
     it('should not display breadcrumb title when no items are provided', () => {
-        const crumbs: DotCrumb[] = [];
+        const crumbs: MenuItem[] = [];
 
-        mockService.trigger(crumbs);
+        mockStore.setBreadcrumbs(crumbs);
         spectator.detectChanges();
 
         const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
@@ -115,9 +123,9 @@ describe('DotCrumbtrailComponent', () => {
     });
 
     it('should display empty collapsed breadcrumbs when no items are provided', () => {
-        const crumbs: DotCrumb[] = [];
+        const crumbs: MenuItem[] = [];
 
-        mockService.trigger(crumbs);
+        mockStore.setBreadcrumbs(crumbs);
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
@@ -131,7 +139,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Last', url: '/last' }
         ];
 
-        mockService.trigger(crumbs);
+        mockStore.setBreadcrumbs(crumbs);
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
@@ -150,7 +158,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Second', url: '/second' }
         ];
 
-        mockService.trigger(initialCrumbs);
+        mockStore.setBreadcrumbs(initialCrumbs);
         spectator.detectChanges();
 
         let breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
@@ -162,7 +170,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Page', url: '/page' }
         ];
 
-        mockService.trigger(updatedCrumbs);
+        mockStore.setBreadcrumbs(updatedCrumbs);
         spectator.detectChanges();
 
         breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
@@ -182,7 +190,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Last', url: '/last' }
         ];
 
-        mockService.trigger(crumbs);
+        mockStore.setBreadcrumbs(crumbs);
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
@@ -202,7 +210,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Last', url: '/last' }
         ];
 
-        mockService.trigger(crumbs);
+        mockStore.setBreadcrumbs(crumbs);
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
