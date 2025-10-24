@@ -42,6 +42,16 @@
         @for (i of LOADING_ROWS_MOCK; track i) {
             <p-skeleton width="100%" [height]="$skeletonHeight()"></p-skeleton>
         }
+    } @else if ($status() === DotPaletteListStatus.EMPTY) {
+        <div class="dot-uve-palette-list__empty">
+            <div class="dot-uve-palette-list__empty-icon">
+                <i class="pi pi-plus"></i>
+            </div>
+            <p class="dot-uve-palette-list__empty-text">
+                <span class="dot-uve-palette-list__empty-link">Add</span>
+                new content to this list for easy access.
+            </p>
+        </div>
     } @else {
         @switch ($currentView()) {
             @case (DotUVEPaletteListView.CONTENTLETS) {
@@ -62,7 +72,7 @@
     }
 </div>
 
-@if ($pagination()) {
+@if ($pagination() && $status() !== DotPaletteListStatus.EMPTY) {
     <p-paginator
         (onPageChange)="onPageChange($event)"
         [first]="$start()"

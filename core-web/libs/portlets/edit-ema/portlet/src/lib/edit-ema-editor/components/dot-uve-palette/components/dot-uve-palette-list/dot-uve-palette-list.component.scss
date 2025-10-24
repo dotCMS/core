@@ -48,6 +48,54 @@ $icon-size: 0.875rem;
             width: 100%;
             min-height: 0;
         }
+
+        // Empty state styling
+
+        &:has(.dot-uve-palette-list__empty) {
+            grid-auto-rows: unset;
+            grid-template-rows: 1fr;
+        }
+
+        .dot-uve-palette-list__empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            grid-column: 1 / -1;
+            grid-row: 1 / -1;
+            padding: 2rem;
+            text-align: center;
+            min-height: 100%;
+            width: 100%;
+
+            .dot-uve-palette-list__empty-icon {
+                margin-bottom: 1rem;
+
+                i {
+                    font-size: 3rem;
+                    color: $color-palette-gray-600;
+                    font-weight: 400;
+                }
+            }
+
+            .dot-uve-palette-list__empty-text {
+                font-size: 1rem;
+                color: $color-palette-gray-700;
+                margin: 0;
+                line-height: 1.5;
+
+                .dot-uve-palette-list__empty-link {
+                    color: $color-palette-primary-600;
+                    text-decoration: underline;
+                    cursor: pointer;
+                    font-weight: 500;
+
+                    &:hover {
+                        color: $color-palette-primary-700;
+                    }
+                }
+            }
+        }
     }
 
     p-paginator {
