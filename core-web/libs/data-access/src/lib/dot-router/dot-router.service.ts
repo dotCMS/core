@@ -1,6 +1,7 @@
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, merge, Observable, Subject } from 'rxjs';
 
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, effect, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     ActivatedRoute,
     Event,
@@ -10,16 +11,21 @@ import {
     Router
 } from '@angular/router';
 
-import { filter } from 'rxjs/operators';
+import { MenuItem } from 'primeng/api';
+
+import { filter, map, tap } from 'rxjs/operators';
 
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotRouterService {
     private router = inject(Router);
     private route = inject(ActivatedRoute);
-    readonly $history = signal<string[]>([]);
+    readonly #globalStore = inject(GlobalStore);
 
     portletReload$ = new Subject();
     private _storedRedirectUrl = '';
@@ -28,11 +34,10 @@ export class DotRouterService {
     private _routeCanBeDeactivated = new BehaviorSubject(true);
     private _pageLeaveRequest = new Subject<void>();
 
+    newBreadcrumb$ = new Subject<MenuItem>();
+
     constructor() {
         this._routeHistory.url = this.router.url;
-        if (this.router.url !== '/') {
-            this.$history.set([this.router.url]);
-        }
         this.router.events
             .pipe(filter((event: Event) => event instanceof NavigationEnd))
             .subscribe((event: NavigationEnd) => {
@@ -40,11 +45,11 @@ export class DotRouterService {
                     url: event.url,
                     previousUrl: this._routeHistory.url
                 };
-                this.$history.update((currentHistory) => [
-                    ...currentHistory,
-                    event.urlAfterRedirects
-                ]);
             });
+        this.buildBreadcrumbs();
+        effect(() => {
+            sessionStorage.setItem('breadcrumbs', JSON.stringify(this.#globalStore.breadcrumbs()));
+        });
     }
 
     get currentSavedURL(): string {
@@ -452,5 +457,48 @@ export class DotRouterService {
         }
 
         return navExtras;
+    }
+
+    private buildBreadcrumbs() {
+        this.router.events
+            .pipe(
+                filter((event: Event) => event instanceof NavigationEnd),
+                map((event: NavigationEnd) => event.urlAfterRedirects),
+                takeUntilDestroyed()
+            )
+            .subscribe((url) => {
+                const menu = this.#globalStore.flattenMenuItems();
+                const newUrl = `/dotAdmin/#${url}`;
+                const breadcrumbs = this.#globalStore.breadcrumbs();
+                const existingIndex = breadcrumbs.findIndex((crumb) => crumb.url === newUrl);
+
+                if (existingIndex > -1) {
+                    this.#globalStore.truncateBreadcrumbs(existingIndex);
+                } else {
+                    const item = menu.find((item) => item.menuLink === url);
+                    if (item) {
+                        this.#globalStore.setBreadcrumbs([
+                            {
+                                label: item.labelParent,
+                                target: '_self'
+                            },
+                            {
+                                label: item.label,
+                                target: '_self',
+                                url: newUrl
+                            }
+                        ]);
+                    } else {
+                        if (url.includes('/content?filter=')) {
+                            const filter = url.split('/content?filter=')[1];
+                            this.#globalStore.addNewBreadcrumb({
+                                label: filter,
+                                target: '_self',
+                                url: newUrl
+                            });
+                        }
+                    }
+                }
+            });
     }
 }
