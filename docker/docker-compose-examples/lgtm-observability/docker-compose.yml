@@ -211,6 +211,12 @@ services:
       - "4040:4040"    # Pyroscope
     environment:
       GF_PATHS_DATA: /var/lib/grafana
+
+      # ⭐ Config to allow embeddings
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_SECURITY_COOKIE_SAMESITE: "none"
+      GF_SECURITY_COOKIE_SECURE: "false"
+
       # Enable Pyroscope and all component logging for debugging
       ENABLE_LOGS_PYROSCOPE: "true"
       ENABLE_LOGS_ALL: "true"
@@ -236,6 +242,8 @@ services:
       - ./run-prometheus-custom.sh:/otel-lgtm/run-prometheus.sh:ro
       # Mount Grafana datasources configuration
       # - ./provisioning/datasources/prometheus.yml:/otel-lgtm/grafana/conf/provisioning/datasources/dotcms-datasources.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  
     networks:
       - observability-net
     restart: unless-stopped

@@ -49,6 +49,8 @@ tags:
   name: Folders
 - description: Form management and processing
   name: Forms
+- description: Endpoints for interacting with Grafana dashboards and folders
+  name: Grafana Integration
 - description: Health management and monitoring endpoints for administrative dashboards
   name: Health
 - description: Elasticsearch index management and operations
@@ -8686,6 +8688,251 @@ paths:
           description: default response
       tags:
       - Forms
+  /v1/grafana/dashboards/search:
+    get:
+      description: "Search for dashboards in Grafana based on various criteria including\
+        \ query text, type, starred status, folders, and tags."
+      operationId: searchDashboards
+      parameters:
+      - description: Search query string to filter dashboards by title
+        in: query
+        name: query
+        schema:
+          type: string
+      - description: "Dashboard type filter (e.g., 'dash-db')"
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: Filter by starred status
+        in: query
+        name: starred
+        schema:
+          type: boolean
+      - description: Comma-separated list of folder IDs
+        in: query
+        name: folderIds
+        schema:
+          type: string
+      - description: Tag to filter dashboards by
+        in: query
+        name: tag
+        schema:
+          type: string
+      - description: Maximum number of results to return
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrafanaDashboardSearchResultView"
+          description: Dashboard search completed successfully
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to access Grafana
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or Grafana connection failed
+      summary: Search Grafana dashboards
+      tags:
+      - Grafana Integration
+  /v1/grafana/dashboards/{uid}:
+    get:
+      description: Retrieve detailed information about a specific Grafana dashboard
+        using its unique identifier.
+      operationId: getDashboardByUid
+      parameters:
+      - description: Dashboard unique identifier
+        in: path
+        name: uid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrafanaDashboardDetailView"
+          description: Dashboard details retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid dashboard UID provided
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to access Grafana
+        "404":
+          content:
+            application/json: {}
+          description: Dashboard not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or Grafana connection failed
+      summary: Get dashboard details by UID
+      tags:
+      - Grafana Integration
+  /v1/grafana/folders:
+    get:
+      description: Retrieve a list of all Grafana folders with optional limit on the
+        number of results.
+      operationId: getFolders
+      parameters:
+      - description: Maximum number of folders to return
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrafanaFolderView"
+          description: Folders retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to access Grafana
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or Grafana connection failed
+      summary: Get Grafana folders
+      tags:
+      - Grafana Integration
+  /v1/grafana/folders/{folderUid}/dashboards:
+    get:
+      description: Retrieve all dashboards contained within a specific Grafana folder.
+      operationId: getDashboardsInFolder
+      parameters:
+      - description: Folder unique identifier
+        in: path
+        name: folderUid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrafanaDashboardSearchResultView"
+          description: Folder dashboards retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid folder UID provided
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to access Grafana
+        "404":
+          content:
+            application/json: {}
+          description: Folder not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or Grafana connection failed
+      summary: Get dashboards in folder
+      tags:
+      - Grafana Integration
+  /v1/grafana/folders/{uid}:
+    get:
+      description: Retrieve detailed information about a specific Grafana folder using
+        its unique identifier.
+      operationId: getFolderByUid
+      parameters:
+      - description: Folder unique identifier
+        in: path
+        name: uid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrafanaFolderSingleView"
+          description: Folder details retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid folder UID provided
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to access Grafana
+        "404":
+          content:
+            application/json: {}
+          description: Folder not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or Grafana connection failed
+      summary: Get folder details by UID
+      tags:
+      - Grafana Integration
+  /v1/grafana/test-connection:
+    get:
+      description: Test connectivity to the configured Grafana instance to verify
+        integration setup.
+      operationId: testConnection
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Connectivity test completed
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to test Grafana connectivity
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during connectivity test
+      summary: Test Grafana connectivity
+      tags:
+      - Grafana Integration
   /v1/health:
     get:
       description: Returns comprehensive health status including all registered health
@@ -19867,6 +20114,94 @@ components:
           type: string
         portletName:
           type: string
+    DashboardDetail:
+      type: object
+      properties:
+        dashboard:
+          type: object
+          additionalProperties:
+            type: object
+        meta:
+          $ref: "#/components/schemas/DashboardMeta"
+    DashboardMeta:
+      type: object
+      properties:
+        canAdmin:
+          type: boolean
+        canEdit:
+          type: boolean
+        canSave:
+          type: boolean
+        canStar:
+          type: boolean
+        created:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        expires:
+          type: integer
+          format: int64
+        folderId:
+          type: string
+        folderTitle:
+          type: string
+        folderUid:
+          type: string
+        folderUrl:
+          type: string
+        hasAcl:
+          type: boolean
+        isFolder:
+          type: boolean
+        provisioned:
+          type: boolean
+        slug:
+          type: string
+        type:
+          type: string
+        updated:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+        url:
+          type: string
+        version:
+          type: integer
+          format: int32
+    DashboardSearchResult:
+      type: object
+      properties:
+        folderId:
+          type: string
+        folderTitle:
+          type: string
+        folderUid:
+          type: string
+        folderUrl:
+          type: string
+        id:
+          type: integer
+          format: int64
+        isStarred:
+          type: boolean
+        slug:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        title:
+          type: string
+        type:
+          type: string
+        uid:
+          type: string
+        uri:
+          type: string
+        url:
+          type: string
     DateField:
       type: object
       allOf:
@@ -21498,6 +21833,133 @@ components:
       properties:
         primary:
           $ref: "#/components/schemas/Goal"
+    GrafanaDashboardDetailView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DashboardDetail"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    GrafanaDashboardSearchResultView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardSearchResult"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    GrafanaFolder:
+      type: object
+      properties:
+        canAdmin:
+          type: boolean
+        canEdit:
+          type: boolean
+        canSave:
+          type: boolean
+        created:
+          type: string
+        createdBy:
+          type: string
+        hasAcl:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        uid:
+          type: string
+        updated:
+          type: string
+        updatedBy:
+          type: string
+        url:
+          type: string
+        version:
+          type: integer
+          format: int32
+    GrafanaFolderSingleView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/GrafanaFolder"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    GrafanaFolderView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/GrafanaFolder"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     HiddenField:
       type: object
       allOf:

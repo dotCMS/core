@@ -66,6 +66,8 @@ import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPIImpl;
 import com.dotcms.graphql.business.GraphqlAPI;
 import com.dotcms.graphql.business.GraphqlAPIImpl;
+import com.dotcms.rest.api.v1.grafana.GrafanaAPI;
+import com.dotcms.rest.api.v1.grafana.GrafanaAPIImpl;
 import com.dotcms.health.api.HealthService;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.keyvalue.business.KeyValueAPI;
@@ -320,6 +322,15 @@ public class APILocator extends Locator<APIIndex> {
 
 	public static CustomAttributeAPI getAnalyticsCustomAttribute() {
 		return (CustomAttributeAPI) getInstance(APIIndex.ANALYTICS_CUSTOM_ATTRIBUTE_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link GrafanaAPI} class.
+	 *
+	 * @return The {@link GrafanaAPI} class.
+	 */
+	public static GrafanaAPI getGrafanaAPI() {
+		return (GrafanaAPI) getInstance(APIIndex.GRAFANA_API);
 	}
 
     @VisibleForTesting
@@ -1395,7 +1406,8 @@ enum APIIndex
 	CONTENT_ANALYTICS_API,
 	JOB_QUEUE_MANAGER_API,
    AI_VISION_API,
-	ANALYTICS_CUSTOM_ATTRIBUTE_API;
+	ANALYTICS_CUSTOM_ATTRIBUTE_API,
+	GRAFANA_API;
 
 	Object create() {
 		switch(this) {
@@ -1493,6 +1505,7 @@ enum APIIndex
          case AI_VISION_API:
             return new OpenAIVisionAPIImpl();
 			case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
+			case GRAFANA_API: return new GrafanaAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

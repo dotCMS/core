@@ -1,2 +1,289 @@
-<p>dot-hackathon-test works!</p>
-<iframe [src]="iFrameUrl" width="100%" height="500px"></iframe>
+<div class="grafana-integration">
+    <h2>Grafana Dashboard Integration</h2>
+
+    <!-- Connection Status -->
+    <div class="connection-status">
+        <div class="section-header">
+            <h3>Connection Status</h3>
+            <button
+                type="button"
+                class="toggle-button"
+                (click)="toggleConnectionStatus()"
+                [attr.aria-expanded]="!isConnectionStatusCollapsed"
+                [attr.aria-label]="'Toggle connection status section'">
+                <i class="pi" [class.pi-chevron-down]="isConnectionStatusCollapsed" [class.pi-chevron-up]="!isConnectionStatusCollapsed"></i>
+            </button>
+        </div>
+
+        <!-- Collapsible Content -->
+        @if (!isConnectionStatusCollapsed) {
+            <div class="status-indicator">
+            @if (connectionStatus === 'loading') {
+                <i class="pi pi-spinner pi-spin"></i>
+                <span>Testing connection...</span>
+            } @else if (connectionStatus === 'connected') {
+                <i class="pi pi-check-circle" style="color: green;"></i>
+                <span style="color: green;">Connected to Grafana</span>
+            } @else if (connectionStatus === 'disconnected') {
+                <i class="pi pi-times-circle" style="color: red;"></i>
+                <span style="color: red;">Not connected to Grafana</span>
+            }
+        </div>
+            <button
+                type="button"
+                class="p-button p-button-sm p-button-outlined"
+                (click)="testConnection()"
+                [disabled]="connectionStatus === 'loading'">
+                Test Connection
+            </button>
+        }
+    </div>
+
+    @if (connectionStatus === 'connected') {
+        <!-- Dashboard Selection -->
+        <div class="dashboard-selection">
+            <div class="section-header">
+                <h3>Select Dashboard</h3>
+                <button
+                    type="button"
+                    class="toggle-button"
+                    (click)="toggleDashboardSelection()"
+                    [attr.aria-expanded]="!isDashboardSelectionCollapsed"
+                    [attr.aria-label]="'Toggle dashboard selection section'">
+                    <i class="pi" [class.pi-chevron-down]="isDashboardSelectionCollapsed" [class.pi-chevron-up]="!isDashboardSelectionCollapsed"></i>
+                </button>
+            </div>
+
+            <!-- Collapsible Content -->
+            @if (!isDashboardSelectionCollapsed) {
+                <!-- Search Controls -->
+            <div class="search-controls">
+                <div class="p-field">
+                    <label for="search-query">Search Dashboards:</label>
+                    <input
+                        id="search-query"
+                        type="text"
+                        class="p-inputtext"
+                        [(ngModel)]="searchQuery"
+                        placeholder="Enter dashboard name..."
+                        (input)="onSearchChange()">
+                </div>
+
+                <div class="p-field">
+                    <label for="folder-select">Filter by Folder:</label>
+                    <select
+                        id="folder-select"
+                        class="p-dropdown"
+                        [(ngModel)]="selectedFolderId"
+                        (change)="onFolderChange()">
+                        <option value="">All Folders</option>
+                        @for (folder of folders; track folder.uid) {
+                            <option [value]="folder.uid">{{ folder.title }}</option>
+                        }
+                    </select>
+                </div>
+
+                <button
+                    type="button"
+                    class="p-button p-button-sm"
+                    (click)="searchDashboards()"
+                    [disabled]="searchLoading">
+                    @if (searchLoading) {
+                        <i class="pi pi-spinner pi-spin"></i>
+                    }
+                    Search
+                </button>
+            </div>
+
+            <!-- Dashboard List -->
+            @if (searchLoading) {
+                <div class="loading-message">
+                    <i class="pi pi-spinner pi-spin"></i>
+                    <span>Loading dashboards...</span>
+                </div>
+            } @else if (dashboards.length > 0) {
+                <div class="dashboard-list">
+                    <h4>Available Dashboards ({{ dashboards.length }})</h4>
+                    <div class="dashboard-grid">
+                        @for (dashboard of dashboards; track dashboard.uid) {
+                            <button
+                                type="button"
+                                class="dashboard-card"
+                                [class.selected]="selectedDashboard?.uid === dashboard.uid"
+                                (click)="selectDashboard(dashboard)"
+                                [attr.aria-pressed]="selectedDashboard?.uid === dashboard.uid"
+                                [attr.aria-label]="'Select dashboard: ' + dashboard.title">
+                                <div class="dashboard-info">
+                                    <h5>{{ dashboard.title }}</h5>
+                                    @if (dashboard.folderTitle) {
+                                        <span class="folder-info">📁 {{ dashboard.folderTitle }}</span>
+                                    }
+                                    @if (dashboard.tags?.length) {
+                                        <div class="tags">
+                                            @for (tag of dashboard.tags; track tag) {
+                                                <span class="tag">{{ tag }}</span>
+                                            }
+                                        </div>
+                                    }
+                                    @if (dashboard.isStarred) {
+                                        <i class="pi pi-star-fill" style="color: gold;" title="Starred"></i>
+                                    }
+                                </div>
+                            </button>
+                        }
+                    </div>
+                </div>
+            } @else if (!searchLoading && searchPerformed) {
+                <div class="no-results">
+                    <p>No dashboards found. Try adjusting your search criteria.</p>
+                </div>
+            }
+            }
+        </div>
+
+        <!-- Dashboard Options -->
+        @if (selectedDashboard) {
+            <div class="dashboard-options">
+                <div class="section-header">
+                    <h3>Dashboard Options</h3>
+                    <button
+                        type="button"
+                        class="toggle-button"
+                        (click)="toggleDashboardOptions()"
+                        [attr.aria-expanded]="!isDashboardOptionsCollapsed"
+                        [attr.aria-label]="'Toggle dashboard options section'">
+                        <i class="pi" [class.pi-chevron-down]="isDashboardOptionsCollapsed" [class.pi-chevron-up]="!isDashboardOptionsCollapsed"></i>
+                    </button>
+                </div>
+
+                <!-- Collapsible Content -->
+                @if (!isDashboardOptionsCollapsed) {
+                    <div class="options-grid">
+                    <div class="p-field">
+                        <label for="dashboard-uid">Dashboard UID:</label>
+                        <input
+                            id="dashboard-uid"
+                            type="text"
+                            class="p-inputtext"
+                            [value]="dashboardOptions.dashboardUid || ''"
+                            readonly
+                            placeholder="No dashboard selected">
+                    </div>
+
+                    <div class="p-field">
+                        <label for="theme-select">Theme:</label>
+                        <select
+                            id="theme-select"
+                            class="p-dropdown"
+                            [(ngModel)]="dashboardOptions.theme">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
+
+                    <div class="p-field-checkbox">
+                        <input
+                            type="checkbox"
+                            id="kiosk-mode"
+                            class="p-checkbox"
+                            [(ngModel)]="dashboardOptions.kiosk">
+                        <label for="kiosk-mode">Kiosk Mode (Hide Navigation)</label>
+                    </div>
+
+                    <div class="p-field-checkbox">
+                        <input
+                            type="checkbox"
+                            id="autofit-panels"
+                            class="p-checkbox"
+                            [(ngModel)]="dashboardOptions.autofitpanels">
+                        <label for="autofit-panels">Auto-fit Panels</label>
+                    </div>
+
+                    <div class="p-field">
+                        <label for="refresh-interval">Refresh Interval:</label>
+                        <select
+                            id="refresh-interval"
+                            class="p-dropdown"
+                            [(ngModel)]="dashboardOptions.refresh">
+                            <option value="">No Auto Refresh</option>
+                            <option value="5s">5 seconds</option>
+                            <option value="10s">10 seconds</option>
+                            <option value="30s">30 seconds</option>
+                            <option value="1m">1 minute</option>
+                            <option value="5m">5 minutes</option>
+                            <option value="15m">15 minutes</option>
+                            <option value="30m">30 minutes</option>
+                        </select>
+                    </div>
+                </div>
+
+                    <button
+                        type="button"
+                        class="p-button p-button-primary"
+                        (click)="loadDashboard()">
+                        Load Dashboard
+                    </button>
+                }
+            </div>
+        }
+
+        <!-- Dashboard Display -->
+        @if (iFrameUrl && selectedDashboard) {
+            <div class="dashboard-display">
+                <div class="dashboard-header">
+                    <h3>{{ selectedDashboard.title }}</h3>
+                    <div class="dashboard-actions">
+                        <button
+                            type="button"
+                            class="p-button p-button-sm p-button-outlined"
+                            (click)="refreshDashboard()">
+                            <i class="pi pi-refresh"></i>
+                            Refresh
+                        </button>
+                        <button
+                            type="button"
+                            class="p-button p-button-sm p-button-outlined"
+                            (click)="fullscreenDashboard()"
+                            title="Open in new tab">
+                            <i class="pi pi-external-link"></i>
+                            Fullscreen
+                        </button>
+                    </div>
+                </div>
+
+                <div class="iframe-container">
+                    <iframe
+                        [src]="iFrameUrl"
+                        [title]="'Grafana Dashboard: ' + selectedDashboard.title"
+                        allowfullscreen
+                        (load)="onIframeLoad()"
+                        (error)="onIframeError()">
+                    </iframe>
+
+                    @if (iframeLoading) {
+                        <div class="iframe-loading">
+                            <i class="pi pi-spinner pi-spin"></i>
+                            <span>Loading dashboard...</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    } @else if (connectionStatus === 'disconnected') {
+        <div class="connection-help">
+            <h3>Grafana Connection Required</h3>
+            <p>To use this feature, please ensure:</p>
+            <ul>
+                <li>Grafana is running and accessible</li>
+                <li>The Grafana API configuration is properly set in dotCMS</li>
+                <li>Your user has the necessary permissions</li>
+            </ul>
+            <p>Check the dotCMS configuration for:</p>
+            <ul>
+                <li><code>grafana.api.url</code> - Grafana server URL</li>
+                <li><code>grafana.api.token</code> - Valid API token</li>
+                <li><code>grafana.api.timeout</code> - Request timeout</li>
+            </ul>
+        </div>
+    }
+</div>
