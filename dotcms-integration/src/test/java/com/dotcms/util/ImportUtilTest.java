@@ -5061,16 +5061,18 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public void testImportMultilingualWithSiteNameAsKeyField() throws DotSecurityException, DotDataException, IOException {
         ContentType contentType = null;
         Host testSite = null;
-        Language spanish = null;
-        Language french = null;
+        Language lang1;
+        Language lang2;
+        Language lang3;
 
         try {
             // Create a test site with a name
             testSite = new SiteDataGen().name("test-site-" + System.currentTimeMillis()).nextPersisted();
 
-            
-            spanish = new LanguageDataGen().nextPersisted();
-            french = new LanguageDataGen().nextPersisted();
+            // Create 3 languages with unique codes (LanguageDataGen creates random 5-char codes)
+            lang1 = new LanguageDataGen().nextPersisted();
+            lang2 = new LanguageDataGen().nextPersisted();
+            lang3 = new LanguageDataGen().nextPersisted();
 
             // Create ContentType with slug and site fields
             com.dotcms.contenttype.model.field.Field slugField = new FieldDataGen()
@@ -5095,9 +5097,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             // Create CSV with multilingual content using site NAME (not identifier)
             String csvContent = "languageCode,countryCode,slug,site\r\n" +
-                    defaultLanguage.getLanguageCode() + "," + defaultLanguage.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
-                    spanish.getLanguageCode() + "," + spanish.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
-                    french.getLanguageCode() + "," + french.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n";
+                    lang1.getLanguageCode() + "," + lang1.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
+                    lang2.getLanguageCode() + "," + lang2.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
+                    lang3.getLanguageCode() + "," + lang3.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n";
 
             final Reader reader = createTempFile(csvContent);
             final CsvReader csvreader = new CsvReader(reader);
@@ -5158,9 +5160,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .sorted()
                     .collect(Collectors.toList());
 
-            assertTrue("Should have English version", languageIds.contains(defaultLanguage.getId()));
-            assertTrue("Should have Spanish version", languageIds.contains(spanish.getId()));
-            assertTrue("Should have French version", languageIds.contains(french.getId()));
+            assertTrue("Should have language 1 version", languageIds.contains(lang1.getId()));
+            assertTrue("Should have language 2 version", languageIds.contains(lang2.getId()));
+            assertTrue("Should have language 3 version", languageIds.contains(lang3.getId()));
 
 
             final List<String> inodes = contentlets.stream()
@@ -5200,19 +5202,27 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 }
             }
 
-            if (spanish != null) {
+            if (lang1 != null) {
                 try {
-                    APILocator.getLanguageAPI().deleteLanguage(spanish);
+                    APILocator.getLanguageAPI().deleteLanguage(lang1);
                 } catch (Exception e) {
-                    Logger.warn(ImportUtilTest.class, "Error cleaning up Spanish language", e);
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 1", e);
                 }
             }
 
-            if (french != null) {
+            if (lang2 != null) {
                 try {
-                    APILocator.getLanguageAPI().deleteLanguage(french);
+                    APILocator.getLanguageAPI().deleteLanguage(lang2);
                 } catch (Exception e) {
-                    Logger.warn(ImportUtilTest.class, "Error cleaning up French language", e);
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 2", e);
+                }
+            }
+
+            if (lang3 != null) {
+                try {
+                    APILocator.getLanguageAPI().deleteLanguage(lang3);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 3", e);
                 }
             }
         }
