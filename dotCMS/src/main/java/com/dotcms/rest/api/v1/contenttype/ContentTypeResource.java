@@ -1795,26 +1795,6 @@ public class ContentTypeResource implements Serializable {
 			throw new BadRequestException("The 'pagePathOrId' parameter is required.");
 		}
 
-		//If set, we need to consider only the content types that belong to the specific base types
-		List<String> byBaseType = Collections.emptyList();
-
-		if (UtilMethods.isSet(types)) {
-			ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
-
-			byBaseType = types.stream()
-					.map(BaseContentType::getBaseContentType)
-					.flatMap(baseType -> {
-						try {
-							return contentTypeAPI.findByType(baseType).stream();
-						} catch (Exception e) {
-							Logger.error(getClass(), "Error finding content type for baseType: " + baseType, e);
-							return Stream.empty(); // Skip this type if there's an error
-						}
-					})
-					.map(ContentType::variable)
-					.collect(Collectors.toList());
-		}
-
 		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId);
 
 		final Map<String, Object> extraParams = new HashMap<>();
@@ -1823,8 +1803,19 @@ public class ContentTypeResource implements Serializable {
 		final Host site = getSite(siteId, user, pageMode.respectAnonPerms); // wondering if this should be current or default
 		final String orderBy = this.getOrderByRealName(orderByParam);
 		List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrIdAndFilter(pagePathOrId, site,
-				languageId, pageMode, user, filter, byBaseType);
+				languageId, pageMode, user, filter);
 		final boolean isUsage = "usage".equalsIgnoreCase(orderBy);
+
+		//If set, we need to consider only the content types that belong to the specific base types
+		if (null != types) {
+			//Remove empty strings and duplicates, preserve order
+			final List<String> filteredTypes = types.stream()
+					.filter(UtilMethods::isSet)
+					.collect(Collectors.toList());
+			if (!filteredTypes.isEmpty()) {
+				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(filteredTypes));
+			}
+		}
 
 		if (isUsage) {
 
@@ -1918,8 +1909,7 @@ public class ContentTypeResource implements Serializable {
 																				   final long languageId,
 																				   final PageMode pageMode,
 																				   final User user,
-																				   final String filter,
-																				   final List<String> byBaseTypes) throws DotDataException, DotSecurityException {
+																				   final String filter) throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId +
 				" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
@@ -1957,7 +1947,6 @@ public class ContentTypeResource implements Serializable {
 				.filter(Objects::nonNull)
 				.filter(Predicate.not(this.contentPaletteHiddenTypes.get()::contains))
 				.filter(repeatedTypes::add)
-				.filter(byBaseTypes::contains)
 				.filter(varname -> filter == null || varname.toLowerCase().contains(filter.toLowerCase()))
 				.collect(Collectors.toList());
 	} // findPageContainersContentTypesVarnamesByPathOrIdAndFilter
