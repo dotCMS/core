@@ -75,4 +75,11 @@ public interface CompletionsAPI {
      */
     void rawStream(CompletionsForm promptForm, OutputStream out);
 
+    /**
+     * this method takes a prompt in the request and returns a json AI response based on the parameters
+     * passed in.
+     * @param completionRequest
+     * @return
+     */
+    Object raw(CompletionRequest completionRequest);
 }
