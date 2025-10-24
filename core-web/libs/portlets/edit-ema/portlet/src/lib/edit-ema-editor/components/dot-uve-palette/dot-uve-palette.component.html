@@ -1,7 +1,9 @@
 <p-tabView (activeIndexChange)="$currentIndex.set($event)">
     <p-tabPanel>
         <ng-template pTemplate="header">
-            <i class="pi pi-stop"></i>
+            <div class="tab-header" pTooltip="Content types" tooltipPosition="bottom">
+                <i class="pi pi-stop" ti></i>
+            </div>
         </ng-template>
         <!-- Without this constrain, primeng is instanciating the component even if the tab is not active.
         creating triple renders and triple requests to the server. -->
@@ -14,7 +16,9 @@
     </p-tabPanel>
     <p-tabPanel>
         <ng-template pTemplate="header">
-            <i class="pi pi-th-large"></i>
+            <div class="tab-header" pTooltip="Widgets" tooltipPosition="bottom">
+                <i class="pi pi-th-large"></i>
+            </div>
         </ng-template>
         @if ($currentIndex() === 1) {
             <dot-uve-palette-list
@@ -25,7 +29,9 @@
     </p-tabPanel>
     <p-tabPanel>
         <ng-template pTemplate="header">
-            <i class="pi pi-star"></i>
+            <div class="tab-header" pTooltip="Favorites" tooltipPosition="bottom">
+                <i class="pi pi-star"></i>
+            </div>
         </ng-template>
         @if ($currentIndex() === 2) {
             <dot-uve-palette-list

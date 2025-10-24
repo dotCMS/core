@@ -35,7 +35,12 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { SortOption, ViewOption } from './model';
-import { DotUVEPaletteListView, DotPaletteListStore, DEFAULT_PER_PAGE } from './store/store';
+import {
+    DotUVEPaletteListView,
+    DotPaletteListStore,
+    DEFAULT_PER_PAGE,
+    DotPaletteListStatus
+} from './store/store';
 
 import { DotUVEPaletteListType } from '../../../../../shared/models';
 import {
@@ -105,7 +110,9 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     readonly $pagination = this.#paletteListStore.pagination;
     readonly $rowsPerPage = this.#paletteListStore.$rowsPerPage;
     readonly $currentView = this.#paletteListStore.currentView;
+    readonly $status = this.#paletteListStore.$status;
     readonly DotUVEPaletteListView = DotUVEPaletteListView;
+    readonly DotPaletteListStatus = DotPaletteListStatus;
 
     readonly $showViewList = computed(() => {
         return this.$view() === 'list' || this.$currentView() === DotUVEPaletteListView.CONTENTLETS;

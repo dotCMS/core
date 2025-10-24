@@ -22,9 +22,17 @@ import { DotESContentParams, SortOption } from '../model';
  * Available view states for the palette list
  */
 export enum DotUVEPaletteListView {
-    LOADING = 'loading',
     CONTENT_TYPES = 'contenttypes',
     CONTENTLETS = 'contentlets'
+}
+
+/**
+ * Status states for the palette list
+ */
+export enum DotPaletteListStatus {
+    LOADING = 'loading',
+    LOADED = 'loaded',
+    EMPTY = 'empty'
 }
 
 /** Default number of items per page */
@@ -40,6 +48,7 @@ export interface DotPaletteListState {
     pagination: DotPagination;
     sort: SortOption;
     currentView: DotUVEPaletteListView;
+    status: DotPaletteListStatus;
 }
 
 export const DEFAULT_STATE: DotPaletteListState = {
@@ -55,7 +64,8 @@ export const DEFAULT_STATE: DotPaletteListState = {
         direction: 'ASC'
     },
     currentContentType: '',
-    currentView: DotUVEPaletteListView.LOADING
+    currentView: DotUVEPaletteListView.CONTENT_TYPES,
+    status: DotPaletteListStatus.LOADING
 };
 
 export const DotPaletteListStore = signalStore(
@@ -65,7 +75,8 @@ export const DotPaletteListStore = signalStore(
             $start: computed(() => {
                 return (store.pagination().currentPage - 1) * store.pagination().perPage;
             }),
-            $rowsPerPage: computed(() => store.pagination().perPage)
+            $rowsPerPage: computed(() => store.pagination().perPage),
+            $status: computed(() => store.status())
         };
     }),
     withMethods((store) => {
@@ -82,14 +93,22 @@ export const DotPaletteListStore = signalStore(
             setContenttypes(contenttypes: DotCMSContentType[]) {
                 patchState(store, {
                     contenttypes,
-                    currentView: DotUVEPaletteListView.CONTENT_TYPES
+                    currentView: DotUVEPaletteListView.CONTENT_TYPES,
+                    status:
+                        contenttypes.length > 0
+                            ? DotPaletteListStatus.LOADED
+                            : DotPaletteListStatus.EMPTY
                 });
             },
 
             setContentlets(contentlets: DotCMSContentlet[]) {
                 patchState(store, {
                     contentlets,
-                    currentView: DotUVEPaletteListView.CONTENTLETS
+                    currentView: DotUVEPaletteListView.CONTENTLETS,
+                    status:
+                        contentlets.length > 0
+                            ? DotPaletteListStatus.LOADED
+                            : DotPaletteListStatus.EMPTY
                 });
             },
 
@@ -99,11 +118,17 @@ export const DotPaletteListStore = signalStore(
                 });
             },
 
+            setStatus(status: DotPaletteListStatus) {
+                patchState(store, {
+                    status
+                });
+            },
+
             getContentTypes(params: DotPageContentTypeParams) {
                 const { orderby, direction } = params;
 
                 patchState(store, {
-                    currentView: DotUVEPaletteListView.LOADING,
+                    status: DotPaletteListStatus.LOADING,
                     sort: { orderby, direction }
                 });
 
@@ -111,18 +136,30 @@ export const DotPaletteListStore = signalStore(
                     patchState(store, {
                         contenttypes,
                         pagination,
-                        currentView: DotUVEPaletteListView.CONTENT_TYPES
+                        currentView: DotUVEPaletteListView.CONTENT_TYPES,
+                        status:
+                            contenttypes.length > 0
+                                ? DotPaletteListStatus.LOADED
+                                : DotPaletteListStatus.EMPTY
                     });
                 });
             },
             getWidgets(params: DotPageContentTypeParams) {
+                patchState(store, {
+                    status: DotPaletteListStatus.LOADING
+                });
+
                 pageContentTypeService
                     .getAllContentTypes(params)
                     .subscribe(({ contenttypes, pagination }) => {
                         patchState(store, {
                             contenttypes,
                             pagination,
-                            currentView: DotUVEPaletteListView.CONTENT_TYPES
+                            currentView: DotUVEPaletteListView.CONTENT_TYPES,
+                            status:
+                                contenttypes.length > 0
+                                    ? DotPaletteListStatus.LOADED
+                                    : DotPaletteListStatus.EMPTY
                         });
                     });
             },
@@ -140,7 +177,7 @@ export const DotPaletteListStore = signalStore(
             getContentlets(params: DotESContentParams) {
                 const { itemsPerPage, lang, filter, offset, query } = params;
                 patchState(store, {
-                    currentView: DotUVEPaletteListView.LOADING
+                    status: DotPaletteListStatus.LOADING
                 });
 
                 dotESContentService
@@ -160,13 +197,17 @@ export const DotPaletteListStore = signalStore(
                                 perPage: contentlets.length,
                                 totalEntries: response.resultsSize
                             },
-                            currentView: DotUVEPaletteListView.CONTENTLETS
+                            currentView: DotUVEPaletteListView.CONTENTLETS,
+                            status:
+                                contentlets.length > 0
+                                    ? DotPaletteListStatus.LOADED
+                                    : DotPaletteListStatus.EMPTY
                         });
                     });
             },
             getFavoriteContentTypes(pagePathOrId: string, filter: string) {
                 patchState(store, {
-                    currentView: DotUVEPaletteListView.LOADING
+                    status: DotPaletteListStatus.LOADING
                 });
 
                 const response = dotPageFavoriteContentTypeService.get(pagePathOrId, {
@@ -178,7 +219,11 @@ export const DotPaletteListStore = signalStore(
                 patchState(store, {
                     contenttypes: response.contenttypes,
                     pagination: response.pagination,
-                    currentView: DotUVEPaletteListView.CONTENT_TYPES
+                    currentView: DotUVEPaletteListView.CONTENT_TYPES,
+                    status:
+                        response.contenttypes.length > 0
+                            ? DotPaletteListStatus.LOADED
+                            : DotPaletteListStatus.EMPTY
                 });
             },
             getAllFavoriteContentTypes(pagePathOrId: string, filter: string) {

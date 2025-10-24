@@ -38,24 +38,25 @@
 </div>
 
 <div class="dot-uve-palette-list__grid" [class.dot-uve-palette-list__grid--list]="$showViewList()">
-    @switch ($currentView()) {
-        @case (DotUVEPaletteListView.LOADING) {
-            @for (i of LOADING_ROWS_MOCK; track i) {
-                <p-skeleton width="100%" [height]="$skeletonHeight()"></p-skeleton>
-            }
+    @if ($status() === DotPaletteListStatus.LOADING) {
+        @for (i of LOADING_ROWS_MOCK; track i) {
+            <p-skeleton width="100%" [height]="$skeletonHeight()"></p-skeleton>
         }
-        @case (DotUVEPaletteListView.CONTENTLETS) {
-            @for (contentlet of $contentlets(); track contentlet.identifier) {
-                <dot-uve-palette-contentlet [contentlet]="contentlet" />
+    } @else {
+        @switch ($currentView()) {
+            @case (DotUVEPaletteListView.CONTENTLETS) {
+                @for (contentlet of $contentlets(); track contentlet.identifier) {
+                    <dot-uve-palette-contentlet [contentlet]="contentlet" />
+                }
             }
-        }
-        @case (DotUVEPaletteListView.CONTENT_TYPES) {
-            @for (contentType of $contenttypes(); track contentType.id) {
-                <dot-uve-palette-item
-                    [contentType]="contentType"
-                    [view]="$view()"
-                    (selectContentType)="onSelectContentType($event)"
-                    (rightClick)="onRightClick(contentType); cm.show($event)" />
+            @case (DotUVEPaletteListView.CONTENT_TYPES) {
+                @for (contentType of $contenttypes(); track contentType.id) {
+                    <dot-uve-palette-item
+                        [contentType]="contentType"
+                        [view]="$view()"
+                        (selectContentType)="onSelectContentType($event)"
+                        (rightClick)="onRightClick(contentType); cm.show($event)" />
+                }
             }
         }
     }
