@@ -5065,7 +5065,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         Language lang2 = null;
 
         try {
-            // Create a test site with a name
+
             testSite = new SiteDataGen().name("test-site-" + System.currentTimeMillis()).nextPersisted();
 
             lang1 = APILocator.getLanguageAPI().getLanguage("en", "US");
@@ -5094,9 +5094,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             siteField = fieldAPI.byContentTypeAndVar(contentType, siteField.variable());
 
             // Create CSV with multilingual content using site NAME (not identifier)
+            // Using hardcoded language codes that exist in dotCMS system (same as other tests)
             String csvContent = "languageCode,countryCode,slug,site\r\n" +
-                    lang1.getLanguageCode() + "," + lang1.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n" +
-                    lang2.getLanguageCode() + "," + lang2.getCountryCode() + ",test-article," + testSite.getHostname() + "\r\n";
+                    "en,US,test-article," + testSite.getHostname() + "\r\n" +
+                    "es,ES,test-article," + testSite.getHostname() + "\r\n";
 
             final Reader reader = createTempFile(csvContent);
             final CsvReader csvreader = new CsvReader(reader);
@@ -5148,25 +5149,25 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         firstIdentifier,
                         contentlet.getIdentifier());
 
-                // Verify they have DIFFERENT inodes (different versions)
+
                 assertTrue("Each version should have a unique inode",
                         contentlet.getInode() != null && !contentlet.getInode().isEmpty());
 
-                // Verify the slug field value
+
                 assertEquals("Slug should be 'test-article'",
                         "test-article",
                         contentlet.getStringProperty(slugField.variable()));
 
-                // Verify the site field value (should be stored as identifier)
+
                 assertEquals("Site field should contain the site identifier",
                         testSite.getIdentifier(),
                         contentlet.getStringProperty(siteField.variable()));
 
-                // Verify the contentlet is published
+
                 assertTrue("Contentlet should be published", contentlet.isLive());
             }
 
-            // Verify we have both languages
+
             final List<Long> languageIds = contentlets.stream()
                     .map(Contentlet::getLanguageId)
                     .sorted()
@@ -5175,7 +5176,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertTrue("Should have English version", languageIds.contains(lang1.getId()));
             assertTrue("Should have Spanish version", languageIds.contains(lang2.getId()));
 
-            // Verify all inodes are unique
+
             final List<String> inodes = contentlets.stream()
                     .map(Contentlet::getInode)
                     .distinct()
