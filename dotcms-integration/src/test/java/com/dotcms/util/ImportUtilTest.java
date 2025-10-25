@@ -5065,12 +5065,22 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         Language lang2 = null;
 
         try {
-
+            // Create a test site with a name
             testSite = new SiteDataGen().name("test-site-" + System.currentTimeMillis()).nextPersisted();
 
+            // Get or create English language
             lang1 = APILocator.getLanguageAPI().getLanguage("en", "US");
+            if (lang1 == null) {
+                lang1 = new LanguageDataGen().languageCode("en").countryCode("US")
+                        .languageName("English").country("United States").nextPersisted();
+            }
 
+            // Get or create Spanish language
             lang2 = APILocator.getLanguageAPI().getLanguage("es", "ES");
+            if (lang2 == null) {
+                lang2 = new LanguageDataGen().languageCode("es").countryCode("ES")
+                        .languageName("Spanish").country("Spain").nextPersisted();
+            }
 
             // Create ContentType with slug and site fields
             com.dotcms.contenttype.model.field.Field slugField = new FieldDataGen()
@@ -5214,7 +5224,29 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 }
             }
 
-            // No need to clean up languages - they are system languages
+            // Clean up languages if we created them (only if they didn't exist before)
+            if (lang1 != null) {
+                try {
+                    // Check if this language has ID > 1 (meaning we created it, not a default language)
+                    if (lang1.getId() > 1) {
+                        APILocator.getLanguageAPI().deleteLanguage(lang1);
+                    }
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 1", e);
+                }
+            }
+
+            if (lang2 != null) {
+                try {
+                    // Spanish is typically ID 2, but if we created it, clean it up
+                    // Check if this is not a system default language
+                    if (lang2.getId() > 2) {
+                        APILocator.getLanguageAPI().deleteLanguage(lang2);
+                    }
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 2", e);
+                }
+            }
         }
     }
 
