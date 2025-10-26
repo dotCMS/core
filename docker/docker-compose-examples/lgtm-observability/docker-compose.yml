@@ -216,6 +216,8 @@ services:
       GF_SECURITY_ALLOW_EMBEDDING: "true"
       GF_SECURITY_COOKIE_SAMESITE: "none"
       GF_SECURITY_COOKIE_SECURE: "false"
+      # Reverse Proxy 
+      GF_SERVER_ROOT_URL: "http://localhost:8080/grafana-proxy"       
 
       # Enable Pyroscope and all component logging for debugging
       ENABLE_LOGS_PYROSCOPE: "true"
