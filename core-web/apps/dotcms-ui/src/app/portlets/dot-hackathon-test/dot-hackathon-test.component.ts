@@ -27,6 +27,7 @@ interface DashboardOptions {
     to?: string;
     orgId?: number;
     panelId?: number;
+    useProxy: boolean;
 }
 
 @Component({
@@ -62,7 +63,8 @@ export class DotHackathonTestComponent implements OnInit {
         theme: 'light',
         kiosk: true,
         autofitpanels: true,
-        refresh: ''
+        refresh: '',
+        useProxy: false
     };
 
     // Dashboard Display
@@ -73,6 +75,7 @@ export class DotHackathonTestComponent implements OnInit {
     isConnectionStatusCollapsed = false;
     isDashboardSelectionCollapsed = false;
     isDashboardOptionsCollapsed = false;
+    isDashboardDisplayCollapsed = false;
 
     ngOnInit() {
         this.initializeSearchDebounce();
@@ -337,6 +340,14 @@ export class DotHackathonTestComponent implements OnInit {
      */
     toggleDashboardOptions() {
         this.isDashboardOptionsCollapsed = !this.isDashboardOptionsCollapsed;
+        this.cdr.detectChanges();
+    }
+
+    /**
+     * Toggle dashboard display section
+     */
+    toggleDashboardDisplay() {
+        this.isDashboardDisplayCollapsed = !this.isDashboardDisplayCollapsed;
         this.cdr.detectChanges();
     }
 }

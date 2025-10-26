@@ -1,6 +1,4 @@
 <div class="grafana-integration">
-    <h2>Grafana Dashboard Integration</h2>
-
     <!-- Connection Status -->
     <div class="connection-status">
         <div class="section-header">
@@ -22,11 +20,11 @@
                 <i class="pi pi-spinner pi-spin"></i>
                 <span>Testing connection...</span>
             } @else if (connectionStatus === 'connected') {
-                <i class="pi pi-check-circle" style="color: green;"></i>
-                <span style="color: green;">Connected to Grafana</span>
+                <i class="pi pi-check-circle" [style.color]="'green'"></i>
+                <span [style.color]="'green'">Connected to Grafana</span>
             } @else if (connectionStatus === 'disconnected') {
-                <i class="pi pi-times-circle" style="color: red;"></i>
-                <span style="color: red;">Not connected to Grafana</span>
+                <i class="pi pi-times-circle" [style.color]="'red'"></i>
+                <span [style.color]="'red'">Not connected to Grafana</span>
             }
         </div>
             <button
@@ -126,7 +124,7 @@
                                         </div>
                                     }
                                     @if (dashboard.isStarred) {
-                                        <i class="pi pi-star-fill" style="color: gold;" title="Starred"></i>
+                                        <i class="pi pi-star-fill" [style.color]="'gold'" title="Starred"></i>
                                     }
                                 </div>
                             </button>
@@ -199,6 +197,15 @@
                         <label for="autofit-panels">Auto-fit Panels</label>
                     </div>
 
+                    <div class="p-field-checkbox">
+                        <input
+                            type="checkbox"
+                            id="use-proxy"
+                            class="p-checkbox"
+                            [(ngModel)]="dashboardOptions.useProxy">
+                        <label for="use-proxy">Use dotCMS Proxy</label>
+                    </div>
+
                     <div class="p-field">
                         <label for="refresh-interval">Refresh Interval:</label>
                         <select
@@ -235,6 +242,15 @@
                     <div class="dashboard-actions">
                         <button
                             type="button"
+                            class="toggle-button"
+                            (click)="toggleDashboardDisplay()"
+                            [attr.aria-expanded]="!isDashboardDisplayCollapsed"
+                            [attr.aria-label]="'Toggle dashboard display section'"
+                            [style.margin-right]="'1rem'">
+                            <i class="pi" [class.pi-chevron-down]="isDashboardDisplayCollapsed" [class.pi-chevron-up]="!isDashboardDisplayCollapsed"></i>
+                        </button>
+                        <button
+                            type="button"
                             class="p-button p-button-sm p-button-outlined"
                             (click)="refreshDashboard()">
                             <i class="pi pi-refresh"></i>
@@ -251,22 +267,24 @@
                     </div>
                 </div>
 
-                <div class="iframe-container">
-                    <iframe
-                        [src]="iFrameUrl"
-                        [title]="'Grafana Dashboard: ' + selectedDashboard.title"
-                        allowfullscreen
-                        (load)="onIframeLoad()"
-                        (error)="onIframeError()">
-                    </iframe>
+                @if (!isDashboardDisplayCollapsed) {
+                    <div class="iframe-container">
+                        <iframe
+                            [src]="iFrameUrl"
+                            [title]="'Grafana Dashboard: ' + selectedDashboard.title"
+                            allowfullscreen
+                            (load)="onIframeLoad()"
+                            (error)="onIframeError()">
+                        </iframe>
 
-                    @if (iframeLoading) {
-                        <div class="iframe-loading">
-                            <i class="pi pi-spinner pi-spin"></i>
-                            <span>Loading dashboard...</span>
-                        </div>
-                    }
-                </div>
+                        @if (iframeLoading) {
+                            <div class="iframe-loading">
+                                <i class="pi pi-spinner pi-spin"></i>
+                                <span>Loading dashboard...</span>
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         }
     } @else if (connectionStatus === 'disconnected') {

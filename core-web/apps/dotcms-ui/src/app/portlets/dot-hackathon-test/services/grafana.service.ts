@@ -185,11 +185,20 @@ export class GrafanaService {
         refresh?: string;
         orgId?: number;
         panelId?: number;
+        useProxy?: boolean;
     } = {}): string {
-        // Get base Grafana URL from configuration (this should match the grafana.api.url config)
-        const baseGrafanaUrl = 'http://localhost:3000'; // This should come from config
+        // Determine base URL based on proxy option
+        let baseUrl: string;
 
-        let url = `${baseGrafanaUrl}/d/${dashboardUid}`;
+        if (options.useProxy) {
+            // Use the dotCMS proxy URL
+            baseUrl = 'http://localhost:8080/grafana-proxy';
+        } else {
+            // Use direct Grafana URL
+            baseUrl = 'http://localhost:3000'; // This should come from config
+        }
+
+        let url = `${baseUrl}/d/${dashboardUid}`;
 
         const queryParams: string[] = [];
 
