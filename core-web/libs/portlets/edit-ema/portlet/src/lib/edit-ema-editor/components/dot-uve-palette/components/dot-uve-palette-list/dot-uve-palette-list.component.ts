@@ -112,6 +112,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
 
     readonly $viewMode = signal<ViewOption>('grid');
     readonly $favoriteMenuItems = signal<MenuItem[]>([]);
+    readonly $contextMenuItems = signal<MenuItem[]>([]);
     readonly #searchSubject = new Subject<string>();
 
     readonly $skeletonHeight = computed(() => (this.$showViewList() ? '4rem' : '6.875rem'));
@@ -132,57 +133,6 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
         return `{first} - {last} ${this.#dotMessageService.get('uve.palette.pagination.of')} {totalRecords}`;
     });
     readonly LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index + 1);
-
-    /** Computed menu items with active state based on current sort and view */
-    readonly $menuItems = computed(() => {
-        const currentView = this.$viewMode();
-
-        return [
-            {
-                label: this.#dotMessageService.get('uve.palette.menu.sort.title'),
-                items: [
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.popular'),
-                        id: 'most-popular',
-                        command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
-                        styleClass: this.isSortActive({ orderby: 'usage', direction: 'ASC' })
-                    },
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.a-to-z'),
-                        id: 'a-to-z',
-                        command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
-                        styleClass: this.isSortActive({ orderby: 'name', direction: 'ASC' })
-                    },
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.z-to-a'),
-                        id: 'z-to-a',
-                        command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
-                        styleClass: this.isSortActive({ orderby: 'name', direction: 'DESC' })
-                    }
-                ]
-            },
-            {
-                separator: true
-            },
-            {
-                label: this.#dotMessageService.get('uve.palette.menu.view.title'),
-                items: [
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.view.option.grid'),
-                        id: 'grid',
-                        command: () => this.onViewSelect('grid'),
-                        styleClass: currentView === 'grid' ? 'active-menu-item' : ''
-                    },
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.view.option.list'),
-                        id: 'list',
-                        command: () => this.onViewSelect('list'),
-                        styleClass: currentView === 'list' ? 'active-menu-item' : ''
-                    }
-                ]
-            }
-        ];
-    });
 
     ngOnInit() {
         this.getContentTypes();
@@ -329,18 +279,6 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
         this.#paletteListStore.setCurrentContentType(contentTypeName);
     }
 
-    protected onRightClick(contentType: DotCMSContentType) {
-        const isFavorite = this.#paletteListStore.getIsFavoriteContentType(
-            this.$pagePath(),
-            contentType.id
-        );
-        if (isFavorite) {
-            this.setRemoveFavoriteMenuItem(contentType);
-        } else {
-            this.setAddFavoriteMenuItem(contentType);
-        }
-    }
-
     /**
      * Sets up the debounced search functionality.
      * Listens to search input changes and triggers search after 500ms delay.
@@ -361,24 +299,68 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
             });
     }
 
-    private setRemoveFavoriteMenuItem(contentType: DotCMSContentType) {
-        this.$favoriteMenuItems.set([
+    protected setSortMenuItems() {
+        const currentView = this.$viewMode();
+        const items = [
             {
-                label: this.#dotMessageService.get('uve.palette.menu.favorite.option.remove'),
-                id: 'remove',
-                command: () => this.removeFavoriteItems(contentType)
+                label: this.#dotMessageService.get('uve.palette.menu.sort.title'),
+                items: [
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.popular'),
+                        id: 'most-popular',
+                        command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
+                        styleClass: this.isSortActive({ orderby: 'usage', direction: 'ASC' })
+                    },
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.a-to-z'),
+                        id: 'a-to-z',
+                        command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
+                        styleClass: this.isSortActive({ orderby: 'name', direction: 'ASC' })
+                    },
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.z-to-a'),
+                        id: 'z-to-a',
+                        command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
+                        styleClass: this.isSortActive({ orderby: 'name', direction: 'DESC' })
+                    }
+                ]
+            },
+            {
+                separator: true
+            },
+            {
+                label: this.#dotMessageService.get('uve.palette.menu.view.title'),
+                items: [
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.view.option.grid'),
+                        id: 'grid',
+                        command: () => this.onViewSelect('grid'),
+                        styleClass: currentView === 'grid' ? 'active-menu-item' : ''
+                    },
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.view.option.list'),
+                        id: 'list',
+                        command: () => this.onViewSelect('list'),
+                        styleClass: currentView === 'list' ? 'active-menu-item' : ''
+                    }
+                ]
             }
-        ]);
+        ];
+        this.$contextMenuItems.set(items);
     }
 
-    private setAddFavoriteMenuItem(contentType: DotCMSContentType) {
-        this.$favoriteMenuItems.set([
-            {
-                label: this.#dotMessageService.get('uve.palette.menu.favorite.option.add'),
-                id: 'add',
-                command: () => this.addFavoriteItems(contentType)
-            }
-        ]);
+    protected setFavoriteMenuItems(contentType: DotCMSContentType) {
+        const isFavorite = this.#paletteListStore.isFavoriteContentType(
+            this.$pagePath(),
+            contentType.id
+        );
+        const label = isFavorite
+            ? 'uve.palette.menu.favorite.option.remove'
+            : 'uve.palette.menu.favorite.option.add';
+        const command = isFavorite
+            ? () => this.removeFavoriteItems(contentType)
+            : () => this.addFavoriteItems(contentType);
+        this.$contextMenuItems.set([{ label: this.#dotMessageService.get(label), command }]);
     }
 
     /**

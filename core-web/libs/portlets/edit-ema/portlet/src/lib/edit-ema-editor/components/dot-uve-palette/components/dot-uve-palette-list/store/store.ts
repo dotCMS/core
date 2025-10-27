@@ -198,7 +198,7 @@ export const DotPaletteListStore = signalStore(
                     direction: 'ASC'
                 });
             },
-            getIsFavoriteContentType(pagePathOrId: string, contentTypeId: string) {
+            isFavoriteContentType(pagePathOrId: string, contentTypeId: string) {
                 return dotPageFavoriteContentTypeService.isFavorite(pagePathOrId, contentTypeId);
             },
             addFavoriteContentType(pagePathOrId: string, contentType: DotCMSContentType) {

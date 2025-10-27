@@ -73,7 +73,7 @@ export class DotFavoriteSelectorComponent implements OnInit {
      * Check if a content type is marked as favorite
      */
     isContentTypeFavorite(contentTypeId: string): boolean {
-        return this.store.getIsFavoriteContentType(this.$pagePath(), contentTypeId);
+        return this.store.isFavoriteContentType(this.$pagePath(), contentTypeId);
     }
 
     /**

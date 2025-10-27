@@ -26,7 +26,7 @@
             [text]="true"
             [rounded]="true"
             styleClass="options-menu-button"
-            (onClick)="sortMenu.toggle($event)" />
+            (onClick)="setSortMenuItems(); cm.toggle($event)" />
     } @else if ($type() === 'FAVORITES') {
         <p-button
             icon="pi pi-plus"
@@ -83,7 +83,7 @@
                         [contentType]="contentType"
                         [view]="$viewMode()"
                         (selectContentType)="onSelectContentType($event)"
-                        (rightClick)="onRightClick(contentType); cm.show($event)" />
+                        (rightClick)="setFavoriteMenuItems(contentType); cm.show($event)" />
                 }
             }
         }
@@ -104,16 +104,8 @@
 }
 
 <p-menu
-    #sortMenu
-    [model]="$menuItems()"
-    [popup]="true"
-    appendTo="body"
-    styleClass="options-menu-popup"
-    showTransitionOptions="0ms" />
-
-<p-menu
     #cm
-    [model]="$favoriteMenuItems()"
+    [model]="$contextMenuItems()"
     [popup]="true"
     appendTo="body"
     styleClass="options-menu-popup"
