@@ -547,7 +547,7 @@ public class PublisherTestUtil {
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(pconf);
 
         // Run bundlers
-        BundlerUtil.writeBundleXML(pconf, directoryBundleOutput);
+        BundlerUtil.writeBundleMetaInfo(pconf, directoryBundleOutput);
         for (final Class<IBundler> aClass : bundlers) {
 
             final IBundler bundler = aClass.newInstance();

@@ -64,7 +64,7 @@ public class WorkflowBundler implements IBundler {
 	public static final String ACTION_ID    = "actionId";
 	public static final String STEP_ID      = "stepId";
 	public static final String ACTION_ORDER = "actionOrder";
-	public final static String WORKFLOW_EXTENSION = ".workflow.xml" ;
+    public final static String[] WORKFLOW_EXTENSIONS = {".workflow.xml", ".workflow.json"};
 
 	@Override
 	public String getName() {
@@ -142,27 +142,28 @@ public class WorkflowBundler implements IBundler {
 				actionClasses, actionClassParams, actionNextAssignRolekeyMap, actionStepsListMap, systemActionMappings);
 		wrapper.setOperation(config.getOperation());
 
-		final String workflowFilePath = getFile(workflow);
+        for (String extension : WORKFLOW_EXTENSIONS) {
+            final String workflowFilePath = getFile(workflow, extension);
 
-		try (final OutputStream outputStream = bundleOutput.addFile(workflowFilePath)) {
+            try (final OutputStream outputStream = bundleOutput.addFile(workflowFilePath)) {
 
-			BundlerUtil.objectToXML(wrapper, outputStream);
-		}
+                BundlerUtil.writeObject(wrapper, outputStream, workflowFilePath);
+            }
 
-		bundleOutput.setLastModified(workflowFilePath, Calendar.getInstance().getTimeInMillis());
-
+            bundleOutput.setLastModified(workflowFilePath, Calendar.getInstance().getTimeInMillis());
+        }
 		if(Config.getBooleanProperty("PUSH_PUBLISHING_LOG_DEPENDENCIES", false)) {
 			PushPublishLogger.log(getClass(), "Workflow Scheme bundled for pushing. Operation: "+config.getOperation()+", Id: "+ workflow.getId(), config.getId());
 		}
 	}
 
-	private String getFile(final WorkflowScheme workflow) {
+    private String getFile(final WorkflowScheme workflow, String extension) {
 
 		String uri = workflow.getId();
-		if(!uri.endsWith(WORKFLOW_EXTENSION)){
-			uri.replace(WORKFLOW_EXTENSION, StringPool.BLANK);
+        if (!uri.endsWith(extension)) {
+            uri.replace(extension, StringPool.BLANK);
 			uri.trim();
-			uri += WORKFLOW_EXTENSION;
+            uri += extension;
 		}
 
 		final String myFileUrl = File.separator + uri;
@@ -221,16 +222,8 @@ public class WorkflowBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new ContainerBundlerFilter();
+        return new ExtensionFileFilter(WORKFLOW_EXTENSIONS);
 	}
 
-	public class ContainerBundlerFilter implements FileFilter{
 
-		@Override
-		public boolean accept(final File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(WORKFLOW_EXTENSION));
-		}
-
-	}
 }

@@ -47,7 +47,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION;
+import static com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS;
 import static com.dotcms.util.CollectionsUtils.list;
 
 public class StaticPublisherIntegrationTestHelper {
@@ -708,7 +708,7 @@ public class StaticPublisherIntegrationTestHelper {
                     + livePageWithContent.host.getHostname() + File.separator
                     + language.getId()
                     + livePageWithContent.page.getURI().replace("/", File.separator)
-                    + HTMLPAGE_ASSET_EXTENSION;
+                    + HTMLPAGE_ASSET_EXTENSIONS[0];
         } catch (DotDataException e) {
             throw new RuntimeException(e);
         }

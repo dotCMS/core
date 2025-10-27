@@ -43,7 +43,7 @@ public class LinkBundler implements IBundler {
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
 
-	public final static String LINK_EXTENSION = ".link.xml" ;
+    public final static String[] LINK_EXTENSIONS = {".link.xml", ".link.json"};
 
 	@Override
 	public String getName() {
@@ -128,39 +128,31 @@ public class LinkBundler implements IBundler {
 
 		String liveworking = workingLink.isLive() ? "live" :  "working";
 
-		String uri = APILocator.getIdentifierAPI()
-				.find(workingLink).getURI().replace("/", File.separator);
-		if(!uri.endsWith(LINK_EXTENSION)){
-			uri.replace(LINK_EXTENSION, "");
-			uri.trim();
-			uri += LINK_EXTENSION;
-		}
+        for (String extension : LINK_EXTENSIONS) {
+            String uri = APILocator.getIdentifierAPI()
+                    .find(workingLink).getURI().replace("/", File.separator);
+            if (!uri.endsWith(extension)) {
+                uri.replace(extension, "");
+                uri.trim();
+                uri += extension;
+            }
 
+            String myFileUrl = File.separator
+                    + liveworking + File.separator
+                    + h.getHostname() + uri;
 
-		String myFileUrl = File.separator
-				+liveworking + File.separator
-				+ h.getHostname() + uri;
+            try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
 
-		try(final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
+                BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
+            }
 
-			BundlerUtil.objectToXML(wrapper, outputStream);
-		}
-
-		bundleOutput.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
+            bundleOutput.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
+        }
 	}
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new LinkBundlerFilter();
+        return new ExtensionFileFilter(LINK_EXTENSIONS);
 	}
 
-	public class LinkBundlerFilter implements FileFilter{
-
-		@Override
-		public boolean accept(File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(LINK_EXTENSION));
-		}
-
-	}
 }

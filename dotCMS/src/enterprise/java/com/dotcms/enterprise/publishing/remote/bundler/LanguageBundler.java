@@ -44,7 +44,7 @@ import com.dotmarketing.util.PushPublishLogger;
  */
 public class LanguageBundler implements IBundler {
 
-	public final static String LANGUAGE_EXTENSION = ".language.xml" ;
+    public final static String[] LANGUAGE_EXTENSIONS = {".language.xml", ".language.json"};
 	private PushPublisherConfig config;
 
 	@Override
@@ -129,45 +129,31 @@ public class LanguageBundler implements IBundler {
 		LanguageWrapper wrapper = new LanguageWrapper(language);
 		wrapper.setOperation(config.getOperation());
 
-		String uri = language.getLanguageCode() + "_" + language.getCountryCode();
-		if(!uri.endsWith(LANGUAGE_EXTENSION)){
-			uri.replace(LANGUAGE_EXTENSION, "");
-			uri.trim();
-			uri += LANGUAGE_EXTENSION;
-		}
+        for (String extension : LANGUAGE_EXTENSIONS) {
+            String uri = language.getLanguageCode() + "_" + language.getCountryCode();
+            if (!uri.endsWith(extension)) {
+                uri.replace(extension, "");
+                uri.trim();
+                uri += extension;
+            }
 
-		String myFileUrl = File.separator
-				+"live" + File.separator
-				+ APILocator.getHostAPI().findSystemHost().getHostname() +File.separator + uri;
+            String myFileUrl = File.separator
+                    + "live" + File.separator
+                    + APILocator.getHostAPI().findSystemHost().getHostname() + File.separator + uri;
 
-		if (!output.exists(myFileUrl)) {
-			try (final OutputStream outputStream = output.addFile(myFileUrl)) {
-				BundlerUtil.objectToXML(wrapper, outputStream);
-				output.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
-			}
-		}
+            if (!output.exists(myFileUrl)) {
+                try (final OutputStream outputStream = output.addFile(myFileUrl)) {
+                    BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
+                    output.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
+                }
+            }
+        }
 	}
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new LanguageBundlerFilter();
+        return new ExtensionFileFilter(LANGUAGE_EXTENSIONS);
 	}
 
-	/**
-	 * A simple file filter that looks for Language data files inside a bundle.
-	 * 
-	 * @author Jorge Urdaneta
-	 * @version 1.0
-	 * @since Mar 7, 2013
-	 *
-	 */
-	public class LanguageBundlerFilter implements FileFilter{
 
-		@Override
-		public boolean accept(File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(LANGUAGE_EXTENSION));
-		}
-
-	}
 }

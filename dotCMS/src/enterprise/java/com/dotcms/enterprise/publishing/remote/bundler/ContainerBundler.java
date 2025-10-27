@@ -44,6 +44,7 @@ public class ContainerBundler implements IBundler {
 	PublisherAPI pubAPI = null;
 
 	public final static String CONTAINER_EXTENSION = ".container.xml" ;
+    public final static String CONTAINER_EXTENSION_JSON = ".container.json";
 
 	@Override
 	public String getName() {
@@ -135,7 +136,7 @@ public class ContainerBundler implements IBundler {
 				+ h.getHostname() + uri;
 
 		try(final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
-			BundlerUtil.objectToXML(wrapper, outputStream);
+            BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
 			bundleOutput.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
 		}
 
@@ -146,17 +147,10 @@ public class ContainerBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new ContainerBundlerFilter();
-	}
+        return new ExtensionFileFilter(CONTAINER_EXTENSION, CONTAINER_EXTENSION_JSON);
 
-	public class ContainerBundlerFilter implements FileFilter{
+    }
 
-		@Override
-		public boolean accept(File pathname) {
 
-			return (pathname.isDirectory() || pathname.getName().endsWith(CONTAINER_EXTENSION));
-		}
-
-	}
 
 }

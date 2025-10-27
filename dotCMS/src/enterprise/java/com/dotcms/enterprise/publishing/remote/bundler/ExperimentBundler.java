@@ -193,7 +193,7 @@ public class ExperimentBundler implements IBundler {
 
 		if (!bundleOutput.exists(experimentFileUrl)) {
 			try (final OutputStream outputStream = bundleOutput.addFile(experimentFileUrl)) {
-				BundlerUtil.objectToJSON(wrapper, outputStream);
+                BundlerUtil.writeObject(wrapper, outputStream, experimentFileUrl);
 			}
 
 			bundleOutput.setLastModified(experimentFileUrl, Calendar.getInstance().getTimeInMillis());

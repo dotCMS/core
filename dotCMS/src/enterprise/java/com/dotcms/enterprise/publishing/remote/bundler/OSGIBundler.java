@@ -113,7 +113,7 @@ public class OSGIBundler implements IBundler {
                         + WRAPPER_DESCRIPTOR_EXTENSION;
 
                 try(final OutputStream outputStream = output.addFile(wrapperDescriptorPath)) {
-                    BundlerUtil.objectToJSON(osgiWrapper, outputStream);
+                    BundlerUtil.writeObject(osgiWrapper, outputStream, wrapperDescriptorPath);
                 }
 
                 if ( Config.getBooleanProperty( "PUSH_PUBLISHING_LOG_DEPENDENCIES", false ) ) {

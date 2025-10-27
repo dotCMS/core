@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.publishing.remote.bundler.ExtensionFileFilter;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticDependencyBundler;
 import com.dotcms.publishing.*;
 import com.dotcms.publishing.output.BundleOutput;
@@ -62,7 +63,7 @@ public class HTMLPageAsContentBundler implements IBundler {
 	private UserAPI uAPI = null;
 	private User systemUser = null;
 
-	public final static String  HTMLPAGE_ASSET_EXTENSION = ".html.xml" ;
+    public final static String[] HTMLPAGE_ASSET_EXTENSIONS = {".html.xml", ".html.json"};
 
 	@Override
 	public String getName() {
@@ -293,87 +294,78 @@ public class HTMLPageAsContentBundler implements IBundler {
 
 		String liveworking = (htmlPageWrapper.getAsset().getInode()
 				.equals(htmlPageWrapper.getInfo().getLiveInode())) ? "live" : "working";
-		String myFile = File.separator
-				+ liveworking + File.separator
-				+ site.getHostname() + File.separator + tryingLang
-				+ htmlPageWrapper.getAsset().getURI().replace("/", File.separator)
-				+ HTMLPAGE_ASSET_EXTENSION;
 
-		// Should we write or is the file already there:
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(htmlPageWrapper.getInfo().getVersionTs());
-		cal.set(Calendar.MILLISECOND, 0);
+        for (String htmlPageAssetExtension : HTMLPAGE_ASSET_EXTENSIONS) {
+            String myFile = File.separator
+                    + liveworking + File.separator
+                    + site.getHostname() + File.separator + tryingLang
+                    + htmlPageWrapper.getAsset().getURI().replace("/", File.separator)
+                    + htmlPageAssetExtension;
 
-		//only write if changed
-		String pageFilePath = myFile;
+            // Should we write or is the file already there:
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(htmlPageWrapper.getInfo().getVersionTs());
+            cal.set(Calendar.MILLISECOND, 0);
 
+            //only write if changed
+            String pageFilePath = myFile;
 
-		if (!bundleOutput.exists(pageFilePath) || bundleOutput.lastModified(pageFilePath) != cal.getTimeInMillis()) {
-			if (bundleOutput.exists(pageFilePath)) {
-				bundleOutput.delete(pageFilePath); // unlink possible existing hard link
-			}
+            if (!bundleOutput.exists(pageFilePath)
+                    || bundleOutput.lastModified(pageFilePath) != cal.getTimeInMillis()) {
+                if (bundleOutput.exists(pageFilePath)) {
+                    bundleOutput.delete(pageFilePath); // unlink possible existing hard link
+                }
 
-			try (final OutputStream outputStream = bundleOutput.addFile(myFile)) {
-				BundlerUtil.objectToXML(htmlPageWrapper, outputStream);
-				bundleOutput.setLastModified(pageFilePath, cal.getTimeInMillis());
-			}
-		}
-		
-		boolean deleteFile=config.liveOnly() && config.isIncremental() && !htmlPageWrapper.getAsset().isLive();
+                try (final OutputStream outputStream = bundleOutput.addFile(myFile)) {
+                    BundlerUtil.writeObject(htmlPageWrapper, outputStream, myFile);
+                    bundleOutput.setLastModified(pageFilePath, cal.getTimeInMillis());
+                }
+            }
 
-		pageFilePath = myFile.replaceAll(HTMLPAGE_ASSET_EXTENSION, "");
-		if(deleteFile) {
-			if (bundleOutput.exists(pageFilePath)) {
-				bundleOutput.delete(pageFilePath);
-		    }
-			pageFilePath = File.separator
-					+ "live" + File.separator
-					+ site.getHostname() + File.separator + tryingLang
-					+ htmlPageWrapper.getAsset().getURI().replace("/", File.separator);
-			if (bundleOutput.exists(pageFilePath)) {
-				bundleOutput.delete(pageFilePath);
-			}
-		} else {
-			BufferedWriter out = null;
-		    try{
+            boolean deleteFile = config.liveOnly() && config.isIncremental() && !htmlPageWrapper.getAsset().isLive();
 
-				try (final OutputStream outputStream = bundleOutput.addFile(pageFilePath)) {
-					final String html = APILocator.getHTMLPageAssetAPI()
-							.getHTML(htmlPageWrapper.getAsset().getURI(),
-									site, live, htmlPageWrapper.getAsset().getInode(),
-									uAPI.getSystemUser(), tryingLang,
-									getUserAgent(config));
-					if (UtilMethods.isSet(html)) {
-						outputStream.write(html.getBytes());
-					} else {
+            pageFilePath = myFile.replaceAll(htmlPageAssetExtension, "");
+            if (deleteFile) {
+                if (bundleOutput.exists(pageFilePath)) {
+                    bundleOutput.delete(pageFilePath);
+                }
+                pageFilePath = File.separator
+                        + "live" + File.separator
+                        + site.getHostname() + File.separator + tryingLang
+                        + htmlPageWrapper.getAsset().getURI().replace("/", File.separator);
+                if (bundleOutput.exists(pageFilePath)) {
+                    bundleOutput.delete(pageFilePath);
+                }
+            } else {
+
+                try (final OutputStream outputStream = bundleOutput.addFile(pageFilePath)) {
+                    final String html = APILocator.getHTMLPageAssetAPI()
+                            .getHTML(htmlPageWrapper.getAsset().getURI(),
+                                    site, live, htmlPageWrapper.getAsset().getInode(),
+                                    uAPI.getSystemUser(), tryingLang,
+                                    getUserAgent(config));
+                    if (UtilMethods.isSet(html)) {
+                        outputStream.write(html.getBytes());
+                    } else {
                         Logger.warn(HTMLPageAsContentBundler.class, String.format("HTML Page with ID '%s' has no " +
-                                "contents, or does not have the required CMS Anonymous permissions.", htmlPageWrapper.getId().getId()));
+                                        "contents, or does not have the required CMS Anonymous permissions.",
+                                htmlPageWrapper.getId().getId()));
                     }
-				}
-		    } catch (final Exception e) {
-                Logger.error(HTMLPageAsContentBundler.class, String.format("An error occurred when retrieving " +
-                        "contents from page '%s' under Site '%s': %s", htmlPageWrapper.getAsset().getURI(), site
-                        .getHostname(), e.getMessage()), e);
-            } finally {
-		        if (out != null) {
-		            out.close();
-		        }
-		    }
-		}
+
+                } catch (final Exception e) {
+                    Logger.error(HTMLPageAsContentBundler.class, String.format("An error occurred when retrieving " +
+                            "contents from page '%s' under Site '%s': %s", htmlPageWrapper.getAsset().getURI(), site
+                            .getHostname(), e.getMessage()), e);
+                }
+            }
+        }
 	}
 	
 	@Override
 	public FileFilter getFileFilter(){
-		return new HTMLPageAsContentBundlerFilter();
+        return new ExtensionFileFilter(HTMLPAGE_ASSET_EXTENSIONS);
 	}
 
-	public class HTMLPageAsContentBundlerFilter implements FileFilter{
 
-		@Override
-		public boolean accept(File pathname) {
-			return (pathname.isDirectory() || pathname.getName().endsWith(HTMLPAGE_ASSET_EXTENSION));
-		}
-
-	}
 	
 }

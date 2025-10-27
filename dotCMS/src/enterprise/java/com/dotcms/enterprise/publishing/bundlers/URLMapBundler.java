@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.bundlers;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.publishing.remote.bundler.ExtensionFileFilter;
 import com.dotcms.publishing.*;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.FileCreationException;
@@ -69,7 +70,7 @@ public class URLMapBundler implements IBundler {
     private LanguageAPI langAPI = APILocator.getLanguageAPI();
     private HostAPI hostAPI = APILocator.getHostAPI();
 
-    public final static String FILE_ASSET_EXTENSION = ".dotUrlMap.xml";
+    public final static String[] URLMAP_EXTENSIONS = {".dotUrlMap.xml", ".dotUrlMap.json"};
 
     @Override
     public String getName () {
@@ -433,13 +434,18 @@ public class URLMapBundler implements IBundler {
                 }
             }
 
-            contentletBundlerFilePath = contentletBundlerFilePath + FILE_ASSET_EXTENSION;
-            if ( !bundleOutput.exists(contentletBundlerFilePath) || bundleOutput.lastModified(contentletBundlerFilePath) != cal.getTimeInMillis() ) {
-                if ( bundleOutput.exists(contentletBundlerFilePath)  ) bundleOutput.delete(contentletBundlerFilePath) ;
+            for (String extension : URLMAP_EXTENSIONS) {
+                contentletBundlerFilePath = contentletBundlerFilePath + extension;
+                if (!bundleOutput.exists(contentletBundlerFilePath)
+                        || bundleOutput.lastModified(contentletBundlerFilePath) != cal.getTimeInMillis()) {
+                    if (bundleOutput.exists(contentletBundlerFilePath)) {
+                        bundleOutput.delete(contentletBundlerFilePath);
+                    }
 
-                try (final OutputStream outputStream = bundleOutput.addFile(contentletBundlerFilePath)) {
-                    BundlerUtil.objectToXML(wrap, outputStream);
-                    bundleOutput.setLastModified(contentletBundlerFilePath, cal.getTimeInMillis());
+                    try (final OutputStream outputStream = bundleOutput.addFile(contentletBundlerFilePath)) {
+                        BundlerUtil.writeObject(wrap, outputStream, contentletBundlerFilePath);
+                        bundleOutput.setLastModified(contentletBundlerFilePath, cal.getTimeInMillis());
+                    }
                 }
             }
 
@@ -476,17 +482,9 @@ public class URLMapBundler implements IBundler {
 
     @Override
     public FileFilter getFileFilter () {
-        return new URLMapBundlerFilter();
+        return new ExtensionFileFilter(URLMAP_EXTENSIONS);
     }
 
-    public class URLMapBundlerFilter implements FileFilter {
 
-        @Override
-        public boolean accept ( File pathname ) {
-
-            return (pathname.isDirectory() || pathname.getName().endsWith( FILE_ASSET_EXTENSION ));
-        }
-
-    }
 
 }

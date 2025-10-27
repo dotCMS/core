@@ -50,7 +50,7 @@ public class StructureBundler implements IBundler {
 	UserAPI uAPI = null;
 	PublisherAPI pubAPI = null;
 
-	public final static String STRUCTURE_EXTENSION = ".structure.xml" ;
+    public final static String[] STRUCTURE_EXTENSIONS = {".structure.xml", ".structure.json"};
 
 	@Override
 	public String getName() {
@@ -104,16 +104,16 @@ public class StructureBundler implements IBundler {
 			DotSecurityException, DotPublisherException
 	{
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
-        
+
 		List<FieldVariable> fieldVariables=new ArrayList<>();
         for(Field ff : fields) {
             fieldVariables.addAll(
                     APILocator.getFieldAPI().getFieldVariablesForField(ff.getInode(), APILocator.getUserAPI().getSystemUser(), false));
         }
-		
+
 		StructureWrapper wrapper = new StructureWrapper(structure,fields,fieldVariables);
-		
-		wrapper.setOperation(op);
+
+        wrapper.setOperation(op);
 		List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(structure);
 		final ImmutableList.Builder<String> schemeIds = new ImmutableList.Builder<>();
 		final ImmutableList.Builder<String> schemeNames = new ImmutableList.Builder<>();
@@ -123,29 +123,27 @@ public class StructureBundler implements IBundler {
 		}
 		wrapper.setWorkflowSchemaIds(schemeIds.build());
 		wrapper.setWorkflowSchemaNames(schemeNames.build());
-		
+        Host h = APILocator.getHostAPI().find(structure.getHost(), systemUser, false);
 		String liveworking = structure.isLive() ? "live" :  "working";
+        for (String extension : STRUCTURE_EXTENSIONS) {
+            String uri = structure.getInode();
+            if (!uri.endsWith(extension)) {
+                uri.replace(extension, "");
+                uri.trim();
+                uri += extension;
+            }
 
-		String uri = structure.getInode();
-		if(!uri.endsWith(STRUCTURE_EXTENSION)){
-			uri.replace(STRUCTURE_EXTENSION, "");
-			uri.trim();
-			uri += STRUCTURE_EXTENSION;
-		}
+            String myFileUrl = File.separator
+                    + liveworking + File.separator
+                    + h.getHostname() + File.separator + uri;
 
-		Host h = APILocator.getHostAPI().find(structure.getHost(), systemUser, false);
+            try (final OutputStream outputStream = bundleRoot.addFile(myFileUrl)) {
 
-		String myFileUrl = File.separator
-				+liveworking + File.separator
-				+ h.getHostname() +File.separator + uri;
+                BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
+            }
 
-		try(final OutputStream outputStream = bundleRoot.addFile(myFileUrl)) {
-
-			BundlerUtil.objectToXML(wrapper, outputStream);
-		}
-
-		bundleRoot.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
-
+            bundleRoot.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
+        }
 		if(Config.getBooleanProperty("PUSH_PUBLISHING_LOG_DEPENDENCIES", false)) {
 			PushPublishLogger.log(getClass(), "Structure bundled for pushing. Operation: "+config.getOperation()+", Id: "+ structure.getInode(), config.getId());
 		}
@@ -153,16 +151,8 @@ public class StructureBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new FolderBundlerFilter();
+        return new ExtensionFileFilter(STRUCTURE_EXTENSIONS);
 	}
 
-	public class FolderBundlerFilter implements FileFilter{
 
-		@Override
-		public boolean accept(File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(STRUCTURE_EXTENSION));
-		}
-
-	}
 }

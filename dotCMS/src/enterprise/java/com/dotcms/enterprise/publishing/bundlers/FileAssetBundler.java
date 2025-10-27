@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.publishing.remote.bundler.ExtensionFileFilter;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyModDateUtil;
 import com.dotcms.publisher.util.dependencies.PushedAssetUtil;
@@ -76,8 +77,8 @@ public class FileAssetBundler implements IBundler {
 	private UserAPI uAPI = null;
 	private FileAssetAPI fAPI = null;
 	private User systemUser = null;
-	
-	public final static String  FILE_ASSET_EXTENSION = ".fileAsset.xml" ;
+
+    public final static String[] FILE_ASSET_EXTENSIONS = {".fileAsset.xml", ".fileAsset.json"};
 
 	@Override
 	public String getName() {
@@ -327,10 +328,7 @@ public class FileAssetBundler implements IBundler {
 			throws IOException, DotDataException, DotSecurityException {
 
 		String liveworking = (fileAssetWrapper.getAsset().getInode().equals(fileAssetWrapper.getInfo().getLiveInode() )) ? "live" : "working";
-		String myFile = File.separator
-				+liveworking + File.separator 
-				+ host.getHostname() + File.separator + languageId
-				+ fileAssetWrapper.getAsset().getURI().replace("/", File.separator) + FILE_ASSET_EXTENSION;
+
 
 		
 		// Should we write or is the file already there:
@@ -338,64 +336,64 @@ public class FileAssetBundler implements IBundler {
 		cal.setTime(fileAssetWrapper.getInfo().getVersionTs());
 		cal.set(Calendar.MILLISECOND, 0);
 
-    	/*
-    	 * Inhibited xml-file generation for static-publishing scenario
-    	 * Performance enhancement due to https://github.com/dotCMS/core/issues/12291
-    	 */
-		if( !config.isStatic() && (!output.exists(myFile) ||
-				output.lastModified(myFile)  != cal.getTimeInMillis()) ){
-		    if(output.exists(myFile)) {
-				output.delete(myFile); // unlink possible existing hard link
-			}
+        for (String extension : FILE_ASSET_EXTENSIONS) {
 
-			try(final OutputStream outputStream = output.addFile(myFile)) {
-
-				BundlerUtil.objectToXML(fileAssetWrapper, outputStream);
-				output.setLastModified(myFile, cal.getTimeInMillis());
-			}
-		}
-
-		final boolean deleteFile = config.liveOnly() && config.isIncremental() && !fileAssetWrapper.getAsset().isLive();
-
-		String filePath = myFile.replaceAll(FILE_ASSET_EXTENSION, "");
-		if(deleteFile) {
-			output.delete(filePath);
-			filePath = File.separator
-                    +"live" + File.separator 
+            String myFile = File.separator
+                    + liveworking + File.separator
                     + host.getHostname() + File.separator + languageId
-                    + fileAssetWrapper.getAsset().getURI().replace("/", File.separator);
-		    if(output.exists(filePath)) {
-				output.delete(filePath);
-            }
-		}
-		else {
-		    //only write if changed
-			if(!output.exists(filePath) || output.lastModified(filePath) != cal.getTimeInMillis()){
-				File oldAsset = new File(APILocator.getFileAssetAPI().getRealAssetPathIgnoreExtensionCase(fileAssetWrapper.getAsset().getInode(), fileAssetWrapper.getAsset().getUnderlyingFileName()));
-				if(output.exists(filePath)) {
-					output.delete(filePath);
-				}
+                    + fileAssetWrapper.getAsset().getURI().replace("/", File.separator) + extension;
+            /*
+             * Inhibited xml-file generation for static-publishing scenario
+             * Performance enhancement due to https://github.com/dotCMS/core/issues/12291
+             */
+            if (!config.isStatic() && (!output.exists(myFile) ||
+                    output.lastModified(myFile) != cal.getTimeInMillis())) {
+                if (output.exists(myFile)) {
+                    output.delete(myFile); // unlink possible existing hard link
+                }
 
-				FileUtil.copyFile(oldAsset, output.getFile(filePath), true);
-				output.setLastModified(filePath, cal.getTimeInMillis());
-			}
-		}		
+                try (final OutputStream outputStream = output.addFile(myFile)) {
+
+                    BundlerUtil.writeObject(fileAssetWrapper, outputStream, myFile);
+                    output.setLastModified(myFile, cal.getTimeInMillis());
+                }
+            }
+
+            final boolean deleteFile =
+                    config.liveOnly() && config.isIncremental() && !fileAssetWrapper.getAsset().isLive();
+
+            String filePath = myFile.replaceAll(extension, "");
+            if (deleteFile) {
+                output.delete(filePath);
+                filePath = File.separator
+                        + "live" + File.separator
+                        + host.getHostname() + File.separator + languageId
+                        + fileAssetWrapper.getAsset().getURI().replace("/", File.separator);
+                if (output.exists(filePath)) {
+                    output.delete(filePath);
+                }
+            } else {
+                //only write if changed
+                if (!output.exists(filePath) || output.lastModified(filePath) != cal.getTimeInMillis()) {
+                    File oldAsset = new File(APILocator.getFileAssetAPI()
+                            .getRealAssetPathIgnoreExtensionCase(fileAssetWrapper.getAsset().getInode(),
+                                    fileAssetWrapper.getAsset().getUnderlyingFileName()));
+                    if (output.exists(filePath)) {
+                        output.delete(filePath);
+                    }
+
+                    FileUtil.copyFile(oldAsset, output.getFile(filePath), true);
+                    output.setLastModified(filePath, cal.getTimeInMillis());
+                }
+            }
+        }
 	}
 	
 	@Override
 	public FileFilter getFileFilter(){
-		return new FileObjectBundlerFilter();
+        return new ExtensionFileFilter(FILE_ASSET_EXTENSIONS);
 		
 	}
 
-	public class FileObjectBundlerFilter implements FileFilter{
-
-		@Override
-		public boolean accept(File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(FILE_ASSET_EXTENSION));
-		}
-
-	}
 	
 }

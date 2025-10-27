@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise.publishing.bundlers;
 
+import com.dotcms.enterprise.publishing.remote.bundler.ExtensionFileFilter;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockServletPathRequest;
@@ -37,6 +38,7 @@ import com.dotmarketing.util.WebKeys;
 import java.io.*;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.stream.Stream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -96,16 +98,16 @@ public class ShortyBundler implements IBundler {
             for(File f : files){
                 if(f.isDirectory()){
                     continue;
-                }
-                else if(f.getAbsolutePath().endsWith(URLMapBundler.FILE_ASSET_EXTENSION)){
+                } else if (f.getAbsolutePath().endsWith(URLMapBundler.URLMAP_EXTENSIONS[0]) || f.getAbsolutePath()
+                        .endsWith(URLMapBundler.URLMAP_EXTENSIONS[1])) {
                     try{
                         bins.putAll(processURLMapPage(f, output));
                     }
                     catch(Exception e){
                       Logger.error(this.getClass(), e.getMessage(),e);
                     }
-                }
-                else if(f.getAbsolutePath().endsWith(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION)){
+                } else if (f.getAbsolutePath().endsWith(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[0])
+                        || f.getAbsolutePath().endsWith(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[1])) {
                   try{
                       bins.putAll(processHTMLPage(f, output));
                   }
@@ -163,13 +165,16 @@ public class ShortyBundler implements IBundler {
         String docId = null;
         Set<String> binaryUrls = new HashSet<>();
         try {
-            URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.xmlToObject(file);
+            URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.readObject(file, URLMapWrapper.class);
             if (wrap == null){
                 return bins;
             }
             boolean live = (wrap.getContent().getInode().equals(wrap.getInfo().getLiveInode() )) ;
             if(!live) return bins;
-            File urlMapFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
+            File urlMapFile = new File(file.getAbsolutePath()
+                    .replaceAll(URLMapBundler.URLMAP_EXTENSIONS[0], "")
+                    .replaceAll(URLMapBundler.URLMAP_EXTENSIONS[1], "")
+            );
             if(!urlMapFile.exists()) return bins;
             Host h = APILocator.getHostAPI().find(wrap.getId().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
 
@@ -234,7 +239,8 @@ public class ShortyBundler implements IBundler {
         Map<String, BinFileExportStruc> bins = new HashMap<>();
 
         try {
-            HTMLPageAsContentWrapper wrap = (HTMLPageAsContentWrapper) BundlerUtil.xmlToObject(file);
+            HTMLPageAsContentWrapper wrap = (HTMLPageAsContentWrapper) BundlerUtil.readObject(file,
+                    HTMLPageAsContentWrapper.class);
             
             Host host= APILocator.getHostAPI().find(wrap.getId().getHostId(), APILocator.getUserAPI().getSystemUser(), false);
             
@@ -244,7 +250,11 @@ public class ShortyBundler implements IBundler {
             }
             boolean live = (wrap.getAsset().getInode().equals(wrap.getInfo().getLiveInode() )) ;
             if(!live) return bins;
-            File htmlFile = new File(file.getAbsolutePath().replaceAll(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION, ""));
+            File htmlFile = new File(file.getAbsolutePath()
+                    .replaceAll(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[0], "")
+                    .replaceAll(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[1], "")
+
+            );
             if(!htmlFile.exists()) return bins;
             Host h = APILocator.getHostAPI().find(wrap.getId().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
 
@@ -289,11 +299,10 @@ public class ShortyBundler implements IBundler {
 
     @Override
     public FileFilter getFileFilter() {
-        return new FileFilter() {
-            public boolean accept(File ff) {
-                return (ff.isDirectory()  || ff.getName().endsWith(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION)  || ff.getName().endsWith(URLMapBundler.FILE_ASSET_EXTENSION));
-            }
-        };
+
+        return new ExtensionFileFilter(URLMapBundler.URLMAP_EXTENSIONS,
+                HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS);
+
     }
 
 

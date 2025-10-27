@@ -56,7 +56,7 @@ public class CategoryBundlerUtil {
 
         if (!output.exists(myFileUrl)) {
             try(final OutputStream outputStream = output.addFile(myFileUrl)) {
-                BundlerUtil.objectToXML(categoryWrapper, outputStream);
+                BundlerUtil.writeObject(categoryWrapper, outputStream, myFileUrl);
                 output.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
             } catch (IOException e ) {
                 Logger.error( PublisherUtil.class, e.getMessage(), e );

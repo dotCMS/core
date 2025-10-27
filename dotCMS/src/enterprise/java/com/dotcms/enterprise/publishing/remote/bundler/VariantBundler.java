@@ -175,20 +175,10 @@ public class VariantBundler implements IBundler {
 
     @Override
     public FileFilter getFileFilter() {
-        return new VariantBundlerFilter();
+        return new ExtensionFileFilter(EXTENSION);
     }
 
-    /**
-     * A simple file filter that looks for Variant data files inside a bundle.
-     */
-    public class VariantBundlerFilter implements FileFilter {
 
-        @Override
-        public boolean accept(File pathname) {
-            return (pathname.isDirectory() || pathname.getName().endsWith(EXTENSION));
-        }
-
-    }
 
     /**
      * Writes the properties of a {@link Variant} object to the file system, so that it can be
@@ -218,7 +208,7 @@ public class VariantBundler implements IBundler {
 
         if (!bundleOutput.exists(myFileUrl)) {
             try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
-                BundlerUtil.objectToJSON(wrapper, outputStream);
+                BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
             }
 
             bundleOutput.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());

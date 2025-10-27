@@ -149,7 +149,7 @@ public class ContentTypeBundler implements IBundler {
 				+ host.getHostname() +File.separator + uri;
 
 		try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
-			BundlerUtil.objectToJSON(wrapper, outputStream);
+            BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
 		}
 
 		bundleOutput.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
@@ -184,18 +184,9 @@ public class ContentTypeBundler implements IBundler {
 	@Override
 	public FileFilter getFileFilter() {
 
-		return new FolderBundlerFilter();
+        return new ExtensionFileFilter(CONTENT_TYPE_EXTENSION);
 	}
 
-	public class FolderBundlerFilter implements FileFilter{
-
-		@Override
-		public boolean accept(File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(CONTENT_TYPE_EXTENSION));
-		}
-
-	}
 
 	@Override
 	public void setPublisher(IPublisher publisher) {

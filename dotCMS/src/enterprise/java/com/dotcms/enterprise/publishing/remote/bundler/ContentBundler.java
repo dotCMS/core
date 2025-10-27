@@ -35,8 +35,6 @@ import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 
-import com.dotcms.publishing.*;
-import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -71,13 +69,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -85,7 +81,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,14 +92,10 @@ import java.util.stream.Collectors;
 import java.util.function.Function;
 
 import java.io.*;
-import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This bundler will take the list of {@link Contentlet} objects that are being
@@ -133,9 +124,10 @@ public class ContentBundler implements IBundler {
 	private PublisherAPI pubAPI = null;
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 
-	public final static String CONTENT_EXTENSION = ".content.xml" ;
-	public final static String CONTENT_WORKFLOW_EXTENSION = ".contentworkflow.xml";
+	public final static String[] CONTENT_EXTENSION = {".content.xml", ".content.json"};
+	public final static String[] CONTENT_WORKFLOW_EXTENSION = {".contentworkflow.xml", ".contentworkflow.json"};
 	public static final String CATEGORY_SEPARATOR = "sep_sep";
+
 
 	@Override
 	public String getName() {
@@ -262,7 +254,7 @@ public class ContentBundler implements IBundler {
 				}
 			}
 
-			if (UtilMethods.isSet(contentletVersionInfo.getWorkingInode())) {
+			if (!contentletVersionInfo.isDeleted() || config.isSameIndexNotIncremental()) {
 				final Optional<Contentlet> optionalContentlet = contentletAPI.findInDb(
 						contentletVersionInfo.getWorkingInode());
 
@@ -270,40 +262,14 @@ public class ContentBundler implements IBundler {
 					contents.put(contentletVersionInfo.getWorkingInode(), optionalContentlet.get());
 				}
 			}
+
 		}
 
-		if(config.isSameIndexNotIncremental()){
-			final String archivedQuery = getArchivedQuery(contentIdentifier);
-
-			conAPI.search(archivedQuery, 0, -1, null, systemUser, false)
-					.forEach(content -> contents.put(content.getInode(), content));
-		}
 		return contents.values();
 	}
 
-	private String getArchivedQuery(String contentIdentifier) {
-		ARCHIVED_QUERY.setLength(0);
-		ARCHIVED_QUERY.append("+identifier:");
-		ARCHIVED_QUERY.append(contentIdentifier)
-				.append(" +deleted:true");
-		return ARCHIVED_QUERY.toString();
-	}
 
-	private String gtWorkingQuery(String contentIdentifier) {
-		WORKING_QUERY.setLength(0);
-		WORKING_QUERY.append("+identifier:");
-		WORKING_QUERY.append(contentIdentifier)
-				.append(" +working:true");
-		return WORKING_QUERY.toString();
-	}
 
-	private String getLiveQuery(String contentIdentifier) {
-		LIVE_QUERY.setLength(0);
-		LIVE_QUERY.append("+identifier:");
-		LIVE_QUERY.append(contentIdentifier)
-				.append(" +live:true");
-		return LIVE_QUERY.toString();
-	}
 
 	/**
 	 * Writes the properties of a {@link Contentlet} object to the file system,
@@ -332,7 +298,7 @@ public class ContentBundler implements IBundler {
 
 		Calendar cal = Calendar.getInstance();
 		File pushContentFile = null;
-		Host h = null;
+		final Host host = APILocator.getHostAPI().find(con.getHost(), APILocator.getUserAPI().getSystemUser(), true);
 
 		//Populate wrapper
 		Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
@@ -343,7 +309,6 @@ public class ContentBundler implements IBundler {
 					+ con.getIdentifier() + ". Lang: " + con.getLanguageId());
 		}
 
-		h = APILocator.getHostAPI().find(con.getHost(), APILocator.getUserAPI().getSystemUser(), true);
 
 		PushContentWrapper wrapper=new PushContentWrapper();
 	    wrapper.setContent(con);
@@ -450,28 +415,32 @@ public class ContentBundler implements IBundler {
 
 		String liveworking = con.isLive() ? "live" :  "working";
 
-		String uri = APILocator.getIdentifierAPI().find(con).getURI().replace("/", File.separator);
-		if(!uri.endsWith(CONTENT_EXTENSION)){
-			uri.replace(CONTENT_EXTENSION, "");
-			uri.trim();
-			uri += CONTENT_EXTENSION;
+		for (String extension : CONTENT_EXTENSION) {
+			String uri = APILocator.getIdentifierAPI().find(con).getURI().replace("/", File.separator);
+			if (!uri.endsWith(extension)) {
+				uri.replace(extension, "");
+				uri.trim();
+				uri += extension;
+			}
+			uri = uri.replace(uri.substring(uri.lastIndexOf(File.separator) + 1, uri.length()),
+					countOrder + "-" + uri.substring(uri.lastIndexOf(File.separator) + 1, uri.length()));
+
+			String assetName =
+					APILocator.getFileAssetAPI().isFileAsset(con) ? (File.separator + countOrder + "-" + con.getInode()
+							+ extension) : uri;
+
+			String myFileUrl = File.separator
+					+ liveworking + File.separator
+					+ host.getHostname() + File.separator
+					+ con.getLanguageId() + assetName;
+
+			try (final OutputStream outputStream = output.addFile(myFileUrl)) {
+
+				BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
+			}
+
+			output.setLastModified(myFileUrl, cal.getTimeInMillis());
 		}
-		uri = uri.replace(uri.substring(uri.lastIndexOf(File.separator)+1, uri.length()), countOrder +"-"+ uri.substring(uri.lastIndexOf(File.separator)+1, uri.length()));
-
-		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + countOrder +"-" +con.getInode() + CONTENT_EXTENSION):uri;
-
-		String myFileUrl = File.separator
-				+liveworking + File.separator
-				+ h.getHostname() + File.separator +
-				+ con.getLanguageId() + assetName;
-
-		try(final OutputStream outputStream = output.addFile(myFileUrl)) {
-
-			BundlerUtil.objectToXML(wrapper, outputStream);
-		}
-
-		output.setLastModified(myFileUrl, cal.getTimeInMillis());
-
 		if(Config.getBooleanProperty("PUSH_PUBLISHING_LOG_DEPENDENCIES", false)) {
 			PushPublishLogger.log(getClass(), "Content bundled for pushing. Operation: "+config.getOperation()+", Identifier: "+ con.getIdentifier(), config.getId());
 		}
@@ -511,14 +480,24 @@ public class ContentBundler implements IBundler {
 				//w.setComments(APILocator.getWorkflowAPI().findWorkFlowComments(task));
 				w.setComments(new ImmutableList.Builder<WorkflowComment>().build());
 
-    		    final String stepFilePath = File.separator + liveworking + File.separator + h.getHostname() + File.separator +
-    		            con.getLanguageId() + File.separator + con.getIdentifier() + CONTENT_WORKFLOW_EXTENSION;
+				for (String extension : CONTENT_WORKFLOW_EXTENSION) {
 
-				try (final OutputStream outputStream = output.addFile(stepFilePath)) {
-					BundlerUtil.objectToXML(w, outputStream);
+					final String stepFilePath =
+							File.separator
+									+ liveworking
+									+ File.separator
+									+ host.getHostname()
+									+ File.separator
+									+ con.getLanguageId()
+									+ File.separator
+									+ con.getIdentifier()
+									+ extension;
+
+					try (final OutputStream outputStream = output.addFile(stepFilePath)) {
+						BundlerUtil.writeObject(w, outputStream, stepFilePath);
+					}
+					output.setLastModified(stepFilePath, cal.getTimeInMillis());
 				}
-
-    		    output.setLastModified(stepFilePath, cal.getTimeInMillis());
 		    }
 		}
 		// If content is a Content Page, add dependent Rules, if any
@@ -535,29 +514,13 @@ public class ContentBundler implements IBundler {
 		}
 	}
 
+
 	@Override
 	public FileFilter getFileFilter(){
-		return new ContentBundlerFilter();
+		return new ExtensionFileFilter(CONTENT_EXTENSION);
 	}
 
-	/**
-	 * A simple file filter that looks for contentlet data files inside a
-	 * bundle.
-	 * 
-	 * @author Jorge Urdaneta
-	 * @version 1.0
-	 * @since Mar 7, 2013
-	 *
-	 */
-	public class ContentBundlerFilter implements FileFilter{
 
-		@Override
-		public boolean accept(File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(CONTENT_EXTENSION));
-		}
-
-	}
 
 	private class ContentBundlerCallable implements Callable<Void> {
 		private BundleOutput output;

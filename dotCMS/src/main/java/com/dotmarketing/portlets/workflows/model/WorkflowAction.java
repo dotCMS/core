@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Encapsulates the information related to a Workflow Action in dotCMS.
@@ -40,9 +41,26 @@ import java.util.Set;
  * @since Mar 22, 2012
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class WorkflowAction implements Permissionable, Serializable{
+public class WorkflowAction implements Permissionable, Serializable, Comparable<WorkflowAction> {
 
-	private static final long serialVersionUID = 1L;
+    @Override
+    public int compareTo(@NotNull WorkflowAction o) {
+        if (o == null) {
+            return 1;
+        }
+        if (this.equals(o)) {
+            return 0;
+        }
+        if (this.getOrder() < o.getOrder()) {
+            return -1;
+        } else if (this.getOrder() > o.getOrder()) {
+            return 1;
+        }
+        return 0;
+    }
+
+
+    private static final long serialVersionUID = 1L;
 	/**
 	 * Key to store when the next step is current step.
 	 */

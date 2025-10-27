@@ -87,7 +87,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                         && config.getStartDate() == null) {
                     // if its incremental and start/end dates aren't se we take it from latest bundle
                     if (BundlerUtil.bundleExists(config)) {
-                        PublisherConfig pc = BundlerUtil.readBundleXml(config);
+                        PublisherConfig pc = BundlerUtil.readBundleMeta(config);
                         if (pc.getEndDate() != null) {
                             config.setStartDate(pc.getEndDate());
                             config.setEndDate(new Date());
@@ -189,9 +189,9 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             pcClone.setStatic(true);
             pcClone.setOperation(config.getOperation());
 
-            BundlerUtil.writeBundleXML(pcClone, output);
+            BundlerUtil.writeBundleMetaInfo(pcClone, output);
         } else {
-            BundlerUtil.writeBundleXML(config, output);
+            BundlerUtil.writeBundleMetaInfo(config, output);
         }
     }
 

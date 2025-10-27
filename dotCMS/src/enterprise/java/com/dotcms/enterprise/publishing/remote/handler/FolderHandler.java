@@ -16,6 +16,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.FolderWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
+import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.util.xstream.XStreamHandler;
@@ -40,7 +41,6 @@ import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.thoughtworks.xstream.XStream;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.InputStream;
@@ -131,7 +131,7 @@ public class FolderHandler implements IHandler {
 		Host host = null;
         File workingOn = null;
 		try{
-	        XStream xstream = XStreamHandler.newXStreamInstance();
+
 	        //Handle folders
 	        for(File folderFile: folders) {
 	            workingOn = folderFile;
@@ -139,7 +139,7 @@ public class FolderHandler implements IHandler {
 
                 FolderWrapper folderWrapper;
 	        	try (final InputStream input = Files.newInputStream(folderFile.toPath())){
-                     folderWrapper = (FolderWrapper) xstream.fromXML(input);
+                    folderWrapper = (FolderWrapper) BundlerUtil.readObject(folderFile, FolderWrapper.class);
                 }
 
 

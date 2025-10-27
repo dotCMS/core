@@ -131,8 +131,8 @@ public class ContentTypeHandler implements IHandler {
 
 				workingOn = contentTypeFile;
 
-	        	final ContentTypeWrapper contentTypeWrapper = BundlerUtil
-						.jsonToObject(contentTypeFile, ContentTypeWrapper.class);
+                final ContentTypeWrapper contentTypeWrapper = BundlerUtil.readObject(contentTypeFile,
+                        ContentTypeWrapper.class);
 
 				if(UtilMethods.isEmpty(()->contentTypeWrapper.getContentType().inode())){
 					continue;

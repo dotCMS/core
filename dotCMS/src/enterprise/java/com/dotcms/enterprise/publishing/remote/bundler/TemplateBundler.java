@@ -41,7 +41,7 @@ public class TemplateBundler implements IBundler {
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
 
-	public final static String TEMPLATE_EXTENSION = ".template.xml" ;
+    public final static String[] TEMPLATE_EXTENSION = {".template.xml", ".template.json"};
 
 	@Override
 	public String getName() {
@@ -116,27 +116,28 @@ public class TemplateBundler implements IBundler {
 		wrapper.setVi(APILocator.getVersionableAPI().getVersionInfo(templateId.getId()));
 
 		String liveworking = template.isLive() ? "live" :  "working";
+        Host h = APILocator.getHostAPI().find(templateId.getHostId(), systemUser, false);
 
-		String uri = APILocator.getIdentifierAPI()
-				.find(template).getURI().replace("/", File.separator);
-		if(!uri.endsWith(TEMPLATE_EXTENSION)){
-			uri.replace(TEMPLATE_EXTENSION, "");
-			uri.trim();
-			uri += TEMPLATE_EXTENSION;
-		}
+        for (String extension : TEMPLATE_EXTENSION) {
+            String uri = APILocator.getIdentifierAPI()
+                    .find(template).getURI().replace("/", File.separator);
+            if (!uri.endsWith(extension)) {
+                uri.replace(extension, "");
+                uri.trim();
+                uri += extension;
+            }
 
-		Host h = APILocator.getHostAPI().find(templateId.getHostId(), systemUser, false);
+            String myFileUrl = File.separator
+                    + liveworking + File.separator
+                    + h.getHostname() + uri;
 
-		String myFileUrl = File.separator
-				+liveworking + File.separator
-				+ h.getHostname() + uri;
+            try (final OutputStream outputStream = output.addFile(myFileUrl)) {
 
-		try (final OutputStream outputStream = output.addFile(myFileUrl)) {
+                BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
+            }
+            output.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
+        }
 
-			BundlerUtil.objectToXML(wrapper, outputStream);
-		}
-
-		output.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
 
 		if(Config.getBooleanProperty("PUSH_PUBLISHING_LOG_DEPENDENCIES", false)) {
 			PushPublishLogger.log(getClass(), "Template bundled for pushing. Operation: "+config.getOperation()+", Identifier: "+ template.getIdentifier(), config.getId());
@@ -145,16 +146,8 @@ public class TemplateBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new ContainerBundlerFilter();
+        return new ExtensionFileFilter(TEMPLATE_EXTENSION);
 	}
 
-	public class ContainerBundlerFilter implements FileFilter{
 
-		@Override
-		public boolean accept(File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(TEMPLATE_EXTENSION));
-		}
-
-	}
 }

@@ -42,9 +42,9 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
        try {
            final String fileName = file.getName();
 
-           if (fileName.endsWith(ContentBundler.CONTENT_EXTENSION)) {
+           if (fileName.endsWith(ContentBundler.CONTENT_EXTENSION[0])) {
                return getContentletFileArguments(contentlet);
-           } else   if (fileName.endsWith(ContentBundler.CONTENT_WORKFLOW_EXTENSION)) {
+           } else if (fileName.endsWith(ContentBundler.CONTENT_WORKFLOW_EXTENSION[0])) {
                return getWorkflowTaskFileArguments(contentlet);
            } else {
                return new HashMap<>();
@@ -97,9 +97,9 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
     public String getFilePathExpected(File file) {
         final String fileName = file.getName();
 
-        if (fileName.endsWith(ContentBundler.CONTENT_EXTENSION)) {
+        if (fileName.endsWith(ContentBundler.CONTENT_EXTENSION[0])) {
             return CONTENT_EXPECTED_DEFAULT_FILE_PATH;
-        } else   if (fileName.endsWith(ContentBundler.CONTENT_WORKFLOW_EXTENSION)) {
+        } else if (fileName.endsWith(ContentBundler.CONTENT_WORKFLOW_EXTENSION[0])) {
             return WORKFLOW_TASK_EXPECTED_FILE_PATH;
         } else {
             return BINARY_FILE_PATH;
@@ -187,7 +187,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
 
         final String fileName = file.getName();
 
-        if (fileName.endsWith(ContentBundler.CONTENT_EXTENSION)) {
+        if (fileName.endsWith(ContentBundler.CONTENT_EXTENSION[0])) {
             return list(
                     "lockedOn class=\"sql-timestamp\">.*</lockedOn>",
                     "<versionTs class=\"sql-timestamp\">.*</versionTs>",
@@ -195,7 +195,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
                     "<createDate class=\"sql-timestamp\">.*</createDate>",
                     "<file>.*</file>"
             );
-        } else   if (fileName.endsWith(ContentBundler.CONTENT_WORKFLOW_EXTENSION)) {
+        } else if (fileName.endsWith(ContentBundler.CONTENT_WORKFLOW_EXTENSION[0])) {
             return list(
                     "<modDate>.*</modDate>",
                     "creationDate>.*</creationDate>",

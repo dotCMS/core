@@ -80,7 +80,7 @@ public class ExperimentHandler implements IHandler {
 				}
 
 	        	final ExperimentWrapper experimentWrapper = BundlerUtil
-						.jsonToObject(experimentFile, ExperimentWrapper.class);
+                        .readObject(experimentFile, ExperimentWrapper.class);
 
 				experiment = experimentWrapper.getExperiment();
 

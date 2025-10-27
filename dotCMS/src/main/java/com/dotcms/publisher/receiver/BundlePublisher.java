@@ -146,7 +146,7 @@ public class BundlePublisher extends Publisher {
      * @throws DotPublishingException An error occurred when handling the contents of this bundle.
      */
     @Override
-    public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
+    public PublisherConfig process(final PublishStatus dassdasda) throws DotPublishingException {
         Logger.debug(BundlePublisher.class, "Processing bundle");
         if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
             throw new RuntimeException( "need an enterprise license to run this" );
@@ -424,7 +424,7 @@ public class BundlePublisher extends Publisher {
             Logger.debug(BundlePublisher.class, "Getting assets details from bundle.xml for bundle: " + finalBundlePath);
             File xml = new File(finalBundlePath + File.separator + "bundle.xml");
 
-            PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
+            PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.readBundleMeta(xml);
             final List<PublishQueueElement> bundlerAssets = UtilMethods.isSet(readConfig.getAssets()) ?
                     readConfig.getAssets() : Collections.EMPTY_LIST;
 

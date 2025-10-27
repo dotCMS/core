@@ -106,7 +106,7 @@ public class LanguageVariablesBundler implements IBundler {
 
 		if ( !output.exists(myFileUrl) ) {
 			try (final OutputStream outputStream = output.addFile(myFileUrl)){
-				BundlerUtil.objectToXML(wrapper, outputStream);
+                BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
 				output.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
 			} catch ( IOException e ) {
 				Logger.error( PublisherUtil.class, e.getMessage(), e );

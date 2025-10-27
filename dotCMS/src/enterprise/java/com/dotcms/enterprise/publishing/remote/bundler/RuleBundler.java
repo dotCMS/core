@@ -53,7 +53,7 @@ import com.liferay.portal.model.User;
  */
 public class RuleBundler implements IBundler {
 
-	public final static String EXTENSION = ".rule.xml";
+    public final static String[] RULE_EXTENSIONS = {".rule.xml", ".rule.json"};
 	public final static String NAME = "Rule bundler";
 
 	private PushPublisherConfig config = null;
@@ -140,25 +140,10 @@ public class RuleBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter() {
-		return new RuleBundlerFilter();
+        return new ExtensionFileFilter(RULE_EXTENSIONS);
 	}
 
-	/**
-	 * A simple file filter that looks for rule data files inside a bundle.
-	 * 
-	 * @author Jose Castro
-	 * @version 1.0
-	 * @since Mar 8, 2016
-	 *
-	 */
-	public class RuleBundlerFilter implements FileFilter {
 
-		@Override
-		public boolean accept(File pathname) {
-			return (pathname.isDirectory() || pathname.getName().endsWith(EXTENSION));
-		}
-
-	}
 
 	/**
 	 * Writes the properties of a {@link Rule} object to the file system, so
@@ -181,12 +166,8 @@ public class RuleBundler implements IBundler {
 
 		final RuleWrapper wrapper = new RuleWrapper(rule);
 		wrapper.setOperation(config.getOperation());
-		String uri = rule.getId();
-		if (!uri.endsWith(EXTENSION)) {
-			uri.replace(EXTENSION, "").trim();
-			uri += EXTENSION;
-		}
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
 		Host host = null;
 		final List<Contentlet> contentlets = APILocator.getContentletAPI().searchByIdentifier(
 				"+identifier:" + rule.getParent(), 1, 0, null, systemUser, false,
@@ -205,16 +186,26 @@ public class RuleBundler implements IBundler {
 			throw new DotDataException("The parent ID [" + rule.getParent() + "] cannot be found for Rule [" + rule.getId()
 					+ "]");
 		}
-		final String ruleFileUrl = File.separator + "live" + File.separator + host.getHostname()
-				+ File.separator + uri;
 
-		if (!bundleOutput.exists(ruleFileUrl)) {
-			try (final OutputStream outputStream = bundleOutput.addFile(ruleFileUrl)) {
-				BundlerUtil.objectToXML(wrapper, outputStream);
-			}
+        for (String extension : RULE_EXTENSIONS) {
 
-			bundleOutput.setLastModified(ruleFileUrl, Calendar.getInstance().getTimeInMillis());
-		}
+            String uri = rule.getId();
+            if (!uri.endsWith(extension)) {
+                uri.replace(extension, "").trim();
+                uri += extension;
+            }
+
+            final String ruleFileUrl = File.separator + "live" + File.separator + host.getHostname()
+                    + File.separator + uri;
+
+            if (!bundleOutput.exists(ruleFileUrl)) {
+                try (final OutputStream outputStream = bundleOutput.addFile(ruleFileUrl)) {
+                    BundlerUtil.writeObject(wrapper, outputStream, ruleFileUrl);
+                }
+
+                bundleOutput.setLastModified(ruleFileUrl, Calendar.getInstance().getTimeInMillis());
+            }
+        }
 		if (Config.getBooleanProperty("PUSH_PUBLISHING_LOG_DEPENDENCIES", false)) {
 			PushPublishLogger.log(getClass(), "Rule bundled for pushing -> Operation: " + config.getOperation() + "; ID: "
 					+ rule.getId(), config.getId());

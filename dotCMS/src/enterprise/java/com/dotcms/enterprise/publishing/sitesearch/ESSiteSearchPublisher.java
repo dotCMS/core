@@ -247,13 +247,14 @@ public class ESSiteSearchPublisher extends Publisher {
     private boolean processUrlMap(final File file, final String indexName)  {
         String docId = null;
         try {
-            final URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.xmlToObject(file);
+            final URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.readObject(file, URLMapWrapper.class);
             if (wrap == null) {
                 return false;
             }
 
             final File htmlFile = new File(
-                    file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
+                    file.getAbsolutePath().replaceAll(URLMapBundler.URLMAP_EXTENSIONS[0], "")
+                            .replaceAll(URLMapBundler.URLMAP_EXTENSIONS[1], ""));
 
             docId = wrap.getId().getId() + "_" + config.getLanguage();;
 
@@ -312,7 +313,7 @@ public class ESSiteSearchPublisher extends Publisher {
         // Logger.info(this.getClass(), "processing: " +
         // file.getAbsolutePath());
 
-        FileAssetWrapper wrap = (FileAssetWrapper) BundlerUtil.xmlToObject(file);
+        FileAssetWrapper wrap = (FileAssetWrapper) BundlerUtil.readObject(file, FileAssetWrapper.class);
         if (wrap == null) {
             return false;
         }
@@ -378,13 +379,16 @@ public class ESSiteSearchPublisher extends Publisher {
     private boolean processHTMLPageAsContent(final File file, final String indexName) {
         String docId = null;
         try {
-            final HTMLPageAsContentWrapper wrap = (HTMLPageAsContentWrapper) BundlerUtil.xmlToObject(file);
+            final HTMLPageAsContentWrapper wrap = (HTMLPageAsContentWrapper) BundlerUtil.readObject(file,
+                    HTMLPageAsContentWrapper.class);
             if (wrap == null) {
                 return false;
             }
 
             final File htmlFile = new File(file.getAbsolutePath()
-                    .replaceAll(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION, ""));
+                    .replaceAll(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[0], "")
+                    .replaceAll(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[1], "")
+            );
 
             final IHTMLPage page = wrap.getAsset();
 

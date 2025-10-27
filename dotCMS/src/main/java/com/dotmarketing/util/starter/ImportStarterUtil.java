@@ -507,7 +507,7 @@ public class ImportStarterUtil {
             if (type instanceof TypeReference){
                 all = (List) BundlerUtil.jsonToObject(file, (TypeReference)type);
             } else{
-                all = (List) BundlerUtil.jsonToObject(file, (Class)type);
+                all = (List) BundlerUtil.readObject(file, (Class) type);
             }
             if (filter != null) {
                 for (Object obj : all)

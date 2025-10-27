@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise.publishing.bundlers;
 
+import com.dotcms.enterprise.publishing.remote.bundler.ExtensionFileFilter;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.publishing.*;
@@ -38,6 +39,7 @@ import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -102,15 +104,16 @@ public abstract class AbstractServletBundler implements IBundler {
 			for(File file : files){
 				if(file.isDirectory()){
 					continue;
-				}else if(file.getAbsolutePath().endsWith(URLMapBundler.FILE_ASSET_EXTENSION)){
+                } else if (file.getAbsolutePath().endsWith(URLMapBundler.URLMAP_EXTENSIONS[0])
+                        || file.getAbsolutePath().endsWith(URLMapBundler.URLMAP_EXTENSIONS[1])) {
 					try{
 						bins.putAll(processURLMapPage(file));
 					}
 					catch(Exception e){
 						Logger.error(this.getClass(), e.getMessage(), e);
 					}
-				}
-				else if(file.getAbsolutePath().endsWith(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION)){
+                } else if (file.getAbsolutePath().endsWith(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[0])
+                        || file.getAbsolutePath().endsWith(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[1])) {
                     try{
                         bins.putAll(processHTMLPageAsContent(file));
                     }
@@ -174,13 +177,17 @@ public abstract class AbstractServletBundler implements IBundler {
 		String docId = null;
 		Set<String> binaryUrls = new HashSet<>();
 		try {
-			URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.xmlToObject(file);
+            URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.readObject(file, URLMapWrapper.class);
 			if (wrap == null){
 				return bins;
 			}
 			boolean live = (wrap.getContent().getInode().equals(wrap.getInfo().getLiveInode() )) ;
 			if(!live) return bins;
-			File urlMapFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
+            String name = file.getAbsolutePath()
+                    .replaceAll(URLMapBundler.URLMAP_EXTENSIONS[0], "")
+                    .replaceAll(URLMapBundler.URLMAP_EXTENSIONS[1], "");
+
+            File urlMapFile = new File(name);
 			if(!urlMapFile.exists()) return bins;
 			Host h = APILocator.getHostAPI().find(wrap.getId().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
 
@@ -244,7 +251,8 @@ public abstract class AbstractServletBundler implements IBundler {
         Map<String, BinFileExportStruc> bins = new HashMap<>();
 
         try {
-            HTMLPageAsContentWrapper wrap = (HTMLPageAsContentWrapper) BundlerUtil.xmlToObject(file);
+            HTMLPageAsContentWrapper wrap = (HTMLPageAsContentWrapper) BundlerUtil.readObject(file,
+                    HTMLPageAsContentWrapper.class);
             if (wrap == null){
                 return bins;
             }
@@ -252,7 +260,10 @@ public abstract class AbstractServletBundler implements IBundler {
 
             boolean live = (page.getInode().equals(wrap.getInfo().getLiveInode() )) ;
             if(!live) return bins;
-            File htmlFile = new File(file.getAbsolutePath().replaceAll(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION, ""));
+            File htmlFile = new File(
+                    file.getAbsolutePath()
+                            .replaceAll(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[0], "")
+                            .replaceAll(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS[1], ""));
             if(!htmlFile.exists()) return bins;
             Host h = APILocator.getHostAPI().find(wrap.getId().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
 
@@ -294,13 +305,17 @@ public abstract class AbstractServletBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter() {
-		return new FileFilter() {
-			public boolean accept(File ff) {
-				return (ff.isDirectory()
-                        || ff.getName().endsWith(URLMapBundler.FILE_ASSET_EXTENSION)
-                        || ff.getName().endsWith(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION));
-			}
-		};
+
+        String[] combinedExtensions = Stream.of(
+                        URLMapBundler.URLMAP_EXTENSIONS,
+                        HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS
+                )
+                .flatMap(Arrays::stream)
+                .toArray(String[]::new);
+
+        return new ExtensionFileFilter(combinedExtensions);
+
+
 	}
 
 

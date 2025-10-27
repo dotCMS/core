@@ -48,7 +48,7 @@ public class CategoryFullBundler implements IBundler {
     private PushPublisherConfig config;
     private CategoryAPI catAPI = null;
     private UserAPI userAPI = null;
-    public final static String CATEGORY_FULL_EXTENSION = ".category.xml";
+    public final static String[] CATEGORY_FULL_EXTENSIONS = {".category.xml", ".category.json"};
 
     @Override
     public String getName() {
@@ -90,7 +90,9 @@ public class CategoryFullBundler implements IBundler {
                             catAPI.findChildren(userAPI.getSystemUser(), topLevel.getInode(), true,
                                     null));
                     wrapper.setChildren(childrenInodes);
-                    CategoryBundlerUtil.writeCategory(output, CATEGORY_FULL_EXTENSION, wrapper);
+                    for (String extension : CATEGORY_FULL_EXTENSIONS) {
+                        CategoryBundlerUtil.writeCategory(output, extension, wrapper);
+                    }
                     writeChildren(output, childrenInodes);
                 }
 
@@ -108,7 +110,7 @@ public class CategoryFullBundler implements IBundler {
 
     @Override
     public FileFilter getFileFilter() {
-        return new CategoryBundlerFilter();
+        return new ExtensionFileFilter(CATEGORY_FULL_EXTENSIONS);
     }
 
     private Set<String> getChildrenInodes(List<Category> children) {
@@ -138,7 +140,9 @@ public class CategoryFullBundler implements IBundler {
                     wrapper.setCategory(cat);
                     wrapper.setOperation(config.getOperation());
                     wrapper.setChildren(getChildrenInodes(children));
-                    CategoryBundlerUtil.writeCategory(bundleOutput, CATEGORY_FULL_EXTENSION, wrapper);
+                    for (String extension : CATEGORY_FULL_EXTENSIONS) {
+                        CategoryBundlerUtil.writeCategory(bundleOutput, extension, wrapper);
+                    }
                     Set<String> childrenInodes = getChildrenInodes(children);
                     writeChildren(bundleOutput, childrenInodes);
                 } else { // write the category
@@ -147,19 +151,14 @@ public class CategoryFullBundler implements IBundler {
                     wrapper.setCategory(cat);
                     wrapper.setOperation(config.getOperation());
                     wrapper.setChildren(null);
-                    CategoryBundlerUtil.writeCategory(bundleOutput, CATEGORY_FULL_EXTENSION, wrapper);
+                    for (String extension : CATEGORY_FULL_EXTENSIONS) {
+                        CategoryBundlerUtil.writeCategory(bundleOutput, extension, wrapper);
+                    }
                 }
             }
         }
 
     }
 
-    public class CategoryBundlerFilter implements FileFilter {
 
-        @Override
-        public boolean accept(File pathname) {
-            return (pathname.isDirectory() || pathname.getName().endsWith(CATEGORY_FULL_EXTENSION));
-        }
-
-    }
 }

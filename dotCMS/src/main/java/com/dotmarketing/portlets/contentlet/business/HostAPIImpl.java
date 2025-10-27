@@ -841,6 +841,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
         String workingHostName = workinghost.getHostname();
         String updatedHostName = updatedhost.getHostname();
+        if (workingHostName == null || updatedHostName == null) {
+            return;
+        }
         if(!workingHostName.equals(updatedHostName)) {
             HibernateUtil dh = new HibernateUtil(Link.class);
             List<Link> resultList = new ArrayList<>();

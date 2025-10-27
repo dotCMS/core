@@ -37,7 +37,6 @@ public class DependencyBundler implements IBundler {
 	PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	FolderAPI fAPI = APILocator.getFolderAPI();
 
-	public final static String CONTENT_EXTENSION = ".content.xml" ;
 
 	@Override
 	public String getName() {
@@ -80,17 +79,9 @@ public class DependencyBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new ContentBundlerFilter();
+        return new ExtensionFileFilter(ContentBundler.CONTENT_EXTENSION);
 	}
 
-	public class ContentBundlerFilter implements FileFilter{
 
-		@Override
-		public boolean accept(File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(CONTENT_EXTENSION));
-		}
-
-	}
 
 }

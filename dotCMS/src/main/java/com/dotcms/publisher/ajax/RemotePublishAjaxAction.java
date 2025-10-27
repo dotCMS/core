@@ -363,7 +363,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             if ( bundleStaticFile.exists() ) {
 
                 File readBundle = new File(bundleStaticFile.getAbsolutePath() + File.separator + "bundle.xml");
-                PublisherConfig readConfig = (PublisherConfig) BundlerUtil.xmlToObject( readBundle );
+                PublisherConfig readConfig = (PublisherConfig) BundlerUtil.readBundleMeta(readBundle);
 
                 PublisherConfig configStatic = new PublisherConfig();
                 configStatic.setId(bundleId);

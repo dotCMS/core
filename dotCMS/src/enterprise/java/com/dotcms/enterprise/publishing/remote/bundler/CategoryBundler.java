@@ -51,6 +51,9 @@ public class CategoryBundler implements IBundler {
 
     public final static String CATEGORY_EXTENSION = ".category.dpc.xml";
 
+    public final static String CATEGORY_EXTENSION_JSON = ".category.dpc.json";
+
+
     @Override
     public String getName() {
         return "Category Bundler";
@@ -164,16 +167,9 @@ public class CategoryBundler implements IBundler {
 
     @Override
     public FileFilter getFileFilter() {
-        return new CategoryBundlerFilter();
+        return new ExtensionFileFilter(CATEGORY_EXTENSION, CATEGORY_EXTENSION_JSON);
     }
 
-    public class CategoryBundlerFilter implements FileFilter {
 
-        @Override
-        public boolean accept(File pathname) {
-            return (pathname.isDirectory() || pathname.getName().endsWith(CATEGORY_EXTENSION));
-        }
-
-    }
 
 }

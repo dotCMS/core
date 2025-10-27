@@ -38,6 +38,10 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.liferay.portal.model.User;
 
 public class FolderBundler implements IBundler {
+
+    {
+        Logger.info(this.getClass(), "Folder bundler loaded");
+    }
 	private PushPublisherConfig config;
 	private User systemUser;
 	ContentletAPI conAPI = null;
@@ -46,7 +50,7 @@ public class FolderBundler implements IBundler {
 	PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	FolderAPI fAPI = APILocator.getFolderAPI();
 
-	public final static String FOLDER_EXTENSION = ".folder.xml" ;
+    public final static String[] FOLDER_EXTENSION = {".folder.xml", ".folder.json"};
 
 	@Override
 	public String getName() {
@@ -140,12 +144,17 @@ public class FolderBundler implements IBundler {
 				bundleOutput.mkdirs(myFolderUrl);
 
 				FolderWrapper wrapper = folderWrappers.remove(0);
-				String myFileUrl = fsFolder.getParent()+ File.separator +
-						wrapper.getFolder().getIdentifier()+FOLDER_EXTENSION;
 
-				try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
-					BundlerUtil.objectToXML(wrapper, outputStream);
-				}
+                for (String ext : FOLDER_EXTENSION) {
+                    String myFileUrl = fsFolder.getParent() + File.separator +
+                            wrapper.getFolder().getIdentifier() + ext;
+
+                    try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
+                        BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
+                    }
+
+                }
+
 			}
 		}
 
@@ -156,17 +165,9 @@ public class FolderBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new FolderBundlerFilter();
+        return new ExtensionFileFilter(FOLDER_EXTENSION);
 	}
 
-	public class FolderBundlerFilter implements FileFilter{
 
-		@Override
-		public boolean accept(File pathname) {
-
-			return (pathname.isDirectory() || pathname.getName().endsWith(FOLDER_EXTENSION));
-		}
-
-	}
 
 }

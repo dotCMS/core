@@ -30,7 +30,9 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
+import com.dotcms.publisher.pusher.wrapper.HostWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
+import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
@@ -39,7 +41,7 @@ import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.xstream.XStreamHandler;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -91,7 +93,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.thoughtworks.xstream.XStream;
+
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
@@ -185,10 +187,7 @@ public class ContentHandler implements IHandler {
 	 */
 	public void handle(final File bundleFolder, final Boolean isHost) throws Exception {
 
-	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-			throw new RuntimeException("need an enterprise pro license to run this");
-		}
-		List<File> contents = isHost?FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()):
+        List<File> contents = isHost ? FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()) :
 				FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
 		Collections.sort(contents);
 		contents = contents.stream().filter(File::isFile).collect(Collectors.toList());
@@ -239,9 +238,7 @@ public class ContentHandler implements IHandler {
 	 *             An error occurred when interacting with the database.
 	 */
 	private void handleContents(final Collection<File> contentsIn, final File folderOut, final Boolean isHost) throws DotPublishingException, DotDataException{
-	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-			throw new RuntimeException("need an enterprise pro license to run this");
-		}
+
 	    final User systemUser = userAPI.getSystemUser();
         File workingOn=null;
         Contentlet content;
@@ -250,14 +247,14 @@ public class ContentHandler implements IHandler {
 		final Collection<String> alreadyDeleted = new HashSet<>();
 
     	try{
-	        final XStream xstream = XStreamHandler.newXStreamInstance();
-			final Set<Pair<String,Long>> pushedIdsToIgnore = new HashSet<>();
+
+            final Set<Pair<String, Long>> pushedIdsToIgnore = new HashSet<>();
             for (final File contentFile : contents) {
                 workingOn=contentFile;
+                Class clazz =
+                        contentFile.getAbsolutePath().contains(".host.") ? HostWrapper.class : ContentWrapper.class;
+                wrapper = (ContentWrapper) BundlerUtil.readObject(contentFile, clazz);
 
-                try(final InputStream input = Files.newInputStream(contentFile.toPath())){
-                    wrapper = (ContentWrapper) xstream.fromXML(input);
-                }
                 //This is to check if the contentType exists in the receiver, to improve logs
 				//If the ContentType does not exist, this method will throw a NotFoundInDBException
 				APILocator.getContentTypeAPI(systemUser).find(wrapper.getContent().getContentTypeId());
@@ -372,9 +369,10 @@ public class ContentHandler implements IHandler {
 				    continue;
                 }
 				workingOn = contentFile;
-				try (final InputStream input = Files.newInputStream(contentFile.toPath())){
-					wrapper = (ContentWrapper)xstream.fromXML(input);
-				}
+                Class clazz =
+                        contentFile.getAbsolutePath().contains(".host.") ? HostWrapper.class : ContentWrapper.class;
+                wrapper = (ContentWrapper) BundlerUtil.readObject(contentFile, clazz);
+
 				content = null;
 
                 if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {

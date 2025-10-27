@@ -82,7 +82,7 @@ public class HostBundler implements IBundler {
 	private LanguageAPI langAPI = null;
 	private final PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 
-	public final static String HOST_EXTENSION = ".host.xml" ;
+    public final static String[] HOST_EXTENSION = {".host.xml", ".host.json"};
 
 	@Override
 	public String getName() {
@@ -383,26 +383,30 @@ public class HostBundler implements IBundler {
 		String liveworking = hostContentlet.isLive() ? "live" :  "working";
 
 		String uri = APILocator.getIdentifierAPI().find(hostContentlet).getURI().replace("/", File.separator);
-		if(!uri.endsWith(HOST_EXTENSION)){
-			uri.replace(HOST_EXTENSION, "");
-			uri.trim();
-			uri += HOST_EXTENSION;
-		}
-		String assetName = APILocator.getFileAssetAPI().isFileAsset(hostContentlet)?(File.separator + hostContentlet.getInode() + HOST_EXTENSION):uri;
+        for (String extension : HOST_EXTENSION) {
+            if (!uri.endsWith(extension)) {
+                uri.replace(extension, "");
+                uri.trim();
+                uri += extension;
+            }
 
-		String myFileUrl = File.separator
-				+liveworking + File.separator
-				+ host.getHostname() + File.separator
-				+ hostContentlet.getLanguageId() + assetName;
+            String assetName = APILocator.getFileAssetAPI().isFileAsset(hostContentlet) ? (File.separator
+                    + hostContentlet.getInode() + extension) : uri;
+
+            String myFileUrl = File.separator
+                    + liveworking + File.separator
+                    + host.getHostname() + File.separator
+                    + hostContentlet.getLanguageId() + assetName;
+
+            try (final OutputStream outputStream = output.addFile(myFileUrl)) {
+
+                BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
 
 
-		try (final OutputStream outputStream = output.addFile(myFileUrl)) {
+            }
 
-			BundlerUtil.objectToXML(wrapper, outputStream);
-		}
-
-		output.setLastModified(myFileUrl, cal.getTimeInMillis());
-
+            output.setLastModified(myFileUrl, cal.getTimeInMillis());
+        }
 		Set<String> htmlIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent1");
 		Set<String> containerIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent2");
 
@@ -427,25 +431,9 @@ public class HostBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new HostBundlerFilter();
-	}
+        return new ExtensionFileFilter(HOST_EXTENSION);
+    }
 
-	/**
-	 * A simple file filter that looks for Site data files inside a bundle.
-	 * 
-	 * @author Jorge Urdaneta
-	 * @version 1.0
-	 * @since Mar 7, 2013
-	 *
-	 */
-	public static class HostBundlerFilter implements FileFilter {
-
-		@Override
-		public boolean accept(final File pathname) {
-			return (pathname.isDirectory() || pathname.getName().endsWith(HOST_EXTENSION));
-		}
-
-	}
 
 	/**
 	 * 

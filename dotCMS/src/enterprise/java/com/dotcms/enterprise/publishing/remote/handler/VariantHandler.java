@@ -83,7 +83,7 @@ public class VariantHandler implements IHandler {
 				}
 
 	        	final VariantWrapper variantWrapper = BundlerUtil
-						.jsonToObject(variantFile, VariantWrapper.class);
+                        .readObject(variantFile, VariantWrapper.class);
 
 				variant = variantWrapper.getVariant();
 

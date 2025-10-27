@@ -16,26 +16,18 @@ import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.XMLUtils;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-
+import io.vavr.control.Try;
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -43,14 +35,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
-import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
 public class BundlerUtil {
 
-    private static ObjectMapper objectMapper;
+
     private static ObjectMapper customMapper;
 
     public static final List<Status> STATUS_TO_RETRY = list(
@@ -199,20 +190,31 @@ public class BundlerUtil {
         return getStaticBundleRoot(config.getName());
     }
 
+
+    private static String[] bundleMetaFiles = {"bundle.xml", "bundle.json"};
+
+
+
 	/**
 	 * write bundle down
      * @param config
      * @param output
      */
-	public static void writeBundleXML(final PublisherConfig config, final BundleOutput output){
-		final String bundleXmlFilePath = File.separator + "bundle.xml";
+    public static void writeBundleMetaInfo(final PublisherConfig config, final BundleOutput output) {
 
-		try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
-            objectToXML(config, outputStream);
-        } catch ( IOException e ) {
-            Logger.error( BundlerUtil.class, e.getMessage(), e );
+        for (String bundleMetaFile : bundleMetaFiles) {
+            final String bundleXmlFilePath = File.separator + bundleMetaFile;
+
+            try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
+                writeObject(config, outputStream, bundleXmlFilePath);
+            } catch (IOException e) {
+                Logger.error(BundlerUtil.class, e.getMessage(), e);
+                throw new DotRuntimeException(e.getMessage(), e);
+            }
         }
-	}
+
+
+    }
 
     /**
      * Reads the main bundle.xml file inside a bundle directory in order to create based on that file a PublisherConfig object
@@ -220,17 +222,36 @@ public class BundlerUtil {
      * @param config This bundle current configuration
      * @return The Bundle configuration read from the mail Bundle xml file
      */
-    public static PublisherConfig readBundleXml(PublisherConfig config){
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+    public static PublisherConfig readBundleMeta(PublisherConfig config) {
+        if (config == null || config.getName() == null) {
+            throw new DotRuntimeException("Invalid bundle config for readBundleMeta: " + config);
+        }
+        File bundlePath = new File(ConfigUtils.getBundlePath() + File.separator + config.getName());
+        return readBundleMeta(bundlePath);
 
-		File xml = new File(bundlePath + File.separator + "bundle.xml");
-		if(xml.exists()){
-			return (PublisherConfig) xmlToObject(xml);
-		}
-		else{
-			return null;
-		}
-	}
+    }
+
+    public static PublisherConfig readBundleMeta(File parentPath) {
+        if (parentPath == null) {
+            throw new DotRuntimeException("Invalid bundle parent path for readBundleMeta: " + parentPath);
+        }
+        if (!parentPath.isDirectory() && (parentPath.getName().endsWith(".xml") || parentPath.getName()
+                .endsWith(".json"))) {
+            parentPath = parentPath.getParentFile();
+        }
+
+        for (String bundleMetaFile : bundleMetaFiles) {
+            final File bundleInfo = new File(parentPath.getAbsolutePath() + File.separator + bundleMetaFile);
+            final PublisherConfig bundleConfig = Try.of(() -> readObject(bundleInfo, PublisherConfig.class))
+                    .onFailure(e -> Logger.warn(BundlerUtil.class, "unable to find bundle meta: " + e.getMessage()))
+                    .getOrNull();
+            if (bundleConfig != null) {
+                return bundleConfig;
+            }
+        }
+        throw new DotRuntimeException("Unable to read bundle meta file");
+    }
+
 
     /**
      * Serialize a given object to xml
@@ -238,7 +259,7 @@ public class BundlerUtil {
      * @param obj Object to serialize
      * @param f   File to write to
      */
-    public static void objectToXML ( Object obj, File f ) {
+    private static void objectToXML(Object obj, File f) {
         objectToXML( obj, f, true );
     }
 
@@ -248,7 +269,7 @@ public class BundlerUtil {
      * @param obj Object to serialize
      * @param f   File to write to
      */
-    public static void objectToXML ( Object obj, File f, boolean removeFirst ) {
+    private static void objectToXML(Object obj, File f, boolean removeFirst) {
 
         if ( removeFirst && f.exists() )
             f.delete();
@@ -265,7 +286,7 @@ public class BundlerUtil {
 
 
             try(final OutputStream outputStream = Files.newOutputStream(f.toPath())){
-                objectToXML(obj, outputStream);
+                writeXML(obj, outputStream);
             }
 
         } catch ( IOException e ) {
@@ -273,10 +294,30 @@ public class BundlerUtil {
         }
     }
 
-    public static void objectToXML(final Object obj, final OutputStream outputStream) {
+    private static void writeXML(final Object obj, final OutputStream outputStream) {
         HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(new OutputStreamWriter(outputStream));
         XMLSerializerUtil.getInstance().marshal(obj, xmlWriter);
     }
+
+
+    public static boolean readXML() {
+        return Config.getBooleanProperty("PUSH_PUBLISHING_READ_CONTENTLET_AS_XML", false);
+    }
+
+    public static boolean readJSON() {
+        return Config.getBooleanProperty("PUSH_PUBLISHING_READ_CONTENTLET_AS_JSON", true);
+    }
+
+
+    public static boolean writeXML() {
+        return Config.getBooleanProperty("PUSH_PUBLISHING_WRITE_CONTENTLET_AS_XML", true);
+    }
+
+    public static boolean writeJSON() {
+        return Config.getBooleanProperty("PUSH_PUBLISHING_WRITE_CONTENTLET_AS_JSON", true);
+    }
+
+
 
     /**
      * Serialize a given object to json (using jackson)
@@ -284,7 +325,7 @@ public class BundlerUtil {
      * @param obj Object to serialize
      * @param f   File to write to
      */
-    public static void objectToJSON( Object obj, File f ) {
+    private static void objectToJSON(Object obj, File f) {
         objectToJSON( obj, f, true );
     }
 
@@ -294,12 +335,12 @@ public class BundlerUtil {
      * @param obj Object to serialize
      * @param f   File to write to
      */
-    public static void objectToJSON( Object obj, File f, boolean removeFirst ) {
+    private static void objectToJSON(Object obj, File f, boolean removeFirst) {
 
         if ( removeFirst && f.exists() )
             f.delete();
 
-        final ObjectMapper mapper = getCustomMapper();
+        final ObjectMapper mapper = getObjectMapper();
 
         try {
             if ( !f.exists() ){
@@ -320,25 +361,11 @@ public class BundlerUtil {
     }
 
     private static ObjectMapper getObjectMapper() {
-        if (objectMapper == null) {
-            objectMapper = new ObjectMapper();
-            final JavaTimeModule javaTimeModule = createJavaTimeModule();
-            objectMapper.registerModule(javaTimeModule);
-            objectMapper.registerModule(new Jdk8Module());
-            objectMapper.registerModule(new GuavaModule());
-        }
-        return objectMapper;
-    }
-
-    private static ObjectMapper getCustomMapper() {
-        if (customMapper == null) {
-            customMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
-        }
-        return customMapper;
+        return DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
     }
 
 
-    public static void objectToJSON( final Object obj, final OutputStream outputStream) {
+    private static void objectToJSON(final Object obj, final OutputStream outputStream) {
         final ObjectMapper mapper = getObjectMapper();
 
         try {
@@ -354,7 +381,7 @@ public class BundlerUtil {
      * @param f file to deserialize
      * @return A deserialized object
      */
-    public static Object xmlToObject(File f){
+    private static Object xmlToObject(File f) {
         try (InputStream input = Files.newInputStream(f.toPath())) {
             return xmlToObject(input);
 		} catch (Exception e) {
@@ -363,7 +390,7 @@ public class BundlerUtil {
 		}
 	}
 
-    public static Object xmlToObject(final InputStream inputStream) throws IOException {
+    private static Object xmlToObject(final InputStream inputStream) throws IOException {
         final XStream xstream = XMLSerializerUtil.getInstance().getXmlSerializer();
 
         try (InputStream input = new BufferedInputStream(inputStream)) {
@@ -384,12 +411,54 @@ public class BundlerUtil {
         } catch (Exception e) {
            throw new DotRuntimeException("Unable to deserialize XML: " + file + " " + e.getMessage(), e);
         }
-        
+    }
+
+
+    public static <T> T readObject(File f, Class<T> clazz) {
+        if (readXML() && f.getName().endsWith(".xml")) {
+            return (T) xmlToObject(f);
+        } else if (readJSON() && f.getName().endsWith(".json")) {
+            return jsonToObject(f, clazz);
+        } else {
+            return null;
+        }
+    }
+
+
+    public static void writeObject(Object obj, File f) {
+
+        writeObject(obj, f, true);
+    }
+
+    public static void writeObject(Object obj, File f, boolean removeFirst) {
+
+        if (removeFirst && f.exists()) {
+            f.delete();
+        }
+
+        String fileName = f.getName();
+
+        try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(f.toPath()))) {
+            writeObject(obj, out, fileName);
+        } catch (Exception e) {
+            Logger.error(BundlerUtil.class, e.getMessage(), e);
+            throw new DotRuntimeException("Unable to write object to file: " + f.getAbsolutePath(), e);
+        }
+
+    }
+
+
+    public static void writeObject(Object obj, OutputStream out, String filePath) {
+
+        if (writeXML() && filePath.endsWith(".xml")) {
+            writeXML(obj, out);
+        }
+        if (writeJSON() && filePath.endsWith(".json")) {
+            objectToJSON(obj, out);
+        }
 
 
     }
-    
-    
 
     /**
      * Deserialize an object back from JSON (using jackson)
@@ -398,24 +467,16 @@ public class BundlerUtil {
      * @param clazz value type to deserialize
      * @return A deserialized object
      */
-    public static <T> T jsonToObject(File f, Class<T> clazz){
+    private static <T> T jsonToObject(File file, Class<T> clazz) {
     	final ObjectMapper mapper = getObjectMapper();
+        try (InputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
+            T ret = mapper.readValue(input, clazz);
+            return ret;
+        } catch (IOException e) {
+            Logger.error(BundlerUtil.class, e.getMessage(), e);
+            return null;
+        }
 
-    	BufferedInputStream input = null;
-		try {
-			input = new BufferedInputStream(Files.newInputStream(f.toPath()));
-			T ret = mapper.readValue(input, clazz);
-			return ret;
-		} catch (IOException e) {
-			Logger.error(BundlerUtil.class,e.getMessage(),e);
-			return null;
-		}finally{
-			try {
-				input.close();
-			}
-			catch(Exception e){
-			}
-		}
 	}
 
     /**
@@ -425,7 +486,7 @@ public class BundlerUtil {
      * @param typeReference value type to deserialize
      * @return A deserialized object
      */
-    public static <T> T jsonToObject(File f, TypeReference<T> typeReference){
+    public static <T> T jsonToObject(File f, TypeReference<T> typeReference) {
         ObjectMapper mapper = new ObjectMapper();
 
         try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(f.toPath()))){
@@ -525,31 +586,4 @@ public class BundlerUtil {
         final File bundleTarGzip = TarGzipBundleOutput.getBundleTarGzipFile(bundleId);
         return bundleTarGzip.exists();
     }
-
-    private static JavaTimeModule createJavaTimeModule() {
-        final JavaTimeModule javaTimeModule = new JavaTimeModule();
-        javaTimeModule.addSerializer(Instant.class, new JsonSerializer<Instant>() {
-            @Override
-            public void serialize(final Instant value, final JsonGenerator genarator,
-                    final SerializerProvider serializers)
-                    throws IOException {
-                genarator.writeNumber(String.valueOf(value.toEpochMilli()));
-            }
-        });
-
-        javaTimeModule.addDeserializer(Instant.class, new JsonDeserializer<Instant>() {
-            @Override
-            public Instant deserialize(final JsonParser parser, final DeserializationContext ctxt)
-                    throws IOException {
-                try {
-                    final long longValue = parser.getLongValue();
-                    return Instant.ofEpochMilli(longValue);
-                } catch (JsonParseException e) {
-                    return Instant.parse(parser.getValueAsString());
-                }
-            }
-        });
-        return javaTimeModule;
-    }
-
 }

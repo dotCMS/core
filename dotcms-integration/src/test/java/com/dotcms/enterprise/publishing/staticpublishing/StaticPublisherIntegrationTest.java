@@ -51,7 +51,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION;
+import static com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getContentTypeWithURlMap;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getFolderWithLiveFileAssetAndPage;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getHostWithLiveFileAssetAndPage;
@@ -255,7 +255,7 @@ public class StaticPublisherIntegrationTest {
                 String fileContent = FileTestUtil.removeSpace(
                         FileTestUtil.getFileContent(file));
 
-                if (file.getAbsolutePath().endsWith(HTMLPAGE_ASSET_EXTENSION)) {
+                if (file.getAbsolutePath().endsWith(HTMLPAGE_ASSET_EXTENSIONS[0])) {
                     fileContent = FileTestUtil.removeContent(fileContent, getXMLFileToRemove());
                 }
 

@@ -16,7 +16,6 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.UserWrapper;
 import com.dotcms.publishing.*;
 import com.dotcms.publishing.output.BundleOutput;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
@@ -43,7 +42,7 @@ public class UserBundler implements IBundler {
 
     public final static String USER_PREFIX = "user_";
     public final static String FOLDER_USERS = "users";
-    public final static String WRAPPER_DESCRIPTOR_EXTENSION = ".user.xml";
+    public final static String[] USER_EXTENSIONS = {".user.xml", ".user.json"};
 
     @Override
     public String getName () {
@@ -101,20 +100,22 @@ public class UserBundler implements IBundler {
                 UserWrapper wrapper = new UserWrapper( user, userRole );
                 wrapper.setOperation( operation );
 
-                //Prepare the file where we are going to write all this user information
-                String uri = user.getUserId();
-                if ( !uri.endsWith( WRAPPER_DESCRIPTOR_EXTENSION ) ) {
-                    uri = uri.replace( WRAPPER_DESCRIPTOR_EXTENSION, "" ).trim();
-                    uri += WRAPPER_DESCRIPTOR_EXTENSION;
+                for (String extension : USER_EXTENSIONS) {
+                    //Prepare the file where we are going to write all this user information
+                    String uri = user.getUserId();
+                    if (!uri.endsWith(extension)) {
+                        uri = uri.replace(extension, "").trim();
+                        uri += extension;
+                    }
+                    final String myFileUrl = File.separator + FOLDER_USERS + File.separator + uri;
+
+                    try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
+
+                        BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
+                    }
+
+                    bundleOutput.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
                 }
-                final String myFileUrl = File.separator + FOLDER_USERS + File.separator + uri;
-
-                try(final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
-
-                    BundlerUtil.objectToXML(wrapper, outputStream);
-                }
-
-                bundleOutput.setLastModified( myFileUrl, Calendar.getInstance().getTimeInMillis() );
 
                 if ( Config.getBooleanProperty( "PUSH_PUBLISHING_LOG_DEPENDENCIES", false ) ) {
                     PushPublishLogger.log( getClass(), "User bundled for pushing. Operation : " + config.getOperation() + ", User id: " + userId, config.getId() );
@@ -128,16 +129,8 @@ public class UserBundler implements IBundler {
 
     @Override
     public FileFilter getFileFilter () {
-        return new UserBundlerFilter();
+        return new ExtensionFileFilter(USER_EXTENSIONS);
     }
 
-    public class UserBundlerFilter implements FileFilter {
-
-        @Override
-        public boolean accept ( File pathName ) {
-            return (pathName.isDirectory() || pathName.getName().endsWith( WRAPPER_DESCRIPTOR_EXTENSION ));
-        }
-
-    }
 
 }

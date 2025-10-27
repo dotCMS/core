@@ -80,16 +80,17 @@ public class CategoryFullHandler implements IHandler {
     		// https://github.com/dotCMS/core/issues/12225
     		HibernateUtil.setTransactionListenersStatus(TransactionListenerStatus.DISABLED);
 
-    		pushCategoryUtil = new PushCategoryUtil(categories,
-	                CategoryFullBundler.CATEGORY_FULL_EXTENSION);
-	        if (pushCategoryUtil.getCategoryXMLCount() > 0) {
+            for (String extension : CategoryFullBundler.CATEGORY_FULL_EXTENSIONS) {
+                pushCategoryUtil = new PushCategoryUtil(categories, extension);
+                if (pushCategoryUtil.getCategoryXMLCount() > 0) {
 
-                deleteAllCategories();
-                CacheLocator.getCategoryCache().clearCache();
-                handleCategories(categories);
-                removeInvalidTreeRelationships();
-                CacheLocator.getCategoryCache().clearCache();
-	        }
+                    deleteAllCategories();
+                    CacheLocator.getCategoryCache().clearCache();
+                    handleCategories(categories);
+                    removeInvalidTreeRelationships();
+                    CacheLocator.getCategoryCache().clearCache();
+                }
+            }
     	} finally {
     		HibernateUtil.setTransactionListenersStatus(listenersStatus);
     	}

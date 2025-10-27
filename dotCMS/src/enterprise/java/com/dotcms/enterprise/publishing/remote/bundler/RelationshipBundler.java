@@ -35,7 +35,7 @@ import com.dotmarketing.util.PushPublishLogger;
 public class RelationshipBundler implements IBundler {
 
 	private PushPublisherConfig config;
-	public final static String RELATIONSHIP_EXTENSION = ".relationship.xml" ;
+    public final static String[] RELATIONSHIP_EXTENSIONS = {".relationship.xml", ".relationship.json"};
 
 	@Override
 	public String getName() {
@@ -78,29 +78,29 @@ public class RelationshipBundler implements IBundler {
 			throws IOException, DotBundleException, DotDataException, DotSecurityException, DotPublisherException {
 		RelationshipWrapper wrapper = new RelationshipWrapper(relationship, op);
 		String liveworking = relationship.isLive() ? "live" :  "working";
+        Structure parent = CacheLocator.getContentTypeCache()
+                .getStructureByInode(relationship.getParentStructureInode());
 
-		String uri = relationship.getInode();
-		if(!uri.endsWith(RELATIONSHIP_EXTENSION)){
-			uri.replace(RELATIONSHIP_EXTENSION, "");
-			uri.trim();
-			uri += RELATIONSHIP_EXTENSION;
-		}
+        Host h = APILocator.getHostAPI().find(parent.getHost(), APILocator.getUserAPI().getSystemUser(), false);
+        for (String extension : RELATIONSHIP_EXTENSIONS) {
+            String uri = relationship.getInode();
+            if (!uri.endsWith(extension)) {
+                uri.replace(extension, "");
+                uri.trim();
+                uri += extension;
+            }
 
-		Structure parent = CacheLocator.getContentTypeCache().getStructureByInode(relationship.getParentStructureInode());
+            String myFileUrl = File.separator
+                    + liveworking + File.separator
+                    + h.getHostname() + File.separator + uri;
 
-		Host h = APILocator.getHostAPI().find(parent.getHost(), APILocator.getUserAPI().getSystemUser(), false);
+            try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
 
-		String myFileUrl = File.separator
-				+liveworking + File.separator
-				+ h.getHostname() +File.separator + uri;
+                BundlerUtil.writeObject(wrapper, outputStream, myFileUrl);
+            }
 
-		try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
-
-			BundlerUtil.objectToXML(wrapper, outputStream);
-		}
-
-		bundleOutput.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
-
+            bundleOutput.setLastModified(myFileUrl, Calendar.getInstance().getTimeInMillis());
+        }
 		if(Config.getBooleanProperty("PUSH_PUBLISHING_LOG_DEPENDENCIES", false)) {
 			PushPublishLogger.log(getClass(), "Relationship bundled for pushing. Operation: "+config.getOperation()+", Id: "+ relationship.getInode(), config.getId());
 		}
@@ -108,16 +108,9 @@ public class RelationshipBundler implements IBundler {
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new RelationshipBundlerFilter();
+        return new ExtensionFileFilter(RELATIONSHIP_EXTENSIONS);
 	}
 
-	public class RelationshipBundlerFilter implements FileFilter {
 
-		@Override
-		public boolean accept(File pathname) {
-			return (pathname.isDirectory() || pathname.getName().endsWith(RELATIONSHIP_EXTENSION));
-		}
-
-	}
 
 }

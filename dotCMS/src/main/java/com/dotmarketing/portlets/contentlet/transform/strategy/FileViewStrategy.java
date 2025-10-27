@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.List;
@@ -93,16 +94,16 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
             Logger.warn(this, "FileAsset identifier is empty for field: " + field.variable());
             return Map.of();
         }
-
+        User user = PortalUtil.getUser();
+        boolean workingContent = user != null && user.isBackendUser();
         Optional<Contentlet> fileAsContentOptional = APILocator.getContentletAPI()
-                .findContentletByIdentifierOrFallback(fileAssetIdentifier, Try.of(
-                        contentlet::isLive).getOrElseThrow(()->new DotDataException("can't determine if content is live"))
+                .findContentletByIdentifierOrFallback(fileAssetIdentifier, workingContent
                         , contentlet.getLanguageId(),
                         APILocator.systemUser(), true);
 
         if(fileAsContentOptional.isEmpty()) {
             //Prevent NPE
-            Logger.warn(this, "Live FileAsset not found for identifier: " + fileAssetIdentifier);
+            Logger.debug(this, "Live FileAsset not found for identifier: " + fileAssetIdentifier);
             return Map.of();
         }
 

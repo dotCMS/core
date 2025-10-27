@@ -62,9 +62,8 @@ public class PushPublisherJob extends DotStatefulJob {
 		final Map<String, Serializable> executionData = getExecutionData(trigger, PushPublisherJob.class);
 
 		final String bundleName = (String) executionData.get("bundleName");
-		final PublishAuditStatus status = (PublishAuditStatus) executionData.get("status");
 
-		processBundle(bundleName, status);
+        processBundle(bundleName, new PublishAuditStatus());
 	}
 
 	/**
@@ -78,7 +77,7 @@ public class PushPublisherJob extends DotStatefulJob {
 		Logger.debug(PushPublisherJob.class, "Triggering Push Publisher Job for bundle: " + bundleName);
 		Logger.debug(PushPublisherJob.class, "Status: " + status.getStatus().name());
 		final ImmutableMap<String, Serializable> nextExecutionData = ImmutableMap
-				.of("bundleName", bundleName, "status", status);
+                .of("bundleName", bundleName);
 
 		try {
 			DotStatefulJob.enqueueTrigger(nextExecutionData, PushPublisherJob.class);

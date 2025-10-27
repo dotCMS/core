@@ -93,7 +93,7 @@ public class OSGIHandler implements IHandler {
 
                 //Get our wrapper
                 final Path path = wrapperDescriptor.toPath();
-                    final OSGIWrapper wrapper = BundlerUtil.jsonToObject(path.toFile(), OSGIWrapper.class);
+                final OSGIWrapper wrapper = BundlerUtil.readObject(path.toFile(), OSGIWrapper.class);
                 final PushPublisherConfig.Operation operation = wrapper.getOperation();
                 final String bundleJarName = wrapper.getJarName();
 

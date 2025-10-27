@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.remote.handler;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ExtensionFileFilter;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.wrapper.PushContentWorkflowWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
@@ -101,11 +102,8 @@ public class ContentWorkflowHandler implements IHandler {
 
     @Override
     public void handle(File bundleFolder) throws Exception {
-        handleContentWorkflow(FileUtil.listFilesRecursively(bundleFolder, new FileFilter() {
-            public boolean accept(File pathname) {
-                return pathname.isDirectory() || pathname.getName().endsWith(ContentBundler.CONTENT_WORKFLOW_EXTENSION);
-            }
-        }));
+        handleContentWorkflow(FileUtil.listFilesRecursively(bundleFolder,
+                new ExtensionFileFilter(ContentBundler.CONTENT_WORKFLOW_EXTENSION)));
     }
 
     /**

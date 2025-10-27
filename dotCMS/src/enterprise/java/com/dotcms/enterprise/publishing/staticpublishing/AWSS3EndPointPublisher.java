@@ -43,9 +43,13 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
@@ -421,12 +425,27 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
       }
     }
 
-    private class AWSS3FileFilter implements FileFilter{
+    private String[] combinedExtensions = Stream.of(
+                    URLMapBundler.URLMAP_EXTENSIONS,
+                    FileAssetBundler.FILE_ASSET_EXTENSIONS,
+                    HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSIONS
+            )
+            .flatMap(Arrays::stream)
+            .toArray(String[]::new);
+
+    private class AWSS3FileFilter implements FileFilter {
+
         @Override
         public boolean accept(File pathname) {
-            return !(pathname.getName().endsWith(HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION)
-                || pathname.getName().endsWith(URLMapBundler.FILE_ASSET_EXTENSION)
-                || pathname.getName().endsWith(FileAssetBundler.FILE_ASSET_EXTENSION));
+            if (pathname.isDirectory()) {
+                return true;
+            }
+            for (String ext : combinedExtensions) {
+                if (pathname.getName().toLowerCase().endsWith(ext)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
     //////////////////////////////////////////

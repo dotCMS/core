@@ -31,7 +31,7 @@ public class BundlerUtilIntegrationTest {
     }
 
     /**
-     * Method to test: {@link BundlerUtil#writeBundleXML(PublisherConfig, BundleOutput)}
+     * Method to test: {@link BundlerUtil#writeBundleMetaInfo(PublisherConfig, BundleOutput)} (PublisherConfig, BundleOutput)}
      * When: Write a bundle.xml file
      * Should: the serialize object should be a {@link PushPublisherConfig}
      * 
@@ -50,13 +50,13 @@ public class BundlerUtilIntegrationTest {
         final File bundlerUtilTest = FileUtil.createTemporaryDirectory("BundlerUtilTest");
         final BundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, bundlerUtilTest);
 
-        BundlerUtil.writeBundleXML(config, directoryBundleOutput);
+        BundlerUtil.writeBundleMetaInfo(config, directoryBundleOutput);
 
         final File bundleXMLFile = new File(bundlerUtilTest, "bundle.xml");
 
         assertTrue(bundleXMLFile.exists());
 
-        final Object bundleXmlObject = BundlerUtil.xmlToObject(bundleXMLFile);
+        final Object bundleXmlObject = BundlerUtil.readBundleMeta(bundleXMLFile);
         assertTrue(PushPublisherConfig.class.isInstance(bundleXmlObject));
 
     }
