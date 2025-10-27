@@ -159,7 +159,7 @@ public class KeyStoreManagerIntegrationTest {
         private final String keyStorePath;
 
         public TestKeyStoreManager(String keyStorePath) {
-            super();
+            super(null,null, null);
             this.keyStorePath = keyStorePath;
         }
 

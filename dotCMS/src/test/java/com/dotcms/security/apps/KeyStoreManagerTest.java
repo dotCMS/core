@@ -1,5 +1,6 @@
 package com.dotcms.security.apps;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -48,17 +49,17 @@ class KeyStoreManagerTest {
             configMock.when(() -> Config.getStringProperty(anyString(), anyString()))
                      .thenReturn(testKeyStoreFile.getAbsolutePath());
 
-            // Create initial keystore file
+            // Create an initial keystore file
             createInitialKeyStore(testKeyStoreFile, testPassword);
 
             // Initialize KeyStoreManager
-            keyStoreManager = new KeyStoreManager();
+            keyStoreManager = CDIUtils.getBeanThrows(KeyStoreManager.class);
         }
     }
 
     @Test
     void testInitialLoad() {
-        // Test that initial load works
+        // Test that an initial load works
         KeyStore keyStore = keyStoreManager.getKeyStore();
         assertNotNull(keyStore);
         assertEquals("PKCS12", keyStore.getType());
@@ -70,7 +71,7 @@ class KeyStoreManagerTest {
         KeyStore keyStore1 = keyStoreManager.getKeyStore();
         assertNotNull(keyStore1);
 
-        // Second load should return the same instance (cache hit)
+        // The second load should return the same instance (cache hit)
         KeyStore keyStore2 = keyStoreManager.getKeyStore();
         assertSame(keyStore1, keyStore2, "Should return same cached instance when file unchanged");
     }

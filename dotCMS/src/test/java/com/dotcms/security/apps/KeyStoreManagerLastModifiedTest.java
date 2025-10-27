@@ -1,5 +1,6 @@
 package com.dotcms.security.apps;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotmarketing.util.Config;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class KeyStoreManagerLastModifiedTest {
                      .thenReturn(testKeyStoreFile.getAbsolutePath());
 
             createKeyStoreFile(testKeyStoreFile, testPassword);
-            keyStoreManager = new KeyStoreManager();
+            keyStoreManager = CDIUtils.getBeanThrows(KeyStoreManager.class);
         }
     }
 

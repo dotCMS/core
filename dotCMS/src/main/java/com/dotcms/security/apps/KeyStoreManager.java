@@ -12,6 +12,7 @@ import com.liferay.util.FileUtil;
 import java.nio.file.Paths;
 import java.util.Date;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +50,11 @@ public class KeyStoreManager {
     private final String keyStorePath;
     private final Supplier<char[]> passwordSupplier;
 
+    // CDI Events - injected via constructor
+    private final Event<KeyStoreCreatedEvent> keyStoreCreatedEvent;
+    private final Event<KeyStoreLoadedEvent> keyStoreLoadedEvent;
+    private final Event<KeyStoreSavedEvent> keyStoreSavedEvent;
+
     public static String getSecretStorePath() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + File.separator + "server" + File.separator + "secrets" + File.separator + SECRETS_STORE_FILE;
@@ -56,11 +62,24 @@ public class KeyStoreManager {
         return Paths.get(dirPath).normalize().toString();
     }
 
+    /**
+     * CDI Friendly Constructor.
+     */
     public KeyStoreManager() {
+        this(null, null, null);
+    }
+
+    @Inject
+    public KeyStoreManager(Event<KeyStoreCreatedEvent> keyStoreCreatedEvent,
+                          Event<KeyStoreLoadedEvent> keyStoreLoadedEvent,
+                          Event<KeyStoreSavedEvent> keyStoreSavedEvent) {
         this.keyStorePath = getSecretStorePath();
         this.passwordSupplier = () -> Config
                 .getStringProperty(SecretsKeyStoreHelper.SECRETS_KEYSTORE_PASSWORD_KEY,
                         AppsUtil.digest(com.dotcms.enterprise.cluster.ClusterFactory.getClusterSalt())).toCharArray();
+        this.keyStoreCreatedEvent = keyStoreCreatedEvent;
+        this.keyStoreLoadedEvent = keyStoreLoadedEvent;
+        this.keyStoreSavedEvent = keyStoreSavedEvent;
     }
 
     /**
@@ -95,11 +114,28 @@ public class KeyStoreManager {
                 result = loadKeyStoreFromDisk();
                 cachedKeyStore = result;
                 lastModified = checkModified;
+
+                fireKeyStoreLoadedEvent(result);
             }
 
             return result;
         } finally {
             keyStoreLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Fires a KeyStoreLoadedEvent.
+     * @param result The KeyStore that was loaded.
+     */
+    private void fireKeyStoreLoadedEvent(KeyStore result) {
+        // Fire loaded event
+        if (keyStoreLoadedEvent != null) {
+            try {
+                keyStoreLoadedEvent.fire(new KeyStoreLoadedEvent(keyStorePath, result.size()));
+            } catch (Exception e) {
+                Logger.warn(this.getClass(), "Failed to fire KeyStoreLoadedEvent: " + e.getMessage());
+            }
         }
     }
 
@@ -133,10 +169,14 @@ public class KeyStoreManager {
         try {
             // Ensure parent directory exists
             if (!secretStoreFileTmp.getParentFile().exists()) {
-                secretStoreFileTmp.getParentFile().mkdirs();
+                final boolean mkDirs = secretStoreFileTmp.getParentFile().mkdirs();
+                if (!mkDirs) {
+                    throw new DotStateException("Failed to create parent directories for tmp file: "
+                            + secretStoreFileTmp.getParent());
+                }
             }
 
-            // Atomic write: tmp file -> final file
+            // Atomically write: tmp file -> final file
             try (OutputStream fos = Files.newOutputStream(secretStoreFileTmp.toPath())) {
                 keyStore.store(fos, passwordSupplier.get());
                 FileUtil.copyFile(secretStoreFileTmp, secretStoreFile);
@@ -145,6 +185,8 @@ public class KeyStoreManager {
                 // Update cache
                 cachedKeyStore = keyStore;
                 lastModified = secretStoreFile.lastModified();
+                // Fire saved event
+                fireKeyStoreSavedEvent(keyStore);
 
                 Logger.debug(this.getClass(), "KeyStore saved successfully and cache updated");
             }
@@ -153,6 +195,20 @@ public class KeyStoreManager {
             throw new DotRuntimeException(e);
         } finally {
             keyStoreLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Fires a KeyStoreSavedEvent.
+     * @param keyStore The KeyStore that was saved.
+     */
+    private void fireKeyStoreSavedEvent(KeyStore keyStore) {
+        if (keyStoreSavedEvent != null) {
+            try {
+                keyStoreSavedEvent.fire(new KeyStoreSavedEvent(keyStorePath, keyStore.size()));
+            } catch (Exception e) {
+                Logger.warn(this.getClass(), "Failed to fire KeyStoreSavedEvent: " + e.getMessage());
+            }
         }
     }
 
@@ -171,6 +227,9 @@ public class KeyStoreManager {
                     keyStore.load(inputStream, passwordSupplier.get());
                     Logger.info(KeyStoreManager.class,
                             String.format("KeyStore loaded successfully after %d tries.", tryCount));
+
+                    // Fire loaded event for existing KeyStore
+                    fireKeyStoreLoadedEvent(keyStore);
                     break;
                 } catch (IOException e) {
                     Logger.warn(KeyStoreManager.class,
@@ -190,7 +249,7 @@ public class KeyStoreManager {
     }
 
     /**
-     * Creates KeyStore file if it doesn't exist.
+     * Creates a KeyStore file if it doesn't exist.
      */
     private File createStoreIfNeeded() {
         final File secretStoreFile = new File(keyStorePath);
@@ -202,13 +261,19 @@ public class KeyStoreManager {
 
                 // Create parent directories
                 if (!secretStoreFile.getParentFile().exists()) {
-                    secretStoreFile.getParentFile().mkdirs();
+                    final boolean mkDirs = secretStoreFile.getParentFile().mkdirs();
+                    if (!mkDirs) {
+                        throw new DotStateException("Failed to create parent directories for KeyStore file: "
+                                + secretStoreFile.getParent());
+                    }
                 }
 
                 // Save empty KeyStore
                 try (OutputStream fos = Files.newOutputStream(secretStoreFile.toPath())) {
                     keyStore.store(fos, passwordSupplier.get());
                 }
+
+                fireKeyStoreCreatedEvent();
 
                 Logger.info(this.getClass(), "New KeyStore created successfully");
             } catch (Exception e) {
@@ -217,6 +282,17 @@ public class KeyStoreManager {
             }
         }
         return secretStoreFile;
+    }
+
+    private void fireKeyStoreCreatedEvent() {
+        // Fire created event
+        if (keyStoreCreatedEvent != null) {
+            try {
+                keyStoreCreatedEvent.fire(new KeyStoreCreatedEvent(keyStorePath));
+            } catch (Exception e) {
+                Logger.warn(this.getClass(), "Failed to fire KeyStoreCreatedEvent: " + e.getMessage());
+            }
+        }
     }
 
     /**
@@ -278,5 +354,72 @@ public class KeyStoreManager {
      */
     public String getKeyStorePath() {
         return keyStorePath;
+    }
+
+    // Event Classes
+    public static class KeyStoreCreatedEvent {
+        private final String keyStorePath;
+        private final long timestamp;
+
+        public KeyStoreCreatedEvent(String keyStorePath) {
+            this.keyStorePath = keyStorePath;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public String getKeyStorePath() {
+            return keyStorePath;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+    }
+
+    public static class KeyStoreLoadedEvent {
+        private final String keyStorePath;
+        private final int entryCount;
+        private final long timestamp;
+
+        public KeyStoreLoadedEvent(String keyStorePath, int entryCount) {
+            this.keyStorePath = keyStorePath;
+            this.entryCount = entryCount;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public String getKeyStorePath() {
+            return keyStorePath;
+        }
+
+        public int getEntryCount() {
+            return entryCount;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+    }
+
+    public static class KeyStoreSavedEvent {
+        private final String keyStorePath;
+        private final int entryCount;
+        private final long timestamp;
+
+        public KeyStoreSavedEvent(String keyStorePath, int entryCount) {
+            this.keyStorePath = keyStorePath;
+            this.entryCount = entryCount;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public String getKeyStorePath() {
+            return keyStorePath;
+        }
+
+        public int getEntryCount() {
+            return entryCount;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
     }
 }

@@ -38,8 +38,7 @@ public class SecretCachedKeyStoreImpl implements SecretsStore {
         this.secretsKeyStore = new SecretsKeyStoreHelper(
                         () -> cache.getFromCache(SECRETS_KEYSTORE_PASSWORD_KEY,
                         () -> Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY,
-                        digest(ClusterFactory.getClusterSalt())).toCharArray()),
-                        List.of(this::flushCache)
+                        digest(ClusterFactory.getClusterSalt())).toCharArray())
         );
         this.cache = cache;
     }
@@ -65,7 +64,7 @@ public class SecretCachedKeyStoreImpl implements SecretsStore {
 
     /**
      * while in cache it must be encrypted!
-     * once returned from this method it should get decrypted
+     * once returned from this method, it should get decrypted
      * @param variableKey
      * @return
      */

@@ -44,23 +44,21 @@ public class SecretsKeyStoreHelper {
     private static final String SECRETS_STORE_SECRET_KEY_FACTORY_TYPE = "PBE";
     private static final String APPS_KEY_PROVIDER_CLASS = "APPS_KEY_PROVIDER_CLASS";
     private final Supplier<char[]> passwordSupplier;
-    private final List<StoreCreatedListener> storeCreatedListeners;
 
     @VisibleForTesting
     public static String getSecretStorePath() {
         return KeyStoreManager.getSecretStorePath();
     }
 
-    private SecretsKeyStoreHelper(
-            final Supplier<char[]> passwordSupplier, final List<StoreCreatedListener> storeCreatedListeners) {
+    public SecretsKeyStoreHelper(
+            final Supplier<char[]> passwordSupplier) {
                 this.passwordSupplier = passwordSupplier;
-                this.storeCreatedListeners = storeCreatedListeners;
     }
 
     public SecretsKeyStoreHelper() {
        this(() -> Config
                .getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY,
-                       digest(ClusterFactory.getClusterSalt())).toCharArray(), List.of());
+                       digest(ClusterFactory.getClusterSalt())).toCharArray());
     }
 
    /**
@@ -253,12 +251,5 @@ public class SecretsKeyStoreHelper {
     void backupAndRemoveKeyStore() throws IOException {
         final KeyStoreManager keyStoreManager = CDIUtils.getBeanThrows(KeyStoreManager.class);
         keyStoreManager.backupAndRemoveKeyStore();
-    }
-
-    @FunctionalInterface
-    public interface StoreCreatedListener {
-
-        void onStoreCreated();
-
     }
 }
