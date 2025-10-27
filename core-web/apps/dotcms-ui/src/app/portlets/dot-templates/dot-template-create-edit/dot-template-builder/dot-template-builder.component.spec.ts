@@ -5,6 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogService } from 'primeng/dynamicdialog';
 import { TabViewModule } from 'primeng/tabview';
 
 import {
@@ -153,7 +154,8 @@ describe('DotTemplateBuilderComponent', () => {
             {
                 provide: DotPropertiesService,
                 useClass: DotPropertiesServiceMock
-            }
+            },
+            DialogService
         ],
         detectChanges: false
     });

@@ -162,12 +162,12 @@ describe('DotContentTypesPortletComponent', () => {
 
         TestBed.configureTestingModule({
             declarations: [
-                DotContentTypesPortletComponent,
                 MockDotBaseTypeSelectorComponent,
                 MockDotAddToBundleComponent,
                 MockDotContentTypeCloneDialogComponent
             ],
             imports: [
+                DotContentTypesPortletComponent,
                 RouterTestingModule.withRoutes([
                     { path: 'test', component: DotContentTypesPortletComponent }
                 ]),

@@ -22,7 +22,6 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
-import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotGridStackWidget, SCROLL_DIRECTION } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -62,19 +61,7 @@ describe('TemplateBuilderComponent', () => {
 
     const createComponent = createComponentFactory({
         component: TemplateBuilderComponent,
-        imports: [
-            NgFor,
-            NgIf,
-            AsyncPipe,
-            DotMessagePipe,
-            DynamicDialogModule,
-            NgStyle,
-            NgClass,
-            ToolbarModule,
-            DividerModule,
-            TemplateBuilderComponentsModule,
-            HttpClientTestingModule
-        ],
+        imports: [HttpClientTestingModule],
         providers: [
             DotTemplateBuilderStore,
             DialogService,

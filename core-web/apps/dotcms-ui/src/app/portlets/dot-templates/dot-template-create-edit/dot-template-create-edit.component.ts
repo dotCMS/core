@@ -32,7 +32,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
     styleUrls: ['./dot-template-create-edit.component.scss'],
-    providers: [DotTemplateStore, DotTemplatesService],
+    providers: [DotTemplateStore, DotTemplatesService, DialogService],
     imports: [
         ButtonModule,
         CommonModule,

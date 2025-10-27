@@ -30,13 +30,11 @@ import {
     FeaturedFlags,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotGlobalMessageComponent } from '../../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotEditPageInfoComponent } from '../../../components/dot-edit-page-info/dot-edit-page-info.component';
-import { DotEditPageNavDirective } from '../../../main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 import { DotEditPageStateControllerComponent } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.component';
 import { DotEditPageViewAsControllerComponent } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.component';
 import { DotEditPageWorkflowsActionsComponent } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.component';
@@ -58,8 +56,6 @@ import { DotEditPageWorkflowsActionsComponent } from '../dot-edit-page-workflows
         ToolbarModule,
         TooltipModule,
         DotGlobalMessageComponent,
-        DotFavoritePageComponent,
-        DotEditPageNavDirective,
         RouterLink,
         TagModule,
         DotMessagePipe

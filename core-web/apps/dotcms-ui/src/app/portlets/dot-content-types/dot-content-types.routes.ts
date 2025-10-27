@@ -21,6 +21,7 @@ export const dotContentTypesRoutes: Routes = [
                 (m) => m.DotContentTypesEditModule
             ),
         path: 'create/:type',
+        providers: [DotContentTypeEditResolver],
         resolve: {
             contentType: DotContentTypeEditResolver
         }
@@ -36,6 +37,7 @@ export const dotContentTypesRoutes: Routes = [
                 (m) => m.DotContentTypesEditModule
             ),
         path: 'edit/:id',
+        providers: [DotContentTypeEditResolver],
         resolve: {
             contentType: DotContentTypeEditResolver
         }

@@ -57,11 +57,11 @@ import {
 
 import { ContentTypeFieldsDropZoneComponent } from '.';
 
-import { ContentTypeFieldsAddRowModule } from '..';
 import { DotActionButtonComponent } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
-import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
+import { ContentTypeFieldsAddRowComponent } from '../content-type-fields-add-row/content-type-fields-add-row.component';
+import { DotContentTypeFieldsVariablesComponent } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
 import { FieldDragDropService } from '../service/index';
@@ -217,8 +217,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
-                ContentTypeFieldsAddRowModule,
-                DotContentTypeFieldsVariablesModule,
+                ContentTypeFieldsAddRowComponent,
+                DotContentTypeFieldsVariablesComponent,
                 DotIconComponent,
                 DotActionButtonComponent,
                 TableModule,
@@ -494,7 +494,7 @@ describe('Load fields and drag and drop', () => {
                     }
                 ]),
                 DragulaModule,
-                DotContentTypeFieldsVariablesModule,
+                DotContentTypeFieldsVariablesComponent,
                 FormsModule,
                 CheckboxModule,
                 ReactiveFormsModule,
@@ -503,7 +503,7 @@ describe('Load fields and drag and drop', () => {
                 DotIconComponent,
                 ButtonModule,
                 TableModule,
-                ContentTypeFieldsAddRowModule,
+                ContentTypeFieldsAddRowComponent,
                 DotDialogComponent,
                 HttpClientTestingModule,
                 DotMessagePipe,

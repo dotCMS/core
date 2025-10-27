@@ -77,8 +77,9 @@ describe('DotContentTypeCloneDialogComponent', () => {
             'contenttypes.form.label.icon': 'Icon'
         });
         TestBed.configureTestingModule({
-            declarations: [DotContentTypeCopyDialogComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
+                DotContentTypeCopyDialogComponent,
                 DotFormSelectorComponent,
                 BrowserAnimationsModule,
                 DotFieldValidationMessageComponent,

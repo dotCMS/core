@@ -15,7 +15,7 @@ import { DotCategoriesCreateEditStore } from './store/dot-categories-create-edit
 import { DotCategoriesService } from '../../../api/services/dot-categories/dot-categories.service';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotCategoriesListComponent } from '../dot-categories-list/dot-categories-list.component';
-import { DotCategoriesPermissionsModule } from '../dot-categories-permissions/dot-categories-permissions.module';
+import { DotCategoriesPermissionsComponent } from '../dot-categories-permissions/dot-categories-permissions.component';
 
 @Pipe({
     name: 'dm',
@@ -40,7 +40,7 @@ describe('CategoriesCreateEditComponent', () => {
                 TabViewModule,
                 DotCategoriesListComponent,
                 DotPortletBaseComponent,
-                DotCategoriesPermissionsModule,
+                DotCategoriesPermissionsComponent,
                 DotCategoriesCreateEditComponent
             ],
             providers: [

@@ -15,6 +15,8 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -78,6 +80,7 @@ describe('DotEditLayoutComponent', () => {
                 DotSessionStorageService,
                 DotRouterService,
                 DotEventsService,
+                DialogService,
                 {
                     provide: DotPageStateService,
                     useValue: {

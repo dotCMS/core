@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -11,18 +12,30 @@ import {
     inject,
     signal
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { DotContentTypeService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
+import { SearchableDropdownComponent } from '../../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
+import { DotCardinalitySelectorComponent } from '../dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 
+
 @Component({
-    providers: [PaginatorService],
     selector: 'dot-new-relationships',
     templateUrl: './dot-new-relationships.component.html',
     styleUrls: ['./dot-new-relationships.component.scss'],
-    standalone: false
+    imports: [
+        SearchableDropdownComponent,
+        DotCardinalitySelectorComponent,
+        FormsModule,
+        AsyncPipe,
+        DotMessagePipe,
+        DotFieldRequiredDirective
+    ],
+    providers: [PaginatorService]
 })
 export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     paginatorService = inject(PaginatorService);

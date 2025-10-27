@@ -25,7 +25,7 @@ import {
     DotTemplateDesigner,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { TemplateBuilderModule } from '@dotcms/template-builder';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
 
 import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
@@ -36,7 +36,7 @@ export const DEBOUNCE_TIME = 5000;
     selector: 'dot-edit-layout',
     templateUrl: './dot-edit-layout.component.html',
     styleUrls: ['./dot-edit-layout.component.scss'],
-    imports: [CommonModule, RouterModule, TemplateBuilderModule, DotGlobalMessageComponent]
+    imports: [CommonModule, RouterModule, TemplateBuilderComponent, DotGlobalMessageComponent]
 })
 export class DotEditLayoutComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);

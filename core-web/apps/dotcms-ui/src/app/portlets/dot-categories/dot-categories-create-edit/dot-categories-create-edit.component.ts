@@ -10,7 +10,7 @@ import { DotCategoriesCreateEditStore } from './store/dot-categories-create-edit
 
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotCategoriesListComponent } from '../dot-categories-list/dot-categories-list.component';
-import { DotCategoriesPermissionsModule } from '../dot-categories-permissions/dot-categories-permissions.module';
+import { DotCategoriesPermissionsComponent } from '../dot-categories-permissions/dot-categories-permissions.component';
 @Component({
     selector: 'dot-categories-create-edit-list',
     templateUrl: './dot-categories-create-edit.component.html',
@@ -22,7 +22,7 @@ import { DotCategoriesPermissionsModule } from '../dot-categories-permissions/do
         TabViewModule,
         DotCategoriesListComponent,
         DotPortletBaseComponent,
-        DotCategoriesPermissionsModule
+        DotCategoriesPermissionsComponent
     ]
 })
 export class DotCategoriesCreateEditComponent {

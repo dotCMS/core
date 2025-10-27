@@ -40,8 +40,8 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'categories',
         loadChildren: () =>
-            import('@dotcms/app/portlets/dot-categories/dot-categories.module').then(
-                (m) => m.DotCategoriesModule
+            import('@dotcms/app/portlets/dot-categories/dot-categories.routes').then(
+                (m) => m.dotCategoriesRoutes
             )
     },
     {
@@ -59,8 +59,8 @@ const PORTLETS_ANGULAR: Route[] = [
             reuseRoute: false
         },
         loadChildren: () =>
-            import('@portlets/dot-content-types/dot-content-types.module').then(
-                (m) => m.DotContentTypesModule
+            import('@portlets/dot-content-types/dot-content-types.routes').then(
+                (m) => m.dotContentTypesRoutes
             )
     },
     {
@@ -99,8 +99,8 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         loadChildren: () =>
-            import('@portlets/dot-form-builder/dot-form-builder.module').then(
-                (m) => m.DotFormBuilderModule
+            import('@portlets/dot-form-builder/dot-form-builder.routes').then(
+                (m) => m.dotFormBuilderRoutes
             ),
         data: {
             filterBy: 'FORM'

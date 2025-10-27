@@ -23,6 +23,7 @@ export const dotFormBuilderRoutes: Routes = [
                 (m) => m.DotContentTypesEditModule
             ),
         path: 'create',
+        providers: [DotContentTypeEditResolver],
         resolve: {
             contentType: DotContentTypeEditResolver
         }
@@ -38,6 +39,7 @@ export const dotFormBuilderRoutes: Routes = [
                 (m) => m.DotContentTypesEditModule
             ),
         path: 'edit/:id',
+        providers: [DotContentTypeEditResolver],
         resolve: {
             contentType: DotContentTypeEditResolver
         }

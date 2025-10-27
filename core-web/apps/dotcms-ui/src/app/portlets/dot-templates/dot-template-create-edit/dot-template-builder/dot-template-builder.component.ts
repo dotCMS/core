@@ -18,7 +18,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
-import { TemplateBuilderModule } from '@dotcms/template-builder';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
@@ -40,7 +40,7 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
         TabViewModule,
         IframeComponent,
         DotPortletBoxComponent,
-        TemplateBuilderModule,
+        TemplateBuilderComponent,
         ButtonModule,
         DotGlobalMessageComponent
     ]

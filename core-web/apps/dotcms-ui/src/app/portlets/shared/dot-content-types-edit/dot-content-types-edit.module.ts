@@ -42,14 +42,15 @@ import { DotBlockEditorSettingsComponent } from './components/dot-block-editor-s
 import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { ContentTypesFieldDragabbleItemComponent } from './components/fields/content-type-field-dragabble-item';
-import { ContentTypeFieldsAddRowModule } from './components/fields/content-type-fields-add-row/content-type-fields-add-row.module';
+import { ContentTypeFieldsAddRowComponent } from './components/fields/content-type-fields-add-row/content-type-fields-add-row.component';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/content-type-fields-drop-zone';
 import { ContentTypeFieldsPropertiesFormComponent } from './components/fields/content-type-fields-properties-form';
 import { CategoriesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/categories-property';
 import { CheckboxPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/checkbox-property';
 import { DataTypePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/data-type-property';
 import { DefaultValuePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/default-value-property';
-import { DotRelationshipsModule } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
+import { DotRelationshipsPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships-property.component';
+import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { DynamicFieldPropertyDirective } from './components/fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { HintPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/hint-property';
 import { NamePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/name-property';
@@ -57,7 +58,7 @@ import { RegexCheckPropertyComponent } from './components/fields/content-type-fi
 import { ValuesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/values-property';
 import { ContentTypeFieldsRowComponent } from './components/fields/content-type-fields-row';
 import { ContentTypeFieldsTabComponent } from './components/fields/content-type-fields-tab';
-import { DotContentTypeFieldsVariablesModule } from './components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
+import { DotContentTypeFieldsVariablesComponent } from './components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 import { FieldDragDropService } from './components/fields/service/field-drag-drop.service';
 import { FieldPropertyService } from './components/fields/service/field-properties.service';
 import { FieldService } from './components/fields/service/field.service';
@@ -120,13 +121,13 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         CheckboxModule,
         ConfirmDialogModule,
         CommonModule,
-        ContentTypeFieldsAddRowModule,
+        ContentTypeFieldsAddRowComponent,
         DialogModule,
         DotAddToBundleComponent,
         DotApiLinkComponent,
         DotAutofocusDirective,
         DotBaseTypeSelectorComponent,
-        DotContentTypeFieldsVariablesModule,
+        DotContentTypeFieldsVariablesComponent,
         RouterModule.forChild(dotContentTypesEditRoutes),
         DotCopyLinkComponent,
         DotDialogComponent,
@@ -141,7 +142,7 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotMaxlengthDirective,
         DotMenuComponent,
         DotPageSelectorComponent,
-        DotRelationshipsModule,
+        DotRelationshipsPropertyComponent,
         DotTextareaContentComponent,
         DotWorkflowsActionsSelectorFieldComponent,
         DotWorkflowsSelectorFieldComponent,
@@ -181,7 +182,8 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotNavigationService,
         DotWorkflowsActionsService,
         DotWorkflowsActionsSelectorFieldService,
-        DotFeatureFlagResolver
+        DotFeatureFlagResolver,
+        DotEditContentTypeCacheService
     ],
     schemas: []
 })

@@ -2,14 +2,15 @@
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import { FormGroupDirective, NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
+import { DotEditContentTypeCacheService } from './services/dot-edit-content-type-cache.service';
 
 import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
 
@@ -67,15 +68,30 @@ describe('DotRelationshipsPropertyComponent', () => {
     });
 
     beforeEach(waitForAsync(() => {
+        const formGroupDirectiveMock = {
+            control: new UntypedFormGroup({
+                relationship: new UntypedFormControl('')
+            })
+        };
+
+        const dotEditContentTypeCacheServiceMock = {
+            get: jest.fn().mockReturnValue({ id: 'test-content-type-id' }),
+            set: jest.fn()
+        };
+
         DOTTestBed.configureTestingModule({
             declarations: [
-                DotRelationshipsPropertyComponent,
                 TestFieldValidationMessageComponent,
                 TestNewRelationshipsComponent,
                 TestEditRelationshipsComponent
             ],
-            imports: [DotMessagePipe],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            imports: [DotRelationshipsPropertyComponent, DotMessagePipe],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotContentTypeService,
+                { provide: DotEditContentTypeCacheService, useValue: dotEditContentTypeCacheServiceMock },
+                { provide: FormGroupDirective, useValue: formGroupDirectiveMock }
+            ]
         });
 
         fixture = DOTTestBed.createComponent(DotRelationshipsPropertyComponent);

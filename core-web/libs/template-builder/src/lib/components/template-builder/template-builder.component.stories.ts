@@ -28,7 +28,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { JsonClassesService } from './components/add-style-classes-dialog/services/json-classes.service';
-import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import {
@@ -44,20 +43,8 @@ const meta: Meta<TemplateBuilderComponent> = {
     decorators: [
         moduleMetadata({
             imports: [
-                NgFor,
-                NgIf,
-                AsyncPipe,
-                NgClass,
-                TemplateBuilderComponentsModule,
-                DotMessagePipe,
                 BrowserAnimationsModule,
-                DynamicDialogModule,
-                HttpClientModule,
-                ButtonModule,
-                ToolbarModule,
-                DividerModule,
-                DropdownModule,
-                FormsModule
+                HttpClientModule
             ],
             providers: [
                 DotTemplateBuilderStore,

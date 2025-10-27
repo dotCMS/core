@@ -1,16 +1,20 @@
 import { Observable, of as observableOf } from 'rxjs';
 
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 
 import { flatMap, map, switchMap, toArray } from 'rxjs/operators';
 
 import { PaginatorService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
+import { SearchableDropdownComponent } from '../../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 import { DotRelationship } from '../model/dot-relationship.model';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 import { DotEditContentTypeCacheService } from '../services/dot-edit-content-type-cache.service';
 import { DotRelationshipService } from '../services/dot-relationship.service';
+
 
 /**
  *Cardinalities sorted by id
@@ -30,10 +34,10 @@ interface CardinalitySorted {
  * @implements {OnInit}
  */
 @Component({
-    providers: [PaginatorService],
     selector: 'dot-edit-relationships',
     templateUrl: './dot-edit-relationships.component.html',
-    standalone: false
+    imports: [SearchableDropdownComponent, AsyncPipe, DotMessagePipe],
+    providers: [PaginatorService]
 })
 export class DotEditRelationshipsComponent implements OnInit {
     dotPaginatorService = inject(PaginatorService);

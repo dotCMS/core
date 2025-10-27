@@ -9,6 +9,7 @@ import {
 import { DDElementHost } from 'gridstack/dist/dd-element';
 import { Observable, Subject, combineLatest } from 'rxjs';
 
+import { AsyncPipe, NgClass, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -28,9 +29,13 @@ import {
     inject
 } from '@angular/core';
 
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DividerModule } from 'primeng/divider';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { ToolbarModule } from 'primeng/toolbar';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
+
+
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -42,11 +47,16 @@ import {
     DotContainerMap,
     DotTemplate
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
+import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
+import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
+import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
+import { TemplateBuilderSidebarComponent } from './components/template-builder-sidebar/template-builder-sidebar.component';
 import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
 import {
     BOX_WIDTH,
@@ -76,7 +86,21 @@ import {
     styleUrls: ['./template-builder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore],
-    standalone: false
+    imports: [
+        AsyncPipe,
+        NgClass,
+        NgStyle,
+        DotMessagePipe,
+        DynamicDialogModule,
+        ToolbarModule,
+        DividerModule,
+        AddWidgetComponent,
+        TemplateBuilderActionsComponent,
+        TemplateBuilderSectionComponent,
+        TemplateBuilderSidebarComponent,
+        TemplateBuilderRowComponent,
+        TemplateBuilderBoxComponent
+    ]
 })
 export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     private store = inject(DotTemplateBuilderStore);

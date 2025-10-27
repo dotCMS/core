@@ -1,9 +1,15 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { UntypedFormGroup } from '@angular/forms';
+import { FormsModule, UntypedFormGroup } from '@angular/forms';
+
+import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotFieldRequiredDirective, DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotEditRelationshipsComponent } from './dot-edit-relationship/dot-edit-relationships.component';
+import { DotNewRelationshipsComponent } from './dot-new-relationships/dot-new-relationships.component';
 import { DotRelationshipsPropertyValue } from './model/dot-relationships-property-value.model';
+import { DotRelationshipService } from './services/dot-relationship.service';
 
 import { FieldProperty } from '../field-properties.model';
 
@@ -15,11 +21,19 @@ import { FieldProperty } from '../field-properties.model';
  * @implements {OnInit}
  */
 @Component({
-    providers: [],
     selector: 'dot-relationships-property',
     templateUrl: './dot-relationships-property.component.html',
     styleUrls: ['./dot-relationships-property.component.scss'],
-    standalone: false
+    imports: [
+        RadioButtonModule,
+        FormsModule,
+        DotMessagePipe,
+        DotNewRelationshipsComponent,
+        DotEditRelationshipsComponent,
+        DotFieldRequiredDirective,
+        DotFieldValidationMessageComponent
+    ],
+    providers: [DotRelationshipService]
 })
 export class DotRelationshipsPropertyComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

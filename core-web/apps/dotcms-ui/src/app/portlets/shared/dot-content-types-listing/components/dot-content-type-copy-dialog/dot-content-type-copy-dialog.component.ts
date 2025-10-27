@@ -1,5 +1,6 @@
 import { combineLatest, Observable, of } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     AfterViewChecked,
     ChangeDetectionStrategy,
@@ -13,18 +14,31 @@ import {
     inject
 } from '@angular/core';
 import {
+    ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormControl,
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
 
+import { InputTextModule } from 'primeng/inputtext';
+
 import { map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyContentTypeDialogFormFields, DotDialogActions } from '@dotcms/dotcms-models';
-import { DotValidators } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotDialogComponent,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotValidators
+} from '@dotcms/ui';
 
+
+import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
+import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
 
 @Component({
@@ -32,7 +46,18 @@ import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
     templateUrl: './dot-content-type-copy-dialog.component.html',
     styleUrls: ['./dot-content-type-copy-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        InputTextModule,
+        DotFieldValidationMessageComponent,
+        DotDialogComponent,
+        DotMdIconSelectorComponent,
+        DotSiteSelectorFieldComponent,
+        DotAutofocusDirective,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked {
     private readonly fb = inject(UntypedFormBuilder);
