@@ -1,7 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import static com.dotcms.rest.api.v1.contenttype.ContentTypeHelper.sortContentTypes;
-
 import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
@@ -852,7 +850,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
                   orderBy, remainingLimit, offset, includedIds);
 
           returnTypes.addAll(searchResults);
-          return sortContentTypes(returnTypes, orderBy);
+          return returnTypes;
 
       } catch (final DotSecurityException e) {
           Logger.error(this,

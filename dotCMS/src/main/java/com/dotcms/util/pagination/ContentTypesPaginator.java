@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.dotcms.rest.api.v1.contenttype.ContentTypeHelper.sortContentTypes;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
@@ -161,18 +162,23 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                 }
             }
             //Since we're combining multiple types, we need to slice the result to remain consistent with pagination params
-                final List<ContentType> contentTypes = applySafeSlice(new ArrayList<>(collectedContentTypes), offset, limit);
-                final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
-                setEntriesAttribute(user, contentTypesTransform,
-                        this.workflowAPI.findSchemesMapForContentType(contentTypes),
-                        this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user),
-                        extraParams);
 
-                result.addAll(Objects.nonNull(extraParams) && extraParams.containsKey(COMPARATOR) ?
-                        contentTypesTransform.stream()
-                                .sorted((Comparator<Map<String, Object>>) extraParams.get(
-                                        COMPARATOR)).collect(Collectors.toList())
-                        : contentTypesTransform);
+            // This line ensures that the resulting list follows the orderBy param
+            final Set<ContentType> sortedCollectedContentTypes = new LinkedHashSet<>(
+                    sortContentTypes(collectedContentTypes, orderByParam));
+
+            final List<ContentType> contentTypes = applySafeSlice(new ArrayList<>(sortedCollectedContentTypes), offset, limit);
+            final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
+            setEntriesAttribute(user, contentTypesTransform,
+                    this.workflowAPI.findSchemesMapForContentType(contentTypes),
+                    this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user),
+                    extraParams);
+
+            result.addAll(Objects.nonNull(extraParams) && extraParams.containsKey(COMPARATOR) ?
+                    contentTypesTransform.stream()
+                            .sorted((Comparator<Map<String, Object>>) extraParams.get(
+                                    COMPARATOR)).collect(Collectors.toList())
+                    : contentTypesTransform);
 
             result.setTotalResults(totalRecords);
             return result;

@@ -2071,6 +2071,120 @@
                   "response": []
                 },
                 {
+                  "name": "Get ContentTypes with multiple types",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "// Parse the JSON response",
+                          "const response = pm.response.json();",
+                          "",
+                          "// Test 1: Check response status is 200",
+                          "pm.test(\"Status code is 200\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "",
+                          "// Test 2: Check response structure exists",
+                          "pm.test(\"Response has entity array\", function () {",
+                          "    pm.expect(response).to.have.property('entity');",
+                          "    pm.expect(response.entity).to.be.an('array');",
+                          "});",
+                          "",
+                          "// Test 3: Verify no errors in response",
+                          "pm.test(\"Response has no errors\", function () {",
+                          "    pm.expect(response.errors).to.be.an('array').that.is.empty;",
+                          "});",
+                          "",
+                          "// Test 4: Verify the list is sorted in ascending order by name (case-insensitive)",
+                          "pm.test(\"Content types are sorted in ascending order by name\", function () {",
+                          "    const names = response.entity",
+                          "        .map(ct => ct.name?.toLowerCase())",
+                          "        .filter(name => !!name); // remove undefined/null",
+                          "",
+                          "    const sortedNames = [...names].sort((a, b) => a.localeCompare(b));",
+                          "",
+                          "    pm.expect(names, \"Content types are not in ascending order by name\").to.eql(sortedNames);",
+                          "});",
+                          "",
+                          "// Content types found: (for debugging).",
+                          "console.log(\"\\nContent Types found:\");",
+                          "response.entity.forEach(ct => {",
+                          "    console.log(`- Name: ${ct.name}, Variable: ${ct.variable}, BaseType: ${ct.baseType}`);",
+                          "});",
+                          "",
+                          "console.log(`\\nTotal content types: ${response.entity.length}`);",
+                          "console.log(`Pagination info: Page ${response.pagination.currentPage}, Total: ${response.pagination.totalEntries}`);"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "basic",
+                      "basic": [
+                        {
+                          "key": "username",
+                          "value": "admin@dotcms.com",
+                          "type": "string"
+                        },
+                        {
+                          "key": "password",
+                          "value": "admin",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/contenttype?&orderby=name&direction=ASC&per_page=40&type=fileasset&type=content&type=widget",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "contenttype"
+                      ],
+                      "query": [
+                        {
+                          "key": null,
+                          "value": null
+                        },
+                        {
+                          "key": "orderby",
+                          "value": "name"
+                        },
+                        {
+                          "key": "direction",
+                          "value": "ASC"
+                        },
+                        {
+                          "key": "per_page",
+                          "value": "40"
+                        },
+                        {
+                          "key": "type",
+                          "value": "fileasset"
+                        },
+                        {
+                          "key": "type",
+                          "value": "content"
+                        },
+                        {
+                          "key": "type",
+                          "value": "widget"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
                   "name": "Get ContentTypes sending ensure param",
                   "event": [
                     {

@@ -797,11 +797,11 @@ public class ContentTypeHelper implements Serializable {
      * @param orderBy The field and direction to sort the Content Types by.
      * @return The sorted list of Content Types.
      */
-    public static List<ContentType> sortContentTypes(final List<ContentType> contentTypes,
+    public static List<ContentType> sortContentTypes(final Collection<ContentType> contentTypes,
             final String orderBy) {
 
         if (contentTypes == null || contentTypes.isEmpty() || orderBy == null || orderBy.isBlank()) {
-            return contentTypes;
+            return contentTypes != null ? new ArrayList<>(contentTypes) : null;
         }
 
         String[] parts = orderBy.split("[:\\s]+");
