@@ -978,12 +978,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 */
 	private List<Object> getConditionParametersAndBuildConditionQuery(final Map<String, Object> params, final StringBuffer conditionQueryBuffer) throws DotSecurityException {
 
-		List<Object> paramValues = null;
+		final List<Object> paramValues = new ArrayList<>();
 
 		if (params != null && !params.isEmpty()) {
 
 			conditionQueryBuffer.append(" and (");
-			paramValues = new ArrayList<>();
 			int counter = 0;
 
 			for (final Map.Entry<String, Object> entry : params.entrySet()) {
