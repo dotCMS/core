@@ -19,3 +19,4 @@ Release-25.07.10 LTS
 13. https://github.com/dotCMS/core/issues/33473 : [DEFECT] Putting host in 404 cache when it actually exists and it's active #33473
 14. https://github.com/dotCMS/core/issues/33302 : [DEFECT] Cache Provider Init problem #33302
 15. https://github.com/dotCMS/core/issues/33265 : [FEATURE] disregard common query params as Page Cache keys #33265
+16. https://github.com/dotCMS/core/issues/33255 : Stackoverflow error during startup when trying to migrate from earlier version to later ones because of contentlets living on System Host #33255
