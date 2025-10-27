@@ -2,18 +2,19 @@ import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    inject,
+    OnInit,
+    ChangeDetectorRef
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { finalize, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import {
-    GrafanaService,
-    GrafanaDashboard,
-    GrafanaFolder
-} from './services/grafana.service';
-
+import { GrafanaService, GrafanaDashboard, GrafanaFolder } from './services/grafana.service';
 
 type ConnectionStatus = 'loading' | 'connected' | 'disconnected' | null;
 
@@ -87,10 +88,7 @@ export class DotHackathonTestComponent implements OnInit {
      * Initialize search input debouncing
      */
     private initializeSearchDebounce() {
-        this.searchSubject.pipe(
-            debounceTime(300),
-            distinctUntilChanged()
-        ).subscribe(() => {
+        this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
             this.searchDashboards();
         });
     }
@@ -102,7 +100,8 @@ export class DotHackathonTestComponent implements OnInit {
         this.connectionStatus = 'loading';
         this.cdr.detectChanges();
 
-        this.grafanaService.testConnection()
+        this.grafanaService
+            .testConnection()
             .pipe(
                 catchError((_error) => {
                     return of(false);
@@ -132,7 +131,8 @@ export class DotHackathonTestComponent implements OnInit {
             return;
         }
 
-        this.grafanaService.getFolders(50)
+        this.grafanaService
+            .getFolders(50)
             .pipe(
                 catchError((_error) => {
                     return of([]);
@@ -185,7 +185,8 @@ export class DotHackathonTestComponent implements OnInit {
             folderIds: this.selectedFolderId || undefined
         };
 
-        this.grafanaService.searchDashboards(searchParams)
+        this.grafanaService
+            .searchDashboards(searchParams)
             .pipe(
                 catchError((_error) => {
                     return of([]);

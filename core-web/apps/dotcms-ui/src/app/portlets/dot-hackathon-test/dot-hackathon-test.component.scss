@@ -7,7 +7,6 @@
     overflow-y: auto;
     max-height: 100vh;
 
-
     h3 {
         color: #555;
         margin-bottom: 1rem;
@@ -150,12 +149,15 @@
                     color: #495057;
                 }
 
-                input, select {
+                input,
+                select {
                     padding: 0.75rem;
                     border: 1px solid #ced4da;
                     border-radius: 4px;
                     font-size: 0.9rem;
-                    transition: border-color 0.2s, box-shadow 0.2s;
+                    transition:
+                        border-color 0.2s,
+                        box-shadow 0.2s;
 
                     &:focus {
                         outline: none;
@@ -167,7 +169,7 @@
                         background: #f8f9fa;
                         color: #6c757d;
                         cursor: not-allowed;
-                        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                        font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
                         font-size: 0.85rem;
                     }
                 }
@@ -356,14 +358,17 @@
                     color: #495057;
                 }
 
-                input, select {
+                input,
+                select {
                     padding: 0.5rem;
                     border: 1px solid #ced4da;
                     border-radius: 4px;
                     background: white;
                     cursor: pointer;
                     font-size: 0.9rem;
-                    transition: border-color 0.2s, box-shadow 0.2s;
+                    transition:
+                        border-color 0.2s,
+                        box-shadow 0.2s;
 
                     &:focus {
                         outline: none;
@@ -375,7 +380,7 @@
                         background: #f8f9fa;
                         color: #6c757d;
                         cursor: not-allowed;
-                        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                        font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
                         font-size: 0.85rem;
                     }
                 }
@@ -536,7 +541,7 @@
             color: #e83e8c;
             padding: 0.2rem 0.4rem;
             border-radius: 3px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
             font-size: 0.9rem;
         }
     }
@@ -565,7 +570,8 @@
 }
 
 // Force global scroll
-html, body {
+html,
+body {
     overflow-y: auto !important;
     height: auto !important;
 }

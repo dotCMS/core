@@ -83,23 +83,24 @@ export class GrafanaService {
      * Test connectivity to Grafana
      */
     testConnection(): Observable<boolean> {
-        return this.http.get<ApiResponse<boolean>>(`${this.baseUrl}/test-connection`)
-            .pipe(
-                map(response => response.entity)
-            );
+        return this.http
+            .get<ApiResponse<boolean>>(`${this.baseUrl}/test-connection`)
+            .pipe(map((response) => response.entity));
     }
 
     /**
      * Search for dashboards with optional filters
      */
-    searchDashboards(params: {
-        query?: string;
-        type?: string;
-        starred?: boolean;
-        folderIds?: string;
-        tag?: string;
-        limit?: number;
-    } = {}): Observable<GrafanaDashboard[]> {
+    searchDashboards(
+        params: {
+            query?: string;
+            type?: string;
+            starred?: boolean;
+            folderIds?: string;
+            tag?: string;
+            limit?: number;
+        } = {}
+    ): Observable<GrafanaDashboard[]> {
         let httpParams = new HttpParams();
 
         if (params.query) {
@@ -121,20 +122,20 @@ export class GrafanaService {
             httpParams = httpParams.set('limit', params.limit.toString());
         }
 
-        return this.http.get<ApiResponse<GrafanaDashboard[]>>(`${this.baseUrl}/dashboards/search`, { params: httpParams })
-            .pipe(
-                map(response => response.entity || [])
-            );
+        return this.http
+            .get<
+                ApiResponse<GrafanaDashboard[]>
+            >(`${this.baseUrl}/dashboards/search`, { params: httpParams })
+            .pipe(map((response) => response.entity || []));
     }
 
     /**
      * Get dashboard details by UID
      */
     getDashboardByUid(uid: string): Observable<DashboardDetail> {
-        return this.http.get<ApiResponse<DashboardDetail>>(`${this.baseUrl}/dashboards/${uid}`)
-            .pipe(
-                map(response => response.entity)
-            );
+        return this.http
+            .get<ApiResponse<DashboardDetail>>(`${this.baseUrl}/dashboards/${uid}`)
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -146,47 +147,47 @@ export class GrafanaService {
             httpParams = httpParams.set('limit', limit.toString());
         }
 
-        return this.http.get<ApiResponse<GrafanaFolder[]>>(`${this.baseUrl}/folders`, { params: httpParams })
-            .pipe(
-                map(response => response.entity || [])
-            );
+        return this.http
+            .get<ApiResponse<GrafanaFolder[]>>(`${this.baseUrl}/folders`, { params: httpParams })
+            .pipe(map((response) => response.entity || []));
     }
 
     /**
      * Get folder by UID
      */
     getFolderByUid(uid: string): Observable<GrafanaFolder> {
-        return this.http.get<ApiResponse<GrafanaFolder>>(`${this.baseUrl}/folders/${uid}`)
-            .pipe(
-                map(response => response.entity)
-            );
+        return this.http
+            .get<ApiResponse<GrafanaFolder>>(`${this.baseUrl}/folders/${uid}`)
+            .pipe(map((response) => response.entity));
     }
 
     /**
      * Get dashboards in a specific folder
      */
     getDashboardsInFolder(folderUid: string): Observable<GrafanaDashboard[]> {
-        return this.http.get<ApiResponse<GrafanaDashboard[]>>(`${this.baseUrl}/folders/${folderUid}/dashboards`)
-            .pipe(
-                map(response => response.entity || [])
-            );
+        return this.http
+            .get<ApiResponse<GrafanaDashboard[]>>(`${this.baseUrl}/folders/${folderUid}/dashboards`)
+            .pipe(map((response) => response.entity || []));
     }
 
     /**
      * Build Grafana dashboard URL for iframe embedding
      * This constructs the proper URL to embed a Grafana dashboard
      */
-    buildDashboardUrl(dashboardUid: string, options: {
-        theme?: 'light' | 'dark';
-        kiosk?: boolean;
-        autofitpanels?: boolean;
-        from?: string;
-        to?: string;
-        refresh?: string;
-        orgId?: number;
-        panelId?: number;
-        useProxy?: boolean;
-    } = {}): string {
+    buildDashboardUrl(
+        dashboardUid: string,
+        options: {
+            theme?: 'light' | 'dark';
+            kiosk?: boolean;
+            autofitpanels?: boolean;
+            from?: string;
+            to?: string;
+            refresh?: string;
+            orgId?: number;
+            panelId?: number;
+            useProxy?: boolean;
+        } = {}
+    ): string {
         // Determine base URL based on proxy option
         let baseUrl: string;
 
