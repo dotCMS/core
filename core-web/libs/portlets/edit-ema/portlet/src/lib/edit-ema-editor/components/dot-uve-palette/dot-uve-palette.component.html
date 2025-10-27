@@ -9,7 +9,7 @@
         creating triple renders and triple requests to the server. -->
         @if ($currentIndex() === 0) {
             <dot-uve-palette-list
-                [type]="$type()"
+                [type]="UVE_PALETTE_LIST_TYPES.CONTENT"
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }
@@ -22,7 +22,7 @@
         </ng-template>
         @if ($currentIndex() === 1) {
             <dot-uve-palette-list
-                [type]="$type()"
+                [type]="UVE_PALETTE_LIST_TYPES.WIDGET"
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }
@@ -35,7 +35,7 @@
         </ng-template>
         @if ($currentIndex() === 2) {
             <dot-uve-palette-list
-                [type]="$type()"
+                [type]="UVE_PALETTE_LIST_TYPES.FAVORITES"
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }

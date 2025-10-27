@@ -1,13 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
 
 import { TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DEFAULT_VARIANT_ID, DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
-
-import { DotUVEPaletteListType } from '../../../shared/models';
+import { UVE_PALETTE_LIST_TYPES } from './utils';
 
 @Component({
     selector: 'dot-uve-palette',
@@ -21,14 +20,6 @@ export class DotUvePaletteComponent {
     $pagePath = input.required<string>({ alias: 'pagePath' });
     $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
 
-    readonly TYPES_ARRAY: Array<DotUVEPaletteListType> = [
-        DotCMSBaseTypesContentTypes.CONTENT,
-        DotCMSBaseTypesContentTypes.WIDGET,
-        'FAVORITES'
-    ];
-
     readonly $currentIndex = signal(0);
-    readonly $type = computed(() => {
-        return this.TYPES_ARRAY[this.$currentIndex()];
-    });
+    readonly UVE_PALETTE_LIST_TYPES = UVE_PALETTE_LIST_TYPES;
 }

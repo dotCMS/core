@@ -669,7 +669,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     #insertPageContent(): void {
         const iframeElement = this.iframe?.nativeElement;
-        const doc = iframeElement.contentDocument;
+        const doc = iframeElement?.contentDocument;
 
         const enableInlineEdit = this.uveStore.$enableInlineEdit();
         const pageRender = this.uveStore.$pageRender();

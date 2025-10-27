@@ -7,8 +7,13 @@ export const BASETYPES_FOR_CONTENT = [
     DotCMSBaseTypesContentTypes.FILEASSET,
     DotCMSBaseTypesContentTypes.DOTASSET
 ];
-
 export const BASETYPES_FOR_WIDGET = [DotCMSBaseTypesContentTypes.WIDGET];
+export const BASE_TYPES_FOR_FAVORITES = [...BASETYPES_FOR_CONTENT, ...BASETYPES_FOR_WIDGET];
+export enum UVE_PALETTE_LIST_TYPES {
+    CONTENT = DotCMSBaseTypesContentTypes.CONTENT,
+    WIDGET = DotCMSBaseTypesContentTypes.WIDGET,
+    FAVORITES = 'FAVORITES'
+}
 
 /**
  * Determines the CSS class for sort menu items based on current sort state.

@@ -26,11 +26,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotESContentService, DotMessageService } from '@dotcms/data-access';
-import {
-    DEFAULT_VARIANT_ID,
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentType
-} from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { SortOption, ViewOption } from './model';
 import {
@@ -40,13 +36,17 @@ import {
     DotPaletteListStatus
 } from './store/store';
 
-import { DotUVEPaletteListType } from '../../../../../shared/models';
 import {
     DotPageContentTypeParams,
     DotPageContentTypeService
 } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
-import { BASETYPES_FOR_CONTENT, BASETYPES_FOR_WIDGET, isSortActive } from '../../utils';
+import {
+    BASETYPES_FOR_CONTENT,
+    BASETYPES_FOR_WIDGET,
+    isSortActive,
+    UVE_PALETTE_LIST_TYPES
+} from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
@@ -90,7 +90,7 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePaletteListComponent implements OnInit, OnDestroy {
-    $type = input.required<DotUVEPaletteListType>({ alias: 'type' });
+    $type = input.required<UVE_PALETTE_LIST_TYPES>({ alias: 'type' });
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
     $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
@@ -121,7 +121,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
             this.$viewMode() === 'list' || this.$currentView() === DotUVEPaletteListView.CONTENTLETS
     );
     readonly allowedBaseTypes = computed(() =>
-        this.$type() === DotCMSBaseTypesContentTypes.CONTENT
+        this.$type() === UVE_PALETTE_LIST_TYPES.CONTENT
             ? BASETYPES_FOR_CONTENT
             : BASETYPES_FOR_WIDGET
     );
@@ -233,9 +233,9 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      * @param params - The parameters for the content types.
      */
     private getContentTypes(params: Partial<DotPageContentTypeParams> = {}) {
-        if (this.$type() === 'FAVORITES') {
+        if (this.$type() === UVE_PALETTE_LIST_TYPES.FAVORITES) {
             this.#paletteListStore.getFavoriteContentTypes(this.$pagePath(), params.filter || '');
-        } else if (this.$type() === DotCMSBaseTypesContentTypes.WIDGET) {
+        } else if (this.$type() === UVE_PALETTE_LIST_TYPES.WIDGET) {
             this.#paletteListStore.getWidgets({ ...this.getSearchParams(), ...params });
         } else {
             this.#paletteListStore.getContentTypes({ ...this.getSearchParams(), ...params });
