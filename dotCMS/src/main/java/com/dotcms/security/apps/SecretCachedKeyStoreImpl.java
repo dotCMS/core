@@ -17,6 +17,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,11 +35,12 @@ public class SecretCachedKeyStoreImpl implements SecretsStore {
     private final AppsCache cache;
 
     SecretCachedKeyStoreImpl(final AppsCache cache) {
-        this.secretsKeyStore = new SecretsKeyStoreHelper(() -> cache
-                .getFromCache(SECRETS_KEYSTORE_PASSWORD_KEY, () -> Config
-                        .getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY,
-                                digest(ClusterFactory.getClusterSalt())).toCharArray()),
-                ImmutableList.of(this::flushCache));
+        this.secretsKeyStore = new SecretsKeyStoreHelper(
+                        () -> cache.getFromCache(SECRETS_KEYSTORE_PASSWORD_KEY,
+                        () -> Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY,
+                        digest(ClusterFactory.getClusterSalt())).toCharArray()),
+                        List.of(this::flushCache)
+        );
         this.cache = cache;
     }
 

@@ -10,6 +10,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 
 import java.nio.file.Paths;
+import java.util.Date;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.File;
@@ -21,6 +22,7 @@ import java.security.KeyStore;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.time.FastDateFormat;
 
 /**
  * CDI ApplicationScoped KeyStore manager that handles automatic reloading
@@ -218,7 +220,7 @@ public class KeyStoreManager {
     }
 
     /**
-     * Destroys the KeyStore file and invalidates cache.
+     * Destroys the KeyStore file and invalidates the cache.
      */
     public void destroy() {
         keyStoreLock.writeLock().lock();
@@ -251,6 +253,24 @@ public class KeyStoreManager {
             Logger.error(this.getClass(), "Failed to get KeyStore size: " + e.getMessage(), e);
             return 0;
         }
+    }
+
+    public void backupAndRemoveKeyStore() throws IOException {
+        final File secretStoreFile = new File(keyStorePath);
+        if (!secretStoreFile.exists()) {
+            Logger.warn(SecretsKeyStoreHelper.class, String.format("KeyStore file `%s` does NOT exist therefore it can not be backed-up. ",keyStorePath));
+            return;
+        }
+        final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+        final String name = secretStoreFile.getName();
+        final File secretStoreFileBak = new File(secretStoreFile.getParent(), datetimeFormat.format(new Date()) + "-" + name );
+        Files.copy(secretStoreFile.toPath(), secretStoreFileBak.toPath());
+        final boolean delete = secretStoreFile.delete();
+        if(!delete){
+            Logger.warn(SecretsKeyStoreHelper.class,
+                    "Unable to delete secrets keystore file: " + secretStoreFile.getAbsolutePath());
+        }
+        Logger.info(SecretsKeyStoreHelper.class, ()->String.format("KeyStore `%s` has been removed a backup has been created.", keyStorePath));
     }
 
     /**
