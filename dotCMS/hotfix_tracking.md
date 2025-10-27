@@ -78,4 +78,5 @@ This maintenance release includes the following code fixes:
 72. https://github.com/dotCMS/core/issues/33302 : [DEFECT] Cache Provider Init problem #33302
 73. https://github.com/dotCMS/core/issues/33265 : [FEATURE] disregard common query params as Page Cache keys #33265
 74. https://github.com/dotCMS/core/issues/32802 : Long file names in the list view are clipped instead of being truncated gracefully #32802
+75. https://github.com/dotCMS/core/issues/32249 : Starter zip file entries being created with leading slash #32249
 
