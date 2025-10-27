@@ -237,10 +237,16 @@ export class DotHackathonTestComponent implements OnInit {
 
         // Sanitize and set the URL for the iframe
         this.iFrameUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.currentDashboardUrl);
-        this.cdr.detectChanges();
 
         // Auto-collapse dashboard selection when loading dashboard
         this.isDashboardSelectionCollapsed = true;
+
+        // Auto-expand dashboard display section if it's collapsed
+        if (this.isDashboardDisplayCollapsed) {
+            this.isDashboardDisplayCollapsed = false;
+        }
+
+        this.cdr.detectChanges();
 
         // Auto-scroll to dashboard after a short delay to let it render
         setTimeout(() => {
