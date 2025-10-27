@@ -2,6 +2,7 @@ package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.CompletionRequest;
+import com.dotcms.ai.api.CompletionResponse;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.config.AiModelConfig;
@@ -110,17 +111,14 @@ public class TextResource {
                 finalForm = CompletionsForm.copy(form).model(modelConfigOpt.get().getName()).build();
             }
 
-            Logger.debug(this, ()-> "Using new AI api for the text resource");
-            return Response.ok(
-                            APILocator.getDotAIAPI()
-                                    .getCompletionsAPI()
-                                    .raw(toCompletionRequest(finalForm, modelConfigOpt.get()))
-                                    .toString())
-                    .build();
+            Logger.debug(this, "Using new AI api for the text resource with the form: " + finalForm);
+            final CompletionResponse completionResponse = APILocator.getDotAIAPI()
+                    .getCompletionsAPI().raw(toCompletionRequest(finalForm, modelConfigOpt.get()));
+            Logger.debug(this, ()-> "Completion response: " + completionResponse);
+            return Response.ok(completionResponse.getMessageText()).build();
         }
 
         final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
-
         return Response.ok(
                 APILocator.getDotAIAPI()
                         .getCompletionsAPI()

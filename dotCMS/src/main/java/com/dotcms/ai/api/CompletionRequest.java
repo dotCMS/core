@@ -54,7 +54,7 @@ public class CompletionRequest {
     public static final class Builder {
         private AiModelConfig chatModelConfig;
         private String vendorModelPath;
-        private float temperature;
+        private Float temperature;
         private String prompt;
 
 
@@ -73,7 +73,7 @@ public class CompletionRequest {
             return this;
         }
 
-        public Builder temperature(float temperature) {
+        public Builder temperature(Float temperature) {
             this.temperature = temperature;
             return this;
         }

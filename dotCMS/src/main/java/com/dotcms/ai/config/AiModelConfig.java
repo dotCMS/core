@@ -48,4 +48,78 @@ public class AiModelConfig implements Serializable {
                 ", config=" + config +
                 '}';
     }
+
+    /**
+     * Creates a Builder initialized from an existing AiModelConfig and overrides temperature.
+     * Returned builder allows additional entries before calling build().
+     */
+    public static Builder withTemperature(final AiModelConfig base, final Float temperature) {
+        final Builder builder = builderFrom(base);
+        if (temperature != null) {
+            builder.temperature(temperature);
+        }
+        return builder;
+    }
+
+    /**
+     * Convenience to create a Builder pre-populated from an existing AiModelConfig.
+     */
+    public static Builder builderFrom(final AiModelConfig base) {
+        final Builder builder = new Builder();
+        builder.name(base.name);
+        builder.entries(base.config);
+        return builder;
+    }
+
+    /**
+     * Generic builder for AiModelConfig. Keeps existing constructors intact.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private String name;
+        private java.util.Map<String, String> config = new java.util.HashMap<>();
+
+        public Builder name(final String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Adds a key/value entry to the configuration map.
+         */
+        public Builder entry(final String key, final String value) {
+            if (key != null && value != null) {
+                this.config.put(key, value);
+            }
+            return this;
+        }
+
+        public Builder entries(final java.util.Map<String, String> entries) {
+            if (entries != null) {
+                this.config.putAll(entries);
+            }
+            return this;
+        }
+
+        public Builder temperature(final Float temperature) {
+            if (temperature != null) {
+                this.config.put(TEMPERATURE, String.valueOf(temperature));
+            }
+            return this;
+        }
+
+        public Builder temperature(final String temperature) {
+            if (temperature != null) {
+                this.config.put(TEMPERATURE, temperature);
+            }
+            return this;
+        }
+
+        public AiModelConfig build() {
+            return new AiModelConfig(this.name, java.util.Map.copyOf(this.config));
+        }
+    }
 }

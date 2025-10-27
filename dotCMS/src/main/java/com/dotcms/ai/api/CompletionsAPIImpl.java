@@ -9,6 +9,7 @@ import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.client.AIProxyClient;
 import com.dotcms.ai.client.JSONObjectAIRequest;
+import com.dotcms.ai.config.AiModelConfig;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.domain.AIResponse;
 import com.dotcms.ai.domain.Model;
@@ -47,6 +48,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -161,23 +163,23 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     @Override
-    public Object raw(final CompletionRequest completionRequest) {
+    public CompletionResponse raw(final CompletionRequest completionRequest) {
 
         Logger.debug(this, ()-> "Doing raw request: " + completionRequest);
+        final AiModelConfig modelConfig = completionRequest.getChatModelConfig();
         final String vendorName = AIUtil.getVendorFromPath(completionRequest.getVendorModelPath());
-        final float temperature = completionRequest.getTemperature();
+        final Float temperature = completionRequest.getTemperature();
 
-        // todo: I need to pass the temparature if applies to the factory (as a map of customuserProps)
         final ChatModel chatModel = this.modelProviderFactory.get(vendorName,
-                completionRequest.getChatModelConfig());
+                Objects.nonNull(temperature)? AiModelConfig.withTemperature(modelConfig, temperature).build():
+                        completionRequest.getChatModelConfig());
         final String userPrompt = completionRequest.getPrompt();
-
         final String systemPrompt = completionRequest.getSystemPrompt();
         final UserMessage userMessage     = new UserMessage(userPrompt);
         final List<ChatMessage> messages = StringUtils.isSet(systemPrompt)?
                 List.of(new SystemMessage(systemPrompt), userMessage):List.of(userMessage);
         final ChatResponse chatResponse = chatModel.chat(messages);
-        return chatResponse;
+        return new CompletionResponse(chatResponse.aiMessage().text(), chatResponse.aiMessage(), chatResponse.metadata());
     }
 
     @Override

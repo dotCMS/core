@@ -81,5 +81,5 @@ public interface CompletionsAPI {
      * @param completionRequest
      * @return
      */
-    Object raw(CompletionRequest completionRequest);
+    CompletionResponse raw(CompletionRequest completionRequest);
 }
