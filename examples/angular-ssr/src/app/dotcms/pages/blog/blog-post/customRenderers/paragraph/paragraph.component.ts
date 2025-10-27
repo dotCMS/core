@@ -1,5 +1,5 @@
 import { Component, Input, OnInit, signal } from '@angular/core';
-import { BlockEditorContent } from '@dotcms/types';
+import { BlockEditorNode } from '@dotcms/types';
 
 @Component({
   selector: 'app-paragraph',
@@ -19,7 +19,7 @@ import { BlockEditorContent } from '@dotcms/types';
   `,
 })
 export class ParagraphComponent implements OnInit {
-  @Input() content!: BlockEditorContent;
+  @Input() content!: BlockEditorNode;
 
   protected $text = signal<string>('');
 
