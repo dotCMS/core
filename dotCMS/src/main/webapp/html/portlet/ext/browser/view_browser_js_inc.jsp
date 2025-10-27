@@ -19,6 +19,23 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 %>
 
+<style type="text/css" media="all">
+    .nameTD {
+        max-width: 200px;
+        overflow: hidden;
+    }
+    .nameTD .assetRef {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .nameTD .assetName {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+
 <script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
 
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
@@ -744,7 +761,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                     '    <td class="nameTD" id="' + asset.inode + '-NameTD">\n' +
                     '    <a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                     '        <span class="folderIcon" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                    '        &nbsp;<span id="' + asset.inode + '-NameSPAN" title="' + asset.name + '">' + shortenString(asset.name, 30) + '</span>\n' +
+                    ' <span class="assetName" id="' + asset.inode + '-NameSPAN" title="' + asset.name + '">' + asset.name + '</span>\n' +
                     '    </a>\n' +
                     '    </td>\n' +
                     '    <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -818,7 +835,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
                 //processing asset description and name to avoid long words that break the column width
                 name = shortenLongWords(name, 30)
-                name = shortenString(name, 30)
                 var title = shortenString(asset.title, 30);
                 var modUserName = shortenString(asset.modUserName, 20);
                 //Show Language Icon for Contents (Pages, Files)
@@ -835,7 +851,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                         '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
+                        '<span class="assetName" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -845,7 +861,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;" data-url="' +  asset.pageURI +'">\n' +
                         '<span style="pointer-events: none" class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span style="pointer-events: none" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
+                        '<span style="pointer-events: none" class="assetName" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +

@@ -77,4 +77,5 @@ This maintenance release includes the following code fixes:
 71. https://github.com/dotCMS/core/issues/33473 : [DEFECT] Putting host in 404 cache when it actually exists and it's active #33473
 72. https://github.com/dotCMS/core/issues/33302 : [DEFECT] Cache Provider Init problem #33302
 73. https://github.com/dotCMS/core/issues/33265 : [FEATURE] disregard common query params as Page Cache keys #33265
+74. https://github.com/dotCMS/core/issues/32802 : Long file names in the list view are clipped instead of being truncated gracefully #32802
 
