@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -117,5 +119,129 @@ public class ContentTypeHelperTest {
 
         assertEquals(3, result.size());
         assertEquals(Arrays.asList("video", "content", "blog"), result);
+    }
+
+    /**
+     * Method to test:  {@link ContentTypeHelper#sortContentTypes(List, String)}
+     * <p>
+     * When: Passed a Content Type list and the orderBy parameter is "name:asc".
+     * <p>
+     * Should: return a list of content types sorted by name in ascending order.
+     */
+    @Test
+    public void testSorByName_Ascending() {
+        List<ContentType> contentTypes = MockContentTypeTest.ContentTypesForSortingMock();
+        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "name:asc");
+
+        assertEquals("Activity", sorted.get(0).name());
+        assertEquals("Banner", sorted.get(1).name());
+        assertEquals("Banner Carousel", sorted.get(2).name());
+        assertEquals("Blog", sorted.get(3).name());
+        assertEquals("dotAsset", sorted.get(4).name());
+        assertEquals("Video", sorted.get(5).name());
+    }
+
+    /**
+     * Method to test:  {@link ContentTypeHelper#sortContentTypes(List, String)}
+     * <p>
+     * When: Passed a Content Type list and the orderBy parameter is "name:desc".
+     * <p>
+     * Should: return a list of content types sorted by name in descending order.
+     */
+    @Test
+    public void testSortByName_Descending() {
+        List<ContentType> contentTypes = MockContentTypeTest.ContentTypesForSortingMock();
+        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "name:desc");
+
+        assertEquals("Video", sorted.get(0).name());
+        assertEquals("dotAsset", sorted.get(1).name());
+        assertEquals("Blog", sorted.get(2).name());
+        assertEquals("Banner Carousel", sorted.get(3).name());
+        assertEquals("Banner", sorted.get(4).name());
+        assertEquals("Activity", sorted.get(5).name());
+    }
+
+    /**
+     * Method to test:  {@link ContentTypeHelper#sortContentTypes(List, String)}
+     * <p>
+     * When: Passed a Content Type list and the orderBy parameter is "name". (default direction is
+     * ascending)
+     * <p>
+     * Should: return a list of content types sorted by name in ascending order.
+     */
+    @Test
+    public void testSortByName_DefaultIsAscending() {
+        List<ContentType> contentTypes = MockContentTypeTest.ContentTypesForSortingMock();
+        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "name");
+
+        assertEquals("Activity", sorted.get(0).name());
+        assertEquals("Banner", sorted.get(1).name());
+        assertEquals("Banner Carousel", sorted.get(2).name());
+        assertEquals("Blog", sorted.get(3).name());
+        assertEquals("dotAsset", sorted.get(4).name());
+        assertEquals("Video", sorted.get(5).name());
+    }
+
+    /**
+     * Method to test:  {@link ContentTypeHelper#sortContentTypes(List, String)}
+     * <p>
+     * When: Passed a Content Type list and the orderBy parameter is "variable asc". (using space
+     * separator)
+     * <p>
+     * Should: return a list of content types sorted by variable in ascending order.
+     */
+    @Test
+    public void testSortByVelocityVarName_Ascending() {
+        List<ContentType> contentTypes = MockContentTypeTest.ContentTypesForSortingMock();
+        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "variable asc");
+
+        assertEquals("Activity", sorted.get(0).variable());
+        assertEquals("Banner", sorted.get(1).variable());
+        assertEquals("BannerCarousel", sorted.get(2).variable());
+        assertEquals("Blog", sorted.get(3).variable());
+        assertEquals("dotAsset", sorted.get(4).variable());
+        assertEquals("Video", sorted.get(5).variable());
+    }
+
+    /**
+     * Method to test:  {@link ContentTypeHelper#sortContentTypes(List, String)}
+     * <p>
+     * When: Passed an empty list.
+     * <p>
+     * Should: return an empty list.
+     */
+    @Test
+    public void testSortWithEmptyList() {
+        List<ContentType> emptyList = new ArrayList<>();
+        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(emptyList, "name");
+        assertTrue(sorted.isEmpty());
+    }
+
+    /**
+     * Method to test:  {@link ContentTypeHelper#sortContentTypes(List, String)}
+     * <p>
+     * When: Passed a Content Type list and the orderBy parameter is null.
+     * <p>
+     * Should: return the original list.
+     */
+    @Test
+    public void testSortWithNullOrderBy() {
+        List<ContentType> contentTypes = MockContentTypeTest.ContentTypesForSortingMock();
+        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, null);
+        assertEquals(contentTypes, sorted);
+    }
+
+    /**
+     * Method to test:  {@link ContentTypeHelper#sortContentTypes(List, String)}
+     * <p>
+     * When: Passed a Content Type list and the orderBy parameter is a blank string.
+     * <p>
+     * Should: return the original list.
+     */
+    @Test
+    public void testSortWithBlankOrderBy() {
+        List<ContentType> contentTypes = MockContentTypeTest.ContentTypesForSortingMock();
+        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "   ");
+        assertEquals(contentTypes, sorted);
     }
 }
