@@ -49,7 +49,7 @@ import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favori
 import { BASETYPES_FOR_CONTENT, BASETYPES_FOR_WIDGET, isSortActive } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
-import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-palette-item.component';
+import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
 
 /**
  * Component for displaying and managing a list of content types in the UVE palette.
@@ -67,7 +67,7 @@ import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-pale
 @Component({
     selector: 'dot-uve-palette-list',
     imports: [
-        DotUvePaletteItemComponent,
+        DotUVEPaletteContenttypeComponent,
         DotUvePaletteContentletComponent,
         ButtonModule,
         IconFieldModule,

@@ -10,17 +10,17 @@ import {
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 @Component({
-    selector: 'dot-uve-palette-item',
+    selector: 'dot-uve-palette-contenttype',
     imports: [],
-    templateUrl: './dot-uve-palette-item.component.html',
-    styleUrl: './dot-uve-palette-item.component.scss',
+    templateUrl: './dot-uve-palette-contenttype.component.html',
+    styleUrl: './dot-uve-palette-contenttype.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[attr.data-type]': '"content-type"',
         '[attr.draggable]': 'true'
     }
 })
-export class DotUvePaletteItemComponent {
+export class DotUVEPaletteContenttypeComponent {
     $view = input<'grid' | 'list'>('grid', { alias: 'view' });
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 

@@ -79,7 +79,7 @@
             }
             @case (DotUVEPaletteListView.CONTENT_TYPES) {
                 @for (contentType of $contenttypes(); track contentType.id) {
-                    <dot-uve-palette-item
+                    <dot-uve-palette-contenttype
                         [contentType]="contentType"
                         [view]="$viewMode()"
                         (selectContentType)="onSelectContentType($event)"
@@ -93,13 +93,13 @@
 @if ($showPaginator()) {
     <p-paginator
         (onPageChange)="onPageChange($event)"
-        [first]="$start()"
-        [rows]="$rowsPerPage()"
-        [totalRecords]="$pagination.totalEntries()"
         [showPageLinks]="false"
         [showJumpToPageDropdown]="false"
         [showCurrentPageReport]="true"
         [showFirstLastIcon]="false"
+        [first]="$start()"
+        [rows]="$rowsPerPage()"
+        [totalRecords]="$pagination.totalEntries()"
         [currentPageReportTemplate]="$paginatorTemplate()" />
 }
 
