@@ -456,8 +456,8 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'success',
-                summary: 'Success',
-                detail: 'content-drive.dialog.folder.message.create-success'
+                summary: 'content-drive.toast.workflow-executed',
+                detail: 'content-drive.toast.workflow-executed-detail'
             });
         });
     });
