@@ -182,6 +182,8 @@ services:
       #PYROSCOPE_BASIC_AUTH_PASSWORD: ''
       # Disable Glowroot since we're using OpenTelemetry and Pyroscope
       GLOWROOT_ENABLED: 'false'
+      # Grafana API Client Configuration
+      DOT_GRAFANA_API_URL: 'http://localhost:3000'
     volumes:
       - cms-shared:/data/shared
       - agents:/srv/dotserver/tomcat/agents
