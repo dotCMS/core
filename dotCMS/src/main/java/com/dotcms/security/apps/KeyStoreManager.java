@@ -37,10 +37,10 @@ import org.apache.commons.lang3.time.FastDateFormat;
 @ApplicationScoped
 public class KeyStoreManager {
 
-    private static final String SECRETS_STORE_FILE = "dotSecretsStore.p12";
-    private static final String SECRETS_STORE_KEYSTORE_TYPE = "pkcs12";
-    private static final String SECRETS_STORE_LOAD_TRIES = "SECRETS_STORE_LOAD_TRIES";
-    private static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
+    static final String SECRETS_STORE_FILE = "dotSecretsStore.p12";
+    static final String SECRETS_STORE_KEYSTORE_TYPE = "pkcs12";
+    static final String SECRETS_STORE_LOAD_TRIES = "SECRETS_STORE_LOAD_TRIES";
+    static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
 
     // Thread-safe synchronization
     private final ReadWriteLock keyStoreLock = new ReentrantReadWriteLock();
@@ -186,6 +186,7 @@ public class KeyStoreManager {
                 cachedKeyStore = keyStore;
                 lastModified = secretStoreFile.lastModified();
                 // Fire saved event
+                //TODO: Invalidate cache!
                 fireKeyStoreSavedEvent(keyStore);
 
                 Logger.debug(this.getClass(), "KeyStore saved successfully and cache updated");
