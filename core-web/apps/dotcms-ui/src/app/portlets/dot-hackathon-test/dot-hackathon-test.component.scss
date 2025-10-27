@@ -2,8 +2,10 @@
     padding: 1rem;
     max-width: 1200px;
     margin: 0 auto;
-    // Remove fixed height constraints that might prevent scrolling
+    // Ensure scrolling is enabled
     position: relative;
+    overflow-y: auto;
+    max-height: 100vh;
 
 
     h3 {
@@ -216,6 +218,10 @@
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
                 gap: 1rem;
+                max-height: 400px;
+                overflow-y: auto;
+                overflow-x: hidden;
+                padding: 0.5rem;
 
                 .dashboard-card {
                     border: 1px solid #dee2e6;
@@ -508,6 +514,8 @@
         border-radius: 8px;
         padding: 2rem;
         color: #856404;
+        max-height: 300px;
+        overflow-y: auto;
 
         h3 {
             color: #856404;

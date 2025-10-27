@@ -64,7 +64,7 @@ export class DotHackathonTestComponent implements OnInit {
         kiosk: true,
         autofitpanels: true,
         refresh: '',
-        useProxy: false
+        useProxy: true
     };
 
     // Dashboard Display
