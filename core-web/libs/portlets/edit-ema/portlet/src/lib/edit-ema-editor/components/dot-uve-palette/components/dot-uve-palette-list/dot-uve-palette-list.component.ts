@@ -22,7 +22,6 @@ import { MenuModule } from 'primeng/menu';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
-import { ToastModule } from 'primeng/toast';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -78,11 +77,9 @@ import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-pale
         PaginatorModule,
         SkeletonModule,
         OverlayPanelModule,
-        DotFavoriteSelectorComponent,
-        ToastModule
+        DotFavoriteSelectorComponent
     ],
     providers: [
-        MessageService,
         DotPaletteListStore,
         DotESContentService,
         DotPageContentTypeService,
@@ -369,23 +366,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
             {
                 label: this.#dotMessageService.get('uve.palette.menu.favorite.option.remove'),
                 id: 'remove',
-                command: () => {
-                    this.#paletteListStore.removeFavoriteContentType(
-                        this.$pagePath(),
-                        contentType.id
-                    );
-
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: 'Removed from favorites',
-                        detail: 'You have removed it from your favorites',
-                        life: 3000
-                    });
-
-                    if (this.$type() === 'FAVORITES') {
-                        this.getContentTypes();
-                    }
-                }
+                command: () => this.removeFavoriteItems(contentType)
             }
         ]);
     }
@@ -395,21 +376,46 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
             {
                 label: this.#dotMessageService.get('uve.palette.menu.favorite.option.add'),
                 id: 'add',
-                command: () => {
-                    this.#paletteListStore.addFavoriteContentType(this.$pagePath(), contentType);
-
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: 'Added to favorites',
-                        detail: 'You have added it to your favorites',
-                        life: 3000
-                    });
-
-                    if (this.$type() === 'FAVORITES') {
-                        this.getContentTypes();
-                    }
-                }
+                command: () => this.addFavoriteItems(contentType)
             }
         ]);
+    }
+
+    /**
+     * Remove a content type from favorites.
+     * @param contentType - The content type to remove.
+     */
+    private removeFavoriteItems(contentType: DotCMSContentType) {
+        this.#paletteListStore.removeFavoriteContentType(this.$pagePath(), contentType.id);
+
+        this.#messageService.add({
+            severity: 'success',
+            summary: 'Removed from favorites',
+            detail: 'You have removed it from your favorites',
+            life: 3000
+        });
+
+        if (this.$type() === 'FAVORITES') {
+            this.getContentTypes();
+        }
+    }
+
+    /**
+     * Add a content type to favorites.
+     * @param contentType - The content type to add.
+     */
+    private addFavoriteItems(contentType: DotCMSContentType) {
+        this.#paletteListStore.addFavoriteContentType(this.$pagePath(), contentType);
+
+        this.#messageService.add({
+            severity: 'success',
+            summary: 'Added to favorites',
+            detail: 'You have added it to your favorites',
+            life: 3000
+        });
+
+        if (this.$type() === 'FAVORITES') {
+            this.getContentTypes();
+        }
     }
 }
