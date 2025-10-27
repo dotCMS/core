@@ -89,41 +89,6 @@ export const DotPaletteListStore = signalStore(
                     currentContentType: contentTypeName
                 });
             },
-
-            setContenttypes(contenttypes: DotCMSContentType[]) {
-                patchState(store, {
-                    contenttypes,
-                    currentView: DotUVEPaletteListView.CONTENT_TYPES,
-                    status:
-                        contenttypes.length > 0
-                            ? DotPaletteListStatus.LOADED
-                            : DotPaletteListStatus.EMPTY
-                });
-            },
-
-            setContentlets(contentlets: DotCMSContentlet[]) {
-                patchState(store, {
-                    contentlets,
-                    currentView: DotUVEPaletteListView.CONTENTLETS,
-                    status:
-                        contentlets.length > 0
-                            ? DotPaletteListStatus.LOADED
-                            : DotPaletteListStatus.EMPTY
-                });
-            },
-
-            setView(view: DotUVEPaletteListView) {
-                patchState(store, {
-                    currentView: view
-                });
-            },
-
-            setStatus(status: DotPaletteListStatus) {
-                patchState(store, {
-                    status
-                });
-            },
-
             getContentTypes(params: DotPageContentTypeParams) {
                 const { orderby, direction } = params;
 

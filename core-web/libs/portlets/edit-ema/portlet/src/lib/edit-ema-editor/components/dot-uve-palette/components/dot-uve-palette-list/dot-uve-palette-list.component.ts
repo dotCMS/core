@@ -32,7 +32,6 @@ import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentType
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 
 import { SortOption, ViewOption } from './model';
 import {
@@ -77,7 +76,6 @@ import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-pale
         InputTextModule,
         MenuModule,
         PaginatorModule,
-        DotMessagePipe,
         SkeletonModule,
         OverlayPanelModule,
         DotFavoriteSelectorComponent,
@@ -103,6 +101,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     readonly #paletteListStore = inject(DotPaletteListStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
+    readonly #destroyRef = inject(DestroyRef);
 
     readonly $start = this.#paletteListStore.$start;
     readonly $contenttypes = this.#paletteListStore.contenttypes;
@@ -114,29 +113,32 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     readonly DotUVEPaletteListView = DotUVEPaletteListView;
     readonly DotPaletteListStatus = DotPaletteListStatus;
 
-    readonly $showViewList = computed(() => {
-        return this.$view() === 'list' || this.$currentView() === DotUVEPaletteListView.CONTENTLETS;
-    });
-
-    readonly $skeletonHeight = computed(() => {
-        return this.$showViewList() ? '4rem' : '6.875rem';
-    });
-    readonly allowedBaseTypes = computed(() => {
-        return this.$type() === DotCMSBaseTypesContentTypes.CONTENT
-            ? BASETYPES_FOR_CONTENT
-            : BASETYPES_FOR_WIDGET;
-    });
-
-    readonly LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index + 1);
-    readonly $view = signal<ViewOption>('grid');
-
-    // Subject for debounced search
+    readonly $viewMode = signal<ViewOption>('grid');
+    readonly $favoriteMenuItems = signal<MenuItem[]>([]);
     readonly #searchSubject = new Subject<string>();
-    readonly #destroyRef = inject(DestroyRef);
+
+    readonly $skeletonHeight = computed(() => (this.$showViewList() ? '4rem' : '6.875rem'));
+    readonly $showViewList = computed(
+        () =>
+            this.$viewMode() === 'list' || this.$currentView() === DotUVEPaletteListView.CONTENTLETS
+    );
+    readonly allowedBaseTypes = computed(() =>
+        this.$type() === DotCMSBaseTypesContentTypes.CONTENT
+            ? BASETYPES_FOR_CONTENT
+            : BASETYPES_FOR_WIDGET
+    );
+
+    readonly $showPaginator = computed(
+        () => this.$pagination() && this.$status() !== DotPaletteListStatus.EMPTY
+    );
+    readonly $paginatorTemplate = computed(() => {
+        return `{first} - {last} ${this.#dotMessageService.get('uve.palette.pagination.of')} {totalRecords}`;
+    });
+    readonly LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index + 1);
 
     /** Computed menu items with active state based on current sort and view */
     readonly $menuItems = computed(() => {
-        const currentView = this.$view();
+        const currentView = this.$viewMode();
 
         return [
             {
@@ -184,8 +186,6 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
             }
         ];
     });
-
-    readonly $favoriteMenuItems = signal<MenuItem[]>([]);
 
     ngOnInit() {
         this.getContentTypes();
@@ -243,7 +243,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      * @param viewOption - Selected view mode ('grid' or 'list')
      */
     onViewSelect(viewOption: ViewOption) {
-        this.$view.set(viewOption);
+        this.$viewMode.set(viewOption);
     }
 
     /**
@@ -330,10 +330,6 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
             query: `+contentType:${contentTypeName} +deleted:false ${variantTerm}`.trim()
         });
         this.#paletteListStore.setCurrentContentType(contentTypeName);
-    }
-
-    protected onAddFavoriteContentType() {
-        // console.log('onAddFavoriteContentType');
     }
 
     protected onRightClick(contentType: DotCMSContentType) {

@@ -81,7 +81,7 @@
                 @for (contentType of $contenttypes(); track contentType.id) {
                     <dot-uve-palette-item
                         [contentType]="contentType"
-                        [view]="$view()"
+                        [view]="$viewMode()"
                         (selectContentType)="onSelectContentType($event)"
                         (rightClick)="onRightClick(contentType); cm.show($event)" />
                 }
@@ -90,7 +90,7 @@
     }
 </div>
 
-@if ($pagination() && $status() !== DotPaletteListStatus.EMPTY) {
+@if ($showPaginator()) {
     <p-paginator
         (onPageChange)="onPageChange($event)"
         [first]="$start()"
@@ -100,9 +100,7 @@
         [showJumpToPageDropdown]="false"
         [showCurrentPageReport]="true"
         [showFirstLastIcon]="false"
-        [currentPageReportTemplate]="
-            '{first} - {last} ' + ('uve.palette.pagination.of' | dm) + ' {totalRecords}'
-        " />
+        [currentPageReportTemplate]="$paginatorTemplate()" />
 }
 
 <p-menu
