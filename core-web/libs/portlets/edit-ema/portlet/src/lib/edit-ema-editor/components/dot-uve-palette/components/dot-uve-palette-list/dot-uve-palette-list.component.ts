@@ -46,7 +46,7 @@ import {
     DotPageContentTypeService
 } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
-import { BASETYPES_FOR_CONTENT, BASETYPES_FOR_WIDGET } from '../../utils';
+import { BASETYPES_FOR_CONTENT, BASETYPES_FOR_WIDGET, isSortActive } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUvePaletteItemComponent } from '../dot-uve-palette-item/dot-uve-palette-item.component';
@@ -212,24 +212,6 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Determines the CSS class for sort menu items based on current sort state.
-     * Returns 'active-menu-item' if the item matches the current sort configuration.
-     *
-     * @param orderby - Sort field to check
-     * @param direction - Sort direction to check
-     * @param currentSort - Current sort state
-     * @returns CSS class string for the menu item
-     */
-    private isSortActive(itemSort: SortOption): string {
-        const activeSort = this.#paletteListStore.sort();
-        const sameOrderby = activeSort.orderby === itemSort.orderby;
-        const sameDirection = activeSort.direction === itemSort.direction;
-        const isActive = sameOrderby && sameDirection;
-
-        return isActive ? 'active-menu-item' : '';
-    }
-
-    /**
      * Get the search parameters for the content types.
      * @returns DotPageContentTypeParams
      */
@@ -301,6 +283,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
 
     protected setSortMenuItems() {
         const currentView = this.$viewMode();
+        const currentSort = this.#paletteListStore.sort();
         const items = [
             {
                 label: this.#dotMessageService.get('uve.palette.menu.sort.title'),
@@ -309,19 +292,25 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
                         label: this.#dotMessageService.get('uve.palette.menu.sort.option.popular'),
                         id: 'most-popular',
                         command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
-                        styleClass: this.isSortActive({ orderby: 'usage', direction: 'ASC' })
+                        styleClass: isSortActive(
+                            { orderby: 'usage', direction: 'ASC' },
+                            currentSort
+                        )
                     },
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.sort.option.a-to-z'),
                         id: 'a-to-z',
                         command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
-                        styleClass: this.isSortActive({ orderby: 'name', direction: 'ASC' })
+                        styleClass: isSortActive({ orderby: 'name', direction: 'ASC' }, currentSort)
                     },
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.sort.option.z-to-a'),
                         id: 'z-to-a',
                         command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
-                        styleClass: this.isSortActive({ orderby: 'name', direction: 'DESC' })
+                        styleClass: isSortActive(
+                            { orderby: 'name', direction: 'DESC' },
+                            currentSort
+                        )
                     }
                 ]
             },

@@ -1,155 +1,6 @@
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSClazzes,
-    DotCMSContentType
-} from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
-export const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
-    {
-        baseType: 'CONTENT',
-        host: 'localhost',
-        iDate: 1234567890,
-        layout: [],
-        name: 'Activity',
-        icon: 'palette',
-        id: '1',
-        variable: 'activity',
-        clazz: DotCMSClazzes.SIMPLE_CONTENT_TYPE,
-        defaultType: false,
-        contentType: 'Activity',
-        description: 'Activity content type',
-        fields: [],
-        fixed: false,
-        folder: 'Content',
-        modDate: 1234567890,
-        multilingualable: true,
-        nEntries: 0,
-        owner: 'system',
-        system: true,
-        versionable: true,
-        workflows: []
-    },
-    {
-        baseType: 'CONTENT',
-        host: 'localhost',
-        iDate: 1234567890,
-        layout: [],
-        name: 'Blog Post',
-        icon: 'article',
-        id: '2',
-        variable: 'blog-post',
-        clazz: DotCMSClazzes.SIMPLE_CONTENT_TYPE,
-        defaultType: false,
-        contentType: 'Blog Post',
-        description: 'Blog post content type',
-        fields: [],
-        fixed: false,
-        folder: 'Content',
-        modDate: 1234567890,
-        multilingualable: true,
-        nEntries: 0,
-        owner: 'system',
-        system: true,
-        versionable: true,
-        workflows: []
-    },
-    {
-        baseType: 'CONTENT',
-        host: 'localhost',
-        iDate: 1234567890,
-        layout: [],
-        name: 'Product',
-        icon: 'shopping_cart',
-        id: '3',
-        variable: 'product',
-        clazz: DotCMSClazzes.SIMPLE_CONTENT_TYPE,
-        defaultType: false,
-        contentType: 'Product',
-        description: 'Product content type',
-        fields: [],
-        fixed: false,
-        folder: 'Content',
-        modDate: 1234567890,
-        multilingualable: true,
-        nEntries: 0,
-        owner: 'system',
-        system: true,
-        versionable: true,
-        workflows: []
-    },
-    {
-        baseType: 'CONTENT',
-        host: 'localhost',
-        iDate: 1234567890,
-        layout: [],
-        name: 'Event',
-        icon: 'event',
-        id: '4',
-        variable: 'event',
-        clazz: DotCMSClazzes.SIMPLE_CONTENT_TYPE,
-        defaultType: false,
-        contentType: 'Event',
-        description: 'Event content type',
-        fields: [],
-        fixed: false,
-        folder: 'Content',
-        modDate: 1234567890,
-        multilingualable: true,
-        nEntries: 0,
-        owner: 'system',
-        system: true,
-        versionable: true,
-        workflows: []
-    },
-    {
-        baseType: 'CONTENT',
-        host: 'localhost',
-        iDate: 1234567890,
-        layout: [],
-        name: 'News',
-        icon: 'newspaper',
-        id: '5',
-        variable: 'news',
-        clazz: DotCMSClazzes.SIMPLE_CONTENT_TYPE,
-        defaultType: false,
-        contentType: 'News',
-        description: 'News content type',
-        fields: [],
-        fixed: false,
-        folder: 'Content',
-        modDate: 1234567890,
-        multilingualable: true,
-        nEntries: 0,
-        owner: 'system',
-        system: true,
-        versionable: true,
-        workflows: []
-    },
-    {
-        baseType: 'CONTENT',
-        host: 'localhost',
-        iDate: 1234567890,
-        layout: [],
-        name: 'Gallery',
-        icon: 'photo_library',
-        id: '6',
-        variable: 'gallery',
-        clazz: DotCMSClazzes.SIMPLE_CONTENT_TYPE,
-        defaultType: false,
-        contentType: 'Gallery',
-        description: 'Gallery content type',
-        fields: [],
-        fixed: false,
-        folder: 'Content',
-        modDate: 1234567890,
-        multilingualable: true,
-        nEntries: 0,
-        owner: 'system',
-        system: true,
-        versionable: true,
-        workflows: []
-    }
-];
+import { SortOption } from './components/dot-uve-palette-list/model';
 
 export const BASETYPES_FOR_CONTENT = [
     DotCMSBaseTypesContentTypes.CONTENT,
@@ -158,3 +9,20 @@ export const BASETYPES_FOR_CONTENT = [
 ];
 
 export const BASETYPES_FOR_WIDGET = [DotCMSBaseTypesContentTypes.WIDGET];
+
+/**
+ * Determines the CSS class for sort menu items based on current sort state.
+ * Returns 'active-menu-item' if the item matches the current sort configuration.
+ *
+ * @param orderby - Sort field to check
+ * @param direction - Sort direction to check
+ * @param currentSort - Current sort state
+ * @returns CSS class string for the menu item
+ */
+export function isSortActive(itemSort: SortOption, currentSort: SortOption): string {
+    const sameOrderby = currentSort.orderby === itemSort.orderby;
+    const sameDirection = currentSort.direction === itemSort.direction;
+    const isActive = sameOrderby && sameDirection;
+
+    return isActive ? 'active-menu-item' : '';
+}
