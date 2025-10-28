@@ -804,7 +804,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 			for(final Contentlet container : containers) {
 
-				folders.add(this.folderAPI.find(container.getFolder(), user, false));
+				try {
+					folders.add(this.folderAPI.find(container.getFolder(), user, false));
+				} catch (final DotSecurityException e) {
+					Logger.debug(ContainerFactoryImpl.class, e.getMessage(), e);
+				}
 			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
