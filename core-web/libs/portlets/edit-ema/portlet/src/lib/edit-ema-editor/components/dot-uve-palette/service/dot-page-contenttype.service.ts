@@ -72,7 +72,9 @@ export interface DotPagination {
  * @export
  * @class DotPageContentTypeService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotPageContentTypeService {
     private http = inject(HttpClient);
 

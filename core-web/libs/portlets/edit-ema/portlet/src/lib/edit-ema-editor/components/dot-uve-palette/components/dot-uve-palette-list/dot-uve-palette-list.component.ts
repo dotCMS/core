@@ -26,7 +26,11 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotESContentService, DotMessageService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
 
 import { SortOption, ViewOption } from './model';
 import {
@@ -41,12 +45,7 @@ import {
     DotPageContentTypeService
 } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
-import {
-    BASETYPES_FOR_CONTENT,
-    BASETYPES_FOR_WIDGET,
-    isSortActive,
-    UVE_PALETTE_LIST_TYPES
-} from '../../utils';
+import { isSortActive, UVE_PALETTE_LIST_TYPES } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
@@ -91,6 +90,9 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
 })
 export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     $type = input.required<UVE_PALETTE_LIST_TYPES>({ alias: 'type' });
+    $allowedBaseTypes = input.required<DotCMSBaseTypesContentTypes[]>({
+        alias: 'allowedBaseTypes'
+    });
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
     $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
@@ -107,28 +109,19 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     readonly $rowsPerPage = this.#paletteListStore.$rowsPerPage;
     readonly $currentView = this.#paletteListStore.currentView;
     readonly $status = this.#paletteListStore.$status;
+    readonly $showPaginator = this.#paletteListStore.$showPaginator;
     readonly DotUVEPaletteListView = DotUVEPaletteListView;
     readonly DotPaletteListStatus = DotPaletteListStatus;
 
     readonly $viewMode = signal<ViewOption>('grid');
-    readonly $favoriteMenuItems = signal<MenuItem[]>([]);
     readonly $contextMenuItems = signal<MenuItem[]>([]);
     readonly #searchSubject = new Subject<string>();
 
-    readonly $skeletonHeight = computed(() => (this.$showViewList() ? '4rem' : '6.875rem'));
     readonly $showViewList = computed(
         () =>
             this.$viewMode() === 'list' || this.$currentView() === DotUVEPaletteListView.CONTENTLETS
     );
-    readonly allowedBaseTypes = computed(() =>
-        this.$type() === UVE_PALETTE_LIST_TYPES.CONTENT
-            ? BASETYPES_FOR_CONTENT
-            : BASETYPES_FOR_WIDGET
-    );
 
-    readonly $showPaginator = computed(
-        () => this.$pagination() && this.$status() !== DotPaletteListStatus.EMPTY
-    );
     readonly $paginatorTemplate = computed(() => {
         return `{first} - {last} ${this.#dotMessageService.get('uve.palette.pagination.of')} {totalRecords}`;
     });
@@ -217,7 +210,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      */
     private getSearchParams(): DotPageContentTypeParams {
         return {
-            types: this.allowedBaseTypes(),
+            types: this.$allowedBaseTypes(),
             pagePathOrId: this.$pagePath(),
             language: this.$languageId().toString(),
             filter: '',
@@ -233,12 +226,16 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      * @param params - The parameters for the content types.
      */
     private getContentTypes(params: Partial<DotPageContentTypeParams> = {}) {
-        if (this.$type() === UVE_PALETTE_LIST_TYPES.FAVORITES) {
-            this.#paletteListStore.getFavoriteContentTypes(this.$pagePath(), params.filter || '');
-        } else if (this.$type() === UVE_PALETTE_LIST_TYPES.WIDGET) {
-            this.#paletteListStore.getWidgets({ ...this.getSearchParams(), ...params });
-        } else {
-            this.#paletteListStore.getContentTypes({ ...this.getSearchParams(), ...params });
+        switch (this.$type()) {
+            case UVE_PALETTE_LIST_TYPES.FAVORITES:
+                this.#paletteListStore.getFavoriteContentTypes(params.filter || '');
+                break;
+            case UVE_PALETTE_LIST_TYPES.WIDGET:
+                this.#paletteListStore.getWidgets({ ...this.getSearchParams(), ...params });
+                break;
+            default:
+                this.#paletteListStore.getContentTypes({ ...this.getSearchParams(), ...params });
+                break;
         }
     }
 
@@ -290,7 +287,6 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
                 items: [
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.sort.option.popular'),
-                        id: 'most-popular',
                         command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
                         styleClass: isSortActive(
                             { orderby: 'usage', direction: 'ASC' },
@@ -299,13 +295,11 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
                     },
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.sort.option.a-to-z'),
-                        id: 'a-to-z',
                         command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
                         styleClass: isSortActive({ orderby: 'name', direction: 'ASC' }, currentSort)
                     },
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.sort.option.z-to-a'),
-                        id: 'z-to-a',
                         command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
                         styleClass: isSortActive(
                             { orderby: 'name', direction: 'DESC' },
@@ -322,13 +316,11 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
                 items: [
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.view.option.grid'),
-                        id: 'grid',
                         command: () => this.onViewSelect('grid'),
                         styleClass: currentView === 'grid' ? 'active-menu-item' : ''
                     },
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.view.option.list'),
-                        id: 'list',
                         command: () => this.onViewSelect('list'),
                         styleClass: currentView === 'list' ? 'active-menu-item' : ''
                     }
@@ -339,10 +331,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     }
 
     protected setFavoriteMenuItems(contentType: DotCMSContentType) {
-        const isFavorite = this.#paletteListStore.isFavoriteContentType(
-            this.$pagePath(),
-            contentType.id
-        );
+        const isFavorite = this.#paletteListStore.isFavoriteContentType(contentType.id);
         const label = isFavorite
             ? 'uve.palette.menu.favorite.option.remove'
             : 'uve.palette.menu.favorite.option.add';
@@ -357,7 +346,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      * @param contentType - The content type to remove.
      */
     private removeFavoriteItems(contentType: DotCMSContentType) {
-        this.#paletteListStore.removeFavoriteContentType(this.$pagePath(), contentType.id);
+        this.#paletteListStore.removeFavoriteContentType(contentType.id);
 
         this.#messageService.add({
             severity: 'success',
@@ -376,7 +365,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      * @param contentType - The content type to add.
      */
     private addFavoriteItems(contentType: DotCMSContentType) {
-        this.#paletteListStore.addFavoriteContentType(this.$pagePath(), contentType);
+        this.#paletteListStore.addFavoriteContentType(contentType);
 
         this.#messageService.add({
             severity: 'success',

@@ -10,6 +10,7 @@
         @if ($currentIndex() === 0) {
             <dot-uve-palette-list
                 [type]="UVE_PALETTE_LIST_TYPES.CONTENT"
+                [allowedBaseTypes]="BASE_TYPES_FOR_CONTENT"
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }
@@ -23,6 +24,7 @@
         @if ($currentIndex() === 1) {
             <dot-uve-palette-list
                 [type]="UVE_PALETTE_LIST_TYPES.WIDGET"
+                [allowedBaseTypes]="BASE_TYPES_FOR_WIDGET"
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }
@@ -36,6 +38,7 @@
         @if ($currentIndex() === 2) {
             <dot-uve-palette-list
                 [type]="UVE_PALETTE_LIST_TYPES.FAVORITES"
+                [allowedBaseTypes]="BASE_TYPES_FOR_FAVORITES"
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }

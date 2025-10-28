@@ -1,86 +1,118 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, input, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ListboxModule } from 'primeng/listbox';
 
-import { take } from 'rxjs/operators';
+import { debounceTime, switchMap } from 'rxjs/operators';
 
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { DotContentTypeParams } from '../../service/dot-page-contenttype.service';
+import {
+    DotContentTypeParams,
+    DotPageContentTypeService
+} from '../../service/dot-page-contenttype.service';
+import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { DotPaletteListStore } from '../dot-uve-palette-list/store/store';
+
+const FILTER_DEBOUNCE_TIME = 500;
+const CONTENT_TYPE_CATEGORIES = [
+    DotCMSBaseTypesContentTypes.CONTENT,
+    DotCMSBaseTypesContentTypes.FILEASSET,
+    DotCMSBaseTypesContentTypes.DOTASSET,
+    DotCMSBaseTypesContentTypes.WIDGET
+];
 
 @Component({
     selector: 'dot-favorite-selector',
-    standalone: true,
-    imports: [CommonModule, FormsModule, ListboxModule],
+    imports: [FormsModule, ListboxModule],
     templateUrl: './dot-favorite-selector.component.html',
     styleUrls: ['./dot-favorite-selector.component.scss']
 })
 export class DotFavoriteSelectorComponent implements OnInit {
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #pageContentTypeService = inject(DotPageContentTypeService);
+    readonly #favoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
     readonly store = inject(DotPaletteListStore);
 
-    // Input for the page path or ID to manage favorites
-    $pagePath = input.required<string>({ alias: 'pagePath' });
+    // Signals
+    readonly $contenttypes = signal<DotCMSContentType[]>([]);
+    readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
 
-    selectedContentTypes: DotCMSContentType[] = [];
-    contenttypes: DotCMSContentType[] = [];
-    filterValue = '';
+    // Filter subject for debouncing
+    readonly #filterSubject$ = new Subject<string>();
+
+    constructor() {
+        this.#setupFavoritesSync();
+        this.#setupFilterDebounce();
+    }
 
     ngOnInit(): void {
-        const pageId = this.$pagePath();
-        if (pageId) {
-            this.loadContentTypes();
-        }
+        this.#loadAllContentTypes();
     }
 
     /**
-     * Load content types with current filter and pagination
+     * Handle filter input changes with debounce
      */
-    loadContentTypes() {
-        const params: DotContentTypeParams = {
-            filter: this.filterValue,
-            orderby: 'name',
-            direction: 'ASC'
-        };
+    onFilter(event: { filter: string }): void {
+        this.#filterSubject$.next(event.filter);
+    }
 
-        this.store
-            .getAllContentTypes(params)
-            .pipe(take(1))
-            .subscribe(({ contenttypes }) => {
-                this.contenttypes = contenttypes;
-                this.selectedContentTypes = this.getSelectedContentTypes();
+    /**
+     * Handle selection changes in the listbox
+     */
+    onSelectionChange({ value }: { value: DotCMSContentType[] }): void {
+        this.store.saveFavoriteContentTypes(value);
+    }
+
+    /**
+     * Sync selected favorites whenever store changes
+     */
+    #setupFavoritesSync(): void {
+        toObservable(this.store.contenttypes)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
+                this.$selectedContentTypes.set(this.#favoriteContentTypeService.getAll());
             });
     }
 
     /**
-     * Handle filter input changes
+     * Setup filter with debounce
      */
-    onFilter(event: { filter: string }) {
-        this.filterValue = event.filter;
-        this.loadContentTypes();
+    #setupFilterDebounce(): void {
+        this.#filterSubject$
+            .pipe(
+                debounceTime(FILTER_DEBOUNCE_TIME),
+                switchMap((filter) => this.#getContentTypes(filter)),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe(({ contenttypes }) => {
+                this.$contenttypes.set(contenttypes);
+            });
     }
 
     /**
-     * Handle checkbox changes for favorites
+     * Load all content types on init
      */
-    onSelectionChange(event) {
-        this.store.saveFavoriteContentTypes(this.$pagePath(), event.value);
+    #loadAllContentTypes(): void {
+        this.#getContentTypes('')
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(({ contenttypes }) => this.$contenttypes.set(contenttypes));
     }
 
     /**
-     * Check if a content type is marked as favorite
+     * Get content types with filter
      */
-    isContentTypeFavorite(contentTypeId: string): boolean {
-        return this.store.isFavoriteContentType(this.$pagePath(), contentTypeId);
-    }
+    #getContentTypes(filter: string) {
+        const params: DotContentTypeParams = {
+            filter,
+            orderby: 'name',
+            direction: 'ASC',
+            types: CONTENT_TYPE_CATEGORIES
+        };
 
-    /**
-     * Initialize selected content types based on favorites
-     */
-    getSelectedContentTypes() {
-        return this.store.getAllFavoriteContentTypes(this.$pagePath(), this.filterValue)
-            .contenttypes;
+        return this.#pageContentTypeService.getAllContentTypes(params);
     }
 }

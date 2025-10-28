@@ -23,16 +23,16 @@
     @if ($currentView() === DotUVEPaletteListView.CONTENT_TYPES && $type() !== 'FAVORITES') {
         <p-button
             icon="pi pi-arrow-right-arrow-left"
+            styleClass="options-menu-button"
             [text]="true"
             [rounded]="true"
-            styleClass="options-menu-button"
             (onClick)="setSortMenuItems(); cm.toggle($event)" />
     } @else if ($type() === 'FAVORITES') {
         <p-button
             icon="pi pi-plus"
+            styleClass="options-menu-button"
             [text]="true"
             [rounded]="true"
-            styleClass="options-menu-button"
             (onClick)="overlayPanel.toggle($event)" />
     }
 </div>
@@ -42,8 +42,9 @@
     [class.dot-uve-palette-list__grid--list]="$showViewList()"
     [class.dot-uve-palette-list__grid--loading]="$status() === DotPaletteListStatus.LOADING">
     @if ($status() === DotPaletteListStatus.LOADING) {
+        @let skeletonHeight = $showViewList() ? '4rem' : '6.875rem';
         @for (i of LOADING_ROWS_MOCK; track i) {
-            <p-skeleton width="100%" [height]="$skeletonHeight()"></p-skeleton>
+            <p-skeleton width="100%" [height]="skeletonHeight" />
         }
     } @else if ($status() === DotPaletteListStatus.EMPTY) {
         <div class="dot-uve-palette-list__empty">
@@ -112,5 +113,5 @@
     showTransitionOptions="0ms" />
 
 <p-overlayPanel #overlayPanel styleClass="favorite-selector-overlaypanel">
-    <dot-favorite-selector [pagePath]="$pagePath()" />
+    <dot-favorite-selector />
 </p-overlayPanel>

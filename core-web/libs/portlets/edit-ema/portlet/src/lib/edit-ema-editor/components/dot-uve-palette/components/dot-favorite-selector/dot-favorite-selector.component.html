@@ -1,13 +1,14 @@
 <p-listbox
-    [options]="contenttypes"
-    [(ngModel)]="selectedContentTypes"
+    filterPlaceHolder="Filter content types..."
+    optionLabel="name"
+    dataKey="id"
+    [options]="$contenttypes()"
+    [ngModel]="$selectedContentTypes()"
     (onChange)="onSelectionChange($event)"
     (onFilter)="onFilter($event)"
-    optionLabel="name"
     [multiple]="true"
     [checkbox]="true"
     [filter]="true"
     [metaKeySelection]="false"
-    filterPlaceHolder="Filter content types..."
     [listStyle]="{ 'max-height': '400px' }"
-    [style]="{ width: '100%' }"></p-listbox>
+    [style]="{ width: '100%' }" />

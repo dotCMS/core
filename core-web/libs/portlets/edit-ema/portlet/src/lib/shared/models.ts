@@ -1,9 +1,4 @@
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
-    DotCMSContentType,
-    DotPagination
-} from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCMSUVEAction } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
@@ -288,34 +283,4 @@ export interface DotUVEPaletteListParams {
     pagePathOrId: string;
     language: string;
     type: DotUVEPaletteListType;
-}
-
-/**
- * Parameters for searching and paginating favorite content types.
- *
- * @export
- * @interface DotFavoriteContentTypeParams
- */
-export interface DotFavoriteContentTypeParams {
-    /** Filter content types by name or description */
-    filter?: string;
-    /** Page number for pagination (default: 1) */
-    page?: number;
-    /** Items per page (default: 20) */
-    per_page?: number;
-    /** Sort field - "name" (default: "name") */
-    orderby?: 'name';
-    /** Sort direction - ASC|DESC (default: "ASC") */
-    direction?: 'ASC' | 'DESC';
-}
-
-/**
- * Response structure for favorite content types with pagination.
- *
- * @export
- * @interface DotFavoriteContentTypeResponse
- */
-export interface DotFavoriteContentTypeResponse {
-    contenttypes: DotCMSContentType[];
-    pagination: DotPagination;
 }

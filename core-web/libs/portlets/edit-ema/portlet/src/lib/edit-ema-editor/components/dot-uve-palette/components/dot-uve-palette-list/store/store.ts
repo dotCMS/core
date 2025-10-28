@@ -3,15 +3,9 @@ import { signalStore, withMethods, withState, patchState, withComputed } from '@
 import { computed, inject } from '@angular/core';
 
 import { DotESContentService } from '@dotcms/data-access';
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
-    DotCMSContentType,
-    DotPagination
-} from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType, DotPagination } from '@dotcms/dotcms-models';
 
 import {
-    DotContentTypeParams,
     DotPageContentTypeParams,
     DotPageContentTypeService
 } from '../../../service/dot-page-contenttype.service';
@@ -71,12 +65,12 @@ export const DEFAULT_STATE: DotPaletteListState = {
 export const DotPaletteListStore = signalStore(
     withState<DotPaletteListState>(DEFAULT_STATE),
     withComputed((store) => {
+        const pagination = store.pagination;
         return {
-            $start: computed(() => {
-                return (store.pagination().currentPage - 1) * store.pagination().perPage;
-            }),
+            $start: computed(() => pagination().currentPage - 1 * pagination().perPage),
+            $status: computed(() => store.status()),
             $rowsPerPage: computed(() => store.pagination().perPage),
-            $status: computed(() => store.status())
+            $showPaginator: computed(() => pagination().totalEntries > pagination().perPage)
         };
     }),
     withMethods((store) => {
@@ -128,17 +122,6 @@ export const DotPaletteListStore = signalStore(
                         });
                     });
             },
-            getAllContentTypes(params: DotContentTypeParams) {
-                return pageContentTypeService.getAllContentTypes({
-                    ...params,
-                    types: [
-                        DotCMSBaseTypesContentTypes.CONTENT,
-                        DotCMSBaseTypesContentTypes.FILEASSET,
-                        DotCMSBaseTypesContentTypes.DOTASSET,
-                        DotCMSBaseTypesContentTypes.WIDGET
-                    ]
-                });
-            },
             getContentlets(params: DotESContentParams) {
                 const { itemsPerPage, lang, filter, offset, query } = params;
                 patchState(store, {
@@ -170,53 +153,73 @@ export const DotPaletteListStore = signalStore(
                         });
                     });
             },
-            getFavoriteContentTypes(pagePathOrId: string, filter: string) {
+            getFavoriteContentTypes(filter: string) {
                 patchState(store, {
                     status: DotPaletteListStatus.LOADING
                 });
 
-                const response = dotPageFavoriteContentTypeService.get(pagePathOrId, {
-                    orderby: 'name',
-                    direction: 'ASC',
-                    filter
-                });
+                let contenttypes = dotPageFavoriteContentTypeService.getAll();
+                const totalEntries = contenttypes.length;
+
+                // Apply filter
+                if (filter) {
+                    const filterLower = filter.toLowerCase();
+                    contenttypes = contenttypes.filter((ct) =>
+                        ct.name.toLowerCase().includes(filterLower)
+                    );
+                }
+
+                // Apply sorting by name
+                contenttypes.sort((a, b) => a.name.localeCompare(b.name));
 
                 patchState(store, {
-                    contenttypes: response.contenttypes,
-                    pagination: response.pagination,
+                    contenttypes,
+                    pagination: {
+                        currentPage: 1,
+                        perPage: contenttypes.length,
+                        totalEntries
+                    },
                     currentView: DotUVEPaletteListView.CONTENT_TYPES,
                     status:
-                        response.contenttypes.length > 0
+                        contenttypes.length > 0
                             ? DotPaletteListStatus.LOADED
                             : DotPaletteListStatus.EMPTY
                 });
             },
-            getAllFavoriteContentTypes(pagePathOrId: string, filter: string) {
-                return dotPageFavoriteContentTypeService.get(pagePathOrId, {
-                    filter,
-                    orderby: 'name',
-                    direction: 'ASC'
+            isFavoriteContentType(contentTypeId: string) {
+                return dotPageFavoriteContentTypeService.isFavorite(contentTypeId);
+            },
+            addFavoriteContentType(contentType: DotCMSContentType) {
+                const updatedFavorites = dotPageFavoriteContentTypeService.add(contentType);
+
+                // Update store state with current favorites
+                patchState(store, {
+                    contenttypes: updatedFavorites
                 });
             },
-            isFavoriteContentType(pagePathOrId: string, contentTypeId: string) {
-                return dotPageFavoriteContentTypeService.isFavorite(pagePathOrId, contentTypeId);
-            },
-            addFavoriteContentType(pagePathOrId: string, contentType: DotCMSContentType) {
-                dotPageFavoriteContentTypeService.add(pagePathOrId, contentType);
-            },
-            saveFavoriteContentTypes(pagePathOrId: string, contentTypes: DotCMSContentType[]) {
-                dotPageFavoriteContentTypeService.save(pagePathOrId, contentTypes);
+            saveFavoriteContentTypes(contentTypes: DotCMSContentType[]) {
+                // Replace entire favorites list with the new selection
+                const updatedFavorites = dotPageFavoriteContentTypeService.set(contentTypes);
 
                 patchState(store, {
-                    contenttypes: contentTypes,
+                    contenttypes: updatedFavorites,
                     status:
-                        contentTypes.length > 0
+                        updatedFavorites.length > 0
                             ? DotPaletteListStatus.LOADED
                             : DotPaletteListStatus.EMPTY
                 });
             },
-            removeFavoriteContentType(pagePathOrId: string, contentTypeId: string) {
-                dotPageFavoriteContentTypeService.remove(pagePathOrId, contentTypeId);
+            removeFavoriteContentType(contentTypeId: string) {
+                const updatedFavorites = dotPageFavoriteContentTypeService.remove(contentTypeId);
+
+                // Update store state with current favorites
+                patchState(store, {
+                    contenttypes: updatedFavorites,
+                    status:
+                        updatedFavorites.length > 0
+                            ? DotPaletteListStatus.LOADED
+                            : DotPaletteListStatus.EMPTY
+                });
             }
         };
     })
