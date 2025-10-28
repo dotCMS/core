@@ -801,88 +801,56 @@ public class ContentTypeHelper implements Serializable {
             final String orderBy) {
 
         if (contentTypes == null || contentTypes.isEmpty() || orderBy == null || orderBy.isBlank()) {
-            return contentTypes != null ? new ArrayList<>(contentTypes) : null;
+            return contentTypes == null ? Collections.emptyList() : new ArrayList<>(contentTypes);
         }
 
-        String[] parts = orderBy.split("[:\\s]+");
-        String field = parts[0].trim().toLowerCase(Locale.ROOT);
-        boolean ascending = parts.length < 2 || !"desc".equalsIgnoreCase(parts[1].trim());
+        final String[] parts = orderBy.split("[:\\s]+");
+        final String field = parts[0].trim().toLowerCase(Locale.ROOT);
+        final boolean ascending = parts.length < 2 || !"desc".equalsIgnoreCase(parts[1].trim());
 
-        Function<ContentType, Comparable> keyExtractor = c -> getFieldValue(c, field);
+        final Function<ContentType, Comparable> keyExtractor =
+                FIELD_COMPARABLE_MAP.getOrDefault(field, ct -> lower(ct.name()));
 
-        Comparator<ContentType> comparator = Comparator.comparing(
+        final Comparator<ContentType> comparator = Comparator.comparing(
                 keyExtractor,
                 Comparator.nullsLast(Comparator.naturalOrder())
         );
 
-        if (!ascending) {
-            comparator = comparator.reversed();
-        }
-
         return contentTypes.stream()
-                .sorted(comparator)
+                .sorted(ascending ? comparator : comparator.reversed())
                 .collect(Collectors.toList());
     }
 
     /**
-     * Retrieves the comparable filed value for sorting.
-     * <p>
-     * @param contentType The Content Type to get the field value from.
-     * @param field The field to get the value from.
-     * @return The value of the field.
+     * Map of field names to their corresponding Comparable function.
      */
-    private static Comparable<?> getFieldValue(final ContentType contentType, final String field) {
-        if (contentType == null) {
-            return null;
-        }
+    private static final Map<String, Function<ContentType, Comparable>> FIELD_COMPARABLE_MAP = createFieldComparableMap();
 
-        switch (field) {
-            case "name":
-                return lower(contentType.name());
-            case "variable":
-            case "velocity_var_name":
-                return lower(contentType.variable());
-            case "description":
-                return  lower(contentType.description());
-            case "id":
-                return contentType.id();
-            case "moddate":
-            case "mod_date":
-                return contentType.modDate();
-            case "idate":
-            case "i_date":
-                return contentType.iDate();
-            case "sortorder":
-            case "sort_order":
-                return contentType.sortOrder();
-            case "system":
-                return contentType.system();
-            case "versionable":
-                return contentType.versionable();
-            case "multilingualable":
-                return contentType.multilingualable();
-            case "defaulttype":
-            case "default_type":
-                return contentType.defaultType();
-            case "fixed":
-                return contentType.fixed();
-            case "host":
-                return contentType.host();
-            case "sitename":
-            case "site_name":
-                return contentType.siteName();
-            case "icon":
-                return contentType.icon();
-            case "folder":
-                return contentType.folder();
-            default:
-                Logger.warn(
-                        ContentTypeHelper.class,
-                        String.format("Unknown sort field: [%s], using 'name' as fallback.", field)
-                );
-
-                return lower(contentType.name());
-        }
+    /**
+     * Creates a map of field names to their corresponding Comparable function.
+     * @return Map of field names to their corresponding Comparable function.
+     */
+    private static Map<String, Function<ContentType, Comparable>> createFieldComparableMap() {
+        return Map.ofEntries(
+                Map.entry("name", c -> lower(c.name())),
+                Map.entry("variable", c -> lower(c.variable())),
+                Map.entry("velocity_var_name", c -> lower(c.variable())),
+                Map.entry("description", c -> lower(c.description())),
+                Map.entry("id", ContentType::id), Map.entry("moddate", ContentType::modDate),
+                Map.entry("mod_date", ContentType::modDate), Map.entry("idate", ContentType::iDate),
+                Map.entry("i_date", ContentType::iDate),
+                Map.entry("sortorder", ContentType::sortOrder),
+                Map.entry("sort_order", ContentType::sortOrder),
+                Map.entry("system", ContentType::system),
+                Map.entry("versionable", ContentType::versionable),
+                Map.entry("multilingualable", ContentType::multilingualable),
+                Map.entry("defaulttype", ContentType::defaultType),
+                Map.entry("default_type", ContentType::defaultType),
+                Map.entry("fixed", ContentType::fixed), Map.entry("host", ContentType::host),
+                Map.entry("sitename", ContentType::siteName),
+                Map.entry("site_name", ContentType::siteName), Map.entry("icon", ContentType::icon),
+                Map.entry("folder", ContentType::folder)
+        );
     }
 
     /**
