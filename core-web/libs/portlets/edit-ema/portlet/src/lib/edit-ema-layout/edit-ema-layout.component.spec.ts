@@ -9,7 +9,7 @@ import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
     DotAnalyticsTrackerService,
@@ -112,6 +112,7 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: jest.fn(() => of([]))
             }),
+            mockProvider(ConfirmationService),
             MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
             MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
             MockProvider(DotLanguagesService, new DotLanguagesServiceMock(), 'useValue'),

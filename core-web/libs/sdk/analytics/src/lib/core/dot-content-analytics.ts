@@ -1,10 +1,23 @@
 import { Analytics } from 'analytics';
 
+import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '@dotcms/uve/internal';
+
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
-import { cleanupActivityTracking } from './shared/dot-content-analytics.utils';
+import {
+    cleanupActivityTracking,
+    validateAnalyticsConfig
+} from './shared/dot-content-analytics.utils';
 import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
+
+// Extend Window interface for analytics properties
+declare global {
+    interface Window {
+        [ANALYTICS_WINDOWS_ACTIVE_KEY]?: boolean;
+        [ANALYTICS_WINDOWS_CLEANUP_KEY]?: () => void;
+    }
+}
 
 /**
  * Creates an analytics instance for content analytics tracking.
@@ -15,14 +28,14 @@ import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/mod
 export const initializeContentAnalytics = (
     config: DotCMSAnalyticsConfig
 ): DotCMSAnalytics | null => {
-    if (!config.siteAuth) {
-        console.error('DotCMS Analytics: Missing "siteAuth" in configuration');
+    // Validate required configuration
+    const missingFields = validateAnalyticsConfig(config);
+    if (missingFields) {
+        console.error(`DotCMS Analytics: Missing ${missingFields.join(' and ')} in configuration`);
 
-        return null;
-    }
-
-    if (!config.server) {
-        console.error('DotCMS Analytics: Missing "server" in configuration');
+        if (typeof window !== 'undefined') {
+            window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
+        }
 
         return null;
     }
@@ -42,7 +55,11 @@ export const initializeContentAnalytics = (
 
     if (typeof window !== 'undefined') {
         window.addEventListener('beforeunload', cleanup);
-        window.__dotAnalyticsCleanup = cleanup;
+        window[ANALYTICS_WINDOWS_CLEANUP_KEY] = cleanup;
+        window[ANALYTICS_WINDOWS_ACTIVE_KEY] = true;
+
+        // Dispatch custom event to notify subscribers that analytics is ready
+        window.dispatchEvent(new CustomEvent('dotcms:analytics:ready'));
     }
 
     return {

@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
-import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
+import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFolderListViewComponent } from './dot-folder-list-view.component';
 
-import { DOT_DRAG_ITEM } from '../shared/constants';
+import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
 import { mockItems } from '../shared/mocks';
 
 // Mock DragEvent since it's not available in Jest environment
@@ -41,6 +43,23 @@ function createDragStartEvent(): DragEvent {
     return new DragEvent('dragstart');
 }
 
+const mockLanguages: DotLanguage[] = [
+    {
+        id: 1,
+        language: 'English',
+        languageCode: 'en',
+        countryCode: 'US',
+        country: 'United States'
+    },
+    {
+        id: 2,
+        language: 'Spanish',
+        languageCode: 'es',
+        countryCode: 'ES',
+        country: 'Spain'
+    }
+];
+
 describe('DotFolderListViewComponent', () => {
     let spectator: Spectator<DotFolderListViewComponent>;
 
@@ -51,6 +70,9 @@ describe('DotFolderListViewComponent', () => {
             mockProvider(DotMessageService, new MockDotMessageService({})),
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
             mockProvider(DotFormatDateService),
+            mockProvider(DotLanguagesService, {
+                get: jest.fn(() => of(mockLanguages))
+            }),
             provideHttpClient()
         ],
         declarations: [],
@@ -80,6 +102,31 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', true);
 
             expect(spectator.component.$loading()).toBe(true);
+        });
+    });
+
+    describe('Languages Service', () => {
+        it('should call languages service on init', () => {
+            const languagesService = spectator.inject(DotLanguagesService);
+
+            expect(languagesService.get).toHaveBeenCalled();
+        });
+
+        it('should populate languagesMap with languages from service', () => {
+            const languagesMap = spectator.component['$languagesMap']();
+
+            expect(languagesMap.size).toBe(2);
+            expect(languagesMap.get(1)).toEqual(mockLanguages[0]);
+            expect(languagesMap.get(2)).toEqual(mockLanguages[1]);
+        });
+
+        it('should convert languages array to Map with id as key', () => {
+            const languagesMap = spectator.component['$languagesMap']();
+
+            expect(languagesMap.get(1)?.language).toBe('English');
+            expect(languagesMap.get(1)?.languageCode).toBe('en');
+            expect(languagesMap.get(2)?.language).toBe('Spanish');
+            expect(languagesMap.get(2)?.languageCode).toBe('es');
         });
     });
 
@@ -130,20 +177,24 @@ describe('DotFolderListViewComponent', () => {
                 expect(header).toBeTruthy();
             });
 
-            it('should show 2 sortable columns with sort icon', () => {
+            it('should show sortable columns with sort icon', () => {
+                const sortableColumnsCount = HEADER_COLUMNS.filter((col) => col.sortable).length;
                 const sortableColumns = spectator.queryAll(byTestId('header-column-sortable'));
                 const sortIcons = spectator.queryAll(byTestId('sort-icon'));
 
-                expect(sortableColumns.length).toBe(4);
-                expect(sortIcons.length).toBe(4);
+                expect(sortableColumns.length).toBe(sortableColumnsCount);
+                expect(sortIcons.length).toBe(sortableColumnsCount);
             });
 
-            it('should show 3 not sortable columns', () => {
+            it('should show not sortable columns', () => {
+                const notSortableColumnsCount = HEADER_COLUMNS.filter(
+                    (col) => !col.sortable
+                ).length;
                 const notSortableColumns = spectator.queryAll(
                     byTestId('header-column-not-sortable')
                 );
 
-                expect(notSortableColumns.length).toBe(2);
+                expect(notSortableColumns.length).toBe(notSortableColumnsCount);
             });
 
             it('should have one checkbox column', () => {
@@ -263,10 +314,16 @@ describe('DotFolderListViewComponent', () => {
             expect(statusColumn).toBeTruthy();
         });
 
-        it('should have a base type column', () => {
-            const baseTypeColumn = spectator.query(byTestId('item-base-type'));
+        it('should have a language column', () => {
+            const languageColumn = spectator.query(byTestId('item-language'));
 
-            expect(baseTypeColumn).toBeTruthy();
+            expect(languageColumn).toBeTruthy();
+        });
+
+        it('should have a content type column', () => {
+            const contentTypeColumn = spectator.query(byTestId('item-content-type'));
+
+            expect(contentTypeColumn).toBeTruthy();
         });
 
         it('should have a mod user name column', () => {

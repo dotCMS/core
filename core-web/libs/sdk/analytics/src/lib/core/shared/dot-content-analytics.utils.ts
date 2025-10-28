@@ -30,6 +30,29 @@ export {
     updateSessionActivity
 } from './dot-content-analytics.activity-tracker';
 
+/**
+ * Validates required configuration fields for Analytics initialization.
+ *
+ * @param config - The analytics configuration to validate
+ * @returns Array of missing field names, or null if all required fields are present
+ *
+ * @example
+ * ```ts
+ * const missing = validateAnalyticsConfig(config);
+ * if (missing) {
+ *   console.error(`Missing: ${missing.join(' and ')}`);
+ * }
+ * ```
+ */
+export function validateAnalyticsConfig(config: DotCMSAnalyticsConfig): string[] | null {
+    const missing: string[] = [];
+
+    if (!config.siteAuth?.trim()) missing.push('"siteAuth"');
+    if (!config.server?.trim()) missing.push('"server"');
+
+    return missing.length > 0 ? missing : null;
+}
+
 // Performance cache for static browser data that rarely changes
 let staticBrowserData: Pick<
     DotCMSBrowserData,
