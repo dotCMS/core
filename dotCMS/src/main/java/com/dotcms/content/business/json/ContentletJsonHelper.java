@@ -26,8 +26,8 @@ public class ContentletJsonHelper {
     /**
      * Jackson mapper configuration and lazy initialized instance.
      */
-    private final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
-        return DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+    private static final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
+        return DotObjectMapperProvider.getInstance().getIso8610ObjectMapper();
     });
 
     /**

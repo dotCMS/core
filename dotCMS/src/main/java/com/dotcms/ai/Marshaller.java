@@ -1,10 +1,7 @@
 package com.dotcms.ai;
 
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,6 +30,6 @@ public class Marshaller {
     }
 
     private static ObjectMapper createObjectMapper() {
-        return DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        return DotObjectMapperProvider.getInstance().getIso8610ObjectMapper();
     }
 }
