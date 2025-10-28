@@ -1,5 +1,3 @@
-import { Subject } from 'rxjs';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -7,11 +5,8 @@ import {
     inject,
     input,
     OnInit,
-    signal,
-    OnDestroy,
-    DestroyRef
+    signal
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -23,14 +18,8 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-
 import { DotESContentService, DotMessageService } from '@dotcms/data-access';
-import {
-    DEFAULT_VARIANT_ID,
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentType
-} from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { SortOption, ViewOption } from './model';
 import {
@@ -40,12 +29,8 @@ import {
     DotPaletteListStatus
 } from './store/store';
 
-import {
-    DotPageContentTypeParams,
-    DotPageContentTypeService
-} from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
-import { isSortActive, UVE_PALETTE_LIST_TYPES } from '../../utils';
+import { buildContentletsQuery, isSortActive, UVE_PALETTE_LIST_TYPES } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
@@ -78,29 +63,21 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
         OverlayPanelModule,
         DotFavoriteSelectorComponent
     ],
-    providers: [
-        DotPaletteListStore,
-        DotESContentService,
-        DotPageContentTypeService,
-        DotPageFavoriteContentTypeService
-    ],
+    providers: [DotPaletteListStore, DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
     styleUrl: './dot-uve-palette-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUvePaletteListComponent implements OnInit, OnDestroy {
-    $type = input.required<UVE_PALETTE_LIST_TYPES>({ alias: 'type' });
-    $allowedBaseTypes = input.required<DotCMSBaseTypesContentTypes[]>({
-        alias: 'allowedBaseTypes'
-    });
+export class DotUvePaletteListComponent implements OnInit {
+    $listType = input.required<UVE_PALETTE_LIST_TYPES>({ alias: 'listType' });
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
     $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
 
     readonly #paletteListStore = inject(DotPaletteListStore);
+    readonly #dotPageFavoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
-    readonly #destroyRef = inject(DestroyRef);
 
     readonly $start = this.#paletteListStore.$start;
     readonly $contenttypes = this.#paletteListStore.contenttypes;
@@ -109,13 +86,13 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     readonly $rowsPerPage = this.#paletteListStore.$rowsPerPage;
     readonly $currentView = this.#paletteListStore.currentView;
     readonly $status = this.#paletteListStore.$status;
-    readonly $showPaginator = this.#paletteListStore.$showPaginator;
     readonly DotUVEPaletteListView = DotUVEPaletteListView;
     readonly DotPaletteListStatus = DotPaletteListStatus;
+    readonly $isLoading = this.#paletteListStore.$isLoading;
 
     readonly $viewMode = signal<ViewOption>('grid');
     readonly $contextMenuItems = signal<MenuItem[]>([]);
-    readonly #searchSubject = new Subject<string>();
+    readonly $currentContentType = signal<string>('');
 
     readonly $showViewList = computed(
         () =>
@@ -128,52 +105,54 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     readonly LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index + 1);
 
     ngOnInit() {
-        this.getContentTypes();
-        this.setupDebouncedSearch();
-    }
-
-    ngOnDestroy() {
-        this.#searchSubject.complete();
+        this.#paletteListStore.setSearchParams({
+            pagePathOrId: this.$pagePath(),
+            language: this.$languageId(),
+            variantId: this.$variantId()
+        });
+        this.#paletteListStore.getContentTypes(this.$listType());
     }
 
     /**
      * Handles pagination page change events.
-     * Converts PrimeNG's 0-based page index to API's 1-based index.
      *
      * @param event - PrimeNG paginator state event
      */
     onPageChange(event: PaginatorState) {
-        const page = event.page + 1;
-        if (this.$currentView() === DotUVEPaletteListView.CONTENT_TYPES) {
-            this.getContentTypes({ page });
+        if (!this.$currentContentType()) {
+            this.#paletteListStore.getContentTypes(this.$listType(), { page: event.page });
         } else {
-            this.getContentlets({
-                contentTypeName: this.#paletteListStore.currentContentType(),
-                page,
-                filter: ''
-            });
+            const query = buildContentletsQuery(this.$currentContentType(), this.$variantId());
+            this.#paletteListStore.getContentlets({ query, offset: '0' });
         }
     }
 
     /**
      * Handles search input changes.
-     * Emits the search value to the debounced search subject.
+     * Debouncing is handled by the store.
      *
      * @param event - Input change event
      */
     onSearch(event: Event) {
         const value = (event.target as HTMLInputElement).value;
-        this.#searchSubject.next(value);
+        if (!this.$currentContentType()) {
+            this.#paletteListStore.getContentTypes(this.$listType(), { filter: value });
+        } else {
+            const query = buildContentletsQuery(this.$currentContentType(), this.$variantId());
+            this.#paletteListStore.getContentlets({ query, offset: '0', filter: value });
+        }
     }
 
     /**
      * Handles sort option selection from the options menu.
-     * Updates the sort state which triggers a new fetch via the effect.
      *
      * @param sortOption - Selected sort configuration
      */
-    onSortSelect({ orderby, direction }: SortOption) {
-        this.getContentTypes({ orderby, direction });
+    onSortSelect(sortOption: SortOption) {
+        this.#paletteListStore.getContentTypes(this.$listType(), {
+            orderby: sortOption.orderby,
+            direction: sortOption.direction
+        });
     }
 
     /**
@@ -187,100 +166,27 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handles the selection of a content type.
+     * Handles the selection of a content type to view its contentlets.
      *
-     * @param {string} contentType
-     * @memberof DotUvePaletteListComponent
+     * @param contentTypeName - The name of the content type to drill into
      */
     onSelectContentType(contentTypeName: string) {
-        this.getContentlets({ contentTypeName, page: 1, filter: '' });
+        this.$currentContentType.set(contentTypeName);
+        const query = buildContentletsQuery(contentTypeName, this.$variantId());
+        this.#paletteListStore.getContentlets({ query, offset: '0' });
     }
 
     /**
-     * Handles the back to content types action.
-     * Resets the state to the initial state.
+     * Handles returning to the content types view from contentlets drill-down.
      */
     onBackToContentTypes() {
-        this.getContentTypes();
-    }
-
-    /**
-     * Get the search parameters for the content types.
-     * @returns DotPageContentTypeParams
-     */
-    private getSearchParams(): DotPageContentTypeParams {
-        return {
-            types: this.$allowedBaseTypes(),
-            pagePathOrId: this.$pagePath(),
-            language: this.$languageId().toString(),
-            filter: '',
-            per_page: DEFAULT_PER_PAGE,
-            page: 1,
-            orderby: 'name',
-            direction: 'ASC'
-        };
-    }
-
-    /**
-     * Get the content types.
-     * @param params - The parameters for the content types.
-     */
-    private getContentTypes(params: Partial<DotPageContentTypeParams> = {}) {
-        switch (this.$type()) {
-            case UVE_PALETTE_LIST_TYPES.FAVORITES:
-                this.#paletteListStore.getFavoriteContentTypes(params.filter || '');
-                break;
-            case UVE_PALETTE_LIST_TYPES.WIDGET:
-                this.#paletteListStore.getWidgets({ ...this.getSearchParams(), ...params });
-                break;
-            default:
-                this.#paletteListStore.getContentTypes({ ...this.getSearchParams(), ...params });
-                break;
-        }
-    }
-
-    /**
-     * Get the content lets.
-     * @param params - The parameters for the content lets.
-     */
-    private getContentlets({ contentTypeName, filter = '', page = 1 }) {
-        const variantTerm = this.$variantId()
-            ? `+variant:(${DEFAULT_VARIANT_ID} OR ${this.$variantId()})`
-            : `+variant:${DEFAULT_VARIANT_ID}`;
-
-        this.#paletteListStore.getContentlets({
-            filter,
-            itemsPerPage: DEFAULT_PER_PAGE,
-            lang: this.$languageId().toString(),
-            offset: ((page - 1) * DEFAULT_PER_PAGE).toString(),
-            query: `+contentType:${contentTypeName} +deleted:false ${variantTerm}`.trim()
-        });
-        this.#paletteListStore.setCurrentContentType(contentTypeName);
-    }
-
-    /**
-     * Sets up the debounced search functionality.
-     * Listens to search input changes and triggers search after 500ms delay.
-     */
-    private setupDebouncedSearch() {
-        this.#searchSubject
-            .pipe(debounceTime(500), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
-            .subscribe((searchTerm) => {
-                if (this.$currentView() === DotUVEPaletteListView.CONTENT_TYPES) {
-                    this.getContentTypes({ filter: searchTerm });
-                } else {
-                    this.getContentlets({
-                        contentTypeName: this.#paletteListStore.currentContentType(),
-                        filter: searchTerm,
-                        page: 1
-                    });
-                }
-            });
+        this.$currentContentType.set('');
+        this.#paletteListStore.getContentTypes(this.$listType());
     }
 
     protected setSortMenuItems() {
         const currentView = this.$viewMode();
-        const currentSort = this.#paletteListStore.sort();
+        const currentSort = this.#paletteListStore.$currentSort();
         const items = [
             {
                 label: this.#dotMessageService.get('uve.palette.menu.sort.title'),
@@ -309,9 +215,6 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
                 ]
             },
             {
-                separator: true
-            },
-            {
                 label: this.#dotMessageService.get('uve.palette.menu.view.title'),
                 items: [
                     {
@@ -331,7 +234,7 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
     }
 
     protected setFavoriteMenuItems(contentType: DotCMSContentType) {
-        const isFavorite = this.#paletteListStore.isFavoriteContentType(contentType.id);
+        const isFavorite = this.#dotPageFavoriteContentTypeService.isFavorite(contentType.id);
         const label = isFavorite
             ? 'uve.palette.menu.favorite.option.remove'
             : 'uve.palette.menu.favorite.option.add';
@@ -346,18 +249,19 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      * @param contentType - The content type to remove.
      */
     private removeFavoriteItems(contentType: DotCMSContentType) {
-        this.#paletteListStore.removeFavoriteContentType(contentType.id);
+        const contenttypes = this.#dotPageFavoriteContentTypeService.remove(contentType.id);
+
+        if (this.$listType() === UVE_PALETTE_LIST_TYPES.FAVORITES) {
+            this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
+        }
+        // this.#paletteListStore.setFavorites(contenttypes);
 
         this.#messageService.add({
             severity: 'success',
-            summary: 'Removed from favorites',
-            detail: 'You have removed it from your favorites',
+            summary: this.#dotMessageService.get('uve.palette.favorite.remove.success.summary'),
+            detail: this.#dotMessageService.get('uve.palette.favorite.remove.success.detail'),
             life: 3000
         });
-
-        if (this.$type() === 'FAVORITES') {
-            this.getContentTypes();
-        }
     }
 
     /**
@@ -365,17 +269,18 @@ export class DotUvePaletteListComponent implements OnInit, OnDestroy {
      * @param contentType - The content type to add.
      */
     private addFavoriteItems(contentType: DotCMSContentType) {
-        this.#paletteListStore.addFavoriteContentType(contentType);
+        const contenttypes = this.#dotPageFavoriteContentTypeService.add(contentType);
+
+        if (this.$listType() === UVE_PALETTE_LIST_TYPES.FAVORITES) {
+            this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
+        }
+        // this.#paletteListStore.setFavorites(contenttypes);
 
         this.#messageService.add({
             severity: 'success',
-            summary: 'Added to favorites',
-            detail: 'You have added it to your favorites',
+            summary: this.#dotMessageService.get('uve.palette.favorite.add.success.summary'),
+            detail: this.#dotMessageService.get('uve.palette.favorite.add.success.detail'),
             life: 3000
         });
-
-        if (this.$type() === 'FAVORITES') {
-            this.getContentTypes();
-        }
     }
 }

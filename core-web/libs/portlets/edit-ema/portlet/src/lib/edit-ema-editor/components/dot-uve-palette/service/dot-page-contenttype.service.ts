@@ -7,9 +7,11 @@ import { map, take } from 'rxjs/operators';
 
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 
+import { DEFAULT_PER_PAGE } from '../components/dot-uve-palette-list/store/store';
+
 export interface DotContentTypeParams {
     /** Language ID for content type analysis (default: "-1") */
-    language?: string;
+    language?: number;
     /** Filter content types by name or description */
     filter?: string;
     /** Page number for pagination (default: 1) */
@@ -92,7 +94,9 @@ export class DotPageContentTypeService {
         contenttypes: DotCMSContentType[];
         pagination: DotPagination;
     }> {
-        let httpParams = new HttpParams().set('pagePathOrId', params.pagePathOrId);
+        let httpParams = new HttpParams()
+            .set('pagePathOrId', params.pagePathOrId)
+            .set('per_page', DEFAULT_PER_PAGE);
 
         // Add optional parameters if provided
         if (params.language) {

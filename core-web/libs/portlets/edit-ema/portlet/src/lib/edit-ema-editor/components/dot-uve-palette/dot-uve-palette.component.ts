@@ -6,12 +6,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
-import {
-    BASE_TYPES_FOR_FAVORITES,
-    BASETYPES_FOR_CONTENT,
-    BASETYPES_FOR_WIDGET,
-    UVE_PALETTE_LIST_TYPES
-} from './utils';
+import { UVE_PALETTE_LIST_TYPES } from './utils';
 
 @Component({
     selector: 'dot-uve-palette',
@@ -27,8 +22,4 @@ export class DotUvePaletteComponent {
 
     readonly $currentIndex = signal(0);
     readonly UVE_PALETTE_LIST_TYPES = UVE_PALETTE_LIST_TYPES;
-
-    readonly BASE_TYPES_FOR_CONTENT = BASETYPES_FOR_CONTENT;
-    readonly BASE_TYPES_FOR_WIDGET = BASETYPES_FOR_WIDGET;
-    readonly BASE_TYPES_FOR_FAVORITES = BASE_TYPES_FOR_FAVORITES;
 }

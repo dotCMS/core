@@ -1,6 +1,16 @@
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentType,
+    ESContent
+} from '@dotcms/dotcms-models';
 
 import { SortOption } from './components/dot-uve-palette-list/model';
+import {
+    DEFAULT_PER_PAGE,
+    DotPaletteListStatus
+} from './components/dot-uve-palette-list/store/store';
 
 export const BASETYPES_FOR_CONTENT = [
     DotCMSBaseTypesContentTypes.CONTENT,
@@ -30,4 +40,37 @@ export function isSortActive(itemSort: SortOption, currentSort: SortOption): str
     const isActive = sameOrderby && sameDirection;
 
     return isActive ? 'active-menu-item' : '';
+}
+
+export function getPaletteState(elements: DotCMSContentType[] | DotCMSContentlet[]) {
+    return elements.length > 0 ? DotPaletteListStatus.LOADED : DotPaletteListStatus.EMPTY;
+}
+
+export function buildFavoriteResponse(contentTypes: DotCMSContentType[], filter = '') {
+    const contenttypes = contentTypes.filter(
+        (ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase())
+    );
+    contenttypes.sort((a, b) => a.name.localeCompare(b.name));
+
+    const pagination = {
+        currentPage: 1,
+        perPage: contenttypes.length,
+        totalEntries: contenttypes.length
+    };
+
+    return { contenttypes, pagination };
+}
+
+export function buildContentletsResponse(response: ESContent, offset: number) {
+    const contentlets = response.jsonObjectView.contentlets;
+    const totalEntries = response.resultsSize;
+    const currentPage = Math.floor(Number(offset) / DEFAULT_PER_PAGE) + 1;
+    return {
+        contentlets,
+        pagination: { currentPage, perPage: contentlets.length, totalEntries }
+    };
+}
+
+export function buildContentletsQuery(contentTypeName: string, variantId: string) {
+    return `+contentType:${contentTypeName} +deleted:false ${variantId ? `+variant:(${DEFAULT_VARIANT_ID} OR ${variantId})` : `+variant:${DEFAULT_VARIANT_ID}`}`;
 }

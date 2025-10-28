@@ -2,32 +2,31 @@
     @if ($currentView() === DotUVEPaletteListView.CONTENTLETS) {
         <p-button
             icon="pi pi-chevron-left"
+            styleClass="options-menu-button"
             [text]="true"
             [rounded]="true"
-            styleClass="options-menu-button"
-            (onClick)="onBackToContentTypes()"></p-button>
+            (onClick)="onBackToContentTypes()" />
     }
 
     <p-iconField iconPosition="left" [style]="{ width: '100%' }">
         <p-inputIcon styleClass="pi pi-search" />
         <input
-            type="text"
-            placeholder="Search"
             pInputText
-            [style]="{ width: '100%' }"
+            placeholder="Search"
             styleClass="input-text-sm"
+            [style]="{ width: '100%' }"
             (input)="onSearch($event)"
             [value]="" />
     </p-iconField>
 
-    @if ($currentView() === DotUVEPaletteListView.CONTENT_TYPES && $type() !== 'FAVORITES') {
+    @if ($currentView() === DotUVEPaletteListView.CONTENT_TYPES && $listType() !== 'FAVORITES') {
         <p-button
             icon="pi pi-arrow-right-arrow-left"
             styleClass="options-menu-button"
             [text]="true"
             [rounded]="true"
             (onClick)="setSortMenuItems(); cm.toggle($event)" />
-    } @else if ($type() === 'FAVORITES') {
+    } @else if ($listType() === 'FAVORITES') {
         <p-button
             icon="pi pi-plus"
             styleClass="options-menu-button"
@@ -40,7 +39,7 @@
 <div
     class="dot-uve-palette-list__grid"
     [class.dot-uve-palette-list__grid--list]="$showViewList()"
-    [class.dot-uve-palette-list__grid--loading]="$status() === DotPaletteListStatus.LOADING">
+    [class.dot-uve-palette-list__grid--loading]="$isLoading()">
     @if ($status() === DotPaletteListStatus.LOADING) {
         @let skeletonHeight = $showViewList() ? '4rem' : '6.875rem';
         @for (i of LOADING_ROWS_MOCK; track i) {
@@ -52,7 +51,7 @@
                 <i class="pi pi-plus"></i>
             </div>
 
-            @if ($type() === 'FAVORITES') {
+            @if ($listType() === 'FAVORITES') {
                 <p class="dot-uve-palette-list__empty-text">
                     <span
                         class="dot-uve-palette-list__empty-link"
@@ -91,7 +90,7 @@
     }
 </div>
 
-@if ($showPaginator()) {
+@if (!$isLoading()) {
     <p-paginator
         (onPageChange)="onPageChange($event)"
         [showPageLinks]="false"

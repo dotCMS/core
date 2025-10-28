@@ -32,10 +32,10 @@ const CONTENT_TYPE_CATEGORIES = [
     styleUrls: ['./dot-favorite-selector.component.scss']
 })
 export class DotFavoriteSelectorComponent implements OnInit {
+    readonly #store = inject(DotPaletteListStore);
     readonly #destroyRef = inject(DestroyRef);
     readonly #pageContentTypeService = inject(DotPageContentTypeService);
     readonly #favoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
-    readonly store = inject(DotPaletteListStore);
 
     // Signals
     readonly $contenttypes = signal<DotCMSContentType[]>([]);
@@ -64,14 +64,15 @@ export class DotFavoriteSelectorComponent implements OnInit {
      * Handle selection changes in the listbox
      */
     onSelectionChange({ value }: { value: DotCMSContentType[] }): void {
-        this.store.saveFavoriteContentTypes(value);
+        const contenttypes = this.#favoriteContentTypeService.set(value);
+        this.#store.setContentTypesFromFavorite(contenttypes);
     }
 
     /**
      * Sync selected favorites whenever store changes
      */
     #setupFavoritesSync(): void {
-        toObservable(this.store.contenttypes)
+        toObservable(this.#store.contenttypes)
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe(() => {
                 this.$selectedContentTypes.set(this.#favoriteContentTypeService.getAll());
