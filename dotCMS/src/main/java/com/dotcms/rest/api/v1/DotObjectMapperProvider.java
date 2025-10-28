@@ -130,6 +130,8 @@ public class DotObjectMapperProvider {
 
     /**
      * Gets the timestamp object mapper that writes Dates as timestamps.
+     * For new code, prefer the {@link #getIso8610ObjectMapper()} instead.
+     *
      * @return
      */
     public ObjectMapper getTimestampObjectMapper() {
