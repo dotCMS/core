@@ -24,6 +24,7 @@ export const useExperimentVariant = (data: DotCMSPageAsset): { shouldWaitForVari
     const { runningExperimentId, viewAs } = data;
 
     const variantId = viewAs?.variantId;
+
     // By default, wait for the variant
     const [shouldWaitForVariant, setShouldWaitForVariant] = useState<boolean>(true);
 
@@ -44,7 +45,7 @@ export const useExperimentVariant = (data: DotCMSPageAsset): { shouldWaitForVari
                     'Please ensure the page data includes variantId in viewAs. ' +
                     'Showing content to prevent blank screen.'
             );
-            // setShouldWaitForVariant(false);
+            setShouldWaitForVariant(false);
 
             return;
         }
