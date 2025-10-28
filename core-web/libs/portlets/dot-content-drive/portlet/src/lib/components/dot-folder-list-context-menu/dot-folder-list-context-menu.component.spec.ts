@@ -9,6 +9,7 @@ import { MenuItemCommandEvent, MessageService } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
 
 import {
+    DotContentletService,
     DotFolderService,
     DotMessageService,
     DotRenderMode,
@@ -35,10 +36,20 @@ describe('DotFolderListViewContextMenuComponent', () => {
     let navigationService: SpyObject<DotContentDriveNavigationService>;
     let dotWizardService: SpyObject<DotWizardService>;
     let workflowsActionsFireService: SpyObject<DotWorkflowActionsFireService>;
+    let dotContentletService: SpyObject<DotContentletService>;
+    let messageService: SpyObject<MessageService>;
 
     const mockContentlet = createFakeContentlet();
 
     const mockWorkflowActions = mockWorkflowsActionsWithMove; // 3 mocked workflow actions + 1 Move workflow action
+
+    const createMockCanLock = (canLock: boolean, locked: boolean) => ({
+        canLock,
+        id: mockContentlet.identifier,
+        inode: mockContentlet.inode,
+        locked,
+        lockedBy: locked ? 'admin@dotcms.com' : ''
+    });
 
     const createComponent = createComponentFactory({
         component: DotFolderListViewContextMenuComponent,
@@ -75,6 +86,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
             }),
+            mockProvider(DotContentletService, {
+                canLock: jest.fn().mockReturnValue(of(createMockCanLock(true, false))),
+                lockContent: jest.fn().mockReturnValue(of(mockContentlet)),
+                unlockContent: jest.fn().mockReturnValue(of(mockContentlet))
+            }),
             provideHttpClient()
         ]
     });
@@ -87,6 +103,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
         navigationService = spectator.inject(DotContentDriveNavigationService);
         dotWizardService = spectator.inject(DotWizardService);
         workflowsActionsFireService = spectator.inject(DotWorkflowActionsFireService);
+        dotContentletService = spectator.inject(DotContentletService);
+        messageService = spectator.inject(MessageService);
     });
 
     afterEach(() => {
@@ -147,7 +165,13 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 mockContentlet.inode,
                 DotRenderMode.LISTING
             );
-            expect(component.$items()).toHaveLength(5); // Edit + 3 workflow actions + Add to Bundle
+            expect(component.$items()).toHaveLength(6); // Edit + Lock/Unlock + 3 workflow actions + Add to Bundle
+        });
+
+        it('should fetch canLock data when building menu items', async () => {
+            await component.getMenuItems(mockContextMenuData);
+
+            expect(dotContentletService.canLock).toHaveBeenCalledWith(mockContentlet.inode);
         });
 
         it('should build correct menu items for contentlet', async () => {
@@ -155,10 +179,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             const items = component.$items();
             expect(items[0].label).toBe('content-drive.context-menu.edit-content');
-            expect(items[1].label).toBe('Assign Workflow');
-            expect(items[2].label).toBe('Save');
-            expect(items[3].label).toBe('Save / Publish');
-            expect(items[4].label).toBe('contenttypes.content.add_to_bundle');
+            expect(items[1].label).toBe('content-drive.context-menu.lock');
+            expect(items[2].label).toBe('Assign Workflow');
+            expect(items[3].label).toBe('Save');
+            expect(items[4].label).toBe('Save / Publish');
+            expect(items[5].label).toBe('contenttypes.content.add_to_bundle');
         });
 
         it('should build correct menu items for Pages contentlet', async () => {
@@ -187,7 +212,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(mockContextMenuData);
 
             const items = component.$items();
-            items[4].command?.({} as unknown as MenuItemCommandEvent);
+            items[5].command?.({} as unknown as MenuItemCommandEvent);
 
             expect(store.contextMenu().showAddToBundle).toBe(true);
         });
@@ -216,7 +241,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(mockContextMenuData);
 
             expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-            expect(component.$items()).toHaveLength(5);
+            expect(component.$items()).toHaveLength(6);
         });
 
         it('should not include move to folder workflow action', async () => {
@@ -226,6 +251,164 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(items).not.toContain({
                 label: 'Move',
                 command: expect.any(Function)
+            });
+        });
+
+        describe('lock/unlock functionality', () => {
+            const mockEvent = new MouseEvent('contextmenu');
+
+            it('should show lock action when content is unlocked and can be locked', async () => {
+                dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
+
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: mockContentlet,
+                    showAddToBundle: false
+                });
+
+                const items = component.$items();
+                const lockItem = items.find(
+                    (item) => item.label === 'content-drive.context-menu.lock'
+                );
+
+                expect(lockItem).toBeDefined();
+            });
+
+            it('should show unlock action when content is locked and can be locked', async () => {
+                dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
+
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: mockContentlet,
+                    showAddToBundle: false
+                });
+
+                const items = component.$items();
+                const unlockItem = items.find(
+                    (item) => item.label === 'content-drive.context-menu.unlock'
+                );
+
+                expect(unlockItem).toBeDefined();
+            });
+
+            it('should not show lock/unlock action when content cannot be locked', async () => {
+                dotContentletService.canLock.mockReturnValue(of(createMockCanLock(false, false)));
+
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: mockContentlet,
+                    showAddToBundle: false
+                });
+
+                const items = component.$items();
+                const lockItem = items.find(
+                    (item) =>
+                        item.label === 'content-drive.context-menu.lock' ||
+                        item.label === 'content-drive.context-menu.unlock'
+                );
+
+                expect(lockItem).toBeUndefined();
+                expect(items).toHaveLength(5); // Edit + 3 workflow actions + Add to Bundle (no lock/unlock)
+            });
+
+            it('should call lockContent when lock action is triggered on unlocked content', async () => {
+                dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
+                dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
+
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: mockContentlet,
+                    showAddToBundle: false
+                });
+
+                const items = component.$items();
+                const lockItem = items.find(
+                    (item) => item.label === 'content-drive.context-menu.lock'
+                );
+
+                lockItem?.command?.({} as unknown as MenuItemCommandEvent);
+
+                expect(dotContentletService.lockContent).toHaveBeenCalledWith(mockContentlet.inode);
+            });
+
+            it('should call unlockContent when unlock action is triggered on locked content', async () => {
+                dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
+                dotContentletService.unlockContent.mockReturnValue(of(mockContentlet));
+
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: mockContentlet,
+                    showAddToBundle: false
+                });
+
+                const items = component.$items();
+                const unlockItem = items.find(
+                    (item) => item.label === 'content-drive.context-menu.unlock'
+                );
+
+                unlockItem?.command?.({} as unknown as MenuItemCommandEvent);
+
+                expect(dotContentletService.unlockContent).toHaveBeenCalledWith(
+                    mockContentlet.inode
+                );
+            });
+
+            it('should show success message when lock action succeeds', async () => {
+                jest.useFakeTimers();
+                dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
+                dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
+
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: mockContentlet,
+                    showAddToBundle: false
+                });
+
+                const items = component.$items();
+                const lockItem = items.find(
+                    (item) => item.label === 'content-drive.context-menu.lock'
+                );
+
+                lockItem?.command?.({} as unknown as MenuItemCommandEvent);
+
+                jest.advanceTimersByTime(0);
+
+                expect(messageService.add).toHaveBeenCalledWith({
+                    severity: 'success',
+                    summary: 'content-drive.toast.lock-success',
+                    detail: 'content-drive.toast.lock-success-detail'
+                });
+
+                jest.useRealTimers();
+            });
+
+            it('should show success message when unlock action succeeds', async () => {
+                jest.useFakeTimers();
+                dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
+                dotContentletService.unlockContent.mockReturnValue(of(mockContentlet));
+
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: mockContentlet,
+                    showAddToBundle: false
+                });
+
+                const items = component.$items();
+                const unlockItem = items.find(
+                    (item) => item.label === 'content-drive.context-menu.unlock'
+                );
+
+                unlockItem?.command?.({} as unknown as MenuItemCommandEvent);
+
+                jest.advanceTimersByTime(0);
+
+                expect(messageService.add).toHaveBeenCalledWith({
+                    severity: 'success',
+                    summary: 'content-drive.toast.unlock-success',
+                    detail: 'content-drive.toast.unlock-success-detail'
+                });
+
+                jest.useRealTimers();
             });
         });
     });
@@ -326,8 +509,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             const items = component.$items();
 
-            // Assign Workflow
-            items[1].command?.({} as unknown as MenuItemCommandEvent);
+            // Assign Workflow (now at index 2 because of lock/unlock at index 1)
+            items[2].command?.({} as unknown as MenuItemCommandEvent);
 
             expect(dotWizardService.open).toHaveBeenCalled();
         });
@@ -341,8 +524,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             const items = component.$items();
 
-            // Assign Workflow
-            items[1].command?.({} as unknown as MenuItemCommandEvent);
+            // Assign Workflow (now at index 2 because of lock/unlock at index 1)
+            items[2].command?.({} as unknown as MenuItemCommandEvent);
 
             dotWizardService.open.mockReturnValue(of({}));
 

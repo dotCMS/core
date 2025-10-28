@@ -12,7 +12,7 @@
     (selectionChange)="onSelectionChange()"
     (onPage)="onPage($event)"
     (onSort)="onSort($event)"
-    [first]="$currentPageFirstRowIndex()"
+    [first]="state.currentPageFirstRowIndex()"
     dataKey="identifier"
     sortMode="single"
     selectionMode="multiple"
@@ -57,17 +57,21 @@
         } @else {
             <tr
                 class="content-drive-table__row"
+                [class.is-dragging]="state.isDragging()"
+                [pSelectableRow]="item"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
                 [draggable]="true"
                 (dragstart)="onDragStart($event, item)"
                 (dragend)="onDragEnd()">
-                <td data-testId="item-checkbox">
+                <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
                     <p-tableCheckbox [value]="item" />
                 </td>
                 <td class="list-view-title" data-testId="item-title">
-                    <div class="container-thumbnail">
+                    <div
+                        class="container-thumbnail hoverable"
+                        (click)="onDoubleClick(item); $event.stopPropagation()">
                         <dot-contentlet-thumbnail
                             [fieldVariable]="item?.contentType"
                             [iconSize]="'48px'"
@@ -75,7 +79,10 @@
                             data-testId="contentlet-thumbnail"
                             [attr.data-id]="item.identifier" />
                     </div>
-                    <span data-testId="item-title-text" class="truncate-text">
+                    <span
+                        data-testId="item-title-text"
+                        class="truncate-text hoverable"
+                        (click)="onDoubleClick(item); $event.stopPropagation()">
                         {{ item.title }}
                     </span>
                 </td>
@@ -91,7 +98,7 @@
                 <td data-testId="item-language">
                     <p-chip
                         styleClass="p-chip-sm p-chip-blue"
-                        [label]="item.languageId | dotLocaleTag: $languagesMap()" />
+                        [label]="item.languageId | dotLocaleTag: state.languagesMap()" />
                 </td>
                 <td data-testId="item-content-type">{{ item.contentType | dm }}</td>
                 <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
