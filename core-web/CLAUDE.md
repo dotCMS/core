@@ -111,6 +111,25 @@ nx run-many --target=test --projects=sdk-client,sdk-react
 - **State**: Component-store pattern with NgRx signals
 - **Testing**: Jest unit tests + Playwright E2E
 
+### Modern Angular Syntax (REQUIRED)
+```typescript
+// ✅ CORRECT: Modern control flow syntax
+@if (condition()) { <content /> }      // NOT *ngIf
+@for (item of items(); track item.id) { }  // NOT *ngFor
+
+// ✅ CORRECT: Modern input/output syntax
+data = input<string>();                // NOT @Input()
+onChange = output<string>();           // NOT @Output()
+
+// ✅ CRITICAL: Testing with Spectator
+spectator.setInput('prop', value);     // ALWAYS use setInput for inputs
+spectator.detectChanges();             // Trigger change detection
+
+// ✅ CORRECT: Use data-testid for selectors
+<button data-testid="submit-button">Submit</button>
+const button = spectator.query('[data-testid="submit-button"]');
+```
+
 ### Backend Integration
 - **Development Proxy**: `proxy-dev.conf.mjs` routes `/api/*` to port 8080
 - **API Services**: Centralized in `libs/data-access`
@@ -190,3 +209,20 @@ nx run-many --target=test --projects=sdk-client,sdk-react
 - **Dependency Graph**: Use `nx dep-graph` to visualize project relationships
 
 This codebase emphasizes consistency, testability, and maintainability through its monorepo architecture and established patterns.
+
+## Summary Checklist
+
+### Angular/TypeScript Development
+- ✅ Use modern control flow: `@if`, `@for` (NOT `*ngIf`, `*ngFor`)
+- ✅ Use modern inputs/outputs: `input<T>()`, `output<T>()` (NOT `@Input()`, `@Output()`)
+- ✅ Use `data-testid` attributes for all testable elements
+- ✅ Use `spectator.setInput()` for testing component inputs
+- ✅ Follow `dot-` prefix convention for all components
+- ✅ Use standalone components with lazy loading
+- ✅ Use NgRx signals for state management
+- ❌ Avoid legacy Angular syntax (`*ngIf`, `@Input()`, etc.)
+- ❌ Avoid direct DOM queries without `data-testid`
+- ❌ Never skip unit tests for new components
+
+### For Backend/Java Development
+- See **[../CLAUDE.md](../CLAUDE.md)** for Java, Maven, REST API, and Git workflow standards

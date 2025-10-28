@@ -113,7 +113,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should populate languagesMap with languages from service', () => {
-            const languagesMap = spectator.component['$languagesMap']();
+            const languagesMap = spectator.component.state.languagesMap();
 
             expect(languagesMap.size).toBe(2);
             expect(languagesMap.get(1)).toEqual(mockLanguages[0]);
@@ -121,7 +121,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should convert languages array to Map with id as key', () => {
-            const languagesMap = spectator.component['$languagesMap']();
+            const languagesMap = spectator.component.state.languagesMap();
 
             expect(languagesMap.get(1)?.language).toBe('English');
             expect(languagesMap.get(1)?.languageCode).toBe('en');
@@ -364,6 +364,34 @@ describe('DotFolderListViewComponent', () => {
             expect(computedStyle.maxWidth).not.toBe('100%');
         });
 
+        describe('Lock Icon', () => {
+            it('should show lock icon when item is locked', () => {
+                const lockedItem = { ...mockItems[0], locked: true };
+                spectator.setInput('items', [lockedItem]);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+
+                const lockIcon = spectator.query(byTestId('lock-icon'));
+                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'));
+
+                expect(lockIcon).toBeTruthy();
+                expect(lockOpenIcon).toBeFalsy();
+            });
+
+            it('should show open lock icon when item is unlocked', () => {
+                const unlockedItem = { ...mockItems[0], locked: false };
+                spectator.setInput('items', [unlockedItem]);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+
+                const lockIcon = spectator.query(byTestId('lock-icon'));
+                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'));
+
+                expect(lockIcon).toBeFalsy();
+                expect(lockOpenIcon).toBeTruthy();
+            });
+        });
+
         describe('Status', () => {
             it('should have a published status', () => {
                 const statusColumn = spectator.query(byTestId('item-status'));
@@ -538,6 +566,189 @@ describe('DotFolderListViewComponent', () => {
 
                 expect(dragEndSpy).toHaveBeenCalledWith();
             });
+
+            it('should reset isDragging state to false', () => {
+                const event = createDragStartEvent();
+                const item = mockItems[0];
+
+                // Start dragging first
+                spectator.component.onDragStart(event, item);
+                expect(spectator.component.state.isDragging()).toBe(true);
+
+                // Then end dragging
+                spectator.component.onDragEnd();
+
+                expect(spectator.component.state.isDragging()).toBe(false);
+            });
+        });
+
+        describe('isDragging state management', () => {
+            beforeEach(() => {
+                spectator.setInput('items', mockItems);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+            });
+
+            it('should initialize isDragging state as false', () => {
+                expect(spectator.component.state.isDragging()).toBe(false);
+            });
+
+            it('should set isDragging to true when drag starts', () => {
+                const event = createDragStartEvent();
+                const item = mockItems[0];
+
+                spectator.component.onDragStart(event, item);
+
+                expect(spectator.component.state.isDragging()).toBe(true);
+            });
+
+            it('should set isDragging to false when drag ends', () => {
+                const event = createDragStartEvent();
+                const item = mockItems[0];
+
+                // Start dragging
+                spectator.component.onDragStart(event, item);
+                expect(spectator.component.state.isDragging()).toBe(true);
+
+                // End dragging
+                spectator.component.onDragEnd();
+                expect(spectator.component.state.isDragging()).toBe(false);
+            });
+
+            it('should maintain isDragging state through complete drag lifecycle', () => {
+                const event = createDragStartEvent();
+                const firstItem = mockItems[0];
+
+                // Initial state
+                expect(spectator.component.state.isDragging()).toBe(false);
+
+                // Start first drag
+                spectator.component.onDragStart(event, firstItem);
+                expect(spectator.component.state.isDragging()).toBe(true);
+
+                // End first drag
+                spectator.component.onDragEnd();
+                expect(spectator.component.state.isDragging()).toBe(false);
+
+                // Start second drag
+                spectator.component.onDragStart(event, firstItem);
+                expect(spectator.component.state.isDragging()).toBe(true);
+
+                // End second drag
+                spectator.component.onDragEnd();
+                expect(spectator.component.state.isDragging()).toBe(false);
+            });
+
+            it('should apply is-dragging class to row when isDragging is true', () => {
+                const event = createDragStartEvent();
+                const item = mockItems[0];
+
+                spectator.component.onDragStart(event, item);
+                spectator.detectChanges();
+
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                expect(row.classList.contains('is-dragging')).toBe(true);
+                expect(spectator.component.state.isDragging()).toBe(true);
+            });
+
+            it('should remove is-dragging class from row when isDragging is false', () => {
+                const event = createDragStartEvent();
+                const item = mockItems[0];
+
+                // Start dragging
+                spectator.component.onDragStart(event, item);
+                spectator.detectChanges();
+
+                let row = spectator.query(byTestId('item-row')) as HTMLElement;
+                expect(row.classList.contains('is-dragging')).toBe(true);
+                expect(spectator.component.state.isDragging()).toBe(true);
+
+                // End dragging
+                spectator.component.onDragEnd();
+                spectator.detectChanges();
+
+                row = spectator.query(byTestId('item-row')) as HTMLElement;
+                expect(row.classList.contains('is-dragging')).toBe(false);
+                expect(spectator.component.state.isDragging()).toBe(false);
+            });
+
+            it('should reflect isDragging state changes in the DOM immediately', () => {
+                const event = createDragStartEvent();
+                const item = mockItems[0];
+
+                // Verify initial state in DOM
+                let row = spectator.query(byTestId('item-row')) as HTMLElement;
+                expect(row.classList.contains('is-dragging')).toBe(false);
+
+                // Start drag and verify state + DOM
+                spectator.component.onDragStart(event, item);
+                spectator.detectChanges();
+
+                row = spectator.query(byTestId('item-row')) as HTMLElement;
+                expect(spectator.component.state.isDragging()).toBe(true);
+                expect(row.classList.contains('is-dragging')).toBe(true);
+
+                // End drag and verify state + DOM
+                spectator.component.onDragEnd();
+                spectator.detectChanges();
+
+                row = spectator.query(byTestId('item-row')) as HTMLElement;
+                expect(spectator.component.state.isDragging()).toBe(false);
+                expect(row.classList.contains('is-dragging')).toBe(false);
+            });
+        });
+    });
+
+    describe('Double Click Events', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+        });
+
+        it('should emit doubleClick event when row is double clicked', () => {
+            const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const row = spectator.query(byTestId('item-row'));
+
+            spectator.dispatchFakeEvent(row, 'dblclick');
+
+            expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+
+        it('should emit doubleClick event when thumbnail is clicked', () => {
+            const doubleClickSpy = jest.spyOn(spectator.component, 'onDoubleClick');
+            const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+
+            spectator.click(thumbnail);
+
+            expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+
+        it('should emit doubleClick event when title text is clicked', () => {
+            const doubleClickSpy = jest.spyOn(spectator.component, 'onDoubleClick');
+            const titleText = spectator.query(byTestId('item-title-text'));
+
+            spectator.click(titleText);
+
+            expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+
+        it('should call onDoubleClick with correct item when thumbnail is clicked', () => {
+            const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+
+            spectator.click(thumbnail);
+
+            expect(emitSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+
+        it('should call onDoubleClick with correct item when title text is clicked', () => {
+            const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const titleText = spectator.query(byTestId('item-title-text'));
+
+            spectator.click(titleText);
+
+            expect(emitSpy).toHaveBeenCalledWith(mockItems[0]);
         });
     });
 });
