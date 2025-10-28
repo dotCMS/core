@@ -75,7 +75,7 @@ services:
 
   # dotCMS with OpenTelemetry Instrumentation
   dotcms:
-    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
+    image: dotcms/dotcms:issue-33308-observability_SNAPSHOT
     logging:
       driver: "json-file"
       options:
@@ -183,7 +183,10 @@ services:
       # Disable Glowroot since we're using OpenTelemetry and Pyroscope
       GLOWROOT_ENABLED: 'false'
       # Grafana API Client Configuration
-      DOT_GRAFANA_API_URL: 'http://localhost:3000'
+      DOT_GRAFANA_API_URL: 'http://lgtm:3000'
+      # start up grafana create a new readonly user and get the api token then stick it here
+      DOT_GRAFANA_API_TOKEN: ""
+      DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: true
     volumes:
       - cms-shared:/data/shared
       - agents:/srv/dotserver/tomcat/agents
@@ -218,8 +221,10 @@ services:
       GF_SECURITY_ALLOW_EMBEDDING: "true"
       GF_SECURITY_COOKIE_SAMESITE: "none"
       GF_SECURITY_COOKIE_SECURE: "false"
-      # Reverse Proxy 
-      GF_SERVER_ROOT_URL: "http://localhost:8080/grafana-proxy"       
+      # Dual access configuration
+      GF_SERVER_ROOT_URL: "http://localhost:3000"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SERVER_ROUTER_LOGGING: "true"
 
       # Enable Pyroscope and all component logging for debugging
       ENABLE_LOGS_PYROSCOPE: "true"

@@ -193,7 +193,7 @@ export class GrafanaService {
 
         if (options.useProxy) {
             // Use the dotCMS proxy URL
-            baseUrl = 'http://localhost:8080/grafana-proxy';
+            baseUrl = 'http://localhost:8082/grafana-proxy';
         } else {
             // Use direct Grafana URL
             baseUrl = 'http://localhost:3000'; // This should come from config
