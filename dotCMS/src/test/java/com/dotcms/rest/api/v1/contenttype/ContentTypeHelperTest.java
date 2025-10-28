@@ -137,7 +137,8 @@ public class ContentTypeHelperTest {
     @Test
     public void testSorByName_Ascending() {
         List<ContentType> contentTypes = contentTypesForSortingMock();
-        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "name:asc");
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
+        List<ContentType> sorted = contentTypeHelper.sortContentTypes(contentTypes, "name:asc");
 
         assertEquals("Activity", sorted.get(0).name());
         assertEquals("Banner", sorted.get(1).name());
@@ -157,7 +158,8 @@ public class ContentTypeHelperTest {
     @Test
     public void testSortByName_Descending() {
         List<ContentType> contentTypes = contentTypesForSortingMock();
-        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "name:desc");
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
+        List<ContentType> sorted = contentTypeHelper.sortContentTypes(contentTypes, "name:desc");
 
         assertEquals("Video", sorted.get(0).name());
         assertEquals("dotAsset", sorted.get(1).name());
@@ -178,7 +180,8 @@ public class ContentTypeHelperTest {
     @Test
     public void testSortByName_DefaultIsAscending() {
         List<ContentType> contentTypes = contentTypesForSortingMock();
-        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "name");
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
+        List<ContentType> sorted = contentTypeHelper.sortContentTypes(contentTypes, "name");
 
         assertEquals("Activity", sorted.get(0).name());
         assertEquals("Banner", sorted.get(1).name());
@@ -199,7 +202,8 @@ public class ContentTypeHelperTest {
     @Test
     public void testSortByVelocityVarName_Ascending() {
         List<ContentType> contentTypes = contentTypesForSortingMock();
-        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "velocity_var_name asc");
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
+        List<ContentType> sorted = contentTypeHelper.sortContentTypes(contentTypes, "velocity_var_name asc");
 
         assertEquals("Activity", sorted.get(0).variable());
         assertEquals("Banner", sorted.get(1).variable());
@@ -221,8 +225,8 @@ public class ContentTypeHelperTest {
     public void testSortByVelocityVarName_Descending_UsingSetTypeParam() {
         List<ContentType> contentTypes = contentTypesForSortingMock();
         Set<ContentType> contentTypesSet = new LinkedHashSet<>(contentTypes);
-
-        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypesSet, "velocity_var_name DESC");
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
+        List<ContentType> sorted = contentTypeHelper.sortContentTypes(contentTypesSet, "velocity_var_name DESC");
 
         assertEquals("Video", sorted.get(0).name());
         assertEquals("dotAsset", sorted.get(1).name());
@@ -242,7 +246,8 @@ public class ContentTypeHelperTest {
     @Test
     public void testSortWithEmptyList() {
         List<ContentType> emptyList = new ArrayList<>();
-        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(emptyList, "name");
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
+        List<ContentType> sorted = contentTypeHelper.sortContentTypes(emptyList, "name");
         assertTrue(sorted.isEmpty());
     }
 
@@ -256,7 +261,8 @@ public class ContentTypeHelperTest {
     @Test
     public void testSortWithNullOrderBy() {
         List<ContentType> contentTypes = contentTypesForSortingMock();
-        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, null);
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
+        List<ContentType> sorted = contentTypeHelper.sortContentTypes(contentTypes, null);
         assertEquals(contentTypes, sorted);
     }
 
@@ -270,7 +276,8 @@ public class ContentTypeHelperTest {
     @Test
     public void testSortWithBlankOrderBy() {
         List<ContentType> contentTypes = contentTypesForSortingMock();
-        List<ContentType> sorted = ContentTypeHelper.sortContentTypes(contentTypes, "   ");
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
+        List<ContentType> sorted = contentTypeHelper.sortContentTypes(contentTypes, "   ");
         assertEquals(contentTypes, sorted);
     }
 

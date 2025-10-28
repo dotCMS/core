@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.util.SQLUtil;
@@ -33,7 +34,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dotcms.rest.api.v1.contenttype.ContentTypeHelper.sortContentTypes;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
@@ -163,9 +163,10 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             }
             //Since we're combining multiple types, we need to slice the result to remain consistent with pagination params
 
-            // This line ensures that the resulting list follows the orderBy param
+            // This ensures that the resulting list follows the orderBy param
+            ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
             final Set<ContentType> sortedCollectedContentTypes = new LinkedHashSet<>(
-                    sortContentTypes(collectedContentTypes, orderByParam));
+                    contentTypeHelper.sortContentTypes(collectedContentTypes, orderByParam));
 
             final List<ContentType> contentTypes = applySafeSlice(new ArrayList<>(sortedCollectedContentTypes), offset, limit);
             final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);

@@ -797,7 +797,7 @@ public class ContentTypeHelper implements Serializable {
      * @param orderBy The field and direction to sort the Content Types by.
      * @return The sorted list of Content Types.
      */
-    public static List<ContentType> sortContentTypes(final Collection<ContentType> contentTypes,
+    public List<ContentType> sortContentTypes(final Collection<ContentType> contentTypes,
             final String orderBy) {
 
         if (contentTypes == null || contentTypes.isEmpty() || orderBy == null || orderBy.isBlank()) {
@@ -824,32 +824,17 @@ public class ContentTypeHelper implements Serializable {
     /**
      * Map of field names to their corresponding Comparable function.
      */
-    private static final Map<String, Function<ContentType, Comparable>> FIELD_COMPARABLE_MAP = createFieldComparableMap();
+    private final Map<String, Function<ContentType, Comparable>> FIELD_COMPARABLE_MAP = createFieldComparableMap();
 
     /**
      * Creates a map of field names to their corresponding Comparable function.
-     * @return Map of field names to their corresponding Comparable function.
+     * @return Map of field names to their corresponding Comparable function. (when needed you can add more map entries)
      */
-    private static Map<String, Function<ContentType, Comparable>> createFieldComparableMap() {
+    private Map<String, Function<ContentType, Comparable>> createFieldComparableMap() {
         return Map.ofEntries(
                 Map.entry("name", c -> lower(c.name())),
                 Map.entry("variable", c -> lower(c.variable())),
-                Map.entry("velocity_var_name", c -> lower(c.variable())),
-                Map.entry("description", c -> lower(c.description())),
-                Map.entry("id", ContentType::id), Map.entry("moddate", ContentType::modDate),
-                Map.entry("mod_date", ContentType::modDate), Map.entry("idate", ContentType::iDate),
-                Map.entry("i_date", ContentType::iDate),
-                Map.entry("sortorder", ContentType::sortOrder),
-                Map.entry("sort_order", ContentType::sortOrder),
-                Map.entry("system", ContentType::system),
-                Map.entry("versionable", ContentType::versionable),
-                Map.entry("multilingualable", ContentType::multilingualable),
-                Map.entry("defaulttype", ContentType::defaultType),
-                Map.entry("default_type", ContentType::defaultType),
-                Map.entry("fixed", ContentType::fixed), Map.entry("host", ContentType::host),
-                Map.entry("sitename", ContentType::siteName),
-                Map.entry("site_name", ContentType::siteName), Map.entry("icon", ContentType::icon),
-                Map.entry("folder", ContentType::folder)
+                Map.entry("velocity_var_name", c -> lower(c.variable()))
         );
     }
 
