@@ -78,12 +78,12 @@ export class DotNavigationComponent {
      * @param DotMenu currentItem
      * @memberof DotNavigationComponent
      */
-    onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {
+    onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu; toggleOnly?: boolean }): void {
         if (this.$isCollapsed()) {
             this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         } else {
             // Check if the menu is not already open to prevent redundant navigation actions.
-            if (!event.data.isOpen) {
+            if (!event.data.isOpen && !event.toggleOnly) {
                 this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
             }
 
