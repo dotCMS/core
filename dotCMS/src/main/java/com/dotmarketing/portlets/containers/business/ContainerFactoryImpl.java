@@ -515,7 +515,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public List<Container> findContainers(final User user, final ContainerAPI.SearchParams searchParams) throws DotSecurityException, DotDataException {
 		final ContentTypeAPI contentTypeAPI        = APILocator.getContentTypeAPI(user);
 		final StringBuffer conditionBuffer         = new StringBuffer();
-		final List<Object> paramValues 			   = this.getConditionParametersAndBuildConditionQuery(searchParams.filteringCriteria(), conditionBuffer);
+		final List<Object> paramValues 			   = new ArrayList<>();
 		final PaginatedArrayList<Container> assets = new PaginatedArrayList<>();
 		final List<Permissionable> toReturn        = new ArrayList<>();
 		int     internalLimit                      = 500;
@@ -526,7 +526,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				.append(Type.CONTAINERS.getTableName()).append(" asset, inode, identifier, ")
 				.append(Type.CONTAINERS.getVersionTableName()).append(" vinfo");
 
-		this.buildFindContainersQuery(searchParams, contentTypeAPI, query);
+		this.buildFindContainersQuery(searchParams, contentTypeAPI, query, paramValues);
+		paramValues.addAll(this.getConditionParametersAndBuildConditionQuery(searchParams.filteringCriteria(), conditionBuffer));
 
 		orderBy = UtilMethods.isEmpty(orderBy) ? "mod_date desc" : orderBy;
 
@@ -547,6 +548,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}
 			}
 
+			Logger.debug(this, String.format("Finding containers with query: %s, params: %s, offset: %d, limit: %d",
+				query.toString(), paramValues, searchParams.offset(), searchParams.limit()));
+
 			// Adding Containers as Files located in the /application/containers/ folder
 			toReturn.addAll(this.findFolderAssetContainers(user, searchParams));
 
@@ -564,7 +568,13 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				internalOffset += internalLimit;
 			}
 
+			Logger.debug(this, String.format("Found %d total containers before pagination, applying offset=%d, limit=%d",
+				toReturn.size(), searchParams.offset(), searchParams.limit()));
+
 			getPaginatedAssets(searchParams.offset(), searchParams.limit(), assets, toReturn);
+
+			Logger.debug(this, String.format("Returning %d paginated containers", assets.size()));
+
 			if (searchParams.includeSystemContainer()) {
 				// System Container is being included, so increase the total result count by 1
 				assets.setTotalResults(assets.getTotalResults() + 1L);
@@ -665,8 +675,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}).collect(Collectors.toList());
 			}
 
-			if (UtilMethods.isSet(searchParams.orderBy())) {
-				switch (searchParams.orderBy().toLowerCase()) {
+			// Sanitize orderBy parameter to prevent SQL injection
+			String orderBy = SQLUtil.sanitizeSortBy(searchParams.orderBy());
+			orderBy = UtilMethods.isEmpty(orderBy) ? "mod_date desc" : orderBy;
+
+			if (UtilMethods.isSet(orderBy)) {
+				switch (orderBy.toLowerCase()) {
 					case "title asc":
 						containers.sort(Comparator.comparing(Container::getTitle));
 					break;
@@ -676,12 +690,21 @@ public class ContainerFactoryImpl implements ContainerFactory {
                         break;
 
 					case "moddate asc":
+					case "mod_date asc":
 						containers.sort(Comparator.comparing(Container::getModDate));
 						break;
 
+					case "moddate":
+					case "mod_date":
                     case "moddate desc":
+                    case "mod_date desc":
                         containers.sort(Comparator.comparing(Container::getModDate).reversed());
                         break;
+
+					default:
+						// For malicious or unknown orderBy values, use default mod_date desc sorting
+						containers.sort(Comparator.comparing(Container::getModDate).reversed());
+						break;
 				}
 			}
 
@@ -781,7 +804,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 			for(final Contentlet container : containers) {
 
-				folders.add(this.folderAPI.find(container.getFolder(), user, false));
+				try {
+					folders.add(this.folderAPI.find(container.getFolder(), user, false));
+				} catch (final DotSecurityException e) {
+					Logger.debug(ContainerFactoryImpl.class, e.getMessage(), e);
+				}
 			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
@@ -848,16 +875,18 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	/**
 	 * Builds the main part of the SQL query that will be used to find Containers in the dotCMS repository.
+	 * Uses parameterized queries to prevent SQL injection attacks.
 	 *
 	 * @param searchParams   User-specified search criteria.
 	 * @param contentTypeAPI An instance of the {@link ContentTypeAPI}.
 	 * @param query          The SQL query being built.
+	 * @param paramValues    List to collect the query parameters for parameterized execution.
 	 *
-	 * @throws DotSecurityException The user cannot perform this action.
+	 * @throws DotSecurityException The user cannot perform this action or invalid input detected.
 	 * @throws DotDataException     An error occurred when interacting with the data source.
 	 */
 	private void buildFindContainersQuery(final ContainerAPI.SearchParams searchParams, final ContentTypeAPI contentTypeAPI,
-										  final StringBuilder query) throws DotSecurityException, DotDataException {
+										  final StringBuilder query, final List<Object> paramValues) throws DotSecurityException, DotDataException {
 
 		if(UtilMethods.isSet(searchParams.contentTypeIdOrVar())) {
 
@@ -865,19 +894,29 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			final ContentType foundContentType = contentTypeAPI.find(searchParams.contentTypeIdOrVar());
 
 			if (null != foundContentType && InodeUtils.isSet(foundContentType.inode())) {
+				// Use parameterized query to prevent SQL injection
 				query.append(
 								" where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(
 								" and exists (select * from container_structures cs where cs.container_id = asset.identifier")
-						.append(" and cs.structure_id = '")
-						.append(foundContentType.inode())
-						.append("' ) ");
+						.append(" and cs.structure_id = ? ) ");
+				// Validate that inode is a valid UUID
+				final String inode = foundContentType.inode();
+				if (!UtilMethods.isSet(inode) || !UUIDUtil.isUUID(inode)) {
+					throw new DotSecurityException("Invalid inode format: " + inode);
+				}
+				paramValues.add(inode);
 			}else {
+				// Use parameterized query to prevent SQL injection
 				query.append(
 								" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
-						.append(" and tree.parent = '")
-						.append(searchParams.contentTypeIdOrVar())
-						.append("' and tree.child=asset.inode");
+						.append(" and tree.parent = ? and tree.child=asset.inode");
+				// Validate the contentTypeIdOrVar to prevent injection (UUID, variable name, or identifier)
+				final String contentTypeIdOrVar = searchParams.contentTypeIdOrVar();
+				if (!UtilMethods.isSet(contentTypeIdOrVar) || !com.dotcms.util.SecurityUtils.isValidIdentifier(contentTypeIdOrVar)) {
+					throw new DotSecurityException("Invalid content type identifier: " + contentTypeIdOrVar);
+				}
+				paramValues.add(contentTypeIdOrVar);
 			}
 		} else {
 			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
@@ -891,19 +930,42 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		if(UtilMethods.isSet(searchParams.siteId())) {
-			query.append(" and identifier.host_inode = '");
-			query.append(searchParams.siteId()).append('\'');
+			// Use parameterized query to prevent SQL injection
+			query.append(" and identifier.host_inode = ?");
+			// Validate siteId format (UUID or special identifiers like SYSTEM_HOST)
+			final String siteId = searchParams.siteId();
+			try {
+				com.dotcms.util.SecurityUtils.validateIdentifier(siteId);
+			} catch (SecurityException e) {
+				throw new DotSecurityException("Invalid site ID format: " + siteId, e);
+			}
+			paramValues.add(siteId);
 		}
 
 		if(UtilMethods.isSet(searchParams.containerInode())) {
-			query.append(" and asset.inode = '");
-			query.append(searchParams.containerInode()).append('\'');
+			// Use parameterized query to prevent SQL injection
+			query.append(" and asset.inode = ?");
+			// Validate containerInode format (UUID or system identifier)
+			final String containerInode = searchParams.containerInode();
+			try {
+				com.dotcms.util.SecurityUtils.validateIdentifier(containerInode);
+			} catch (SecurityException e) {
+				throw new DotSecurityException("Invalid container inode format: " + containerInode, e);
+			}
+			paramValues.add(containerInode);
 		}
 
 		if(UtilMethods.isSet(searchParams.containerIdentifier())) {
-			query.append(" and asset.identifier = '");
-			query.append(searchParams.containerIdentifier());
-			query.append('\'');
+			// Use parameterized query to prevent SQL injection
+			query.append(" and asset.identifier = ?");
+			// Validate containerIdentifier format (UUID or special identifier)
+			final String containerIdentifier = searchParams.containerIdentifier();
+			try {
+				com.dotcms.util.SecurityUtils.validateIdentifier(containerIdentifier);
+			} catch (SecurityException e) {
+				throw new DotSecurityException("Invalid container identifier format: " + containerIdentifier, e);
+			}
+			paramValues.add(containerIdentifier);
 		}
 	}
 
@@ -918,14 +980,13 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 *
 	 * @return The values for each specific search parameter.
 	 */
-	private List<Object> getConditionParametersAndBuildConditionQuery(final Map<String, Object> params, final StringBuffer conditionQueryBuffer) {
+	private List<Object> getConditionParametersAndBuildConditionQuery(final Map<String, Object> params, final StringBuffer conditionQueryBuffer) throws DotSecurityException {
 
-		List<Object> paramValues = null;
+		final List<Object> paramValues = new ArrayList<>();
 
 		if (params != null && !params.isEmpty()) {
 
 			conditionQueryBuffer.append(" and (");
-			paramValues = new ArrayList<>();
 			int counter = 0;
 
 			for (final Map.Entry<String, Object> entry : params.entrySet()) {
@@ -960,7 +1021,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	private void buildConditionParameterAndBuildConditionQuery (final Map.Entry<String, Object> entry,
 																final List<Object> paramValues,
 																final StringBuffer conditionQueryBuffer,
-																final Optional<String> prefix) {
+																final Optional<String> prefix) throws DotSecurityException {
 
 		if(entry.getValue() instanceof String){
 			if (entry.getKey().equalsIgnoreCase("inode") || entry.getKey()
@@ -971,9 +1032,13 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}
 				conditionQueryBuffer.append(" asset.");
 				conditionQueryBuffer.append(entry.getKey());
-				conditionQueryBuffer.append(" = '");
-				conditionQueryBuffer.append(entry.getValue());
-				conditionQueryBuffer.append('\'');
+				conditionQueryBuffer.append(" = ?");
+				// Validate identifier/inode format to prevent SQL injection
+				final String value = (String) entry.getValue();
+				if (!UtilMethods.isSet(value) || !com.dotcms.util.SecurityUtils.isValidIdentifier(value)) {
+					throw new DotSecurityException("Invalid " + entry.getKey() + " format: " + value);
+				}
+				paramValues.add(value);
 			} else {
 
 				if (prefix.isPresent()) {
