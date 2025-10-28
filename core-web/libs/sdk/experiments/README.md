@@ -6,28 +6,31 @@ The `@dotcms/experiments` SDK is the official dotCMS JavaScript library that hel
 
 ### When to Use It
 
-- Adding A/B testing capabilities to your web application
-- Running experiments to optimize user experience
-- Testing different page variants with real users
-- Tracking experiment performance with DotCMS Analytics
+-   Adding A/B testing capabilities to your web application
+-   Running experiments to optimize user experience
+-   Testing different page variants with real users
+-   Tracking experiment performance with DotCMS Analytics
 
 ### Key Features
 
-- **User Assignment to Experiments**: Automatically assigns users to different experimental variants, ensuring diverse user experiences and reliable test data
-- **Link Verification for Redirection**: Checks links to ensure users are redirected to their assigned experiment variant, maintaining the integrity of the testing process
-- **Automatic PageView Event Sending**: Automatically sends PageView events to DotCMS Analytics, enabling real-time tracking of user engagement and experiment effectiveness
+-   **User Assignment to Experiments**: Automatically assigns users to different experimental variants, ensuring diverse user experiences and reliable test data
+-   **Link Verification for Redirection**: Checks links to ensure users are redirected to their assigned experiment variant, maintaining the integrity of the testing process
+-   **Automatic PageView Event Sending**: Automatically sends PageView events to DotCMS Analytics, enabling real-time tracking of user engagement and experiment effectiveness
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-  - [Components](#components)
-  - [How A/B Testing Works](#how-ab-testing-works-with-dotcmsexperiments)
-- [Usage](#usage)
-- [Support](#support)
-- [Contributing](#contributing)
-- [Licensing](#licensing)
+-   [Overview](#overview)
+-   [Installation](#installation)
+-   [Getting Started](#getting-started)
+    -   [withExperiments HOC](#withexperiments-higher-order-component)
+    -   [Configuration Object](#configuration-object)
+-   [Usage](#usage)
+    -   [With @dotcms/react](#with-dotcmsreact-recommended)
+    -   [Configuration Best Practices](#configuration-best-practices)
+    -   [How It Works](#how-it-works)
+-   [Support](#support)
+-   [Contributing](#contributing)
+-   [Licensing](#licensing)
 
 ## Installation
 
@@ -45,56 +48,89 @@ yarn add @dotcms/experiments
 
 ## Getting Started
 
-### Components
+### `withExperiments` Higher-Order Component
 
-### `DotExperimentsProvider`
-This component utilizes React's Context API to provide DotExperiments instances to its descendants, facilitating access to A/B testing features throughout your webapps.
+The SDK exports a single HOC (Higher-Order Component) called `withExperiments` that wraps your page component with experiment functionality. This component handles:
 
-#### Props
+-   User assignment to experiment variants
+-   Automatic redirection to the correct variant
+-   Prevention of content flickering during variant loading
+-   Automatic page view tracking to dotCMS Analytics
+-   Click event handling to maintain variant consistency across navigation
 
--   **config**: Configuration object for DotCMS Analytics integration
-    -   **apiKey**: Your API key from the DotCMS Analytics app
-    -   **server**: The URL of your dotCMS instance
-    -   **redirectFn**: The redirect function to use when assigning users to experiment variants
+### Configuration Object
+
+The `config` object passed to `withExperiments` accepts the following properties:
+
+-   **apiKey** (required): Your API key from the DotCMS Analytics app
+-   **server** (required): The URL of your dotCMS instance (e.g., `https://your-dotcms-instance.com`)
+-   **redirectFn** (optional): Custom redirect function for SPA navigation (default: `window.location.replace`)
+-   **trackPageView** (optional): Enable/disable automatic page view tracking (default: `true`)
+-   **debug** (optional): Enable debug logging in the browser console (default: `false`)
 
 ## Usage
 
+### With @dotcms/react (Recommended)
+
+The recommended approach is to wrap your `DotCMSLayout` component with `withExperiments`:
+
 ```javascript
-import { DotExperimentsProvider } from "@dotcms/experiments";
-import { useRouter } from 'next/router';
+import { withExperiments } from '@dotcms/experiments';
+import { DotCMSLayout } from '@dotcms/react';
+import { useRouter } from 'next/navigation'; // Next.js example
 
-const { replace } = useRouter();
+export default function Page({ pageAsset, config }) {
+    const router = useRouter();
 
-const experimentConfig = {
-  apiKey: 'your-api-key-from-dotcms-analytics-app',
-  server: 'https://your-dotcms-instance.com',
-  redirectFn: replace // Use replace from useRouter in Next.js
-};
+    // Define experiment configuration
+    const experimentConfig = {
+        apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY,
+        server: process.env.NEXT_PUBLIC_DOTCMS_HOST,
+        redirectFn: router.replace, // Use Next.js router for SPA navigation
+        debug: process.env.NODE_ENV === 'development'
+    };
 
-return (
-  <DotExperimentsProvider config={experimentConfig}>
-  
-    <Header>
-      <Navigation />
-    </Header>
-    <DotcmsLayout />
-    <Footer />
-    
-  </DotExperimentsProvider>
-);
+    // Wrap DotCMSLayout with experiments functionality
+    const DotCMSLayoutWithExperiments = withExperiments(DotCMSLayout, experimentConfig);
+
+    return (
+        <div>
+            <Header>
+                <Navigation />
+            </Header>
+            <DotCMSLayoutWithExperiments page={pageAsset} config={config} />
+            <Footer />
+        </div>
+    );
+}
 ```
 
-### How A/B Testing Works with @dotcms/experiments
+### Configuration Best Practices
 
-The A/B testing process with `@dotcms/experiments` is designed to be straightforward and automatic:
+```javascript
+// Use environment variables for configuration
+const experimentConfig = {
+    apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY, // From DotCMS Analytics app
+    server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // Your dotCMS instance URL
+    redirectFn: router.replace, // Use your framework's router
+    debug: process.env.NODE_ENV === 'development', // Debug only in development
+    trackPageView: true // Enable automatic tracking
+};
+```
 
-1. **Experiment Assignment**: When a user visits a page that includes an experiment, the library first checks if the user has been assigned to an experiment variant. If not, it queries DotCMS Analytics to determine if there are active experiments and assigns the user to the appropriate variant
+### How It Works
 
-2. **Page Redirection**: If the user's assigned variant differs from the current page, the library automatically redirects the user to the correct variant page. This ensures that the user experiences the variant they have been assigned to
+Once you wrap your component with `withExperiments`, the SDK automatically handles:
 
-3. **Tracking Pageviews**: After redirection or upon visiting the page, the library sends a pageview event to DotCMS Analytics. This data is used to determine the effectiveness of each variant, ultimately helping to identify which variant performs better in the A/B test
+1. **User Assignment**: Assigns users to experiment variants when they visit a page with an active experiment
+2. **Automatic Redirection**: Redirects users to their assigned variant URL (prevents seeing the wrong variant)
+3. **Flicker Prevention**: Hides content during redirection to avoid showing the wrong variant momentarily
+4. **Navigation Handling**: Maintains variant consistency when users click links
+5. **Analytics Tracking**: Sends pageview events to DotCMS Analytics automatically
 
-**Learn More**: For more detailed information on A/B testing features and capabilities, visit the [DotCMS A/B Testing Experiments](https://www.dotcms.com/product/ab-testing-experiments) page.
+All of this happens behind the scenes - you just need to wrap your component and provide the configuration.
+
+**Learn More**: For detailed information on creating and managing experiments in dotCMS, visit the [DotCMS A/B Testing Experiments](https://www.dotcms.com/product/ab-testing-experiments) page.
 
 ## Support
 
