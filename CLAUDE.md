@@ -452,13 +452,15 @@ LocalTransaction.wrapReturn(() -> {
 });
 ```
 
-### Angular Development (core-web/)
-```typescript
-// Angular (REQUIRED modern syntax)
-@if (condition()) { <content /> }      // NOT *ngIf
-data = input<string>();                // NOT @Input()
-spectator.setInput('prop', value);     // Testing CRITICAL
-```
+### Frontend Development (core-web/)
+**For Angular/TypeScript/Nx development, see [core-web/CLAUDE.md](core-web/CLAUDE.md)**
+
+The core-web directory contains:
+- Angular 19+ applications and libraries
+- Modern component patterns with signals
+- Jest/Spectator testing standards
+- PrimeNG UI components
+- Nx monorepo commands
 
 ```bash
 # Test Commands (fastest - no core rebuild needed!)
@@ -496,12 +498,12 @@ cd core-web && nx run dotcms-ui:serve                 # Separate Frontend dev se
 
 ### Tech Stack
 - **Backend**: Java 21 runtime, Java 11 syntax (core), Maven, Spring/CDI
-- **Frontend**: Angular 18.2.3, PrimeNG 17.18.11, NgRx Signals, Jest + Spectator  
+- **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript stack details
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
 ### Critical Rules
 - **Maven versions**: Add to `bom/application/pom.xml` ONLY, never `dotCMS/pom.xml`
-- **Testing**: ALWAYS use `data-testid` and `spectator.setInput()`
+- **Frontend testing**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular testing standards
 - **Security**: No hardcoded secrets, validate input, use Logger not System.out
 
 ## 📚 Documentation Navigation (Load On-Demand)
@@ -773,11 +775,12 @@ try {
 ```
 
 ## Summary Checklist
+
+### Backend Development (Java/Maven)
 - ✅ Use `Config.getProperty()` and `Logger.info(this, ...)`
 - ✅ Use `APILocator.getXXXAPI()` for services
 - ✅ Use `@Value.Immutable` for data objects
 - ✅ Use JAX-RS `@Path` for REST endpoints - **See [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)**
-- ✅ Use `data-testid` for Angular testing
 - ✅ Use modern Java 21 syntax (Java 11 compatible)
 - ✅ Follow domain-driven package organization for new features
 - ✅ **@Schema Rules**: Match schema to actual return type (wrapped vs unwrapped) - **See [REST Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)**
@@ -787,3 +790,6 @@ try {
 - ❌ **NEVER use `ResponseEntityView.class`** in `@Schema` - provides no meaningful API documentation
 - ❌ **NEVER omit `@Schema`** from @ApiResponse(200) - incomplete Swagger documentation
 - ❌ **NEVER use `@PathParam`** without corresponding @Path placeholder - use @QueryParam instead
+
+### Frontend Development (Angular/TypeScript)
+- ✅ See **[core-web/CLAUDE.md](core-web/CLAUDE.md)** for complete Angular/TypeScript standards and modern syntax
