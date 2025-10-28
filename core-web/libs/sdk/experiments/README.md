@@ -72,51 +72,53 @@ The `config` object passed to `withExperiments` accepts the following properties
 
 ### With @dotcms/react (Recommended)
 
-The recommended approach is to wrap your `DotCMSLayout` component with `withExperiments`:
+The recommended approach is to wrap the `DotCMSLayoutBody` component with `withExperiments`. The pattern supports **conditional wrapping** - experiments are only enabled when an API key is configured:
 
 ```javascript
-import { withExperiments } from '@dotcms/experiments';
-import { DotCMSLayout } from '@dotcms/react';
-import { useRouter } from 'next/navigation'; // Next.js example
+"use client";
 
-export default function Page({ pageAsset, config }) {
-    const router = useRouter();
+import { withExperiments } from "@dotcms/experiments";
+import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
+import { useRouter } from 'next/navigation';
 
-    // Define experiment configuration
-    const experimentConfig = {
-        apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY,
-        server: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-        redirectFn: router.replace, // Use Next.js router for SPA navigation
-        debug: process.env.NODE_ENV === 'development'
-    };
+// Experiment configuration - only applied if apiKey is present
+const experimentConfig = {
+    apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY,
+    server: process.env.NEXT_PUBLIC_DOTCMS_HOST,
+    debug: true
+};
 
-    // Wrap DotCMSLayout with experiments functionality
-    const DotCMSLayoutWithExperiments = withExperiments(DotCMSLayout, experimentConfig);
+export function Page({ pageContent }) {
+    const { pageAsset } = useEditableDotCMSPage(pageContent);
+    const { replace } = useRouter();
+
+    // Conditionally wrap with experiments if apiKey is configured
+    const DotCMSLayoutBodyComponent = experimentConfig.apiKey
+        ? withExperiments(DotCMSLayoutBody, {
+              ...experimentConfig,
+              redirectFn: replace
+          })
+        : DotCMSLayoutBody;
 
     return (
-        <div>
-            <Header>
-                <Navigation />
-            </Header>
-            <DotCMSLayoutWithExperiments page={pageAsset} config={config} />
-            <Footer />
-        </div>
+        <main>
+            <DotCMSLayoutBodyComponent
+                page={pageAsset}
+                components={pageComponents}
+            />
+        </main>
     );
 }
 ```
 
+> 📚 **Learn more about `DotCMSLayoutBody`**: See the [@dotcms/react SDK documentation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/README.md#dotcmslayoutbody) for complete details on configuring the layout renderer, component mapping, and available props.
+
 ### Configuration Best Practices
 
-```javascript
-// Use environment variables for configuration
-const experimentConfig = {
-    apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY, // From DotCMS Analytics app
-    server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // Your dotCMS instance URL
-    redirectFn: router.replace, // Use your framework's router
-    debug: process.env.NODE_ENV === 'development', // Debug only in development
-    trackPageView: true // Enable automatic tracking
-};
-```
+-   **Use Environment Variables**: Store your API key and server URL in environment variables
+-   **Conditional Wrapping**: Only enable experiments when an API key is configured using a ternary operator
+-   **Framework Router**: Pass your framework's router function (e.g., `router.replace` for Next.js) to maintain SPA navigation
+-   **Debug Mode**: Enable debug logging during development to troubleshoot experiment assignment issues
 
 ### How It Works
 
