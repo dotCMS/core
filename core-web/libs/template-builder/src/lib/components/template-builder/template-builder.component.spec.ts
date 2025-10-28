@@ -1,19 +1,15 @@
 import { expect, it } from '@jest/globals';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
-import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
-import { DividerModule } from 'primeng/divider';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { ToolbarModule } from 'primeng/toolbar';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { pluck, take } from 'rxjs/operators';
 
 import { DotContainersService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
 import {
     containersMock,
     CoreWebServiceMock,

@@ -1,16 +1,10 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { of } from 'rxjs';
 
-import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { ButtonModule } from 'primeng/button';
-import { DividerModule } from 'primeng/divider';
-import { DropdownModule } from 'primeng/dropdown';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { ToolbarModule } from 'primeng/toolbar';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import {
     DotContainersService,
@@ -20,7 +14,6 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
 import { DotLayout } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotContainersServiceMock,
@@ -42,10 +35,7 @@ const meta: Meta<TemplateBuilderComponent> = {
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
-            imports: [
-                BrowserAnimationsModule,
-                HttpClientModule
-            ],
+            imports: [BrowserAnimationsModule, HttpClientModule],
             providers: [
                 DotTemplateBuilderStore,
                 DialogService,
