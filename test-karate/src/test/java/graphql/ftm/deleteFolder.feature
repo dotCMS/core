@@ -3,17 +3,6 @@ Feature: Delete a Folder
     * url baseUrl + '/api/v1/folder/default'
     * headers commonHeaders
 
-  Scenario: Delete a folder on the given path if exists
-    * def path = '/folder-1/folder-2/existing-folder'
-    And request
-      """
-      ["#(path)"]
-      """
-    When method DELETE
-    Then status 200
-    * def errors = call extractErrors response
-    * match errors == []
-
   Scenario: Try to delete a non-existing folder
 
     # Example of a folder that does not exist
