@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class GoalsDeserializer extends JsonDeserializer<Goals> {
 
-    private static ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+    private static ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getTimestampObjectMapper();
 
     @Override
     public Goals deserialize(JsonParser jsonParser, DeserializationContext ctxt)

@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class GoalsSerializer extends JsonSerializer<Goals> {
 
-    private static ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+    private static ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getTimestampObjectMapper();
 
     @Override
     public void serialize(final Goals value, final JsonGenerator gen, SerializerProvider serializers)
