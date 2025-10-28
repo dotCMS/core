@@ -15,7 +15,6 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
 import { DotEditContentTypeCacheService } from '../services/dot-edit-content-type-cache.service';
 import { DotRelationshipService } from '../services/dot-relationship.service';
 
-
 /**
  *Cardinalities sorted by id
  *

@@ -22,7 +22,6 @@ import { SearchableDropdownComponent } from '../../../../../../../../../view/com
 import { DotCardinalitySelectorComponent } from '../dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 
-
 @Component({
     selector: 'dot-new-relationships',
     templateUrl: './dot-new-relationships.component.html',

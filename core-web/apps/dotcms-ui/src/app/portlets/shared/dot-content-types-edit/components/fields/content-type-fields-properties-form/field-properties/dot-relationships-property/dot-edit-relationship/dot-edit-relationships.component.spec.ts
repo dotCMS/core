@@ -15,7 +15,10 @@ import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils
 import { DotEditRelationshipsComponent } from './dot-edit-relationships.component';
 
 import { DOTTestBed } from '../../../../../../../../../test/dot-test-bed';
-import { PaginationEvent, SearchableDropdownComponent } from '../../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
+import {
+    PaginationEvent,
+    SearchableDropdownComponent
+} from '../../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 import { DotEditContentTypeCacheService } from '../services/dot-edit-content-type-cache.service';
 import { DotRelationshipService } from '../services/dot-relationship.service';
@@ -132,7 +135,10 @@ describe('DotEditRelationshipsComponent', () => {
         DOTTestBed.configureTestingModule({
             imports: [DotMessagePipe, DotEditRelationshipsComponent],
             providers: [
-                { provide: DotEditContentTypeCacheService, useValue: dotEditContentTypeCacheServiceMock },
+                {
+                    provide: DotEditContentTypeCacheService,
+                    useValue: dotEditContentTypeCacheServiceMock
+                },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PaginatorService, useClass: MockPaginatorService },
                 { provide: DotRelationshipService, useClass: MockRelationshipService }

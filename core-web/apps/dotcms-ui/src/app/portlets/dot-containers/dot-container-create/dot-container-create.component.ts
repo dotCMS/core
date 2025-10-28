@@ -6,7 +6,6 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { pluck, take } from 'rxjs/operators';
 
-
 import { DotRouterService } from '@dotcms/data-access';
 import { DotContainerEntity } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';

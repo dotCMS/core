@@ -35,8 +35,6 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
 
-
-
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import {
     DotContainer,

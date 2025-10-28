@@ -34,13 +34,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-add-rows',
     styleUrls: ['./content-type-fields-add-row.component.scss'],
     templateUrl: './content-type-fields-add-row.component.html',
-    imports: [
-        CommonModule,
-        ButtonModule,
-        TooltipModule,
-        SplitButtonModule,
-        DotMessagePipe
-    ]
+    imports: [CommonModule, ButtonModule, TooltipModule, SplitButtonModule, DotMessagePipe]
 })
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     private dotEventsService = inject(DotEventsService);

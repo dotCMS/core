@@ -2,7 +2,12 @@
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { FormGroupDirective, NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import {
+    FormGroupDirective,
+    NgControl,
+    UntypedFormControl,
+    UntypedFormGroup
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
@@ -89,7 +94,10 @@ describe('DotRelationshipsPropertyComponent', () => {
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotContentTypeService,
-                { provide: DotEditContentTypeCacheService, useValue: dotEditContentTypeCacheServiceMock },
+                {
+                    provide: DotEditContentTypeCacheService,
+                    useValue: dotEditContentTypeCacheServiceMock
+                },
                 { provide: FormGroupDirective, useValue: formGroupDirectiveMock }
             ]
         });

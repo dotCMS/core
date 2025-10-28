@@ -67,7 +67,7 @@ describe('DotCardinalitySelectorComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [ HostTestComponent],
+            declarations: [HostTestComponent],
             imports: [DropdownModule, FormsModule, DotCardinalitySelectorComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

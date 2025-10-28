@@ -36,7 +36,6 @@ import {
     DotValidators
 } from '@dotcms/ui';
 
-
 import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
 import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';

@@ -4,7 +4,11 @@ import { FormsModule, UntypedFormGroup } from '@angular/forms';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotEditRelationshipsComponent } from './dot-edit-relationship/dot-edit-relationships.component';
 import { DotNewRelationshipsComponent } from './dot-new-relationships/dot-new-relationships.component';
