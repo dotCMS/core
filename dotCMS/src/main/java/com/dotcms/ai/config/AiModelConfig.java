@@ -16,6 +16,7 @@ public class AiModelConfig implements Serializable {
     public static final String TEMPERATURE = "temperature";
     public static final String MAX_OUTPUT_TOKENS = "maxOutputTokens";
     public static final String TIMEOUT_MS = "timeoutMs";
+    public static final String DIMENSIONS = "dimensions";
 
     private final String name;
     private final Map<String, String> config;

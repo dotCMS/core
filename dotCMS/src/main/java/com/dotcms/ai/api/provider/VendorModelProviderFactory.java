@@ -2,6 +2,7 @@ package com.dotcms.ai.api.provider;
 
 import com.dotcms.ai.api.provider.anthropic.AnthropicVendorModelProviderImpl;
 import com.dotcms.ai.api.provider.azure.AzureVendorModelProviderImpl;
+import com.dotcms.ai.api.provider.bedrock.BedRockVendorModelProviderImpl;
 import com.dotcms.ai.api.provider.openai.OpenAiVendorModelProviderImpl;
 import com.dotcms.ai.config.AiModelConfig;
 import dev.langchain4j.model.chat.ChatModel;
@@ -24,7 +25,7 @@ public class VendorModelProviderFactory {
 
     public VendorModelProviderFactory() {
         this(List.of(new OpenAiVendorModelProviderImpl(), new AnthropicVendorModelProviderImpl(),
-                new AzureVendorModelProviderImpl()));
+                new AzureVendorModelProviderImpl(), new BedRockVendorModelProviderImpl()));
     }
 
     public VendorModelProviderFactory(final List<VendorModelProvider> providerList) {
