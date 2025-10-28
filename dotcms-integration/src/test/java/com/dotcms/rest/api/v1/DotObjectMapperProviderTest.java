@@ -28,7 +28,7 @@ public class DotObjectMapperProviderTest {
     }
 
     /**
-     * Metod to test: {@link DotObjectMapperProvider#getObjectMapper()}
+     * Metod to test: {@link DotObjectMapperProvider#getDefaultObjectMapper()}
      * When: You have a exepriment and try to serialize it
      * Should: Serializ Scheduling's Instant field like a timestamp
      * @throws JsonProcessingException
@@ -49,7 +49,7 @@ public class DotObjectMapperProviderTest {
                 .scheduling(Scheduling.builder().startDate(startDate).endDate(endDate).build())
                 .next();
 
-        final ObjectMapper defaultMapper = DotObjectMapperProvider.getInstance().getObjectMapper();
+        final ObjectMapper defaultMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         final String json = defaultMapper.writeValueAsString(testingExperiment);
         final Map experimentAsMap = defaultMapper.readValue(json, Map.class);
 

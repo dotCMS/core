@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -47,15 +46,15 @@ public class DotObjectMapperProvider {
     }
 
     private static ObjectMapper buildBaseObjectMapper() {
+
         boolean alphaKeys = Config.getBooleanProperty("dotcms.rest.sort.json.properties", true);
         boolean useBlackbird = Config.getBooleanProperty("jackson.module.blackbird.enable", true);
         boolean useJdk8Module = Config.getBooleanProperty("jackson.module.jdk8module.enable", true);
 
         final ObjectMapper objectMapper = new ObjectMapper();
-
+        objectMapper.findAndRegisterModules();
         objectMapper.registerModule(new VersioningModule());
         objectMapper.registerModule(new GuavaModule());
-        objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, alphaKeys);
         objectMapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, alphaKeys);
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.disable(DeserializationFeature.WRAP_EXCEPTIONS);
@@ -140,17 +139,13 @@ public class DotObjectMapperProvider {
     }
 
     /**
-     * Gets the default object mapper that writes Dates as timestamps.
+     * Gets the default object mapper that writes Dates as ISO8601 strings.
      *
      * @return ObjectMapper
-     *
-     *
-     * @deprecated Use {@link #getIso8610ObjectMapper()} instead, or if you need to write timestamps, use
-     * {@link #getTimestampObjectMapper()}.
+
      */
-    @Deprecated
     public ObjectMapper getDefaultObjectMapper() {
-        return timestampObjectMapper;
+        return iso8610ObjectMapper;
     }
 
 

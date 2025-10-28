@@ -46,7 +46,7 @@ public class TikaUtils {
 
     public static final int SIZE = 1024;
     public static final int DEFAULT_META_DATA_MAX_SIZE = 5;
-    private final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getObjectMapper();
+    private final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
 
     private TikaProxyService tikaService;
