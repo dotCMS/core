@@ -635,6 +635,14 @@ Valid log levels: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `OFF`
   # List issues
   gh issue list --assignee @me
   ```
+- **Issue Templates**: Available templates in `.github/ISSUE_TEMPLATE/`:
+  - `task.yaml` - Technical tasks or improvements
+  - `defect.yaml` - Bug reports and defects
+  - `feature.yaml` - New features and enhancements
+  - `spike.yaml` - Research and exploration tasks
+  - `epic.yml` - Large initiatives spanning multiple issues
+  - `pillar.yml` - Strategic themes
+  - `ux.yaml` - UX improvements and design tasks
 - **Conventional Commits**: Use conventional commit format for all changes:
   ```
   feat: add new workflow component
