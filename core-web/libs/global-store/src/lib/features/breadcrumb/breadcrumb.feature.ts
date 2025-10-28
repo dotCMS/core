@@ -2,6 +2,7 @@ import {
     patchState,
     signalStoreFeature,
     withComputed,
+    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
@@ -30,6 +31,17 @@ const initialBreadcrumbState: BreadcrumbState = {
     breadcrumbs: []
 };
 
+const urlsRegex = {
+    content: {
+        regex: /\/content\/.+/,
+        url: '/dotAdmin/#/content'
+    },
+    editPage: {
+        regex: /\/content\/.+/,
+        url: '/dotAdmin/#/edit-page/content'
+    },
+}
+
 /**
  * Custom Store Feature for managing breadcrumb navigation state.
  *
@@ -47,6 +59,36 @@ const initialBreadcrumbState: BreadcrumbState = {
 export function withBreadcrumbs() {
     return signalStoreFeature(
         withState(initialBreadcrumbState),
+        withComputed(({ breadcrumbs }) => ({
+            /**
+             * Computed signal that returns the number of breadcrumb items.
+             *
+             * @returns The count of breadcrumb items
+             */
+            breadcrumbCount: computed(() => breadcrumbs().length),
+
+            /**
+             * Computed signal that indicates if there are any breadcrumbs.
+             *
+             * @returns `true` if there are breadcrumbs, `false` if empty
+             */
+            hasBreadcrumbs: computed(() => breadcrumbs().length > 0),
+
+            /**
+             * Computed signal returning the last breadcrumb item.
+             * Returns null if there are no breadcrumbs.
+             */
+            lastBreadcrumb: computed(() => breadcrumbs()[breadcrumbs().length - 1]),
+            /**
+             * Computed signal returning the label of the last breadcrumb item.
+             * Returns null if there are no breadcrumbs.
+             */
+            selectLastBreadcrumbLabel: computed(() => {
+                const crumbs = breadcrumbs();
+                const last = crumbs.length ? crumbs[crumbs.length - 1] : null;
+                return last?.label ?? null;
+            })
+        })),
         withMethods((store) => ({
             /**
              * Sets the breadcrumb items, replacing any existing breadcrumbs.
@@ -64,42 +106,61 @@ export function withBreadcrumbs() {
              */
             appendCrumb: (crumb: MenuItem) => {
                 const currentBreadcrumbs = store.breadcrumbs();
-                patchState(store, {
-                    breadcrumbs: [...currentBreadcrumbs, crumb]
-                });
+                patchState(store, { breadcrumbs: [...currentBreadcrumbs, crumb] });
             },
-
             /**
-             * Clears all breadcrumb items, resetting to an empty array.
+             * Truncates the breadcrumbs to the existing index.
+             *
+             * @param existingIndex - Index of the existing breadcrumb
              */
-            clearBreadcrumbs: () => {
-                patchState(store, { breadcrumbs: [] });
+            truncateBreadcrumbs: (existingIndex: number) => {
+                const currentBreadcrumbs = store.breadcrumbs();
+                patchState(store, { breadcrumbs: currentBreadcrumbs.slice(0, existingIndex + 1) });
+            },
+            /**
+             * Sets the last breadcrumb item, replacing the last breadcrumb item.
+             *
+             * @param crumb - MenuItem object to set as the last breadcrumb
+             */
+            setLastBreadcrumb: (crumb: MenuItem) => {
+                const currentBreadcrumbs = store.breadcrumbs();
+                patchState(store, { breadcrumbs: [...currentBreadcrumbs.slice(0, -1), crumb] });
+            },
+            /**
+             * Adds a new breadcrumb item to the breadcrumbs.
+             *
+             * @param item - MenuItem object to add to the breadcrumbs
+             */
+            addNewBreadcrumb: (item: MenuItem) => {
+                const contentEditRegex = /\/content\/.+/;
+                const url = item?.url?.replace('/dotAdmin/#', '') || '';
+                const lastBreadcrumb = store.lastBreadcrumb();
+                const lastBreadcrumbUrl = lastBreadcrumb?.url?.replace('/dotAdmin/#', '') || '';
+                const currentBreadcrumbs = store.breadcrumbs();
+
+                const isSameUrl = url === lastBreadcrumbUrl;
+
+                if (isSameUrl) {
+                    return;
+                }
+
+                if (contentEditRegex.test(url) && contentEditRegex.test(lastBreadcrumbUrl)) {
+                    patchState(store, { breadcrumbs: [...currentBreadcrumbs.slice(0, -1), item] });
+                } else {
+                    patchState(store, { breadcrumbs: [...currentBreadcrumbs, item] });
+                }
+            },
+            loadBreadcrumbs: () => {
+                const breadcrumbs = JSON.parse(sessionStorage.getItem('breadcrumbs') || '[]');
+                patchState(store, { breadcrumbs });
             }
         })),
-        withComputed(({ breadcrumbs }) => ({
-            /**
-             * Computed signal that returns the number of breadcrumb items.
-             *
-             * @returns The count of breadcrumb items
-             */
-            breadcrumbCount: computed(() => breadcrumbs().length),
-
-            /**
-             * Computed signal that indicates if there are any breadcrumbs.
-             *
-             * @returns `true` if there are breadcrumbs, `false` if empty
-             */
-            hasBreadcrumbs: computed(() => breadcrumbs().length > 0),
-
-            /**
-             * Computed signal returning the label of the last breadcrumb item.
-             * Returns null if there are no breadcrumbs.
-             */
-            selectLastBreadcrumbLabel: computed(() => {
-                const crumbs = breadcrumbs();
-                const last = crumbs.length ? crumbs[crumbs.length - 1] : null;
-                return last?.label ?? null;
-            })
-        }))
+        withHooks({
+            onInit(store) {
+                // Load current site on store initialization
+                // System configuration is automatically loaded by withSystem feature
+                store.loadBreadcrumbs();
+            }
+        })
     );
 }

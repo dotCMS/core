@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
-import { catchError, map, take } from 'rxjs/operators';
+import { catchError, map, take, tap } from 'rxjs/operators';
 
 import {
     DotContentTypesInfoService,
@@ -15,6 +15,7 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 /**
  * With the url return a content type by id or a default content type
@@ -30,14 +31,33 @@ export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private dotRouterService = inject(DotRouterService);
     private loginService = inject(LoginService);
+    readonly #globalStore = inject(GlobalStore);
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotCMSContentType> {
         if (route.paramMap.get('id')) {
-            return this.getContentType(route.paramMap.get('id'));
+            return this.getContentType(route.paramMap.get('id')).pipe(
+                tap((contentType) => {
+                    console.log('contentType', contentType);
+                    this.#globalStore.addNewBreadcrumb({
+                        label: contentType.name,
+                        target: '_self',
+                        url: `/dotAdmin/#/content-types-angular/edit/${contentType.id}`
+                    });
+                })
+            );
         } else {
             const contentType = this.getFilterByParam(route) || route.paramMap.get('type');
 
-            return this.getDefaultContentType(contentType);
+            return this.getDefaultContentType(contentType).pipe(
+                tap((contentType) => {
+                    console.log('contentType', contentType);
+                    this.#globalStore.addNewBreadcrumb({
+                        label: contentType.name,
+                        target: '_self',
+                        url: `/dotAdmin/#/content-types-angular/create/${contentType.variable}`
+                    });
+                })
+            );
         }
     }
 
