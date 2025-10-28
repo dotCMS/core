@@ -274,7 +274,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 expect(lockItem).toBeDefined();
             });
 
-            it('should show unlock action when content is locked and can be locked', async () => {
+            it('should show unlock action when content is locked and can be unlocked', async () => {
                 dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
 
                 await component.getMenuItems({
