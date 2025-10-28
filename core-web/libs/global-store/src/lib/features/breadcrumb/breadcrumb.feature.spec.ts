@@ -183,9 +183,150 @@ describe('withBreadcrumbs Feature', () => {
         });
     });
 
+    describe('Edge Cases and Error Handling', () => {
+        it('should handle breadcrumbs with undefined properties', () => {
+            const crumbsWithUndefined: MenuItem[] = [
+                { label: 'Home', url: '/home' },
+                { label: undefined, url: '/undefined-label' },
+                { url: '/no-label' }, // No label property
+                { label: 'Last', url: undefined }
+            ];
+
+            store.setBreadcrumbs(crumbsWithUndefined);
+            expect(store.breadcrumbCount()).toBe(4);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Last');
+        });
+
+        it('should handle breadcrumbs with null properties', () => {
+            const crumbsWithNull: MenuItem[] = [
+                { label: 'Home', url: '/home' },
+                { label: null, url: '/null-label' },
+                { label: 'Last', url: null }
+            ];
+
+            store.setBreadcrumbs(crumbsWithNull);
+            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Last');
+        });
+
+        it('should handle empty objects in breadcrumbs array', () => {
+            const crumbsWithEmpty: MenuItem[] = [
+                { label: 'Home', url: '/home' },
+                {}, // Empty object
+                { label: 'Last', url: '/last' }
+            ];
+
+            store.setBreadcrumbs(crumbsWithEmpty);
+            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Last');
+        });
+
+        it('should handle null/undefined input to setBreadcrumbs gracefully', () => {
+            // Test with null - should not throw but the state becomes null
+            expect(() => store.setBreadcrumbs(null as unknown as MenuItem[])).not.toThrow();
+            // The implementation sets breadcrumbs to null, so we check it's not an array
+            expect(store.breadcrumbs()).not.toBeInstanceOf(Array);
+
+            // Reset state for next test
+            store.setBreadcrumbs([]);
+
+            // Test with undefined
+            expect(() => store.setBreadcrumbs(undefined as unknown as MenuItem[])).not.toThrow();
+            expect(store.breadcrumbs()).not.toBeInstanceOf(Array);
+        });
+
+        it('should handle null/undefined input to appendCrumb gracefully', () => {
+            // Test with null
+            expect(() => store.appendCrumb(null as unknown as MenuItem)).not.toThrow();
+            expect(store.breadcrumbCount()).toBe(1);
+
+            // Test with undefined
+            expect(() => store.appendCrumb(undefined as unknown as MenuItem)).not.toThrow();
+            expect(store.breadcrumbCount()).toBe(2);
+        });
+    });
+
+    describe('Immutability Tests', () => {
+        it('should not mutate original array when setting breadcrumbs', () => {
+            const originalArray: MenuItem[] = [
+                { label: 'Home', url: '/home' },
+                { label: 'Products', url: '/products' }
+            ];
+            const originalArrayCopy = [...originalArray];
+
+            store.setBreadcrumbs(originalArray);
+            
+            // Modify the store's breadcrumbs
+            store.appendCrumb({ label: 'New', url: '/new' });
+            
+            // Original array should remain unchanged
+            expect(originalArray).toEqual(originalArrayCopy);
+        });
+
+        it('should not mutate original array when appending breadcrumb', () => {
+            const originalArray: MenuItem[] = [{ label: 'Home', url: '/home' }];
+            const originalArrayCopy = [...originalArray];
+
+            store.setBreadcrumbs(originalArray);
+            store.appendCrumb({ label: 'New', url: '/new' });
+            
+            // Original array should remain unchanged
+            expect(originalArray).toEqual(originalArrayCopy);
+        });
+
+        it('should create new array references when modifying breadcrumbs', () => {
+            store.setBreadcrumbs([{ label: 'Home', url: '/home' }]);
+            const firstArray = store.breadcrumbs();
+            
+            store.appendCrumb({ label: 'New', url: '/new' });
+            const secondArray = store.breadcrumbs();
+            
+            // Should be different array references
+            expect(firstArray).not.toBe(secondArray);
+        });
+    });
+
+    describe('Performance and Large Data Tests', () => {
+        it('should handle large number of breadcrumbs', () => {
+            const largeBreadcrumbs: MenuItem[] = Array.from({ length: 100 }, (_, i) => ({
+                label: `Breadcrumb ${i + 1}`,
+                url: `/breadcrumb-${i + 1}`
+            }));
+
+            store.setBreadcrumbs(largeBreadcrumbs);
+            expect(store.breadcrumbCount()).toBe(100);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Breadcrumb 100');
+        });
+
+        it('should handle breadcrumbs with very long labels', () => {
+            const longLabel = 'A'.repeat(1000);
+            const crumbsWithLongLabel: MenuItem[] = [
+                { label: 'Home', url: '/home' },
+                { label: 'Middle', url: '/middle' },
+                { label: longLabel, url: '/long-label' }
+            ];
+
+            store.setBreadcrumbs(crumbsWithLongLabel);
+            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.selectLastBreadcrumbLabel()).toBe(longLabel);
+        });
+
+        it('should handle breadcrumbs with special characters', () => {
+            const specialCrumbs: MenuItem[] = [
+                { label: 'Home & About', url: '/home' },
+                { label: 'Products < > & " \' ', url: '/products' },
+                { label: 'Details: 100%', url: '/details' }
+            ];
+
+            store.setBreadcrumbs(specialCrumbs);
+            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Details: 100%');
+        });
+    });
+
     describe('Complex Scenarios', () => {
         it('should handle full breadcrumb workflow', () => {
-            // Start empty
+            // Start empty 
             expect(store.breadcrumbs()).toEqual([]);
 
             // Add breadcrumbs one by one
@@ -216,6 +357,33 @@ describe('withBreadcrumbs Feature', () => {
             store.appendCrumb({ label: 'New', url: '/new' });
             expect(store.breadcrumbs().length).toBe(1);
             expect(store.selectLastBreadcrumbLabel()).toBe('New');
+        });
+
+        it('should handle navigation workflow with mixed operations', () => {
+            // Start with some breadcrumbs
+            store.setBreadcrumbs([
+                { label: 'Dashboard', url: '/dashboard' },
+                { label: 'Content', url: '/content' }
+            ]);
+
+            // Navigate deeper
+            store.appendCrumb({ label: 'Edit', url: '/content/edit' });
+            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
+
+            // Navigate to different section (replace breadcrumbs)
+            store.setBreadcrumbs([
+                { label: 'Dashboard', url: '/dashboard' },
+                { label: 'Settings', url: '/settings' }
+            ]);
+            expect(store.breadcrumbCount()).toBe(2);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Settings');
+
+            // Add more levels
+            store.appendCrumb({ label: 'Users', url: '/settings/users' });
+            store.appendCrumb({ label: 'Create', url: '/settings/users/create' });
+            expect(store.breadcrumbCount()).toBe(4);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Create');
         });
     });
 });
