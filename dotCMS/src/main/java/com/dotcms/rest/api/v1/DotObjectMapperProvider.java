@@ -127,10 +127,10 @@ public class DotObjectMapperProvider {
         return DotObjectMapperProvider.SingletonHolder.INSTANCE;
     } // getInstance.
 
+
     /**
-     * Gets the default object mapper that writes Dates as timestamps.
-     *
-     * @return ObjectMapper
+     * Gets the timestamp object mapper that writes Dates as timestamps.
+     * @return
      */
     public ObjectMapper getTimestampObjectMapper() {
         return timestampObjectMapper;
@@ -140,7 +140,12 @@ public class DotObjectMapperProvider {
      * Gets the default object mapper that writes Dates as timestamps.
      *
      * @return ObjectMapper
+     *
+     *
+     * @deprecated Use {@link #getIso8610ObjectMapper()} instead, or if you need to write timestamps, use
+     * {@link #getTimestampObjectMapper()}.
      */
+    @Deprecated
     public ObjectMapper getDefaultObjectMapper() {
         return timestampObjectMapper;
     }
