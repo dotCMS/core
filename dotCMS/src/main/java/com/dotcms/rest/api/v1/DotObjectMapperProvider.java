@@ -59,6 +59,7 @@ public class DotObjectMapperProvider {
         objectMapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, alphaKeys);
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.disable(DeserializationFeature.WRAP_EXCEPTIONS);
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         if (useBlackbird) {
             objectMapper.registerModule(new BlackbirdModule());
         }
