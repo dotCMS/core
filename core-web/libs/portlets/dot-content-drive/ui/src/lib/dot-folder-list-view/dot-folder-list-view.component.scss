@@ -84,7 +84,7 @@
 
 .list-view-title {
     display: grid;
-    grid-template-columns: 4.5rem minmax(0, 1fr);
+    grid-template-columns: 4.5rem minmax(0, 1fr) min-content;
     align-items: center;
     gap: $spacing-3;
     width: 100%;
@@ -92,6 +92,10 @@
     .truncate-text {
         max-width: 100%;
         width: fit-content;
+    }
+
+    .pi {
+        color: $color-palette-gray-700;
     }
 }
 

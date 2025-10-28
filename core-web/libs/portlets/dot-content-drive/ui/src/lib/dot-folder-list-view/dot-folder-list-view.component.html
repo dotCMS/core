@@ -85,6 +85,13 @@
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         {{ item.title }}
                     </span>
+                    <span data-testId="lock-hint">
+                        @if (item.locked) {
+                            <i class="pi pi-lock" data-testId="lock-icon"></i>
+                        } @else {
+                            <i class="pi pi-lock-open" data-testId="lock-open-icon"></i>
+                        }
+                    </span>
                 </td>
                 <td data-testId="item-status">
                     @if (status === 'Published') {

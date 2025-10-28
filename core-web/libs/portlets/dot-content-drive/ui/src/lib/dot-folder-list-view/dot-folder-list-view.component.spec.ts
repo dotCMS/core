@@ -364,6 +364,34 @@ describe('DotFolderListViewComponent', () => {
             expect(computedStyle.maxWidth).not.toBe('100%');
         });
 
+        describe('Lock Icon', () => {
+            it('should show lock icon when item is locked', () => {
+                const lockedItem = { ...mockItems[0], locked: true };
+                spectator.setInput('items', [lockedItem]);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+
+                const lockIcon = spectator.query(byTestId('lock-icon'));
+                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'));
+
+                expect(lockIcon).toBeTruthy();
+                expect(lockOpenIcon).toBeFalsy();
+            });
+
+            it('should show open lock icon when item is unlocked', () => {
+                const unlockedItem = { ...mockItems[0], locked: false };
+                spectator.setInput('items', [unlockedItem]);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+
+                const lockIcon = spectator.query(byTestId('lock-icon'));
+                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'));
+
+                expect(lockIcon).toBeFalsy();
+                expect(lockOpenIcon).toBeTruthy();
+            });
+        });
+
         describe('Status', () => {
             it('should have a published status', () => {
                 const statusColumn = spectator.query(byTestId('item-status'));
