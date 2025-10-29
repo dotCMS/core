@@ -46,7 +46,8 @@ export class DotPageContentTypeService {
     }> {
         let httpParams = new HttpParams()
             .set('pagePathOrId', params.pagePathOrId)
-            .set('per_page', DEFAULT_PER_PAGE);
+            .set('per_page', DEFAULT_PER_PAGE)
+            .set('page', 1);
 
         // Add optional parameters if provided
         if (params.language) {
@@ -73,7 +74,7 @@ export class DotPageContentTypeService {
             httpParams = httpParams.set('direction', params.direction);
         }
 
-        if (params.types) {
+        if (params.types && params.types.length > 0) {
             params.types.forEach((type: DotCMSBaseTypesContentTypes) => {
                 httpParams = httpParams.append('type', type);
             });
