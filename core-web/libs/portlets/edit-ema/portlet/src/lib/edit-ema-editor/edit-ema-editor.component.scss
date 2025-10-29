@@ -7,10 +7,6 @@
 
     // Default state (no palette)
     grid-template-columns: min-content 1fr;
-
-    // &:has(.toggle-palette-placeholder) {
-    //     grid-template-columns: min 1fr 2rem min-content;
-    // }
 }
 
 // To generate the space for the palette toggle button

@@ -1,24 +1,40 @@
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { DotESContentService, DotLocalstorageService } from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 
 import { DotFavoriteSelectorComponent } from './dot-favorite-selector.component';
 
+import { DotPageContentTypeService } from '../../service/dot-page-contenttype.service';
+import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
+import { DotPaletteListStore } from '../dot-uve-palette-list/store/store';
+
 describe('DotFavoriteSelectorComponent', () => {
-    let component: DotFavoriteSelectorComponent;
-    let fixture: ComponentFixture<DotFavoriteSelectorComponent>;
+    let spectator: Spectator<DotFavoriteSelectorComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotFavoriteSelectorComponent, HttpClientTestingModule]
-        }).compileComponents();
+    const createComponent = createComponentFactory({
+        component: DotFavoriteSelectorComponent,
+        imports: [HttpClientTestingModule],
+        providers: [
+            DotPaletteListStore,
+            DotPageContentTypeService,
+            DotPageFavoriteContentTypeService,
+            DotLocalstorageService,
+            DotESContentService,
+            {
+                provide: CoreWebService,
+                useClass: CoreWebServiceMock
+            }
+        ]
+    });
 
-        fixture = TestBed.createComponent(DotFavoriteSelectorComponent);
-        component = fixture.componentInstance;
-        fixture.componentRef.setInput('pagePathOrId', 'test-page-id');
-        fixture.detectChanges();
+    beforeEach(() => {
+        spectator = createComponent();
     });
 
     it('should create', () => {
-        expect(component).toBeTruthy();
+        expect(spectator.component).toBeTruthy();
     });
 });
