@@ -6,7 +6,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotContainerMap } from '@dotcms/dotcms-models';
+import { DotContainer, DotContainerMap, CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 import { containersMock } from '@dotcms/utils-testing';
 
 import { DotTemplateBuilderStore } from './template-builder.store';
@@ -14,13 +14,15 @@ import { DotTemplateBuilderStore } from './template-builder.store';
 import {
     DotGridStackNode,
     DotGridStackWidget,
-    DotTemplateLayoutProperties,
-    SYSTEM_CONTAINER_IDENTIFIER
+    DotTemplateLayoutProperties
 } from '../models/models';
 import {
     GRIDSTACK_DATA_MOCK,
     INITIAL_STATE_MOCK,
+    mockDefaultContainerWithPath,
+    mockDefaultContainerWithoutPath,
     mockTemplateBuilderContainer,
+    mockTempContainer,
     ROWS_MINIMAL_MOCK,
     SIDEBAR_MOCK,
     STYLE_CLASS_MOCK
@@ -186,9 +188,7 @@ describe('DotTemplateBuilderStore', () => {
         rows$.subscribe(({ rows, shouldEmit }) => {
             expect(rows.length).toBeGreaterThan(initialState.rows.length);
             expect(rows[3].subGridOpts.children[0].w).toBe(3);
-            expect(rows[3].subGridOpts.children[0].containers[0].identifier).toBe(
-                SYSTEM_CONTAINER_IDENTIFIER
-            );
+            expect(rows[3].subGridOpts.children[0].containers).toEqual([]);
             expect(shouldEmit).toEqual(true);
             done();
         });
@@ -294,11 +294,7 @@ describe('DotTemplateBuilderStore', () => {
                 id: newColumn.id,
                 parentId: parentId,
                 styleClass: undefined,
-                containers: [
-                    {
-                        identifier: SYSTEM_CONTAINER_IDENTIFIER
-                    }
-                ]
+                containers: []
             });
             expect(shouldEmit).toEqual(true);
             done();
@@ -707,6 +703,199 @@ describe('DotTemplateBuilderStore', () => {
             expect(rows).toEqual(updatedRows);
             expect(shouldEmit).toEqual(false);
             done();
+        });
+    });
+
+    describe('defaultContainer', () => {
+        it('should initialize with undefined defaultContainer', (done) => {
+            expect.assertions(1);
+            service.vm$.subscribe(({ defaultContainer }) => {
+                expect(defaultContainer).toBeUndefined();
+                done();
+            });
+        });
+
+        it('should use defaultContainer when adding a new row', (done) => {
+            expect.assertions(2);
+            // Set state with defaultContainer
+            service.setState({
+                ...INITIAL_STATE_MOCK,
+                rows: GRIDSTACK_DATA_MOCK,
+                defaultContainer: mockDefaultContainerWithPath,
+                layoutProperties: {
+                    header: true,
+                    footer: true,
+                    sidebar: SIDEBAR_MOCK
+                }
+            });
+
+            const mockRow: DotGridStackWidget = {
+                styleClass: ['mock-class'],
+                containers: [],
+                y: 1
+            };
+
+            service.addRow(mockRow);
+
+            rows$.subscribe(({ rows, shouldEmit }) => {
+                const newRow = rows[rows.length - 1];
+                expect(newRow.subGridOpts.children[0].containers[0].identifier).toBe(
+                    mockDefaultContainerWithPath.path
+                );
+                expect(shouldEmit).toEqual(true);
+                done();
+            });
+        });
+
+        it('should use defaultContainer identifier when path is not available', (done) => {
+            expect.assertions(1);
+            // Set state with defaultContainer (no path property)
+            service.setState({
+                ...INITIAL_STATE_MOCK,
+                rows: GRIDSTACK_DATA_MOCK,
+                defaultContainer: mockDefaultContainerWithoutPath,
+                layoutProperties: {
+                    header: true,
+                    footer: true,
+                    sidebar: SIDEBAR_MOCK
+                }
+            });
+
+            const mockRow: DotGridStackWidget = {
+                styleClass: ['mock-class'],
+                containers: [],
+                y: 1
+            };
+
+            service.addRow(mockRow);
+
+            rows$.subscribe(({ rows }) => {
+                const newRow = rows[rows.length - 1];
+                expect(newRow.subGridOpts.children[0].containers[0].identifier).toBe(
+                    mockDefaultContainerWithoutPath.identifier
+                );
+                done();
+            });
+        });
+
+        it('should use empty containers when defaultContainer is not set', (done) => {
+            expect.assertions(1);
+            // Ensure defaultContainer is undefined
+            service.setState({
+                ...INITIAL_STATE_MOCK,
+                rows: GRIDSTACK_DATA_MOCK,
+                defaultContainer: undefined,
+                layoutProperties: {
+                    header: true,
+                    footer: true,
+                    sidebar: SIDEBAR_MOCK
+                }
+            });
+
+            const mockRow: DotGridStackWidget = {
+                styleClass: ['mock-class'],
+                containers: [],
+                y: 1
+            };
+
+            service.addRow(mockRow);
+
+            rows$.subscribe(({ rows }) => {
+                const newRow = rows[rows.length - 1];
+                expect(newRow.subGridOpts.children[0].containers).toEqual([]);
+                done();
+            });
+        });
+
+        it('should use defaultContainer when adding a new column', (done) => {
+            expect.assertions(1);
+            // Set state with defaultContainer
+            service.setState({
+                ...INITIAL_STATE_MOCK,
+                rows: GRIDSTACK_DATA_MOCK,
+                defaultContainer: mockDefaultContainerWithPath,
+                layoutProperties: {
+                    header: true,
+                    footer: true,
+                    sidebar: SIDEBAR_MOCK
+                }
+            });
+
+            const parentId = GRIDSTACK_DATA_MOCK[0].id as string;
+            const grid = {
+                grid: {
+                    parentGridItem: {
+                        id: parentId
+                    }
+                }
+            };
+
+            const newColumn: DotGridStackWidget = {
+                x: 0,
+                y: 0,
+                w: 3,
+                id: uuid()
+            };
+
+            service.addColumn({ ...newColumn, ...grid } as DotGridStackNode);
+
+            rows$.subscribe(({ rows }) => {
+                const row = rows.find((item) => item.id === parentId);
+                const addedColumn = row?.subGridOpts?.children.find(
+                    (child) => child.id === newColumn.id
+                );
+                expect(addedColumn?.containers[0].identifier).toBe(
+                    mockDefaultContainerWithPath.path
+                );
+                done();
+            });
+        });
+
+        it('should update defaultContainer using updateDefaultContainer method', (done) => {
+            expect.assertions(2);
+            const newDefaultContainer: DotContainer = {
+                identifier: 'new-default-container-id',
+                name: 'New Default Container',
+                type: 'containers',
+                source: CONTAINER_SOURCE.FILE,
+                live: true,
+                working: true,
+                deleted: false,
+                locked: false,
+                title: 'New Default Container Title',
+                path: '/new/default/container/path',
+                archived: false,
+                categoryId: 'new-category',
+                parentPermissionable: {
+                    hostname: 'new-host'
+                }
+            };
+
+            service.updateDefaultContainer(newDefaultContainer);
+
+            service.vm$.subscribe(({ defaultContainer, shouldEmit }) => {
+                expect(defaultContainer).toEqual(newDefaultContainer);
+                expect(shouldEmit).toEqual(true);
+                done();
+            });
+        });
+
+        it('should set defaultContainer to null using updateDefaultContainer method', (done) => {
+            expect.assertions(2);
+            // First set a defaultContainer
+            service.setState({
+                ...INITIAL_STATE_MOCK,
+                defaultContainer: mockTempContainer
+            });
+
+            // Then set it to null
+            service.updateDefaultContainer(null);
+
+            service.vm$.subscribe(({ defaultContainer, shouldEmit }) => {
+                expect(defaultContainer).toBeNull();
+                expect(shouldEmit).toEqual(true);
+                done();
+            });
         });
     });
 

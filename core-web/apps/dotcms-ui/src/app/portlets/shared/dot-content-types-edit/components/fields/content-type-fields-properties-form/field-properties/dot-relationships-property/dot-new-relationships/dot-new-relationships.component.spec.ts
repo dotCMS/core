@@ -189,7 +189,7 @@ describe('DotNewRelationshipsComponent', () => {
         comp = de.componentInstance;
 
         paginatorService = de.injector.get(PaginatorService);
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([contentTypeMock]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([contentTypeMock]));
     }));
 
     describe('Content Types', () => {
@@ -231,6 +231,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             expect(paginatorService.filter).toBe(newFilter);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
 
             fixtureHostComponent.detectChanges();
 
@@ -250,10 +251,99 @@ describe('DotNewRelationshipsComponent', () => {
 
             expect(paginatorService.filter).toBe(event.filter);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(event.first);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
 
             fixtureHostComponent.detectChanges();
 
             expect(dotSearchableDropdown.componentInstance.data).toEqual([contentTypeMock]);
+        });
+
+        it('should clear paginator links and update lastSearch when getContentTypeList is called', () => {
+            const filter = 'test filter';
+            const offset = 10;
+
+            fixtureHostComponent.detectChanges();
+
+            // Set up initial links to verify they get cleared
+            paginatorService.links = { next: 'some-url', prev: 'some-other-url' };
+
+            comp.getContentTypeList(filter, offset);
+
+            expect(paginatorService.links).toEqual({});
+            expect(comp.lastSearch()).toEqual({ filter, offset });
+            expect(paginatorService.filter).toBe(filter);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(offset);
+        });
+
+        it('should skip search when editing is true and not update lastSearch', () => {
+            const filter = 'test filter';
+            const offset = 10;
+            const initialLastSearch = comp.lastSearch();
+
+            fixtureHostComponent.componentInstance.editing = true;
+            fixtureHostComponent.detectChanges();
+
+            jest.clearAllMocks();
+
+            comp.getContentTypeList(filter, offset);
+
+            expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
+            expect(comp.lastSearch()).toEqual(initialLastSearch);
+        });
+
+        it('should skip search when filter and offset match lastSearch values', () => {
+            const filter = 'same filter';
+            const offset = 5;
+
+            fixtureHostComponent.detectChanges();
+
+            // First call - should execute
+            comp.getContentTypeList(filter, offset);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
+
+            jest.clearAllMocks();
+
+            // Second call with same parameters - should skip
+            comp.getContentTypeList(filter, offset);
+            expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
+        });
+
+        it('should not skip search when filter or offset are different from lastSearch', () => {
+            const initialFilter = 'initial filter';
+            const initialOffset = 0;
+            const newFilter = 'new filter';
+            const newOffset = 10;
+
+            fixtureHostComponent.detectChanges();
+
+            // First call
+            comp.getContentTypeList(initialFilter, initialOffset);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
+
+            jest.clearAllMocks();
+
+            // Second call with different filter
+            comp.getContentTypeList(newFilter, initialOffset);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
+
+            jest.clearAllMocks();
+
+            // Third call with different offset
+            comp.getContentTypeList(initialFilter, newOffset);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
+        });
+
+        it('should update lastSearch signal when getContentTypeList executes successfully', () => {
+            const filter = 'test filter';
+            const offset = 20;
+
+            fixtureHostComponent.detectChanges();
+
+            expect(comp.lastSearch()).toEqual({ filter: null, offset: null });
+
+            comp.getContentTypeList(filter, offset);
+
+            expect(comp.lastSearch()).toEqual({ filter, offset });
         });
 
         it('should tigger change event when content type changed', (done) => {
@@ -288,7 +378,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             it('should load content type, and emit change event with the right variableValue', (done) => {
                 const contentTypeService = de.injector.get(DotContentTypeService);
-                spyOn(contentTypeService, 'getContentType').and.callThrough();
+                jest.spyOn(contentTypeService, 'getContentType');
 
                 fixtureHostComponent.detectChanges();
 

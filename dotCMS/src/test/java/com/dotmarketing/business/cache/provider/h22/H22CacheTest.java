@@ -2,8 +2,11 @@ package com.dotmarketing.business.cache.provider.h22;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.cache.CacheValue;
+import com.dotcms.cache.CacheValueImpl;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -23,7 +26,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.RandomStringUtils;
+import org.awaitility.Awaitility;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -49,13 +54,15 @@ public class H22CacheTest {
 	final int numberOfGroups = 100;
 	final int maxCharOfObjects = 100;
 	static H22Cache cache ;
-	
+
 	@BeforeClass
 	public static void initCache(){
+
 	       // File dir = Files.createTempDir();
         File dir = new File("/tmp/h2cachetest");
         FileUtil.deltree(dir);
         dir.mkdirs();
+        System.out.println("Creating cache in: " + dir.getAbsolutePath());
 
         cache = new H22Cache(dir.getAbsolutePath());
         try {
@@ -65,9 +72,35 @@ public class H22CacheTest {
             throw new DotRuntimeException(e);
         }
 	}
-	
-	
-	
+
+
+    @Test
+    public void test_CacheValue_TTL() throws Exception {
+
+        String group = "testCacheValueTTL";
+        String key = "testKey";
+
+        // Live in cache for max 5 seconds
+        CacheValue cacheValue = new CacheValueImpl("test my Content!!!", 5000);
+
+        cache.put(group, key, cacheValue);
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> cache.get(group, key) != null);
+        Object val = cache.get(group, key);
+
+        assertThat("We have a CacheValue", val instanceof CacheValue);
+
+        CacheValue cacheValueFromCache = (CacheValue) val;
+
+        assertEquals("Test Cache hit", cacheValueFromCache.getValue(), cacheValue.getValue());
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> cache.get(group, key) == null);
+        assertNull(cache.get(group, key));
+
+
+    }
+
+
     @Test
     public void test_basic_cache_operations() throws Exception {
 
@@ -99,9 +132,9 @@ public class H22CacheTest {
 
         }
     }
-	
-	
-	@Test
+
+
+    @Test
 	public void test_special_cases_like_long_names() throws Exception {
 
 
@@ -121,12 +154,11 @@ public class H22CacheTest {
 		cache.put(LONG_GROUPNAME, LONG_KEYNAME, CONTENT);
 		assertThat("We should cache with a long key", CONTENT.equals(getFromCacheLoop(LONG_GROUPNAME, LONG_KEYNAME)));
 
-		
+
         // get content from cache
         assertThat("Did we cache something", CONTENT.equals(getFromCacheLoop(LONG_GROUPNAME, LONG_KEYNAME)));
-        
-        
-		Fqn fqn = new Fqn(LONG_GROUPNAME, LONG_KEYNAME);
+
+        Fqn fqn = new Fqn(LONG_GROUPNAME, LONG_KEYNAME);
 		Set<String> keys = cache.getKeys(LONG_GROUPNAME);
 		assertThat("Keys should include long key", keys.contains(fqn.id));
 
@@ -137,8 +169,8 @@ public class H22CacheTest {
 
 	}
 
-	   
-        final String getFromCacheLoop(String groupName, String keyName) throws InterruptedException {
+
+    final String getFromCacheLoop(String groupName, String keyName) throws InterruptedException {
 
             String fromCache = null;
             for (int i = 0; i < 10; i++) {
@@ -150,8 +182,8 @@ public class H22CacheTest {
             }
             return fromCache;
         }
-	
-	
+
+
     @Test
     public void test_multi_threaded_h22_including_recovery() throws Exception{
 
@@ -167,9 +199,9 @@ public class H22CacheTest {
 				cache.dispose(true);
 			}
 			pool.execute(new TestRunner(cache, i, errors));
-			
 
-		}
+
+        }
 		pool.shutdown();
 
 		while(!pool.isTerminated()){
@@ -178,9 +210,8 @@ public class H22CacheTest {
 			}
 			Thread.sleep(500);
 		}
-		
 
-		int size = cache.getGroups().size();
+        int size = cache.getGroups().size();
 		for(int i=0;i<20;i++){
 			if(size<numberOfGroups){
 				Thread.sleep(1000);
@@ -207,8 +238,8 @@ public class H22CacheTest {
 		//assertThat("Cache filled , we should have 10 in group 1", cache.getKeys("group_1").size() == numberOfPuts / numberOfGroups);
 
 	}
-	
-	void breakCache() throws SQLException{
+
+    void breakCache() throws SQLException{
 		Optional<Connection> conn = cache.createConnection(true, 0);
 		if(conn.isPresent()){
 			Statement stmt = conn.get().createStatement();
@@ -216,9 +247,9 @@ public class H22CacheTest {
 			conn.get().close();
 		}
 	}
-	
-	
-	class TestRunner implements Runnable {
+
+
+    class TestRunner implements Runnable {
 
 		final H22Cache cache;
 		final int iter;
@@ -228,8 +259,8 @@ public class H22CacheTest {
 			this.iter = iter;
 			this.errors = errors;
 		}
-		
-		@Override
+
+        @Override
 		public void run() {
 
 			String group = "group_" + iter % numberOfGroups;
@@ -250,8 +281,8 @@ public class H22CacheTest {
 				} catch (InterruptedException e) {
 
 				}
-				
-				cache.put(group, key, val);
+
+                cache.put(group, key, val);
 				newVal = (String) Try.of(()->getFromCacheLoop(group, key)).getOrNull();
 
 			}
@@ -268,12 +299,11 @@ public class H22CacheTest {
 			}
 
 
-			
-		}
+        }
 	};
-	
-	
-	public final class CantCacheMeObject {
+
+
+    public final class CantCacheMeObject {
 		final String notSerializable = "fail!";
 
 	}

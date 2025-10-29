@@ -459,6 +459,20 @@ describe('utils functions', () => {
             expect(sanitizeURL('//index////')).toEqual('/index/');
         });
 
+        it('should clean query params from the url', () => {
+            expect(sanitizeURL('hello-there/general-kenobi?test=1&test2=2')).toEqual(
+                'hello-there/general-kenobi'
+            );
+
+            expect(sanitizeURL('/hello-there/general-kenobi?test=1&test2=2')).toEqual(
+                '/hello-there/general-kenobi'
+            );
+
+            expect(sanitizeURL('/hello-there/general-kenobi/?test=1&test2=2')).toEqual(
+                '/hello-there/general-kenobi/'
+            );
+        });
+
         describe('nested url', () => {
             it('should leave as it is for a nested valid url', () => {
                 expect(sanitizeURL('hello-there/general-kenobi/')).toEqual(
@@ -537,40 +551,80 @@ describe('utils functions', () => {
     });
 
     describe('computePageIsLocked', () => {
-        it('should return false when the page is unlocked', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: false,
-                lockedBy: '123',
-                userId: '123'
+        describe('with legacy behavior (feature flag disabled)', () => {
+            it('should return false when the page is unlocked', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: false,
+                    lockedBy: '123',
+                    userId: '123'
+                });
+
+                const result = computePageIsLocked(page, currentUser, false);
+
+                expect(result).toBe(false);
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            it('should return false when the page is locked and is the same user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '123'
+                });
 
-            expect(result).toBe(false);
+                const result = computePageIsLocked(page, currentUser, false);
+
+                expect(result).toBe(false);
+            });
+
+            it('should return true when the page is locked and is not the same user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '456'
+                });
+
+                const result = computePageIsLocked(page, currentUser, false);
+
+                expect(result).toBe(true);
+            });
         });
 
-        it('should return false when the page is locked and is the same user', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: true,
-                lockedBy: '123',
-                userId: '123'
+        describe('with new behavior (feature flag enabled)', () => {
+            it('should return false when the page is unlocked', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: false,
+                    lockedBy: '123',
+                    userId: '123'
+                });
+
+                const result = computePageIsLocked(page, currentUser, true);
+
+                expect(result).toBe(false);
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            it('should return true when the page is locked by current user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '123'
+                });
 
-            expect(result).toBe(false);
-        });
+                const result = computePageIsLocked(page, currentUser, true);
 
-        it('should return true when the page is locked and is not the same user', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: true,
-                lockedBy: '123',
-                userId: '456'
+                expect(result).toBe(true);
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            it('should return true when the page is locked by another user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '456'
+                });
 
-            expect(result).toBe(true);
+                const result = computePageIsLocked(page, currentUser, true);
+
+                expect(result).toBe(true);
+            });
         });
     });
 

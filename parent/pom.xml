@@ -76,7 +76,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20250714</starter.deploy.version>
+        <starter.deploy.version>empty_20251006</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>
@@ -334,6 +334,7 @@
                                         <bootstrap.system_call_filter>false</bootstrap.system_call_filter>
                                         <bootstrap.memory_lock>true</bootstrap.memory_lock>
                                         <DISABLE_SECURITY_PLUGIN>true</DISABLE_SECURITY_PLUGIN>
+                                        <OPENSEARCH_JAVA_OPTS>-Xms1g -Xmx1g -XX:-UseContainerSupport</OPENSEARCH_JAVA_OPTS>
                                     </env>
                                     <ports>
                                         <port>es.port:9200</port>

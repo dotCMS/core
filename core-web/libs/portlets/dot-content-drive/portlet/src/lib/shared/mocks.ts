@@ -243,7 +243,7 @@ export const SELECTED_CONTENT_TYPES: DotCMSContentType[] = [
     MOCK_CONTENT_TYPES[1],
     MOCK_CONTENT_TYPES[2],
     MOCK_CONTENT_TYPES[3]
-];
+].filter((ct) => ct.baseType !== DotCMSBaseTypesContentTypes.FORM); // Select only content types that are not form
 
 export const MOCK_BASE_TYPES: StructureTypeView[] = [
     { name: 'Content', label: 'Content', types: null },

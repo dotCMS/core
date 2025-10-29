@@ -1,0 +1,10 @@
+@for (action of DEFAULT_WORKFLOW_ACTIONS; track action.id) {
+    <p-button
+        styleClass="p-button-outlined bg-white"
+        [attr.data-testid]="'workflow-action-' + action.id"
+        [ngStyle]="{ display: shouldShowAction(action) ? 'block' : 'none' }"
+        [label]="action.name | dm"
+        (click)="onExecuteAction(action)" />
+}
+
+<p-confirmDialog />

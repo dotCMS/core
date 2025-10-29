@@ -26,7 +26,8 @@ import java.util.Map;
  */
 public class Host extends Contentlet implements Permissionable,Treeable,Parentable {
 
-	/**
+    public static final String SYSTEM_HOST_SITENAME = "System Host";
+    /**
      *
      */
 	private static final long serialVersionUID = 1L;

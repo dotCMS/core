@@ -1,8 +1,15 @@
-import {
-    ACTIVITY_EVENTS,
-    DEFAULT_SESSION_TIMEOUT_MINUTES
-} from './dot-content-analytics.constants';
-import { DotCMSAnalyticsConfig } from './dot-content-analytics.model';
+import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '@dotcms/uve/internal';
+
+import { ACTIVITY_EVENTS, DEFAULT_SESSION_TIMEOUT_MINUTES } from './constants';
+import { DotCMSAnalyticsConfig } from './models';
+
+// Extend window interface for cleanup function
+declare global {
+    interface Window {
+        [ANALYTICS_WINDOWS_CLEANUP_KEY]?: () => void;
+        [ANALYTICS_WINDOWS_ACTIVE_KEY]?: boolean;
+    }
+}
 
 /**
  * Activity tracking manager for DotCMS Analytics.
@@ -168,10 +175,19 @@ export const initializeActivityTracking = (config: DotCMSAnalyticsConfig): void 
 };
 
 /**
- * Cleans up activity tracking listeners
+ * Cleans up activity tracking listeners and resets analytics state
  */
 export const cleanupActivityTracking = (): void => {
     activityTracker.cleanup();
+
+    // Reset analytics state and cleanup window properties
+    if (typeof window !== 'undefined') {
+        window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
+        window[ANALYTICS_WINDOWS_CLEANUP_KEY] = undefined;
+
+        // Dispatch cleanup event to notify any subscribers
+        window.dispatchEvent(new CustomEvent('dotcms:analytics:cleanup'));
+    }
 };
 
 /**

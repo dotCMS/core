@@ -1,0 +1,123 @@
+@let historicalVersionInode = $historicalVersionInode();
+
+<section role="region" aria-label="Content Version History">
+    <dot-sidebar-accordion
+        [initialActiveTab]="'versions'"
+        (activeTabChange)="onAccordionTabChange($event)">
+        <!-- Versions Tab -->
+        <dot-sidebar-accordion-tab
+            id="versions"
+            [label]="'edit.content.sidebar.history.versions' | dm">
+            <div class="dot-edit-content-sidebar-history">
+                @if ($isLoading()) {
+                    <!-- Loading state -->
+                    <div
+                        class="dot-edit-content-sidebar-history__loading"
+                        data-testid="loading-state">
+                        @for (item of [1, 2, 3, 4]; track $index) {
+                            <div class="dot-edit-content-sidebar-history__skeleton-item">
+                                <p-skeleton width="100%" height="80px" />
+                            </div>
+                        }
+                    </div>
+                } @else if (!$hasHistoryItems()) {
+                    <!-- Empty state -->
+                    <dot-empty-container
+                        [configuration]="{
+                            title: '',
+                            subtitle: 'edit.content.sidebar.history.empty.message' | dm,
+                            icon: 'pi-folder-open'
+                        }"
+                        [hideContactUsLink]="true"></dot-empty-container>
+                } @else {
+                    <!-- History content -->
+                    <div class="dot-edit-content-sidebar-history__content">
+                        <p-scroller
+                            [items]="$historyItems()"
+                            [itemSize]="83"
+                            [lazy]="true"
+                            scrollHeight="100%"
+                            (onScrollIndexChange)="onScrollIndexChange($event)"
+                            styleClass="dot-edit-content-sidebar-history__scroller"
+                            data-testid="history-timeline">
+                            <ng-template pTemplate="item" let-item let-index="index">
+                                <dot-history-timeline-item
+                                    [item]="item"
+                                    [itemIndex]="getRealIndex(item)"
+                                    [isActive]="historicalVersionInode === item.inode"
+                                    (click)="
+                                        timelineItemAction.emit({
+                                            type: 'view',
+                                            item
+                                        })
+                                    "
+                                    (actionTriggered)="
+                                        timelineItemAction.emit($event)
+                                    "></dot-history-timeline-item>
+                            </ng-template>
+                        </p-scroller>
+                    </div>
+                }
+            </div>
+        </dot-sidebar-accordion-tab>
+
+        <!-- Push Publish Tab -->
+        <dot-sidebar-accordion-tab
+            id="push-publish"
+            [label]="'edit.content.sidebar.history.push.publish' | dm">
+            <div
+                slot="header-content"
+                class="dot-edit-content-sidebar-history__push-publish__actions">
+                <p-button
+                    icon="pi pi-ellipsis-v"
+                    styleClass="p-button-rounded p-button-sm p-button-text dot-edit-content-sidebar-history__menu-button p-button-tertiary"
+                    (click)="ppMenu.toggle($event); $event.stopPropagation()"
+                    [disabled]="!$hasPushPublishHistoryItems()"
+                    data-testid="push-publish-menu-button"></p-button>
+                <p-menu #ppMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true"></p-menu>
+            </div>
+            <div class="dot-edit-content-sidebar-history__push-publish">
+                @if ($isLoading()) {
+                    <!-- Loading state for push publish -->
+                    <div
+                        class="dot-edit-content-sidebar-history__loading"
+                        data-testid="push-publish-loading-state">
+                        @for (item of [1, 2, 3, 4]; track $index) {
+                            <div class="dot-edit-content-sidebar-history__skeleton-item">
+                                <p-skeleton width="100%" height="80px" />
+                            </div>
+                        }
+                    </div>
+                } @else if (!$hasPushPublishHistoryItems()) {
+                    <!-- Empty state for push publish -->
+                    <dot-empty-container
+                        [configuration]="{
+                            title: '',
+                            subtitle:
+                                'edit.content.sidebar.history.push.publish.empty.message' | dm,
+                            icon: 'pi-folder-open'
+                        }"
+                        [hideContactUsLink]="true"></dot-empty-container>
+                } @else {
+                    <!-- Push Publish History content -->
+                    <div class="dot-edit-content-sidebar-history__push-publish-content">
+                        <p-scroller
+                            [items]="$pushPublishHistoryItems()"
+                            [itemSize]="83"
+                            [lazy]="true"
+                            scrollHeight="100%"
+                            (onScrollIndexChange)="onPushPublishScrollIndexChange($event)"
+                            styleClass="dot-edit-content-sidebar-history__scroller"
+                            data-testid="push-publish-timeline">
+                            <ng-template pTemplate="item" let-item let-index="index">
+                                <dot-pushpublish-timeline-item
+                                    [item]="item"
+                                    data-testid="pushpublish-timeline-item"></dot-pushpublish-timeline-item>
+                            </ng-template>
+                        </p-scroller>
+                    </div>
+                }
+            </div>
+        </dot-sidebar-accordion-tab>
+    </dot-sidebar-accordion>
+</section>

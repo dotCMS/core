@@ -23,6 +23,8 @@ export * from './lib/components/dot-link/dot-link.component';
 export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
+export * from './lib/components/dot-severity-icon/dot-severity-icon.component';
+export * from './lib/components/dot-sidebar-accordion';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
 export * from './lib/components/dot-temp-file-thumbnail/dot-temp-file-thumbnail.component';
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
@@ -30,6 +32,7 @@ export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
 export * from './lib/modules/dot-dialog/dot-dialog.component';
+
 // Directives
 export * from './lib/directives/dot-autofocus/dot-autofocus.directive';
 export * from './lib/directives/dot-avatar/dot-avatar.directive';
@@ -52,8 +55,10 @@ export * from './lib/dot-contentlet-status/dot-contentlet-status.pipe';
 export * from './lib/dot-message/dot-message.pipe';
 export * from './lib/pipes/dot-diff/dot-diff.pipe';
 export * from './lib/pipes/dot-file-size-format/dot-file-size-format.pipe';
+export * from './lib/pipes/dot-folder-name/dot-folder-name.pipe';
 export * from './lib/pipes/dot-highlight/dot-highlight.pipe';
 export * from './lib/pipes/dot-iso-code/dot-iso-code.pipe';
+export * from './lib/pipes/dot-locale-tag/dot-locale-tag.pipe';
 export * from './lib/pipes/dot-relative-date/dot-relative-date.pipe';
 export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 export * from './lib/pipes/dot-string-format/dot-string-format.pipe';

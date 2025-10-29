@@ -141,23 +141,24 @@ jobs:
       - name: Get existing issue comments
         id: get_comments
         run: |
-          comments=$(curl -s \
+          # Fetch comments and write to temp file to avoid multiline JSON issues in GitHub Actions outputs
+          curl -s \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               https://api.github.com/repos/${{ github.repository }}/issues/${{ steps.determine_issue.outputs.final_issue_number }}/comments \
-            | jq -c .)
-          
-          echo "comments=$comments" >> "$GITHUB_OUTPUT"
+            | jq -c . > /tmp/issue_comments.json
+
+          echo "comments_file=/tmp/issue_comments.json" >> "$GITHUB_OUTPUT"
 
       - name: Check if comment already exists
         id: check_comment
         run: |
-          comments='${{ steps.get_comments.outputs.comments }}'
+          comments_file="${{ steps.get_comments.outputs.comments_file }}"
           pr_url="${{ inputs.pr_url }}"
-          
-          # Check if our bot comment already exists
-          existing_comment=$(echo "$comments" | jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("PRs linked to this issue"))) | .id' | head -1)
+
+          # Check if our bot comment already exists (read from file instead of env var)
+          existing_comment=$(jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("PRs linked to this issue"))) | .id' "$comments_file" | head -1)
           
           if [[ -n "$existing_comment" && "$existing_comment" != "null" ]]; then
             echo "Found existing comment: $existing_comment"
@@ -169,7 +170,7 @@ jobs:
           
           # Get existing PR list from the comment if it exists
           if [[ -n "$existing_comment" && "$existing_comment" != "null" ]]; then
-            existing_body=$(echo "$comments" | jq -r --arg id "$existing_comment" '.[] | select(.id == ($id | tonumber)) | .body')
+            existing_body=$(jq -r --arg id "$existing_comment" '.[] | select(.id == ($id | tonumber)) | .body' "$comments_file")
             
             # Extract existing PR lines (lines starting with "- [")
             existing_pr_lines=$(echo "$existing_body" | grep "^- \[" | sort -u)

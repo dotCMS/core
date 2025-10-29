@@ -1,5 +1,6 @@
 @let ogTagsResults = ogTagsResults$;
 @let showSEOTool = $editorProps().seoResults && ogTagsResults;
+@let dropzone = $editorProps().dropzone;
 
 <dot-uve-toolbar
     (translatePage)="translatePage($event)"
@@ -65,11 +66,15 @@
                 [disableDeleteButton]="contentletTools.disableDeleteButton"
                 data-testId="contentlet-tools" />
         }
-        @if ($editorProps().dropzone; as dropzone) {
+        @if (!$toggleLockOptions()?.showOverlay && dropzone) {
             <dot-ema-page-dropzone
                 [containers]="dropzone.bounds"
                 [dragItem]="dropzone.dragItem"
                 data-testId="dropzone" />
+        }
+
+        @if ($toggleLockOptions()?.showOverlay) {
+            <dot-uve-lock-overlay />
         }
     </div>
 </div>

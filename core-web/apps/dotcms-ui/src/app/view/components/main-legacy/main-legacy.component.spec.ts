@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
@@ -14,16 +14,17 @@ import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotRouterService,
+    DotUiColorsService,
     DotWorkflowActionsFireService,
-    DotGlobalMessageService,
-    DotWorkflowEventHandlerService,
-    DotFormatDateService,
-    DotIframeService
+    DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -43,7 +44,6 @@ import { MainComponentLegacyComponent } from './main-legacy.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotDownloadBundleDialogModule } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotWizardModule } from '../_common/dot-wizard/dot-wizard.module';
@@ -188,7 +188,7 @@ describe('MainLegacyComponent', () => {
         });
 
         it('should call dotCustomEventHandlerService on customEvent', () => {
-            spyOn(dotCustomEventHandlerService, 'handle');
+            jest.spyOn(dotCustomEventHandlerService, 'handle');
             createContentlet.triggerEventHandler('custom', { data: 'test' });
 
             expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({

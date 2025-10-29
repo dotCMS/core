@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 import { of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -17,21 +17,22 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPageStateService,
     DotRouterService,
     DotSessionStorageService,
-    DotWorkflowActionsFireService,
-    DotGlobalMessageService,
-    DotIframeService,
+    DotUiColorsService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService,
-    DotPageStateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -58,7 +59,6 @@ import {
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
 import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotUiColorsService } from '../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../test/dot-test-bed';
 import { DotDownloadBundleDialogModule } from '../../../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -216,7 +216,10 @@ describe('DotEditPageMainComponent', () => {
         titleService = fixture.debugElement.injector.get(Title);
         fixture.detectChanges();
 
-        spyOn<any>(route, 'queryParams').and.returnValue(of({}));
+        Object.defineProperty(route, 'queryParams', {
+            value: of({}),
+            writable: true
+        });
     });
 
     it('should have router-outlet', () => {
@@ -235,7 +238,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should not call goToEditPage if the dialog is closed without new page properties', () => {
-        spyOn(dotPageStateService, 'get').and.callThrough();
+        jest.spyOn(dotPageStateService, 'get');
 
         dotContentletEditorService.close$.next(true);
         expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
@@ -243,7 +246,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should call goToEditPage if page properties were saved with different URLs', () => {
-        spyOn(dotPageStateService, 'get').and.callThrough();
+        jest.spyOn(dotPageStateService, 'get');
         editContentlet.custom.emit({
             detail: {
                 name: 'save-page',
@@ -264,7 +267,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should call get if page properties were saved with equal URLs', () => {
-        spyOn(dotPageStateService, 'get').and.callThrough();
+        jest.spyOn(dotPageStateService, 'get');
         editContentlet.custom.emit({
             detail: {
                 name: 'save-page',
@@ -282,7 +285,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should set the page title correctly', () => {
-        spyOn(titleService, 'getTitle').and.callThrough();
+        jest.spyOn(titleService, 'getTitle');
         const initialTitle = titleService.getTitle().split(' - ');
         const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
         const subtTitle = initialTitle.length > 1 ? initialTitle[initialTitle.length - 1] : '';
@@ -321,7 +324,7 @@ describe('DotEditPageMainComponent', () => {
         });
 
         it('should call dotCustomEventHandlerService on customEvent', () => {
-            spyOn(dotCustomEventHandlerService, 'handle');
+            jest.spyOn(dotCustomEventHandlerService, 'handle');
             editContentlet.custom.emit({
                 detail: {
                     name: 'random'
