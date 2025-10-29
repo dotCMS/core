@@ -224,7 +224,4 @@ export const BASETYPES_FOR_WIDGET = [DotCMSBaseTypesContentTypes.WIDGET];
 /**
  * All base content types that can be added to favorites.
  */
-export const BASE_TYPES_FOR_FAVORITES = [
-    ...BASETYPES_FOR_CONTENT,
-    ...BASETYPES_FOR_WIDGET
-];
+export const BASE_TYPES_FOR_FAVORITES = [...BASETYPES_FOR_CONTENT, ...BASETYPES_FOR_WIDGET];

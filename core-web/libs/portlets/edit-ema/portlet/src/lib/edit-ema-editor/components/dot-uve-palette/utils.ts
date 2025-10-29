@@ -1,10 +1,11 @@
-import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';
-
 import {
-    DEFAULT_PER_PAGE,
-    DotPaletteSortOption,
-    DotPaletteListStatus
-} from './models';
+    DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
+    DotCMSContentType,
+    ESContent
+} from '@dotcms/dotcms-models';
+
+import { DEFAULT_PER_PAGE, DotPaletteSortOption, DotPaletteListStatus } from './models';
 
 /**
  * Mock array for loading skeleton rows.
@@ -20,7 +21,10 @@ export const LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, in
  * @param currentSort - Current sort state
  * @returns CSS class string for the menu item
  */
-export function isSortActive(itemSort: DotPaletteSortOption, currentSort: DotPaletteSortOption): string {
+export function isSortActive(
+    itemSort: DotPaletteSortOption,
+    currentSort: DotPaletteSortOption
+): string {
     const sameOrderby = currentSort.orderby === itemSort.orderby;
     const sameDirection = currentSort.direction === itemSort.direction;
     const isActive = sameOrderby && sameDirection;

@@ -11,9 +11,7 @@ import { debounceTime, switchMap } from 'rxjs/operators';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotContentTypeQueryParams } from '../../models';
-import {
-    DotPageContentTypeService
-} from '../../service/dot-page-contenttype.service';
+import { DotPageContentTypeService } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { DotPaletteListStore } from '../dot-uve-palette-list/store/store';
 

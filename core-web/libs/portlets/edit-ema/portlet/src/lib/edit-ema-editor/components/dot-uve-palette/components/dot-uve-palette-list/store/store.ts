@@ -22,11 +22,7 @@ import {
 } from '../../../models';
 import { DotPageContentTypeService } from '../../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
-import {
-    buildContentletsResponse,
-    buildFavoriteResponse,
-    getPaletteState
-} from '../../../utils';
+import { buildContentletsResponse, buildFavoriteResponse, getPaletteState } from '../../../utils';
 
 export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
@@ -62,8 +58,12 @@ export const DotPaletteListStore = signalStore(
                 };
             }),
             $isLoading: computed(() => store.status() === DotPaletteListStatus.LOADING),
-            $isContentTypesView: computed(() => store.currentView() === DotUVEPaletteListView.CONTENT_TYPES),
-            $isContentletsView: computed(() => store.currentView() === DotUVEPaletteListView.CONTENTLETS)
+            $isContentTypesView: computed(
+                () => store.currentView() === DotUVEPaletteListView.CONTENT_TYPES
+            ),
+            $isContentletsView: computed(
+                () => store.currentView() === DotUVEPaletteListView.CONTENTLETS
+            )
         };
     }),
     withMethods((store) => {

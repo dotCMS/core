@@ -5,7 +5,11 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotCMSBaseTypesContentTypes, DotCMSContentType, DotPagination } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentType,
+    DotPagination
+} from '@dotcms/dotcms-models';
 
 import {
     DEFAULT_PER_PAGE,
