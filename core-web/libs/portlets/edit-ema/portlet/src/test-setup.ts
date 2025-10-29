@@ -19,3 +19,11 @@ console.error = (...params) => {
 console.warn = () => {
     // do nothing so it doesn't print warnings that are not relevant to the tests
 };
+
+// Mock ResizeObserver for PrimeNG TabView component
+// PrimeNG TabView uses ResizeObserver which is not available in JSDOM
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn()
+}));
