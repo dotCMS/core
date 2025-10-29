@@ -21,6 +21,19 @@ export interface QueueConfig {
 }
 
 /**
+ * Configuration for content impression tracking.
+ * Controls how content visibility is detected and tracked.
+ */
+export interface ImpressionConfig {
+    /** Minimum percentage of element visible (0.0 to 1.0) - default: 0.5 */
+    visibilityThreshold?: number;
+    /** Minimum time in milliseconds element must be visible - default: 750 */
+    dwellMs?: number;
+    /** Maximum number of elements to track (performance limit) - default: 1000 */
+    maxNodes?: number;
+}
+
+/**
  * Main interface for the DotCMS Analytics SDK.
  * Provides the core methods for tracking page views and custom events.
  */
@@ -71,6 +84,14 @@ export interface DotCMSAnalyticsConfig {
      * - `QueueConfig`: Enable queuing with custom settings
      */
     queue?: QueueConfig | boolean;
+
+    /**
+     * Content impression tracking configuration:
+     * - `undefined` or `false` (default): Impression tracking disabled
+     * - `true`: Enable with default settings (threshold: 0.5, dwell: 750ms, maxNodes: 1000)
+     * - `ImpressionConfig`: Enable with custom settings
+     */
+    impressions?: ImpressionConfig | boolean;
 }
 
 /**
