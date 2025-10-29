@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -8,21 +7,21 @@ import {
     input,
     output
 } from '@angular/core';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
 
-import { BlockEditorModule } from '@dotcms/block-editor';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotSystemTimezone
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
+import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
+import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
@@ -40,7 +39,6 @@ import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-t
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { DotEditContentWcCompoment } from '../../fields/dot-edit-content-wc/dot-edit-content-wc.compoment';
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
-import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 
@@ -65,25 +63,24 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentTagFieldComponent,
         DotEditContentCheckboxFieldComponent,
         DotEditContentMultiSelectFieldComponent,
-        DotEditContentBinaryFieldComponent,
+        DotBinaryFieldWrapperComponent,
         DotEditContentJsonFieldComponent,
         DotEditContentCustomFieldComponent,
         DotEditContentWYSIWYGFieldComponent,
         DotEditContentHostFolderFieldComponent,
         DotEditContentCategoryFieldComponent,
-        DotFieldRequiredDirective,
-        BlockEditorModule,
+        DotEditContentBlockEditorComponent,
         DotEditContentKeyValueComponent,
         DotEditContentWYSIWYGFieldComponent,
         DotEditContentFileFieldComponent,
         DotEditContentRelationshipFieldComponent,
         DotEditContentWcCompoment,
         DividerModule,
-        NgTemplateOutlet
     ]
 })
 export class DotEditContentFieldComponent {
     readonly #globalStore = inject(GlobalStore);
+    #parentForm = inject(ControlContainer, { skipSelf: true })?.control as FormGroup;
 
     @HostBinding('class') class = 'field';
 
@@ -121,17 +118,40 @@ export class DotEditContentFieldComponent {
     readonly fieldTypes = FIELD_TYPES;
 
     /**
-     * The calendar types.
+     * Event emitted when the binary field value is updated.
+     * @param event
      */
-    readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
+    onBinaryFieldValueUpdated(event: { value: string; fileName: string }) {
+        if (!this.shouldAutoFillFields(this.$contentType())) {
+            return;
+        }
+
+        const { fileName } = event;
+
+        const titleControl = this.#parentForm.get('title');
+        const fileNameControl = this.#parentForm.get('fileName');
+
+        // Auto-fill title if exists and is empty
+        if (titleControl && !titleControl.value) {
+            titleControl.setValue(fileName);
+            titleControl.markAsTouched();
+        }
+
+        // Auto-fill fileName if exists and is empty
+        if (fileNameControl && !fileNameControl.value) {
+            fileNameControl.setValue(fileName);
+            fileNameControl.markAsTouched();
+        }
+    }
 
     /**
-     * Whether to show the label.
+     * Whether to auto-fill the fields.
+     * @param contentType
+     * @returns
      */
-    $showLabel = computed(() => {
-        const field = this.$field();
-        if (!field) return true;
+    private shouldAutoFillFields(contentType: DotCMSContentType | null): boolean {
+        if (!contentType) return false;
 
-        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
-    });
+        return contentType.baseType === DotCMSBaseTypesContentTypes.FILEASSET;
+    }
 }

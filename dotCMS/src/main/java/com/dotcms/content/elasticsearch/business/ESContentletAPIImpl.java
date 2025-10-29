@@ -1,5 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -185,18 +192,6 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -225,13 +220,17 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-import static com.liferay.util.StringPool.BLANK;
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1582,6 +1581,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // Permissions in the query
         if (!isAdmin) {
             addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
+            addCategoryPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
         }
 
         if (UtilMethods.isSet(sortBy) && sortBy.trim().equalsIgnoreCase("random")) {
@@ -1617,6 +1617,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } else {
             return contentFactory.indexSearchScroll(buffy.toString(), sortBy);
         }
+
+    }
+
+    void addCategoryPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) {
+        if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
+            return;
+        }
+        if (user != null && user.isAdmin()) {
+            return;
+        }
+
+        buffy.append(" +(");
+
+        for (Role role : roles) {
+            buffy.append(ESMappingConstants.CATEGORY_PERMISSIONS + ":" + role.getId() + " ");
+        }
+
+        if (respectFrontendRoles) {
+            buffy.append(ESMappingConstants.CATEGORY_PERMISSIONS + ":"
+                    + ESMappingConstants.MAPPED_PERMISSIONS.cms_anon_role.name() + " ");
+        }
+
+        // always add NONE
+        buffy.append(ESMappingConstants.CATEGORY_PERMISSIONS + ":" + ESMappingConstants.MAPPED_PERMISSIONS.none.name()
+                + " ");
+
+        buffy.append(") ");
 
     }
 
@@ -7011,9 +7038,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Category> categories, final User user, final boolean respect)
             throws DotDataException, DotSecurityException {
         final List<Category> categoriesUserCannotRemove = new ArrayList<>();
-        if (categories == null) {
-            categories = new ArrayList<>();
-        }
+
+        // checkin was failing if the passed categories were an immutable list.  this makes a copy
+        categories = (categories == null) ? new ArrayList<>() : new ArrayList<>(categories);
+
 
         //Find categories which the user can't use.  A user cannot remove a category they cannot use
         final List<Category> cats = categoryAPI.getParents(fromContentlet,
@@ -7160,10 +7188,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public List<Contentlet> findAllVersions(final SearchCriteria searchCriteria) throws DotSecurityException, DotDataException {
         Logger.debug(this.getClass(), String.format("Retrieving all versions for Identifier [ %s ], " +
-                        "bringOldVersions [ %b ], limit [ %d ], offset [ %d ]", searchCriteria.identifier(),
-                searchCriteria.bringOldVersions(), searchCriteria.limit(), searchCriteria.offset()));
-        final List<Contentlet> contentlets = this.contentFactory.findAllVersions(searchCriteria.identifier(),
-                searchCriteria.bringOldVersions(), searchCriteria.limit(), searchCriteria.offset(), searchCriteria.orderDirection());
+                        "Language ID [ %s ], bringOldVersions [ %b ], limit [ %d ], offset [ %d ]",
+                searchCriteria.identifier(), searchCriteria.languageId(), searchCriteria.bringOldVersions(),
+                searchCriteria.limit(), searchCriteria.offset()));
+        final List<Contentlet> contentlets = this.contentFactory.findAllVersions(
+                searchCriteria.identifier(), searchCriteria.languageId(), searchCriteria.bringOldVersions(),
+                searchCriteria.limit(), searchCriteria.offset(), searchCriteria.orderDirection());
         if (contentlets.isEmpty()) {
             return List.of();
         }
@@ -8723,7 +8753,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentRelationships;
     }
 
-    @WrapInTransaction
     @Override
     public int deleteOldContent(Date deleteFrom) throws DotDataException {
         int results = 0;

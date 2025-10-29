@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { DotCMSAnalytics } from '../../core/shared/dot-content-analytics.model';
 
 // Mock initializeContentAnalytics to avoid real initialization
 const mockAnalyticsInstance = {
@@ -10,7 +10,7 @@ const mockAnalyticsInstance = {
 
 const mockInitialize = jest.fn(() => mockAnalyticsInstance);
 
-jest.mock('../../dotAnalytics/dot-content-analytics', () => ({
+jest.mock('../../core/dot-content-analytics', () => ({
     initializeContentAnalytics: mockInitialize
 }));
 
@@ -24,7 +24,7 @@ const loadUtils = () => {
 describe('react/internal/utils', () => {
     const mockConfig = {
         server: 'https://demo.dotcms.com',
-        siteKey: 'test-site',
+        siteAuth: 'test-site',
         debug: false
     };
 
@@ -60,13 +60,13 @@ describe('react/internal/utils', () => {
             expect(mockInitialize).toHaveBeenCalledTimes(2);
         });
 
-        it('resets singleton when siteKey changes', () => {
+        it('resets singleton when siteAuth changes', () => {
             const { initializeAnalytics } = loadUtils();
 
             const instance1 = initializeAnalytics(mockConfig);
             const instance2 = initializeAnalytics({
                 ...mockConfig,
-                siteKey: 'new-site'
+                siteAuth: 'new-site'
             });
 
             expect(instance1).toBe(mockAnalyticsInstance);

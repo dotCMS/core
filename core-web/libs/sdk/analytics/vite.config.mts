@@ -66,6 +66,7 @@ export default defineConfig({
                 'analytics',
                 '@analytics/core',
                 '@analytics/storage-utils',
+                '@analytics/queue-utils',
                 /^next\//
             ],
             output: {

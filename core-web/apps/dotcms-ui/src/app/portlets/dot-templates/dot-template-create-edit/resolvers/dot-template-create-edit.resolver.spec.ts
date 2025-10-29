@@ -46,7 +46,7 @@ describe('DotTemplateDesignerService', () => {
                 {
                     provide: DotTemplatesService,
                     useValue: {
-                        getById: jasmine.createSpy().and.returnValue(
+                        getById: jest.fn().mockReturnValue(
                             of({
                                 this: {
                                     is: 'a page'
@@ -79,13 +79,14 @@ describe('DotTemplateDesignerService', () => {
             )
             .subscribe((res) => {
                 expect(templateService.getById).toHaveBeenCalledWith('ID');
+                expect(templateService.getById).toHaveBeenCalledTimes(1);
                 expect<any>(res).toEqual({ this: { is: 'a page' } });
                 done();
             });
     });
 
     it('should return page by inode from router', (done) => {
-        spyOn(templateService, 'getFiltered').and.returnValue(of([templateMock]));
+        jest.spyOn(templateService, 'getFiltered').mockReturnValue(of([templateMock]));
         service
             .resolve(
                 {
@@ -99,13 +100,14 @@ describe('DotTemplateDesignerService', () => {
             )
             .subscribe((res) => {
                 expect(templateService.getFiltered).toHaveBeenCalledWith('inode123');
+                expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
                 expect<any>(res).toEqual(templateMock);
                 done();
             });
     });
 
     it('should go to the main portlet if inode is invalid', (done) => {
-        spyOn(templateService, 'getFiltered').and.returnValue(of([]));
+        jest.spyOn(templateService, 'getFiltered').mockReturnValue(of([]));
         service
             .resolve(
                 {
@@ -119,7 +121,9 @@ describe('DotTemplateDesignerService', () => {
             )
             .subscribe(() => {
                 expect(templateService.getFiltered).toHaveBeenCalledWith('inode123');
+                expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
                 expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
                 done();
             });
     });

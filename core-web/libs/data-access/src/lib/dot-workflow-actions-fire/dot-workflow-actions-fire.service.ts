@@ -11,7 +11,7 @@ import {
     DotActionBulkResult
 } from '@dotcms/dotcms-models';
 
-interface DotActionRequestOptions {
+export interface DotActionRequestOptions {
     contentType?: string;
     data: { [key: string]: string };
     action: ActionToFire;
@@ -24,6 +24,11 @@ export interface DotFireActionOptions<T> {
     inode?: string;
     identifier?: string;
     data?: T;
+}
+
+export interface DotFireDefaultActionOptions {
+    action: string;
+    inodes: string[];
 }
 
 enum ActionToFire {
@@ -67,6 +72,26 @@ export class DotWorkflowActionsFireService {
 
         return this.httpClient
             .put(url, data, { headers: this.defaultHeaders, params: urlParams })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Fire a default workflow action over one or multiple contentlets
+     *
+     * @param {DotFireDefaultActionOptions} options
+     * @return {*}  {Observable<DotCMSContentlet[]>}
+     * @memberof DotWorkflowActionsFireService
+     */
+    fireDefaultAction(options: DotFireDefaultActionOptions): Observable<DotCMSContentlet[]> {
+        const { action, inodes } = options;
+        const url = `${this.BASE_URL}/actions/default/fire/${action}`;
+        const urlParams = new HttpParams().set('indexPolicy', 'WAIT_FOR');
+        const body = {
+            contentlet: inodes.map((inode) => ({ inode }))
+        };
+
+        return this.httpClient
+            .post(url, body, { headers: this.defaultHeaders, params: urlParams })
             .pipe(pluck('entity'));
     }
 

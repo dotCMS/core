@@ -263,3 +263,13 @@ export interface ReorderMenuPayload {
 }
 
 export type DotPageAssetParams = DotPageApiParams;
+
+export interface ToggleLockOptions {
+    inode: string;
+    isLocked: boolean;
+    lockedBy: string;
+    canLock: boolean;
+    isLockedByCurrentUser: boolean;
+    showBanner: boolean;
+    showOverlay: boolean;
+}

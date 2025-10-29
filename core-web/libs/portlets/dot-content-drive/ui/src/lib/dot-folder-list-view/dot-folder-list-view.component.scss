@@ -12,6 +12,54 @@
                     border: none;
                     border-radius: 0;
                 }
+
+                .p-datatable-tbody {
+                    tr.content-drive-table__loading-row {
+                        cursor: default;
+                        // This is the height of the row in the table
+                        // We need to set it to the same height as the row in the table
+                        // to avoid the row from being too tall or too short
+                        height: 4.3125rem;
+
+                        td {
+                            text-align: center;
+                            vertical-align: middle;
+
+                            .skeleton-wrapper {
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                height: 100%;
+                            }
+                        }
+
+                        &:hover {
+                            cursor: default;
+                            background-color: transparent;
+                        }
+                    }
+
+                    tr.content-drive-table__row {
+                        td:nth-child(2) {
+                            min-width: 15.625rem;
+                        }
+
+                        .content-drive-table__actions-button {
+                            opacity: 0;
+                            transition: opacity 0.2s ease-in-out;
+                        }
+
+                        &:hover {
+                            .content-drive-table__actions-button {
+                                opacity: 1;
+                            }
+                        }
+
+                        &.is-dragging {
+                            cursor: grabbing;
+                        }
+                    }
+                }
             }
         }
 
@@ -22,6 +70,7 @@
 
                     table {
                         height: 100%;
+                        width: 100%;
                     }
                 }
             }
@@ -29,12 +78,25 @@
     }
 }
 
+.hoverable {
+    cursor: pointer;
+}
+
 .list-view-title {
     display: grid;
-    grid-template-columns: 4.5rem 1fr;
+    grid-template-columns: 4.5rem minmax(0, 1fr) min-content;
     align-items: center;
     gap: $spacing-3;
     width: 100%;
+
+    .truncate-text {
+        max-width: 100%;
+        width: fit-content;
+    }
+
+    .pi {
+        color: $color-palette-gray-700;
+    }
 }
 
 .empty-state {
@@ -84,5 +146,85 @@
         color: $black;
         font-size: $font-size-md;
         line-height: 1.5;
+    }
+}
+
+// Drag image styles (dynamically created, appended to body)
+::ng-deep {
+    .drag-image-container {
+        position: fixed;
+        //Hide it outside of the screen
+        top: -9999px;
+        left: -9999px;
+        width: 80px;
+        height: 80px;
+    }
+
+    .drag-image-item {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: $white;
+        border: 2px solid $color-palette-primary-500;
+        border-radius: $border-radius-lg;
+        padding: $spacing-1;
+        box-shadow:
+            0 8px 24px rgba(0, 0, 0, 0.3),
+            0 2px 8px rgba(0, 0, 0, 0.2);
+        width: 4rem;
+        height: 4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+
+        &.drag-image-item-0 {
+            transform: translate(0, 0);
+            z-index: 3;
+        }
+
+        &.drag-image-item-1 {
+            transform: translate(0.625rem, 0.625rem);
+            z-index: 2;
+            opacity: 0.9;
+        }
+
+        &.drag-image-item-2 {
+            transform: translate(1.25rem, 1.25rem);
+            z-index: 1;
+            opacity: 0.8;
+        }
+
+        > * {
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: 3rem !important;
+            height: 3rem !important;
+            object-fit: contain !important;
+            font-size: 3rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: auto !important;
+        }
+    }
+
+    .drag-image-badge {
+        position: absolute;
+        top: -10px;
+        right: 0;
+        background: $color-palette-primary-500;
+        color: $white;
+        border-radius: 50%;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: $font-size-sm;
+        font-weight: $font-weight-bold;
+        border: 3px solid $white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        z-index: 10;
     }
 }

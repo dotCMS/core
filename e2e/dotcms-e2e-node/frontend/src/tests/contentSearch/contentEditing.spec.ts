@@ -291,16 +291,25 @@ test("Validate file assets show corresponding information", async ({
 
 //* Test to validate the download of binary fields on file assets
 test("Validate the download of binary fields on file assets", async ({
-  page,
-}) => {
+                                                                       page,
+                                                                     }) => {
   const contentUtils = new ContentPage(page);
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(fileAsset.locator);
   await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
-  await (
-    await contentUtils.getContentElement(fileAssetContent.newFileName)
-  ).click();
+
+  // ✅ Add null check and retry logic
+  const contentElement = await contentUtils.getContentElement(fileAssetContent.newFileName);
+  if (!contentElement) {
+    throw new Error(`Content element not found: ${fileAssetContent.newFileName}`);
+  }
+
+  // ✅ Ensure element is visible and clickable before clicking
+  await contentElement.waitFor({ state: 'visible', timeout: 10000 });
+  await contentElement.waitFor({ state: 'attached', timeout: 5000 });
+  await contentElement.click();
+
   await waitForVisibleAndCallback(page.getByRole("heading"), () =>
     expect.soft(page.getByRole("heading")).toContainText(fileAsset.label),
   );
@@ -308,7 +317,6 @@ test("Validate the download of binary fields on file assets", async ({
   const downloadLink = detailFrame.getByTestId("download-btn");
   await contentUtils.validateDownload(downloadLink);
 });
-
 /**
  * Test to validate the required on file asset fields
  */

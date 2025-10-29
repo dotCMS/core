@@ -1,12 +1,11 @@
 import { v4 as uuid } from 'uuid';
 
-import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotContainer, DotLayoutBody } from '@dotcms/dotcms-models';
 
 import {
     BOX_WIDTH,
     DotGridStackNode,
     DotGridStackWidget,
-    SYSTEM_CONTAINER_IDENTIFIER,
     TemplateBuilderBoxSize
 } from '../models/models';
 
@@ -14,33 +13,34 @@ const emptyChar = '_';
 const boxChar = '#';
 const currentBoxChar = '*';
 
-export const EMPTY_ROWS_VALUE = [
-    {
-        w: 12,
-        h: 1,
-        x: 0,
-        y: 0,
-        subGridOpts: {
-            children: [
-                {
-                    w: 3,
-                    h: 1,
-                    y: 0,
-                    x: 0,
-                    id: uuid(),
-                    styleClass: [],
-                    containers: [
-                        {
-                            identifier: SYSTEM_CONTAINER_IDENTIFIER
-                        }
-                    ]
-                }
-            ]
-        },
-        id: uuid(),
-        styleClass: []
-    }
-];
+export const EMPTY_ROWS_VALUE = (container?: DotContainer) => {
+    const identifier = container?.path ?? container?.identifier;
+    const containers = container ? [{ identifier }] : [];
+
+    return [
+        {
+            w: 12,
+            h: 1,
+            x: 0,
+            y: 0,
+            subGridOpts: {
+                children: [
+                    {
+                        w: 3,
+                        h: 1,
+                        y: 0,
+                        x: 0,
+                        id: uuid(),
+                        styleClass: [],
+                        containers
+                    }
+                ]
+            },
+            id: uuid(),
+            styleClass: []
+        }
+    ];
+};
 
 /**
  * @description This function parses the oldNode and newNode to a DotGridStackWidget array
@@ -83,8 +83,11 @@ export function getIndexRowInItems(items: DotGridStackWidget[], rowID: string): 
  * @param {DotGridStackNode[]} columns
  * @return {*}  {DotGridStackWidget[]}
  */
-export function createDotGridStackWidgets(columns: DotGridStackNode[]): DotGridStackWidget[] {
-    return columns.map((node) => createDotGridStackWidgetFromNode(node));
+export function createDotGridStackWidgets(
+    columns: DotGridStackNode[],
+    defaultContainer?: DotContainer
+): DotGridStackWidget[] {
+    return columns.map((node) => createDotGridStackWidgetFromNode(node, defaultContainer));
 }
 
 /**
@@ -94,18 +97,20 @@ export function createDotGridStackWidgets(columns: DotGridStackNode[]): DotGridS
  * @param {DotGridStackNode} node
  * @return {*}  {DotGridStackWidget}
  */
-export function createDotGridStackWidgetFromNode(node: DotGridStackNode): DotGridStackWidget {
+export function createDotGridStackWidgetFromNode(
+    node: DotGridStackNode,
+    defaultContainer?: DotContainer
+): DotGridStackWidget {
+    const identifier = defaultContainer?.path ?? defaultContainer?.identifier;
+    const fallbackContainers = identifier ? [{ identifier }] : [];
+    const containers = node.containers ? node.containers : fallbackContainers;
     return {
         x: node.x,
         id: node.id || uuid(),
         parentId: node.grid?.parentGridItem?.id as string,
         w: node.w,
         styleClass: node.styleClass,
-        containers: node.containers ?? [
-            {
-                identifier: SYSTEM_CONTAINER_IDENTIFIER
-            }
-        ],
+        containers,
         y: node.y
     } as DotGridStackWidget;
 }
@@ -144,10 +149,11 @@ export function removeColumnByID(row: DotGridStackWidget, columnID: string): Dot
  * @returns
  */
 export function parseFromDotObjectToGridStack(
-    body: DotLayoutBody | undefined
+    body: DotLayoutBody | undefined,
+    container?: DotContainer
 ): DotGridStackWidget[] {
     if (!body || !body.rows?.length) {
-        return structuredClone(EMPTY_ROWS_VALUE);
+        return structuredClone(EMPTY_ROWS_VALUE(container));
     }
 
     return body.rows.map((row, i) => ({

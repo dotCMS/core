@@ -1,0 +1,29 @@
+@use "variables" as *;
+
+:host {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-rows: min-content 1fr;
+
+    ::ng-deep {
+        .p-tree {
+            padding: 0 0.75rem 0.75rem;
+        }
+    }
+}
+
+.tree-header {
+    display: flex;
+    align-items: center;
+    padding: $spacing-4 $spacing-3;
+    gap: $spacing-1;
+    height: 4.375rem;
+    padding-top: 1.75rem;
+
+    h3 {
+        font-size: $font-size-default;
+        margin: 0;
+        font-weight: $font-weight-semi-bold;
+    }
+}

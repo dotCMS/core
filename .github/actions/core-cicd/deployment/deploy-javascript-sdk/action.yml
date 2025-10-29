@@ -97,6 +97,7 @@ runs:
         
         # Check the status of each package and find the highest version
         HIGHEST_VERSION="0.0.0"
+        HIGHEST_NEXT_VERSION=""
         VERSION_SOURCE="none"
         PACKAGES_STATUS=""
         
@@ -108,8 +109,9 @@ runs:
           if npm view @dotcms/${sdk} >/dev/null 2>&1; then
             # Package exists, get current versions
             STABLE_VERSION=$(npm view @dotcms/${sdk} dist-tags --json 2>/dev/null | jq -r '.latest // empty')
+            NEXT_VERSION=$(npm view @dotcms/${sdk} dist-tags --json 2>/dev/null | jq -r '.next // empty')
             
-            echo "  ✅ Package exists - Latest: ${STABLE_VERSION:-'none'}"
+            echo "  ✅ Package exists - Latest: ${STABLE_VERSION:-'none'}, Next: ${NEXT_VERSION:-'none'}"
             
             # Update highest version if this package has a higher stable version
             if [ -n "$STABLE_VERSION" ] && [ "$STABLE_VERSION" != "null" ] && [ "$STABLE_VERSION" != "empty" ]; then
@@ -117,6 +119,18 @@ runs:
                 if [ "$HIGHEST_VERSION" = "0.0.0" ] || [ "$(printf '%s\n' "$STABLE_VERSION" "$HIGHEST_VERSION" | sort -V | tail -n1)" = "$STABLE_VERSION" ]; then
                   HIGHEST_VERSION="$STABLE_VERSION"
                   VERSION_SOURCE="existing"
+                fi
+              fi
+            fi
+            
+            # Track highest next version across packages
+            if [ -n "$NEXT_VERSION" ] && [ "$NEXT_VERSION" != "null" ] && [ "$NEXT_VERSION" != "empty" ]; then
+              if [ -z "$HIGHEST_NEXT_VERSION" ]; then
+                HIGHEST_NEXT_VERSION="$NEXT_VERSION"
+              else
+                # Compare next versions to find the highest
+                if [ "$(printf '%s\n' "$NEXT_VERSION" "$HIGHEST_NEXT_VERSION" | sort -V | tail -n1)" = "$NEXT_VERSION" ]; then
+                  HIGHEST_NEXT_VERSION="$NEXT_VERSION"
                 fi
               fi
             fi
@@ -150,6 +164,7 @@ runs:
         echo ""
         echo "=== PACKAGE STATUS SUMMARY ==="
         echo "Base version: $CURRENT_VERSION"
+        echo "Highest next version: $HIGHEST_NEXT_VERSION"
         echo "Version source: $VERSION_SOURCE"
         echo "==============================="
         
@@ -157,7 +172,7 @@ runs:
         echo "version_source=$VERSION_SOURCE" >> $GITHUB_OUTPUT
         echo "current_stable=$CURRENT_STABLE" >> $GITHUB_OUTPUT
         echo "current_beta=" >> $GITHUB_OUTPUT
-        echo "current_next=" >> $GITHUB_OUTPUT
+        echo "current_next=$HIGHEST_NEXT_VERSION" >> $GITHUB_OUTPUT
         echo "::endgroup::"
       shell: bash
 

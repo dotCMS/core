@@ -1,0 +1,11 @@
+:host {
+    position: relative;
+    ::ng-deep {
+        .p-contextmenu ul {
+            // To avoid the focus ring in the context menu: https://github.com/dotCMS/core/issues/33079#issuecomment-3281114583
+            &:focus-visible {
+                outline: none;
+            }
+        }
+    }
+}

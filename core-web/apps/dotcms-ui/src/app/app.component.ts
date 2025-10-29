@@ -1,13 +1,12 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService, DotUiColorsService } from '@dotcms/data-access';
 import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
-import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
 
 @Component({
     selector: 'dot-root',

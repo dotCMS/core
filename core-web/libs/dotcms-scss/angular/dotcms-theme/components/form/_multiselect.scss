@@ -10,6 +10,27 @@
     height: 2.5em;
     width: 100%;
 
+    &.p-multiselect-sm {
+        @extend #form-field-sm;
+        min-height: $field-height-sm;
+
+        .p-multiselect-trigger {
+            @extend #field-trigger-sm;
+        }
+
+        &.p-multiselect-chip {
+            .p-multiselect-token {
+                @extend #field-chip-sm;
+
+                .p-icon-wrapper,
+                .p-icon-wrapper svg {
+                    height: 0.75rem;
+                    width: 0.75rem;
+                }
+            }
+        }
+    }
+
     &:not(.p-multiselect-open):hover {
         @extend #form-field-hover;
     }
@@ -80,6 +101,7 @@
 .p-multiselect-panel {
     @extend #field-panel;
     min-width: 20rem;
+    padding: 0;
 
     .p-multiselect-header {
         @extend #field-panel-header;
@@ -87,10 +109,14 @@
         .p-multiselect-filter-container {
             .p-multiselect-filter {
                 @extend #field-panel-filter;
+                padding-left: $spacing-6;
+                padding-right: $spacing-1;
             }
 
             .p-multiselect-filter-icon {
                 @extend #field-panel-filter-icon;
+                left: $spacing-2;
+                right: unset;
             }
         }
 
@@ -100,6 +126,7 @@
 
         .p-multiselect-close {
             @extend #field-panel-icon-close;
+            display: none;
         }
     }
 
