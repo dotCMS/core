@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.util.SQLUtil;
@@ -161,18 +162,24 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                 }
             }
             //Since we're combining multiple types, we need to slice the result to remain consistent with pagination params
-                final List<ContentType> contentTypes = applySafeSlice(new ArrayList<>(collectedContentTypes), offset, limit);
-                final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
-                setEntriesAttribute(user, contentTypesTransform,
-                        this.workflowAPI.findSchemesMapForContentType(contentTypes),
-                        this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user),
-                        extraParams);
 
-                result.addAll(Objects.nonNull(extraParams) && extraParams.containsKey(COMPARATOR) ?
-                        contentTypesTransform.stream()
-                                .sorted((Comparator<Map<String, Object>>) extraParams.get(
-                                        COMPARATOR)).collect(Collectors.toList())
-                        : contentTypesTransform);
+            // This ensures that the resulting list follows the orderBy param
+            ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
+            final Set<ContentType> sortedCollectedContentTypes = new LinkedHashSet<>(
+                    contentTypeHelper.sortContentTypes(collectedContentTypes, orderByParam));
+
+            final List<ContentType> contentTypes = applySafeSlice(new ArrayList<>(sortedCollectedContentTypes), offset, limit);
+            final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
+            setEntriesAttribute(user, contentTypesTransform,
+                    this.workflowAPI.findSchemesMapForContentType(contentTypes),
+                    this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user),
+                    extraParams);
+
+            result.addAll(Objects.nonNull(extraParams) && extraParams.containsKey(COMPARATOR) ?
+                    contentTypesTransform.stream()
+                            .sorted((Comparator<Map<String, Object>>) extraParams.get(
+                                    COMPARATOR)).collect(Collectors.toList())
+                    : contentTypesTransform);
 
             result.setTotalResults(totalRecords);
             return result;
