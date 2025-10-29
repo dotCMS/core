@@ -39,8 +39,8 @@ const urlsRegex = {
     editPage: {
         regex: /\/content\/.+/,
         url: '/dotAdmin/#/edit-page/content'
-    },
-}
+    }
+};
 
 /**
  * Custom Store Feature for managing breadcrumb navigation state.
@@ -59,84 +59,67 @@ const urlsRegex = {
 export function withBreadcrumbs() {
     return signalStoreFeature(
         withState(initialBreadcrumbState),
-        withComputed(({ breadcrumbs }) => ({
-            /**
-             * Computed signal that returns the number of breadcrumb items.
-             *
-             * @returns The count of breadcrumb items
-             */
-            breadcrumbCount: computed(() => breadcrumbs().length),
-
-            /**
-             * Computed signal that indicates if there are any breadcrumbs.
-             *
-             * @returns `true` if there are breadcrumbs, `false` if empty
-             */
-            hasBreadcrumbs: computed(() => breadcrumbs().length > 0),
-
-            /**
-             * Computed signal returning the last breadcrumb item.
-             * Returns null if there are no breadcrumbs.
-             */
-            lastBreadcrumb: computed(() => breadcrumbs()[breadcrumbs().length - 1]),
-            /**
-             * Computed signal returning the label of the last breadcrumb item.
-             * Returns null if there are no breadcrumbs.
-             */
-            selectLastBreadcrumbLabel: computed(() => {
+        withComputed(({ breadcrumbs }) => {
+            const breadcrumbCount = computed(() => breadcrumbs().length);
+            const hasBreadcrumbs = computed(() => breadcrumbs().length > 0);
+            const lastBreadcrumb = computed(() => {
                 const crumbs = breadcrumbs();
                 const last = crumbs.length ? crumbs[crumbs.length - 1] : null;
-                return last?.label ?? null;
-            })
-        })),
-        withMethods((store) => ({
-            /**
-             * Sets the breadcrumb items, replacing any existing breadcrumbs.
-             *
-             * @param breadcrumbs - Array of MenuItem objects to set as breadcrumbs
-             */
-            setBreadcrumbs: (breadcrumbs: MenuItem[]) => {
-                patchState(store, { breadcrumbs });
-            },
+                return last;
+            });
+            const selectLastBreadcrumbLabel = computed(() => lastBreadcrumb()?.label ?? null);
+            return {
+                /**
+                 * Computed signal that returns the number of breadcrumb items.
+                 *
+                 * @returns The count of breadcrumb items
+                 */
+                breadcrumbCount,
 
-            /**
-             * Appends a single breadcrumb item to the end of the current breadcrumbs.
-             *
-             * @param crumb - MenuItem object to append to the breadcrumbs
-             */
-            appendCrumb: (crumb: MenuItem) => {
+                /**
+                 * Computed signal that indicates if there are any breadcrumbs.
+                 *
+                 * @returns `true` if there are breadcrumbs, `false` if empty
+                 */
+                hasBreadcrumbs,
+
+                /**
+                 * Computed signal returning the last breadcrumb item.
+                 * Returns null if there are no breadcrumbs.
+                 */
+                lastBreadcrumb,
+                /**
+                 * Computed signal returning the label of the last breadcrumb item.
+                 * Returns null if there are no breadcrumbs.
+                 */
+                selectLastBreadcrumbLabel
+            };
+        }),
+        withMethods((store) => {
+            const setBreadcrumbs = (breadcrumbs: MenuItem[]) => {
+                patchState(store, { breadcrumbs });
+            };
+
+            const appendCrumb = (crumb: MenuItem) => {
                 const currentBreadcrumbs = store.breadcrumbs();
                 patchState(store, { breadcrumbs: [...currentBreadcrumbs, crumb] });
-            },
-            /**
-             * Truncates the breadcrumbs to the existing index.
-             *
-             * @param existingIndex - Index of the existing breadcrumb
-             */
-            truncateBreadcrumbs: (existingIndex: number) => {
-                const currentBreadcrumbs = store.breadcrumbs();
-                patchState(store, { breadcrumbs: currentBreadcrumbs.slice(0, existingIndex + 1) });
-            },
-            /**
-             * Sets the last breadcrumb item, replacing the last breadcrumb item.
-             *
-             * @param crumb - MenuItem object to set as the last breadcrumb
-             */
-            setLastBreadcrumb: (crumb: MenuItem) => {
+            };
+
+            const setLastBreadcrumb = (crumb: MenuItem) => {
                 const currentBreadcrumbs = store.breadcrumbs();
                 patchState(store, { breadcrumbs: [...currentBreadcrumbs.slice(0, -1), crumb] });
-            },
-            /**
-             * Adds a new breadcrumb item to the breadcrumbs.
-             *
-             * @param item - MenuItem object to add to the breadcrumbs
-             */
-            addNewBreadcrumb: (item: MenuItem) => {
+            };
+
+            const truncateBreadcrumbs = (existingIndex: number) => {
+                const currentBreadcrumbs = store.breadcrumbs();
+                patchState(store, { breadcrumbs: currentBreadcrumbs.slice(0, existingIndex + 1) });
+            };
+
+            const addNewBreadcrumb = (item: MenuItem) => {
                 const contentEditRegex = /\/content\/.+/;
                 const url = item?.url?.replace('/dotAdmin/#', '') || '';
                 const lastBreadcrumb = store.lastBreadcrumb();
                 const lastBreadcrumbUrl = lastBreadcrumb?.url?.replace('/dotAdmin/#', '') || '';
-                const currentBreadcrumbs = store.breadcrumbs();
 
                 const isSameUrl = url === lastBreadcrumbUrl;
 
@@ -145,16 +128,26 @@ export function withBreadcrumbs() {
                 }
 
                 if (contentEditRegex.test(url) && contentEditRegex.test(lastBreadcrumbUrl)) {
-                    patchState(store, { breadcrumbs: [...currentBreadcrumbs.slice(0, -1), item] });
+                    setLastBreadcrumb(item);
                 } else {
-                    patchState(store, { breadcrumbs: [...currentBreadcrumbs, item] });
+                    appendCrumb(item);
                 }
-            },
-            loadBreadcrumbs: () => {
+            };
+
+            const loadBreadcrumbs = () => {
                 const breadcrumbs = JSON.parse(sessionStorage.getItem('breadcrumbs') || '[]');
                 patchState(store, { breadcrumbs });
-            }
-        })),
+            };
+
+            return {
+                setBreadcrumbs,
+                appendCrumb,
+                truncateBreadcrumbs,
+                setLastBreadcrumb,
+                addNewBreadcrumb,
+                loadBreadcrumbs
+            };
+        }),
         withHooks({
             onInit(store) {
                 // Load current site on store initialization
