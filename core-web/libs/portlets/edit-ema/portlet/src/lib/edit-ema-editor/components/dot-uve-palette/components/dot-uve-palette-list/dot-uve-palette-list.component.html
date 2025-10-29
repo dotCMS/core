@@ -41,54 +41,52 @@
     [class.dot-uve-palette-list__grid--list]="$isListLayout()"
     [class.dot-uve-palette-list__grid--loading]="$isLoading()">
     @if ($status() === DotPaletteListStatus.LOADING) {
-        @let skeletonHeight = $isListLayout() ? '4rem' : '6.875rem';
-        @for (i of LOADING_ROWS; track i) {
-            <p-skeleton width="100%" [height]="skeletonHeight" />
-        }
+        <ng-container *ngTemplateOutlet="loadingTemplate" />
     } @else if ($status() === DotPaletteListStatus.EMPTY) {
-        <div class="dot-uve-palette-list__empty">
-            <div class="dot-uve-palette-list__empty-icon">
-                <i class="pi pi-plus"></i>
-            </div>
-
-            @if ($listType() === 'FAVORITES') {
-                <p class="dot-uve-palette-list__empty-text">
-                    <span
-                        class="dot-uve-palette-list__empty-link"
-                        (click)="overlayPanel.toggle($event)">
-                        Add
-                    </span>
-                    new favorite to this list for easy access.
-                </p>
-            } @else if ($currentView() === DotUVEPaletteListView.CONTENT_TYPES) {
-                <p class="dot-uve-palette-list__empty-text">
-                    Add new content type to this list for easy access.
-                </p>
-            } @else if ($currentView() === DotUVEPaletteListView.CONTENTLETS) {
-                <p class="dot-uve-palette-list__empty-text">
-                    Add new contentlet to this list for easy access.
-                </p>
-            }
-        </div>
+        <ng-container *ngTemplateOutlet="emptyStateTemplate" />
     } @else {
-        @switch ($currentView()) {
-            @case (DotUVEPaletteListView.CONTENTLETS) {
-                @for (contentlet of $contentlets(); track contentlet.identifier) {
-                    <dot-uve-palette-contentlet [contentlet]="contentlet" />
-                }
+        <ng-container *ngTemplateOutlet="contentTemplate" />
+    }
+</div>
+
+<!-- Loading State Template -->
+<ng-template #loadingTemplate>
+    @let skeletonHeight = $isListLayout() ? '4rem' : '6.875rem';
+    @for (i of LOADING_ROWS; track i) {
+        <p-skeleton width="100%" [height]="skeletonHeight" />
+    }
+</ng-template>
+
+<!-- Empty State Template -->
+<ng-template #emptyStateTemplate>
+    <div class="dot-uve-palette-list__empty">
+        <div class="dot-uve-palette-list__empty-icon">
+            <i class="pi pi-plus"></i>
+        </div>
+
+        <p class="dot-uve-palette-list__empty-text" [innerHTML]="$emptyStateMessage() | dm"></p>
+    </div>
+</ng-template>
+
+<!-- Content Template -->
+<ng-template #contentTemplate>
+    @switch ($currentView()) {
+        @case (DotUVEPaletteListView.CONTENTLETS) {
+            @for (contentlet of $contentlets(); track contentlet.identifier) {
+                <dot-uve-palette-contentlet [contentlet]="contentlet" />
             }
-            @case (DotUVEPaletteListView.CONTENT_TYPES) {
-                @for (contentType of $contenttypes(); track contentType.id) {
-                    <dot-uve-palette-contenttype
-                        [contentType]="contentType"
-                        [view]="$viewMode()"
-                        (selectContentType)="onSelectContentType($event)"
-                        (rightClick)="setFavoriteMenuItems(contentType); cm.show($event)" />
-                }
+        }
+        @case (DotUVEPaletteListView.CONTENT_TYPES) {
+            @for (contentType of $contenttypes(); track contentType.id) {
+                <dot-uve-palette-contenttype
+                    [contentType]="contentType"
+                    [view]="$viewMode()"
+                    (selectContentType)="onSelectContentType($event)"
+                    (rightClick)="setFavoriteMenuItems(contentType); cm.show($event)" />
             }
         }
     }
-</div>
+</ng-template>
 
 @if (!$isLoading()) {
     <p-paginator

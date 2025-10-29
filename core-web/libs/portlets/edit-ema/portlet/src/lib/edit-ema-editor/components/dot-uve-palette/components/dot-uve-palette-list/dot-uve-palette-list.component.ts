@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -20,6 +21,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotESContentService, DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPaletteListStore } from './store/store';
 
@@ -52,6 +54,7 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
 @Component({
     selector: 'dot-uve-palette-list',
     imports: [
+        NgTemplateOutlet,
         DotUVEPaletteContenttypeComponent,
         DotUvePaletteContentletComponent,
         ButtonModule,
@@ -62,7 +65,8 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
         PaginatorModule,
         SkeletonModule,
         OverlayPanelModule,
-        DotFavoriteSelectorComponent
+        DotFavoriteSelectorComponent,
+        DotMessagePipe
     ],
     providers: [DotPaletteListStore, DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
@@ -102,6 +106,23 @@ export class DotUvePaletteListComponent implements OnInit {
     readonly $paginatorTemplate = computed(() => {
         return `{first} - {last} ${this.#dotMessageService.get('uve.palette.pagination.of')} {totalRecords}`;
     });
+
+    readonly $emptyStateMessage = computed(() => {
+        const currentView = this.$currentView();
+        const listType = this.$listType();
+
+        if (listType === 'FAVORITES') {
+            return 'uve.palette.empty.favorites.message';
+        }
+
+        if (currentView === DotUVEPaletteListView.CONTENT_TYPES) {
+            return 'uve.palette.empty.content-types.message';
+        }
+
+        return 'uve.palette.empty.contentlets.message';
+    });
+
+    readonly $showAddButton = computed(() => this.$listType() === 'FAVORITES');
 
     readonly LOADING_ROWS = LOADING_ROWS_MOCK;
 
