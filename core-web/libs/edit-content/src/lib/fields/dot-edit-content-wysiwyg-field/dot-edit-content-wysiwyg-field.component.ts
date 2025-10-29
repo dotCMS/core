@@ -11,7 +11,7 @@ import {
     output,
     viewChild
 } from '@angular/core';
-import { ControlContainer, FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, ControlContainer } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -19,7 +19,7 @@ import { DropdownModule } from 'primeng/dropdown';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
+import { DotLanguageVariableSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotWysiwygTinymceComponent } from './components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component';
 import {
@@ -30,6 +30,11 @@ import {
 
 import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 import {
     getCurrentEditorFromDisabled,
     updateDisabledWYSIWYGOnEditorSwitch
@@ -43,18 +48,21 @@ import {
     selector: 'dot-edit-content-wysiwyg-field',
     imports: [
         FormsModule,
+        ReactiveFormsModule,
         DropdownModule,
         DotWysiwygTinymceComponent,
         DotEditContentMonacoEditorControlComponent,
         MonacoEditorModule,
         ConfirmDialogModule,
-        DotLanguageVariableSelectorComponent
+        DotLanguageVariableSelectorComponent,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
+        DotMessagePipe
     ],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
     styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
-    host: {
-        class: 'dot-wysiwyg__wrapper'
-    },
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
@@ -63,11 +71,7 @@ import {
         }
     ]
 })
-export class DotEditContentWYSIWYGFieldComponent {
-    /**
-     * Control container for the form
-     */
-    private readonly controlContainer = inject(ControlContainer);
+export class DotEditContentWYSIWYGFieldComponent extends BaseWrapperField {
     /**
      * Signal to get the TinyMCE component.
      */
@@ -78,14 +82,20 @@ export class DotEditContentWYSIWYGFieldComponent {
      */
     $monacoComponent = viewChild(DotEditContentMonacoEditorControlComponent);
 
+    /**
+     * Inject the ConfirmationService
+     */
     #confirmationService = inject(ConfirmationService);
+
+    /**
+     * Inject the DotMessageService
+     */
     #dotMessageService = inject(DotMessageService);
 
     /**
      * This variable represents a required content type field in DotCMS.
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-
     /**
      * A required input representing a DotCMS contentlet.
      */
@@ -148,6 +158,7 @@ export class DotEditContentWYSIWYGFieldComponent {
     readonly editorOptions = EditorOptions;
 
     constructor() {
+        super();
         this.handleEditorChange(this.$contentEditorUsed);
     }
 

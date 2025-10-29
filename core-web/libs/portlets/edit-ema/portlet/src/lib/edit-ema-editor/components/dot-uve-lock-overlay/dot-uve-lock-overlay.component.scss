@@ -1,0 +1,48 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.lock-overlay {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: $color-palette-black-op-40;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+
+    &__content {
+        text-align: center;
+        color: $white;
+    }
+
+    &__icon {
+        i {
+            font-size: $font-size-xxl;
+            display: inline-block;
+        }
+    }
+
+    &__title {
+        font-size: $font-size-lg;
+        font-weight: 600;
+        color: $white;
+        margin: 0;
+    }
+
+    &__message {
+        margin: 0;
+        font-size: $font-size-md;
+    }
+}

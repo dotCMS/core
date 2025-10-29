@@ -1,8 +1,6 @@
 package com.dotcms.jitsu;
 
 
-import com.dotcms.analytics.attributes.CustomAttributeAPIImpl;
-import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
@@ -97,6 +95,9 @@ public enum ValidAnalyticsEventPayloadTransformer {
         final Serializable sessionId = newRootContext.get(SESSION_ID_ATTRIBUTE_NAME);
         newRootContext.remove(SESSION_ID_ATTRIBUTE_NAME);
 
+        final Map<String, Object> deviceAttributes = (Map<String, Object> ) newRootContext.get(DEVICE_ATTRIBUTE_NAME);
+        newRootContext.remove(DEVICE_ATTRIBUTE_NAME);
+
         final List<Map<String, Serializable>> events =
                 (List<Map<String, Serializable>>) payload.get(EVENTS_ATTRIBUTE_NAME);
 
@@ -105,7 +106,7 @@ public enum ValidAnalyticsEventPayloadTransformer {
                 .map(ValidAnalyticsEventPayloadTransformer::transformDate)
                 .map(jsonObject -> ValidAnalyticsEventPayloadTransformer.setRootValues(jsonObject, payload))
                 .map(jsonObject -> putContent(jsonObject, newRootContext, sessionId))
-                .map(this::putEventAttributes)
+                .map(eventPayload -> putEventAttributes(eventPayload, deviceAttributes))
                 .map(this::transformCustom)
                 .map(ValidAnalyticsEventPayloadTransformer::removeData)
                 .map(EventsPayload.EventPayload::new)
@@ -181,7 +182,14 @@ public enum ValidAnalyticsEventPayloadTransformer {
      * @return
      */
     private static JSONObject removeData(final JSONObject payload) {
+        final Map<String, Object> dataAttributes  = (Map<String, Object>) payload.get(DATA_ATTRIBUTE_NAME);
+
+        dataAttributes.remove(PAGE_ATTRIBUTE_NAME);
+
+        moveToRoot(payload, dataAttributes, Map.of());
+
         payload.remove(DATA_ATTRIBUTE_NAME);
+        payload.remove(CUSTOM_ATTRIBUTE_NAME);
         return payload;
     }
 
@@ -272,19 +280,21 @@ public enum ValidAnalyticsEventPayloadTransformer {
 
     /**
      * This method is in charge of:
-     *
+     * <p>
      * - Move sessionId out of context
      * - Move each attribute in the page section out pf page and data
      * - Move each attribute in the device section out pf device and data
      * - Move utm section out of data
      *
      * @param jsonObject
+     * @param deviceAttributes
      * @return
      */
-    private JSONObject putEventAttributes(final JSONObject jsonObject) {
+    private JSONObject putEventAttributes(final JSONObject jsonObject,
+                                          final Map<String, Object> deviceAttributes) {
+
         final Map<String, Object> dataAttributes = (Map<String, Object> ) jsonObject.get(DATA_ATTRIBUTE_NAME);
         final Map<String, Object> pageAttributes = (Map<String, Object> ) dataAttributes.get(PAGE_ATTRIBUTE_NAME);
-        final Map<String, Object> deviceAttributes = (Map<String, Object> ) dataAttributes.get(DEVICE_ATTRIBUTE_NAME);
 
         moveToRoot(jsonObject, pageAttributes,
                 Map.of("title", "page_title", "language_id", "userlanguage"));
@@ -293,8 +303,13 @@ public enum ValidAnalyticsEventPayloadTransformer {
 
         if (dataAttributes.containsKey(UTM_ATTRIBUTE_NAME)) {
             final Map<String, Object> utmAttributes = (Map<String, Object>) dataAttributes.get(UTM_ATTRIBUTE_NAME);
+            dataAttributes.remove(UTM_ATTRIBUTE_NAME);
             jsonObject.put(UTM_ATTRIBUTE_NAME, utmAttributes);
         }
+
+        dataAttributes.remove(PAGE_ATTRIBUTE_NAME);
+
+        moveToRoot(jsonObject, dataAttributes, Map.of());
 
         final String localTimeAttributes = (String) jsonObject.get(LOCAL_TIME_ATTRIBUTE_NAME);
         jsonObject.put("utc_time", localTimeAttributes);
@@ -353,7 +368,7 @@ public enum ValidAnalyticsEventPayloadTransformer {
      *
      * @param jsonObject Json Object
      * @param attributes attributes to move to the root
-     * @param replacementsKeys Key that you want to replace when theay are move.
+     * @param replacementsKeys Key that you want to replace when they are move.
      */
     private static void moveToRoot(final JSONObject jsonObject,
                                    final Map<String, Object> attributes,

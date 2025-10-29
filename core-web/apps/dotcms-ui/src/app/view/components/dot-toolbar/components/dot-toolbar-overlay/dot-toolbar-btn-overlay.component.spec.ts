@@ -1,6 +1,7 @@
-import { Spectator, createComponentFactory, byTestId } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
-import { OverlayPanel } from 'primeng/overlaypanel';
+import { ButtonModule } from 'primeng/button';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotToolbarBtnOverlayComponent } from './dot-toolbar-btn-overlay.component';
 
@@ -10,6 +11,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotToolbarBtnOverlayComponent,
+        imports: [OverlayPanelModule, ButtonModule],
         detectChanges: false
     });
 
@@ -113,7 +115,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should render overlay panel with correct attributes', () => {
-            const overlayPanel = spectator.query('p-overlayPanel');
+            const overlayPanel = spectator.query('p-overlaypanel');
 
             expect(overlayPanel).toBeTruthy();
             expect(overlayPanel?.getAttribute('ng-reflect-append-to')).toBe('body');
@@ -121,10 +123,14 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
         it('should apply custom style class to overlay panel', () => {
             const customClass = 'my-custom-class';
-            spectator.setInput('overlayStyleClass', customClass);
-            spectator.detectChanges();
 
-            const overlayPanel = spectator.query('p-overlayPanel');
+            // Create a new spectator with the custom class input set before detection
+            const spectatorWithClass = createComponent();
+            spectatorWithClass.setInput('icon', 'pi pi-bell');
+            spectatorWithClass.setInput('overlayStyleClass', customClass);
+            spectatorWithClass.detectChanges();
+
+            const overlayPanel = spectatorWithClass.query('p-overlaypanel');
             expect(overlayPanel?.getAttribute('ng-reflect-style-class')).toBe(customClass);
         });
     });
@@ -139,7 +145,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
             // Spy on the actual overlay panel's toggle method
             const overlayPanel = component.$overlayPanel();
-            spyOn(overlayPanel, 'toggle');
+            jest.spyOn(overlayPanel, 'toggle');
 
             spectator.click(button);
 
@@ -151,7 +157,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
             spectator.detectChanges();
 
             const overlayPanel = component.$overlayPanel();
-            spyOn(overlayPanel, 'hide');
+            jest.spyOn(overlayPanel, 'hide');
 
             const mask = spectator.query('.dot-mask');
             spectator.click(mask);
@@ -162,7 +168,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         it('should handle multiple rapid clicks on button', () => {
             const button = spectator.query(byTestId('btn-overlay'));
             const overlayPanel = component.$overlayPanel();
-            spyOn(overlayPanel, 'toggle');
+            jest.spyOn(overlayPanel, 'toggle');
 
             spectator.click(button);
             spectator.click(button);
@@ -185,7 +191,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
         describe('handlerHide()', () => {
             it('should set showMask to false and emit onHide event', () => {
-                spyOn(component.onHide, 'emit');
+                jest.spyOn(component.onHide, 'emit');
                 component.$showMask.set(true);
 
                 component.handlerHide();
@@ -195,7 +201,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
             });
 
             it('should emit onHide event even when mask was already false', () => {
-                spyOn(component.onHide, 'emit');
+                jest.spyOn(component.onHide, 'emit');
                 component.$showMask.set(false);
 
                 component.handlerHide();
@@ -209,7 +215,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
             it('should call hide on overlay panel', () => {
                 spectator.detectChanges();
                 const overlayPanel = component.$overlayPanel();
-                spyOn(overlayPanel, 'hide');
+                jest.spyOn(overlayPanel, 'hide');
 
                 component.hide();
 
@@ -221,12 +227,13 @@ describe('DotToolbarBtnOverlayComponent', () => {
             it('should call show on overlay panel with event', () => {
                 spectator.detectChanges();
                 const overlayPanel = component.$overlayPanel();
-                spyOn(overlayPanel, 'show');
+                jest.spyOn(overlayPanel, 'show');
                 const mockEvent = new MouseEvent('click');
 
                 component.show(mockEvent);
 
                 expect(overlayPanel.show).toHaveBeenCalledWith(mockEvent);
+                expect(overlayPanel.show).toHaveBeenCalledTimes(1);
             });
 
             it('should handle show method without errors', () => {
@@ -244,7 +251,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should call handlerShow when overlay panel shows', () => {
-            spyOn(component, 'handlerShow');
+            jest.spyOn(component, 'handlerShow');
 
             spectator.triggerEventHandler(OverlayPanel, 'onShow', {});
 
@@ -252,7 +259,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should call handlerHide when overlay panel hides', () => {
-            spyOn(component, 'handlerHide');
+            jest.spyOn(component, 'handlerHide');
 
             spectator.triggerEventHandler(OverlayPanel, 'onHide', {});
 

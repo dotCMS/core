@@ -49,6 +49,10 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      * Represents a required DotCMS content type field.
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    /**
+     * Whether the field has an error.
+     */
+    $hasError = input.required<boolean>({ alias: 'hasError' });
 
     /**
      * A computed property that retrieves and parses custom TinyMCE properties that comes from

@@ -17,7 +17,9 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   **Security First**: Handles authentication and requests securely
 -   **Developer Experience**: Rich autocompletion and documentation
 
-> **📋 Migrating from Alpha Version?** If you're upgrading from the alpha version of `@dotcms/client`, please see our [Migration Guide](./MIGRATION.md) for step-by-step instructions and troubleshooting tips.
+> **📋 Migration Guides:**
+> - **From Alpha Version?** If you're upgrading from the alpha version of `@dotcms/client`, please see our [Migration Guide](./MIGRATION.md) for step-by-step instructions.
+> - **From v1.0.x to v1.1.1?** See the [Changelog](#v111) section below for new features and improvements.
 
 ## Table of Contents
 
@@ -34,17 +36,20 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
     -   [How to Enable Page Editing](#how-to-enable-page-editing)
 -   [API Reference](#api-reference)
     -   [Client Initialization](#client-initialization)
+    -   [HTTP Client Configuration](#http-client-configuration)
     -   [page.get() Method](#pageget-method)
     -   [content.getCollection() Method](#contentgetcollection-method)
     -   [navigation.get() Method](#navigationget-method)
+    -   [Error Handling](#error-handling)
 -   [Concepts & Architecture](#concepts--architecture)
     -   [Key Concepts](#key-concepts)
     -   [Choosing the Right Method](#choosing-the-right-method)
     -   [Architecture Overview](#architecture-overview)
--   [Support & Contributing](#support--contributing)
-    -   [dotCMS Support](#dotcms-support)
-    -   [How To Contribute](#how-to-contribute)
-    -   [Licensing Information](#licensing-information)
+-   [Support](#support)
+-   [Contributing](#contributing)
+-   [Licensing](#licensing)
+-   [Changelog](#changelog)
+    -   [v1.1.1](#v111)
 
 ## Getting Started
 
@@ -289,21 +294,70 @@ createDotCMSClient(config: DotCMSClientConfig): DotCMSClient
 
 #### Parameters
 
-| Option           | Type           | Required | Description                                                   |
-| ---------------- | -------------- | -------- | ------------------------------------------------------------- |
-| `dotcmsUrl`      | string         | ✅       | Your dotCMS instance URL                                      |
-| `authToken`      | string         | ✅       | Authentication token                                          |
-| `siteId`         | string         | ❌       | Site identifier (falls back to default site if not specified) |
-| `requestOptions` | RequestOptions | ❌       | Additional fetch options                                      |
+| Option           | Type              | Required | Description                                                   |
+| ---------------- | ----------------- | -------- | ------------------------------------------------------------- |
+| `dotcmsUrl`      | string            | ✅       | Your dotCMS instance URL                                      |
+| `authToken`      | string            | ✅       | Authentication token                                          |
+| `siteId`         | string            | ❌       | Site identifier (falls back to default site if not specified) |
+| `requestOptions` | DotRequestOptions | ❌       | Additional request options                                    |
+| `httpClient`     | DotHttpClient     | ❌       | Custom HTTP client implementation                             |
 
 #### Example
 ```typescript
 const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',
-    siteId: 'your-site-id'
+    siteId: 'your-site-id',
+    httpClient: customHttpClient // Optional: provide custom HTTP client
 });
 ```
+
+### HTTP Client Configuration
+
+The SDK now supports custom HTTP client implementations for advanced use cases. By default, it uses the built-in `FetchHttpClient` based on the native Fetch API.
+
+#### Default HTTP Client
+```typescript
+// The SDK automatically uses FetchHttpClient if no custom client is provided
+const client = createDotCMSClient({
+    dotcmsUrl: 'https://your-dotcms-instance.com',
+    authToken: 'your-auth-token'
+    // No httpClient specified - uses FetchHttpClient internally
+});
+```
+
+#### Custom HTTP Client
+```typescript
+import { BaseHttpClient } from '@dotcms/types';
+
+// Implement your own HTTP client by extending BaseHttpClient
+class CustomHttpClient extends BaseHttpClient {
+    async request<T>(url: string, options?: DotRequestOptions): Promise<T> {
+        // Your custom implementation
+        // Must handle JSON parsing, error conversion, etc.
+        return customRequest(url, options);
+    }
+}
+
+const client = createDotCMSClient({
+    dotcmsUrl: 'https://your-dotcms-instance.com',
+    authToken: 'your-auth-token',
+    httpClient: new CustomHttpClient()
+});
+```
+
+#### When You Might Need a Custom HTTP Client
+
+- **Corporate Proxies**: "All our API calls must go through our corporate proxy with authentication"
+- **Request Monitoring**: "We need to log every dotCMS API call for our compliance audit trail"
+- **Custom Authentication**: "Our enterprise SSO requires adding custom headers to every request"
+- **Performance Optimization**: "We want to reuse HTTP connections and implement our own retry logic"
+
+#### HTTP Client Features
+- **Automatic Response Parsing**: JSON responses are automatically parsed
+- **Error Standardization**: All HTTP failures are converted to `DotHttpError` instances
+- **Type Safety**: Full TypeScript support with generic response types
+- **Universal Compatibility**: Works in both browser and Node.js environments
 
 ### page.get() Method
 
@@ -397,6 +451,112 @@ get(
 const nav = await client.navigation.get('/', { depth: 2 });
 ```
 
+### Error Handling
+
+The SDK provides comprehensive error handling with specific error types for different API operations. These domain-specific errors may wrap `DotHttpError` instances when HTTP failures occur and include contextual information to help with debugging.
+
+#### Error Types
+
+| Error Type          | When It's Thrown                           | Properties                                          |
+| ------------------- | ------------------------------------------ | --------------------------------------------------- |
+| `DotHttpError`      | HTTP/network failures (4xx/5xx, timeouts) | `status`, `statusText`, `headers`, `body`           |
+| `DotErrorPage`      | Page API failures                          | `httpError?`, `context` (query, variables)         |
+| `DotErrorContent`   | Content API failures                       | `contentType`, `operation`, `httpError?`, `query?` |
+| `DotErrorNavigation`| Navigation API failures                    | `path`, `httpError?`                               |
+
+#### Basic Error Handling
+```typescript
+try {
+    const { pageAsset } = await client.page.get('/about-us');
+    console.log(pageAsset.page.title);
+} catch (error) {
+    if (error instanceof DotErrorPage) {
+        console.error('Page error:', error.message);
+        console.error('Context:', error.context);
+    } else {
+        console.error('Unexpected error:', error);
+    }
+}
+```
+
+#### Content Collection Error Handling
+```typescript
+try {
+    const blogs = await client.content
+        .getCollection('Blog')
+        .limit(10);
+} catch (error) {
+    if (error instanceof DotErrorContent) {
+        console.error('Content error:', error.message);
+        console.error('Content type:', error.contentType);
+        console.error('Operation:', error.operation);
+        if (error.httpError) {
+            console.error('HTTP status:', error.httpError.status);
+        }
+    }
+}
+```
+
+#### Navigation Error Handling
+```typescript
+try {
+    const nav = await client.navigation.get('/missing-path');
+} catch (error) {
+    if (error instanceof DotErrorNavigation) {
+        console.error('Navigation error:', error.message);
+        console.error('Path:', error.path);
+        if (error.httpError) {
+            console.error('HTTP status:', error.httpError.status);
+        }
+    }
+}
+```
+
+#### Promise-Style Error Handling
+```typescript
+// Content collections support .then() with error handling
+const result = await client.content
+    .getCollection('Blog')
+    .limit(10)
+    .then(
+        (response) => {
+            console.log('Success:', response.contentlets);
+            return response;
+        },
+        (error) => {
+            console.error('Error:', error.message);
+            // Return fallback data or re-throw
+            return { contentlets: [], total: 0 };
+        }
+    );
+```
+
+#### Common Error Scenarios
+
+**401 Unauthorized**
+```typescript
+// Missing or invalid authentication token
+DotHttpError: status 401, message: "Authentication required"
+```
+
+**403 Forbidden**
+```typescript
+// Valid token but insufficient permissions
+DotHttpError: status 403, message: "Access denied"
+```
+
+**404 Not Found**
+```typescript
+// Page, content, or navigation path not found
+DotErrorPage: "Page /missing-page not found. Check the page URL and permissions."
+```
+
+**Network Errors**
+```typescript
+// Connection issues, timeouts, etc.
+DotHttpError: "Network request failed"
+```
+
 ## Concepts & Architecture
 
 ### Key Concepts
@@ -446,15 +606,14 @@ All APIs support:
 - Localization and personalization
 - Browser and Node.js compatibility
 
-## Support & Contributing
-
-### dotCMS Support
+## Support
 
 We offer multiple channels to get help with the dotCMS Client SDK:
 
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-client` when posting questions.
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
 
 When reporting issues, please include:
 
@@ -463,11 +622,9 @@ When reporting issues, please include:
 -   Minimal reproduction steps
 -   Expected vs. actual behavior
 
-Enterprise customers can access premium support through the [dotCMS Support Portal](https://dev.dotcms.com/docs/help).
+## Contributing
 
-### How To Contribute
-
-GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
+GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the dotCMS Client SDK! If you'd like to contribute, please follow these steps:
 
 1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -477,7 +634,117 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 
 Please ensure your code follows the existing style and includes appropriate tests.
 
-### Licensing Information
+## Changelog
+
+### v1.1.1
+
+Version 1.1.1 introduces significant improvements to error handling and HTTP client architecture. Most applications will continue to work without changes.
+
+#### ✨ Added - Enhanced Error Handling
+
+**New Features:**
+- Introduced specific error types: `DotErrorPage`, `DotErrorContent`, `DotErrorNavigation`
+- Domain-specific errors wrap `DotHttpError` instances with contextual information
+- Enhanced error context and debugging information
+- Improved error handling in promise chains
+
+**Migration Required If:**
+- You're catching generic `Error` instances from SDK calls
+- You're using `.then()` callbacks on content collections without return values
+- You're parsing raw HTTP error responses manually
+
+**Before (v1.0.x):**
+```typescript
+try {
+    const { pageAsset } = await client.page.get('/about');
+} catch (error) {
+    // Generic error handling
+    console.error('Error:', error.message);
+    console.error('Status:', error.status); // May not exist
+}
+
+// Collection error handling
+client.content.getCollection('Blog').then(
+    (response) => console.log(response),
+    (error) => {
+        console.error(error.status); // Raw HTTP status
+        // No return value required
+    }
+);
+```
+
+**After (v1.1.1):**
+```typescript
+try {
+    const { pageAsset } = await client.page.get('/about');
+} catch (error) {
+    // Specific error type checking
+    if (error instanceof DotErrorPage) {
+        console.error('Page Error:', error.message);
+        console.error('Context:', error.context);
+        if (error.httpError) {
+            console.error('HTTP Status:', error.httpError.status);
+        }
+    }
+}
+
+// Collection error handling with required return values
+client.content.getCollection('Blog').then(
+    (response) => {
+        console.log(response);
+        return response; // Return value recommended
+    },
+    (error) => {
+        if (error instanceof DotErrorContent) {
+            console.error('Content Error:', error.contentType, error.operation);
+        }
+        return { contentlets: [], total: 0 }; // Return fallback or re-throw
+    }
+);
+```
+
+#### ✨ Added - HTTP Client Architecture
+
+**New Features:**
+- New `DotHttpClient` interface for pluggable HTTP implementations
+- Default `FetchHttpClient` replaces direct `fetch()` calls
+- Better TypeScript support for custom HTTP clients
+
+**Migration Required If:**
+- You're extending or mocking SDK internals
+- You need custom HTTP behavior (proxies, interceptors, etc.)
+
+**New Capabilities:**
+```typescript
+// Custom HTTP client support
+const client = createDotCMSClient({
+    dotcmsUrl: 'https://your-instance.com',
+    authToken: 'your-token',
+    httpClient: new CustomHttpClient() // Optional: custom implementation
+});
+```
+
+#### 🔄 Changed - Type Updates
+
+**Improvements:**
+- `RequestOptions` renamed to `DotRequestOptions`
+- GraphQL response types improved
+- Error response types standardized
+
+**Migration Required If:**
+- You're importing `RequestOptions` directly
+- You're using internal type definitions
+
+**Update Imports:**
+```typescript
+// Before
+import { RequestOptions } from '@dotcms/types';
+
+// After
+import { DotRequestOptions } from '@dotcms/types';
+```
+
+## Licensing
 
 dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
 

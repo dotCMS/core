@@ -1,5 +1,8 @@
 package com.dotcms.analytics.attributes;
 
+import com.dotcms.analytics.content.ReportResponse;
+import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
@@ -13,6 +16,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -381,5 +389,1356 @@ public class CustomAttributeAPIImplTest {
                                 "AND custom_attribute->>'" + customAttributeName3 + "' = '" + customAttributeMatch3 + "'")
                         .loadObjectResults()
                         .get(0).get("count").toString());
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name", "request.custom.type"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "member": "request.eventType",
+     *                 "operator": "equals",
+     *                 "values": ["custom_event"]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     * Should: return the follow:
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom_1", "request.custom_2"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "member": "request.eventType",
+     *                 "operator": "equals",
+     *                 "values": ["custom_event"]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNames() throws DotDataException, CustomAttributeProcessingException {
+
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+            "\"dimensions\": [\"request.custom.name\", \"request.custom.type\"],\n" +
+            "\"measures\": [\"request.count\"],\n" +
+            "\"filters\": [\n" +
+                "{\n" +
+                "   \"member\": \"request.eventType\",\n" +
+                "   \"operator\": \"equals\",\n" +
+                "   \"values\": [\"" + eventName + "\"]\n" +
+                "}\n" +
+            "]\n" +
+        "}";
+
+        final CustomAttributeAPI.TranslatedQuery translatedQuery = customAttributeAPI.translateFromFriendlyName(query);
+
+        final String queryTranslated = translatedQuery.getTranslateQuery();
+
+        final String expectedQuery = "{\n" +
+            "\"dimensions\": [\"request.custom_1\", \"request.custom_2\"],\n" +
+            "\"measures\": [\"request.count\"],\n" +
+            "\"filters\": [\n" +
+                "{\n" +
+                "   \"member\": \"request.eventType\",\n" +
+                "   \"operator\": \"equals\",\n" +
+                "   \"values\": [\"" + eventName + "\"]\n" +
+                "}\n" +
+            "]\n" +
+        "}";
+
+        assertEquals(expectedQuery, queryTranslated);
+
+        final Map<String, String> matchApplied = translatedQuery.getMatchApplied();
+        assertEquals(3, matchApplied.size());
+
+        assertTrue(matchApplied.containsKey("request.custom.name"));
+        assertTrue(matchApplied.containsKey("request.custom.type"));
+        assertTrue(matchApplied.containsKey("request.custom.anotherOne"));
+
+        assertEquals("request.custom_1", matchApplied.get("request.custom.name"));
+        assertEquals("request.custom_2", matchApplied.get("request.custom.type"));
+        assertEquals("request.custom_3", matchApplied.get("request.custom.anotherOne"));
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * is called with a query like (no filter here):
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name", "request.custom.type"],
+     *         "measures": ["request.count"]
+     *     }
+     * </code>
+     *
+     * Should: return a CustomAttributeProcessingException with a message as follows:
+     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithOutFilter() throws DotDataException {
+
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\", \"request.custom.type\"],\n" +
+                "\"measures\": [\"request.count\"]\n" +
+        "}";
+
+        try {
+            customAttributeAPI.translateFromFriendlyName(query);
+            throw new AssertionError("CustomAttributeProcessingException expected");
+        } catch (CustomAttributeProcessingException e) {
+            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * is called with a query like (no filter here):
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.name", "request.type"],
+     *         "measures": ["request.count"]
+     *     }
+     * </code>
+     *
+     * Should: In this case the user is not using any custom attribute so we should just return the same query
+     * without translate
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithOutFiltersAndCustom()
+            throws DotDataException, CustomAttributeProcessingException {
+
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.name\", \"request.type\"],\n" +
+                "\"measures\": [\"request.count\"]\n" +
+        "}";
+
+        final CustomAttributeAPI.TranslatedQuery translatedQuery = customAttributeAPI.translateFromFriendlyName(query);
+
+        assertEquals(query, translatedQuery.getTranslateQuery());
+
+        final Map<String, String> matchApplied = translatedQuery.getMatchApplied();
+        assertTrue(matchApplied.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like this one:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name", "request.custom.type"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "member": "request.eventType",
+     *                 "operator": "set"
+     *             }
+     *         ]
+     *     }
+     * </code>
+     *
+     * Should: return a CustomAttributeProcessingException with a message as follows:
+     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithoutFiltersValues() throws DotDataException, CustomAttributeProcessingException {
+
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\", \"request.custom.type\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [\n" +
+                    "{\n" +
+                    "   \"member\": \"request.eventType\",\n" +
+                    "   \"operator\": \"set\"\n" +
+                    "}\n" +
+                "]\n" +
+        "}";
+
+        try {
+            customAttributeAPI.translateFromFriendlyName(query);
+            throw new AssertionError("CustomAttributeProcessingException expected");
+        } catch (CustomAttributeProcessingException e) {
+            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like this one:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name", "request.custom.type"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "member_miss-spelling": "request.eventType",
+     *                 "operator": "set",
+     *                 "values": ["eventType"]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     *
+     * Member is misspelling
+     *
+     * Should: return the same query the method goal is translated the custom attribute the query not validate it.
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithoutFiltersMember() throws DotDataException, CustomAttributeProcessingException {
+
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\", \"request.custom.type\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [\n" +
+                    "{\n" +
+                    "   \"member_miss-spelling\": \"request.eventType\",\n" +
+                    "   \"operator\": \"set\",\n" +
+                    "   \"values\": [\"" + eventName + "\"]\n" +
+                    "}\n" +
+                "]\n" +
+        "}";
+
+        try {
+            customAttributeAPI.translateFromFriendlyName(query);
+            throw new AssertionError("CustomAttributeProcessingException expected");
+        } catch (CustomAttributeProcessingException e) {
+            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "or": [
+     *                    {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event"]
+     *                    },
+     *                    {
+     *                      "member": "request.custom.type",
+     *                      "operator": "equals",
+     *                      "values": ["A"]
+     *                    },
+     *                 ]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     * Should: return the follow:
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom_1"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "or": [
+     *                    {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event"]
+     *                    },
+     *                    {
+     *                      "member": "request.custom_2",
+     *                      "operator": "equals",
+     *                      "values": ["A"]
+     *                    },
+     *                 ]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithOrFilter() throws DotDataException, CustomAttributeProcessingException {
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"or\": [\n" +
+                            "{\n" +
+                                "\"member\": \"request.eventType\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"" + eventName + "\"]\n" +
+                            "},\n" +
+                            "{\n" +
+                                "\"member\": \"request.custom.type\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"A\"]\n" +
+                            "}\n" +
+                        "]\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        final String queryTranslated = customAttributeAPI.translateFromFriendlyName(query).getTranslateQuery();
+
+        final String expectedQuery = "{\n" +
+                "\"dimensions\": [\"request.custom_1\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"or\": [\n" +
+                            "{\n" +
+                                "\"member\": \"request.eventType\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"" + eventName + "\"]\n" +
+                            "},\n" +
+                            "{\n" +
+                                "\"member\": \"request.custom_2\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"A\"]\n" +
+                            "}\n" +
+                        "]\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        assertEquals(expectedQuery, queryTranslated);
+    }
+
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "and": [
+     *                    {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event"]
+     *                    },
+     *                    {
+     *                      "member": "request.custom.type",
+     *                      "operator": "equals",
+     *                      "values": ["A"]
+     *                    }
+     *                 ]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     *
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithAndFilter() throws DotDataException, CustomAttributeProcessingException {
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"and\": [\n" +
+                            "{\n" +
+                                "\"member\": \"request.eventType\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"" + eventName + "\"]\n" +
+                            "},\n" +
+                            "{\n" +
+                                "\"member\": \"request.custom.type\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"A\"]\n" +
+                            "}\n" +
+                        "]\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        final String queryTranslated = customAttributeAPI.translateFromFriendlyName(query).getTranslateQuery();
+
+        final String expectedQuery = "{\n" +
+                "\"dimensions\": [\"request.custom_1\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"and\": [\n" +
+                            "{\n" +
+                                "\"member\": \"request.eventType\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"" + eventName + "\"]\n" +
+                            "},\n" +
+                            "{\n" +
+                                "\"member\": \"request.custom_2\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"A\"]\n" +
+                            "}\n" +
+                        "]\n" +
+                    "}\n" +
+                    "]" +
+        "}";
+
+        assertEquals(expectedQuery, queryTranslated);
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "or": {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event"]
+     *                 }
+     *             }
+     *         ]
+     *     }
+     * </code>
+     * (The or is invalid is must be an array)
+     *
+     * Should: return a CustomAttributeProcessingException with a message as follows:
+     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithInvalidOrFilter() throws DotDataException, CustomAttributeProcessingException {
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"or\": {\n" +
+                            "\"member\": \"request.eventType\",\n" +
+                            "\"operator\": \"equals\",\n" +
+                            "\"values\": [\"" + eventName + "\"]\n" +
+                        "}\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        try {
+            customAttributeAPI.translateFromFriendlyName(query);
+            throw new AssertionError("CustomAttributeProcessingException expected");
+        } catch (CustomAttributeProcessingException e) {
+            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "or": {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event"]
+     *                  }
+     *             }
+     *         ]
+     *     }
+     * </code>
+     * (The or is invalid is must be an array)
+     *
+     * Should:return the same query
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithInvalidOrFilterButNotCustomAttributes()
+            throws DotDataException, CustomAttributeProcessingException {
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"or\": {\n" +
+                            "\"member\": \"request.eventType\",\n" +
+                            "\"operator\": \"equals\",\n" +
+                            "\"values\": [\"" + eventName + "\"]\n" +
+                        "}\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        assertEquals(query, customAttributeAPI.translateFromFriendlyName(query).getTranslateQuery());
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "and": {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event"]
+     *                 }
+     *             }
+     *         ]
+     *     }
+     * </code>
+     * (The or is invalid is must be an array)
+     *
+     * Should: return a CustomAttributeProcessingException with a message as follows:
+     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithInvalidAndFilter()
+            throws DotDataException, CustomAttributeProcessingException {
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"and\": {\n" +
+                            "\"member\": \"request.eventType\",\n" +
+                            "\"operator\": \"equals\",\n" +
+                            "\"values\": [\"" + eventName + "\"]\n" +
+                        "}\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        try {
+            customAttributeAPI.translateFromFriendlyName(query);
+            throw new AssertionError("CustomAttributeProcessingException expected");
+        } catch (CustomAttributeProcessingException e) {
+            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "and": {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event"]
+     *                  }
+     *             }
+     *         ]
+     *     }
+     * </code>
+     * (The or is invalid is must be an array)
+     *
+     * Should:return the same query
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithInvalidAndFilterButNotCustomAttributes()
+            throws DotDataException, CustomAttributeProcessingException {
+        final String eventName = "Test_Event_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload= new LinkedHashMap<>();
+        customAttributesPayload.put("name", "name_value");
+        customAttributesPayload.put("type", "type_value");
+        customAttributesPayload.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"and\": {\n" +
+                            "\"member\": \"request.eventType\",\n" +
+                            "\"operator\": \"equals\",\n" +
+                            "\"values\": [\"" + eventName + "\"]\n" +
+                        "}\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        assertEquals(query, customAttributeAPI.translateFromFriendlyName(query).getTranslateQuery());
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event_1 as Event Type:
+     *
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     *  and another call for custom_event_2:
+     *
+     * <code>
+     * {
+     *   name_2: "name_value",
+     *   type_2: "type_value",
+     *   anotherOne_2: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "and": [
+     *                    {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event_1", "custom_events_2"]
+     *                    },
+     *                    {
+     *                      "member": "request.custom.type",
+     *                      "operator": "equals",
+     *                      "values": ["A"]
+     *                    }
+     *                 ]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     *
+     * Should: return a CustomAttributeProcessingException with a message as follows:
+     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithMultiEventTypeValues() throws DotDataException {
+        final String eventName_1 = "Test_Event_1_" + System.currentTimeMillis();
+        final String eventName_2 = "Test_Event_2_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload_1 = new LinkedHashMap<>();
+        customAttributesPayload_1.put("name", "name_value");
+        customAttributesPayload_1.put("type", "type_value");
+        customAttributesPayload_1.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName_1, customAttributesPayload_1);
+
+        final Map<String, Object> customAttributesPayload_2 = new LinkedHashMap<>();
+        customAttributesPayload_2.put("name", "name_value");
+        customAttributesPayload_2.put("type", "type_value");
+        customAttributesPayload_2.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName_2, customAttributesPayload_2);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"and\": [\n" +
+                            "{\n" +
+                                "\"member\": \"request.eventType\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"" + eventName_1 + "\"," + "\"" + eventName_2 + "\"" + "]\n" +
+                            "},\n" +
+                            "{\n" +
+                                "\"member\": \"request.custom.type\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"A\"]\n" +
+                            "}\n" +
+                        "]\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        try {
+            customAttributeAPI.translateFromFriendlyName(query);
+            throw new AssertionError("CustomAttributeProcessingException expected");
+        } catch (CustomAttributeProcessingException e) {
+            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+                    e.getMessage());
+        }
+    }
+
+
+
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event_1 as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     *  and another call for custom_event_2:
+     *
+     * <code>
+     * {
+     *   name_2: "name_value",
+     *   type_2: "type_value",
+     *   anotherOne_2: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "or": [
+     *                    {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event_1", "custom_event_2"]
+     *                    },
+     *                    {
+     *                      "member": "request.custom.type",
+     *                      "operator": "equals",
+     *                      "values": ["A"]
+     *                    },
+     *                 ]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     *
+     * Should: return a CustomAttributeProcessingException with a message as follows:
+     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithOrAndMultiEventTypeValues() throws DotDataException {
+        final String eventName_1 = "Test_Event_1_" + System.currentTimeMillis();
+        final String eventName_2 = "Test_Event_2_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload_1= new LinkedHashMap<>();
+        customAttributesPayload_1.put("name", "name_value");
+        customAttributesPayload_1.put("type", "type_value");
+        customAttributesPayload_1.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName_1, customAttributesPayload_1);
+
+        final Map<String, Object> customAttributesPayload_2= new LinkedHashMap<>();
+        customAttributesPayload_2.put("name", "name_value");
+        customAttributesPayload_2.put("type", "type_value");
+        customAttributesPayload_2.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName_2, customAttributesPayload_2);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"or\": [\n" +
+                            "{\n" +
+                                "\"member\": \"request.eventType\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"" + eventName_1 + "\"," + "\"" + eventName_2 + "\"]\n" +
+                            "},\n" +
+                            "{\n" +
+                                "\"member\": \"request.custom.type\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"A\"]\n" +
+                            "}\n" +
+                        "]\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        try {
+            customAttributeAPI.translateFromFriendlyName(query);
+            throw new AssertionError("CustomAttributeProcessingException expected");
+        } catch (CustomAttributeProcessingException e) {
+            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event_1 as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     *  and another call for custom_event_2:
+     *
+     * <code>
+     * {
+     *   name_2: "name_value",
+     *   type_2: "type_value",
+     *   anotherOne_2: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.custom.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                 "and": [
+     *                    {
+     *                      "member": "request.eventType",
+     *                      "operator": "equals",
+     *                      "values": ["custom_event_1", "custom_event_2"]
+     *                    },
+     *                    {
+     *                      "member": "request.custom.type",
+     *                      "operator": "equals",
+     *                      "values": ["A"]
+     *                    },
+     *                 ]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     *
+     * Should: return a CustomAttributeProcessingException with a message as follows:
+     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWithAndOperatorAndMultiEventTypeValues() throws DotDataException {
+        final String eventName_1 = "Test_Event_1_" + System.currentTimeMillis();
+        final String eventName_2 = "Test_Event_2_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload_1= new LinkedHashMap<>();
+        customAttributesPayload_1.put("name", "name_value");
+        customAttributesPayload_1.put("type", "type_value");
+        customAttributesPayload_1.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName_1, customAttributesPayload_1);
+
+        final Map<String, Object> customAttributesPayload_2= new LinkedHashMap<>();
+        customAttributesPayload_2.put("name", "name_value");
+        customAttributesPayload_2.put("type", "type_value");
+        customAttributesPayload_2.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName_2, customAttributesPayload_2);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.custom.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [ \n" +
+                    "{\n" +
+                        "\"and\": [\n" +
+                            "{\n" +
+                                "\"member\": \"request.eventType\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"" + eventName_1 + "\"," + "\"" + eventName_2 + "\"]\n" +
+                            "},\n" +
+                            "{\n" +
+                                "\"member\": \"request.custom.type\",\n" +
+                                "\"operator\": \"equals\",\n" +
+                                "\"values\": [\"A\"]\n" +
+                            "}\n" +
+                        "]\n" +
+                    "}\n" +
+                "]" +
+        "}";
+
+        try {
+            customAttributeAPI.translateFromFriendlyName(query);
+            throw new AssertionError("CustomAttributeProcessingException expected");
+        } catch (CustomAttributeProcessingException e) {
+            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * When: Send an invalid json
+     * Should: return exactly the same "query", remember the method translate custom no validate the Json
+     *
+     * @throws CustomAttributeProcessingException
+     */
+    @Test
+    public void translateToFriendlyNamesWithInvalidJson() throws CustomAttributeProcessingException {
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+        final String query = "Invalid json";
+
+        assertEquals(query, customAttributeAPI.translateFromFriendlyName(query).getTranslateQuery());
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * When: Send a invalid json with custom match
+     * Should: return exactly the same "query", remember the method translate custom no validate the Json
+     *
+     * @throws CustomAttributeProcessingException
+     */
+    @Test
+    public void translateToFriendlyNamesWithInvalidJsonWithCustom() throws CustomAttributeProcessingException {
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+        final String query = "Invalid json with request.custom.name";
+
+        assertEquals(query, customAttributeAPI.translateFromFriendlyName(query).getTranslateQuery());
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
+     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * and custom_event as Event Type:
+     * <code>
+     * {
+     *   name: "name_value",
+     *   type: "type_value",
+     *   anotherOne: "another_value"
+     * }
+     * </code>
+     *
+     * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
+     *
+     * <code>
+     *     {
+     *         "dimensions": ["request.name"],
+     *         "measures": ["request.count"],
+     *         "filters": [
+     *             {
+     *                "member": "request.eventType",
+     *                "operator": "equals",
+     *                 "values": ["custom_event"]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     * (The or is invalid is must be an array)
+     *
+     * Should:return the same query
+     *
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void translateToFriendlyNamesWhenDoesNotExistsMatch() throws CustomAttributeProcessingException, DotDataException {
+        final String eventName = "Test_Event_1_" + System.currentTimeMillis();
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+
+        final Map<String, Object> customAttributesPayload_1= new LinkedHashMap<>();
+        customAttributesPayload_1.put("name", "name_value");
+        customAttributesPayload_1.put("type", "type_value");
+        customAttributesPayload_1.put("anotherOne", "another_value");
+
+        customAttributeAPI.checkCustomPayloadValidation(eventName, customAttributesPayload_1);
+
+        final String query = "{\n" +
+                "\"dimensions\": [\"request.name\"],\n" +
+                "\"measures\": [\"request.count\"],\n" +
+                "\"filters\": [\n" +
+                    "{\n" +
+                    "   \"member\": \"request.eventType\",\n" +
+                    "   \"operator\": \"equals\",\n" +
+                    "   \"values\": [\"" + eventName + "\"]\n" +
+                    "}\n" +
+                "]\n" +
+        "}";
+
+        final String queryTranslated = customAttributeAPI.translateFromFriendlyName(query).getTranslateQuery();
+
+        assertEquals(query, queryTranslated);
+    }
+
+    /**
+     * Method to test: {@link CustomAttributeAPIImpl#translateResults(ReportResponse, Map)}
+     * When: You get a result after run the query like:
+     * <code>
+     *    [
+     *      {
+     *          "request.custom_1": "A",
+     *          "request.custom_2": "B",
+     *          "request.totalSessions": "10"
+     *      },
+     *      {
+     *          "request.custom_1": "C",
+     *          "request.custom_2": "D",
+     *          "request.totalSessions": "20"
+     *      }
+     *    ]
+     * </code>
+     * Should: translate it to:
+     * <code>
+     *    [
+     *      {
+     *          "request.custom.name": "A",
+     *          "request.custom.type": "B",
+     *          "request.totalSessions": "10"
+     *      },
+     *      {
+     *          "request.custom.name": "C",
+     *          "request.custom.type": "D",
+     *          "request.totalSessions": "20"
+     *      }
+     *    ]
+     * </code>
+     */
+    @Test
+    public void translateResult(){
+        final ReportResponse originalReportResponse = mock(ReportResponse.class);
+
+        final List<ResultSetItem> resultSetItems = new ArrayList<>();
+
+        final ResultSetItem resultSetItem_1 = mock(ResultSetItem.class);
+        when(resultSetItem_1.getAll()).thenReturn(Map.of(
+                "request.custom_1", "A",
+                "request.custom_2", "B",
+                "request.totalSessions", "10"
+        ));
+        resultSetItems.add(resultSetItem_1);
+
+        final ResultSetItem resultSetItem_2 = mock(ResultSetItem.class);
+        when(resultSetItem_2.getAll()).thenReturn(Map.of(
+                "request.custom_1", "C",
+                "request.custom_2", "D",
+                "request.totalSessions", "20"
+        ));
+        resultSetItems.add(resultSetItem_2);
+
+        when(originalReportResponse.getResults()).thenReturn(resultSetItems);
+
+        final Map<String, String> matchApplied = Map.of(
+                "request.custom_1", "request.custom.name",
+                "request.custom_2",  "request.custom.type"
+        );
+
+        final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
+        final ReportResponse transslateReportResponse = customAttributeAPI.translateResults(originalReportResponse, matchApplied);
+
+        final List<ResultSetItem> results = transslateReportResponse.getResults();
+
+        assertEquals(2, results.size());
+
+        final Map<String, String> expected_1 = Map.of(
+                "request.custom.name", "A",
+                "request.custom.type", "B",
+                "request.totalSessions", "10"
+        );
+
+        final Map<String, String> expected_2 = Map.of(
+                "request.custom.name", "C",
+                "request.custom.type", "D",
+                "request.totalSessions", "20"
+        );
+
+        assertEquals(expected_1, results.get(0).getAll());
+        assertEquals(expected_2, results.get(1).getAll());
+
     }
 }

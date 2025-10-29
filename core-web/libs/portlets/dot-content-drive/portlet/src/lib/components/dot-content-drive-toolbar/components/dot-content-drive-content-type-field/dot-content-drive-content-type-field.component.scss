@@ -1,0 +1,16 @@
+@use "variables" as *;
+
+.footer {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    padding: $spacing-1 $spacing-2;
+    color: $color-palette-gray-500;
+    gap: $spacing-3;
+}
+
+:host::ng-deep {
+    .p-multiselect-panel.hide-empty-message .p-multiselect-items .p-multiselect-empty-message {
+        display: none;
+    }
+}

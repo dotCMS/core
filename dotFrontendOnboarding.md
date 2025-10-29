@@ -34,7 +34,7 @@ Before you begin, ensure you have the following tools installed on your system:
 
 - **Node**: JavaScript runtime environment
   ```sh
-  nvm install 18.18.2
+  nvm use
   ```
 
 - **Nx**: Monorepo tool
@@ -47,12 +47,12 @@ Before you begin, ensure you have the following tools installed on your system:
   brew install yarn
   ```
 
-- **VS Code**: Code editor for development
-  - Download from [VS Code website](https://code.visualstudio.com/download) (Recommended)
+- Editors:
+  - VsCode: Download from [VS Code website](https://code.visualstudio.com/download) (Recommended)
+  - Cursor: Download from [Cursor website](https://www.cursor.com/download) (Recommended)
 
-- **Nx Console**: A Visual Studio Code extension for Nx
-  - Download from [Vs Code Marketplace ](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) (Optional)
-
+- Extensions:
+  - Nx Console: Download from [Nx Console website](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) (Optional)
 
 ## Installation
 

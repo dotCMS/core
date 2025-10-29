@@ -17,7 +17,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
@@ -25,7 +25,12 @@ import { WINDOW } from '@dotcms/utils';
 import { CustomFieldConfig } from '../../models/dot-edit-content-custom-field.interface';
 import { DEFAULT_CUSTOM_FIELD_CONFIG } from '../../models/dot-edit-content-field.constant';
 import { createCustomFieldConfig } from '../../utils/functions.util';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 /**
  * This component is used to render a custom field in the DotCMS content editor.
@@ -39,7 +44,11 @@ import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
         ButtonModule,
         InputTextModule,
         DialogModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent
     ],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
@@ -50,17 +59,11 @@ import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
             useValue: window
         }
     ],
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ],
     host: {
         '[class.no-label]': '!$showLabel()'
     }
 })
-export class DotEditContentCustomFieldComponent implements OnDestroy {
+export class DotEditContentCustomFieldComponent extends BaseWrapperField implements OnDestroy {
     /**
      * The field to render.
      */
@@ -70,14 +73,17 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
      */
     $contentType = input<string>(null, { alias: 'contentType' });
     /**
-     * The inode of the content to render the field for.
-     */
-    $inode = input<string>(null, { alias: 'inode' });
-    /**
      * The iframe element to render the custom field in.
      */
     $iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
-
+    /**
+     * The contentlet to render the field for.
+     */
+    $contentlet = input<DotCMSContentlet>(null, { alias: 'contentlet' });
+    /**
+     * The inode of the content to render the field for.
+     */
+    $inode = computed(() => this.$contentlet()?.inode);
     /**
      * The window object.
      */
@@ -121,16 +127,6 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         }
 
         return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
-    });
-
-    /**
-     * Whether to show the label.
-     */
-    $showLabel = computed(() => {
-        const field = this.$field();
-        if (!field) return true;
-
-        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
     });
 
     /**

@@ -1,17 +1,49 @@
-# DotCMS Type Definition Library
+# dotCMS Types Library
+
+The `@dotcms/types` package contains TypeScript type definitions for the dotCMS ecosystem. Use it to enable type safety and an enhanced developer experience when working with dotCMS APIs and structured content.
 
 📦 [@dotcms/types on npm](https://www.npmjs.com/package/@dotcms/types)
 🛠️ [View source on GitHub](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/types)
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Installation](#installation)
+- [Commonly Used Types](#commonly-used-types)
+- [Type Hierarchy (Jump to Definitions)](#type-hierarchy-jump-to-definitions)
+  - [dotCMS Content & Pages](#dotcms-content--pages)
+  - [Universal Visual Editor (UVE)](#universal-visual-editor-uve)
+  - [Block Editor](#block-editor)
+  - [Client & HTTP](#client--http)
+  - [Error Handling](#error-handling)
+- [Usage Examples](#usage-examples)
+  - [Error Type Checking](#error-type-checking)
+- [Support](#support)
+- [Contributing](#contributing)
+- [Licensing](#licensing)
+- [Changelog](#changelog)
+
+## Overview
+
+### When to Use It
+
+- Building TypeScript applications with dotCMS
+- Enabling type safety in your dotCMS integrations
+- Getting better IDE autocomplete and error checking
+- Working with dotCMS Client SDK or other SDK packages
+
+### Key Benefits
+
+- **Type Safety**: Catch errors at compile time instead of runtime
+- **IDE Support**: Rich autocomplete and inline documentation
+- **Better Developer Experience**: Clear interfaces for all dotCMS data structures
+- **Framework Agnostic**: Works with any TypeScript project
 
 ## Installation
 
 ```bash
 npm install @dotcms/types@latest --save-dev
 ```
-
-## Overview
-
-This package contains TypeScript type definitions for the dotCMS ecosystem. Use it to enable type safety and an enhanced developer experience when working with dotCMS APIs and structured content.
 
 ## Commonly Used Types
 
@@ -20,77 +52,203 @@ import {
   DotCMSPageAsset,
   DotCMSPageResponse,
   UVEEventType,
-  DotCMSInlineEditingPayload
+  DotCMSInlineEditingPayload,
+  DotHttpClient,
+  DotHttpError,
+  DotErrorPage,
+  DotErrorContent,
+  DotErrorNavigation
 } from '@dotcms/types';
 ```
 
 ## Type Hierarchy (Jump to Definitions)
 
-### Page Types
+### dotCMS Content & Pages
 
-* [DotCMSPageAsset](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L18)
+**Page:**
 
-  * [DotCMSPage](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L515)
-  * [DotCMSPageAssetContainer](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L138)
-  * [DotCMSSite](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L733)
-  * [DotCMSTemplate](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L432)
-  * [DotCMSViewAs](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L598)
-  * [DotCMSVanityUrl](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L80)
-  * [DotCMSURLContentMap](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L41)
-  * [DotCMSLayout](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L622)
-  * [DotCMSPageContainerContentlets](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1139)
-  * [DotCMSPageResponse](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1175)
-  * [DotCMSComposedPageAsset](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1189)
-  * [DotCMSComposedContent](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1195)
-  * [DotCMSComposedPageResponse](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1199)
-  * [DotCMSClientPageGetResponse](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1208)
+| Type | Description |
+|------|-------------|
+| [DotCMSPageAsset](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L18) | Complete page with layout and content |
+| [DotCMSPage](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L515) | Core page data |
+| [DotCMSPageResponse](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1175) | API response for page requests |
+| [DotGraphQLApiResponse](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1186) | GraphQL API response structure |
 
-### Block Editor Types
+**Content:**
 
-* [BlockEditorContent](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/components/block-editor-renderer/public.ts#L38)
+| Type | Description |
+|------|-------------|
+| [DotCMSBasicContentlet](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1141) | Basic contentlet structure |
 
-  * [BlockEditorNode](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/components/block-editor-renderer/public.ts#L18)
-  * [BlockEditorMark](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/components/block-editor-renderer/public.ts#L7)
+**Site & Layout:**
 
-### Editor & UVE Types
+| Type | Description |
+|------|-------------|
+| [DotCMSSite](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L733) | Site information |
+| [DotCMSTemplate](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L432) | Page templates |
+| [DotCMSLayout](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L622) | Page layout structure |
+| [DotCMSPageAssetContainer](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L138) | Container definitions |
 
-* [UVEState](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L30)
+**Navigation:**
 
-  * [UVE\_MODE](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L55)
-* [UVEEventHandler](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L67)
-* [UVEEventSubscriber](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L90)
+| Type | Description |
+|------|-------------|
+| [DotCMSNavigationItem](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/nav/public.ts#L73) | Navigation structure item with hierarchy support |
+| [DotCMSVanityUrl](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L80) | URL rewrites and vanity URLs |
+| [DotCMSURLContentMap](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L41) | URL to content mapping |
 
-  * [UVEEventSubscription](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L81)
-  * [UVEUnsubscribeFunction](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L73)
-* [UVEEventType](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L169)
+### Universal Visual Editor (UVE)
 
-  * [UVEEventPayloadMap](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L199)
-* [DotCMSPageRendererMode](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L44)
-* [DotCMSUVEAction](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L98)
+**Editor State:**
 
-### Events
+| Type | Description |
+|------|-------------|
+| [UVEState](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L30) | Current editor state |
+| [UVE_MODE](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L55) | Editor modes (EDIT, PREVIEW, PUBLISHED) |
+| [DotCMSPageRendererMode](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L44) | Page rendering modes |
 
-* [DotCMSInlineEditingPayload](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/events/public.ts#L13)
+**Editor Events:**
 
-  * [DotCMSInlineEditingType](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/events/public.ts#L1)
+| Type | Description |
+|------|-------------|
+| [UVEEventHandler](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L67) | Event handler functions |
+| [UVEEventSubscriber](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L90) | Event subscription management |
+| [UVEEventType](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L169) | Available event types |
+| [UVEEventPayloadMap](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/editor/public.ts#L199) | Event payload definitions |
 
-### Client Request Types
+**Inline Editing:**
 
-* [DotCMSPageRequestParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L35)
+| Type | Description |
+|------|-------------|
+| [DotCMSInlineEditingPayload](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/events/public.ts#L13) | Inline editing data |
+| [DotCMSInlineEditingType](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/events/public.ts#L1) | Types of inline editing |
 
-  * [DotCMSGraphQLParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L7)
-  * [RequestOptions](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L84)
-  * [DotCMSClientConfig](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L89)
-  * [DotCMSNavigationRequestParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L119)
+### Block Editor
 
-## About
+| Type | Description |
+|------|-------------|
+| [BlockEditorContent](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/components/block-editor-renderer/public.ts#L38) | Block editor content structure |
+| [BlockEditorNode](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/components/block-editor-renderer/public.ts#L18) | Individual blocks/nodes |
+| [BlockEditorMark](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/components/block-editor-renderer/public.ts#L7) | Text formatting marks |
 
-This package is maintained as part of the [dotCMS core repository](https://github.com/dotCMS/core).
+### Client & HTTP
 
-### Keywords
+**HTTP Client:**
 
-* dotcms
-* typescript
-* types
-* cms
-* content-management-system
+| Type | Description |
+|------|-------------|
+| [DotHttpClient](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L108) | HTTP client interface for custom implementations |
+| [BaseHttpClient](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L196) | Abstract base class with error handling utilities |
+
+**Client Configuration:**
+
+| Type | Description |
+|------|-------------|
+| [DotCMSClientConfig](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L395) | Client configuration options |
+| [DotRequestOptions](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L383) | HTTP request options |
+| [DotCMSPageRequestParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L378) | Page request parameters |
+| [DotCMSGraphQLParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L280) | GraphQL query parameters |
+| [DotCMSNavigationRequestParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/nav/public.ts#L39) | Navigation request options |
+
+### Error Handling
+
+**Base Error Types:**
+
+| Type | Description |
+|------|-------------|
+| [HttpErrorDetails](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L6) | HTTP error details interface |
+| [DotHttpError](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L26) | Standardized HTTP error class |
+
+**Domain-Specific Errors:**
+
+| Type | Description |
+|------|-------------|
+| [DotErrorPage](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1253) | Page API errors with GraphQL context |
+| [DotErrorContent](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/content/public.ts#L7) | Content API specific error handling |
+| [DotErrorNavigation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/nav/public.ts#L7) | Navigation API error handling |
+
+## Usage Examples
+
+### Error Type Checking
+
+```typescript
+import {
+  DotHttpError,
+  DotErrorPage,
+  DotErrorContent,
+  DotErrorNavigation
+} from '@dotcms/types';
+
+// Type-safe error handling
+if (error instanceof DotHttpError) {
+  // Access standardized HTTP error properties
+  console.error(`HTTP ${error.status}: ${error.statusText}`);
+  console.error('Response data:', error.data);
+}
+
+if (error instanceof DotErrorPage) {
+  // Page-specific error with GraphQL context
+  console.error('GraphQL query:', error.graphql?.query);
+}
+
+if (error instanceof DotErrorContent) {
+  // Content-specific error context
+  console.error(`${error.operation} failed for ${error.contentType}`);
+}
+```
+
+> **Note**: For complete implementation examples and usage patterns, see the [@dotcms/client](../client/README.md) package documentation.
+
+## Support
+
+We offer multiple channels to get help with the dotCMS Types library:
+
+-   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository
+-   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions
+-   **Stack Overflow**: Use the tag `dotcms-types` when posting questions
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
+
+When reporting issues, please include:
+
+-   Package version you're using
+-   TypeScript version
+-   Minimal reproduction steps
+-   Expected vs. actual behavior
+
+## Contributing
+
+GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the dotCMS Types library! If you'd like to contribute, please follow these steps:
+
+1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your code follows the existing style and includes appropriate tests.
+
+## Changelog
+
+### [1.1.1]
+
+#### Added
+- `DotHttpClient` interface for custom HTTP client implementations
+- `BaseHttpClient` abstract class with built-in error handling utilities
+- `DotHttpError` class for standardized HTTP error handling
+- `DotErrorPage` class for page-specific errors with GraphQL query context
+- `DotErrorContent` class for content API errors with operation details
+- `DotErrorNavigation` class for navigation-specific error handling
+- `DotGraphQLApiResponse` interface for GraphQL API responses
+- `HttpErrorDetails` interface for HTTP error standardization
+- All error classes include `toJSON()` methods for easy logging and serialization
+
+#### Changed
+- Renamed `RequestOptions` to `DotRequestOptions` for better naming consistency
+- Renamed `DotCMSGraphQLPageResponse` to `DotGraphQLApiResponse` for clarity
+- Enhanced `DotCMSClientConfig` to support custom `httpClient` implementations
+
+## Licensing
+
+dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
+
+This package is part of dotCMS's dual-licensed platform (GPL 3.0 for Community, commercial license for Enterprise).

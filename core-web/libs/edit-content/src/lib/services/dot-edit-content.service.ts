@@ -10,14 +10,21 @@ import {
     DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentType, DotCMSContentlet, DotContentletDepth } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotCMSContentlet,
+    DotCMSContentletVersion,
+    DotContentletDepth,
+    DotCMSResponse,
+    PaginationParams
+} from '@dotcms/dotcms-models';
 
 import {
     CustomTreeNode,
     DotFolder,
     TreeNodeItem
 } from '../models/dot-edit-content-host-folder-field.interface';
-import { Activity } from '../models/dot-edit-content.model';
+import { Activity, DotPushPublishHistoryItem } from '../models/dot-edit-content.model';
 import { createPaths } from '../utils/functions.util';
 
 @Injectable()
@@ -298,5 +305,83 @@ export class DotEditContentService {
         return this.#http
             .post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment })
             .pipe(pluck('entity'));
+    }
+
+    /**
+     * Creates HTTP parameters for pagination requests.
+     * Handles the logic for setting offset and limit parameters with proper defaults.
+     *
+     * @private
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters
+     * @returns {HttpParams} Configured HTTP parameters
+     */
+    private buildPaginationParams(paginationParams?: PaginationParams): HttpParams {
+        let httpParams = new HttpParams();
+
+        if (paginationParams?.limit) {
+            const offset = paginationParams.offset || 1;
+            httpParams = httpParams
+                .set('offset', offset.toString())
+                .set('limit', paginationParams.limit.toString());
+        }
+
+        return httpParams;
+    }
+
+    /**
+     * Retrieves the version history for a content item by its identifier.
+     * Returns all versions of the content including live, working, and archived versions.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters (offset-based)
+     * @param {number} [languageId] - Optional language ID to filter versions for a specific language
+     * @returns {Observable<DotCMSResponse<DotCMSContentletVersion[]>>} Observable that emits DotCMS response with contentlet version history
+     */
+    getVersions(
+        identifier: string,
+        paginationParams?: PaginationParams,
+        languageId?: number
+    ): Observable<DotCMSResponse<DotCMSContentletVersion[]>> {
+        let httpParams = this.buildPaginationParams(paginationParams);
+
+        if (languageId) {
+            httpParams = httpParams.set('languageId', languageId.toString());
+        }
+
+        return this.#http.get<DotCMSResponse<DotCMSContentletVersion[]>>(
+            `/api/v1/content/versions/id/${identifier}/history`,
+            { params: httpParams }
+        );
+    }
+
+    /**
+     * Retrieves the push publish history for a content item by its identifier.
+     * Returns all push publish operations for the content.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters (offset-based)
+     * @returns {Observable<DotCMSResponse<DotPushPublishHistoryItem[]>>} Observable that emits DotCMS response with push publish history
+     */
+    getPushPublishHistory(
+        identifier: string,
+        paginationParams?: PaginationParams
+    ): Observable<DotCMSResponse<DotPushPublishHistoryItem[]>> {
+        const httpParams = this.buildPaginationParams(paginationParams);
+
+        return this.#http.get<DotCMSResponse<DotPushPublishHistoryItem[]>>(
+            `/api/v1/content/${identifier}/push/history`,
+            { params: httpParams }
+        );
+    }
+
+    /**
+     * Deletes all push publish history for a content item by its identifier.
+     * Calls the /api/bundle/deletepushhistory/assetid/{identifier} endpoint.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @returns {Observable<any>} Observable that emits the deletion response
+     */
+    deletePushPublishHistory(identifier: string): Observable<unknown> {
+        return this.#http.get(`/api/bundle/deletepushhistory/assetid/${identifier}`);
     }
 }

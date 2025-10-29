@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 
 import { getUVEState } from '@dotcms/uve';
 
-import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { DotCMSAnalytics } from '../../core/shared/models';
 
 // TODO: Make this work no tightly coupled to Next.js App Router https://github.com/dotCMS/core/issues/33100
 

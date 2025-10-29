@@ -26,6 +26,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
@@ -81,7 +82,8 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotEditContentService),
             mockProvider(DotContentTypeService),
             mockProvider(DotWorkflowService),
-            mockProvider(DotContentletService)
+            mockProvider(DotContentletService),
+            mockProvider(DotVersionableService)
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
@@ -132,6 +134,7 @@ describe('EditContentLayoutComponent', () => {
 
         // Mock the initial UI state
         jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+            view: 'form',
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,

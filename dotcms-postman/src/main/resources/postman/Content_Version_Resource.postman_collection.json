@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "eca2aec6-2606-41ae-a013-6a23cb6061ae",
+		"_postman_id": "8c59ae8d-4791-4c3d-ba76-862e984f8f40",
 		"name": "Content Version Resource",
 		"description": "The Content Versions REST Endpoint allows users to retrieve information related to the different versions a Contentlet has in the dotCMS repository. It's base path is mapped to:\n\n`/api/v1/content/versions`\n\nYou can query Contentlet versions or history data.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -429,6 +429,144 @@
 										"id",
 										"{{contentIdentifier}}",
 										"history"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "English Versions Only",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const entity = pm.response.json().entity;",
+											"",
+											"pm.test(\"A total of 3 records in EN must be returned\", function() {",
+											"    pm.expect(entity.length).to.eql(3, \"There must be 3 EN contents returned as results\");",
+											"});",
+											"",
+											"pm.test(\"Checking total records\", function() {",
+											"    pm.expect(pm.response.json().pagination.totalEntries).to.eql(3, \"Total entries must be 3\");",
+											"});",
+											"",
+											"pm.test(\"Checking default descending order. The latest version is returned first\", function() {",
+											"    pm.expect(entity[0].title).to.eql(\"Test Content 3\", \"The 'Test Content 3' version must be the first one in the list\");",
+											"});",
+											"",
+											"pm.test(\"Checking default current page value\", function() {",
+											"    pm.expect(pm.response.json().pagination.currentPage).to.eql(1, \"Default page value must be 1\");",
+											"});",
+											"",
+											"pm.test(\"Checking default perPage value\", function() {",
+											"    pm.expect(pm.response.json().pagination.perPage).to.eql(10, \"Default perPage value must be 10\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?languageId=1",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									],
+									"query": [
+										{
+											"key": "languageId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Second Lang Versions Only",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const entity = pm.response.json().entity;",
+											"",
+											"pm.test(\"A total of 2 records in second language must be returned\", function() {",
+											"    pm.expect(entity.length).to.eql(2, \"There must be 2 contents in second language returned as results\");",
+											"});",
+											"",
+											"pm.test(\"Checking total records\", function() {",
+											"    pm.expect(pm.response.json().pagination.totalEntries).to.eql(2, \"Total entries must be 2\");",
+											"});",
+											"",
+											"pm.test(\"Checking default descending order. The latest version is returned first\", function() {",
+											"    pm.expect(entity[0].title).to.eql(\"Contenido de Prueba 2\", \"The 'Contenido de Prueba 2' version must be the first one in the list\");",
+											"});",
+											"",
+											"pm.test(\"Checking default current page value\", function() {",
+											"    pm.expect(pm.response.json().pagination.currentPage).to.eql(1, \"Default page value must be 1\");",
+											"});",
+											"",
+											"pm.test(\"Checking default perPage value\", function() {",
+											"    pm.expect(pm.response.json().pagination.perPage).to.eql(10, \"Default perPage value must be 10\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?languageId={{secondLangId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									],
+									"query": [
+										{
+											"key": "languageId",
+											"value": "{{secondLangId}}"
+										}
 									]
 								}
 							},

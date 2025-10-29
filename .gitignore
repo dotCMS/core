@@ -190,3 +190,7 @@ dotCMS/dependencies.gradle
 examples/nextjs/package-lock.json
 examples/angular/package-lock.json
 examples/astro/package-lock.json
+
+local/
+
+**/.yalc/

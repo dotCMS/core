@@ -1,7 +1,7 @@
 import { DotCMSBaseTypesContentTypes, DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
-import { getImageAssetUrl, ellipsizeText, getRunnableLink } from './dot-utils';
+import { getImageAssetUrl, ellipsizeText, getRunnableLink, hasValidValue } from './dot-utils';
 
 describe('Dot Utils', () => {
     describe('getImageAssetUrl', () => {
@@ -365,6 +365,57 @@ describe('Dot Utils', () => {
             expect(getRunnableLink(url, params)).toEqual(
                 'https://example.com/http://my-site.com/current-page?host_id=123&language_id=456'
             );
+        });
+    });
+
+    describe('hasValidValue', () => {
+        it('should return FALSE when value is null or undefined', () => {
+            expect(hasValidValue(null)).toEqual(false);
+            expect(hasValidValue(undefined)).toEqual(false);
+        });
+
+        it('should return TRUE when value is not empty string', () => {
+            expect(hasValidValue('test')).toEqual(true);
+        });
+
+        it('should return FALSE when value is empty string', () => {
+            expect(hasValidValue('')).toEqual(false);
+        });
+
+        it('should return FALSE when value is space string', () => {
+            expect(hasValidValue('   ')).toEqual(false);
+        });
+
+        it('should return TRUE when value is not empty array', () => {
+            expect(hasValidValue(['test'])).toEqual(true);
+        });
+
+        it('should return FALSE when value is empty array', () => {
+            expect(hasValidValue([])).toEqual(false);
+        });
+
+        it('should return TRUE when value is not empty object', () => {
+            expect(hasValidValue({ test: 'test' })).toEqual(true);
+        });
+
+        it('should return FALSE when value is empty object', () => {
+            expect(hasValidValue({})).toEqual(false);
+        });
+
+        it('should return TRUE when value is a positive number', () => {
+            expect(hasValidValue(1)).toEqual(true);
+        });
+
+        it('should return TRUE when value is 0', () => {
+            expect(hasValidValue(0)).toEqual(true);
+        });
+
+        it('should return TRUE when value is true', () => {
+            expect(hasValidValue(true)).toEqual(true);
+        });
+
+        it('should return TRUE when value is false', () => {
+            expect(hasValidValue(false)).toEqual(true);
         });
     });
 });

@@ -60,7 +60,7 @@
           {
               "keywordmapping" : {
                   "match_pattern": "regex",
-                  "path_match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|parentpath|path|urlmap|moduser|owner|metadata.contenttype|metadata.keywords|variant",
+                "path_match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|parentpath|path|urlmap|moduser|owner|metadata.contenttype|metadata.keywords|variant|categoryperms",
                   "mapping": {
                       "type": "keyword"
                   }

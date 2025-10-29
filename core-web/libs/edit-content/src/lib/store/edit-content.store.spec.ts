@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -13,6 +13,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
@@ -52,7 +53,9 @@ describe('DotEditContentStore', () => {
             mockProvider(DotContentletService),
             mockProvider(DotLanguagesService),
             mockProvider(DotCurrentUserService),
-            mockProvider(DialogService)
+            mockProvider(DialogService),
+            mockProvider(DotVersionableService),
+            mockProvider(ConfirmationService)
         ]
     });
 
@@ -70,6 +73,15 @@ describe('DotEditContentStore', () => {
         expect(store.state()).toBe(ComponentStatus.INIT);
         expect(store.error()).toBeNull();
         expect(store.isDialogMode()).toBe(false);
+    });
+
+    it('should initialize push publish history state correctly', () => {
+        expect(store.pushPublishHistory()).toEqual([]);
+        expect(store.pushPublishHistoryPagination()).toBeNull();
+        expect(store.pushPublishHistoryStatus()).toEqual({
+            status: ComponentStatus.INIT,
+            error: null
+        });
     });
 
     it('should compose with all required features', () => {
@@ -91,12 +103,19 @@ describe('DotEditContentStore', () => {
         expect(store.activeSidebarTab).toBeDefined();
         // User Feature
         expect(store.currentUser).toBeDefined();
+        // History Feature - Push Publish History
+        expect(store.pushPublishHistory).toBeDefined();
+        expect(store.pushPublishHistoryPagination).toBeDefined();
+        expect(store.pushPublishHistoryStatus).toBeDefined();
         // Methods
         expect(store.enableDialogMode).toBeDefined();
         expect(store.initializeNewContent).toBeDefined();
         expect(store.initializeExistingContent).toBeDefined();
         expect(store.initializeDialogMode).toBeDefined();
         expect(store.initializeAsPortlet).toBeDefined();
+        expect(store.loadPushPublishHistory).toBeDefined();
+        expect(store.clearPushPublishHistory).toBeDefined();
+        expect(store.deletePushPublishHistory).toBeDefined();
     });
 
     describe('initializeDialogMode', () => {
