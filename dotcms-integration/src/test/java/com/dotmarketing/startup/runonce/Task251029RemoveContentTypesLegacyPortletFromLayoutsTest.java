@@ -1,22 +1,20 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.util.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 /**
- * Integration test for Task250905RemoveContentTypesLegacyPortletFromLayouts
+ * Integration test for Task251029RemoveContentTypesLegacyPortletFromLayouts
  * Tests that the startup task properly removes legacy content-types portlet from layouts.
  * 
  * @author Neeha Kethi
  */
-public class Task250905RemoveContentTypesLegacyPortletFromLayoutsTest {
+public class Task251029RemoveContentTypesLegacyPortletFromLayoutsTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -40,7 +38,7 @@ public class Task250905RemoveContentTypesLegacyPortletFromLayoutsTest {
 
         try {
             // Test: forceRun should return true when legacy portlets exist
-            Task250905RemoveContentTypesLegacyPortletFromLayouts task = new Task250905RemoveContentTypesLegacyPortletFromLayouts();
+            Task251029RemoveContentTypesLegacyPortletFromLayouts task = new Task251029RemoveContentTypesLegacyPortletFromLayouts();
             assertTrue("forceRun should return true when content-types portlets exist in layouts", 
                       task.forceRun());
         } finally {
@@ -64,7 +62,7 @@ public class Task250905RemoveContentTypesLegacyPortletFromLayoutsTest {
             .loadResult();
 
         // Test: forceRun should return false when no legacy portlets exist
-        Task250905RemoveContentTypesLegacyPortletFromLayouts task = new Task250905RemoveContentTypesLegacyPortletFromLayouts();
+        Task251029RemoveContentTypesLegacyPortletFromLayouts task = new Task251029RemoveContentTypesLegacyPortletFromLayouts();
         assertFalse("forceRun should return false when no content-types portlets exist in layouts", 
                    task.forceRun());
     }
@@ -100,7 +98,7 @@ public class Task250905RemoveContentTypesLegacyPortletFromLayoutsTest {
             assertTrue("Should have legacy portlets before executeUpgrade", countBefore >= 2);
 
             // Test: Execute the upgrade task
-            Task250905RemoveContentTypesLegacyPortletFromLayouts task = new Task250905RemoveContentTypesLegacyPortletFromLayouts();
+            Task251029RemoveContentTypesLegacyPortletFromLayouts task = new Task251029RemoveContentTypesLegacyPortletFromLayouts();
             task.executeUpgrade();
 
             // Verify: No legacy portlets should exist after execution
@@ -139,7 +137,7 @@ public class Task250905RemoveContentTypesLegacyPortletFromLayoutsTest {
             .loadResult();
 
         try {
-            Task250905RemoveContentTypesLegacyPortletFromLayouts task = new Task250905RemoveContentTypesLegacyPortletFromLayouts();
+            Task251029RemoveContentTypesLegacyPortletFromLayouts task = new Task251029RemoveContentTypesLegacyPortletFromLayouts();
 
             // First execution
             task.executeUpgrade();
@@ -206,7 +204,7 @@ public class Task250905RemoveContentTypesLegacyPortletFromLayoutsTest {
             assertTrue("Should have modern portlet before execution", modernCountBefore >= 1);
 
             // Test: Execute the upgrade task
-            Task250905RemoveContentTypesLegacyPortletFromLayouts task = new Task250905RemoveContentTypesLegacyPortletFromLayouts();
+            Task251029RemoveContentTypesLegacyPortletFromLayouts task = new Task251029RemoveContentTypesLegacyPortletFromLayouts();
             task.executeUpgrade();
 
             // Verify results

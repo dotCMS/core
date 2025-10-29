@@ -13,7 +13,7 @@ import io.vavr.control.Try;
  * The new content-types-angular portlet should be used instead.
  * @author Neeha kethi
  */
-public class Task250905RemoveContentTypesLegacyPortletFromLayouts implements StartupTask {
+public class Task251029RemoveContentTypesLegacyPortletFromLayouts implements StartupTask {
 
 	@Override
 	public boolean forceRun() {
