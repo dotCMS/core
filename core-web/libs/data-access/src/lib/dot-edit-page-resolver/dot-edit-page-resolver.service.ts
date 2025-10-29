@@ -4,7 +4,7 @@ import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
-import { catchError, filter, map, switchMap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import { HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
@@ -13,6 +13,7 @@ import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-e
 import { DotPageStateService } from '../dot-page-state/dot-page-state.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
+import { GlobalStore } from '@dotcms/store';
 
 /**
  * With the url return a string of the edit page html
@@ -27,7 +28,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
     private dotRouterService = inject(DotRouterService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private siteService = inject(SiteService);
-
+    readonly #globalStore = inject(GlobalStore);
     private dotSessionStorageService: DotSessionStorageService = inject(DotSessionStorageService);
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState | null> {
@@ -40,7 +41,14 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
         // If we have data, we don't need to request the page again
         const data$ = data ? of(data) : this.getPageRenderState(renderOptions, isLayout);
 
-        return forkJoin([this.setSite(hostId), data$]).pipe(map(([_, pageRender]) => pageRender));
+        return forkJoin([this.setSite(hostId), data$]).pipe(map(([_, pageRender]) => pageRender))
+        .pipe(tap((pageRender) => {
+            console.log('pageRender', pageRender);
+            this.#globalStore.addNewBreadcrumb({
+                label: pageRender?.page.title,
+                disabled: true,
+            });
+        }));
     }
 
     private checkUserCanGoToLayout(

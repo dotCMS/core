@@ -1222,6 +1222,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
+                console.log('URL_MAP_FOR_CONTENT', URL_MAP_FOR_CONTENT);
+
                 // If the URL is the same, we need to fetch the new page data
                 this.uveStore.reloadCurrentPage();
             });
