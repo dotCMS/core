@@ -482,11 +482,11 @@ export class DotRouterService {
                         this.#globalStore.setBreadcrumbs([
                             {
                                 label: 'dotCMS',
-                                disabled: true,
+                                disabled: true
                             },
                             {
                                 label: item.labelParent,
-                                disabled: true,
+                                disabled: true
                             },
                             {
                                 label: item.label,
