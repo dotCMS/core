@@ -8,7 +8,6 @@ import { DotGenerateSecurePasswordComponent } from '../_common/dot-generate-secu
 import { DotPushPublishDialogComponent } from '../_common/dot-push-publish-dialog/dot-push-publish-dialog.component';
 import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
 import { DotCreateContentletComponent } from '../dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
-import { DotContentletEditorService } from '../dot-contentlet-editor/services/dot-contentlet-editor.service';
 // Import standalone components
 import { DotLargeMessageDisplayComponent } from '../dot-large-message-display/dot-large-message-display.component';
 import { DotMessageDisplayComponent } from '../dot-message-display/dot-message-display.component';
@@ -18,7 +17,6 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
-    providers: [DotCustomEventHandlerService, DotContentletEditorService],
     selector: 'dot-main-component',
     styleUrls: ['./main-legacy.component.scss'],
     templateUrl: './main-legacy.component.html',

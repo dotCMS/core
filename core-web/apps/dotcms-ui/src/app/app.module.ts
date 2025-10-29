@@ -13,7 +13,7 @@ import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { AppRoutingModule } from './app-routing.module';
 import { COMPONENTS, STANDALONE_COMPONENTS } from './components';
-import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
+import { NGFACES_MODULES } from './modules';
 import { ENV_PROVIDERS } from './providers';
 import { DotDirectivesModule } from './shared/dot-directives.module';
 import { SharedModule } from './shared/shared.module';
@@ -21,7 +21,6 @@ import { SharedModule } from './shared/shared.module';
 @NgModule({
     declarations: [...COMPONENTS],
     imports: [
-        ...CUSTOM_MODULES,
         ...NGFACES_MODULES,
         ...STANDALONE_COMPONENTS,
         CommonModule,
