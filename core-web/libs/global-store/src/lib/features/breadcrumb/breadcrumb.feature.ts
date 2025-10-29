@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, effect } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
@@ -139,13 +139,18 @@ export function withBreadcrumbs() {
                 patchState(store, { breadcrumbs });
             };
 
+            const clearBreadcrumbs = () => {
+                patchState(store, { breadcrumbs: [] });
+            };
+
             return {
                 setBreadcrumbs,
                 appendCrumb,
                 truncateBreadcrumbs,
                 setLastBreadcrumb,
                 addNewBreadcrumb,
-                loadBreadcrumbs
+                loadBreadcrumbs,
+                clearBreadcrumbs
             };
         }),
         withHooks({
@@ -153,6 +158,12 @@ export function withBreadcrumbs() {
                 // Load current site on store initialization
                 // System configuration is automatically loaded by withSystem feature
                 store.loadBreadcrumbs();
+
+                // Persist breadcrumbs to sessionStorage whenever they change
+                effect(() => {
+                    const breadcrumbs = store.breadcrumbs();
+                    sessionStorage.setItem('breadcrumbs', JSON.stringify(breadcrumbs));
+                });
             }
         })
     );
