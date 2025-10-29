@@ -1,5 +1,5 @@
 <p-listbox
-    filterPlaceHolder="Filter content types..."
+    [filterPlaceHolder]="'search' | dm"
     optionLabel="name"
     dataKey="id"
     [options]="$contenttypes()"

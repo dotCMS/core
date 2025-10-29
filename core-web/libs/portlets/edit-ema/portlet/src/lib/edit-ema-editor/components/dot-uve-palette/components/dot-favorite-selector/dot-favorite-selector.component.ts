@@ -9,6 +9,7 @@ import { ListboxModule } from 'primeng/listbox';
 import { debounceTime, switchMap } from 'rxjs/operators';
 
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentTypeQueryParams } from '../../models';
 import { DotPageContentTypeService } from '../../service/dot-page-contenttype.service';
@@ -25,7 +26,7 @@ const CONTENT_TYPE_CATEGORIES = [
 
 @Component({
     selector: 'dot-favorite-selector',
-    imports: [FormsModule, ListboxModule],
+    imports: [FormsModule, ListboxModule, DotMessagePipe],
     templateUrl: './dot-favorite-selector.component.html',
     styleUrls: ['./dot-favorite-selector.component.scss']
 })

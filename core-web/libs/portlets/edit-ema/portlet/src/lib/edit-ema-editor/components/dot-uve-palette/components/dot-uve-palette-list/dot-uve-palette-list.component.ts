@@ -103,10 +103,6 @@ export class DotUvePaletteListComponent implements OnInit {
         return this.$viewMode() === 'list' || this.#paletteListStore.$isContentletsView();
     });
 
-    readonly $paginatorTemplate = computed(() => {
-        return `{first} - {last} ${this.#dotMessageService.get('uve.palette.pagination.of')} {totalRecords}`;
-    });
-
     readonly $emptyStateMessage = computed(() => {
         const currentView = this.$currentView();
         const listType = this.$listType();
