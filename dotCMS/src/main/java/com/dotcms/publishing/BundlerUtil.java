@@ -32,9 +32,9 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -322,8 +322,8 @@ public class BundlerUtil {
     private static ObjectMapper getObjectMapper() {
         if (objectMapper == null) {
             objectMapper = new ObjectMapper();
-            final JavaTimeModule javaTimeModule = createJavaTimeModule();
-            objectMapper.registerModule(javaTimeModule);
+            objectMapper.registerModule(new BlackbirdModule());
+            objectMapper.registerModule(createJavaTimeModule());
             objectMapper.registerModule(new Jdk8Module());
             objectMapper.registerModule(new GuavaModule());
         }
@@ -426,7 +426,7 @@ public class BundlerUtil {
      * @return A deserialized object
      */
     public static <T> T jsonToObject(File f, TypeReference<T> typeReference){
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
         try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(f.toPath()))){
             T ret = mapper.readValue(input, typeReference);

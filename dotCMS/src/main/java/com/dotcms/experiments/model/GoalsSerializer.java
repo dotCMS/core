@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
-
 import java.io.IOException;
 import java.util.Map;
 
@@ -15,7 +14,7 @@ import java.util.Map;
  */
 public class GoalsSerializer extends JsonSerializer<Goals> {
 
-    private static ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+    private static ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     @Override
     public void serialize(final Goals value, final JsonGenerator gen, SerializerProvider serializers)

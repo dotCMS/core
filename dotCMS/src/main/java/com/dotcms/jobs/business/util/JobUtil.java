@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -43,6 +44,7 @@ public class JobUtil {
      */
     private static final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
         ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new BlackbirdModule());
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.registerModule(new Jdk8Module());
         mapper.registerModule(new GuavaModule());

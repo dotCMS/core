@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,7 +20,7 @@ import java.util.Map;
 
 public class GoalsDeserializer extends JsonDeserializer<Goals> {
 
-    private static ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+    private static ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     @Override
     public Goals deserialize(JsonParser jsonParser, DeserializationContext ctxt)

@@ -971,6 +971,13 @@
             </dependency>
 
             <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-blackbird</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+
+            <dependency>
                 <groupId>com.github.jonpeterson</groupId>
                 <artifactId>jackson-module-model-versioning</artifactId>
                 <version>1.2.2</version>

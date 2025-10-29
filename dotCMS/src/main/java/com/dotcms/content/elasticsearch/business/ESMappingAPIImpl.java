@@ -75,6 +75,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -214,6 +215,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			synchronized (this.getClass().getName()) {
 				if (mapper == null) {
 					mapper = new ObjectMapper();
+                    mapper.registerModule(new BlackbirdModule());
 					ThreadSafeSimpleDateFormat df = new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 					mapper.setDateFormat(df);
 				}

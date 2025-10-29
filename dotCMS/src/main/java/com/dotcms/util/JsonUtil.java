@@ -1,12 +1,12 @@
 package com.dotcms.util;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public class JsonUtil {
 
-    public final static ObjectMapper JSON_MAPPER = new ObjectMapper();
+    public final static ObjectMapper JSON_MAPPER = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     @SuppressWarnings("unchecked")
     public static Map<String, Object> getJsonFileContent(final String path) throws IOException {

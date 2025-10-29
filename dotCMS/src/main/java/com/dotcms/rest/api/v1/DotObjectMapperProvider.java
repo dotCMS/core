@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -10,12 +11,13 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
+import io.vavr.Lazy;
 import java.io.IOException;
 import java.time.Instant;
 
@@ -45,15 +47,19 @@ public class DotObjectMapperProvider {
         this.defaultObjectMapper = defaultObjectMapper;
     }
 
-    public static ObjectMapper createDefaultMapper() {
+    private static Lazy<ObjectMapper> lazyMapper = Lazy.of(() -> {
 
         final ObjectMapper result = new ObjectMapper();
         result.disable(DeserializationFeature.WRAP_EXCEPTIONS);
-
+        boolean useBlackbird = Config.getBooleanProperty("jackson.module.blackbird.enable", true);
         if (Config.getBooleanProperty("dotcms.rest.sort.json.properties", true)) {
             result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
             result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
         }
+        if (useBlackbird) {
+            result.registerModule(new BlackbirdModule());
+        }
+
         result.registerModule(new Jdk8Module());
         final JavaTimeModule javaTimeModule = createJavaTimeModule();
 
@@ -61,6 +67,12 @@ public class DotObjectMapperProvider {
         result.registerModule(new GuavaModule());
 
         return result;
+
+    });
+
+
+    private static ObjectMapper createDefaultMapper() {
+        return lazyMapper.get();
     }
 
     private static JavaTimeModule createJavaTimeModule() {
@@ -102,5 +114,3 @@ public class DotObjectMapperProvider {
     } // getInstance.
 
 } // E:O:F:DotObjectMapperProvider.
-
-
