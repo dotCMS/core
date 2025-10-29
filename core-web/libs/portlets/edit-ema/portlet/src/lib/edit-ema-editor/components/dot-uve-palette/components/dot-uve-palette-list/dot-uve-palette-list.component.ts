@@ -33,7 +33,7 @@ import {
     DotUVEPaletteListView
 } from '../../models';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
-import { buildContentletsQuery, isSortActive, LOADING_ROWS_MOCK } from '../../utils';
+import { buildContentletsQuery, getSortActiveClass, LOADING_ROWS_MOCK } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
@@ -212,7 +212,7 @@ export class DotUvePaletteListComponent implements OnInit {
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.sort.option.popular'),
                         command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
-                        styleClass: isSortActive(
+                        styleClass: getSortActiveClass(
                             { orderby: 'usage', direction: 'ASC' },
                             currentSort
                         )
@@ -220,12 +220,15 @@ export class DotUvePaletteListComponent implements OnInit {
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.sort.option.a-to-z'),
                         command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
-                        styleClass: isSortActive({ orderby: 'name', direction: 'ASC' }, currentSort)
+                        styleClass: getSortActiveClass(
+                            { orderby: 'name', direction: 'ASC' },
+                            currentSort
+                        )
                     },
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.sort.option.z-to-a'),
                         command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
-                        styleClass: isSortActive(
+                        styleClass: getSortActiveClass(
                             { orderby: 'name', direction: 'DESC' },
                             currentSort
                         )

@@ -22,7 +22,11 @@ import {
 } from '../../../models';
 import { DotPageContentTypeService } from '../../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
-import { buildContentletsResponse, buildFavoriteResponse, getPaletteState } from '../../../utils';
+import {
+    buildContentletsResponse,
+    filterAndBuildFavoriteResponse,
+    getPaletteState
+} from '../../../utils';
 
 export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
@@ -87,7 +91,7 @@ export const DotPaletteListStore = signalStore(
                 case DotUVEPaletteListTypes.FAVORITES:
                     return of(dotPageFavoriteContentTypeService.getAll()).pipe(
                         map((contentTypes) =>
-                            buildFavoriteResponse(contentTypes, params.filter || '')
+                            filterAndBuildFavoriteResponse(contentTypes, params.filter || '')
                         )
                     );
             }
@@ -98,7 +102,7 @@ export const DotPaletteListStore = signalStore(
                 patchState(store, { searchParams: { ...store.searchParams(), ...searchParams } });
             },
             setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
-                const { contenttypes, pagination } = buildFavoriteResponse(contentTypes);
+                const { contenttypes, pagination } = filterAndBuildFavoriteResponse(contentTypes);
                 patchState(store, {
                     contenttypes,
                     pagination,
