@@ -1,7 +1,7 @@
 import smartQueue, { type Queue } from '@analytics/queue-utils';
 
 import { DEFAULT_QUEUE_CONFIG } from '../constants';
-import { sendAnalyticsEvent, type TransportType } from '../dot-content-analytics.http';
+import { sendAnalyticsEvent } from '../dot-content-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsEventContext,
@@ -18,10 +18,10 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
     let currentContext: DotCMSAnalyticsEventContext | null = null;
 
     /**
-     * Transport type to use for sending events
-     * 'beacon' for page unload (reliable), 'fetch' for normal sends
+     * Whether to use keepalive mode for sending events
+     * true for page unload (visibilitychange, pagehide), false for normal sends
      */
-    let transportType: TransportType = 'fetch';
+    let useKeepalive = false;
 
     // Merge user config with defaults (allows partial configuration)
     const queueConfig: QueueConfig = {
@@ -31,7 +31,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
 
     /**
      * Send batch of events to server
-     * Called by smartQueue - uses appropriate transport based on context
+     * Called by smartQueue - uses keepalive mode when flushing on page unload
      */
     const sendBatch = (events: DotCMSEvent[]): void => {
         if (!currentContext) return;
@@ -40,17 +40,17 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             // eslint-disable-next-line no-console
             console.log(`DotCMS Analytics Queue: Sending batch of ${events.length} event(s)`, {
                 events,
-                transport: transportType
+                keepalive: useKeepalive
             });
         }
 
         const payload = { context: currentContext, events };
-        sendAnalyticsEvent(payload, config, transportType);
+        sendAnalyticsEvent(payload, config, useKeepalive);
     };
 
     /**
      * Flush remaining events when page becomes hidden or unloads
-     * Sets transport to 'beacon' and triggers smartQueue to flush ALL events
+     * Enables keepalive mode and triggers smartQueue to flush ALL events
      */
     const flushRemaining = (): void => {
         if (!eventQueue || eventQueue.size() === 0 || !currentContext) return;
@@ -61,8 +61,8 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             );
         }
 
-        // Use beacon transport for reliable delivery during page unload
-        transportType = 'beacon';
+        // Use keepalive mode for reliable delivery during page unload
+        useKeepalive = true;
 
         // Flush all events - flush(true) makes smartQueue recursively batch until empty
         eventQueue.flush(true);
@@ -150,7 +150,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
 
             eventQueue = null;
             currentContext = null;
-            transportType = 'fetch';
+            useKeepalive = false;
         }
     };
 };
