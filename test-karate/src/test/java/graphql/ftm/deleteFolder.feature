@@ -1,15 +1,29 @@
 Feature: Delete a Folder
   Scenario: Delete an existing folder
-    * def path = '/test-folder'
+    # Create a folder
+    * def assetPath = '//default' + path + '/'
+    * def createRequest =
+      """
+      {
+        "assetPath": "#(assetPath)",
+        "data": {
+          "title": "application/containers/banner",
+          "showOnMenu": false,
+          "sortOrder": 1,
+          "defaultAssetType": "FileAsset"
+        }
+      }
+      """
 
-    # Create the folder
-    Given url baseUrl + '/api/v1/folder/createfolders/default'
+    Given url baseUrl + '/api/v1/assets/folders'
     And headers commonHeaders
-    And request { path: '#(path)' }
+    And request createRequest
     When method POST
     Then status 200
+    * def errors = call extractErrors response
+    * match errors == []
 
-    # Now delete it
+    # Delete an existing folder (previously created)
     Given url baseUrl + '/api/v1/folder/default'
     And headers commonHeaders
     And request
@@ -22,15 +36,11 @@ Feature: Delete a Folder
     * match errors == []
 
   Scenario: Try to delete a non-existing folder
-      # Example of a folder that does not exist
-      * def path = '/folder-1/folder-2/target-folder'
+    * def nonExistingFolder = '/does-not-exist-folder'
 
-      Given url baseUrl + '/api/v1/folder/default'
-      And headers commonHeaders
-      And request
-        """
-        ["#(path)"]
-        """
-      When method DELETE
-      Then status 404
-      * match response.message == 'The folder does not exists: ' + path
+    Given url baseUrl + '/api/v1/folder/default'
+    And headers commonHeaders
+    And request ["#(nonExistingFolder)"]
+    When method DELETE
+    Then status 404
+    * match response.message == 'The folder does not exists: ' + nonExistingFolder
