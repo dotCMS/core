@@ -5,68 +5,14 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentType, DotPagination } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PER_PAGE } from '../components/dot-uve-palette-list/store/store';
-
-export interface DotContentTypeParams {
-    /** Language ID for content type analysis (default: "-1") */
-    language?: number;
-    /** Filter content types by name or description */
-    filter?: string;
-    /** Page number for pagination (default: 1) */
-    page?: number;
-    /** Items per page - max: 100 (default: 20) */
-    per_page?: number;
-    /** Sort field - "name", "usage", "modified" (default: "usage") */
-    orderby?: 'name' | 'usage';
-    /** Sort direction - ASC|DESC (default: "ASC") */
-    direction?: 'ASC' | 'DESC';
-    types?: DotCMSBaseTypesContentTypes[];
-}
-
-/**
- * Query parameters for fetching page content types.
- *
- * @export
- * @interface DotPageContentTypeParams
- */
-export interface DotPageContentTypeParams extends DotContentTypeParams {
-    /** The URL of the page to filter content types for the palette */
-    pagePathOrId: string;
-}
-
-/**
- * TOD: Move this to app.models.ts
- * Generic response structure for dotCMS API endpoints.
- *
- * @export
- * @interface DotCMSAPIResponse
- * @template T
- */
-export interface DotCMSAPIResponse<T = unknown> {
-    entity: T;
-    errors: string[];
-    messages: string[];
-    permissions: string[];
-    i18nMessagesMap: { [key: string]: string };
-    pagination?: DotPagination;
-}
-
-/**
- * Pagination information for the response.
- *
- * @export
- * @interface DotPageContentTypePagination
- */
-export interface DotPagination {
-    /** Current page number */
-    currentPage: number;
-    /** Items per page */
-    perPage: number;
-    /** Total number of entries */
-    totalEntries: number;
-}
+import {
+    DEFAULT_PER_PAGE,
+    DotCMSAPIResponse,
+    DotContentTypeQueryParams,
+    DotPageContentTypeQueryParams
+} from '../models';
 
 /**
  * Service to manage page content types for the Universal Visual Editor palette.
@@ -86,11 +32,11 @@ export class DotPageContentTypeService {
     /**
      * Get available content types for Universal Visual Editor palette by analyzing page structure.
      *
-     * @param {DotPageContentTypeParams} params - The query parameters for fetching content types.
+     * @param {DotPageContentTypeQueryParams} params - The query parameters for fetching content types.
      * @returns {Observable<DotPageContentTypeResponse>} An observable emitting the content types response with pagination.
      * @memberof DotPageContentTypeService
      */
-    get(params: DotPageContentTypeParams): Observable<{
+    get(params: DotPageContentTypeQueryParams): Observable<{
         contenttypes: DotCMSContentType[];
         pagination: DotPagination;
     }> {
@@ -144,7 +90,7 @@ export class DotPageContentTypeService {
             );
     }
 
-    getAllContentTypes(params: DotContentTypeParams): Observable<{
+    getAllContentTypes(params: DotContentTypeQueryParams): Observable<{
         contenttypes: DotCMSContentType[];
         pagination: DotPagination;
     }> {

@@ -1,40 +1,26 @@
-import {
-    DEFAULT_VARIANT_ID,
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
-    DotCMSContentType,
-    ESContent
-} from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';
 
-import { SortOption } from './components/dot-uve-palette-list/model';
 import {
     DEFAULT_PER_PAGE,
+    DotPaletteSortOption,
     DotPaletteListStatus
-} from './components/dot-uve-palette-list/store/store';
+} from './models';
 
-export const BASETYPES_FOR_CONTENT = [
-    DotCMSBaseTypesContentTypes.CONTENT,
-    DotCMSBaseTypesContentTypes.FILEASSET,
-    DotCMSBaseTypesContentTypes.DOTASSET
-];
-export const BASETYPES_FOR_WIDGET = [DotCMSBaseTypesContentTypes.WIDGET];
-export const BASE_TYPES_FOR_FAVORITES = [...BASETYPES_FOR_CONTENT, ...BASETYPES_FOR_WIDGET];
-export enum UVE_PALETTE_LIST_TYPES {
-    CONTENT = DotCMSBaseTypesContentTypes.CONTENT,
-    WIDGET = DotCMSBaseTypesContentTypes.WIDGET,
-    FAVORITES = 'FAVORITES'
-}
+/**
+ * Mock array for loading skeleton rows.
+ * Used to display placeholder content while data is loading.
+ */
+export const LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index);
 
 /**
  * Determines the CSS class for sort menu items based on current sort state.
  * Returns 'active-menu-item' if the item matches the current sort configuration.
  *
- * @param orderby - Sort field to check
- * @param direction - Sort direction to check
+ * @param itemSort - Sort option to check
  * @param currentSort - Current sort state
  * @returns CSS class string for the menu item
  */
-export function isSortActive(itemSort: SortOption, currentSort: SortOption): string {
+export function isSortActive(itemSort: DotPaletteSortOption, currentSort: DotPaletteSortOption): string {
     const sameOrderby = currentSort.orderby === itemSort.orderby;
     const sameDirection = currentSort.direction === itemSort.direction;
     const isActive = sameOrderby && sameDirection;

@@ -8,7 +8,7 @@ import { TabView } from 'primeng/tabview';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
 import { DotUvePaletteComponent } from './dot-uve-palette.component';
-import { UVE_PALETTE_LIST_TYPES } from './utils';
+import { DotUVEPaletteListTypes } from './models';
 
 /**
  * Helper function to trigger tab change event
@@ -184,7 +184,7 @@ describe('DotUvePaletteComponent', () => {
 
             // Verify inputs using ngMocks.input()
             expect(ngMocks.input(paletteListDebugEl, 'listType')).toBe(
-                UVE_PALETTE_LIST_TYPES.CONTENT
+                DotUVEPaletteListTypes.CONTENT
             );
             expect(ngMocks.input(paletteListDebugEl, 'languageId')).toBe(1);
             expect(ngMocks.input(paletteListDebugEl, 'pagePath')).toBe('/test/page/path');
@@ -199,7 +199,7 @@ describe('DotUvePaletteComponent', () => {
 
             // Verify inputs
             expect(ngMocks.input(paletteListDebugEl, 'listType')).toBe(
-                UVE_PALETTE_LIST_TYPES.WIDGET
+                DotUVEPaletteListTypes.WIDGET
             );
             expect(ngMocks.input(paletteListDebugEl, 'languageId')).toBe(1);
             expect(ngMocks.input(paletteListDebugEl, 'pagePath')).toBe('/test/page/path');
@@ -214,7 +214,7 @@ describe('DotUvePaletteComponent', () => {
 
             // Verify inputs
             expect(ngMocks.input(paletteListDebugEl, 'listType')).toBe(
-                UVE_PALETTE_LIST_TYPES.FAVORITES
+                DotUVEPaletteListTypes.FAVORITES
             );
             expect(ngMocks.input(paletteListDebugEl, 'languageId')).toBe(1);
             expect(ngMocks.input(paletteListDebugEl, 'pagePath')).toBe('/test/page/path');
@@ -257,7 +257,7 @@ describe('DotUvePaletteComponent', () => {
 
             // Verify all inputs are correct
             expect(ngMocks.input(paletteListDebugEl, 'listType')).toBe(
-                UVE_PALETTE_LIST_TYPES.WIDGET
+                DotUVEPaletteListTypes.WIDGET
             );
             expect(ngMocks.input(paletteListDebugEl, 'languageId')).toBe(3);
             expect(ngMocks.input(paletteListDebugEl, 'pagePath')).toBe('/updated/path');

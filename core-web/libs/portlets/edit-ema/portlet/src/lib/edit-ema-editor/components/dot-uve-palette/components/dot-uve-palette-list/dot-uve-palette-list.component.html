@@ -38,11 +38,11 @@
 
 <div
     class="dot-uve-palette-list__grid"
-    [class.dot-uve-palette-list__grid--list]="$showViewList()"
+    [class.dot-uve-palette-list__grid--list]="$isListLayout()"
     [class.dot-uve-palette-list__grid--loading]="$isLoading()">
     @if ($status() === DotPaletteListStatus.LOADING) {
-        @let skeletonHeight = $showViewList() ? '4rem' : '6.875rem';
-        @for (i of LOADING_ROWS_MOCK; track i) {
+        @let skeletonHeight = $isListLayout() ? '4rem' : '6.875rem';
+        @for (i of LOADING_ROWS; track i) {
             <p-skeleton width="100%" [height]="skeletonHeight" />
         }
     } @else if ($status() === DotPaletteListStatus.EMPTY) {
@@ -98,7 +98,7 @@
         [showCurrentPageReport]="true"
         [showFirstLastIcon]="false"
         [first]="$start()"
-        [rows]="$rowsPerPage()"
+        [rows]="$pagination.perPage()"
         [totalRecords]="$pagination.totalEntries()"
         [currentPageReportTemplate]="$paginatorTemplate()" />
 }

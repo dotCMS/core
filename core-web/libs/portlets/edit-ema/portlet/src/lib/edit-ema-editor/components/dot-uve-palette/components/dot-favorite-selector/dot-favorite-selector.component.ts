@@ -10,8 +10,8 @@ import { debounceTime, switchMap } from 'rxjs/operators';
 
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 
+import { DotContentTypeQueryParams } from '../../models';
 import {
-    DotContentTypeParams,
     DotPageContentTypeService
 } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
@@ -107,7 +107,7 @@ export class DotFavoriteSelectorComponent implements OnInit {
      * Get content types with filter
      */
     #getContentTypes(filter: string) {
-        const params: DotContentTypeParams = {
+        const params: DotContentTypeQueryParams = {
             filter,
             orderby: 'name',
             direction: 'ASC',

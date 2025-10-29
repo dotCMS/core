@@ -15,9 +15,9 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUvePaletteListComponent } from './dot-uve-palette-list.component';
 
+import { DotUVEPaletteListTypes } from '../../models';
 import { DotPageContentTypeService } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
-import { UVE_PALETTE_LIST_TYPES } from '../../utils';
 
 describe('DotUvePaletteListComponent', () => {
     let spectator: Spectator<DotUvePaletteListComponent>;
@@ -90,7 +90,7 @@ describe('DotUvePaletteListComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         // Use componentRef.setInput for required signal inputs with aliases
-        spectator.fixture.componentRef.setInput('listType', UVE_PALETTE_LIST_TYPES.CONTENT);
+        spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
         spectator.fixture.componentRef.setInput('languageId', 1);
         spectator.fixture.componentRef.setInput('pagePath', '/test-page');
         spectator.detectChanges();

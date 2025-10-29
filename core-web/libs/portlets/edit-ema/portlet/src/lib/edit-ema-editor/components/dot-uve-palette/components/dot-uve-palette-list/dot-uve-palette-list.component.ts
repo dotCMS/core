@@ -21,16 +21,17 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DotESContentService, DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { SortOption, ViewOption } from './model';
-import {
-    DotUVEPaletteListView,
-    DotPaletteListStore,
-    DEFAULT_PER_PAGE,
-    DotPaletteListStatus
-} from './store/store';
+import { DotPaletteListStore } from './store/store';
 
+import {
+    DotPaletteListStatus,
+    DotPaletteSortOption,
+    DotPaletteViewMode,
+    DotUVEPaletteListTypes,
+    DotUVEPaletteListView
+} from '../../models';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
-import { buildContentletsQuery, isSortActive, UVE_PALETTE_LIST_TYPES } from '../../utils';
+import { buildContentletsQuery, isSortActive, LOADING_ROWS_MOCK } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
@@ -69,7 +70,7 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePaletteListComponent implements OnInit {
-    $listType = input.required<UVE_PALETTE_LIST_TYPES>({ alias: 'listType' });
+    $listType = input.required<DotUVEPaletteListTypes>({ alias: 'listType' });
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
     $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
@@ -83,26 +84,26 @@ export class DotUvePaletteListComponent implements OnInit {
     readonly $contenttypes = this.#paletteListStore.contenttypes;
     readonly $contentlets = this.#paletteListStore.contentlets;
     readonly $pagination = this.#paletteListStore.pagination;
-    readonly $rowsPerPage = this.#paletteListStore.$rowsPerPage;
     readonly $currentView = this.#paletteListStore.currentView;
     readonly $status = this.#paletteListStore.$status;
-    readonly DotUVEPaletteListView = DotUVEPaletteListView;
-    readonly DotPaletteListStatus = DotPaletteListStatus;
     readonly $isLoading = this.#paletteListStore.$isLoading;
 
-    readonly $viewMode = signal<ViewOption>('grid');
+    readonly DotUVEPaletteListView = DotUVEPaletteListView;
+    readonly DotPaletteListStatus = DotPaletteListStatus;
+
+    readonly $viewMode = signal<DotPaletteViewMode>('grid');
     readonly $contextMenuItems = signal<MenuItem[]>([]);
     readonly $currentContentType = signal<string>('');
 
-    readonly $showViewList = computed(
-        () =>
-            this.$viewMode() === 'list' || this.$currentView() === DotUVEPaletteListView.CONTENTLETS
-    );
+    readonly $isListLayout = computed(() => {
+        return this.$viewMode() === 'list' || this.#paletteListStore.$isContentletsView();
+    });
 
     readonly $paginatorTemplate = computed(() => {
         return `{first} - {last} ${this.#dotMessageService.get('uve.palette.pagination.of')} {totalRecords}`;
     });
-    readonly LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index + 1);
+
+    readonly LOADING_ROWS = LOADING_ROWS_MOCK;
 
     ngOnInit() {
         this.#paletteListStore.setSearchParams({
@@ -148,7 +149,7 @@ export class DotUvePaletteListComponent implements OnInit {
      *
      * @param sortOption - Selected sort configuration
      */
-    onSortSelect(sortOption: SortOption) {
+    onSortSelect(sortOption: DotPaletteSortOption) {
         this.#paletteListStore.getContentTypes(this.$listType(), {
             orderby: sortOption.orderby,
             direction: sortOption.direction
@@ -161,7 +162,7 @@ export class DotUvePaletteListComponent implements OnInit {
      *
      * @param viewOption - Selected view mode ('grid' or 'list')
      */
-    onViewSelect(viewOption: ViewOption) {
+    onViewSelect(viewOption: DotPaletteViewMode) {
         this.$viewMode.set(viewOption);
     }
 
@@ -251,7 +252,7 @@ export class DotUvePaletteListComponent implements OnInit {
     private removeFavoriteItems(contentType: DotCMSContentType) {
         const contenttypes = this.#dotPageFavoriteContentTypeService.remove(contentType.id);
 
-        if (this.$listType() === UVE_PALETTE_LIST_TYPES.FAVORITES) {
+        if (this.$listType() === DotUVEPaletteListTypes.FAVORITES) {
             this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
         }
         // this.#paletteListStore.setFavorites(contenttypes);
@@ -271,7 +272,7 @@ export class DotUvePaletteListComponent implements OnInit {
     private addFavoriteItems(contentType: DotCMSContentType) {
         const contenttypes = this.#dotPageFavoriteContentTypeService.add(contentType);
 
-        if (this.$listType() === UVE_PALETTE_LIST_TYPES.FAVORITES) {
+        if (this.$listType() === DotUVEPaletteListTypes.FAVORITES) {
             this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
         }
         // this.#paletteListStore.setFavorites(contenttypes);

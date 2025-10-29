@@ -6,68 +6,27 @@ import { computed, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 
 import { DotESContentService } from '@dotcms/data-access';
-import {
-    DEFAULT_VARIANT_ID,
-    DotCMSContentlet,
-    DotCMSContentType,
-    DotPagination
-} from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import {
-    DotPageContentTypeParams,
-    DotPageContentTypeService
-} from '../../../service/dot-page-contenttype.service';
-import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
 import {
     BASETYPES_FOR_CONTENT,
     BASETYPES_FOR_WIDGET,
+    DEFAULT_PER_PAGE,
+    DotESContentParams,
+    DotPageContentTypeQueryParams,
+    DotPaletteListState,
+    DotPaletteListStatus,
+    DotPaletteSearchParams,
+    DotUVEPaletteListTypes,
+    DotUVEPaletteListView
+} from '../../../models';
+import { DotPageContentTypeService } from '../../../service/dot-page-contenttype.service';
+import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
+import {
     buildContentletsResponse,
     buildFavoriteResponse,
-    getPaletteState,
-    UVE_PALETTE_LIST_TYPES
+    getPaletteState
 } from '../../../utils';
-import { DotESContentParams } from '../model';
-
-/**
- * Available view states for the palette list
- */
-export enum DotUVEPaletteListView {
-    CONTENT_TYPES = 'contenttypes',
-    CONTENTLETS = 'contentlets'
-}
-
-/**
- * Status states for the palette list
- */
-export enum DotPaletteListStatus {
-    LOADING = 'loading',
-    LOADED = 'loaded',
-    EMPTY = 'empty'
-}
-
-/** Default number of items per page */
-export const DEFAULT_PER_PAGE = 30;
-
-export interface SearchParams {
-    pagePathOrId: string;
-    language: number;
-    variantId: string;
-    orderby: 'name' | 'usage';
-    direction: 'ASC' | 'DESC';
-    page: number;
-}
-
-/**
- * Component state interface for palette list
- */
-export interface DotPaletteListState {
-    searchParams: SearchParams;
-    contenttypes: DotCMSContentType[];
-    contentlets: DotCMSContentlet[];
-    pagination: DotPagination;
-    currentView: DotUVEPaletteListView;
-    status: DotPaletteListStatus;
-}
 
 export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
@@ -96,14 +55,15 @@ export const DotPaletteListStore = signalStore(
         return {
             $start: computed(() => (pagination().currentPage - 1) * pagination().perPage),
             $status: computed(() => store.status()),
-            $rowsPerPage: computed(() => store.pagination().perPage),
             $currentSort: computed(() => {
                 return {
                     orderby: store.searchParams.orderby(),
                     direction: store.searchParams.direction()
                 };
             }),
-            $isLoading: computed(() => store.status() === DotPaletteListStatus.LOADING)
+            $isLoading: computed(() => store.status() === DotPaletteListStatus.LOADING),
+            $isContentTypesView: computed(() => store.currentView() === DotUVEPaletteListView.CONTENT_TYPES),
+            $isContentletsView: computed(() => store.currentView() === DotUVEPaletteListView.CONTENTLETS)
         };
     }),
     withMethods((store) => {
@@ -112,19 +72,19 @@ export const DotPaletteListStore = signalStore(
         const dotPageFavoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
 
         const getData = (
-            type: UVE_PALETTE_LIST_TYPES,
-            extraParams: Partial<DotPageContentTypeParams> = {}
+            type: DotUVEPaletteListTypes,
+            extraParams: Partial<DotPageContentTypeQueryParams> = {}
         ) => {
             const params = { ...store.searchParams(), ...extraParams };
             switch (type) {
-                case UVE_PALETTE_LIST_TYPES.CONTENT:
+                case DotUVEPaletteListTypes.CONTENT:
                     return pageContentTypeService.get({ ...params, types: BASETYPES_FOR_CONTENT });
-                case UVE_PALETTE_LIST_TYPES.WIDGET:
+                case DotUVEPaletteListTypes.WIDGET:
                     return pageContentTypeService.getAllContentTypes({
                         ...params,
                         types: BASETYPES_FOR_WIDGET
                     });
-                case UVE_PALETTE_LIST_TYPES.FAVORITES:
+                case DotUVEPaletteListTypes.FAVORITES:
                     return of(dotPageFavoriteContentTypeService.getAll()).pipe(
                         map((contentTypes) =>
                             buildFavoriteResponse(contentTypes, params.filter || '')
@@ -134,7 +94,7 @@ export const DotPaletteListStore = signalStore(
         };
 
         return {
-            setSearchParams(searchParams: Partial<SearchParams>) {
+            setSearchParams(searchParams: Partial<DotPaletteSearchParams>) {
                 patchState(store, { searchParams: { ...store.searchParams(), ...searchParams } });
             },
             setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
@@ -146,8 +106,8 @@ export const DotPaletteListStore = signalStore(
                 });
             },
             getContentTypes(
-                type: UVE_PALETTE_LIST_TYPES,
-                params: Partial<DotPageContentTypeParams> = {}
+                type: DotUVEPaletteListTypes,
+                params: Partial<DotPageContentTypeQueryParams> = {}
             ) {
                 patchState(store, {
                     status: DotPaletteListStatus.LOADING
