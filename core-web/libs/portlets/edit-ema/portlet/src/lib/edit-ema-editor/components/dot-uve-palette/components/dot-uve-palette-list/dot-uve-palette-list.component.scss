@@ -135,11 +135,6 @@ $icon-size: 0.875rem;
 }
 
 ::ng-deep {
-    .favorite-selector-overlaypanel {
-        .p-overlaypanel-content {
-            padding: 0;
-        }
-    }
     // Options menu popup positioning
     .options-menu-popup.p-menu {
         transform: translateX(-100%);

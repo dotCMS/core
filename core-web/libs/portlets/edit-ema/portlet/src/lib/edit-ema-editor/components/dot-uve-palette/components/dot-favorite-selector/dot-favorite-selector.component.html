@@ -1,14 +1,30 @@
-<p-listbox
-    [filterPlaceHolder]="'search' | dm"
-    optionLabel="name"
-    dataKey="id"
-    [options]="$contenttypes()"
-    [ngModel]="$selectedContentTypes()"
-    (onChange)="onSelectionChange($event)"
-    (onFilter)="onFilter($event)"
-    [multiple]="true"
-    [checkbox]="true"
-    [filter]="true"
-    [metaKeySelection]="false"
-    [listStyle]="{ 'max-height': '400px' }"
-    [style]="{ width: '100%' }" />
+<p-overlayPanel styleClass="favorite-selector-overlaypanel" (onHide)="onHide()">
+    <p-listbox
+        optionLabel="name"
+        dataKey="id"
+        [filterPlaceHolder]="'uve.palette.favorite.search.placeholder' | dm"
+        [options]="$contenttypes()"
+        [ngModel]="$selectedContentTypes()"
+        (onChange)="onSelectionChange($event)"
+        (onFilter)="onFilter($event)"
+        [multiple]="true"
+        [checkbox]="true"
+        [filter]="true"
+        [metaKeySelection]="false"
+        [listStyle]="{ 'max-height': '400px' }"
+        [style]="{ width: '100%' }">
+        <ng-template pTemplate="empty">
+            @if (!$fetchingItems()) {
+                <div class="empty-message">No results found</div>
+            }
+        </ng-template>
+        <ng-template pTemplate="footer">
+            @if ($fetchingItems()) {
+                <div class="footer">
+                    <i class="pi pi-spin pi-spinner"></i>
+                    <span>{{ 'content.drive.contenttype.search.state.label' | dm }}</span>
+                </div>
+            }
+        </ng-template>
+    </p-listbox>
+</p-overlayPanel>

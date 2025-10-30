@@ -31,7 +31,7 @@
             styleClass="options-menu-button"
             [text]="true"
             [rounded]="true"
-            (onClick)="overlayPanel.toggle($event)" />
+            (onClick)="favoritesPanel.toggle($event)" />
     }
 </div>
 
@@ -109,6 +109,4 @@
 
 <p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" styleClass="no-padding" />
 
-<p-overlayPanel #overlayPanel styleClass="favorite-selector-overlaypanel">
-    <dot-favorite-selector />
-</p-overlayPanel>
+<dot-favorite-selector #favoritesPanel />
