@@ -23,10 +23,8 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 export class DotUVEPaletteContenttypeComponent {
     $view = input<'grid' | 'list'>('grid', { alias: 'view' });
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
-
-    selectContentType = output<string>();
-
-    readonly rightClick = output<MouseEvent>();
+    readonly onSelectContentType = output<string>();
+    readonly contextMenu = output<MouseEvent>();
 
     @HostBinding('class.list-view')
     get isListView() {
@@ -47,8 +45,8 @@ export class DotUVEPaletteContenttypeComponent {
     }
 
     @HostListener('contextmenu', ['$event'])
-    protected onRightClick(event: MouseEvent) {
+    protected onContextMenu(event: MouseEvent) {
         event.preventDefault();
-        this.rightClick.emit(event);
+        this.contextMenu.emit(event);
     }
 }

@@ -24,7 +24,7 @@
             styleClass="options-menu-button"
             [text]="true"
             [rounded]="true"
-            (onClick)="setSortMenuItems(); cm.toggle($event)" />
+            (onClick)="menu.toggle($event)" />
     } @else if ($listType() === 'FAVORITES') {
         <p-button
             icon="pi pi-plus"
@@ -79,8 +79,8 @@
                 <dot-uve-palette-contenttype
                     [contentType]="contentType"
                     [view]="$viewMode()"
-                    (selectContentType)="onSelectContentType($event)"
-                    (rightClick)="setFavoriteMenuItems(contentType); cm.show($event)" />
+                    (onSelectContentType)="onSelectContentType($event)"
+                    (contextMenu)="onContextMenu(contentType); cm.show($event)" />
             }
         }
     }
@@ -100,12 +100,14 @@
 }
 
 <p-menu
-    #cm
-    [model]="$contextMenuItems()"
+    #menu
+    [model]="$menuItems()"
     [popup]="true"
     appendTo="body"
     styleClass="options-menu-popup"
     showTransitionOptions="0ms" />
+
+<p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" styleClass="no-padding" />
 
 <p-overlayPanel #overlayPanel styleClass="favorite-selector-overlaypanel">
     <dot-favorite-selector />

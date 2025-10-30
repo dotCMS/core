@@ -226,7 +226,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
     describe('Output Events', () => {
         it('should emit selectContentType when chevron is clicked', (done) => {
-            spectator.output('selectContentType').subscribe((value: string) => {
+            spectator.output('onSelectContentType').subscribe((value: string) => {
                 expect(value).toBe('TestContentType');
                 done();
             });
@@ -244,7 +244,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             spectator.setHostInput({ contentType: newContentType });
             spectator.detectChanges();
 
-            spectator.output('selectContentType').subscribe((value: string) => {
+            spectator.output('onSelectContentType').subscribe((value: string) => {
                 expect(value).toBe('NewVariableName');
                 done();
             });
@@ -256,7 +256,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
     describe('Right Click Event', () => {
         it('should emit rightClick event when component is right-clicked', (done) => {
-            spectator.output('rightClick').subscribe((event: MouseEvent) => {
+            spectator.output('contextMenu').subscribe((event: MouseEvent) => {
                 expect(event).toBeInstanceOf(MouseEvent);
                 done();
             });
@@ -278,7 +278,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
             const preventDefaultSpy = jest.spyOn(mockEvent, 'preventDefault');
 
-            spectator.output('rightClick').subscribe(() => {
+            spectator.output('contextMenu').subscribe(() => {
                 fail('rightClick should not be emitted');
             });
 
@@ -289,7 +289,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         });
 
         it('should emit rightClick with correct event type', (done) => {
-            spectator.output('rightClick').subscribe((event: MouseEvent) => {
+            spectator.output('contextMenu').subscribe((event: MouseEvent) => {
                 expect(event).toBeInstanceOf(MouseEvent);
                 expect(event.type).toBe('contextmenu');
                 done();

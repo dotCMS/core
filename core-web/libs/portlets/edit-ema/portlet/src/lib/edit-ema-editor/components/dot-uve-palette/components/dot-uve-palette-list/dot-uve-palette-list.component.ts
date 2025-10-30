@@ -16,6 +16,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ContextMenuModule } from 'primeng/contextmenu';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -74,7 +75,8 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
         SkeletonModule,
         OverlayPanelModule,
         DotFavoriteSelectorComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        ContextMenuModule
     ],
     providers: [DotPaletteListStore, DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
@@ -106,6 +108,7 @@ export class DotUvePaletteListComponent implements OnInit {
 
     readonly DotUVEPaletteListView = DotUVEPaletteListView;
     readonly DotPaletteListStatus = DotPaletteListStatus;
+    readonly LOADING_ROWS = LOADING_ROWS_MOCK;
 
     readonly $viewMode = signal<DotPaletteViewMode>('grid');
     readonly $contextMenuItems = signal<MenuItem[]>([]);
@@ -116,7 +119,57 @@ export class DotUvePaletteListComponent implements OnInit {
 
     readonly $showAddButton = computed(() => this.$listType() === 'FAVORITES');
 
-    readonly LOADING_ROWS = LOADING_ROWS_MOCK;
+    protected $menuItems = computed(() => {
+        const currentView = this.$viewMode();
+        const currentSort = this.#paletteListStore.$currentSort();
+        const items = [
+            {
+                label: this.#dotMessageService.get('uve.palette.menu.sort.title'),
+                items: [
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.popular'),
+                        command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
+                        styleClass: getSortActiveClass(
+                            { orderby: 'usage', direction: 'ASC' },
+                            currentSort
+                        )
+                    },
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.a-to-z'),
+                        command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
+                        styleClass: getSortActiveClass(
+                            { orderby: 'name', direction: 'ASC' },
+                            currentSort
+                        )
+                    },
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.z-to-a'),
+                        command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
+                        styleClass: getSortActiveClass(
+                            { orderby: 'name', direction: 'DESC' },
+                            currentSort
+                        )
+                    }
+                ]
+            },
+            {
+                label: this.#dotMessageService.get('uve.palette.menu.view.title'),
+                items: [
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.view.option.grid'),
+                        command: () => this.onViewSelect('grid'),
+                        styleClass: currentView === 'grid' ? 'active-menu-item' : ''
+                    },
+                    {
+                        label: this.#dotMessageService.get('uve.palette.menu.view.option.list'),
+                        command: () => this.onViewSelect('list'),
+                        styleClass: currentView === 'list' ? 'active-menu-item' : ''
+                    }
+                ]
+            }
+        ];
+        return items;
+    });
 
     constructor() {
         // React to input changes and fetch content types
@@ -225,59 +278,7 @@ export class DotUvePaletteListComponent implements OnInit {
         this.searchControl.setValue('', { emitEvent: false });
     }
 
-    protected setSortMenuItems() {
-        const currentView = this.$viewMode();
-        const currentSort = this.#paletteListStore.$currentSort();
-        const items = [
-            {
-                label: this.#dotMessageService.get('uve.palette.menu.sort.title'),
-                items: [
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.popular'),
-                        command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
-                        styleClass: getSortActiveClass(
-                            { orderby: 'usage', direction: 'ASC' },
-                            currentSort
-                        )
-                    },
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.a-to-z'),
-                        command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
-                        styleClass: getSortActiveClass(
-                            { orderby: 'name', direction: 'ASC' },
-                            currentSort
-                        )
-                    },
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.z-to-a'),
-                        command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
-                        styleClass: getSortActiveClass(
-                            { orderby: 'name', direction: 'DESC' },
-                            currentSort
-                        )
-                    }
-                ]
-            },
-            {
-                label: this.#dotMessageService.get('uve.palette.menu.view.title'),
-                items: [
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.view.option.grid'),
-                        command: () => this.onViewSelect('grid'),
-                        styleClass: currentView === 'grid' ? 'active-menu-item' : ''
-                    },
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.view.option.list'),
-                        command: () => this.onViewSelect('list'),
-                        styleClass: currentView === 'list' ? 'active-menu-item' : ''
-                    }
-                ]
-            }
-        ];
-        this.$contextMenuItems.set(items);
-    }
-
-    protected setFavoriteMenuItems(contentType: DotCMSContentType) {
+    protected onContextMenu(contentType: DotCMSContentType) {
         const isFavorite = this.#dotPageFavoriteContentTypeService.isFavorite(contentType.id);
         const label = isFavorite
             ? 'uve.palette.menu.favorite.option.remove'
