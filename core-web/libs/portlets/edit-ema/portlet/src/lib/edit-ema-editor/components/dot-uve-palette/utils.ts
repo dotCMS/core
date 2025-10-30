@@ -71,42 +71,61 @@ export function getPaletteState(
 
 /**
  * Filters content types by search term, sorts them alphabetically by name,
- * and builds a response object with pagination metadata.
+ * applies pagination, and builds a response object with pagination metadata.
  *
- * This function performs three operations:
+ * This function performs four operations:
  * 1. Filters content types by name (case-insensitive) if a filter is provided
  * 2. Sorts the filtered results alphabetically by name
- * 3. Builds pagination metadata for the results
+ * 3. Slices the array based on the current page and DEFAULT_PER_PAGE
+ * 4. Builds pagination metadata for the results
  *
- * @param contentTypes - Array of content types to filter and sort
- * @param filter - Optional search term to filter content types by name (case-insensitive)
- * @returns Object containing filtered/sorted content types and pagination metadata
+ * @param params - Parameters object containing:
+ *   - contentTypes: Array of content types to filter and sort
+ *   - filter: Optional search term to filter content types by name (case-insensitive)
+ *   - page: Current page number (1-indexed, defaults to 1)
+ * @returns Object containing filtered/sorted/paginated content types and pagination metadata
  *
  * @example
  * ```typescript
- * const result = filterAndBuildFavoriteResponse(allContentTypes, 'blog');
+ * const result = filterAndBuildFavoriteResponse({
+ *   contentTypes: allContentTypes,
+ *   filter: 'blog',
+ *   page: 2
+ * });
  * // Returns: {
- * //   contenttypes: [filtered and sorted array],
- * //   pagination: { currentPage: 1, perPage: 5, totalEntries: 5 }
+ * //   contenttypes: [paginated array for page 2],
+ * //   pagination: { currentPage: 2, perPage: 30, totalEntries: 45 }
  * // }
  * ```
  */
-export function filterAndBuildFavoriteResponse(
-    contentTypes: DotCMSContentType[],
-    filter = ''
-): {
+export function filterAndBuildFavoriteResponse({
+    contentTypes,
+    filter = '',
+    page = 1
+}: {
+    contentTypes: DotCMSContentType[];
+    filter?: string;
+    page?: number;
+}): {
     contenttypes: DotCMSContentType[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
 } {
-    const contenttypes = contentTypes.filter(
+    // Filter and sort all content types
+    const filteredContentTypes = contentTypes.filter(
         (ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase())
     );
-    contenttypes.sort((a, b) => a.name.localeCompare(b.name));
+    filteredContentTypes.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Calculate pagination slice
+    const totalEntries = filteredContentTypes.length;
+    const startIndex = (page - 1) * DEFAULT_PER_PAGE;
+    const endIndex = page * DEFAULT_PER_PAGE;
+    const contenttypes = filteredContentTypes.slice(startIndex, endIndex);
 
     const pagination = {
-        currentPage: 1,
-        perPage: contenttypes.length,
-        totalEntries: contenttypes.length
+        currentPage: page,
+        perPage: DEFAULT_PER_PAGE,
+        totalEntries
     };
 
     return { contenttypes, pagination };

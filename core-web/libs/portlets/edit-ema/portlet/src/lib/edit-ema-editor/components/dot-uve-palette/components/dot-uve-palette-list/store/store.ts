@@ -54,21 +54,20 @@ export const DotPaletteListStore = signalStore(
     withState<DotPaletteListState>(DEFAULT_STATE),
     withComputed((store) => {
         const pagination = store.pagination;
+        const params = store.searchParams;
         return {
             $start: computed(() => (pagination().currentPage - 1) * pagination().perPage),
             $status: computed(() => store.status()),
-            $currentSort: computed(() => {
-                return {
-                    orderby: store.searchParams.orderby(),
-                    direction: store.searchParams.direction()
-                };
-            }),
             $isLoading: computed(() => store.status() === DotPaletteListStatus.LOADING),
-            $isContentTypesView: computed(() => store.searchParams.selectedContentType() === ''),
-            $isContentletsView: computed(() => store.searchParams.selectedContentType() !== ''),
+            $isContentTypesView: computed(() => params.selectedContentType() === ''),
+            $isContentletsView: computed(() => params.selectedContentType() !== ''),
+            $currentSort: computed(() => ({
+                orderby: params.orderby(),
+                direction: params.direction()
+            })),
             $emptyStateMessage: computed(() => {
                 const currentView = store.currentView();
-                const listType = store.searchParams.listType();
+                const listType = params.listType();
 
                 if (currentView === DotUVEPaletteListView.CONTENTLETS) {
                     return 'uve.palette.empty.contentlets.message';
@@ -101,7 +100,11 @@ export const DotPaletteListStore = signalStore(
                 case DotUVEPaletteListTypes.FAVORITES:
                     return of(dotPageFavoriteContentTypeService.getAll()).pipe(
                         map((contentTypes) =>
-                            filterAndBuildFavoriteResponse(contentTypes, params.filter || '')
+                            filterAndBuildFavoriteResponse({
+                                contentTypes,
+                                filter: params.filter || '',
+                                page: params.page
+                            })
                         )
                     );
             }
@@ -109,10 +112,11 @@ export const DotPaletteListStore = signalStore(
 
         return {
             setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
-                const { contenttypes, pagination } = filterAndBuildFavoriteResponse(
+                const { contenttypes, pagination } = filterAndBuildFavoriteResponse({
                     contentTypes,
-                    store.searchParams().filter
-                );
+                    filter: store.searchParams().filter,
+                    page: store.searchParams().page
+                });
                 patchState(store, {
                     contenttypes,
                     pagination,

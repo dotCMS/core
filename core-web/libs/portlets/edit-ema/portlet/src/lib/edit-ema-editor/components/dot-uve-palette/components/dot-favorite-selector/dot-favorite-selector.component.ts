@@ -16,7 +16,7 @@ import { DotPageContentTypeService } from '../../service/dot-page-contenttype.se
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { DotPaletteListStore } from '../dot-uve-palette-list/store/store';
 
-const FILTER_DEBOUNCE_TIME = 500;
+const FILTER_DEBOUNCE_TIME = 300;
 const CONTENT_TYPE_CATEGORIES = [
     DotCMSBaseTypesContentTypes.CONTENT,
     DotCMSBaseTypesContentTypes.FILEASSET,
