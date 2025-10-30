@@ -276,9 +276,9 @@ public class FolderHelper {
     /**
      * Check if the folder is valid and has an inode.
      * @param folder folder to check
-     * @return true if the folder exists in the database
+     * @return true if the folder exists in the database or if the folder is not null
      */
-    public boolean isExistingFolder(final Folder folder) {
+    public boolean isValidFolder(final Folder folder) {
         return UtilMethods.isSet(folder) && InodeUtils.isSet(folder.getInode());
     }
 }

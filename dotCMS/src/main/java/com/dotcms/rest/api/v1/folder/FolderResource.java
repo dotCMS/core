@@ -139,7 +139,7 @@ public class FolderResource implements Serializable {
         for (final String path : paths) {
             final Folder folder = folderHelper.loadFolderByURI(host.getIdentifier(), user, path);
 
-            if (folderHelper.isExistingFolder(folder)) {
+            if (folderHelper.isValidFolder(folder)) {
                 Logger.debug(this, () -> "Deleting the folder: " + path);
                 folderHelper.deleteFolder(folder, user);
                 deletedFolders.add(path);
