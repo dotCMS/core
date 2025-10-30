@@ -4,17 +4,22 @@
 
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
-        <button
-            pButton
-            type="button"
-            class="p-button-text p-button-sm p-button-icon-only p-button-icon-outline p-button-rounded"
-            (click)="togglePalette()">
-            @if ($paletteOpen()) {
-                <img src="./assets/edit-uve-toolbar/left_panel_open.svg" alt="Left Panel Open" />
-            } @else {
-                <img src="./assets/edit-uve-toolbar/left_panel_close.svg" alt="Left Panel Close" />
-            }
-        </button>
+        @if ($isEditMode()) {
+            <button
+                pButton
+                type="button"
+                class="p-button-text p-button-sm p-button-icon-only p-button-rounded"
+                (click)="togglePalette()">
+                <img
+                    src="./assets/edit-uve-toolbar/left_panel_open.svg"
+                    alt="Left Panel Open"
+                    [class.hidden]="$paletteOpen()" />
+                <img
+                    src="./assets/edit-uve-toolbar/left_panel_close.svg"
+                    alt="Left Panel Close"
+                    [class.hidden]="!$paletteOpen()" />
+            </button>
+        }
         <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
         <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
         <p-button

@@ -93,6 +93,7 @@ export class DotUveToolbarComponent {
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
+    readonly $isEditMode = this.#store.$isEditMode;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $isLiveMode = this.#store.$isLiveMode;
     readonly $apiURL = this.#store.$apiURL;
