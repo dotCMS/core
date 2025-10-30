@@ -69,8 +69,7 @@ public class DotRestApplication extends ResourceConfig {
 		register(MultiPartFeature.class).
 		register(JacksonJaxbJsonProvider.class).
 		registerClasses(customClasses.keySet()).
-		packages(packages.toArray(new String[0])).
-		register(CdiComponentProvider.class);
+		packages(packages.toArray(new String[0]));
 	}
 
 	/**
