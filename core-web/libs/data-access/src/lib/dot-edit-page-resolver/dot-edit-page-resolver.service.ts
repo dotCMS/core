@@ -8,12 +8,12 @@ import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import { HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 import { DotPageStateService } from '../dot-page-state/dot-page-state.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
-import { GlobalStore } from '@dotcms/store';
 
 /**
  * With the url return a string of the edit page html

@@ -31,17 +31,6 @@ const initialBreadcrumbState: BreadcrumbState = {
     breadcrumbs: []
 };
 
-const urlsRegex = {
-    content: {
-        regex: /\/content\/.+/,
-        url: '/dotAdmin/#/content'
-    },
-    editPage: {
-        regex: /\/content\/.+/,
-        url: '/dotAdmin/#/edit-page/content'
-    }
-};
-
 /**
  * Custom Store Feature for managing breadcrumb navigation state.
  *

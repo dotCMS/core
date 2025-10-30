@@ -17,10 +17,7 @@ describe('DotCrumbtrailComponent', () => {
     const createComponent = createComponentFactory({
         component: DotCrumbtrailComponent,
         imports: [DotCollapseBreadcrumbComponent],
-        providers: [
-            mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService)
-        ],
+        providers: [mockProvider(DotSiteService), mockProvider(DotSystemConfigService)],
         detectChanges: false
     });
 

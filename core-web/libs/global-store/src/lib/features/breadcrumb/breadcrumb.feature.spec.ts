@@ -255,10 +255,10 @@ describe('withBreadcrumbs Feature', () => {
             const originalArrayCopy = [...originalArray];
 
             store.setBreadcrumbs(originalArray);
-            
+
             // Modify the store's breadcrumbs
             store.appendCrumb({ label: 'New', url: '/new' });
-            
+
             // Original array should remain unchanged
             expect(originalArray).toEqual(originalArrayCopy);
         });
@@ -269,7 +269,7 @@ describe('withBreadcrumbs Feature', () => {
 
             store.setBreadcrumbs(originalArray);
             store.appendCrumb({ label: 'New', url: '/new' });
-            
+
             // Original array should remain unchanged
             expect(originalArray).toEqual(originalArrayCopy);
         });
@@ -277,10 +277,10 @@ describe('withBreadcrumbs Feature', () => {
         it('should create new array references when modifying breadcrumbs', () => {
             store.setBreadcrumbs([{ label: 'Home', url: '/home' }]);
             const firstArray = store.breadcrumbs();
-            
+
             store.appendCrumb({ label: 'New', url: '/new' });
             const secondArray = store.breadcrumbs();
-            
+
             // Should be different array references
             expect(firstArray).not.toBe(secondArray);
         });
@@ -326,7 +326,7 @@ describe('withBreadcrumbs Feature', () => {
 
     describe('Complex Scenarios', () => {
         it('should handle full breadcrumb workflow', () => {
-            // Start empty 
+            // Start empty
             expect(store.breadcrumbs()).toEqual([]);
 
             // Add breadcrumbs one by one
