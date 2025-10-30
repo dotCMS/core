@@ -11,19 +11,32 @@ describe('withBreadcrumbs Feature', () => {
     const TestStore = signalStore(withState({}), withBreadcrumbs());
 
     let store: InstanceType<typeof TestStore>;
+    let sessionStorageSetItemSpy: jest.SpyInstance;
+    let sessionStorageGetItemSpy: jest.SpyInstance;
 
     const mockBreadcrumbs: MenuItem[] = [
-        { label: 'Home', url: '/home', icon: 'pi pi-home' },
+        { label: 'Home', url: '/home'},
         { label: 'Products', url: '/products' },
         { label: 'Details', url: '/products/123' }
     ];
 
     beforeEach(() => {
+        // Clear sessionStorage
+        sessionStorage.clear();
+
+        // Setup spies
+        sessionStorageSetItemSpy = jest.spyOn(Storage.prototype, 'setItem');
+        sessionStorageGetItemSpy = jest.spyOn(Storage.prototype, 'getItem');
+
         TestBed.configureTestingModule({
             providers: [TestStore]
         });
 
         store = TestBed.inject(TestStore);
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
     });
 
     describe('Initial State', () => {
@@ -41,6 +54,168 @@ describe('withBreadcrumbs Feature', () => {
 
         it('should have selectLastBreadcrumbLabel as null', () => {
             expect(store.selectLastBreadcrumbLabel()).toBeNull();
+        });
+
+        it('should load breadcrumbs from sessionStorage on init', () => {
+            expect(sessionStorageGetItemSpy).toHaveBeenCalledWith('breadcrumbs');
+        });
+    });
+
+    describe('SessionStorage Persistence', () => {
+        it('should save to sessionStorage when setBreadcrumbs is called', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+
+            // Wait for effect to run
+            TestBed.flushEffects();
+
+            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
+                'breadcrumbs',
+                JSON.stringify(mockBreadcrumbs)
+            );
+        });
+
+        it('should save to sessionStorage when appendCrumb is called', () => {
+            store.setBreadcrumbs([mockBreadcrumbs[0]]);
+            TestBed.flushEffects();
+            sessionStorageSetItemSpy.mockClear();
+
+            const newCrumb = { label: 'New Page', url: '/new' };
+            store.appendCrumb(newCrumb);
+
+            // Wait for effect to run
+            TestBed.flushEffects();
+
+            const expectedBreadcrumbs = [mockBreadcrumbs[0], newCrumb];
+            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
+                'breadcrumbs',
+                JSON.stringify(expectedBreadcrumbs)
+            );
+        });
+
+        it('should save to sessionStorage when truncateBreadcrumbs is called', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+            TestBed.flushEffects();
+            sessionStorageSetItemSpy.mockClear();
+
+            store.truncateBreadcrumbs(1);
+
+            // Wait for effect to run
+            TestBed.flushEffects();
+
+            const expectedBreadcrumbs = mockBreadcrumbs.slice(0, 2);
+            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
+                'breadcrumbs',
+                JSON.stringify(expectedBreadcrumbs)
+            );
+        });
+
+        it('should save to sessionStorage when setLastBreadcrumb is called', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+            TestBed.flushEffects();
+            sessionStorageSetItemSpy.mockClear();
+
+            const updatedLastCrumb = { label: 'Updated', url: '/updated' };
+            store.setLastBreadcrumb(updatedLastCrumb);
+
+            // Wait for effect to run
+            TestBed.flushEffects();
+
+            const expectedBreadcrumbs = [
+                ...mockBreadcrumbs.slice(0, -1),
+                updatedLastCrumb
+            ];
+            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
+                'breadcrumbs',
+                JSON.stringify(expectedBreadcrumbs)
+            );
+        });
+
+        it('should save to sessionStorage when addNewBreadcrumb is called', () => {
+            store.setBreadcrumbs([mockBreadcrumbs[0]]);
+            TestBed.flushEffects();
+            sessionStorageSetItemSpy.mockClear();
+
+            const newBreadcrumb = {
+                label: 'New Item',
+                target: '_self',
+                url: '/dotAdmin/#/new-url'
+            };
+            store.addNewBreadcrumb(newBreadcrumb);
+
+            // Wait for effect to run
+            TestBed.flushEffects();
+
+            expect(sessionStorageSetItemSpy).toHaveBeenCalled();
+            const lastCall = sessionStorageSetItemSpy.mock.calls[sessionStorageSetItemSpy.mock.calls.length - 1];
+            expect(lastCall[0]).toBe('breadcrumbs');
+        });
+
+        it('should persist empty array to sessionStorage when breadcrumbs are cleared', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+            TestBed.flushEffects();
+            sessionStorageSetItemSpy.mockClear();
+
+            store.setBreadcrumbs([]);
+
+            // Wait for effect to run
+            TestBed.flushEffects();
+
+            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
+                'breadcrumbs',
+                JSON.stringify([])
+            );
+        });
+
+        it('should persist to sessionStorage on every breadcrumb state change', () => {
+            // Initial set
+            store.setBreadcrumbs([mockBreadcrumbs[0]]);
+            TestBed.flushEffects();
+            expect(sessionStorageSetItemSpy).toHaveBeenCalled();
+            sessionStorageSetItemSpy.mockClear();
+
+            // Append
+            store.appendCrumb(mockBreadcrumbs[1]);
+            TestBed.flushEffects();
+            expect(sessionStorageSetItemSpy).toHaveBeenCalled();
+            sessionStorageSetItemSpy.mockClear();
+
+            // Truncate
+            store.truncateBreadcrumbs(0);
+            TestBed.flushEffects();
+            expect(sessionStorageSetItemSpy).toHaveBeenCalled();
+            sessionStorageSetItemSpy.mockClear();
+
+            // Set last
+            store.setLastBreadcrumb({ label: 'Updated', url: '/updated' });
+            TestBed.flushEffects();
+            expect(sessionStorageSetItemSpy).toHaveBeenCalled();
+            sessionStorageSetItemSpy.mockClear();
+
+            // Add new
+            store.addNewBreadcrumb({ label: 'Another', url: '/dotAdmin/#/another', target: '_self' });
+            TestBed.flushEffects();
+            expect(sessionStorageSetItemSpy).toHaveBeenCalled();
+        });
+
+        it('should verify sessionStorage is called with correct breadcrumb data structure', () => {
+            const testBreadcrumbs: MenuItem[] = [
+                { label: 'dotCMS', disabled: true },
+                { label: 'Content', disabled: true },
+                { label: 'Blog Posts', target: '_self', url: '/dotAdmin/#/c/content' }
+            ];
+
+            store.setBreadcrumbs(testBreadcrumbs);
+            TestBed.flushEffects();
+
+            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
+                'breadcrumbs',
+                JSON.stringify(testBreadcrumbs)
+            );
+
+            // Verify the data can be parsed back
+            const savedData = sessionStorageSetItemSpy.mock.calls[0][1];
+            const parsedData = JSON.parse(savedData);
+            expect(parsedData).toEqual(testBreadcrumbs);
         });
     });
 

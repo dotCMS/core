@@ -1,6 +1,6 @@
-import { BehaviorSubject, merge, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
-import { Injectable, effect, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     ActivatedRoute,
@@ -13,7 +13,7 @@ import {
 
 import { MenuItem } from 'primeng/api';
 
-import { filter, map, tap } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
@@ -47,11 +47,6 @@ export class DotRouterService {
                 };
             });
         this.buildBreadcrumbs();
-        effect(() => {
-            const breadcrumbs = this.#globalStore.breadcrumbs();
-            console.log('breadcrumbs', breadcrumbs);
-            sessionStorage.setItem('breadcrumbs', JSON.stringify(breadcrumbs));
-        });
     }
 
     get currentSavedURL(): string {
