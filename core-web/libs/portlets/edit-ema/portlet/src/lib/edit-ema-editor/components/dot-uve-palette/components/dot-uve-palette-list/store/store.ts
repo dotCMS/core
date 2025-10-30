@@ -12,8 +12,6 @@ import {
     BASETYPES_FOR_CONTENT,
     BASETYPES_FOR_WIDGET,
     DEFAULT_PER_PAGE,
-    DotESContentParams,
-    DotPageContentTypeQueryParams,
     DotPaletteListState,
     DotPaletteListStatus,
     DotPaletteSearchParams,
@@ -24,6 +22,7 @@ import { DotPageContentTypeService } from '../../../service/dot-page-contenttype
 import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
 import {
     buildContentletsResponse,
+    buildESContentParams,
     filterAndBuildFavoriteResponse,
     getPaletteState
 } from '../../../utils';
@@ -40,9 +39,12 @@ export const DEFAULT_STATE: DotPaletteListState = {
         pagePathOrId: '',
         language: 1,
         variantId: DEFAULT_VARIANT_ID,
+        listType: DotUVEPaletteListTypes.CONTENT,
+        selectedContentType: '',
         orderby: 'name',
         direction: 'ASC',
-        page: 1
+        page: 1,
+        filter: ''
     },
     currentView: DotUVEPaletteListView.CONTENT_TYPES,
     status: DotPaletteListStatus.LOADING
@@ -62,12 +64,22 @@ export const DotPaletteListStore = signalStore(
                 };
             }),
             $isLoading: computed(() => store.status() === DotPaletteListStatus.LOADING),
-            $isContentTypesView: computed(
-                () => store.currentView() === DotUVEPaletteListView.CONTENT_TYPES
-            ),
-            $isContentletsView: computed(
-                () => store.currentView() === DotUVEPaletteListView.CONTENTLETS
-            )
+            $isContentTypesView: computed(() => store.searchParams.selectedContentType() === ''),
+            $isContentletsView: computed(() => store.searchParams.selectedContentType() !== ''),
+            $emptyStateMessage: computed(() => {
+                const currentView = store.currentView();
+                const listType = store.searchParams.listType();
+
+                if (currentView === DotUVEPaletteListView.CONTENTLETS) {
+                    return 'uve.palette.empty.contentlets.message';
+                }
+
+                if (listType === DotUVEPaletteListTypes.FAVORITES) {
+                    return 'uve.palette.empty.favorites.message';
+                }
+
+                return 'uve.palette.empty.content-types.message';
+            })
         };
     }),
     withMethods((store) => {
@@ -75,12 +87,10 @@ export const DotPaletteListStore = signalStore(
         const dotESContentService = inject(DotESContentService);
         const dotPageFavoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
 
-        const getData = (
-            type: DotUVEPaletteListTypes,
-            extraParams: Partial<DotPageContentTypeQueryParams> = {}
-        ) => {
-            const params = { ...store.searchParams(), ...extraParams };
-            switch (type) {
+        const getData = () => {
+            const { listType, ...params } = store.searchParams();
+
+            switch (listType) {
                 case DotUVEPaletteListTypes.CONTENT:
                     return pageContentTypeService.get({ ...params, types: BASETYPES_FOR_CONTENT });
                 case DotUVEPaletteListTypes.WIDGET:
@@ -98,26 +108,34 @@ export const DotPaletteListStore = signalStore(
         };
 
         return {
-            setSearchParams(searchParams: Partial<DotPaletteSearchParams>) {
-                patchState(store, { searchParams: { ...store.searchParams(), ...searchParams } });
-            },
             setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
-                const { contenttypes, pagination } = filterAndBuildFavoriteResponse(contentTypes);
+                const { contenttypes, pagination } = filterAndBuildFavoriteResponse(
+                    contentTypes,
+                    store.searchParams().filter
+                );
                 patchState(store, {
                     contenttypes,
                     pagination,
                     status: getPaletteState(contenttypes)
                 });
             },
-            getContentTypes(
-                type: DotUVEPaletteListTypes,
-                params: Partial<DotPageContentTypeQueryParams> = {}
-            ) {
+            /**
+             * Fetch content types with optional parameter updates.
+             * Updates store search params and then fetches data using the updated params.
+             * Automatically uses listType from store state.
+             */
+            getContentTypes(params: Partial<DotPaletteSearchParams> = {}) {
+                // Update search params in store
                 patchState(store, {
+                    searchParams: {
+                        ...store.searchParams(),
+                        ...params,
+                        selectedContentType: '' // Ensure we're in content types view
+                    },
                     status: DotPaletteListStatus.LOADING
                 });
 
-                return getData(type, params).subscribe(({ contenttypes, pagination }) => {
+                return getData().subscribe(({ contenttypes, pagination }) => {
                     patchState(store, {
                         contenttypes,
                         pagination,
@@ -126,19 +144,28 @@ export const DotPaletteListStore = signalStore(
                     });
                 });
             },
-            getContentlets(params: Partial<DotESContentParams>) {
-                patchState(store, { status: DotPaletteListStatus.LOADING });
-                const { query, offset = '0', filter } = params;
+            /**
+             * Fetch contentlets with optional parameter updates.
+             * Updates store search params and builds ES query automatically.
+             * Uses selectedContentType, variantId, language, page, and filter from store.
+             */
+            getContentlets(params: Partial<DotPaletteSearchParams> = {}) {
+                // Update search params in store
+                patchState(store, {
+                    searchParams: { ...store.searchParams(), ...params },
+                    status: DotPaletteListStatus.LOADING
+                });
+
+                // Build ES params from updated store state
+                const esParams = buildESContentParams(store.searchParams());
 
                 dotESContentService
-                    .get({
-                        itemsPerPage: DEFAULT_PER_PAGE,
-                        lang: store.searchParams().language.toString(),
-                        query,
-                        offset,
-                        filter
-                    })
-                    .pipe(map((response) => buildContentletsResponse(response, Number(offset))))
+                    .get(esParams)
+                    .pipe(
+                        map((response) =>
+                            buildContentletsResponse(response, Number(esParams.offset))
+                        )
+                    )
                     .subscribe(({ contentlets, pagination }) => {
                         patchState(store, {
                             contentlets,

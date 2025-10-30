@@ -4,10 +4,12 @@ import {
     Component,
     computed,
     DestroyRef,
+    effect,
     inject,
     input,
     OnInit,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -38,7 +40,7 @@ import {
     DotUVEPaletteListView
 } from '../../models';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
-import { buildContentletsQuery, getSortActiveClass, LOADING_ROWS_MOCK } from '../../utils';
+import { getSortActiveClass, LOADING_ROWS_MOCK } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
@@ -100,62 +102,56 @@ export class DotUvePaletteListComponent implements OnInit {
     readonly $currentView = this.#paletteListStore.currentView;
     readonly $status = this.#paletteListStore.$status;
     readonly $isLoading = this.#paletteListStore.$isLoading;
+    readonly $emptyStateMessage = this.#paletteListStore.$emptyStateMessage;
 
     readonly DotUVEPaletteListView = DotUVEPaletteListView;
     readonly DotPaletteListStatus = DotPaletteListStatus;
 
     readonly $viewMode = signal<DotPaletteViewMode>('grid');
     readonly $contextMenuItems = signal<MenuItem[]>([]);
-    readonly $currentContentType = signal<string>('');
 
     readonly $isListLayout = computed(() => {
         return this.$viewMode() === 'list' || this.#paletteListStore.$isContentletsView();
-    });
-
-    readonly $emptyStateMessage = computed(() => {
-        const currentView = this.$currentView();
-        const listType = this.$listType();
-
-        if (listType === 'FAVORITES') {
-            return 'uve.palette.empty.favorites.message';
-        }
-
-        if (currentView === DotUVEPaletteListView.CONTENT_TYPES) {
-            return 'uve.palette.empty.content-types.message';
-        }
-
-        return 'uve.palette.empty.contentlets.message';
     });
 
     readonly $showAddButton = computed(() => this.$listType() === 'FAVORITES');
 
     readonly LOADING_ROWS = LOADING_ROWS_MOCK;
 
-    ngOnInit() {
-        this.#paletteListStore.setSearchParams({
-            pagePathOrId: this.$pagePath(),
-            language: this.$languageId(),
-            variantId: this.$variantId()
-        });
-        this.#paletteListStore.getContentTypes(this.$listType());
+    constructor() {
+        // React to input changes and fetch content types
+        effect(() => {
+            const pagePathOrId = this.$pagePath();
+            const language = this.$languageId();
+            const variantId = this.$variantId();
+            const listType = this.$listType();
 
+            // Use untracked to prevent writes during effect
+            untracked(() => {
+                this.#paletteListStore.getContentTypes({
+                    pagePathOrId,
+                    language,
+                    variantId,
+                    listType
+                });
+            });
+        });
+    }
+
+    ngOnInit() {
         // Set up debounced search with distinctUntilChanged to avoid duplicate calls
         this.searchControl.valueChanges
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((searchTerm) => {
-                if (!this.$currentContentType()) {
-                    this.#paletteListStore.getContentTypes(this.$listType(), {
-                        filter: searchTerm
+                if (this.#paletteListStore.$isContentTypesView()) {
+                    this.#paletteListStore.getContentTypes({
+                        filter: searchTerm,
+                        page: 1 // Reset to first page on search
                     });
                 } else {
-                    const query = buildContentletsQuery(
-                        this.$currentContentType(),
-                        this.$variantId()
-                    );
                     this.#paletteListStore.getContentlets({
-                        query,
-                        offset: '0',
-                        filter: searchTerm
+                        filter: searchTerm,
+                        page: 1
                     });
                 }
             });
@@ -163,39 +159,31 @@ export class DotUvePaletteListComponent implements OnInit {
 
     /**
      * Handles pagination page change events.
-     * Preserves the current search term when paginating.
+     * Store automatically preserves the current search term and builds queries.
      *
      * @param event - PrimeNG paginator state event
      */
-    onPageChange(event: PaginatorState) {
-        const currentFilter = this.searchControl.value;
-        if (!this.$currentContentType()) {
-            this.#paletteListStore.getContentTypes(this.$listType(), {
-                page: event.page,
-                filter: currentFilter
-            });
+    protected onPageChange(event: PaginatorState) {
+        const page = (event.page ?? 0) + 1; // PrimeNG uses 0-based pages
+
+        if (this.#paletteListStore.$isContentTypesView()) {
+            this.#paletteListStore.getContentTypes({ page });
         } else {
-            const query = buildContentletsQuery(this.$currentContentType(), this.$variantId());
-            this.#paletteListStore.getContentlets({
-                query,
-                offset: '0',
-                filter: currentFilter
-            });
+            this.#paletteListStore.getContentlets({ page });
         }
     }
 
     /**
      * Handles sort option selection from the options menu.
-     * Preserves the current search term when sorting.
+     * Store automatically preserves the current search term.
      *
      * @param sortOption - Selected sort configuration
      */
-    onSortSelect(sortOption: DotPaletteSortOption) {
-        const currentFilter = this.searchControl.value;
-        this.#paletteListStore.getContentTypes(this.$listType(), {
+    protected onSortSelect(sortOption: DotPaletteSortOption) {
+        this.#paletteListStore.getContentTypes({
             orderby: sortOption.orderby,
             direction: sortOption.direction,
-            filter: currentFilter
+            page: 1 // Reset to first page on sort change
         });
     }
 
@@ -205,31 +193,36 @@ export class DotUvePaletteListComponent implements OnInit {
      *
      * @param viewOption - Selected view mode ('grid' or 'list')
      */
-    onViewSelect(viewOption: DotPaletteViewMode) {
+    protected onViewSelect(viewOption: DotPaletteViewMode) {
         this.$viewMode.set(viewOption);
     }
 
     /**
      * Handles the selection of a content type to view its contentlets.
-     * Resets the search term when drilling into a content type.
+     * Store handles query building, filter reset, and page reset automatically.
      *
      * @param contentTypeName - The name of the content type to drill into
      */
-    onSelectContentType(contentTypeName: string) {
-        this.$currentContentType.set(contentTypeName);
+    protected onSelectContentType(contentTypeName: string) {
+        this.#paletteListStore.getContentlets({
+            selectedContentType: contentTypeName,
+            filter: '',
+            page: 1
+        });
         this.searchControl.setValue('', { emitEvent: false });
-        const query = buildContentletsQuery(contentTypeName, this.$variantId());
-        this.#paletteListStore.getContentlets({ query, offset: '0' });
     }
 
     /**
      * Handles returning to the content types view from contentlets drill-down.
-     * Resets the search term when going back.
+     * Store handles filter reset and page reset automatically.
      */
-    onBackToContentTypes() {
-        this.$currentContentType.set('');
+    protected onBackToContentTypes() {
+        this.#paletteListStore.getContentTypes({
+            selectedContentType: '',
+            filter: '',
+            page: 1
+        });
         this.searchControl.setValue('', { emitEvent: false });
-        this.#paletteListStore.getContentTypes(this.$listType());
     }
 
     protected setSortMenuItems() {
@@ -305,7 +298,6 @@ export class DotUvePaletteListComponent implements OnInit {
         if (this.$listType() === DotUVEPaletteListTypes.FAVORITES) {
             this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
         }
-        // this.#paletteListStore.setFavorites(contenttypes);
 
         this.#messageService.add({
             severity: 'success',
@@ -325,7 +317,6 @@ export class DotUvePaletteListComponent implements OnInit {
         if (this.$listType() === DotUVEPaletteListTypes.FAVORITES) {
             this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
         }
-        // this.#paletteListStore.setFavorites(contenttypes);
 
         this.#messageService.add({
             severity: 'success',

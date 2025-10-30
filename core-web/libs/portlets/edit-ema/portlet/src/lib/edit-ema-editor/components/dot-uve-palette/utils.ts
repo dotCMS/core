@@ -170,3 +170,53 @@ export function buildContentletsResponse(
 export function buildContentletsQuery(contentTypeName: string, variantId: string): string {
     return `+contentType:${contentTypeName} +deleted:false ${variantId ? `+variant:(${DEFAULT_VARIANT_ID} OR ${variantId})` : `+variant:${DEFAULT_VARIANT_ID}`}`;
 }
+
+/**
+ * Converts search parameters to Elasticsearch content parameters.
+ * Calculates offset based on page number and builds the query string.
+ *
+ * @param searchParams - The search parameters from the store
+ * @returns DotESContentParams formatted for the ES content service
+ *
+ * @example
+ * ```typescript
+ * const esParams = buildESContentParams({
+ *   selectedContentType: 'Blog',
+ *   variantId: 'default',
+ *   language: 1,
+ *   page: 2,
+ *   filter: 'news'
+ * });
+ * // Returns: {
+ * //   query: '+contentType:Blog +deleted:false +variant:DEFAULT',
+ * //   offset: '30',
+ * //   itemsPerPage: 30,
+ * //   lang: '1',
+ * //   filter: 'news'
+ * // }
+ * ```
+ */
+export function buildESContentParams(searchParams: {
+    selectedContentType: string;
+    variantId: string;
+    language: number;
+    page: number;
+    filter: string;
+}): {
+    query: string;
+    offset: string;
+    itemsPerPage: number;
+    lang: string;
+    filter: string;
+} {
+    const offset = (searchParams.page - 1) * DEFAULT_PER_PAGE;
+    const query = buildContentletsQuery(searchParams.selectedContentType, searchParams.variantId);
+
+    return {
+        query,
+        offset: String(offset),
+        itemsPerPage: DEFAULT_PER_PAGE,
+        lang: String(searchParams.language),
+        filter: searchParams.filter
+    };
+}

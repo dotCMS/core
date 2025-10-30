@@ -155,12 +155,18 @@ export interface DotPaletteSearchParams {
     language: number;
     /** Variant ID for personalization */
     variantId: string;
+    /** Current palette list type (CONTENT, WIDGET, FAVORITES) */
+    listType: DotUVEPaletteListTypes;
+    /** Selected content type for drill-down view (empty = content types view) */
+    selectedContentType: string;
     /** Field to sort results by */
     orderby: DotPaletteSortField;
     /** Direction to sort results */
     direction: DotPaletteSortDirection;
     /** Current page number for pagination */
     page: number;
+    /** Search filter text for content types/contentlets */
+    filter: string;
 }
 
 /**
