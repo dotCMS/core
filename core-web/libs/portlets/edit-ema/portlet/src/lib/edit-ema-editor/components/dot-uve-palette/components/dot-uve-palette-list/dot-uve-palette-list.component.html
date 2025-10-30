@@ -15,8 +15,7 @@
             styleClass="input-text-sm"
             [placeholder]="'search' | dm"
             [style]="{ width: '100%' }"
-            (input)="onSearch($event)"
-            [value]="" />
+            [formControl]="searchControl" />
     </p-iconField>
 
     @if ($currentView() === DotUVEPaletteListView.CONTENT_TYPES && $listType() !== 'FAVORITES') {

@@ -3,11 +3,14 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     inject,
     input,
     OnInit,
     signal
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -18,6 +21,8 @@ import { MenuModule } from 'primeng/menu';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
+
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotESContentService, DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
@@ -55,6 +60,7 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
     selector: 'dot-uve-palette-list',
     imports: [
         NgTemplateOutlet,
+        ReactiveFormsModule,
         DotUVEPaletteContenttypeComponent,
         DotUvePaletteContentletComponent,
         ButtonModule,
@@ -83,6 +89,9 @@ export class DotUvePaletteListComponent implements OnInit {
     readonly #dotPageFavoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
+    readonly #destroyRef = inject(DestroyRef);
+
+    searchControl = new FormControl('', { nonNullable: true });
 
     readonly $start = this.#paletteListStore.$start;
     readonly $contenttypes = this.#paletteListStore.contenttypes;
@@ -129,47 +138,64 @@ export class DotUvePaletteListComponent implements OnInit {
             variantId: this.$variantId()
         });
         this.#paletteListStore.getContentTypes(this.$listType());
+
+        // Set up debounced search with distinctUntilChanged to avoid duplicate calls
+        this.searchControl.valueChanges
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((searchTerm) => {
+                if (!this.$currentContentType()) {
+                    this.#paletteListStore.getContentTypes(this.$listType(), {
+                        filter: searchTerm
+                    });
+                } else {
+                    const query = buildContentletsQuery(
+                        this.$currentContentType(),
+                        this.$variantId()
+                    );
+                    this.#paletteListStore.getContentlets({
+                        query,
+                        offset: '0',
+                        filter: searchTerm
+                    });
+                }
+            });
     }
 
     /**
      * Handles pagination page change events.
+     * Preserves the current search term when paginating.
      *
      * @param event - PrimeNG paginator state event
      */
     onPageChange(event: PaginatorState) {
+        const currentFilter = this.searchControl.value;
         if (!this.$currentContentType()) {
-            this.#paletteListStore.getContentTypes(this.$listType(), { page: event.page });
+            this.#paletteListStore.getContentTypes(this.$listType(), {
+                page: event.page,
+                filter: currentFilter
+            });
         } else {
             const query = buildContentletsQuery(this.$currentContentType(), this.$variantId());
-            this.#paletteListStore.getContentlets({ query, offset: '0' });
-        }
-    }
-
-    /**
-     * Handles search input changes.
-     * Debouncing is handled by the store.
-     *
-     * @param event - Input change event
-     */
-    onSearch(event: Event) {
-        const value = (event.target as HTMLInputElement).value;
-        if (!this.$currentContentType()) {
-            this.#paletteListStore.getContentTypes(this.$listType(), { filter: value });
-        } else {
-            const query = buildContentletsQuery(this.$currentContentType(), this.$variantId());
-            this.#paletteListStore.getContentlets({ query, offset: '0', filter: value });
+            this.#paletteListStore.getContentlets({
+                query,
+                offset: '0',
+                filter: currentFilter
+            });
         }
     }
 
     /**
      * Handles sort option selection from the options menu.
+     * Preserves the current search term when sorting.
      *
      * @param sortOption - Selected sort configuration
      */
     onSortSelect(sortOption: DotPaletteSortOption) {
+        const currentFilter = this.searchControl.value;
         this.#paletteListStore.getContentTypes(this.$listType(), {
             orderby: sortOption.orderby,
-            direction: sortOption.direction
+            direction: sortOption.direction,
+            filter: currentFilter
         });
     }
 
@@ -185,20 +211,24 @@ export class DotUvePaletteListComponent implements OnInit {
 
     /**
      * Handles the selection of a content type to view its contentlets.
+     * Resets the search term when drilling into a content type.
      *
      * @param contentTypeName - The name of the content type to drill into
      */
     onSelectContentType(contentTypeName: string) {
         this.$currentContentType.set(contentTypeName);
+        this.searchControl.setValue('', { emitEvent: false });
         const query = buildContentletsQuery(contentTypeName, this.$variantId());
         this.#paletteListStore.getContentlets({ query, offset: '0' });
     }
 
     /**
      * Handles returning to the content types view from contentlets drill-down.
+     * Resets the search term when going back.
      */
     onBackToContentTypes() {
         this.$currentContentType.set('');
+        this.searchControl.setValue('', { emitEvent: false });
         this.#paletteListStore.getContentTypes(this.$listType());
     }
 
