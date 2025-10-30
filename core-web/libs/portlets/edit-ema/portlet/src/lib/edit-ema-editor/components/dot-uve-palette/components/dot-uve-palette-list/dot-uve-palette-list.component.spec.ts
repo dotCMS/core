@@ -7,6 +7,7 @@ import { MessageService } from 'primeng/api';
 
 import {
     DotESContentService,
+    DotFavoriteContentTypeService,
     DotLocalstorageService,
     DotMessageService,
     DotPageContentTypeService
@@ -17,7 +18,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotUvePaletteListComponent } from './dot-uve-palette-list.component';
 
 import { DotUVEPaletteListTypes } from '../../models';
-import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 
 describe('DotUvePaletteListComponent', () => {
     let spectator: Spectator<DotUvePaletteListComponent>;
@@ -37,7 +37,7 @@ describe('DotUvePaletteListComponent', () => {
         )
     };
 
-    const mockDotPageFavoriteContentTypeService = {
+    const mockDotFavoriteContentTypeService = {
         getAll: jest.fn().mockReturnValue([]),
         isFavorite: jest.fn().mockReturnValue(false),
         add: jest.fn().mockReturnValue([]),
@@ -63,8 +63,8 @@ describe('DotUvePaletteListComponent', () => {
                 useValue: mockDotPageContentTypeService
             },
             {
-                provide: DotPageFavoriteContentTypeService,
-                useValue: mockDotPageFavoriteContentTypeService
+                provide: DotFavoriteContentTypeService,
+                useValue: mockDotFavoriteContentTypeService
             },
             DotLocalstorageService,
             {

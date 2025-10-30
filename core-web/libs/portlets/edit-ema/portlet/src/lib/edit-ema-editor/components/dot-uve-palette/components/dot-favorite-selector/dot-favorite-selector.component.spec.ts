@@ -6,12 +6,15 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { DotMessageService, DotPageContentTypeService } from '@dotcms/data-access';
+import {
+    DotFavoriteContentTypeService,
+    DotMessageService,
+    DotPageContentTypeService
+} from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotFavoriteSelectorComponent } from './dot-favorite-selector.component';
 
-import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { DotPaletteListStore } from '../dot-uve-palette-list/store/store';
 
 const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
@@ -36,7 +39,7 @@ const MOCK_FAVORITE_CONTENT_TYPES: DotCMSContentType[] = [MOCK_CONTENT_TYPES[0]]
 describe('DotFavoriteSelectorComponent', () => {
     let spectator: Spectator<DotFavoriteSelectorComponent>;
     let mockPageContentTypeService: jest.Mocked<DotPageContentTypeService>;
-    let mockFavoriteContentTypeService: jest.Mocked<DotPageFavoriteContentTypeService>;
+    let mockFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
     let mockStore: jest.Mocked<InstanceType<typeof DotPaletteListStore>>;
 
     const createComponent = createComponentFactory({
@@ -64,7 +67,7 @@ describe('DotFavoriteSelectorComponent', () => {
                     }
                 },
                 {
-                    provide: DotPageFavoriteContentTypeService,
+                    provide: DotFavoriteContentTypeService,
                     useValue: {
                         getAll: jest.fn().mockReturnValue(MOCK_FAVORITE_CONTENT_TYPES),
                         set: jest.fn().mockReturnValue(MOCK_FAVORITE_CONTENT_TYPES)
@@ -80,7 +83,7 @@ describe('DotFavoriteSelectorComponent', () => {
             ]
         });
         mockPageContentTypeService = spectator.inject(DotPageContentTypeService);
-        mockFavoriteContentTypeService = spectator.inject(DotPageFavoriteContentTypeService);
+        mockFavoriteContentTypeService = spectator.inject(DotFavoriteContentTypeService);
         mockStore = spectator.inject(DotPaletteListStore);
     });
 

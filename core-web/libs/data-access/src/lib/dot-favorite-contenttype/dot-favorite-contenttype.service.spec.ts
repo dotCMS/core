@@ -1,9 +1,10 @@
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { DotPageFavoriteContentTypeService } from './dot-page-favorite-contentType.service';
+import { DotFavoriteContentTypeService } from './dot-favorite-contenttype.service';
+
+import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
 
 const FAVORITE_CONTENT_TYPES_KEY = 'dot-favorite-content-types';
 
@@ -43,12 +44,12 @@ const MOCK_CONTENT_TYPE_3: DotCMSContentType = {
     system: false
 } as DotCMSContentType;
 
-describe('DotPageFavoriteContentTypeService', () => {
-    let spectator: SpectatorService<DotPageFavoriteContentTypeService>;
+describe('DotFavoriteContentTypeService', () => {
+    let spectator: SpectatorService<DotFavoriteContentTypeService>;
     let localStorageService: jest.Mocked<DotLocalstorageService>;
 
     const createService = createServiceFactory({
-        service: DotPageFavoriteContentTypeService,
+        service: DotFavoriteContentTypeService,
         mocks: [DotLocalstorageService]
     });
 

@@ -2,7 +2,6 @@ import { describe, expect, it } from '@jest/globals';
 
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { DotPaletteListStatus } from './models';
 import {
     buildContentletsQuery,
     buildContentletsResponse,
@@ -10,7 +9,9 @@ import {
     filterAndBuildFavoriteResponse,
     getPaletteState,
     getSortActiveClass
-} from './utils';
+} from './index';
+
+import { DotPaletteListStatus } from '../models';
 
 describe('Dot UVE Palette Utils', () => {
     describe('getSortActiveClass', () => {

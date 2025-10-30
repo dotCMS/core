@@ -27,7 +27,11 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { DotESContentService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotESContentService,
+    DotFavoriteContentTypeService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -40,7 +44,6 @@ import {
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../models';
-import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { getSortActiveClass, LOADING_ROWS_MOCK } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
@@ -90,7 +93,7 @@ export class DotUvePaletteListComponent implements OnInit {
     $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
 
     readonly #paletteListStore = inject(DotPaletteListStore);
-    readonly #dotPageFavoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
+    readonly #dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #destroyRef = inject(DestroyRef);
@@ -279,7 +282,7 @@ export class DotUvePaletteListComponent implements OnInit {
     }
 
     protected onContextMenu(contentType: DotCMSContentType) {
-        const isFavorite = this.#dotPageFavoriteContentTypeService.isFavorite(contentType.id);
+        const isFavorite = this.#dotFavoriteContentTypeService.isFavorite(contentType.id);
         const label = isFavorite
             ? 'uve.palette.menu.favorite.option.remove'
             : 'uve.palette.menu.favorite.option.add';
@@ -294,7 +297,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * @param contentType - The content type to remove.
      */
     private removeFavoriteItems(contentType: DotCMSContentType) {
-        const contenttypes = this.#dotPageFavoriteContentTypeService.remove(contentType.id);
+        const contenttypes = this.#dotFavoriteContentTypeService.remove(contentType.id);
 
         if (this.$listType() === DotUVEPaletteListTypes.FAVORITES) {
             this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
@@ -313,7 +316,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * @param contentType - The content type to add.
      */
     private addFavoriteItems(contentType: DotCMSContentType) {
-        const contenttypes = this.#dotPageFavoriteContentTypeService.add(contentType);
+        const contenttypes = this.#dotFavoriteContentTypeService.add(contentType);
 
         if (this.$listType() === DotUVEPaletteListTypes.FAVORITES) {
             this.#paletteListStore.setContentTypesFromFavorite(contenttypes);

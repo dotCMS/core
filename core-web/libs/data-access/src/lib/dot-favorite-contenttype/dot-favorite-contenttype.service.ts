@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 
-import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+
+import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
 
 const FAVORITE_CONTENT_TYPES_KEY = 'dot-favorite-content-types';
 
@@ -9,12 +10,12 @@ const FAVORITE_CONTENT_TYPES_KEY = 'dot-favorite-content-types';
  * Service to manage favorite content types using localStorage.
  *
  * @export
- * @class DotPageFavoriteContentTypeService
+ * @class DotFavoriteContentTypeService
  */
 @Injectable({
     providedIn: 'root'
 })
-export class DotPageFavoriteContentTypeService {
+export class DotFavoriteContentTypeService {
     private localStorageService = inject(DotLocalstorageService);
 
     /**
@@ -23,7 +24,7 @@ export class DotPageFavoriteContentTypeService {
      *
      * @param {DotCMSContentType | DotCMSContentType[]} contentTypes - The content type(s) to add
      * @returns {DotCMSContentType[]} Updated array of favorite content types
-     * @memberof DotPageFavoriteContentTypeService
+     * @memberof DotFavoriteContentTypeService
      */
     add(contentTypes: DotCMSContentType | DotCMSContentType[]): DotCMSContentType[] {
         const favorites = this.getAll();
@@ -49,7 +50,7 @@ export class DotPageFavoriteContentTypeService {
      *
      * @param {string} contentTypeId - The ID of the content type to remove
      * @returns {DotCMSContentType[]} Updated array of favorite content types
-     * @memberof DotPageFavoriteContentTypeService
+     * @memberof DotFavoriteContentTypeService
      */
     remove(contentTypeId: string): DotCMSContentType[] {
         const favorites = this.getAll();
@@ -65,7 +66,7 @@ export class DotPageFavoriteContentTypeService {
      *
      * @param {DotCMSContentType[]} contentTypes - The content types to set as favorites
      * @returns {DotCMSContentType[]} The saved array of favorite content types
-     * @memberof DotPageFavoriteContentTypeService
+     * @memberof DotFavoriteContentTypeService
      */
     set(contentTypes: DotCMSContentType[]): DotCMSContentType[] {
         this.localStorageService.setItem<DotCMSContentType[]>(
@@ -80,7 +81,7 @@ export class DotPageFavoriteContentTypeService {
      * Get all favorite content types from localStorage.
      *
      * @returns {DotCMSContentType[]} Array of favorite content types
-     * @memberof DotPageFavoriteContentTypeService
+     * @memberof DotFavoriteContentTypeService
      */
     getAll(): DotCMSContentType[] {
         return (
@@ -93,7 +94,7 @@ export class DotPageFavoriteContentTypeService {
      *
      * @param {string} contentTypeId - The ID of the content type to check
      * @returns {boolean} True if the content type is in favorites
-     * @memberof DotPageFavoriteContentTypeService
+     * @memberof DotFavoriteContentTypeService
      */
     isFavorite(contentTypeId: string): boolean {
         const favorites = this.getAll();
@@ -104,7 +105,7 @@ export class DotPageFavoriteContentTypeService {
     /**
      * Clear all favorite content types from localStorage.
      *
-     * @memberof DotPageFavoriteContentTypeService
+     * @memberof DotFavoriteContentTypeService
      */
     clear(): void {
         this.localStorageService.removeItem(FAVORITE_CONTENT_TYPES_KEY);

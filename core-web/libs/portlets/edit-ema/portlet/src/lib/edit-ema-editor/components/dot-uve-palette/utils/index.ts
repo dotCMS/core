@@ -5,7 +5,7 @@ import {
     ESContent
 } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PER_PAGE, DotPaletteSortOption, DotPaletteListStatus } from './models';
+import { DEFAULT_PER_PAGE, DotPaletteSortOption, DotPaletteListStatus } from '../models';
 
 /**
  * Mock array for loading skeleton rows.

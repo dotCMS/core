@@ -2,7 +2,11 @@ import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotESContentService, DotPageContentTypeService } from '@dotcms/data-access';
+import {
+    DotESContentService,
+    DotFavoriteContentTypeService,
+    DotPageContentTypeService
+} from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotPaletteListStore } from './store';
@@ -12,14 +16,13 @@ import {
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../../models';
-import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
 
 describe('DotPaletteListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotPaletteListStore>>;
     let store: InstanceType<typeof DotPaletteListStore>;
     let pageContentTypeService: jest.Mocked<DotPageContentTypeService>;
     let dotESContentService: jest.Mocked<DotESContentService>;
-    let dotPageFavoriteContentTypeService: jest.Mocked<DotPageFavoriteContentTypeService>;
+    let dotFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
 
     const mockContentTypes: DotCMSContentType[] = [
         {
@@ -61,7 +64,7 @@ describe('DotPaletteListStore', () => {
     const createService = createServiceFactory({
         service: DotPaletteListStore,
         providers: [DotPaletteListStore],
-        mocks: [DotPageContentTypeService, DotESContentService, DotPageFavoriteContentTypeService]
+        mocks: [DotPageContentTypeService, DotESContentService, DotFavoriteContentTypeService]
     });
 
     beforeEach(() => {
@@ -70,7 +73,7 @@ describe('DotPaletteListStore', () => {
 
         pageContentTypeService = spectator.inject(DotPageContentTypeService);
         dotESContentService = spectator.inject(DotESContentService);
-        dotPageFavoriteContentTypeService = spectator.inject(DotPageFavoriteContentTypeService);
+        dotFavoriteContentTypeService = spectator.inject(DotFavoriteContentTypeService);
 
         // Setup default mock return values
         pageContentTypeService.get.mockReturnValue(
@@ -97,7 +100,7 @@ describe('DotPaletteListStore', () => {
 
         dotESContentService.get.mockReturnValue(of(mockESResponse));
 
-        dotPageFavoriteContentTypeService.getAll.mockReturnValue(mockContentTypes);
+        dotFavoriteContentTypeService.getAll.mockReturnValue(mockContentTypes);
     });
 
     describe('Initial State', () => {
@@ -337,7 +340,7 @@ describe('DotPaletteListStore', () => {
             it('should fetch favorites for FAVORITES list type', () => {
                 store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
 
-                expect(dotPageFavoriteContentTypeService.getAll).toHaveBeenCalled();
+                expect(dotFavoriteContentTypeService.getAll).toHaveBeenCalled();
                 expect(store.contenttypes()).toEqual(mockContentTypes);
             });
 
@@ -560,7 +563,7 @@ describe('DotPaletteListStore', () => {
             expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalled();
 
             store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
-            expect(dotPageFavoriteContentTypeService.getAll).toHaveBeenCalled();
+            expect(dotFavoriteContentTypeService.getAll).toHaveBeenCalled();
         });
 
         it('should handle pagination across multiple pages', () => {

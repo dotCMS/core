@@ -5,7 +5,11 @@ import { computed, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotESContentService, DotPageContentTypeService } from '@dotcms/data-access';
+import {
+    DotESContentService,
+    DotFavoriteContentTypeService,
+    DotPageContentTypeService
+} from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import {
@@ -18,7 +22,6 @@ import {
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../../models';
-import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
 import {
     buildContentletsResponse,
     buildESContentParams,
@@ -83,7 +86,7 @@ export const DotPaletteListStore = signalStore(
     withMethods((store) => {
         const pageContentTypeService = inject(DotPageContentTypeService);
         const dotESContentService = inject(DotESContentService);
-        const dotPageFavoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
+        const dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
 
         const getData = () => {
             const { listType, ...params } = store.searchParams();
@@ -97,7 +100,7 @@ export const DotPaletteListStore = signalStore(
                         types: BASETYPES_FOR_WIDGET
                     });
                 case DotUVEPaletteListTypes.FAVORITES:
-                    return of(dotPageFavoriteContentTypeService.getAll()).pipe(
+                    return of(dotFavoriteContentTypeService.getAll()).pipe(
                         map((contentTypes) =>
                             filterAndBuildFavoriteResponse({
                                 contentTypes,

@@ -9,11 +9,14 @@ import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { debounceTime, finalize, switchMap } from 'rxjs/operators';
 
-import { DotContentTypeQueryParams, DotPageContentTypeService } from '@dotcms/data-access';
+import {
+    DotContentTypeQueryParams,
+    DotFavoriteContentTypeService,
+    DotPageContentTypeService
+} from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { DotPaletteListStore } from '../dot-uve-palette-list/store/store';
 
 /**
@@ -52,7 +55,7 @@ export class DotFavoriteSelectorComponent implements OnInit {
     readonly #store = inject(DotPaletteListStore);
     readonly #destroyRef = inject(DestroyRef);
     readonly #pageContentTypeService = inject(DotPageContentTypeService);
-    readonly #favoriteContentTypeService = inject(DotPageFavoriteContentTypeService);
+    readonly #favoriteContentTypeService = inject(DotFavoriteContentTypeService);
 
     /** Full list of content types matching the current filter. */
     readonly $contenttypes = signal<DotCMSContentType[]>([]);
