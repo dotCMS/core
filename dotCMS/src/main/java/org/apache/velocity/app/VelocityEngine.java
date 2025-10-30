@@ -20,6 +20,7 @@ package org.apache.velocity.app;
  */
 
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -145,7 +146,7 @@ public class VelocityEngine implements RuntimeConstants
         if(!initialized.get()) {
             ri.setProperty(key,value);
         } else {
-            Logger.warn(this, "Cannot set property '" + key + "' - VelocityEngine already initialized");
+            Logger.warn(this, "Cannot set property '" + SecurityUtils.sanitizeForLogging(key) + "' - VelocityEngine already initialized");
         }
     }
 
@@ -160,7 +161,7 @@ public class VelocityEngine implements RuntimeConstants
         if(!initialized.get()) {
             ri.addProperty(key,value);
         } else {
-            Logger.warn(this, "Cannot add property '" + key + "' - VelocityEngine already initialized");
+            Logger.warn(this, "Cannot add property '" + SecurityUtils.sanitizeForLogging(key) + "' - VelocityEngine already initialized");
         }
     }
 
@@ -174,7 +175,7 @@ public class VelocityEngine implements RuntimeConstants
         if(!initialized.get()) {
             ri.clearProperty(key);
         } else {
-            Logger.warn(this, "Cannot clear property '" + key + "' - VelocityEngine already initialized");
+            Logger.warn(this, "Cannot clear property '" + SecurityUtils.sanitizeForLogging(key) + "' - VelocityEngine already initialized");
         }
     }
 
@@ -512,7 +513,7 @@ public class VelocityEngine implements RuntimeConstants
          if(!initialized.get()) {
              ri.removeDirective(name);
          } else {
-             Logger.warn(this, "Cannot remove directive '" + name + "' - VelocityEngine already initialized");
+             Logger.warn(this, "Cannot remove directive '" + SecurityUtils.sanitizeForLogging(name) + "' - VelocityEngine already initialized");
          }
      }
 
@@ -526,7 +527,7 @@ public class VelocityEngine implements RuntimeConstants
          if(!initialized.get()) {
              ri.loadDirective(directiveClass);
          } else {
-             Logger.warn(this, "Cannot load directive '" + directiveClass + "' - VelocityEngine already initialized");
+             Logger.warn(this, "Cannot load directive '" + SecurityUtils.sanitizeForLogging(directiveClass) + "' - VelocityEngine already initialized");
          }
      }
      
