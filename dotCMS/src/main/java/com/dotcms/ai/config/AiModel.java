@@ -8,6 +8,7 @@ import java.util.Map;
  */
 public enum AiModel {
 
+    GEMINI_1_5_FLASH(AiVendor.GEMINI, "gemini-2.0-flash", "https://api.openai.com/v1"),
     OPEN_AI_GPT_4O_MINI(AiVendor.OPEN_AI, "gpt-4o-mini", "https://api.openai.com/v1"),
     OPEN_AI_TEXT_EMBEDDING_3_SMALL(AiVendor.OPEN_AI, "text-embedding-3-small", "https://api.openai.com/v1"),
     ANTHROPIC_CLAUDE_3_7(AiVendor.ANTHROPIC, "claude-3-7-sonnet-20250219", "https://api.anthropic.com");
