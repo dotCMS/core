@@ -59,8 +59,7 @@ public class VelocityEngine implements RuntimeConstants
 {
     private RuntimeInstance ri = new RuntimeInstance();
 
-
-    AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
 
 
@@ -79,7 +78,7 @@ public class VelocityEngine implements RuntimeConstants
      */
     public VelocityEngine(String propsFilename)
     {
-        if(initialized.get() == false) {
+        if(!initialized.get()) {
             ri.setProperties(propsFilename);
         }
     }
@@ -89,7 +88,7 @@ public class VelocityEngine implements RuntimeConstants
      */
     public VelocityEngine(Properties p)
     {
-        if(initialized.get() == false) {
+        if(!initialized.get()) {
             ri.setProperties(p);
         }
     }
@@ -143,10 +142,11 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void setProperty(String key, Object value)
     {
-        if(initialized.get() == false) {
+        if(!initialized.get()) {
             ri.setProperty(key,value);
+        } else {
+            Logger.warn(this, "Cannot set property '" + key + "' - VelocityEngine already initialized");
         }
-
     }
 
     /**
@@ -157,10 +157,11 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void addProperty(String key, Object value)
     {
-        if(initialized.get() == false) {
+        if(!initialized.get()) {
             ri.addProperty(key,value);
+        } else {
+            Logger.warn(this, "Cannot add property '" + key + "' - VelocityEngine already initialized");
         }
-
     }
 
     /**
@@ -170,10 +171,11 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void clearProperty(String key)
     {
-        if(initialized.get() == false) {
+        if(!initialized.get()) {
             ri.clearProperty(key);
+        } else {
+            Logger.warn(this, "Cannot clear property '" + key + "' - VelocityEngine already initialized");
         }
-
     }
 
     /**
@@ -187,8 +189,10 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void setExtendedProperties( ExtendedProperties configuration)
     {
-        if(initialized.get() == false) {
+        if(!initialized.get()) {
             ri.setConfiguration(configuration);
+        } else {
+            Logger.warn(this, "Cannot set extended properties - VelocityEngine already initialized");
         }
     }
 
@@ -505,8 +509,10 @@ public class VelocityEngine implements RuntimeConstants
       */
      public void removeDirective(String name)
      {
-         if(initialized.get() == false) {
+         if(!initialized.get()) {
              ri.removeDirective(name);
+         } else {
+             Logger.warn(this, "Cannot remove directive '" + name + "' - VelocityEngine already initialized");
          }
      }
 
@@ -517,8 +523,10 @@ public class VelocityEngine implements RuntimeConstants
       */
      public void loadDirective(String directiveClass)
      {
-         if(initialized.get() == false) {
+         if(!initialized.get()) {
              ri.loadDirective(directiveClass);
+         } else {
+             Logger.warn(this, "Cannot load directive '" + directiveClass + "' - VelocityEngine already initialized");
          }
      }
      
