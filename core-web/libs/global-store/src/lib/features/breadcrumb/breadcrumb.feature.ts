@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, effect } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
@@ -30,6 +30,11 @@ export interface BreadcrumbState {
 const initialBreadcrumbState: BreadcrumbState = {
     breadcrumbs: []
 };
+
+/**
+ * Session storage key for persisting breadcrumbs
+ */
+const BREADCRUMBS_SESSION_KEY = 'breadcrumbs';
 
 const urlsRegex = {
     content: {
@@ -135,8 +140,14 @@ export function withBreadcrumbs() {
             };
 
             const loadBreadcrumbs = () => {
-                const breadcrumbs = JSON.parse(sessionStorage.getItem('breadcrumbs') || '[]');
+                const breadcrumbs = JSON.parse(
+                    sessionStorage.getItem(BREADCRUMBS_SESSION_KEY) || '[]'
+                );
                 patchState(store, { breadcrumbs });
+            };
+
+            const clearBreadcrumbs = () => {
+                patchState(store, { breadcrumbs: [] });
             };
 
             return {
@@ -145,7 +156,8 @@ export function withBreadcrumbs() {
                 truncateBreadcrumbs,
                 setLastBreadcrumb,
                 addNewBreadcrumb,
-                loadBreadcrumbs
+                loadBreadcrumbs,
+                clearBreadcrumbs
             };
         }),
         withHooks({
@@ -153,6 +165,12 @@ export function withBreadcrumbs() {
                 // Load current site on store initialization
                 // System configuration is automatically loaded by withSystem feature
                 store.loadBreadcrumbs();
+
+                // Persist breadcrumbs to sessionStorage whenever they change
+                effect(() => {
+                    const breadcrumbs = store.breadcrumbs();
+                    sessionStorage.setItem(BREADCRUMBS_SESSION_KEY, JSON.stringify(breadcrumbs));
+                });
             }
         })
     );
