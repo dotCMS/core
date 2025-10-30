@@ -476,7 +476,7 @@ export class DotRouterService {
                     if (item) {
                         this.#globalStore.setBreadcrumbs([
                             {
-                                label: 'dotCMS',
+                                label: 'Home',
                                 disabled: true
                             },
                             {
