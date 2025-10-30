@@ -101,6 +101,7 @@ export class DotUveToolbarComponent {
     readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.socialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
+    readonly $paletteOpen = this.#store.paletteOpen;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -142,6 +143,10 @@ export class DotUveToolbarComponent {
             mode: UVE_MODE.LIVE,
             publishDate: publishDateUTC
         });
+    }
+
+    protected togglePalette(): void {
+        this.#store.setPaletteOpen(!this.$paletteOpen());
     }
 
     /**
