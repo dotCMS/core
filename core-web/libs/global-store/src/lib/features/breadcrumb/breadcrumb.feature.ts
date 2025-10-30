@@ -160,9 +160,11 @@ export function withBreadcrumbs() {
                 store.loadBreadcrumbs();
 
                 // Persist breadcrumbs to sessionStorage whenever they change
+                const BREADCRUMBS_SESSION_KEY = 'breadcrumbs';
+
                 effect(() => {
                     const breadcrumbs = store.breadcrumbs();
-                    sessionStorage.setItem('breadcrumbs', JSON.stringify(breadcrumbs));
+                    sessionStorage.setItem(BREADCRUMBS_SESSION_KEY, JSON.stringify(breadcrumbs));
                 });
             }
         })
