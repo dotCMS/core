@@ -49,13 +49,13 @@ public class MenuHelper implements Serializable {
 
         for (String portletId : portletIds) {
             menuContext.setPortletId( portletId );
-            String linkHREF = getUrl(menuContext);
+            String url = getUrl(menuContext);
             Locale locale = Try.of(()-> new Locale(menuContext.getHttpServletRequest().getSession().getAttribute("com.dotcms.repackage.org.apache.struts.action.LOCALE").toString())).getOrElse(Locale.US);
             String linkName = normalizeLinkName(LanguageUtil.get(locale, PORTLET_KEY_PREFIX + portletId));
             boolean isAngular = isAngular( portletId );
             boolean isAjax = isAjax( portletId );
 
-            menuItems.add ( new MenuItem(portletId, linkHREF, linkName, isAngular, isAjax) );
+            menuItems.add ( new MenuItem(portletId, url, linkName, isAngular, isAjax) );
         }
         return menuItems;
     }
@@ -83,10 +83,11 @@ public class MenuHelper implements Serializable {
 
 
     /**
-     * Validate if the portlet is a PortletController
-     * @param portletId Id of the portlet
-     * @return true if the portlet is a PortletController portlet, false if not
-     * @throws ClassNotFoundException
+     * Determines if the portlet is an Angular-based portlet by checking if it implements PortletController
+     *
+     * @param portletId ID of the portlet to check
+     * @return true if the portlet is an Angular portlet, false if not
+     * @throws ClassNotFoundException if the portlet class cannot be found
      */
     public boolean isAngular(final String portletId) throws ClassNotFoundException {
         final Portlet portlet = APILocator.getPortletAPI().findPortlet(portletId);
@@ -134,6 +135,13 @@ public class MenuHelper implements Serializable {
 
             Logger.debug(MenuResource.class, "### getPortletId" + menuContext.getPortletId());
             Logger.debug(MenuResource.class, "### portletClass" + portletClass);
+
+            if(UtilMethods.isSet(portlet.getPortletUrl())){
+                final String portletUrl = portlet.getPortletUrl();
+                Logger.debug(MenuResource.class, "### portletUrl" + portletUrl);
+                return portletUrl.startsWith(StringPool.FORWARD_SLASH) ? portletUrl : StringPool.FORWARD_SLASH + portletUrl;
+            }
+
             final PortletURLImpl portletURLImpl = new PortletURLImpl(menuContext.getHttpServletRequest(),
                     menuContext.getPortletId(), menuContext.getLayout().getId(), false);
             if ( StrutsPortlet.class.isAssignableFrom(classs)
