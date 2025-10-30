@@ -1,3 +1,4 @@
+import { DotContentTypeQueryParams, DotPageContentTypeQueryParams } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -51,49 +52,8 @@ export enum DotPaletteListStatus {
  */
 export type DotPaletteViewMode = 'grid' | 'list';
 
-/**
- * Sort field options for content types.
- */
-export type DotPaletteSortField = 'name' | 'usage';
-
-/**
- * Sort direction options.
- */
-export type DotPaletteSortDirection = 'ASC' | 'DESC';
-
-/**
- * Base query parameters for fetching content types.
- * Used by the content type service for API requests.
- */
-export interface DotContentTypeQueryParams {
-    /** Language ID for content type filtering (default: 1) */
-    language?: number;
-    /** Filter content types by name or description */
-    filter?: string;
-    /** Page number for pagination (default: 1) */
-    page?: number;
-    /** Items per page - max: 100 (default: 30) */
-    per_page?: number;
-    /** Sort field - "name" or "usage" (default: "usage") */
-    orderby?: DotPaletteSortField;
-    /** Sort direction - ASC or DESC (default: "ASC") */
-    direction?: DotPaletteSortDirection;
-    /** Content type base types to filter by */
-    types?: DotCMSBaseTypesContentTypes[];
-}
-
 /** @deprecated Use DotContentTypeQueryParams instead */
 export type DotContentTypeParams = DotContentTypeQueryParams;
-
-/**
- * Extended query parameters for fetching page-specific content types.
- * Adds page context to the base content type parameters.
- * Used when filtering content types based on page context.
- */
-export interface DotPageContentTypeQueryParams extends DotContentTypeQueryParams {
-    /** The URL path or identifier of the page to filter content types */
-    pagePathOrId: string;
-}
 
 /** @deprecated Use DotPageContentTypeQueryParams instead */
 export type DotPageContentTypeParams = DotPageContentTypeQueryParams;
@@ -116,32 +76,13 @@ export interface DotESContentParams {
 }
 
 /**
- * Generic API response structure for dotCMS endpoints.
- * @template T - Type of the entity being returned
- */
-export interface DotCMSAPIResponse<T = unknown> {
-    /** The main data payload */
-    entity: T;
-    /** Array of error messages, if any */
-    errors: string[];
-    /** Array of informational messages */
-    messages: string[];
-    /** User permissions for the entity */
-    permissions: string[];
-    /** Internationalization message map */
-    i18nMessagesMap: { [key: string]: string };
-    /** Pagination information, if applicable */
-    pagination?: DotPagination;
-}
-
-/**
  * Sort configuration for content types in the palette.
  */
 export interface DotPaletteSortOption {
     /** Field to sort by */
-    orderby: DotPaletteSortField;
+    orderby: 'name' | 'usage';
     /** Sort direction */
-    direction: DotPaletteSortDirection;
+    direction: 'ASC' | 'DESC';
 }
 
 /**
@@ -160,9 +101,9 @@ export interface DotPaletteSearchParams {
     /** Selected content type for drill-down view (empty = content types view) */
     selectedContentType: string;
     /** Field to sort results by */
-    orderby: DotPaletteSortField;
+    orderby: 'name' | 'usage';
     /** Direction to sort results */
-    direction: DotPaletteSortDirection;
+    direction: 'ASC' | 'DESC';
     /** Current page number for pagination */
     page: number;
     /** Search filter text for content types/contentlets */

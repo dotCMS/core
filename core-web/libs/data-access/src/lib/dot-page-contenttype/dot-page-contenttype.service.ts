@@ -6,17 +6,44 @@ import { Injectable, inject } from '@angular/core';
 import { map, take } from 'rxjs/operators';
 
 import {
+    DotCMSAPIResponse,
     DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotPagination
 } from '@dotcms/dotcms-models';
 
-import {
-    DEFAULT_PER_PAGE,
-    DotCMSAPIResponse,
-    DotContentTypeQueryParams,
-    DotPageContentTypeQueryParams
-} from '../models';
+const DEFAULT_PER_PAGE = 30;
+
+/**
+ * Base query parameters for fetching content types.
+ * Used by the content type service for API requests.
+ */
+export interface DotContentTypeQueryParams {
+    /** Language ID for content type filtering (default: 1) */
+    language?: number;
+    /** Filter content types by name or description */
+    filter?: string;
+    /** Page number for pagination (default: 1) */
+    page?: number;
+    /** Items per page - max: 100 (default: 30) */
+    per_page?: number;
+    /** Sort field - "name" or "usage" (default: "usage") */
+    orderby?: 'name' | 'usage';
+    /** Sort direction - ASC or DESC (default: "ASC") */
+    direction?: 'ASC' | 'DESC';
+    /** Content type base types to filter by */
+    types?: DotCMSBaseTypesContentTypes[];
+}
+
+/**
+ * Extended query parameters for fetching page-specific content types.
+ * Adds page context to the base content type parameters.
+ * Used when filtering content types based on page context.
+ */
+export interface DotPageContentTypeQueryParams extends DotContentTypeQueryParams {
+    /** The URL path or identifier of the page to filter content types */
+    pagePathOrId: string;
+}
 
 /**
  * Service to manage page content types for the Universal Visual Editor palette.
@@ -89,7 +116,7 @@ export class DotPageContentTypeService {
                 map(({ entity, pagination }) => {
                     return {
                         contenttypes: entity,
-                        pagination: pagination
+                        pagination: pagination as DotPagination
                     };
                 })
             );
@@ -141,7 +168,7 @@ export class DotPageContentTypeService {
                 map((response) => {
                     return {
                         contenttypes: response.entity,
-                        pagination: response.pagination
+                        pagination: response.pagination as DotPagination
                     };
                 })
             );

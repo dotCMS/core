@@ -8,7 +8,8 @@ import { MessageService } from 'primeng/api';
 import {
     DotESContentService,
     DotLocalstorageService,
-    DotMessageService
+    DotMessageService,
+    DotPageContentTypeService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -16,7 +17,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotUvePaletteListComponent } from './dot-uve-palette-list.component';
 
 import { DotUVEPaletteListTypes } from '../../models';
-import { DotPageContentTypeService } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 
 describe('DotUvePaletteListComponent', () => {

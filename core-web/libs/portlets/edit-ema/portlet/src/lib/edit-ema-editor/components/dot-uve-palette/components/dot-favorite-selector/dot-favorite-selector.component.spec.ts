@@ -6,12 +6,11 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotPageContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotFavoriteSelectorComponent } from './dot-favorite-selector.component';
 
-import { DotPageContentTypeService } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { DotPaletteListStore } from '../dot-uve-palette-list/store/store';
 

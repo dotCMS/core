@@ -9,11 +9,10 @@ import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { debounceTime, finalize, switchMap } from 'rxjs/operators';
 
+import { DotContentTypeQueryParams, DotPageContentTypeService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotContentTypeQueryParams } from '../../models';
-import { DotPageContentTypeService } from '../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../service/dot-page-favorite-contentType.service';
 import { DotPaletteListStore } from '../dot-uve-palette-list/store/store';
 

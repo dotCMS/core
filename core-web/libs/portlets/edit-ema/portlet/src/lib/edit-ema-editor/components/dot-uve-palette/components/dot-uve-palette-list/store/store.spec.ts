@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotESContentService } from '@dotcms/data-access';
+import { DotESContentService, DotPageContentTypeService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotPaletteListStore } from './store';
@@ -12,7 +12,6 @@ import {
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../../models';
-import { DotPageContentTypeService } from '../../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
 
 describe('DotPaletteListStore', () => {

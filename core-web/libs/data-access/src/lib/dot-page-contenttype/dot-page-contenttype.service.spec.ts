@@ -2,16 +2,19 @@ import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
-import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
-
-import { DotPageContentTypeService } from './dot-page-contenttype.service';
+import {
+    DotCMSAPIResponse,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
 
 import {
-    DEFAULT_PER_PAGE,
-    DotCMSAPIResponse,
+    DotPageContentTypeService,
     DotContentTypeQueryParams,
     DotPageContentTypeQueryParams
-} from '../models';
+} from './dot-page-contenttype.service';
+
+const DEFAULT_PER_PAGE = 30;
 
 const MOCK_CONTENT_TYPE_1: DotCMSContentType = {
     id: 'content-type-1',
@@ -313,7 +316,7 @@ describe('DotPageContentTypeService', () => {
                 spectator.service.get(params).subscribe();
 
                 const req = httpMock.expectOne((request) => {
-                    const types = request.params.getAll('type');
+                    const types = request.params.getAll('type') ?? [];
 
                     return (
                         request.url === CONTENTTYPE_PAGE_API_URL &&
@@ -699,7 +702,7 @@ describe('DotPageContentTypeService', () => {
                 spectator.service.getAllContentTypes(params).subscribe();
 
                 const req = httpMock.expectOne((request) => {
-                    const types = request.params.getAll('type');
+                    const types = request.params.getAll('type') ?? [];
 
                     return (
                         request.url === CONTENTTYPE_API_URL &&

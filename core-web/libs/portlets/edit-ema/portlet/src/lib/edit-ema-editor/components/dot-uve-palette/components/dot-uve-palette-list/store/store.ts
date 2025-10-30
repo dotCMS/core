@@ -5,7 +5,7 @@ import { computed, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotESContentService } from '@dotcms/data-access';
+import { DotESContentService, DotPageContentTypeService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import {
@@ -18,7 +18,6 @@ import {
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../../models';
-import { DotPageContentTypeService } from '../../../service/dot-page-contenttype.service';
 import { DotPageFavoriteContentTypeService } from '../../../service/dot-page-favorite-contentType.service';
 import {
     buildContentletsResponse,
