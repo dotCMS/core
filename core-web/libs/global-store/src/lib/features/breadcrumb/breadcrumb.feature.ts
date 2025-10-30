@@ -31,6 +31,11 @@ const initialBreadcrumbState: BreadcrumbState = {
     breadcrumbs: []
 };
 
+/**
+ * Session storage key for persisting breadcrumbs
+ */
+const BREADCRUMBS_SESSION_KEY = 'breadcrumbs';
+
 const urlsRegex = {
     content: {
         regex: /\/content\/.+/,
@@ -135,7 +140,9 @@ export function withBreadcrumbs() {
             };
 
             const loadBreadcrumbs = () => {
-                const breadcrumbs = JSON.parse(sessionStorage.getItem('breadcrumbs') || '[]');
+                const breadcrumbs = JSON.parse(
+                    sessionStorage.getItem(BREADCRUMBS_SESSION_KEY) || '[]'
+                );
                 patchState(store, { breadcrumbs });
             };
 
@@ -160,8 +167,6 @@ export function withBreadcrumbs() {
                 store.loadBreadcrumbs();
 
                 // Persist breadcrumbs to sessionStorage whenever they change
-                const BREADCRUMBS_SESSION_KEY = 'breadcrumbs';
-
                 effect(() => {
                     const breadcrumbs = store.breadcrumbs();
                     sessionStorage.setItem(BREADCRUMBS_SESSION_KEY, JSON.stringify(breadcrumbs));
