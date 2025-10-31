@@ -15,7 +15,7 @@ describe('withBreadcrumbs Feature', () => {
     let sessionStorageGetItemSpy: jest.SpyInstance;
 
     const mockBreadcrumbs: MenuItem[] = [
-        { label: 'Home', url: '/home'},
+        { label: 'Home', url: '/home' },
         { label: 'Products', url: '/products' },
         { label: 'Details', url: '/products/123' }
     ];
@@ -120,10 +120,7 @@ describe('withBreadcrumbs Feature', () => {
             // Wait for effect to run
             TestBed.flushEffects();
 
-            const expectedBreadcrumbs = [
-                ...mockBreadcrumbs.slice(0, -1),
-                updatedLastCrumb
-            ];
+            const expectedBreadcrumbs = [...mockBreadcrumbs.slice(0, -1), updatedLastCrumb];
             expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
                 'breadcrumbs',
                 JSON.stringify(expectedBreadcrumbs)
@@ -146,7 +143,8 @@ describe('withBreadcrumbs Feature', () => {
             TestBed.flushEffects();
 
             expect(sessionStorageSetItemSpy).toHaveBeenCalled();
-            const lastCall = sessionStorageSetItemSpy.mock.calls[sessionStorageSetItemSpy.mock.calls.length - 1];
+            const lastCall =
+                sessionStorageSetItemSpy.mock.calls[sessionStorageSetItemSpy.mock.calls.length - 1];
             expect(lastCall[0]).toBe('breadcrumbs');
         });
 
@@ -192,7 +190,11 @@ describe('withBreadcrumbs Feature', () => {
             sessionStorageSetItemSpy.mockClear();
 
             // Add new
-            store.addNewBreadcrumb({ label: 'Another', url: '/dotAdmin/#/another', target: '_self' });
+            store.addNewBreadcrumb({
+                label: 'Another',
+                url: '/dotAdmin/#/another',
+                target: '_self'
+            });
             TestBed.flushEffects();
             expect(sessionStorageSetItemSpy).toHaveBeenCalled();
         });

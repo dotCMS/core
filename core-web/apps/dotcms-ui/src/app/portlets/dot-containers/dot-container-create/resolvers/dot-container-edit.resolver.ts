@@ -19,8 +19,7 @@ export class DotContainerEditResolver implements Resolve<DotContainerEntity> {
         route: ActivatedRouteSnapshot,
         _state: RouterStateSnapshot
     ): Observable<DotContainerEntity> {
-        return this.service.getById(route.paramMap.get('id'), 'working', true)
-        .pipe(
+        return this.service.getById(route.paramMap.get('id'), 'working', true).pipe(
             tap((container) => {
                 const { identifier, title } = container.container;
                 this.globalStore.addNewBreadcrumb({

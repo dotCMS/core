@@ -4,12 +4,18 @@ import {
     withComputed,
     withHooks,
     withMethods,
+    withProps,
     withState
 } from '@ngrx/signals';
 
-import { computed, effect } from '@angular/core';
+import { computed, effect, inject, Signal } from '@angular/core';
+import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
+
+import { filter, map } from 'rxjs/operators';
+
+import { DotMenuItem } from '@dotcms/dotcms-models';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -50,9 +56,13 @@ const BREADCRUMBS_SESSION_KEY = 'breadcrumbs';
  * - Full TypeScript support with strict typing
  *
  */
-export function withBreadcrumbs() {
+
+export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
     return signalStoreFeature(
         withState(initialBreadcrumbState),
+        withProps(() => ({
+            router: inject(Router)
+        })),
         withComputed(({ breadcrumbs }) => {
             const breadcrumbCount = computed(() => breadcrumbs().length);
             const hasBreadcrumbs = computed(() => breadcrumbs().length > 0);
@@ -139,6 +149,53 @@ export function withBreadcrumbs() {
                 patchState(store, { breadcrumbs: [] });
             };
 
+            const listenToRouterEvents = () => {
+                store.router.events
+                    .pipe(
+                        filter((event: Event) => event instanceof NavigationEnd),
+                        map((event: NavigationEnd) => event.urlAfterRedirects)
+                    )
+                    .subscribe((url) => {
+                        const menu = menuItems();
+                        const newUrl = `/dotAdmin/#${url}`;
+                        const breadcrumbs = store.breadcrumbs();
+                        const existingIndex = breadcrumbs.findIndex(
+                            (crumb) => crumb.url === newUrl
+                        );
+
+                        if (existingIndex > -1) {
+                            truncateBreadcrumbs(existingIndex);
+                        } else {
+                            const item = menu.find((item) => item.menuLink === url);
+                            if (item) {
+                                setBreadcrumbs([
+                                    {
+                                        label: 'dotCMS',
+                                        disabled: true
+                                    },
+                                    {
+                                        label: item.labelParent,
+                                        disabled: true
+                                    },
+                                    {
+                                        label: item.label,
+                                        target: '_self',
+                                        url: newUrl
+                                    }
+                                ]);
+                            } else {
+                                if (url.includes('/content?filter=')) {
+                                    const filter = url.split('/content?filter=')[1];
+                                    addNewBreadcrumb({
+                                        label: filter,
+                                        target: '_self',
+                                        url: newUrl
+                                    });
+                                }
+                            }
+                        }
+                    });
+            };
             return {
                 setBreadcrumbs,
                 appendCrumb,
@@ -146,15 +203,16 @@ export function withBreadcrumbs() {
                 setLastBreadcrumb,
                 addNewBreadcrumb,
                 loadBreadcrumbs,
-                clearBreadcrumbs
+                clearBreadcrumbs,
+                _listenToRouterEvents: listenToRouterEvents
             };
         }),
         withHooks({
             onInit(store) {
                 // Load current site on store initialization
                 // System configuration is automatically loaded by withSystem feature
-                store.loadBreadcrumbs();
 
+                store._listenToRouterEvents();
                 // Persist breadcrumbs to sessionStorage whenever they change
                 effect(() => {
                     const breadcrumbs = store.breadcrumbs();

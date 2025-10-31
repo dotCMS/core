@@ -5,7 +5,8 @@ import {
     withComputed,
     withHooks,
     withMethods,
-    withState
+    withState,
+    withFeature
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
@@ -85,8 +86,44 @@ export const GlobalStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withSystem(),
-    withBreadcrumbs(),
-    withMenu(),
+    withComputed(({ siteDetails, menuItemsTemp }) => ({
+        /**
+         * Computed signal that returns the current site identifier.
+         *
+         * This is the primary computed for getting the site ID for any services
+         * that need site context (analytics, content, etc.).
+         * Returns the identifier from the loaded site entity.
+         *
+         * @returns The site identifier string or null if no site is loaded
+         *
+         * @example
+         * ```typescript
+         * const siteId = this.globalStore.currentSiteId();
+         * if (siteId) {
+         *   this.myService.fetchData(siteId);
+         * }
+         * ```
+         */
+        currentSiteId: computed(() => siteDetails()?.identifier ?? null),
+        /**
+         * Computed signal that returns the flattened menu items.
+         *
+         * This is the computed for getting the flattened menu items for the breadcrumb.
+         * Returns the flattened menu items from the menuItems.
+         *
+         * @returns The flattened menu items
+         */
+        flattenMenuItems: computed(() => {
+            const menu = menuItemsTemp();
+            return menu.reduce<DotMenuItem[]>((acc, menu: DotMenu) => {
+                const items = menu.menuItems.map((item) => ({
+                    ...item,
+                    labelParent: menu.tabName
+                }));
+                return [...acc, ...items];
+            }, []);
+        })
+    })),
     withMethods((store, siteService = inject(DotSiteService)) => {
         return {
             /**
@@ -143,47 +180,8 @@ export const GlobalStore = signalStore(
             }
         };
     }),
-    withComputed(({ siteDetails, menuItemsTemp }) => ({
-        /**
-         * Computed signal that returns the current site identifier.
-         *
-         * This is the primary computed for getting the site ID for any services
-         * that need site context (analytics, content, etc.).
-         * Returns the identifier from the loaded site entity.
-         *
-         * @returns The site identifier string or null if no site is loaded
-         *
-         * @example
-         * ```typescript
-         * const siteId = this.globalStore.currentSiteId();
-         * if (siteId) {
-         *   this.myService.fetchData(siteId);
-         * }
-         * ```
-         */
-        currentSiteId: computed(() => siteDetails()?.identifier ?? null),
-        /**
-         * Computed signal that returns the flattened menu items.
-         *
-         * This is the computed for getting the flattened menu items for the breadcrumb.
-         * Returns the flattened menu items from the menuItems.
-         *
-         * @returns The flattened menu items
-         */
-        flattenMenuItems: computed(() => {
-            const menu = menuItemsTemp();
-            return menu.reduce<Array<DotMenuItem & { labelParent: string }>>(
-                (acc, menu: DotMenu) => {
-                    const items = menu.menuItems.map((item: DotMenuItem) => ({
-                        ...item,
-                        labelParent: menu.tabName
-                    }));
-                    return [...acc, ...items];
-                },
-                []
-            );
-        })
-    })),
+    withFeature(({ flattenMenuItems }) => withBreadcrumbs(flattenMenuItems)),
+    withMenu(),
     withHooks({
         /**
          * Automatically loads the current site when the store is initialized.

@@ -1,7 +1,6 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     ActivatedRoute,
     Event,
@@ -13,7 +12,7 @@ import {
 
 import { MenuItem } from 'primeng/api';
 
-import { filter, map } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
@@ -25,7 +24,6 @@ import { GlobalStore } from '@dotcms/store';
 export class DotRouterService {
     private router = inject(Router);
     private route = inject(ActivatedRoute);
-    readonly #globalStore = inject(GlobalStore);
 
     portletReload$ = new Subject();
     private _storedRedirectUrl = '';
@@ -33,8 +31,6 @@ export class DotRouterService {
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
     private _routeCanBeDeactivated = new BehaviorSubject(true);
     private _pageLeaveRequest = new Subject<void>();
-
-    newBreadcrumb$ = new Subject<MenuItem>();
 
     constructor() {
         this._routeHistory.url = this.router.url;
@@ -46,7 +42,6 @@ export class DotRouterService {
                     previousUrl: this._routeHistory.url
                 };
             });
-        this.buildBreadcrumbs();
     }
 
     get currentSavedURL(): string {
@@ -454,52 +449,5 @@ export class DotRouterService {
         }
 
         return navExtras;
-    }
-
-    private buildBreadcrumbs() {
-        this.router.events
-            .pipe(
-                filter((event: Event) => event instanceof NavigationEnd),
-                map((event: NavigationEnd) => event.urlAfterRedirects),
-                takeUntilDestroyed()
-            )
-            .subscribe((url) => {
-                const menu = this.#globalStore.flattenMenuItems();
-                const newUrl = `/dotAdmin/#${url}`;
-                const breadcrumbs = this.#globalStore.breadcrumbs();
-                const existingIndex = breadcrumbs.findIndex((crumb) => crumb.url === newUrl);
-
-                if (existingIndex > -1) {
-                    this.#globalStore.truncateBreadcrumbs(existingIndex);
-                } else {
-                    const item = menu.find((item) => item.menuLink === url);
-                    if (item) {
-                        this.#globalStore.setBreadcrumbs([
-                            {
-                                label: 'dotCMS',
-                                disabled: true
-                            },
-                            {
-                                label: item.labelParent,
-                                disabled: true
-                            },
-                            {
-                                label: item.label,
-                                target: '_self',
-                                url: newUrl
-                            }
-                        ]);
-                    } else {
-                        if (url.includes('/content?filter=')) {
-                            const filter = url.split('/content?filter=')[1];
-                            this.#globalStore.addNewBreadcrumb({
-                                label: filter,
-                                target: '_self',
-                                url: newUrl
-                            });
-                        }
-                    }
-                }
-            });
     }
 }
