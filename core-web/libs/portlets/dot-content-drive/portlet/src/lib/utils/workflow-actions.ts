@@ -87,7 +87,7 @@ const SAVE_AS_DRAFT_ACTION: ContentDriveWorkflowAction = {
 };
 
 const PUBLISH_ACTION: ContentDriveWorkflowAction = {
-    name: 'Publish',
+    name: 'Default-Action-Publish',
     id: WORKFLOW_ACTION_ID.PUBLISH,
     showWhen: {
         noneArchived: true,
@@ -96,7 +96,7 @@ const PUBLISH_ACTION: ContentDriveWorkflowAction = {
 };
 
 const UNPUBLISH_ACTION: ContentDriveWorkflowAction = {
-    name: 'Unpublish',
+    name: 'Default-Action-Unpublish',
     id: WORKFLOW_ACTION_ID.UNPUBLISH,
     // Unpublish: showOn: ["LISTING", "LOCKED", "PUBLISHED", "UNLOCKED"]
     showWhen: {
@@ -106,7 +106,7 @@ const UNPUBLISH_ACTION: ContentDriveWorkflowAction = {
 };
 
 const ARCHIVE_ACTION: ContentDriveWorkflowAction = {
-    name: 'Archive',
+    name: 'Default-Action-Archive',
     id: WORKFLOW_ACTION_ID.ARCHIVE,
     // Archive: showOn: ["LISTING", "ARCHIVED", "UNPUBLISHED", "UNLOCKED"]
     showWhen: {
@@ -116,7 +116,7 @@ const ARCHIVE_ACTION: ContentDriveWorkflowAction = {
 };
 
 const UNARCHIVE_ACTION: ContentDriveWorkflowAction = {
-    name: 'Unarchive',
+    name: 'Default-Action-Unarchive',
     id: WORKFLOW_ACTION_ID.UNARCHIVE,
     showWhen: {
         allArchived: true
@@ -125,7 +125,7 @@ const UNARCHIVE_ACTION: ContentDriveWorkflowAction = {
 };
 
 const DELETE_ACTION: ContentDriveWorkflowAction = {
-    name: 'Delete',
+    name: 'Default-Action-Delete',
     id: WORKFLOW_ACTION_ID.DELETE,
     showWhen: {
         allArchived: true
@@ -143,7 +143,7 @@ const RENAME_ACTION: ContentDriveWorkflowAction = {
 };
 
 const DOWNLOAD_ACTION: ContentDriveWorkflowAction = {
-    name: 'Download',
+    name: 'download',
     id: WORKFLOW_ACTION_ID.DOWNLOAD,
     showWhen: {
         allAreAssets: true,

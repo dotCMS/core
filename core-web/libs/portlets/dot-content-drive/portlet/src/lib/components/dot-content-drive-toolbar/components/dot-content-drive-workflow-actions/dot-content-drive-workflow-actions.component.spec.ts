@@ -12,6 +12,7 @@ import { DotContentDriveItem } from '@dotcms/dotcms-models';
 
 import { DotContentDriveWorkflowActionsComponent } from './dot-content-drive-workflow-actions.component';
 
+import { SUCCESS_MESSAGE_LIFE } from '../../../../shared/constants';
 import { DotContentDriveNavigationService } from '../../../../shared/services';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 import {
@@ -588,6 +589,149 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             const result = spectator.component['shouldShowAction'](action);
 
             expect(result).toBe(false);
+        });
+    });
+
+    describe('Download Action', () => {
+        it('should trigger download when download button is clicked', () => {
+            const mockAsset = {
+                archived: false,
+                live: true,
+                working: false,
+                baseType: 'FILEASSET',
+                inode: 'test-asset-inode',
+                title: 'test-document.pdf',
+                fileAsset: '/dA/test-asset-id/fileAsset/test-document.pdf'
+            } as unknown as DotContentDriveItem;
+
+            mockSelectedItems.set([mockAsset]);
+            spectator.detectChanges();
+
+            const windowSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+            const downloadButton = spectator.query(
+                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
+            );
+
+            spectator.click(downloadButton);
+
+            expect(windowSpy).toHaveBeenCalledWith(
+                expect.stringContaining('force_download=true'),
+                '_self'
+            );
+            expect(windowSpy).toHaveBeenCalledWith(
+                expect.stringContaining(mockAsset.fileAsset),
+                '_self'
+            );
+
+            windowSpy.mockRestore();
+        });
+
+        it('should display success message after download is triggered', () => {
+            const mockAsset = {
+                archived: false,
+                live: true,
+                working: false,
+                baseType: 'DOTASSET',
+                inode: 'test-asset-inode',
+                title: 'test-image.jpg',
+                asset: '/dA/test-asset-id/asset/test-image.jpg'
+            } as unknown as DotContentDriveItem;
+
+            mockSelectedItems.set([mockAsset]);
+            spectator.detectChanges();
+
+            jest.spyOn(window, 'open').mockImplementation(() => null);
+
+            const downloadButton = spectator.query(
+                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
+            );
+
+            spectator.click(downloadButton);
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'content-drive.toast.download-success',
+                detail: 'content-drive.toast.download-success-detail',
+                life: SUCCESS_MESSAGE_LIFE
+            });
+        });
+
+        it('should not download when no asset is selected', () => {
+            mockSelectedItems.set([]);
+            spectator.detectChanges();
+
+            const windowSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+            spectator.component['download']();
+
+            expect(windowSpy).not.toHaveBeenCalled();
+
+            windowSpy.mockRestore();
+        });
+
+        it('should handle DOTASSET type correctly', () => {
+            const mockAsset = {
+                archived: false,
+                live: true,
+                working: false,
+                baseType: 'DOTASSET',
+                inode: 'test-asset-inode',
+                title: 'test-asset.png',
+                assetVersion: '/dA/version/test-asset.png',
+                asset: '/dA/test-asset.png'
+            } as unknown as DotContentDriveItem;
+
+            mockSelectedItems.set([mockAsset]);
+            spectator.detectChanges();
+
+            const windowSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+            const downloadButton = spectator.query(
+                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
+            );
+
+            spectator.click(downloadButton);
+
+            // Should use assetVersion if available
+            expect(windowSpy).toHaveBeenCalledWith(
+                expect.stringContaining(mockAsset.assetVersion),
+                '_self'
+            );
+
+            windowSpy.mockRestore();
+        });
+
+        it('should handle FILEASSET type correctly', () => {
+            const mockAsset = {
+                archived: false,
+                live: true,
+                working: false,
+                baseType: 'FILEASSET',
+                inode: 'test-asset-inode',
+                title: 'document.pdf',
+                fileAssetVersion: '/dA/version/document.pdf',
+                fileAsset: '/dA/document.pdf'
+            } as unknown as DotContentDriveItem;
+
+            mockSelectedItems.set([mockAsset]);
+            spectator.detectChanges();
+
+            const windowSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+            const downloadButton = spectator.query(
+                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
+            );
+
+            spectator.click(downloadButton);
+
+            // Should use fileAssetVersion if available
+            expect(windowSpy).toHaveBeenCalledWith(
+                expect.stringContaining(mockAsset.fileAssetVersion),
+                '_self'
+            );
+
+            windowSpy.mockRestore();
         });
     });
 

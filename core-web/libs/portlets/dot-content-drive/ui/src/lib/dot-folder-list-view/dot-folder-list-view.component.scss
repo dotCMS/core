@@ -58,6 +58,10 @@
                         &.is-dragging {
                             cursor: grabbing;
                         }
+
+                        &:focus:not(.p-highlight) {
+                            background-color: $white;
+                        }
                     }
                 }
             }
