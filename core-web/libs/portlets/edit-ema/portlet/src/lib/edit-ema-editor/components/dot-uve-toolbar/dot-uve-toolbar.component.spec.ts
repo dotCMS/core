@@ -94,6 +94,7 @@ const baseUVEState = {
     loadPageAsset: jest.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
+    $isEditMode: signal(false),
     $personaSelector: signal({
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
