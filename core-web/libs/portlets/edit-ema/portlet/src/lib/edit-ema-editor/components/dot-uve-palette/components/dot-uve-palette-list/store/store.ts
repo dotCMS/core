@@ -59,7 +59,6 @@ export const DotPaletteListStore = signalStore(
         const params = store.searchParams;
         return {
             $start: computed(() => (pagination().currentPage - 1) * pagination().perPage),
-            $status: computed(() => store.status()),
             $isLoading: computed(() => store.status() === DotPaletteListStatus.LOADING),
             $isContentTypesView: computed(() => params.selectedContentType() === ''),
             $isContentletsView: computed(() => params.selectedContentType() !== ''),

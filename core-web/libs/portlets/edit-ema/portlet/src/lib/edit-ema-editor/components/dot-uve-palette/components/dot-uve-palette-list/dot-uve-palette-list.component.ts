@@ -108,7 +108,7 @@ export class DotUvePaletteListComponent implements OnInit {
     readonly $contentlets = this.#paletteListStore.contentlets;
     readonly $pagination = this.#paletteListStore.pagination;
     readonly $currentView = this.#paletteListStore.currentView;
-    readonly $status = this.#paletteListStore.$status;
+    readonly $status = this.#paletteListStore.status;
     readonly $isLoading = this.#paletteListStore.$isLoading;
     readonly $emptyStateMessage = this.#paletteListStore.$emptyStateMessage;
 

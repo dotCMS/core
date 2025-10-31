@@ -1,6 +1,7 @@
 <div class="dot-uve-palette-list__controls">
     @if ($currentView() === DotUVEPaletteListView.CONTENTLETS) {
         <p-button
+            data-testid="back-to-content-types-button"
             icon="pi pi-chevron-left"
             styleClass="options-menu-button"
             [text]="true"
@@ -11,6 +12,7 @@
     <p-iconField iconPosition="left" [style]="{ width: '100%' }">
         <p-inputIcon styleClass="pi pi-search" />
         <input
+            data-testid="palette-search-input"
             pInputText
             styleClass="input-text-sm"
             [placeholder]="'search' | dm"
@@ -20,6 +22,7 @@
 
     @if ($currentView() === DotUVEPaletteListView.CONTENT_TYPES && $listType() !== 'FAVORITES') {
         <p-button
+            data-testid="sort-menu-button"
             icon="pi pi-arrow-right-arrow-left"
             styleClass="options-menu-button"
             [text]="true"
@@ -27,6 +30,7 @@
             (onClick)="menu.toggle($event)" />
     } @else if ($listType() === 'FAVORITES') {
         <p-button
+            data-testid="add-favorites-button"
             icon="pi pi-plus"
             styleClass="options-menu-button"
             [text]="true"
@@ -63,6 +67,7 @@
             <i class="pi pi-plus"></i>
         </div>
         <p
+            data-testid="empty-state-message"
             class="dot-uve-palette-list__empty-text"
             [innerHTML]="$emptyStateMessage() | dm"
             (click)="onEmptyStateClick($event)"></p>
