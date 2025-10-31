@@ -240,5 +240,98 @@ public class SecretsStoreKeyStoreImplTest {
         }
     }
 
+    /**
+     * Given scenario: A secret is saved to the store, then the cache is flushed to simulate
+     * cache invalidation (e.g., after cluster-wide cache clear or cache expiration).
+     * Expected Result: The containsKey() method should still return true after cache flush by
+     * using the cache-aside pattern to reload keys from KeyStore. The getValue() method should
+     * also return the correct value. Subsequent containsKey() calls should use the repopulated
+     * cache. After deletion, containsKey() should return false.
+     */
+    @Test
+    public void Test_ContainsKey_After_Cache_Flush() {
+        final SecretsStore secretsStore = SecretsStore.INSTANCE.get();
+
+        final String key = "test-key-" + System.currentTimeMillis();
+        final String value = "test-value-" + UUIDGenerator.generateUuid();
+
+        // Step 1: Save a secret (updates both KeyStore and cache)
+        secretsStore.saveValue(key, value.toCharArray());
+
+        // Verify it was saved correctly
+        assertTrue("Key should exist after saving", secretsStore.containsKey(key));
+        assertTrue("Value should be retrievable", secretsStore.getValue(key).isPresent());
+
+        // Step 2: Flush the cache to simulate cache invalidation
+        // This is what happens in production when cache is cleared
+        final SecretCachedKeyStoreImpl cachedStore = (SecretCachedKeyStoreImpl) secretsStore;
+        cachedStore.flushCache();
+
+        // Step 3: Verify containsKey() still works after cache flush
+        // This is the critical fix - it should check KeyStore when cache is empty
+        assertTrue("Key should still exist after cache flush (fallback to KeyStore)",
+                   secretsStore.containsKey(key));
+
+        // Step 4: Verify the value is still retrievable
+        final Optional<char[]> retrievedValue = secretsStore.getValue(key);
+        assertTrue("Value should still be retrievable after cache flush", retrievedValue.isPresent());
+        assertEquals("Retrieved value should match original", value, new String(retrievedValue.get()));
+
+        // Step 5: Verify subsequent calls still work (cache has been repopulated)
+        assertTrue("Key should exist on subsequent check", secretsStore.containsKey(key));
+
+        // Cleanup
+        secretsStore.deleteValue(key);
+        assertFalse("Key should not exist after deletion", secretsStore.containsKey(key));
+    }
+
+    /**
+     * Given scenario: Multiple secrets are saved to the store, then the cache is flushed to
+     * simulate cache invalidation in a multi-node cluster environment.
+     * Expected Result: All keys should remain accessible through containsKey() after cache flush.
+     * The listKeys() method should also return all keys correctly. This verifies that the
+     * cache-aside pattern properly reloads all keys from KeyStore and does not lose any entries
+     * during cache repopulation.
+     */
+    @Test
+    public void Test_Multiple_ContainsKey_After_Cache_Flush() {
+        final SecretsStore secretsStore = SecretsStore.INSTANCE.get();
+        final SecretCachedKeyStoreImpl cachedStore = (SecretCachedKeyStoreImpl) secretsStore;
+
+        final String key1 = "test-multi-key1-" + System.currentTimeMillis();
+        final String key2 = "test-multi-key2-" + System.currentTimeMillis();
+        final String key3 = "test-multi-key3-" + System.currentTimeMillis();
+        final String value = "test-value";
+
+        // Save multiple secrets
+        secretsStore.saveValue(key1, value.toCharArray());
+        secretsStore.saveValue(key2, value.toCharArray());
+        secretsStore.saveValue(key3, value.toCharArray());
+
+        // Verify all keys exist
+        assertTrue("Key1 should exist", secretsStore.containsKey(key1));
+        assertTrue("Key2 should exist", secretsStore.containsKey(key2));
+        assertTrue("Key3 should exist", secretsStore.containsKey(key3));
+
+        // Flush cache
+        cachedStore.flushCache();
+
+        // Verify all keys still exist after cache flush
+        assertTrue("Key1 should exist after cache flush", secretsStore.containsKey(key1));
+        assertTrue("Key2 should exist after cache flush", secretsStore.containsKey(key2));
+        assertTrue("Key3 should exist after cache flush", secretsStore.containsKey(key3));
+
+        // Verify listKeys() also returns all keys
+        final Collection<String> keys = secretsStore.listKeys();
+        assertTrue("Keys list should contain key1", keys.contains(key1));
+        assertTrue("Keys list should contain key2", keys.contains(key2));
+        assertTrue("Keys list should contain key3", keys.contains(key3));
+
+        // Cleanup
+        secretsStore.deleteValue(key1);
+        secretsStore.deleteValue(key2);
+        secretsStore.deleteValue(key3);
+    }
+
 
 }
