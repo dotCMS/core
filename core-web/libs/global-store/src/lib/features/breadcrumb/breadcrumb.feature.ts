@@ -213,6 +213,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                 // System configuration is automatically loaded by withSystem feature
 
                 store._listenToRouterEvents();
+                store.loadBreadcrumbs();
                 // Persist breadcrumbs to sessionStorage whenever they change
                 effect(() => {
                     const breadcrumbs = store.breadcrumbs();
