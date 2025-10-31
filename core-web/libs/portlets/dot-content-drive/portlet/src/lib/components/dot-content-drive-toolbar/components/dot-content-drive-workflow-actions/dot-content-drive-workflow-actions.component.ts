@@ -7,7 +7,9 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
+import { getImageAssetUrl, WINDOW } from '@dotcms/utils';
 
+import { SUCCESS_MESSAGE_LIFE } from '../../../../shared/constants';
 import { DotContentDriveStatus } from '../../../../shared/models';
 import { DotContentDriveNavigationService } from '../../../../shared/services';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
@@ -22,7 +24,11 @@ import {
 @Component({
     selector: 'dot-content-drive-workflow-actions',
     imports: [ButtonModule, DotMessagePipe, NgStyle, ConfirmDialogModule],
-    providers: [DotWorkflowActionsFireService, ConfirmationService],
+    providers: [
+        DotWorkflowActionsFireService,
+        ConfirmationService,
+        { provide: WINDOW, useValue: window }
+    ],
     templateUrl: './dot-content-drive-workflow-actions.component.html',
     styleUrl: './dot-content-drive-workflow-actions.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -38,6 +44,7 @@ export class DotContentDriveWorkflowActionsComponent {
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #navigationService = inject(DotContentDriveNavigationService);
     readonly #confirmationService = inject(ConfirmationService);
+    readonly #window = inject(WINDOW);
 
     protected readonly $selectedItems = this.#store.selectedItems;
     protected readonly DEFAULT_WORKFLOW_ACTIONS = DEFAULT_WORKFLOW_ACTIONS;
@@ -167,9 +174,27 @@ export class DotContentDriveWorkflowActionsComponent {
     /**
      * Downloads the selected items.
      */
-    private download() {
-        // TODO: Implement download
-        console.warn('Download functionality is under development');
+    download() {
+        const asset = this.$selectedItems()[0];
+
+        if (!asset) return;
+
+        const assetLink = getImageAssetUrl(asset);
+
+        const downloadLink = new URL(assetLink, this.#window.location.origin);
+        downloadLink.searchParams.set('force_download', 'true');
+
+        this.#window.open(downloadLink.toString(), '_self');
+
+        this.#messageService.add({
+            severity: 'success',
+            summary: this.#dotMessageService.get(
+                'content-drive.toast.download-success',
+                asset.title
+            ),
+            detail: this.#dotMessageService.get('content-drive.toast.download-success-detail'),
+            life: SUCCESS_MESSAGE_LIFE
+        });
     }
 
     /**
