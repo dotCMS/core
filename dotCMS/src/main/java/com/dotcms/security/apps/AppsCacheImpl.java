@@ -226,20 +226,21 @@ public class AppsCacheImpl extends AppsCache {
     }
 
     /**
-     * Single flush by key.
-     * @param key
+     * Invalidates a secret value and the keys set from cache across cluster nodes.
+     * This method handles both CREATE, UPDATE, and DELETE operations by invalidating the cache
+     * and letting the cache-aside pattern reload from KeyStore on next access.
+     * This ensures cluster-wide cache consistency for all secret operations.
+     * @param key the secret key to invalidate
      * @throws DotCacheException
      */
     public void flushSecret(final String key) throws DotCacheException {
-
+        // Invalidate the secret value across cluster nodes
         cache.remove(key, SECRETS_CACHE_GROUP);
-        final Set<String> keys = (Set<String>) cache
-                .get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
-        if (UtilMethods.isSet(keys)) {
-            keys.remove(key);
-            putKeys(keys);
-        }
 
+        // Invalidate the keys set across cluster nodes
+        // This ensures all nodes will reload the keys set from KeyStore on next access
+        // which will reflect creates, updates, or deletes
+        cache.remove(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
     }
 
     /**
