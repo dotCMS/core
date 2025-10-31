@@ -7,6 +7,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentType
 } from '@dotcms/dotcms-models';
+import { MOCK_API_RESPONSE, MOCK_CONTENT_TYPE_1, MOCK_CONTENT_TYPE_2 } from '@dotcms/utils-testing';
 
 import {
     DotPageContentTypeService,
@@ -15,58 +16,6 @@ import {
 } from './dot-page-contenttype.service';
 
 const DEFAULT_PER_PAGE = 30;
-
-const MOCK_CONTENT_TYPE_1: DotCMSContentType = {
-    id: 'content-type-1',
-    name: 'Blog Post',
-    variable: 'blogPost',
-    description: 'A blog post content type',
-    fixed: false,
-    folder: 'SYSTEM_FOLDER',
-    host: 'default',
-    owner: 'admin',
-    system: false,
-    baseType: 'CONTENT'
-} as DotCMSContentType;
-
-const MOCK_CONTENT_TYPE_2: DotCMSContentType = {
-    id: 'content-type-2',
-    name: 'News Article',
-    variable: 'newsArticle',
-    description: 'A news article content type',
-    fixed: false,
-    folder: 'SYSTEM_FOLDER',
-    host: 'default',
-    owner: 'admin',
-    system: false,
-    baseType: 'CONTENT'
-} as DotCMSContentType;
-
-const MOCK_CONTENT_TYPE_3: DotCMSContentType = {
-    id: 'content-type-3',
-    name: 'Product',
-    variable: 'product',
-    description: 'A product content type',
-    fixed: false,
-    folder: 'SYSTEM_FOLDER',
-    host: 'default',
-    owner: 'admin',
-    system: false,
-    baseType: 'CONTENT'
-} as DotCMSContentType;
-
-const MOCK_API_RESPONSE: DotCMSAPIResponse<DotCMSContentType[]> = {
-    entity: [MOCK_CONTENT_TYPE_1, MOCK_CONTENT_TYPE_2, MOCK_CONTENT_TYPE_3],
-    pagination: {
-        currentPage: 1,
-        perPage: DEFAULT_PER_PAGE,
-        totalEntries: 3
-    },
-    errors: [],
-    messages: [],
-    permissions: [],
-    i18nMessagesMap: {}
-};
 
 describe('DotPageContentTypeService', () => {
     let spectator: SpectatorService<DotPageContentTypeService>;
