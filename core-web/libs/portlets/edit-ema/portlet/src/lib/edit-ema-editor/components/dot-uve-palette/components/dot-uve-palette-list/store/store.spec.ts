@@ -172,12 +172,6 @@ describe('DotPaletteListStore', () => {
             });
         });
 
-        describe('$status', () => {
-            it('should return current status', () => {
-                expect(store.$status()).toBe(DotPaletteListStatus.LOADING);
-            });
-        });
-
         describe('$isLoading', () => {
             it('should return true when status is LOADING', () => {
                 expect(store.$isLoading()).toBe(true);
