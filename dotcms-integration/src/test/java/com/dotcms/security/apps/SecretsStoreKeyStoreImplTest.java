@@ -173,7 +173,9 @@ public class SecretsStoreKeyStoreImplTest {
     }
 
     /**
-     * tests to make sure that the listKeys method returns newly saved keys in their list
+     * Given scenario: Three secrets are saved to the store with keys of varying lengths (UUID, UUID, and long key).
+     * Expected Result: The listKeys() method should return all three keys in the list, including the long key.
+     * This verifies that the cache-aside pattern correctly loads all keys from KeyStore.
      */
     @Test
     public void Test_Value_List() {
@@ -190,12 +192,13 @@ public class SecretsStoreKeyStoreImplTest {
 
         secretsStore.saveValue(key2, value2.toCharArray());
 
-        final String key3 = RandomStringUtils.randomAlphanumeric(1024);
+        final String key3 = RandomStringUtils.randomAlphanumeric(1024).toLowerCase();
         final String value3 = RandomStringUtils.randomAlphanumeric(1024);
 
         secretsStore.saveValue(key3, value3.toCharArray());
 
         final Collection<String> keys = secretsStore.listKeys();
+
         assertTrue (keys.size() > 2);
         assertTrue (keys.contains(key));
         assertTrue (keys.contains(key2));
