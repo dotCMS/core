@@ -53,6 +53,15 @@ public interface DotPortlet extends XMLSerializable {
     String getPortletClass();
 
     /**
+     * Returns the optional portlet URL.
+     * @return The portlet URL as a String, or null if not set.
+     */
+    @XmlElement(name = "portlet-url", required = false)
+    @JsonProperty("portlet-url")
+    @javax.annotation.Nullable
+    String getPortletUrl();
+
+    /**
      * Returns a list of initialization parameters for the portlet.
      * This method converts the internal Map representation to a List of InitParam objects.
      * @return A List of InitParam objects.
@@ -82,11 +91,16 @@ public interface DotPortlet extends XMLSerializable {
      * @return A new DotPortlet instance.
      */
     static DotPortlet from(Portlet portlet) {
-        return DotPortlet.builder()
+        final DotPortlet.Builder builder = DotPortlet.builder()
                 .portletId(portlet.getPortletId())
                 .portletClass(portlet.getPortletClass())
-                .initParams(portlet.getInitParams())
-                .build();
+                .initParams(portlet.getInitParams());
+
+        if (portlet.getPortletUrl() != null) {
+            builder.portletUrl(portlet.getPortletUrl());
+        }
+
+        return builder.build();
     }
 
     /**
@@ -94,7 +108,7 @@ public interface DotPortlet extends XMLSerializable {
      * @return A new Portlet instance.
      */
     default Portlet toPortlet() {
-        return new Portlet(getPortletId(), getPortletClass(), initParams());
+        return new Portlet(getPortletId(), getPortletClass(), initParams(), getPortletUrl());
     }
 
     /**
@@ -124,9 +138,15 @@ public interface DotPortlet extends XMLSerializable {
          * @return This Builder instance for method chaining.
          */
         public Builder from(Portlet portlet) {
-            return portletId(portlet.getPortletId())
+            final Builder builder = portletId(portlet.getPortletId())
                     .portletClass(portlet.getPortletClass())
                     .initParams(portlet.getInitParams());
+
+            if (portlet.getPortletUrl() != null) {
+                builder.portletUrl(portlet.getPortletUrl());
+            }
+
+            return builder;
         }
     }
 
