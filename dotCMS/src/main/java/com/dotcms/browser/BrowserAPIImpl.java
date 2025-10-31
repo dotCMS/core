@@ -694,6 +694,15 @@ public class BrowserAPIImpl implements BrowserAPI {
             countQuery.append(contentTypeFilter);
         }
 
+        if (!browserQuery.excludedContentTypeIds.isEmpty()) {
+            String excludeTypesFilter = " and struc.inode not in (" +
+                    browserQuery.excludedContentTypeIds.stream()
+                            .map(id -> "'" + id + "'")
+                            .collect(Collectors.joining(" , ")) + ") ";
+            baseQuery.append(excludeTypesFilter);
+            countQuery.append(excludeTypesFilter);
+        }
+
         return new BaseQuery(baseQuery.toString(), countQuery.toString());
     }
 

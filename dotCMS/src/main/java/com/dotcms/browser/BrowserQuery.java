@@ -50,6 +50,7 @@ public class BrowserQuery {
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
     final Set<String> contentTypeIds;
+    final Set<String> excludedContentTypeIds;
     final Host site;
     final Folder folder;
     final Parentable directParent;
@@ -120,6 +121,7 @@ public class BrowserQuery {
                 : ImmutableSet.copyOf(builder.baseTypes);
         this.languageIds = Set.copyOf(builder.languageIds);
         this.contentTypeIds = Set.copyOf(builder.contentTypes);
+        this.excludedContentTypeIds = Set.copyOf(builder.excludedContentTypes);
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
         this.folder= siteAndFolder._2;
@@ -220,6 +222,7 @@ public class BrowserQuery {
         private boolean showDefaultLangItems = false;
         private Set<Long> languageIds = new LinkedHashSet<>();
         private Set<String> contentTypes = new LinkedHashSet<>();
+        private Set<String> excludedContentTypes = new LinkedHashSet<>();
         private final StringBuilder luceneQuery = new StringBuilder();
         private Set<BaseContentType> baseTypes = new HashSet<>();
         private String hostFolderId = FolderAPI.SYSTEM_FOLDER;
@@ -249,6 +252,7 @@ public class BrowserQuery {
             this.showLinks = browserQuery.showLinks;
             this.languageIds = new LinkedHashSet<>(browserQuery.languageIds);
             this.contentTypes = new LinkedHashSet<>(browserQuery.contentTypeIds);
+            this.excludedContentTypes = new LinkedHashSet<>(browserQuery.excludedContentTypeIds);
             this.showMenuItemsOnly = browserQuery.showMenuItemsOnly;
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;
@@ -441,6 +445,18 @@ public class BrowserQuery {
             if (UtilMethods.isSet(contentType)) {
                 this.contentTypes.add(contentType);
             }
+            return this;
+        }
+
+        /**
+         * This option is useful if we want to build a query that implicitly takes into account every content-type except for the ones specified.
+         * @param excludedContentTypes
+         * @return
+         */
+        public Builder withExcludedContentTypes(@Nonnull Set<String> excludedContentTypes) {
+            this.excludedContentTypes.clear();
+            this.excludedContentTypes.addAll(excludedContentTypes);
+            this.contentTypes.removeAll(excludedContentTypes);
             return this;
         }
 
