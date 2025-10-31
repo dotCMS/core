@@ -10,13 +10,11 @@ import {
     Router
 } from '@angular/router';
 
-import { MenuItem } from 'primeng/api';
 
 import { filter } from 'rxjs/operators';
 
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 @Injectable({
     providedIn: 'root'
