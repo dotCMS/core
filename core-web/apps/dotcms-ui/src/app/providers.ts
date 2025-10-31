@@ -49,6 +49,7 @@ import { DotAccountService } from './api/services/dot-account-service';
 import { DotAppsService } from './api/services/dot-apps/dot-apps.service';
 import { DotDownloadBundleDialogService } from './api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from './api/services/dot-menu.service';
+import { DotParseHtmlService } from './api/services/dot-parse-html/dot-parse-html.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
@@ -94,6 +95,7 @@ const PROVIDERS: Provider[] = [
     DotMenuService,
     DotMessageDisplayService,
     DotMessageService,
+    DotParseHtmlService,
     DotRouterService,
     DotSaveOnDeactivateService,
     DotUiColorsService,
