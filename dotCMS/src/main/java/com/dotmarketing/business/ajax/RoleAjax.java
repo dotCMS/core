@@ -906,7 +906,7 @@ public class RoleAjax {
 		Logger.info(this, "Done applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
 	}
 
-	public List<Map<String, Object>> getCurrentCascadePermissionsJobs () throws DotDataException, DotSecurityException {
+	public List<Map<String, Object>> getCurrentCascadePermissionsJobs () throws DotDataException, DotSecurityException, PortalException, SystemException {
 		//Validate if this logged in user has the required permissions to access the roles portlet
 		validateRolesPortletPermissions(getLoggedInUser());
 
