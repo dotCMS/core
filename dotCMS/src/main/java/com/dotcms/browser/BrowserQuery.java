@@ -52,6 +52,7 @@ public class BrowserQuery {
     final Set<String> contentTypeIds;
     final Set<String> excludedContentTypeIds;
     final Host site;
+    final boolean forceSystemHost;
     final Folder folder;
     final Parentable directParent;
     final Role[] roles;
@@ -125,6 +126,8 @@ public class BrowserQuery {
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
         this.folder= siteAndFolder._2;
+        //Despite the site and folder passed, forceSystemHost makes the inclusion of SYSTEM_HOME in the query
+        this.forceSystemHost = builder.forceSystemHost;
         this.directParent = this.folder.isSystemFolder() ? site : folder;
         this.roles= Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0])).getOrElse(new Role[0]);
     }
@@ -226,6 +229,7 @@ public class BrowserQuery {
         private final StringBuilder luceneQuery = new StringBuilder();
         private Set<BaseContentType> baseTypes = new HashSet<>();
         private String hostFolderId = FolderAPI.SYSTEM_FOLDER;
+        private boolean forceSystemHost = false;
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
@@ -237,6 +241,7 @@ public class BrowserQuery {
             this.hostFolderId = browserQuery.folder.isSystemFolder()
                     ? browserQuery.site.getIdentifier()
                     : browserQuery.folder.getInode();
+            this.forceSystemHost = browserQuery.forceSystemHost;
             this.filter = browserQuery.filter;
             this.fileName = browserQuery.fileName;
             if (browserQuery.luceneQuery != null) {
@@ -268,6 +273,11 @@ public class BrowserQuery {
 
         public Builder withHostOrFolderId(@Nonnull String hostFolderId) {
             this.hostFolderId = hostFolderId;
+            return this;
+        }
+
+        public Builder withForceSystemHost(boolean forceSystemHost) {
+            this.forceSystemHost = forceSystemHost;
             return this;
         }
 

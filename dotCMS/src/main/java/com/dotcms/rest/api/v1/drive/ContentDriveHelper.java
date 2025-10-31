@@ -141,9 +141,11 @@ public class ContentDriveHelper {
         } else {
             builder.withHostOrFolderId(folder.getInode());
         }
+        //This ensures that despite the site passed systemHost will be included too
+        builder.withForceSystemHost(true);
 
         // Enable Elasticsearch filtering for text search when filter is provided
-        if (null != requestForm.filters() && !UtilMethods.isSet(requestForm.filters().text())) {
+        if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
             builder.withUseElasticsearchFiltering(true) // Rely on ES for enhanced text filtering
                     .withFilter(requestForm.filters().text());
         }

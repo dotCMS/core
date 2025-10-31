@@ -79,7 +79,6 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
-    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
             .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'fileName' ->> 'value' ");
     private static final StringBuilder POSTGRES_BINARY_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
@@ -149,7 +148,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             Set<String> inodes =
                     inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toSet());
             if(isUseElasticSearchForTextFiltering(browserQuery) && !inodes.isEmpty()){
-                //After having applied the text filters these are the good inodes we need to return
+                //After having applied the text filters, these are the good inodes we need to return
                 inodes = new HashSet<>(inodesByTextFromES(browserQuery, inodes));
             }
             //Now this should load the good contentlets
@@ -605,9 +604,16 @@ public class BrowserAPIImpl implements BrowserAPI {
                     browserQuery.showDefaultLangItems);
         }
         if (browserQuery.site != null) {
-            appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(), parameters);
-            appendSiteQuery(countQuery, browserQuery.site.getIdentifier(), dump);
+            appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(), browserQuery.forceSystemHost, parameters);
+            appendSiteQuery(countQuery, browserQuery.site.getIdentifier(), browserQuery.forceSystemHost, dump);
+        } else {
+            if (browserQuery.forceSystemHost) {
+                appendSystemHostQuery(selectQuery);
+                appendSystemHostQuery(countQuery);
+            }
         }
+
+
         if (browserQuery.folder != null) {
             appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
             appendFolderQuery(countQuery, browserQuery.folder.getPath(), dump);
@@ -632,8 +638,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(countQuery);
         }
 
-        Logger.debug(this, "Final Select Query: " + selectQuery);
-        Logger.debug(this, "Final Count Query: " + countQuery);
+        Logger.info(this, "Select Query: " + selectQuery);
+        Logger.info(this, "Count Query: " + countQuery);
 
         return new SelectAndCountQueries(selectQuery.toString(), countQuery.toString(), parameters);
     }
@@ -747,19 +753,25 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     /**
      * Appends the query to filter by site identifier to the given SQL query and adds the site
-     * identifier to the parameters list.
+     * identifier to the parameter list.
      *
      * @param sqlQuery       The StringBuilder object representing the SQL query to be appended.
      * @param siteIdentifier The site identifier to filter by.
      * @param parameters     The list of parameters to add the site identifier to.
      */
-    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier,
+    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier, boolean forceSystemHost,
             List<Object> parameters) {
-
-        sqlQuery.append(" and (id.host_inode = ?) ");
+        if(forceSystemHost){
+            sqlQuery.append(" and (id.host_inode = ? or id.host_inode = 'SYSTEM_HOST') ");
+        } else {
+            sqlQuery.append(" and (id.host_inode = ?) ");
+        }
         parameters.add(siteIdentifier);
     }
 
+    private void appendSystemHostQuery(StringBuilder sqlQuery) {
+            sqlQuery.append(" and (id.host_inode = 'SYSTEM_HOST') ");
+    }
     /**
      * Appends the query to filter by a specific folder path to the given SQL query and adds the
      * folder path to the list of parameters.
