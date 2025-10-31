@@ -170,7 +170,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                             if (item) {
                                 setBreadcrumbs([
                                     {
-                                        label: 'dotCMS',
+                                        label: 'Home',
                                         disabled: true
                                     },
                                     {
