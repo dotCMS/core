@@ -9,7 +9,8 @@ import {
     input,
     OnInit,
     signal,
-    untracked
+    untracked,
+    ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -97,6 +98,8 @@ export class DotUvePaletteListComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #destroyRef = inject(DestroyRef);
+
+    @ViewChild('favoritesPanel') favoritesPanel?: DotFavoriteSelectorComponent;
 
     searchControl = new FormControl('', { nonNullable: true });
 
@@ -328,5 +331,20 @@ export class DotUvePaletteListComponent implements OnInit {
             detail: this.#dotMessageService.get('uve.palette.favorite.add.success.detail'),
             life: 3000
         });
+    }
+
+    /**
+     * Handles clicks on the empty state message.
+     * Opens the favorites panel when a span element is clicked.
+     * @param event - The click event
+     */
+    protected onEmptyStateClick(event: Event) {
+        const target = event.target as HTMLElement;
+
+        // Check if the clicked element is a span (or its parent is)
+        if (target.tagName === 'SPAN' || target.closest('span')) {
+            event.preventDefault();
+            this.favoritesPanel?.toggle(event);
+        }
     }
 }

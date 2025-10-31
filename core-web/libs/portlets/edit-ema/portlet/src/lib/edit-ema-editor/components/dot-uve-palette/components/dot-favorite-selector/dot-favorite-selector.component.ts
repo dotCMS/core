@@ -173,7 +173,8 @@ export class DotFavoriteSelectorComponent implements OnInit {
             filter,
             orderby: 'name',
             direction: 'ASC',
-            types: CONTENT_TYPE_CATEGORIES
+            types: CONTENT_TYPE_CATEGORIES,
+            per_page: 10
         };
 
         return this.#pageContentTypeService.getAllContentTypes(params);

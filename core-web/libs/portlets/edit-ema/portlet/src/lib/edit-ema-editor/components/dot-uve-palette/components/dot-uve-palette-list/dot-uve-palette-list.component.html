@@ -62,7 +62,10 @@
         <div class="dot-uve-palette-list__empty-icon">
             <i class="pi pi-plus"></i>
         </div>
-        <p class="dot-uve-palette-list__empty-text" [innerHTML]="$emptyStateMessage() | dm"></p>
+        <p
+            class="dot-uve-palette-list__empty-text"
+            [innerHTML]="$emptyStateMessage() | dm"
+            (click)="onEmptyStateClick($event)"></p>
     </div>
 </ng-template>
 
@@ -86,7 +89,8 @@
     }
 </ng-template>
 
-@if (!$isLoading()) {
+@let totalRecords = $pagination.totalEntries();
+@if (!$isLoading() && totalRecords > 0) {
     <p-paginator
         (onPageChange)="onPageChange($event)"
         [showPageLinks]="false"

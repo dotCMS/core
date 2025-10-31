@@ -93,11 +93,16 @@ export const DotPaletteListStore = signalStore(
 
             switch (listType) {
                 case DotUVEPaletteListTypes.CONTENT:
-                    return pageContentTypeService.get({ ...params, types: BASETYPES_FOR_CONTENT });
+                    return pageContentTypeService.get({
+                        ...params,
+                        types: BASETYPES_FOR_CONTENT,
+                        per_page: DEFAULT_PER_PAGE
+                    });
                 case DotUVEPaletteListTypes.WIDGET:
                     return pageContentTypeService.getAllContentTypes({
                         ...params,
-                        types: BASETYPES_FOR_WIDGET
+                        types: BASETYPES_FOR_WIDGET,
+                        per_page: DEFAULT_PER_PAGE
                     });
                 case DotUVEPaletteListTypes.FAVORITES:
                     return of(dotFavoriteContentTypeService.getAll()).pipe(

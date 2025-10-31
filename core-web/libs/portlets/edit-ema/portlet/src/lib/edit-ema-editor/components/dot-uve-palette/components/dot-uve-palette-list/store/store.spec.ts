@@ -319,7 +319,8 @@ describe('DotPaletteListStore', () => {
 
                 expect(pageContentTypeService.get).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        types: ['CONTENT', 'FILEASSET', 'DOTASSET']
+                        types: ['CONTENT', 'FILEASSET', 'DOTASSET'],
+                        per_page: 30
                     })
                 );
                 expect(store.contenttypes()).toEqual(mockContentTypes);
@@ -332,7 +333,8 @@ describe('DotPaletteListStore', () => {
 
                 expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        types: ['WIDGET']
+                        types: ['WIDGET'],
+                        per_page: 30
                     })
                 );
             });

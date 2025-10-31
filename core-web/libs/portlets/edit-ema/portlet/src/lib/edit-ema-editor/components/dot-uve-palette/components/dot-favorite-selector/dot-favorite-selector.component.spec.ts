@@ -113,6 +113,7 @@ describe('DotFavoriteSelectorComponent', () => {
                 filter: 'Blog',
                 orderby: 'name',
                 direction: 'ASC',
+                per_page: 10,
                 types: ['CONTENT', 'FILEASSET', 'DOTASSET', 'WIDGET']
             });
         }));
@@ -134,6 +135,7 @@ describe('DotFavoriteSelectorComponent', () => {
                 filter: '',
                 orderby: 'name',
                 direction: 'ASC',
+                per_page: 10,
                 types: ['CONTENT', 'FILEASSET', 'DOTASSET', 'WIDGET']
             });
         }));
@@ -170,7 +172,7 @@ describe('DotFavoriteSelectorComponent', () => {
             // Should only be called once with the last filter value
             expect(mockPageContentTypeService.getAllContentTypes).toHaveBeenCalledTimes(1);
             expect(mockPageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
-                expect.objectContaining({ filter: 'Blog' })
+                expect.objectContaining({ filter: 'Blog', per_page: 10 })
             );
         }));
 
@@ -301,6 +303,7 @@ describe('DotFavoriteSelectorComponent', () => {
                 filter: '',
                 orderby: 'name',
                 direction: 'ASC',
+                per_page: 10,
                 types: ['CONTENT', 'FILEASSET', 'DOTASSET', 'WIDGET']
             });
         }));
@@ -335,7 +338,7 @@ describe('DotFavoriteSelectorComponent', () => {
 
             // Should reset to empty filter
             expect(mockPageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
-                expect.objectContaining({ filter: '' })
+                expect.objectContaining({ filter: '', per_page: 10 })
             );
         }));
     });
@@ -355,7 +358,7 @@ describe('DotFavoriteSelectorComponent', () => {
             tick(300);
 
             expect(mockPageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
-                expect.objectContaining({ filter: 'Blog' })
+                expect.objectContaining({ filter: 'Blog', per_page: 10 })
             );
 
             // Step 2: User selects items
@@ -377,7 +380,7 @@ describe('DotFavoriteSelectorComponent', () => {
             tick(300);
 
             expect(mockPageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
-                expect.objectContaining({ filter: '' })
+                expect.objectContaining({ filter: '', per_page: 10 })
             );
         }));
 
@@ -401,7 +404,7 @@ describe('DotFavoriteSelectorComponent', () => {
             tick(300);
 
             expect(mockPageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
-                expect.objectContaining({ filter: 'News' })
+                expect.objectContaining({ filter: 'News', per_page: 10 })
             );
 
             // Step 3: Close overlay
@@ -410,7 +413,7 @@ describe('DotFavoriteSelectorComponent', () => {
             tick(300);
 
             expect(mockPageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
-                expect.objectContaining({ filter: '' })
+                expect.objectContaining({ filter: '', per_page: 10 })
             );
         }));
     });
@@ -428,7 +431,7 @@ describe('DotFavoriteSelectorComponent', () => {
             tick(300);
 
             expect(mockPageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
-                expect.objectContaining({ filter: 'Test@#$%' })
+                expect.objectContaining({ filter: 'Test@#$%', per_page: 10 })
             );
         }));
 

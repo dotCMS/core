@@ -35,6 +35,7 @@ $icon-size: 0.875rem;
         padding: 0 $control-padding;
         overflow-y: auto;
         overflow-x: hidden;
+        padding-bottom: $spacing-1;
         flex: 1;
         min-height: 0; // Allows flex items to shrink properly
 
@@ -79,24 +80,6 @@ $icon-size: 0.875rem;
                     font-size: 3rem;
                     color: $color-palette-gray-600;
                     font-weight: 400;
-                }
-            }
-
-            .dot-uve-palette-list__empty-text {
-                font-size: 1rem;
-                color: $color-palette-gray-700;
-                margin: 0;
-                line-height: 1.5;
-
-                .dot-uve-palette-list__empty-link {
-                    color: $color-palette-primary-600;
-                    text-decoration: underline;
-                    cursor: pointer;
-                    font-weight: 500;
-
-                    &:hover {
-                        color: $color-palette-primary-700;
-                    }
                 }
             }
         }
@@ -144,6 +127,24 @@ $icon-size: 0.875rem;
         .p-menu-list {
             .active-menu-item {
                 background-color: $color-palette-primary-200;
+            }
+        }
+    }
+
+    .dot-uve-palette-list__empty-text {
+        font-size: 1rem;
+        color: $color-palette-gray-700;
+        margin: 0;
+        line-height: 1.5;
+
+        span {
+            color: $color-palette-primary-600;
+            text-decoration: underline;
+            cursor: pointer;
+            font-weight: 500;
+
+            &:hover {
+                color: $color-palette-primary-700;
             }
         }
     }

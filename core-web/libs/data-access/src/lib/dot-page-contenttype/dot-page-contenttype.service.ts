@@ -126,7 +126,9 @@ export class DotPageContentTypeService {
         contenttypes: DotCMSContentType[];
         pagination: DotPagination;
     }> {
-        let httpParams = new HttpParams();
+        let httpParams = new HttpParams()
+            .set('per_page', DEFAULT_PER_PAGE.toString())
+            .set('page', 1);
 
         // Add optional parameters if provided
         if (params.language) {
