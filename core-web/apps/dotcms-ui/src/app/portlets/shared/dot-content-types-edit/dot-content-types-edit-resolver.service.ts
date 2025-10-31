@@ -37,7 +37,6 @@ export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
         if (route.paramMap.get('id')) {
             return this.getContentType(route.paramMap.get('id')).pipe(
                 tap((contentType) => {
-                    console.log('contentType', contentType);
                     this.#globalStore.addNewBreadcrumb({
                         label: contentType.name,
                         target: '_self',
@@ -50,7 +49,6 @@ export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
 
             return this.getDefaultContentType(contentType).pipe(
                 tap((contentType) => {
-                    console.log('contentType', contentType);
                     this.#globalStore.addNewBreadcrumb({
                         label: contentType.name,
                         target: '_self',

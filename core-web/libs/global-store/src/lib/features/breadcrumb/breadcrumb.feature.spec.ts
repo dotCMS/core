@@ -1,18 +1,24 @@
 import { signalStore, withState } from '@ngrx/signals';
+import { Observable, Subject } from 'rxjs';
 
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
+
+import { DotMenuItem } from '@dotcms/dotcms-models';
 
 import { withBreadcrumbs } from './breadcrumb.feature';
 
 describe('withBreadcrumbs Feature', () => {
     // Create a test store that uses the withBreadcrumbs feature
-    const TestStore = signalStore(withState({}), withBreadcrumbs());
+    // Empty menu items signal for basic tests
+    const emptyMenuItemsSignal = signal<DotMenuItem[]>([]);
+    const TestStore = signalStore(withState({}), withBreadcrumbs(emptyMenuItemsSignal));
 
     let store: InstanceType<typeof TestStore>;
     let sessionStorageSetItemSpy: jest.SpyInstance;
-    let sessionStorageGetItemSpy: jest.SpyInstance;
 
     const mockBreadcrumbs: MenuItem[] = [
         { label: 'Home', url: '/home' },
@@ -26,7 +32,6 @@ describe('withBreadcrumbs Feature', () => {
 
         // Setup spies
         sessionStorageSetItemSpy = jest.spyOn(Storage.prototype, 'setItem');
-        sessionStorageGetItemSpy = jest.spyOn(Storage.prototype, 'getItem');
 
         TestBed.configureTestingModule({
             providers: [TestStore]
@@ -56,8 +61,10 @@ describe('withBreadcrumbs Feature', () => {
             expect(store.selectLastBreadcrumbLabel()).toBeNull();
         });
 
-        it('should load breadcrumbs from sessionStorage on init', () => {
-            expect(sessionStorageGetItemSpy).toHaveBeenCalledWith('breadcrumbs');
+        it('should have loadBreadcrumbs method available', () => {
+            // loadBreadcrumbs is no longer called automatically on init
+            // but the method should still be available
+            expect(typeof store.loadBreadcrumbs).toBe('function');
         });
     });
 
@@ -561,6 +568,307 @@ describe('withBreadcrumbs Feature', () => {
             store.appendCrumb({ label: 'Create', url: '/settings/users/create' });
             expect(store.breadcrumbCount()).toBe(4);
             expect(store.selectLastBreadcrumbLabel()).toBe('Create');
+        });
+    });
+
+    describe('Router Integration with listenToRouterEvents', () => {
+        class RouterMock {
+            private _events = new Subject<Event>();
+
+            get events(): Observable<Event> {
+                return this._events.asObservable();
+            }
+
+            triggerNavigationEnd(url: string) {
+                this._events.next(new NavigationEnd(1, url, url));
+            }
+        }
+
+        let routerMock: RouterMock;
+        let menuItemsSignal: ReturnType<typeof signal<DotMenuItem[]>>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let TestStoreWithRouter: any;
+        let storeWithRouter: InstanceType<typeof TestStoreWithRouter>;
+
+        beforeEach(() => {
+            // Reset TestBed to avoid conflicts with parent beforeEach
+            TestBed.resetTestingModule();
+
+            routerMock = new RouterMock();
+
+            // Mock menu items with proper structure
+            menuItemsSignal = signal<DotMenuItem[]>([
+                {
+                    id: 'content',
+                    label: 'Content',
+                    labelParent: 'Content',
+                    menuLink: '/c/content',
+                    url: '/c/content',
+                    angular: true,
+                    active: false,
+                    ajax: false
+                } as DotMenuItem,
+                {
+                    id: 'site-browser',
+                    label: 'Site Browser',
+                    labelParent: 'Tools',
+                    menuLink: '/c/site-browser',
+                    url: '/c/site-browser',
+                    angular: true,
+                    active: false,
+                    ajax: false
+                } as DotMenuItem,
+                {
+                    id: 'pages',
+                    label: 'Pages',
+                    labelParent: 'Content',
+                    menuLink: '/pages',
+                    url: '/pages',
+                    angular: true,
+                    active: false,
+                    ajax: false
+                } as DotMenuItem
+            ]);
+
+            // Create store with breadcrumb feature that receives menuItems signal
+            TestStoreWithRouter = signalStore(withState({}), withBreadcrumbs(menuItemsSignal));
+
+            TestBed.configureTestingModule({
+                providers: [{ provide: Router, useValue: routerMock }, TestStoreWithRouter]
+            });
+
+            storeWithRouter = TestBed.inject(TestStoreWithRouter);
+            TestBed.flushEffects();
+        });
+
+        it('should create breadcrumbs with Home when navigating to a menu link', () => {
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const breadcrumbs = storeWithRouter.breadcrumbs();
+
+            expect(breadcrumbs.length).toBe(3);
+            expect(breadcrumbs[0]).toEqual({
+                label: 'Home',
+                disabled: true
+            });
+            expect(breadcrumbs[1]).toEqual({
+                label: 'Content',
+                disabled: true
+            });
+            expect(breadcrumbs[2]).toMatchObject({
+                label: 'Content',
+                target: '_self',
+                url: '/dotAdmin/#/c/content'
+            });
+        });
+
+        it('should always include Home as the first breadcrumb item', () => {
+            routerMock.triggerNavigationEnd('/c/site-browser');
+            TestBed.flushEffects();
+
+            const breadcrumbs = storeWithRouter.breadcrumbs();
+
+            expect(breadcrumbs[0].label).toBe('Home');
+            expect(breadcrumbs[0].disabled).toBe(true);
+        });
+
+        it('should set Home breadcrumb as disabled', () => {
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const breadcrumbs = storeWithRouter.breadcrumbs();
+            const homeBreadcrumb = breadcrumbs[0];
+
+            expect(homeBreadcrumb.disabled).toBe(true);
+        });
+
+        it('should truncate breadcrumbs when navigating back to existing URL', () => {
+            // Navigate to first page
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const firstBreadcrumbs = storeWithRouter.breadcrumbs();
+            expect(firstBreadcrumbs.length).toBe(3);
+
+            // Navigate to second page
+            routerMock.triggerNavigationEnd('/pages');
+            TestBed.flushEffects();
+
+            const secondBreadcrumbs = storeWithRouter.breadcrumbs();
+            expect(secondBreadcrumbs.length).toBe(3);
+
+            // Navigate back to first page (should truncate)
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const truncatedBreadcrumbs = storeWithRouter.breadcrumbs();
+            expect(truncatedBreadcrumbs.length).toBe(3);
+            expect(truncatedBreadcrumbs[0].label).toBe('Home');
+        });
+
+        it('should not add breadcrumb if URL is not in menu items', () => {
+            const initialCount = storeWithRouter.breadcrumbCount();
+
+            routerMock.triggerNavigationEnd('/unknown-route');
+            TestBed.flushEffects();
+
+            const finalCount = storeWithRouter.breadcrumbCount();
+
+            // Should not have added any breadcrumbs for unknown route
+            expect(finalCount).toBe(initialCount);
+        });
+
+        it('should maintain breadcrumb structure with Home after multiple navigations', () => {
+            // First navigation
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            let breadcrumbs = storeWithRouter.breadcrumbs();
+            expect(breadcrumbs[0].label).toBe('Home');
+            expect(breadcrumbs.length).toBe(3);
+
+            // Second navigation
+            routerMock.triggerNavigationEnd('/c/site-browser');
+            TestBed.flushEffects();
+
+            breadcrumbs = storeWithRouter.breadcrumbs();
+            expect(breadcrumbs[0].label).toBe('Home');
+            expect(breadcrumbs.length).toBe(3);
+        });
+
+        it('should use GlobalStore for breadcrumb state management', () => {
+            // Verify that navigating updates the breadcrumbs in the store
+            const initialCount = storeWithRouter.breadcrumbCount();
+
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const finalCount = storeWithRouter.breadcrumbCount();
+
+            // Should have updated breadcrumbs in the store
+            expect(finalCount).toBeGreaterThan(initialCount);
+            expect(storeWithRouter.breadcrumbs().length).toBe(3);
+        });
+
+        it('should handle content filter URLs by adding new breadcrumb', () => {
+            // First set up initial breadcrumbs
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const initialBreadcrumbs = storeWithRouter.breadcrumbs();
+            expect(initialBreadcrumbs.length).toBe(3);
+
+            // Navigate to filtered content
+            routerMock.triggerNavigationEnd('/content?filter=Products');
+            TestBed.flushEffects();
+
+            const updatedBreadcrumbs = storeWithRouter.breadcrumbs();
+
+            // Should have added a new breadcrumb with the filter label
+            expect(updatedBreadcrumbs.length).toBeGreaterThan(initialBreadcrumbs.length);
+            expect(updatedBreadcrumbs[updatedBreadcrumbs.length - 1]).toMatchObject({
+                label: 'Products',
+                target: '_self',
+                url: '/dotAdmin/#/content?filter=Products'
+            });
+        });
+
+        it('should properly construct breadcrumb URLs with /dotAdmin/# prefix', () => {
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const breadcrumbs = storeWithRouter.breadcrumbs();
+            const currentBreadcrumb = breadcrumbs[breadcrumbs.length - 1];
+
+            expect(currentBreadcrumb.url).toBe('/dotAdmin/#/c/content');
+        });
+
+        it('should use labelParent from menu item for parent breadcrumb', () => {
+            routerMock.triggerNavigationEnd('/c/site-browser');
+            TestBed.flushEffects();
+
+            const breadcrumbs = storeWithRouter.breadcrumbs();
+
+            // Second breadcrumb should be the parent with labelParent
+            expect(breadcrumbs[1]).toEqual({
+                label: 'Tools',
+                disabled: true
+            });
+        });
+
+        it('should update breadcrumbs reactively when menuItems signal changes', () => {
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            let breadcrumbs = storeWithRouter.breadcrumbs();
+            expect(breadcrumbs[2].label).toBe('Content');
+
+            // Update menu items with new label
+            menuItemsSignal.set([
+                {
+                    id: 'content',
+                    label: 'Updated Content',
+                    labelParent: 'Updated Parent',
+                    menuLink: '/c/content',
+                    url: '/c/content',
+                    angular: true,
+                    active: false,
+                    ajax: false
+                } as DotMenuItem,
+                {
+                    id: 'new-page',
+                    label: 'New Page',
+                    labelParent: 'New Parent',
+                    menuLink: '/new-page',
+                    url: '/new-page',
+                    angular: true,
+                    active: false,
+                    ajax: false
+                } as DotMenuItem
+            ]);
+
+            // Navigate to the new page (different URL to avoid truncation)
+            routerMock.triggerNavigationEnd('/new-page');
+            TestBed.flushEffects();
+
+            breadcrumbs = storeWithRouter.breadcrumbs();
+            // Should use the new menu item data
+            expect(breadcrumbs[2].label).toBe('New Page');
+            expect(breadcrumbs[1].label).toBe('New Parent');
+        });
+
+        it('should handle navigation to root URL', () => {
+            routerMock.triggerNavigationEnd('/');
+            TestBed.flushEffects();
+
+            const breadcrumbs = storeWithRouter.breadcrumbs();
+
+            // Should not add breadcrumbs for root URL if not in menu
+            expect(breadcrumbs.length).toBe(0);
+        });
+
+        it('should truncate correctly when navigating to a middle breadcrumb', () => {
+            // Set up initial state with multiple breadcrumbs manually
+            storeWithRouter.setBreadcrumbs([
+                { label: 'Home', disabled: true },
+                { label: 'Content', disabled: true },
+                { label: 'Current', url: '/dotAdmin/#/c/content' },
+                { label: 'Level 4', url: '/dotAdmin/#/level4' },
+                { label: 'Level 5', url: '/dotAdmin/#/level5' }
+            ]);
+            TestBed.flushEffects();
+
+            expect(storeWithRouter.breadcrumbCount()).toBe(5);
+
+            // Navigate back to the third item
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const breadcrumbs = storeWithRouter.breadcrumbs();
+            // Should have truncated and reset to the menu structure
+            expect(breadcrumbs.length).toBe(3);
+            expect(breadcrumbs[0].label).toBe('Home');
         });
     });
 });

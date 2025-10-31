@@ -45,7 +45,6 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
             .pipe(map(([_, pageRender]) => pageRender))
             .pipe(
                 tap((pageRender) => {
-                    console.log('pageRender', pageRender);
                     this.#globalStore.addNewBreadcrumb({
                         label: pageRender?.page.title,
                         disabled: true
