@@ -1,18 +1,26 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.api.CompletionRequest;
+import com.dotcms.ai.api.CompletionResponse;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.config.AiModelConfig;
+import com.dotcms.ai.config.AiModelConfigFactory;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.rest.WebResource;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -26,6 +34,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * The TextResource class provides REST endpoints for interacting with the AI text generation service.
@@ -34,6 +43,13 @@ import java.util.Map;
 @Path("/v1/ai/text")
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class TextResource {
+
+    private final AiModelConfigFactory modelConfigFactory;
+
+    @Inject
+    public TextResource(AiModelConfigFactory modelConfigFactory) {
+        this.modelConfigFactory = modelConfigFactory;
+    }
 
     /**
      * Handles GET requests to generate text based on a given prompt.
@@ -84,14 +100,44 @@ public class TextResource {
                     .build();
         }
 
-        final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
+        final Host site = WebAPILocator.getHostWebAPI().getHost(request);
+        final Optional<AiModelConfig> modelConfigOpt = this.modelConfigFactory.getAiModelConfigOrDefaultChat(site, form.model);
 
+        if(modelConfigOpt.isPresent()) {
+
+            CompletionsForm finalForm = form;
+            if (StringUtils.isNotSet(form.model)) {
+                // probably get the default one
+                finalForm = CompletionsForm.copy(form).model(modelConfigOpt.get().getName()).build();
+            }
+
+            Logger.debug(this, "Using new AI api for the text resource with the form: " + finalForm);
+            final CompletionResponse completionResponse = APILocator.getDotAIAPI()
+                    .getCompletionsAPI().raw(toCompletionRequest(finalForm, modelConfigOpt.get()));
+            Logger.debug(this, ()-> "Completion response: " + completionResponse);
+            return Response.ok(completionResponse.getMessageText()).build();
+        }
+
+        final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
         return Response.ok(
                 APILocator.getDotAIAPI()
                         .getCompletionsAPI()
                         .raw(generateRequest(formIn, config), user.getUserId())
                         .toString())
                 .build();
+    }
+
+    private CompletionRequest toCompletionRequest(final CompletionsForm form,
+                                                  final AiModelConfig aiModelConfig) {
+
+        final CompletionRequest.Builder builder = CompletionRequest.builder()
+                .vendorModelPath(form.model)
+                .prompt(form.prompt)
+                .chatModelConfig(aiModelConfig)
+                .temperature(form.temperature);
+
+        // todo: we need to figured out how to set the system prompts per functionality
+        return builder.build();
     }
 
     /**

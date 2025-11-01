@@ -24,7 +24,28 @@ public class ConversionUtils implements Serializable {
 
     private ConversionUtils() {}
 
-	/**
+    /**
+     * Tries to transform the input object to double, otherwise defaultDouble
+     * @param input Object
+     * @param defaultDouble double
+     * @return Double
+     */
+    public static Double toDouble(final Object input, final double defaultDouble) {
+
+        try {
+            if (input instanceof CharSequence) {
+                return Double.parseDouble(CharSequence.class.cast(input).toString());
+            } else if (input instanceof Number) {
+                return Number.class.cast(input).doubleValue();
+            } else {
+                return defaultDouble;
+            }
+        } catch (NumberFormatException e) {
+            return defaultDouble;
+        }
+    }
+
+    /**
 	 * Converts from the Original to Destiny bean using a converter.
 	 * 
 	 * @param origin
