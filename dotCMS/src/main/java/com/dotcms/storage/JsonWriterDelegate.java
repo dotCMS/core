@@ -1,8 +1,7 @@
 package com.dotcms.storage;
 
-import com.dotmarketing.util.Logger;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -14,7 +13,7 @@ import java.io.Serializable;
  */
 public class JsonWriterDelegate implements ObjectWriterDelegate {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     /**
      * Delegate writer
