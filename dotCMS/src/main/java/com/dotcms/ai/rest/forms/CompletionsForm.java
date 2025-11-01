@@ -121,7 +121,7 @@ public class CompletionsForm {
         } else {
             this.temperature = builder.temperature >= 2 ? 2 : builder.temperature;
         }
-        this.model = UtilMethods.isSet(builder.model) ? builder.model : ConfigService.INSTANCE.config().getModel().getCurrentModel();
+        this.model = builder.model;
         this.user = builder.user;
         this.responseFormat = builder.responseFormat;
     }

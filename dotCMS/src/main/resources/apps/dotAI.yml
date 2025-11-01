@@ -183,3 +183,11 @@ params:
       indexed into the `blogsOnly` index. The list of content types is a comma separated list content types and can optionally 
       include the field that should be indexed when a contentlet is published.  All unpublished content will be removed from the index.
     required: false
+  advanceProviderSettings:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Custom AI Provider Settings"
+    hint: |
+      See ....
+    required: false

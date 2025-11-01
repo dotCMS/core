@@ -152,6 +152,10 @@ public class StringUtils {
     public static boolean isSet(String test){
         return UtilMethods.isSet(test);
     }
+
+    public static boolean isNotSet(final String test){
+        return !UtilMethods.isSet(test);
+    }
     
     public static String nullEmptyStr(String test){
         return isSet(test) ? test : null;
