@@ -45,8 +45,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotContentTypeFieldsVariablesComponent],
-            imports: [DotKeyValueComponent],
+            declarations: [TestHostComponent],
+            imports: [DotKeyValueComponent, DotContentTypeFieldsVariablesComponent],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
                 {
@@ -111,12 +111,15 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     it('should delete a variable from the server', () => {
         const variableToDelete = mockFieldVariables[0];
-        jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'delete').mockReturnValue(
-            of([])
-        );
+
+        // Set up load spy to return mock data before detectChanges
+        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+        jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(of(variableToDelete));
+
         const deletedCollection = mockFieldVariables.filter(
             (item: DotFieldVariable) => variableToDelete.key !== item.key
         );
+
         fixtureHost.detectChanges();
 
         const dotKeyValue = de.query(By.css('dot-key-value-ng'));

@@ -140,8 +140,8 @@ describe('DotPagesListingPanelComponent', () => {
     describe('Empty state', () => {
         beforeEach(() => {
             TestBed.configureTestingModule({
-                declarations: [DotPagesListingPanelComponent],
                 imports: [
+                    DotPagesListingPanelComponent,
                     CommonModule,
                     ButtonModule,
                     CheckboxModule,

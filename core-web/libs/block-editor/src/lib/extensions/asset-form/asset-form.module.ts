@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DotUploadFileService } from '@dotcms/data-access';
-import { DotAssetSearchComponent, DotSpinnerModule } from '@dotcms/ui';
+import { DotAssetSearchComponent, DotSpinnerComponent } from '@dotcms/ui';
 
 import { AssetFormComponent } from './asset-form.component';
 import { DotExternalAssetComponent } from './components/dot-external-asset/dot-external-asset.component';
@@ -17,7 +17,7 @@ import { PrimengModule } from '../../shared/primeng.module';
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         PrimengModule,
         DotAssetSearchComponent
     ],

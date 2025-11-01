@@ -1,16 +1,24 @@
 import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
 
 import { trigger, transition, style, animate } from '@angular/animations';
+import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
-import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
-import { DialogService } from 'primeng/dynamicdialog';
+import { ButtonModule } from 'primeng/button';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { MenuModule } from 'primeng/menu';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TabViewModule } from 'primeng/tabview';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotFieldRequiredDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
+
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 
 interface DotContainerContent extends DotCMSContentType {
     code: string;
@@ -29,7 +37,20 @@ interface DotContainerContent extends DotCMSContentType {
     selector: 'dot-container-code',
     templateUrl: './dot-container-code.component.html',
     styleUrls: ['./dot-container-code.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        TabViewModule,
+        MenuModule,
+        DotTextareaContentComponent,
+        DotMessagePipe,
+        ButtonModule,
+        DynamicDialogModule,
+        DotIconComponent,
+        SkeletonModule,
+        DotFieldRequiredDirective
+    ],
+    providers: [DialogService]
 })
 export class DotContentEditorComponent implements OnInit, OnChanges {
     private dialogService = inject(DialogService);

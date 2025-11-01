@@ -4,14 +4,14 @@ import { ActivatedRoute } from '@angular/router';
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 @Component({
-    providers: [],
     selector: 'dot-contentlets',
     template:
         '<dot-edit-contentlet (shutdown)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>',
-    standalone: false
+    imports: [DotEditContentletComponent]
 })
 export class DotContentletsComponent implements AfterViewInit {
     private dotContentletEditorService = inject(DotContentletEditorService);

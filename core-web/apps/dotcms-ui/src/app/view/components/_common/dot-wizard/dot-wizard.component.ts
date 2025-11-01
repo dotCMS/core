@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -13,6 +14,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { ButtonModule } from 'primeng/button';
+import { Dialog, DialogModule } from 'primeng/dialog';
+
 import { filter, tap, delay } from 'rxjs/operators';
 
 import { DotMessageService, DotWizardService } from '@dotcms/data-access';
@@ -23,7 +27,6 @@ import {
     DotWizardInput,
     DotWizardStep
 } from '@dotcms/dotcms-models';
-import { DotDialogComponent } from '@dotcms/ui';
 
 import { DotFormModel } from '../../../../shared/models/dot-form/dot-form.model';
 import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
@@ -34,7 +37,8 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
-    standalone: false
+    imports: [CommonModule, DialogModule, ButtonModule, DotContainerReferenceDirective],
+    providers: [DotWizardService]
 })
 export class DotWizardComponent implements AfterViewInit {
     #wizardData: { [key: string]: string };
@@ -59,7 +63,7 @@ export class DotWizardComponent implements AfterViewInit {
 
     @ViewChildren(DotContainerReferenceDirective)
     formHosts: QueryList<DotContainerReferenceDirective>;
-    @ViewChild('dialog', { static: true }) dialog: DotDialogComponent;
+    @ViewChild('dialog', { static: true }) dialog: Dialog;
 
     constructor() {
         this.#dotWizardService.showDialog$

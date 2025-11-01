@@ -11,6 +11,7 @@ import { ToastModule } from 'primeng/toast';
 
 import {
     DotAnalyticsTrackerService,
+    DotContentletService,
     DotESContentService,
     DotExperimentsService,
     DotFavoritePageService,
@@ -61,6 +62,7 @@ import {
         DotSeoMetaTagsService,
         DotSeoMetaTagsUtilService,
         DotWorkflowsActionsService,
+        DotContentletService,
         {
             provide: WINDOW,
             useValue: window

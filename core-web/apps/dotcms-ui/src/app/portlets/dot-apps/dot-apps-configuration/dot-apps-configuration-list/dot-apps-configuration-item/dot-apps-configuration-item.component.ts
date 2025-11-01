@@ -1,13 +1,20 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, Output, inject } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotAppsSite } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 @Component({
     selector: 'dot-apps-configuration-item',
     templateUrl: './dot-apps-configuration-item.component.html',
     styleUrls: ['./dot-apps-configuration-item.component.scss'],
-    standalone: false
+    imports: [CommonModule, DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule]
 })
 export class DotAppsConfigurationItemComponent {
     private dotMessageService = inject(DotMessageService);

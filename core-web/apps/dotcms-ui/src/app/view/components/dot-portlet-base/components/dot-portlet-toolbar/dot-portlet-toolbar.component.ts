@@ -1,4 +1,11 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { MenuModule } from 'primeng/menu';
+import { ToolbarModule } from 'primeng/toolbar';
+
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPortletToolbarActions } from '../../../../../shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 
@@ -7,7 +14,7 @@ import { DotPortletToolbarActions } from '../../../../../shared/models/dot-portl
     templateUrl: './dot-portlet-toolbar.component.html',
     styleUrls: ['./dot-portlet-toolbar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    imports: [CommonModule, ToolbarModule, ButtonModule, MenuModule, DotMessagePipe]
 })
 export class DotPortletToolbarComponent {
     @Input() title: string;

@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -12,7 +13,8 @@ import {
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
-import { Menu } from 'primeng/menu';
+import { ButtonModule } from 'primeng/button';
+import { Menu, MenuModule } from 'primeng/menu';
 
 /**
  * The ActionButtonComponent is a configurable button with
@@ -24,7 +26,7 @@ import { Menu } from 'primeng/menu';
     selector: 'dot-action-button',
     styleUrls: ['./dot-action-button.component.scss'],
     templateUrl: 'dot-action-button.component.html',
-    standalone: false
+    imports: [CommonModule, ButtonModule, MenuModule]
 })
 export class DotActionButtonComponent implements OnInit, OnChanges {
     @ViewChild('menu')

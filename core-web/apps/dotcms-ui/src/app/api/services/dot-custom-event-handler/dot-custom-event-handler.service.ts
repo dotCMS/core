@@ -31,7 +31,9 @@ export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
  * @export
  * @class DotCustomEventHandlerService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotCustomEventHandlerService {
     private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
     private dotRouterService = inject(DotRouterService);

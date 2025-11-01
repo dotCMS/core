@@ -21,7 +21,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { dotContentCompareTableDataMock } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component.spec';
 import { DotContentCompareTableComponent } from './components/dot-content-compare-table/dot-content-compare-table.component';
 import { DotContentCompareComponent } from './dot-content-compare.component';
-import { DotContentCompareModule } from './dot-content-compare.module';
 import { DotContentCompareStore } from './store/dot-content-compare.store';
 
 const DotContentCompareEventMOCK = {
@@ -58,8 +57,8 @@ describe('DotContentCompareComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentCompareComponent, TestHostComponent],
-            imports: [DotContentCompareModule],
+            declarations: [TestHostComponent],
+            imports: [DotContentCompareComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotAlertConfirmService,

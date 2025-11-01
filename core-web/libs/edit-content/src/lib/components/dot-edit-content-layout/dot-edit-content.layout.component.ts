@@ -15,6 +15,9 @@ import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import {
+    DotContentletService,
+    DotLanguagesService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
@@ -87,6 +90,9 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentCompareComponent
     ],
     providers: [
+        DotContentletService,
+        DotLanguagesService,
+        DotVersionableService,
         DotWorkflowsActionsService,
         DotWorkflowActionsFireService,
         DotEditContentService,

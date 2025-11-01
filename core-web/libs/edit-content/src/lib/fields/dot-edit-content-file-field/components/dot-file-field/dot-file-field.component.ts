@@ -30,7 +30,7 @@ import {
     DotDropZoneComponent,
     DotMessagePipe,
     DotAIImagePromptComponent,
-    DotSpinnerModule,
+    DotSpinnerComponent,
     DropZoneFileEvent,
     DropZoneFileValidity
 } from '@dotcms/ui';
@@ -57,7 +57,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         ButtonModule,
         DotMessagePipe,
         DotDropZoneComponent,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
         TooltipModule,

@@ -16,7 +16,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
-import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 
 import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
 
@@ -24,11 +24,11 @@ import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
     selector: 'dot-edit-ema-palette-content-type',
     imports: [
         ReactiveFormsModule,
-        DotIconModule,
+        DotIconComponent,
         JsonPipe,
         DotMessagePipe,
         InputTextModule,
-        DotSpinnerModule
+        DotSpinnerComponent
     ],
     templateUrl: './edit-ema-palette-content-type.component.html',
     styleUrls: ['./edit-ema-palette-content-type.component.scss'],

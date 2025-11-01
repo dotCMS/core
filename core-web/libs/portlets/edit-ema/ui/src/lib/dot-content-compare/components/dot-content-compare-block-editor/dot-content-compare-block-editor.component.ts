@@ -1,24 +1,27 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, Input, ViewChild, inject } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { map } from 'rxjs/operators';
 
-import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import { DotSafeHtmlPipe, DotDiffPipe } from '@dotcms/ui';
+
+import { BlockEditorMockComponent } from './block-editor-mock/block-editor-mock.component';
 
 import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
 
 @Component({
     selector: 'dot-content-compare-block-editor',
     templateUrl: './dot-content-compare-block-editor.component.html',
-    standalone: false
+    imports: [CommonModule, BlockEditorMockComponent, DotSafeHtmlPipe, DotDiffPipe]
 })
 export class DotContentCompareBlockEditorComponent implements AfterViewInit {
     private sanitizer = inject(DomSanitizer);
 
-    @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
-    @ViewChild('blockEditorCompare') blockEditorCompare: DotBlockEditorComponent;
+    @ViewChild('blockEditor') blockEditor: BlockEditorMockComponent;
+    @ViewChild('blockEditorCompare') blockEditorCompare: BlockEditorMockComponent;
 
     @Input() data: DotContentCompareTableData;
     @Input() showDiff: boolean;

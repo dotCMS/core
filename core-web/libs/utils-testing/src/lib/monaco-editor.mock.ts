@@ -46,7 +46,14 @@ export const monacoMock = {
             },
             revealLine: (lineNumber: number) => {
                 //
-            }
+            },
+            getSelection: () => ({
+                startLineNumber: 1,
+                startColumn: 1,
+                endLineNumber: 1,
+                endColumn: 1
+            }),
+            executeEdits: () => {}
         }),
         setModelLanguage: () => {},
         createModel: () => ({
@@ -77,5 +84,23 @@ export const monacoMock = {
     Uri: {
         parse: () => ({}),
         file: () => ({})
+    },
+    Range: class {
+        startLineNumber: number;
+        startColumn: number;
+        endLineNumber: number;
+        endColumn: number;
+
+        constructor(
+            startLineNumber: number,
+            startColumn: number,
+            endLineNumber: number,
+            endColumn: number
+        ) {
+            this.startLineNumber = startLineNumber;
+            this.startColumn = startColumn;
+            this.endLineNumber = endLineNumber;
+            this.endColumn = endColumn;
+        }
     }
 };

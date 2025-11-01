@@ -1,17 +1,38 @@
+import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+import { DividerModule } from 'primeng/divider';
+import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
+import { DotToolbarAnnouncementsComponent } from './components/dot-toolbar-announcements/dot-toolbar-announcements.component';
+import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notifications/dot-toolbar-notifications.component';
+import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
+
+import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
 
 @Component({
     selector: 'dot-toolbar',
     styleUrls: ['./dot-toolbar.component.scss'],
     templateUrl: './dot-toolbar.component.html',
-    standalone: false
+    imports: [
+        CommonModule,
+        ToolbarModule,
+        DividerModule,
+        DotCrumbtrailComponent,
+        DotSiteSelectorComponent,
+        DotToolbarNotificationsComponent,
+        DotToolbarAnnouncementsComponent,
+        DotToolbarUserComponent,
+        DotShowHideFeatureDirective
+    ]
 })
 export class DotToolbarComponent implements OnInit {
     readonly #dotRouterService = inject(DotRouterService);

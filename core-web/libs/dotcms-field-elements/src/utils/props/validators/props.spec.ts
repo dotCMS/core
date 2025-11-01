@@ -1,4 +1,3 @@
-import { PropValidationInfo } from '../models';
 import {
     dateRangeValidator,
     dateTimeValidator,
@@ -8,6 +7,8 @@ import {
     stringValidator,
     timeValidator
 } from './props';
+
+import { PropValidationInfo } from '../models';
 
 describe('Props Validators', () => {
     let propInfo: PropValidationInfo<any>;

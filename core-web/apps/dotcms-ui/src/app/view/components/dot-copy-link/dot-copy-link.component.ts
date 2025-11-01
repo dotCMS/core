@@ -1,4 +1,8 @@
+import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, inject } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotClipboardUtil } from '@dotcms/ui';
@@ -15,7 +19,8 @@ import { DotClipboardUtil } from '@dotcms/ui';
     selector: 'dot-copy-link',
     templateUrl: './dot-copy-link.component.html',
     styleUrls: ['./dot-copy-link.component.scss'],
-    standalone: false
+    imports: [CommonModule, TooltipModule, ButtonModule],
+    providers: [DotClipboardUtil]
 })
 export class DotCopyLinkComponent implements OnInit {
     private dotClipboardUtil = inject(DotClipboardUtil);

@@ -1,4 +1,5 @@
-import { Component, forwardRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, forwardRef, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
@@ -12,7 +13,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
             multi: true
         }
     ],
-    standalone: false
+    imports: [CommonModule],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotMdIconSelectorComponent implements ControlValueAccessor {
     value = '';

@@ -10,6 +10,7 @@ import {
     Host,
     h
 } from '@stencil/core';
+
 import { DotFieldStatus, DotFieldStatusEvent, DotFieldValueEvent, DotOption } from '../../models';
 import {
     getClassNames,

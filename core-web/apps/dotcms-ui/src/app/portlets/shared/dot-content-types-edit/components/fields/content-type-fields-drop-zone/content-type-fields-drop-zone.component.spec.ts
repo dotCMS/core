@@ -24,8 +24,10 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
+import { TooltipModule } from 'primeng/tooltip';
 
 import {
+    DotAlertConfirmService,
     DotEventsService,
     DotFormatDateService,
     DotHttpErrorManagerService,
@@ -41,13 +43,7 @@ import {
     DotDialogActions,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import {
-    DotDialogComponent,
-    DotDialogModule,
-    DotFieldValidationMessageComponent,
-    DotIconModule,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotDialogComponent, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 import {
     cleanUpDialog,
@@ -61,11 +57,11 @@ import {
 
 import { ContentTypeFieldsDropZoneComponent } from '.';
 
-import { ContentTypeFieldsAddRowModule } from '..';
-import { DotActionButtonModule } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotActionButtonComponent } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
-import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
+import { ContentTypeFieldsAddRowComponent } from '../content-type-fields-add-row/content-type-fields-add-row.component';
+import { DotContentTypeFieldsVariablesComponent } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
 import { FieldDragDropService } from '../service/index';
@@ -83,7 +79,7 @@ const fakeContentType: DotCMSContentType = {
 @Component({
     selector: 'dot-content-type-fields-row',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestContentTypeFieldsRowComponent {
     @Input()
@@ -97,7 +93,7 @@ class TestContentTypeFieldsRowComponent {
 @Component({
     selector: 'dot-content-type-fields-properties-form',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestContentTypeFieldsPropertiesFormComponent {
     @Output()
@@ -117,7 +113,7 @@ class TestContentTypeFieldsPropertiesFormComponent {
 @Component({
     selector: 'dot-content-type-fields-tab',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestDotContentTypeFieldsTabComponent {
     @Input()
@@ -132,7 +128,7 @@ class TestDotContentTypeFieldsTabComponent {
 @Component({
     selector: 'dot-loading-indicator ',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestDotLoadingIndicatorComponent {
     @Input()
@@ -199,13 +195,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         dragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsDropZoneComponent,
-                TestContentTypeFieldsPropertiesFormComponent,
-                TestContentTypeFieldsRowComponent,
-                TestDotContentTypeFieldsTabComponent,
-                TestDotLoadingIndicatorComponent
-            ],
+            declarations: [ContentTypeFieldsDropZoneComponent],
             imports: [
                 RouterTestingModule.withRoutes([
                     {
@@ -214,24 +204,31 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     }
                 ]),
                 BrowserAnimationsModule,
-                ContentTypeFieldsAddRowModule,
-                DotContentTypeFieldsVariablesModule,
-                DotDialogModule,
-                DotActionButtonModule,
-                ButtonModule,
-                DotIconModule,
-                DragulaModule,
-                TableModule,
-                DotFieldValidationMessageComponent,
-                ReactiveFormsModule,
                 HttpClientTestingModule,
+                FormsModule,
+                ReactiveFormsModule,
                 DotMessagePipe,
-                TabViewModule
+                TabViewModule,
+                TooltipModule,
+                ButtonModule,
+                DotDialogComponent,
+                DragulaModule,
+                TestDotLoadingIndicatorComponent,
+                TestContentTypeFieldsRowComponent,
+                TestContentTypeFieldsPropertiesFormComponent,
+                TestDotContentTypeFieldsTabComponent,
+                ContentTypeFieldsAddRowComponent,
+                DotContentTypeFieldsVariablesComponent,
+                DotIconComponent,
+                DotActionButtonComponent,
+                TableModule,
+                CheckboxModule
             ],
             providers: [
                 { provide: Router, useValue: mockRouter },
                 { provide: FieldDragDropService, useValue: dragDropService },
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotAlertConfirmService, useValue: {} },
                 {
                     provide: DotLoadingIndicatorService,
                     useValue: dotLoadingIndicatorServiceMock
@@ -441,7 +438,7 @@ const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
 @Component({
     selector: 'dot-block-editor-settings',
     template: '',
-    standalone: false
+    standalone: true
 })
 class TestDotBlockEditorSettingsComponent {
     @Output() changeControls = new EventEmitter<DotDialogActions>();
@@ -480,16 +477,16 @@ describe('Load fields and drag and drop', () => {
         TestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsDropZoneComponent,
+                TestHostComponent,
+                DotConvertToBlockInfoComponent,
+                DotConvertWysiwygToBlockComponent
+            ],
+            imports: [
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
-                TestHostComponent,
                 TestDotLoadingIndicatorComponent,
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent,
-                TestDotBlockEditorSettingsComponent
-            ],
-            imports: [
+                TestDotBlockEditorSettingsComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,
@@ -497,17 +494,17 @@ describe('Load fields and drag and drop', () => {
                     }
                 ]),
                 DragulaModule,
-                DotContentTypeFieldsVariablesModule,
+                DotContentTypeFieldsVariablesComponent,
                 FormsModule,
                 CheckboxModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
-                DotActionButtonModule,
-                DotIconModule,
+                DotActionButtonComponent,
+                DotIconComponent,
                 ButtonModule,
                 TableModule,
-                ContentTypeFieldsAddRowModule,
-                DotDialogModule,
+                ContentTypeFieldsAddRowComponent,
+                DotDialogComponent,
                 HttpClientTestingModule,
                 DotMessagePipe,
                 TabViewModule
