@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.asset;
+package com.dotcms.rest.api.v1.drive;
 
 import static com.dotcms.rest.api.v1.asset.WebAssetHelper.SORT_BY;
 
@@ -31,41 +31,13 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("baseTypes")
     List<String> baseTypes();
 
-    @JsonProperty("showContent")
-    @Value.Default
-    default boolean showContent(){return true;}
-
-    @JsonProperty("showImages")
-    @Value.Default
-    default boolean showImages(){return true;}
-
-    @JsonProperty("showFiles")
-    @Value.Default
-    default boolean showFiles(){ return false; }
-
-    @JsonProperty("showFolders")
-    @Value.Default
-    default boolean showFolders(){ return false; }
+    @Nullable
+    @JsonProperty("mimeTypes")
+    List<String> mimeTypes();
 
     @Nullable
-    @JsonProperty("filter")
-    String filter();
-
-    @JsonProperty("showArchived")
-    @Value.Default
-    default boolean showArchived(){ return false; }
-
-    @JsonProperty("showPages")
-    @Value.Default
-    default boolean showPages(){ return false; }
-
-    @JsonProperty("showDotAssets")
-    @Value.Default
-    default boolean showDotAssets(){ return false; }
-
-    @JsonProperty("showLinks")
-    @Value.Default
-    default boolean showLinks(){ return false; }
+    @JsonProperty("filters")
+    QueryFilters filters();
 
     @JsonProperty("offset")
     @Value.Default
@@ -82,8 +54,7 @@ public interface AbstractDriveRequestForm {
     @Value.Default
     default boolean live() { return false; }
 
-    @JsonProperty("working")
+    @JsonProperty("archived")
     @Value.Default
-    default boolean showWorking(){ return false; }
-
+    default boolean archived() { return false; }
 }
