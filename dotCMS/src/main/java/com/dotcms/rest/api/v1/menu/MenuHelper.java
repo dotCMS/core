@@ -81,7 +81,6 @@ public class MenuHelper implements Serializable {
     }
 
 
-
     /**
      * Determines if the portlet is an Angular-based portlet by checking if it implements PortletController
      *

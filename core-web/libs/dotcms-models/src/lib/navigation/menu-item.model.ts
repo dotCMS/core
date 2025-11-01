@@ -6,4 +6,5 @@ export interface DotMenuItem {
     label: string;
     url: string;
     menuLink: string;
+    labelParent?: string;
 }

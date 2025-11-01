@@ -52,7 +52,7 @@ public class Portlet extends PortletModel {
     this.initParams = initParams;
     this.portletClass = portletClass;
     this.portletSource=initParams.getOrDefault("portletSource", "xml");
-    portletUrl = null;
+    this.portletUrl = null;
   }
 
   public Portlet(String portletId, String groupId, String portletClass, Map<String, String> initParams) {
@@ -61,7 +61,16 @@ public class Portlet extends PortletModel {
     this.initParams = initParams;
     this.portletClass = portletClass;
     this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = null;
+  }
 
+  public Portlet(String portletId, String portletClass, Map<String, String> initParams, String portletUrl) {
+    super(portletId, "", "dotcms.org", null, false, null, true);
+    this.portletId = portletId;
+    this.initParams = initParams;
+    this.portletClass = portletClass;
+    this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = portletUrl;
   }
 
   public Portlet(String portletId, String portletClass, Map<String, String> initParams, String portletUrl) {
