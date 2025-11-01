@@ -4,6 +4,7 @@ import com.liferay.util.StringPool;
 
 public enum AppKeys {
 
+    ADVANCE_PROVIDER_SETTINGS_KEY("advanceProviderSettings", null),
     API_KEY("apiKey", null),
     API_URL("apiUrl", "https://api.openai.com/v1/chat/completions"),
     API_IMAGE_URL("apiImageUrl", "https://api.openai.com/v1/images/generations"),

@@ -1,6 +1,7 @@
 package com.dotcms.ai.workflow;
 
 import com.dotcms.ai.AiTest;
+import com.dotcms.ai.api.CompletionRequest;
 import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.ai.app.AppConfig;
@@ -157,6 +158,11 @@ public class OpenAIContentPromptActionletTest {
             @Override
             public void rawStream(CompletionsForm promptForm, OutputStream out) {
 
+            }
+
+            @Override
+            public Object raw(CompletionRequest completionRequest) {
+                return null;
             }
         });
     }
