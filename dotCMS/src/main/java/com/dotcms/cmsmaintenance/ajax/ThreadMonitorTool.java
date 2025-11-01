@@ -53,9 +53,11 @@ public class ThreadMonitorTool{
 	  *	Helper method; stringfies the ThreadInfos and returns them as a string array
 	*/
 	public String[] getThreads() {
-		
-		
-		
+		// Validate user has access to the CMS Maintenance Portlet
+		if (!validateUser()) {
+			throw new DotRuntimeException("User does not have access to the CMS Maintenance Portlet");
+		}
+
 		ThreadMXBean mxBean = ManagementFactory.getThreadMXBean(); 
 
 	    StringBuilder sb = new StringBuilder();
