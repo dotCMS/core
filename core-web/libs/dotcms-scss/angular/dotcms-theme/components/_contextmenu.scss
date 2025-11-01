@@ -1,10 +1,11 @@
 @use "variables" as *;
 
 .p-contextmenu {
-    padding: $spacing-1 0;
+    padding: $spacing-0;
     background: $white;
     color: $black;
     border: 0 none;
+    border-radius: $border-radius-md;
     box-shadow:
         0 2px 4px -1px $color-palette-black-op-20,
         0 4px 5px 0 $color-palette-black-op-10,
@@ -102,4 +103,8 @@
 
 .p-contextmenu .p-submenu-icon {
     font-size: $font-size-sm;
+}
+
+.p-contextmenu ul {
+    outline: none;
 }

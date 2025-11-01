@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -544,7 +545,15 @@ public interface ContentTypeAPI {
    * @return return a Map where the keys are the content types' variable name and the values are the number of entries
    * @throws DotDataException
    */
-  Map<String, Long> getEntriesByContentTypes() throws DotDataException;
+  Map<String, Long> getEntriesByContentTypes() throws DotStateException;
+
+  /**
+   * Return the number of entries for each content types in a specific site
+   *
+   * @return return a Map where the keys are the content types' variable name and the values are the number of entries
+   * @throws DotDataException
+   */
+  Map<String, Long> getEntriesByContentTypes(final String siteId) throws DotStateException;
   
   /**
    * Save or update a Content Type. If the Content Type already exist

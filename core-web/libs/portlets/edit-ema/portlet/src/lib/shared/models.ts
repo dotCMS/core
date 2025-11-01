@@ -1,4 +1,4 @@
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCMSUVEAction } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
@@ -272,4 +272,15 @@ export interface ToggleLockOptions {
     isLockedByCurrentUser: boolean;
     showBanner: boolean;
     showOverlay: boolean;
+}
+
+export type DotUVEPaletteListType =
+    | DotCMSBaseTypesContentTypes.CONTENT
+    | DotCMSBaseTypesContentTypes.WIDGET
+    | 'FAVORITES';
+
+export interface DotUVEPaletteListParams {
+    pagePathOrId: string;
+    language: string;
+    type: DotUVEPaletteListType;
 }

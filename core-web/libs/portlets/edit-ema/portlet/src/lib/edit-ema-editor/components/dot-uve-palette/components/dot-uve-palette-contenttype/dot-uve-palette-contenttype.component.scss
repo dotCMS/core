@@ -1,0 +1,129 @@
+@use "sass:math";
+@use "variables" as *;
+
+// Host element - common styles
+:host {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    border: 1px solid $color-palette-border-light;
+    border-radius: $border-radius-md;
+    background: $white;
+    cursor: pointer;
+    transition: all $basic-speed ease-in-out;
+
+    &:hover {
+        border-color: $color-palette-primary;
+        background: $color-palette-primary-100;
+        box-shadow: $shadow-s;
+
+        .drag-handle,
+        .chevron {
+            opacity: 1;
+        }
+    }
+
+    // Child elements
+    .content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+    }
+
+    .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-palette-gray-800;
+
+        .material-icons {
+            font-size: $font-size-xxl;
+        }
+    }
+
+    .name {
+        font-size: $font-size-md;
+        color: $color-palette-bluegray-800;
+        font-weight: $font-weight-semi-bold;
+        line-height: 1.2;
+    }
+
+    .drag-handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-palette-bluegray-300;
+        width: 0.875rem;
+        height: 0.875rem;
+        cursor: grab;
+        opacity: 0;
+        transition: opacity $basic-speed ease-in-out;
+
+        .pi:first-child {
+            margin-right: -$spacing-1;
+        }
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    .chevron {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-palette-gray-300;
+        width: 0.875rem;
+        height: 0.875rem;
+        opacity: 0;
+        transition: opacity $basic-speed ease-in-out;
+        .pi {
+            color: $color-palette-bluegray-300;
+        }
+    }
+}
+
+// Grid view (default)
+:host {
+    height: 6.875rem;
+    padding: 0 $spacing-1;
+    justify-content: center;
+
+    .content {
+        flex-direction: column;
+        gap: $spacing-1;
+    }
+
+    .icon {
+        width: 2.375rem;
+        height: 2.375rem;
+    }
+
+    .name {
+        text-align: center;
+    }
+}
+
+// List view override
+:host(.list-view) {
+    height: 4rem;
+    gap: $spacing-1;
+    justify-content: space-between;
+
+    .content {
+        flex-direction: row;
+        gap: $spacing-1;
+    }
+
+    .icon {
+        width: auto;
+        height: auto;
+        flex-shrink: 0;
+    }
+
+    .name {
+        flex: 1;
+        text-align: left;
+    }
+}
