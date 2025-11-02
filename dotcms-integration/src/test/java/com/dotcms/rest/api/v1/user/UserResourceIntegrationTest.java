@@ -194,13 +194,13 @@ public class UserResourceIntegrationTest {
         assertNotNull(responseEntity);
         assertNotNull(responseEntity.getEntity());
         
-        Map<String, Object> responseData = (Map<String, Object>) responseEntity.getEntity();
-        List<Map<String, Object>> permissions = (List<Map<String, Object>>) responseData.get("assets");
-        
+        UserPermissions responseData = responseEntity.getEntity();
+        List<UserPermissionAsset> permissions = responseData.getAssets();
+
         // Validate structure
         assertNotNull(permissions);
         assertTrue(permissions.size() >= 3); // At least host + 2 folders
-        
+
         // Validate specific assets
         validateHostPermissions(permissions);
         validateFolderPermissions(permissions);
@@ -227,9 +227,9 @@ public class UserResourceIntegrationTest {
         assertNotNull(responseEntity);
         assertNotNull(responseEntity.getEntity());
         
-        Map<String, Object> responseData = (Map<String, Object>) responseEntity.getEntity();
-        List<Map<String, Object>> permissions = (List<Map<String, Object>>) responseData.get("assets");
-        
+        UserPermissions responseData = responseEntity.getEntity();
+        List<UserPermissionAsset> permissions = responseData.getAssets();
+
         assertNotNull(permissions);
         assertTrue("Should have permissions", !permissions.isEmpty());
     }
@@ -270,30 +270,30 @@ public class UserResourceIntegrationTest {
         assertNotNull(responseEntity);
         assertNotNull(responseEntity.getEntity());
         
-        Map<String, Object> responseData = (Map<String, Object>) responseEntity.getEntity();
-        List<Map<String, Object>> permissions = (List<Map<String, Object>>) responseData.get("assets");
-        
+        UserPermissions responseData = responseEntity.getEntity();
+        List<UserPermissionAsset> permissions = responseData.getAssets();
+
         boolean hasSystemHost = permissions.stream()
-            .anyMatch(p -> "HOST".equals(p.get("type")) && 
-                          "System Host".equals(p.get("name")));
-        
+            .anyMatch(p -> "HOST".equals(p.getType()) &&
+                          "System Host".equals(p.getName()));
+
         assertTrue("System host must be included", hasSystemHost);
     }
 
     // Helper validation methods
-    private void validateHostPermissions(List<Map<String, Object>> permissions) {
-        Map<String, Object> hostPerm = permissions.stream()
-            .filter(p -> "HOST".equals(p.get("type")) && 
-                        permissionTestHost.getIdentifier().equals(p.get("id")))
+    private void validateHostPermissions(List<UserPermissionAsset> permissions) {
+        UserPermissionAsset hostPerm = permissions.stream()
+            .filter(p -> "HOST".equals(p.getType()) &&
+                        permissionTestHost.getIdentifier().equals(p.getId()))
             .findFirst()
             .orElse(null);
-        
+
         assertNotNull("Should have test host permissions", hostPerm);
-        assertEquals(permissionTestHost.getHostname(), hostPerm.get("name"));
-        
-        Map<String, List<String>> perms = (Map<String, List<String>>) hostPerm.get("permissions");
+        assertEquals(permissionTestHost.getHostname(), hostPerm.getName());
+
+        Map<String, List<String>> perms = hostPerm.getPermissions();
         assertNotNull(perms);
-        
+
         List<String> individualPerms = perms.get("INDIVIDUAL");
         assertNotNull(individualPerms);
         assertTrue(individualPerms.contains("READ"));
@@ -301,30 +301,30 @@ public class UserResourceIntegrationTest {
         assertTrue(individualPerms.contains("PUBLISH"));
     }
 
-    private void validateFolderPermissions(List<Map<String, Object>> permissions) {
+    private void validateFolderPermissions(List<UserPermissionAsset> permissions) {
         // Validate folder1 permissions
-        Map<String, Object> folder1Perm = permissions.stream()
-            .filter(p -> "FOLDER".equals(p.get("type")) && 
-                        permissionTestFolder1.getInode().equals(p.get("id")))
+        UserPermissionAsset folder1Perm = permissions.stream()
+            .filter(p -> "FOLDER".equals(p.getType()) &&
+                        permissionTestFolder1.getInode().equals(p.getId()))
             .findFirst()
             .orElse(null);
-        
+
         assertNotNull("Should have folder1 permissions", folder1Perm);
-        Map<String, List<String>> perms1 = (Map<String, List<String>>) folder1Perm.get("permissions");
+        Map<String, List<String>> perms1 = folder1Perm.getPermissions();
         List<String> individualPerms1 = perms1.get("INDIVIDUAL");
         assertTrue(individualPerms1.contains("READ"));
         assertTrue(individualPerms1.contains("WRITE"));
         assertTrue(individualPerms1.contains("CAN_ADD_CHILDREN"));
-        
+
         // Validate folder2 permissions
-        Map<String, Object> folder2Perm = permissions.stream()
-            .filter(p -> "FOLDER".equals(p.get("type")) && 
-                        permissionTestFolder2.getInode().equals(p.get("id")))
+        UserPermissionAsset folder2Perm = permissions.stream()
+            .filter(p -> "FOLDER".equals(p.getType()) &&
+                        permissionTestFolder2.getInode().equals(p.getId()))
             .findFirst()
             .orElse(null);
-        
+
         assertNotNull("Should have folder2 permissions", folder2Perm);
-        Map<String, List<String>> perms2 = (Map<String, List<String>>) folder2Perm.get("permissions");
+        Map<String, List<String>> perms2 = folder2Perm.getPermissions();
         List<String> individualPerms2 = perms2.get("INDIVIDUAL");
         assertTrue(individualPerms2.contains("READ"));
         assertFalse(individualPerms2.contains("WRITE"));
