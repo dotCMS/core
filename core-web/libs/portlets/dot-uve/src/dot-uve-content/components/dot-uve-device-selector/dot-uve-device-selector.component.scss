@@ -1,0 +1,39 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    padding: $spacing-1 0;
+    align-items: center;
+    gap: $spacing-1;
+    align-self: stretch;
+
+    &::ng-deep {
+        .p-button.active-device {
+            background-color: $color-palette-primary-op-20;
+        }
+
+        .p-button {
+            max-width: 7.75rem; // To avoid overflow on the more button
+            use {
+                color: $color-palette-primary;
+            }
+
+            svg {
+                transform: rotate(0deg);
+                transition: all 0.3s ease-in-out;
+
+                &.landscape {
+                    transform: rotate(90deg);
+                }
+            }
+        }
+    }
+}
+
+.menu-item {
+    padding: $spacing-2;
+}
+
+.menu-item.active {
+    background-color: $color-palette-primary-op-20;
+}

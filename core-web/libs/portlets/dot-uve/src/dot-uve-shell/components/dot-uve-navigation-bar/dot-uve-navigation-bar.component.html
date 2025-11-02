@@ -1,0 +1,13 @@
+<nav class="edit-ema-nav-bar">
+    @for (item of items; track $index) {
+        <div style="height: 5rem" class="flex align-items-center justify-content-center w-full">
+            <p-button
+                class="nav-bar-item"
+                styleClass="p-button-text"
+                [ngClass]="{ 'nav-bar-item-active': item.active }"
+                [icon]="item.icon"
+                [iconPos]="'top'"
+                [label]="item.label | dm" />
+        </div>
+    }
+</nav>

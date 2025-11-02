@@ -1,0 +1,28 @@
+@use "variables" as *;
+
+:host {
+    ::ng-deep {
+        .more-menu {
+            padding: $spacing-1;
+        }
+    }
+}
+
+.menu-item {
+    padding: $spacing-2;
+}
+
+.menu-item.active,
+.menu-item.active:hover {
+    background-color: $color-palette-primary-op-20;
+}
+
+.menu-item__label {
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+}
+
+.menu-item__description {
+    font-size: $font-size-md;
+    color: $color-palette-gray-700;
+}
