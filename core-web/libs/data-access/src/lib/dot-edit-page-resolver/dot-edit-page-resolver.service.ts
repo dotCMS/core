@@ -4,11 +4,10 @@ import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
-import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import { HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 import { DotPageStateService } from '../dot-page-state/dot-page-state.service';
@@ -28,7 +27,6 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
     private dotRouterService = inject(DotRouterService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private siteService = inject(SiteService);
-    readonly #globalStore = inject(GlobalStore);
     private dotSessionStorageService: DotSessionStorageService = inject(DotSessionStorageService);
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState | null> {
@@ -43,14 +41,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
 
         return forkJoin([this.setSite(hostId), data$])
             .pipe(map(([_, pageRender]) => pageRender))
-            .pipe(
-                tap((pageRender) => {
-                    this.#globalStore.addNewBreadcrumb({
-                        label: pageRender?.page.title,
-                        disabled: true
-                    });
-                })
-            );
+
     }
 
     private checkUserCanGoToLayout(
