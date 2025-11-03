@@ -257,7 +257,7 @@ import com.dotmarketing.startup.runonce.Task250603UpdateIdentifierParentPathChec
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodes;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTable;
 import com.dotmarketing.startup.runonce.Task250828CreateCustomAttributeTable;
-import com.dotmarketing.startup.runonce.Task250910AddAnalyticsDashboardPortletToMenu;
+import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTree;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -589,6 +589,7 @@ public class TaskLocatorUtil {
         .add(Task250604UpdateFolderInodes.class)
         .add(Task250826AddIndexesToUniqueFieldsTable.class)
         .add(Task250828CreateCustomAttributeTable.class)
+        .add(Task251103AddStylePropertiesColumnInMultiTree.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
