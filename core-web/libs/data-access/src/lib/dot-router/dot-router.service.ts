@@ -10,7 +10,6 @@ import {
     Router
 } from '@angular/router';
 
-
 import { filter } from 'rxjs/operators';
 
 import { LOGOUT_URL } from '@dotcms/dotcms-js';

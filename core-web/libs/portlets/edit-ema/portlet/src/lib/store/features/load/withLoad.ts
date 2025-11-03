@@ -184,9 +184,10 @@ export function withLoad() {
                                             });
                                         }),
 
+                                        // Add breadcrumb after the state is updated
                                         tap(() => {
                                             globalStore.addNewBreadcrumb({
-                                                label: pageAsset?.page.title,
+                                                label: pageAsset?.page.title
                                             });
                                         })
                                     );

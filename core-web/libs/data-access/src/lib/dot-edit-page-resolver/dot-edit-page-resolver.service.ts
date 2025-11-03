@@ -39,9 +39,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
         // If we have data, we don't need to request the page again
         const data$ = data ? of(data) : this.getPageRenderState(renderOptions, isLayout);
 
-        return forkJoin([this.setSite(hostId), data$])
-            .pipe(map(([_, pageRender]) => pageRender))
-
+        return forkJoin([this.setSite(hostId), data$]).pipe(map(([_, pageRender]) => pageRender));
     }
 
     private checkUserCanGoToLayout(
