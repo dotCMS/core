@@ -14,12 +14,12 @@
                 <img
                     src="./assets/edit-uve-toolbar/left_panel_open.svg"
                     alt="Left Panel Open"
-                    [class.hidden]="!$paletteOpen()"
+                    [class.hidden]="!$isPaletteOpen()"
                     data-testId="palette-open-icon" />
                 <img
                     src="./assets/edit-uve-toolbar/left_panel_close.svg"
                     alt="Left Panel Close"
-                    [class.hidden]="$paletteOpen()"
+                    [class.hidden]="$isPaletteOpen()"
                     data-testId="palette-close-icon" />
             </button>
         }

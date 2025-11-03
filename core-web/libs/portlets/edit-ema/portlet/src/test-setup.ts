@@ -1,9 +1,14 @@
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
+import { setupResizeObserverMock } from '@dotcms/utils-testing';
+
 setupZoneTestEnv({
     errorOnUnknownElements: true,
     errorOnUnknownProperties: true
 });
+
+// Setup global mocks
+setupResizeObserverMock();
 
 // Workaround for the following issue:
 // https://github.com/jsdom/jsdom/issues/2177#issuecomment-1724971596
@@ -19,11 +24,3 @@ console.error = (...params) => {
 console.warn = () => {
     // do nothing so it doesn't print warnings that are not relevant to the tests
 };
-
-// Mock ResizeObserver for PrimeNG TabView component
-// PrimeNG TabView uses ResizeObserver which is not available in JSDOM
-global.ResizeObserver = jest.fn().mockImplementation(() => ({
-    observe: jest.fn(),
-    unobserve: jest.fn(),
-    disconnect: jest.fn()
-}));

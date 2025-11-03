@@ -1,8 +1,8 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     CUSTOM_ELEMENTS_SCHEMA,
-    HostBinding,
     input
 } from '@angular/core';
 
@@ -17,15 +17,16 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[attr.data-type]': '"contentlet"',
-        '[attr.draggable]': 'true'
+        '[attr.draggable]': 'true',
+        '[attr.data-item]': '$dataItem()'
     }
 })
 export class DotUvePaletteContentletComponent {
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
-    @HostBinding('attr.data-item')
-    get dataItem() {
+    readonly $dataItem = computed(() => {
         const contentlet = this.$contentlet();
+
         return JSON.stringify({
             contentlet: {
                 identifier: contentlet.identifier,
@@ -36,5 +37,5 @@ export class DotUvePaletteContentletComponent {
             },
             move: false
         });
-    }
+    });
 }

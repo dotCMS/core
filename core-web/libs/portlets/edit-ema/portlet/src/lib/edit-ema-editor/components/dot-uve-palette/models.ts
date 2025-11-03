@@ -1,4 +1,3 @@
-import { DotContentTypeQueryParams, DotPageContentTypeQueryParams } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -51,12 +50,6 @@ export enum DotPaletteListStatus {
  * - list: Compact list layout
  */
 export type DotPaletteViewMode = 'grid' | 'list';
-
-/** @deprecated Use DotContentTypeQueryParams instead */
-export type DotContentTypeParams = DotContentTypeQueryParams;
-
-/** @deprecated Use DotPageContentTypeQueryParams instead */
-export type DotPageContentTypeParams = DotPageContentTypeQueryParams;
 
 /**
  * Parameters for Elasticsearch content queries.

@@ -1,7 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
-    HostBinding,
+    computed,
     HostListener,
     input,
     output
@@ -17,23 +17,22 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[attr.data-type]': '"content-type"',
-        '[attr.draggable]': 'true'
+        '[attr.draggable]': 'true',
+        '[class.list-view]': '$isListView()',
+        '[attr.data-item]': '$dataItem()'
     }
 })
 export class DotUVEPaletteContenttypeComponent {
     $view = input<'grid' | 'list'>('grid', { alias: 'view' });
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
+
     readonly onSelectContentType = output<string>();
     readonly contextMenu = output<MouseEvent>();
 
-    @HostBinding('class.list-view')
-    get isListView() {
-        return this.$view() === 'list';
-    }
-
-    @HostBinding('attr.data-item')
-    get dataItem() {
+    readonly $isListView = computed(() => this.$view() === 'list');
+    readonly $dataItem = computed(() => {
         const contentType = this.$contentType();
+
         return JSON.stringify({
             contentType: {
                 variable: contentType.variable,
@@ -42,7 +41,7 @@ export class DotUVEPaletteContenttypeComponent {
             },
             move: false
         });
-    }
+    });
 
     @HostListener('contextmenu', ['$event'])
     protected onContextMenu(event: MouseEvent) {
