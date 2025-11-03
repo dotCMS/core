@@ -8634,6 +8634,7 @@ paths:
       - Folders
   /v1/folder/{siteName}:
     delete:
+      description: Delete one or more path for a site if they exist
       operationId: deleteFolders
       parameters:
       - in: path
@@ -8649,11 +8650,25 @@ paths:
               items:
                 type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example:
+                entity:
+                - /folder-1/folder-2/target-folder
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Folders deleted successfully
+        "401":
+          description: Unauthorized access
+        "403":
+          description: Insufficient permissions to delete folders
+        "404":
+          description: Folders not found
+      summary: Delete one or more path for a site
       tags:
       - Folders
   /v1/forgotpassword:
