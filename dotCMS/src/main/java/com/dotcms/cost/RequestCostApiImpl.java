@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
@@ -31,8 +31,8 @@ import javax.servlet.http.HttpServletResponse;
 public class RequestCostApiImpl implements RequestCostApi {
 
 
-    private final AtomicLong requestCountForWindow = new AtomicLong(0);
-    private final AtomicLong requestCostForWindow = new AtomicLong(0);
+    private final LongAdder requestCountForWindow = new LongAdder();
+    private final LongAdder requestCostForWindow = new LongAdder();
     private final Optional<Boolean> enableForTests;
     //log an accounting every X seconds
     private int requestCostTimeWindowSeconds;
@@ -107,7 +107,7 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     @Override
     public Tuple2<Long, Long> totalLoadGetAndReset() {
-        return new Tuple2<>(this.requestCountForWindow.getAndSet(0), this.requestCostForWindow.getAndSet(0));
+        return new Tuple2<>(this.requestCountForWindow.sumThenReset(), this.requestCostForWindow.sumThenReset());
     }
 
 
@@ -212,7 +212,7 @@ public class RequestCostApiImpl implements RequestCostApi {
             getAccountList(request).add(load);
         }
         request.setAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE, getRequestCost(request) + price.price);
-        requestCostForWindow.accumulateAndGet(price.price, Math::addExact);
+        requestCostForWindow.add(price.price);
     }
 
     private Map<String, Object> createAccountingEntry(Price price, Class clazz, String method,
@@ -245,7 +245,7 @@ public class RequestCostApiImpl implements RequestCostApi {
         }
 
         // Increment request counter for monitoring window
-        this.requestCountForWindow.incrementAndGet();
+        this.requestCountForWindow.increment();
 
         Accounting accounting = resolveAccounting(request);
         Logger.debug(this.getClass(), "<Starting request cost accounting---");

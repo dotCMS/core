@@ -50,7 +50,7 @@ public class RequestPrices {
         ES_COUNT(3);
 
 
-        final int price;
+        final public int price;
 
         Price(int price) {
             this.price = price;
