@@ -158,14 +158,34 @@ public class ContentDriveHelper {
         return browserAPI.getPaginatedContents(builder.build());
     }
 
+    /**
+     * if base types include FILEASSET then we pass the respective parameter as true
+     * @param baseTypes base types
+     * @return true if FILE_ASSET is present in the list
+     */
     static boolean isShowFile(final Set<BaseContentType> baseTypes) {
        return baseTypes.contains(BaseContentType.FILEASSET);
     }
 
+    /**
+     * if base types include DOTASSET then we pass the respective parameter as true
+     * @param baseTypes
+     * @return true if DOT_ASSET is present in the list
+     */
     static boolean isShowDotAsset(final Set<BaseContentType> baseTypes) {
        return baseTypes.contains(BaseContentType.DOTASSET);
     }
 
+    /**
+     * Processes a field string with an optional ":asc" or ":desc" suffix and returns the field name
+     * without the sorting directive. If no valid suffix is present, the original string is returned.
+     * If the input is null or empty, a default sort field is returned.
+     *
+     * @param fieldWithOrder a string representing a field name with an optional ":asc" or ":desc"
+     *                       suffix indicating sorting order. Can be null or empty.
+     * @return the field name without the sorting suffix, or the default sort field if the input
+     *         is null or empty.
+     */
     static String sortBy(final String fieldWithOrder) {
         if (fieldWithOrder == null || fieldWithOrder.trim().isEmpty()) {
             return AbstractDriveRequestForm.SORT_BY;
@@ -190,6 +210,15 @@ public class ContentDriveHelper {
         return trimmed;
     }
 
+    /**
+     * Determines whether the provided sort key specifies descending order.
+     * The function checks if the input string ends with "desc" (case-insensitive)
+     * after trimming leading and trailing whitespace.
+     *
+     * @param sortBy the input sort key as a string. Typically, includes the field name
+     *               followed by an optional ":asc" or ":desc" suffix.
+     * @return true if the sort key specifies descending order ("desc"), false otherwise.
+     */
     static boolean sortDesc(final String sortBy) {
         return sortBy.trim().toLowerCase().endsWith("desc");
     }
