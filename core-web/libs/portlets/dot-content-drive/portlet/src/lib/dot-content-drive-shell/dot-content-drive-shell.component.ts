@@ -75,7 +75,13 @@ import { encodeFilters } from '../utils/functions';
         DotContentDriveDropzoneComponent,
         DotSeverityIconComponent
     ],
-    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
+    providers: [
+        DotContentDriveStore,
+        DotWorkflowsActionsService,
+        MessageService,
+        DotFolderService,
+        DotUploadFileService
+    ],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
