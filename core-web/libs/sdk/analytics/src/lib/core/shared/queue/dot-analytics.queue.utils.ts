@@ -21,10 +21,11 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
      * Whether to use keepalive mode for sending events
      * true for page unload (visibilitychange, pagehide), false for normal sends
      */
-    let useKeepalive = false;
+    let keepalive = false;
 
     // Merge user config with defaults (allows partial configuration)
-    const queueConfig: QueueConfig = {
+    // After merge, queueConfig always has all required values
+    const queueConfig: Required<QueueConfig> = {
         ...DEFAULT_QUEUE_CONFIG,
         ...(typeof config.queue === 'object' ? config.queue : {})
     };
@@ -40,12 +41,12 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             // eslint-disable-next-line no-console
             console.log(`DotCMS Analytics Queue: Sending batch of ${events.length} event(s)`, {
                 events,
-                keepalive: useKeepalive
+                keepalive
             });
         }
 
         const payload = { context: currentContext, events };
-        sendAnalyticsEvent(payload, config, useKeepalive);
+        sendAnalyticsEvent(payload, config, keepalive);
     };
 
     /**
@@ -62,7 +63,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
         }
 
         // Use keepalive mode for reliable delivery during page unload
-        useKeepalive = true;
+        keepalive = true;
 
         // Flush all events - flush(true) makes smartQueue recursively batch until empty
         eventQueue.flush(true);
@@ -116,7 +117,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             if (config.debug) {
                 // Calculate predicted size before push to show correct order in logs
                 const predictedSize = eventQueue.size() + 1;
-                const maxSize = queueConfig.eventBatchSize ?? DEFAULT_QUEUE_CONFIG.eventBatchSize;
+                const maxSize = queueConfig.eventBatchSize;
                 const willBeFull = predictedSize >= maxSize;
                 // eslint-disable-next-line no-console
                 console.log(
@@ -150,7 +151,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
 
             eventQueue = null;
             currentContext = null;
-            useKeepalive = false;
+            keepalive = false;
         }
     };
 };

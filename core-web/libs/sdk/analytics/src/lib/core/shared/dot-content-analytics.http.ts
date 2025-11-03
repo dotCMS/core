@@ -5,7 +5,7 @@ import { DotCMSAnalyticsConfig, DotCMSEvent, DotCMSRequestBody } from './models'
  * Send analytics events to the server using fetch API
  * @param payload - The event payload data
  * @param config - The analytics configuration
- * @param keepalive - Use keepalive mode for page unload scenarios (visibilitychange, pagehide)
+ * @param keepalive - Use keepalive mode for page unload scenarios (default: false)
  * @returns A promise that resolves when the request is complete
  */
 export const sendAnalyticsEvent = async (
@@ -24,12 +24,19 @@ export const sendAnalyticsEvent = async (
     }
 
     try {
-        const response = await fetch(endpoint, {
+        const fetchOptions: RequestInit = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body,
-            keepalive
-        });
+            body
+        };
+
+        // Only add keepalive-specific options when keepalive is true
+        if (keepalive) {
+            fetchOptions.keepalive = true;
+            fetchOptions.credentials = 'omit'; // Required for keepalive requests
+        }
+
+        const response = await fetch(endpoint, fetchOptions);
 
         if (!response.ok) {
             // Always log the HTTP status code
