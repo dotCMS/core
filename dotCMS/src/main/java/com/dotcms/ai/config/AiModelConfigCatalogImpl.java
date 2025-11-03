@@ -131,13 +131,7 @@ public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
     @Override
     public List<String> getVendorNames() {
 
-        final ImmutableList.Builder<String> vendorNamesBuilder = ImmutableList.builder();
-
-        for (final String vendorName : this.vendors.keySet()) {
-            vendorNamesBuilder.add(vendorName);
-        }
-
-        return vendorNamesBuilder.build();
+        return List.copyOf(this.vendors.keySet());
     }
 
     /**
