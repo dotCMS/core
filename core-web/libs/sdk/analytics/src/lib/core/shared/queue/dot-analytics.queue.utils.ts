@@ -1,7 +1,7 @@
 import smartQueue, { type Queue } from '@analytics/queue-utils';
 
 import { DEFAULT_QUEUE_CONFIG } from '../constants';
-import { sendAnalyticsEvent, type TransportType } from '../dot-content-analytics.http';
+import { sendAnalyticsEvent } from '../dot-content-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsEventContext,
@@ -18,20 +18,21 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
     let currentContext: DotCMSAnalyticsEventContext | null = null;
 
     /**
-     * Transport type to use for sending events
-     * 'beacon' for page unload (reliable), 'fetch' for normal sends
+     * Whether to use keepalive mode for sending events
+     * true for page unload (visibilitychange, pagehide), false for normal sends
      */
-    let transportType: TransportType = 'fetch';
+    let keepalive = false;
 
     // Merge user config with defaults (allows partial configuration)
-    const queueConfig: QueueConfig = {
+    // After merge, queueConfig always has all required values
+    const queueConfig: Required<QueueConfig> = {
         ...DEFAULT_QUEUE_CONFIG,
         ...(typeof config.queue === 'object' ? config.queue : {})
     };
 
     /**
      * Send batch of events to server
-     * Called by smartQueue - uses appropriate transport based on context
+     * Called by smartQueue - uses keepalive mode when flushing on page unload
      */
     const sendBatch = (events: DotCMSEvent[]): void => {
         if (!currentContext) return;
@@ -40,17 +41,17 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             // eslint-disable-next-line no-console
             console.log(`DotCMS Analytics Queue: Sending batch of ${events.length} event(s)`, {
                 events,
-                transport: transportType
+                keepalive
             });
         }
 
         const payload = { context: currentContext, events };
-        sendAnalyticsEvent(payload, config, transportType);
+        sendAnalyticsEvent(payload, config, keepalive);
     };
 
     /**
      * Flush remaining events when page becomes hidden or unloads
-     * Sets transport to 'beacon' and triggers smartQueue to flush ALL events
+     * Enables keepalive mode and triggers smartQueue to flush ALL events
      */
     const flushRemaining = (): void => {
         if (!eventQueue || eventQueue.size() === 0 || !currentContext) return;
@@ -61,8 +62,8 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             );
         }
 
-        // Use beacon transport for reliable delivery during page unload
-        transportType = 'beacon';
+        // Use keepalive mode for reliable delivery during page unload
+        keepalive = true;
 
         // Flush all events - flush(true) makes smartQueue recursively batch until empty
         eventQueue.flush(true);
@@ -116,7 +117,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             if (config.debug) {
                 // Calculate predicted size before push to show correct order in logs
                 const predictedSize = eventQueue.size() + 1;
-                const maxSize = queueConfig.eventBatchSize ?? DEFAULT_QUEUE_CONFIG.eventBatchSize;
+                const maxSize = queueConfig.eventBatchSize;
                 const willBeFull = predictedSize >= maxSize;
                 // eslint-disable-next-line no-console
                 console.log(
@@ -150,7 +151,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
 
             eventQueue = null;
             currentContext = null;
-            transportType = 'fetch';
+            keepalive = false;
         }
     };
 };
