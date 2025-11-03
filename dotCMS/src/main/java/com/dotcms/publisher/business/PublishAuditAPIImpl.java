@@ -225,29 +225,23 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	@CloseDBIfOpened
 	public List<PublishAuditStatus> getPublishAuditStatuses(List<String> bundleIds)
             throws DotPublisherException {
-		if (bundleIds == null || bundleIds.isEmpty()) {
-			return Collections.emptyList();
-		}
 		try {
 			final List<PublishAuditStatus> result = new ArrayList<>();
 
-			final DotConnect dc = new DotConnect();
-			final String placeholders = bundleIds.stream()
-					.map(id -> "?")
-					.collect(Collectors.joining(","));
+			DotConnect dc = new DotConnect();
+			final List<String> parameter = bundleIds.stream().map(id -> "'" + id + "'").collect(Collectors.toList());
 
-			dc.setSQL(String.format(SELECT_ALL_BY_BUNDLES_IDS, placeholders));
-			bundleIds.forEach(dc::addParam);
-			final List<Map<String, Object>> items = dc.loadObjectResults();
+			dc.setSQL(String.format(SELECT_ALL_BY_BUNDLES_IDS,  String.join(",", parameter)));
+			List<Map<String, Object>> items = dc.loadObjectResults();
 
-			for (final Map<String, Object> item : items) {
-				result.add(turnIntoPublishAuditStatus(NO_LIMIT_ASSETS, item));
+			for(Map<String, Object> item: items) {
+				result.add(turnIntoPublishAuditStatus(NO_LIMIT_ASSETS,  item));
 			}
 
 			return result;
-		} catch (Exception e) {
-			Logger.error(PublishAuditAPIImpl.class, e.getMessage(), e);
-			throw new DotPublisherException("Unable to get list of elements with error:" + e.getMessage(), e);
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 
 	}

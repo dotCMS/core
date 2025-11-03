@@ -654,7 +654,6 @@ public class PublisherQueueJob implements StatefulJob {
 
 		final String responseBody = webTarget
 				.request(MediaType.APPLICATION_JSON)
-				.header("Authorization", AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(targetEndpoint).orElse(""))
 				.post(Entity.entity(bundleIds, MediaType.APPLICATION_JSON))
 				.readEntity(String.class);
 
