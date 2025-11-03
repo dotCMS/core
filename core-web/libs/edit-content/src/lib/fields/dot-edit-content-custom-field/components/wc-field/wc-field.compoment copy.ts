@@ -1,12 +1,27 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, input, AfterViewInit, viewChild, forwardRef, computed } from "@angular/core";
-import { ControlContainer, ControlValueAccessor, FormGroup, NG_VALUE_ACCESSOR, ReactiveFormsModule } from "@angular/forms";
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    inject,
+    input,
+    AfterViewInit,
+    viewChild,
+    forwardRef,
+    computed
+} from '@angular/core';
+import {
+    ControlContainer,
+    ControlValueAccessor,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule
+} from '@angular/forms';
 
-import { ButtonModule } from "primeng/button";
-import { DialogModule } from "primeng/dialog";
-import { InputTextModule } from "primeng/inputtext";
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from "@dotcms/dotcms-models";
-import { DotIconModule } from "@dotcms/ui";
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
 
 /**
  * Interface for the dot-template-selector web component attributes
@@ -23,31 +38,25 @@ type DotWcEvent = {
 };
 
 @Component({
-    selector: 'dot-edit-content-wc',
+    selector: 'dot-wc-field',
     template: '<div #container></div>',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
-        },
+        }
     ],
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentWcCompoment),
+            useExisting: forwardRef(() => DotWCCompoment),
             multi: true
         }
     ],
-    imports: [
-        DotIconModule,
-        ButtonModule,
-        InputTextModule,
-        DialogModule,
-        ReactiveFormsModule
-    ],
+    imports: [DotIconModule, ButtonModule, InputTextModule, DialogModule, ReactiveFormsModule]
 })
-export class DotEditContentWcCompoment implements ControlValueAccessor, AfterViewInit {
+export class DotWCCompoment implements ControlValueAccessor, AfterViewInit {
     /**
      * The field to render.
      */
@@ -93,7 +102,6 @@ export class DotEditContentWcCompoment implements ControlValueAccessor, AfterVie
             this.#webComponentInstance = document.createElement(componentTag) as DotWCElement;
 
             this.#webComponentInstance.addEventListener('dotChangeValue', (event: CustomEvent) => {
-                console.log(event);
                 if (this.onChange) {
                     this.onChange(event.detail.value);
                     this.onTouched();
@@ -101,13 +109,11 @@ export class DotEditContentWcCompoment implements ControlValueAccessor, AfterVie
             });
 
             this.#webComponentInstance.addEventListener('dotChangeValues', (event: CustomEvent) => {
-                console.log(event);
                 this.#controlContainer.control.patchValue(event.detail.value, { emitEvent: false });
             });
             this.#assignFormToComponent();
 
             this.$container().nativeElement.appendChild(this.#webComponentInstance);
-
         } catch (error) {
             console.error(error);
         }
@@ -120,7 +126,6 @@ export class DotEditContentWcCompoment implements ControlValueAccessor, AfterVie
     }
 
     #assignFormToComponent() {
-        console.log((this.#controlContainer as any).form);
         if (!this.#webComponentInstance) return;
         this.#webComponentInstance.context = this.form.value;
         this.#webComponentInstance.form = (this.#controlContainer as any).form;
@@ -159,5 +164,4 @@ export class DotEditContentWcCompoment implements ControlValueAccessor, AfterVie
      * A callback function that is called when the field is touched.
      */
     private onTouched: (() => void) | null = null;
-
 }

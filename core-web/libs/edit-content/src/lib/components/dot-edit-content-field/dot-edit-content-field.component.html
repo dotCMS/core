@@ -114,11 +114,6 @@
     }
     @case (fieldTypes.CUSTOM_FIELD) {
         @defer (on immediate) {
-            <dot-edit-content-wc
-                [formControlName]="field.variable"
-                [field]="field"
-                [contentlet]="contentlet" />
-
             <dot-edit-content-custom-field
                 [field]="field"
                 [contentlet]="contentlet"
