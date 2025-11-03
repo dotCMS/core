@@ -295,7 +295,7 @@ describe('createAnalyticsQueue', () => {
     });
 
     describe('sendBatch', () => {
-        it('should send events via fetch by default', () => {
+        it('should send events with keepalive=false by default', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
@@ -317,7 +317,7 @@ describe('createAnalyticsQueue', () => {
                     events
                 },
                 mockConfig,
-                'fetch' // Default transport
+                false // Default keepalive
             );
         });
 
@@ -348,7 +348,7 @@ describe('createAnalyticsQueue', () => {
             expect(mockConsoleLog).toHaveBeenCalledWith(
                 expect.stringContaining('Sending batch of 2 event(s)'),
                 expect.objectContaining({
-                    transport: 'fetch',
+                    keepalive: false,
                     events: expect.any(Array)
                 })
             );
@@ -387,7 +387,7 @@ describe('createAnalyticsQueue', () => {
             documentSpy.mockRestore();
         });
 
-        it('should use sendBeacon when flushing on page unload', () => {
+        it('should use keepalive=true when flushing on page unload', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
@@ -409,7 +409,7 @@ describe('createAnalyticsQueue', () => {
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
                 expect.any(Object),
                 mockConfig,
-                'beacon' // Should use beacon for page unload
+                true // Should use keepalive for page unload
             );
         });
 
@@ -508,14 +508,14 @@ describe('createAnalyticsQueue', () => {
             expect(() => queue.cleanup()).not.toThrow();
         });
 
-        it('should reset sendBeacon flag', () => {
+        it('should reset keepalive flag', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
             const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
-            // Enqueue and trigger flush (sets useBeaconForSend = true)
+            // Enqueue and trigger flush (sets useKeepalive = true)
             queue.enqueue(mockEvent, mockContext);
             mockQueueSize.mockReturnValue(1);
 
@@ -531,19 +531,19 @@ describe('createAnalyticsQueue', () => {
             queue.initialize();
             queue.enqueue(mockEvent, mockContext);
 
-            // Should use fetch again (not beacon)
+            // Should use keepalive=false again after cleanup
             sendBatchCallback([mockEvent]);
 
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
                 expect.any(Object),
                 mockConfig,
-                'fetch' // Should use fetch after cleanup
+                false // Should use keepalive=false after cleanup
             );
         });
     });
 
     describe('Debug Logging', () => {
-        it('should show method type in sendBatch debug log', () => {
+        it('should show keepalive mode in sendBatch debug log', () => {
             const debugConfig = { ...mockConfig, debug: true };
             const queue = createAnalyticsQueue(debugConfig);
             queue.initialize();
@@ -557,12 +557,12 @@ describe('createAnalyticsQueue', () => {
             expect(mockConsoleLog).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
-                    transport: 'fetch'
+                    keepalive: false
                 })
             );
         });
 
-        it('should show sendBeacon method in debug log during page unload', () => {
+        it('should show keepalive=true in debug log during page unload', () => {
             const debugConfig = { ...mockConfig, debug: true };
             const queue = createAnalyticsQueue(debugConfig);
             queue.initialize();
@@ -590,7 +590,7 @@ describe('createAnalyticsQueue', () => {
             expect(sendBatchCall).toBeDefined();
             expect(sendBatchCall?.[1]).toEqual(
                 expect.objectContaining({
-                    transport: 'beacon'
+                    keepalive: true
                 })
             );
         });
