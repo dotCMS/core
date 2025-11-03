@@ -4,30 +4,39 @@
  */
 
 import { DotCMSAnalyticsEventContext } from './data.model';
-import { DotCMSCustomEvent, DotCMSEvent, DotCMSPageViewEvent } from './event.model';
+import { DotCMSEvent } from './event.model';
 
 /**
  * Analytics request body for DotCMS Analytics.
  * Generic structure sent to the DotCMS analytics server.
+ *
+ * This structure contains properly typed events that match the DotCMS event specifications.
+ * Events can be pageviews, content impressions, or custom events, each with their own data structure.
  */
-export interface DotCMSRequestBody<T extends DotCMSEvent> {
+export interface DotCMSRequestBody {
     /** Context information shared across all events */
     context: DotCMSAnalyticsEventContext;
     /** Array of analytics events to be tracked */
-    events: T[];
+    events: DotCMSEvent[];
 }
 
 /**
- * Specific request body type for PageView events
+ * Main type for analytics request bodies.
+ * Flexible enough to accept any event type (pageview, content_impression, custom, etc.)
  */
-export type DotCMSPageViewRequestBody = DotCMSRequestBody<DotCMSPageViewEvent>;
+export type DotCMSAnalyticsRequestBody = DotCMSRequestBody;
 
 /**
- * Specific request body type for Custom events
+ * Specific request body type for PageView events (for type documentation)
  */
-export type DotCMSCustomEventRequestBody = DotCMSRequestBody<DotCMSCustomEvent>;
+export type DotCMSPageViewRequestBody = DotCMSRequestBody;
 
 /**
- * Union type for all possible request bodies
+ * Specific request body type for ContentImpression events (for type documentation)
  */
-export type DotCMSAnalyticsRequestBody = DotCMSPageViewRequestBody | DotCMSCustomEventRequestBody;
+export type DotCMSContentImpressionRequestBody = DotCMSRequestBody;
+
+/**
+ * Specific request body type for Custom events (for type documentation)
+ */
+export type DotCMSCustomEventRequestBody = DotCMSRequestBody;

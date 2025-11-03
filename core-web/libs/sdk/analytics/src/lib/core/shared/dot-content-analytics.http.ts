@@ -1,5 +1,5 @@
 import { ANALYTICS_ENDPOINT } from './constants';
-import { DotCMSAnalyticsConfig, DotCMSEvent, DotCMSRequestBody } from './models';
+import { DotCMSAnalyticsConfig, DotCMSAnalyticsRequestBody } from './models';
 
 /**
  * Available transport methods for sending analytics events
@@ -19,7 +19,7 @@ export type TransportType = (typeof TRANSPORT_TYPES)[keyof typeof TRANSPORT_TYPE
  * @returns A promise that resolves when the request is complete (fetch only)
  */
 export const sendAnalyticsEvent = async (
-    payload: DotCMSRequestBody<DotCMSEvent>,
+    payload: DotCMSAnalyticsRequestBody,
     config: DotCMSAnalyticsConfig,
     transportType: TransportType = 'fetch'
 ): Promise<void> => {

@@ -7,8 +7,6 @@ import { DotCMSAnalyticsEventContext, DotCMSEventPageData, DotCMSEventUtmData } 
 import { JsonObject } from './event.model';
 import { DotCMSAnalyticsRequestBody } from './request.model';
 
-import { DotCMSCustomEventType } from '../constants';
-
 /**
  * Configuration for event queue management.
  * Controls how events are batched before sending to the server.
@@ -31,6 +29,29 @@ export interface ImpressionConfig {
     dwellMs?: number;
     /** Maximum number of elements to track (performance limit) - default: 1000 */
     maxNodes?: number;
+    /** Throttle time in milliseconds for intersection callbacks - default: 100 */
+    throttleMs?: number;
+    /** Use requestIdleCallback for optimized processing - default: true */
+    useIdleCallback?: boolean;
+}
+
+/**
+ * Interface for contentlet data extracted from DOM elements
+ */
+export interface ContentletData {
+    identifier: string;
+    inode: string;
+    contentType: string;
+    title: string;
+    baseType: string;
+}
+
+/**
+ * Interface for viewport metrics
+ */
+export interface ViewportMetrics {
+    offsetPercentage: number;
+    visibilityRatio: number;
 }
 
 /**
@@ -96,12 +117,12 @@ export interface DotCMSAnalyticsConfig {
 
 /**
  * Track event payload with context.
- * This is the payload for custom track events after the identity plugin adds context.
+ * This is the payload for track events after the identity plugin adds context.
  * Used in the track:dot-analytics enricher plugin.
  */
 export interface AnalyticsTrackPayloadWithContext extends AnalyticsBasePayload {
-    /** The custom event name (any string except 'pageview') */
-    event: DotCMSCustomEventType;
+    /** The event name (can be predefined or custom) */
+    event: string;
     /** Analytics context added by identity plugin */
     context: DotCMSAnalyticsEventContext;
 }
@@ -123,29 +144,16 @@ type AnalyticsBasePayloadType = 'page' | 'track';
  * Analytics.js hook parameter types for DotCMS.
  * Represents the payload structure used by Analytics.js lifecycle hooks
  * for intercepting and modifying analytics events.
+ *
+ * Properties are flexible (Record<string, unknown>) to support both:
+ * - Page events: with page-specific fields (title, url, path, etc.)
+ * - Track events: with any custom event data structure
  */
 export interface AnalyticsBasePayload {
     /** The type of analytics event */
     type: AnalyticsBasePayloadType;
-    /** Properties associated with the event */
-    properties: {
-        /** Page title */
-        title: string;
-        /** Page URL */
-        url: string;
-        /** Page path */
-        path: string;
-        /** URL hash fragment */
-        hash: string;
-        /** URL search parameters */
-        search: string;
-        /** Viewport width */
-        width: number;
-        /** Viewport height */
-        height: number;
-        /** Referrer URL */
-        referrer?: string;
-    };
+    /** Properties associated with the event (flexible structure) */
+    properties: Record<string, unknown>;
     /** Configuration options for the event */
     options: Record<string, unknown>;
     /** User identifier */
