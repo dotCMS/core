@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.drive;
 
 import com.dotcms.browser.BrowserAPI;
+import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -12,8 +13,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.util.Logger;
@@ -25,7 +24,6 @@ import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -69,7 +67,7 @@ public class ContentDriveHelper {
      * @throws DotDataException any data-related exception
      * @throws DotSecurityException any security violation exception
      */
-    public Map<String, Object> driveSearch(final DriveRequestForm requestForm, final User user)
+    public PaginatedContents driveSearch(final DriveRequestForm requestForm, final User user)
             throws DotDataException, DotSecurityException {
 
         final List<Long> langIds = requestForm.language().stream()
@@ -112,28 +110,31 @@ public class ContentDriveHelper {
         if (null != requestForm.mimeTypes()){
             builder.showMimeTypes(requestForm.mimeTypes());
         }
+        final String sortBy = sortBy(requestForm.sortBy());
+        final boolean sortDesc = sortDesc(requestForm.sortBy());
         builder.withUser(user)
-                //These are not always present
-                .withContentTypes(
-                    contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
-                )
-                //However, these are
-                .withExcludedContentTypes(
-                    excludedContentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
-                )
-                .withBaseTypes(new ArrayList<>(types))
-                .showDotAssets(showDotAssets)
-                .showFiles(showFiles)
-                .showImages(showFiles)
-                .showArchived(showArchived)
-                .showWorking(!live)
-                .showFolders(true)
-                .showLinks(false)
-                .showContent(!baseContentTypes.isEmpty())
-                .withLanguageIds(langIds)
-                .offset(requestForm.offset())
-                .maxResults(requestForm.maxResults())
-                .sortBy(requestForm.sortBy());
+        //These are not always present
+        .withContentTypes(
+            contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
+        )
+        //However, these are
+        .withExcludedContentTypes(
+            excludedContentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
+        )
+        .withBaseTypes(new ArrayList<>(types))
+        .showDotAssets(showDotAssets)
+        .showFiles(showFiles)
+        .showImages(showFiles)
+        .showArchived(showArchived)
+        .showWorking(!live)
+        .showFolders(true)
+        .showLinks(false)
+        .showContent(!baseContentTypes.isEmpty())
+        .withLanguageIds(langIds)
+        .offset(requestForm.offset())
+        .maxResults(requestForm.maxResults())
+        .sortBy(sortBy)
+        .sortByDesc(sortDesc);
 
         // Determine if we're requesting from a specific folder or host root
         if (folder.isSystemFolder()) {
@@ -142,7 +143,7 @@ public class ContentDriveHelper {
             builder.withHostOrFolderId(folder.getInode());
         }
         //This ensures that despite the site passed systemHost will be included too
-        builder.withForceSystemHost(true);
+        builder.withForceSystemHost(requestForm.includeSystemHost());
 
         // Enable Elasticsearch filtering for text search when filter is provided
         if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
@@ -154,25 +155,53 @@ public class ContentDriveHelper {
                 "Content drive search - User: %s, Path: %s, Languages: %s, ContentTypes: %s, Filter: %s",
                 user.getUserId(), assetPath, requestForm.language(), requestForm.contentTypes(), requestForm.filters()));
 
-        return browserAPI.getPaginatedFolderContents(builder.build());
+        return browserAPI.getPaginatedContents(builder.build());
     }
 
-    boolean isShowFile(Set<BaseContentType> baseTypes) {
+    static boolean isShowFile(final Set<BaseContentType> baseTypes) {
        return baseTypes.contains(BaseContentType.FILEASSET);
     }
 
-    boolean isShowDotAsset(Set<BaseContentType> baseTypes) {
+    static boolean isShowDotAsset(final Set<BaseContentType> baseTypes) {
        return baseTypes.contains(BaseContentType.DOTASSET);
     }
 
-    Set<ContentType> getExcludedContentTypes() {
+    static String sortBy(final String fieldWithOrder) {
+        if (fieldWithOrder == null || fieldWithOrder.trim().isEmpty()) {
+            return AbstractDriveRequestForm.SORT_BY;
+        }
+
+        final String trimmed = fieldWithOrder.trim();
+        final int lastColonIndex = trimmed.lastIndexOf(':');
+
+        if (lastColonIndex == -1) {
+            // No colon found, return as-is
+            return trimmed;
+        }
+
+        final String suffix = trimmed.substring(lastColonIndex + 1).toLowerCase();
+
+        if ("desc".equals(suffix) || "asc".equals(suffix)) {
+            // Remove the :desc or :asc suffix
+            return trimmed.substring(0, lastColonIndex);
+        }
+
+        // Colon found but not followed by desc/asc, return as-is
+        return trimmed;
+    }
+
+    static boolean sortDesc(final String sortBy) {
+        return sortBy.trim().toLowerCase().endsWith("desc");
+    }
+
+    static Set<ContentType> getExcludedContentTypes() {
         try {
             final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
             final ContentType host = contentTypeAPI.find(Host.HOST_VELOCITY_VAR_NAME);
             final ContentType forms = contentTypeAPI.find(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
             return Set.of(host, forms);
         } catch (DotDataException | DotSecurityException e) {
-            Logger.warn(this, "Unable to retrieve excluded content types: " + e.getMessage(), e);
+            Logger.warn(ContentDriveHelper.class, "Unable to retrieve excluded content types: " + e.getMessage(), e);
             return Set.of(); // Return empty set as fallback
         }
     }

@@ -12,7 +12,6 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -25,12 +24,12 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.comparators.GenericMapFieldComparator;
 import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotFolderTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.transform.DotMapViewTransformer;
@@ -50,14 +49,11 @@ import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -426,7 +422,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     @Override
     @CloseDBIfOpened
-    public Map<String, Object> getPaginatedFolderContents(final BrowserQuery browserQuery)
+    public PaginatedContents getPaginatedContents(final BrowserQuery browserQuery)
             throws DotSecurityException, DotDataException {
 
         final Role[] roles = APILocator.getRoleAPI()
@@ -434,13 +430,11 @@ public class BrowserAPIImpl implements BrowserAPI {
                 .toArray(new Role[0]);
 
         final List<Map<String, Object>> list = new LinkedList<>();
-        final LinkedHashMap<String, Object> returnMap = new LinkedHashMap<>();
 
         int offset = browserQuery.offset;
         int maxResults = browserQuery.maxResults;
 
         int folderCount = 0;
-        int linkCount = 0;
         int contentTotalCount = 0;
         int contentCount = 0;
 
@@ -448,7 +442,6 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.showFolders) {
             final List<Map<String, Object>> folders = getFolders(browserQuery, roles);
             folderCount = folders.size();
-            returnMap.put("folderCount", folderCount);
 
             // Calculate if the offset still falls within folders
             if (offset < folderCount) {
@@ -461,25 +454,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
         }
 
-        // 2. Links
-        if (browserQuery.showLinks && maxResults > 0) {
-            final List<Map<String, Object>> links = includeLinks(browserQuery);
-            linkCount = links.size();
-            returnMap.put("linkCount", linkCount);
-
-            if (offset < linkCount) {
-                int toIndex = Math.min(linkCount, offset + maxResults);
-                list.addAll(links.subList(offset, toIndex));
-                maxResults -= (toIndex - offset);
-                offset = 0;
-            } else {
-                offset -= linkCount;
-            }
-        }
-
-        // 3. Contentlets
+        // 2. Contentlets
         if (browserQuery.showContent && maxResults > 0) {
-            // Now the offset is adjusted (subtracting folders+links already seen)
+            // Now the offset is adjusted (subtracting folders already seen)
             final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, offset, maxResults);
             contentTotalCount = fromDB.totalResults;
             contentCount = fromDB.contentlets.size();
@@ -488,16 +465,30 @@ public class BrowserAPIImpl implements BrowserAPI {
                 final Map<String, Object> contentMap = hydrate(browserQuery, contentlet, roles);
                 list.add(contentMap);
             }
-
-            returnMap.put("contentCount", contentCount);
-            returnMap.put("contentTotalCount", contentTotalCount);
         }
 
         // Final sorting (optional: maybe you only need to sort within each block before slicing)
-        list.sort(new WebAssetMapComparator(browserQuery.sortBy, browserQuery.sortByDesc));
+        list.sort(new GenericMapFieldComparator(browserQuery.sortBy, browserQuery.sortByDesc));
 
-        returnMap.put("list", list);
-        return returnMap;
+        return new PaginatedContents(list, folderCount, contentTotalCount, contentCount);
+    }
+
+    /**
+     *
+     */
+    public static class PaginatedContents {
+        public final List<Map<String, Object>> list;
+        public final int folderCount;
+        public final int contentTotalCount;
+        public final int contentCount;
+
+        public PaginatedContents(final List<Map<String, Object>> list, final int folderCount,
+                final int contentTotalCount, final int contentCount) {
+            this.list = list;
+            this.folderCount = folderCount;
+            this.contentTotalCount = contentTotalCount;
+            this.contentCount = contentCount;
+        }
     }
 
     /**
@@ -638,8 +629,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(countQuery);
         }
 
-        Logger.info(this, "Select Query: " + selectQuery);
-        Logger.info(this, "Count Query: " + countQuery);
+        Logger.debug(this, "Select Query: " + selectQuery);
+        Logger.debug(this, "Count Query: " + countQuery);
 
         return new SelectAndCountQueries(selectQuery.toString(), countQuery.toString(), parameters);
     }

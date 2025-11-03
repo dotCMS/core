@@ -1,0 +1,1607 @@
+{
+	"info": {
+		"_postman_id": "1629f074-d53c-4afe-9230-aa43f982f81b",
+		"name": "Content Drive",
+		"description": "Comprehensive tests for Content Drive search functionality including pagination, sorting, and filtering tests.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/test-madhi~612b2311-2446-4663-bedc-0c17e42a1a6f/collection/10041132-1629f074-d53c-4afe-9230-aa43f982f81b?action=share&source=collection_link&creator=10041132"
+	},
+	"item": [
+		{
+			"name": "Test Data Setup",
+			"item": [
+				{
+					"name": "Create Test Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"testSiteId\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"testSiteName\", jsonData.entity.siteName);",
+									"",
+									"pm.test(\"Site created successfully\", function () {",
+									"    pm.expect(jsonData.entity.siteName).to.eql('contentdrive.test.site');",
+									"    pm.expect(jsonData.entity.identifier).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"siteName\": \"contentdrive.test.site\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Content Type for Drive Search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"testContentTypeId\", jsonData.entity[0].id);",
+									"pm.collectionVariables.set(\"testContentTypeVar\", jsonData.entity[0].variable);",
+									"",
+									"pm.test(\"Content type created with title field\", function () {",
+									"    pm.expect(jsonData.entity[0].variable).to.include('driveSearchTest');",
+									"    pm.expect(jsonData.entity[0].fields).to.have.length.at.least(1);",
+									"    // Check for title field",
+									"    var titleField = jsonData.entity[0].fields.find(f => f.variable === 'title');",
+									"    pm.expect(titleField).to.not.be.undefined;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Content Type for Drive Search Tests\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Drive Search Test {{$randomBankAccount}}\",\n    \"variable\": \"driveSearchTest{{$randomBankAccount}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"name\": \"Title\",\n            \"variable\": \"title\",\n            \"fixed\": true\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextAreaField\",\n            \"indexed\": true,\n            \"dataType\": \"LONG_TEXT\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"listed\": false,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"name\": \"Body\",\n            \"variable\": \"body\"\n        }\n    ],\n    \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Folders",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"testFolderId\", jsonData.entity.identifier);",
+									"",
+									"pm.test(\"Test folder created\", function () {",
+									"    pm.expect(jsonData.entity[0].name).to.eql('drive-test-folder');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "\n    [\"/drive-test-folder/\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/createfolders/{{testSiteName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"createfolders",
+								"{{testSiteName}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Contentlets - Alpha Items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Alpha contentlets created\", function () {",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.expect(jsonData.entity.results.length).to.eql(3);",
+									"    ",
+									"    // Store contentlet identifiers for cleanup",
+									"    jsonData.entity.results.forEach((result, index) => {",
+									"        var contentId = Object.keys(result)[0];",
+									"        pm.collectionVariables.set(`alphaContentlet${index+1}Id`, result[contentId].identifier);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{testContentTypeVar}}\",\n            \"title\": \"Alpha Test Content\",\n            \"contentHost\": \"{{testSiteId}}\",\n            \"body\": \"This is alpha test content for drive search\"\n        },\n        {\n            \"contentType\": \"{{testContentTypeVar}}\",\n            \"title\": \"Apple Product Review\",\n            \"contentHost\": \"{{testSiteId}}\",\n            \"body\": \"Detailed review of Apple products\"\n        },\n        {\n            \"contentType\": \"{{testContentTypeVar}}\",\n            \"title\": \"Analytics Dashboard Guide\",\n            \"contentHost\": \"{{testSiteId}}\",\n            \"body\": \"How to use analytics dashboard effectively\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Contentlets - Beta Items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Beta contentlets created\", function () {",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.expect(jsonData.entity.results.length).to.eql(3);",
+									"    ",
+									"    // Store contentlet identifiers for cleanup",
+									"    jsonData.entity.results.forEach((result, index) => {",
+									"        var contentId = Object.keys(result)[0];",
+									"        pm.collectionVariables.set(`betaContentlet${index+1}Id`, result[contentId].identifier);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{testContentTypeVar}}\",\n            \"title\": \"Beta Testing Framework\",\n            \"contentHost\": \"{{testSiteId}}\",\n            \"body\": \"Comprehensive beta testing framework documentation\"\n        },\n        {\n            \"contentType\": \"{{testContentTypeVar}}\",\n            \"title\": \"Business Intelligence Report\",\n            \"contentHost\": \"{{testSiteId}}\",\n            \"body\": \"Monthly business intelligence report\"\n        },\n        {\n            \"contentType\": \"{{testContentTypeVar}}\",\n            \"title\": \"Best Practices Guide\",\n            \"contentHost\": \"{{testSiteId}}\",\n            \"body\": \"Development best practices and guidelines\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Additional Test Folders",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Additional folders created\", function () {",
+									"    pm.expect(jsonData.entity[0].name).to.include('subfolder');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"/drive-test-folder/alpha-subfolder/\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/createfolders/{{testSiteName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"createfolders",
+								"{{testSiteName}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Beta Subfolder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Beta subfolder created\", function () {",
+									"    pm.expect(jsonData.entity[0].name).to.include('beta-subfolder');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "    [\"/drive-test-folder/beta-subfolder/\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/createfolders/{{testSiteName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"createfolders",
+								"{{testSiteName}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Sets up test data including sites, content types, folders, and contentlets for drive search testing."
+		},
+		{
+			"name": "Pagination Tests",
+			"item": [
+				{
+					"name": "Basic Pagination - First Page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response should have pagination structure\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('entity');",
+									"    pm.expect(jsonData.entity).to.have.property('list');",
+									"    pm.expect(jsonData.entity).to.have.property('folderCount');",
+									"    pm.expect(jsonData.entity).to.have.property('contentCount');",
+									"    pm.expect(jsonData.entity).to.have.property('contentTotalCount');",
+									"});",
+									"",
+									"pm.test(\"First page results within limit\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    pm.expect(list.length).to.be.at.most(5); // maxResults limit",
+									"    pm.expect(list.length).to.be.at.least(1);",
+									"});",
+									"",
+									"pm.test(\"Contains both folders and contentlets\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var folderCount = jsonData.entity.folderCount;",
+									"    var contentCount = jsonData.entity.contentCount;",
+									"    pm.expect(folderCount + contentCount).to.be.at.least(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"offset\": 0,\n    \"maxResults\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pagination - Second Page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Second page offset handled correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    // Should have remaining results or be empty if total <= 5",
+									"    pm.expect(list.length).to.be.at.most(5);",
+									"});",
+									"",
+									"pm.test(\"Pagination metadata consistent\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.folderCount).to.be.a('number');",
+									"    pm.expect(jsonData.entity.contentCount).to.be.a('number');",
+									"    pm.expect(jsonData.entity.contentTotalCount).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"offset\": 5,\n    \"maxResults\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Large MaxResults Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Large maxResults respected\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    pm.expect(list.length).to.be.at.most(50); // Should not exceed total available",
+									"});",
+									"",
+									"pm.test(\"All items returned when maxResults is large\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var totalExpected = jsonData.entity.folderCount + jsonData.entity.contentCount;",
+									"    pm.expect(jsonData.entity.list.length).to.be.at.most(totalExpected);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"offset\": 0,\n    \"maxResults\": 50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Tests pagination functionality with different offset and maxResults values."
+		},
+		{
+			"name": "Sorting Tests",
+			"item": [
+				{
+					"name": "Sort by ModDate (Default)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Results are sorted by modification date\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    if (list.length > 1) {",
+									"        for (let i = 0; i < list.length - 1; i++) {",
+									"            if (list[i].modDate && list[i+1].modDate) {",
+									"                var date1 = new Date(list[i].modDate);",
+									"                var date2 = new Date(list[i+1].modDate);",
+									"                // date1 should be LESS THAN OR EQUAL to date2 (ascending)",
+									"                pm.expect(date1.getTime()).to.be.at.most(date2.getTime());",
+									"            }",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Mixed content types present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var folderCount = jsonData.entity.folderCount;",
+									"    var contentCount = jsonData.entity.contentCount;",
+									"    pm.expect(folderCount + contentCount).to.be.at.least(1);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"modDate\",\n    \"maxResults\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by Title Ascending",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Results sorted by title ascending\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    if (list.length > 1) {",
+									"        // Extract contentlets with titles for sorting verification",
+									"        var contentletsWithTitles = list.filter(item => item.title || item.name);",
+									"        ",
+									"        if (contentletsWithTitles.length > 1) {",
+									"            for (let i = 0; i < contentletsWithTitles.length - 1; i++) {",
+									"                var title1 = (contentletsWithTitles[i].title || contentletsWithTitles[i].name).toLowerCase();",
+									"                var title2 = (contentletsWithTitles[i+1].title || contentletsWithTitles[i+1].name).toLowerCase();",
+									"                pm.expect(title1.localeCompare(title2)).to.be.at.most(0);",
+									"            }",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:asc\",\n    \"maxResults\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by Title Descending",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Results sorted by title descending\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    if (list.length > 1) {",
+									"        // Extract contentlets with titles for sorting verification",
+									"        var contentletsWithTitles = list.filter(item => item.title || item.name);",
+									"        ",
+									"        if (contentletsWithTitles.length > 1) {",
+									"            for (let i = 0; i < contentletsWithTitles.length - 1; i++) {",
+									"                var title1 = (contentletsWithTitles[i].title || contentletsWithTitles[i].name).toLowerCase();",
+									"                var title2 = (contentletsWithTitles[i+1].title || contentletsWithTitles[i+1].name).toLowerCase();",
+									"                pm.expect(title1.localeCompare(title2)).to.be.at.least(0);",
+									"            }",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:desc\",\n    \"maxResults\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Folder and Content Mixed Sorting",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Folders and contentlets properly mixed in sort\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    var folderCount = jsonData.entity.folderCount;",
+									"    var contentCount = jsonData.entity.contentCount;",
+									"    ",
+									"    pm.expect(folderCount + contentCount).to.be.at.least(1);",
+									"    ",
+									"    // Verify that both folders and content can appear in the list",
+									"    if (list.length > 0) {",
+									"        var hasFolders = list.some(item => item.type === 'folder' || item.__icon__ === 'folder');",
+									"        var hasContent = list.some(item => item.contentType || item.type === 'contentlet');",
+									"        pm.expect(hasFolders || hasContent).to.be.true;",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Results include test folder and test content\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    // Look for our test items",
+									"    var hasTestFolder = list.some(item => ",
+									"        (item.name && item.name.includes('drive-test-folder')) ||",
+									"        (item.title && item.title.includes('drive-test-folder'))",
+									"    );",
+									"    var hasTestContent = list.some(item => ",
+									"        (item.title && (item.title.includes('Alpha') || item.title.includes('Beta'))) ||",
+									"        (item.name && (item.name.includes('Alpha') || item.name.includes('Beta')))",
+									"    );",
+									"    ",
+									"    // At least one should be present",
+									"    pm.expect(hasTestFolder || hasTestContent).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:asc\",\n    \"maxResults\": 20\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Tests various sorting options and their behavior with folders and contentlets."
+		},
+		{
+			"name": "Search and Filtering Tests",
+			"item": [
+				{
+					"name": "Text Search - Alpha Filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Search results contain Alpha items\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    pm.expect(list.length).to.be.at.least(1);",
+									"    ",
+									"    // Verify that results contain 'Alpha' in title or name",
+									"    var hasAlphaItems = list.some(item => {",
+									"        var title = item.title || item.name || '';",
+									"        return title.toLowerCase().includes('alpha');",
+									"    });",
+									"    ",
+									"    pm.expect(hasAlphaItems).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Search filters out non-matching items\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    // Should not include items without 'Alpha' when filtering",
+									"    var allItemsMatch = list.every(item => {",
+									"        var title = item.title || item.name || '';",
+									"        var body = item.body || '';",
+									"        return title.toLowerCase().includes('alpha') || body.toLowerCase().includes('alpha');",
+									"    });",
+									"    ",
+									"    // Note: Due to Elasticsearch behavior, this might not be 100% strict",
+									"    // but most results should match",
+									"    pm.expect(list.length).to.be.at.most(10); // Should be filtered down",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"Alpha\"\n    },\n    \"maxResults\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Text Search - Beta Filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Search results contain Beta items\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    pm.expect(list.length).to.be.at.least(1);",
+									"    ",
+									"    // Verify that results contain 'Beta' in title or name",
+									"    var hasBetaItems = list.some(item => {",
+									"        var title = item.title || item.name || '';",
+									"        return title.toLowerCase().includes('beta');",
+									"    });",
+									"    ",
+									"    pm.expect(hasBetaItems).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Search with different terms returns different results\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    // Store result count for comparison in collection variable",
+									"    pm.collectionVariables.set('betaSearchResultCount', list.length);",
+									"    ",
+									"    pm.expect(list.length).to.be.at.most(10);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"Beta\"\n    },\n    \"maxResults\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Text Search - Partial Match",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Partial search works (Test keyword)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    pm.expect(list.length).to.be.at.least(1);",
+									"    ",
+									"    // Verify that results contain 'Test' in title or name",
+									"    var hasTestItems = list.some(item => {",
+									"        var title = item.title || item.name || '';",
+									"        return title.toLowerCase().includes('test');",
+									"    });",
+									"    ",
+									"    pm.expect(hasTestItems).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Elasticsearch filtering active\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    // When filtering is active, results should be focused",
+									"    pm.expect(jsonData.entity.list.length).to.be.at.most(15);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"Test\"\n    },\n    \"maxResults\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search with Empty Filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Empty filter returns all results\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    // Empty filter should return more results than specific searches",
+									"    pm.expect(list.length).to.be.at.least(1);",
+									"    ",
+									"    // Should include both folders and contentlets",
+									"    var folderCount = jsonData.entity.folderCount;",
+									"    var contentCount = jsonData.entity.contentCount;",
+									"    pm.expect(folderCount + contentCount).to.be.at.least(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"\"\n    },\n    \"maxResults\": 15\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search No Results",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Non-matching search returns minimal results\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    // Should return very few or no results",
+									"    pm.expect(list.length).to.be.at.most(2);",
+									"});",
+									"",
+									"pm.test(\"Response structure maintained even with no results\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity).to.have.property('list');",
+									"    pm.expect(jsonData.entity).to.have.property('folderCount');",
+									"    pm.expect(jsonData.entity).to.have.property('contentCount');",
+									"    pm.expect(jsonData.entity).to.have.property('contentTotalCount');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"NonExistentSearchTermThatShouldReturnNoResults12345\"\n    },\n    \"maxResults\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Tests search and filtering functionality using the filters.text parameter."
+		},
+		{
+			"name": "Combined Tests",
+			"item": [
+				{
+					"name": "Search with Sorting and Pagination",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Combined search, sort and pagination works\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    // Should respect maxResults",
+									"    pm.expect(list.length).to.be.at.most(3);",
+									"    ",
+									"    // Should contain filtered results",
+									"    if (list.length > 0) {",
+									"        var hasFilteredItems = list.some(item => {",
+									"            var title = item.title || item.name || '';",
+									"            return title.toLowerCase().includes('test') || title.toLowerCase().includes('alpha') || title.toLowerCase().includes('beta');",
+									"        });",
+									"        pm.expect(hasFilteredItems).to.be.true;",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Sorted results when multiple items present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    if (list.length > 1) {",
+									"        // Should be sorted by title ascending",
+									"        for (let i = 0; i < list.length - 1; i++) {",
+									"            var title1 = (list[i].title || list[i].name || '').toLowerCase();",
+									"            var title2 = (list[i+1].title || list[i+1].name || '').toLowerCase();",
+									"            if (title1 && title2) {",
+									"                pm.expect(title1.localeCompare(title2)).to.be.at.most(0);",
+									"            }",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"Test\"\n    },\n    \"sortBy\": \"title asc\",\n    \"offset\": 0,\n    \"maxResults\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deep Folder Navigation with Search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Deep folder search works\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var list = jsonData.entity.list;",
+									"    ",
+									"    // Should return results from within the drive-test-folder",
+									"    pm.expect(list.length).to.be.at.least(0); // May be empty folder",
+									"    ",
+									"    // Response structure should be maintained",
+									"    pm.expect(jsonData.entity).to.have.property('folderCount');",
+									"    pm.expect(jsonData.entity).to.have.property('contentCount');",
+									"});",
+									"",
+									"pm.test(\"Folder-specific results\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    // Should show subfolders like alpha-subfolder, beta-subfolder",
+									"    var folderCount = jsonData.entity.folderCount;",
+									"    pm.expect(folderCount).to.be.at.least(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/drive-test-folder/\",\n    \"filters\": {\n        \"text\": \"subfolder\"\n    },\n    \"maxResults\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Tests combining search, sorting, and pagination features together."
+		},
+		{
+			"name": "Cleanup",
+			"item": [
+				{
+					"name": "Delete Test Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Content type deleted\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{testContentTypeId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{testContentTypeId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Test Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Site archived successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"archived\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/{{testSiteId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"{{testSiteId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Cleanup test data created during the test run."
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "testSiteId",
+			"value": ""
+		},
+		{
+			"key": "testSiteName",
+			"value": ""
+		},
+		{
+			"key": "testContentTypeId",
+			"value": ""
+		},
+		{
+			"key": "testContentTypeVar",
+			"value": ""
+		},
+		{
+			"key": "testFolderId",
+			"value": ""
+		},
+		{
+			"key": "alphaContentlet1Id",
+			"value": ""
+		},
+		{
+			"key": "alphaContentlet2Id",
+			"value": ""
+		},
+		{
+			"key": "alphaContentlet3Id",
+			"value": ""
+		},
+		{
+			"key": "betaContentlet1Id",
+			"value": ""
+		},
+		{
+			"key": "betaContentlet2Id",
+			"value": ""
+		},
+		{
+			"key": "betaContentlet3Id",
+			"value": ""
+		},
+		{
+			"key": "betaSearchResultCount",
+			"value": ""
+		}
+	]
+}

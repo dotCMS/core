@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.drive;
 
-import static com.dotcms.rest.api.v1.asset.WebAssetHelper.SORT_BY;
-
 import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -16,8 +14,14 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = DriveRequestForm.class)
 public interface AbstractDriveRequestForm {
 
+    String SORT_BY = "modDate";
+
     @JsonProperty("assetPath")
     String assetPath();
+
+    @JsonProperty("includeSystemHost")
+    @Value.Default
+    default boolean includeSystemHost(){return true;}
 
     @JsonProperty("language")
     @Value.Default
@@ -48,6 +52,7 @@ public interface AbstractDriveRequestForm {
     default int maxResults() { return 500; }
 
     @JsonProperty("sortBy")
+    @Value.Default
     default String sortBy() { return SORT_BY; }
 
     @JsonProperty("live")
