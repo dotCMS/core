@@ -1,13 +1,21 @@
-import { signalStore, withMethods, withState, patchState, withComputed } from '@ngrx/signals';
+import {
+    signalStore,
+    withMethods,
+    withState,
+    patchState,
+    withComputed,
+    withHooks
+} from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { computed, inject } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import {
     DotESContentService,
     DotFavoriteContentTypeService,
+    DotLocalstorageService,
     DotPageContentTypeService
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
@@ -19,12 +27,19 @@ import {
     DotPaletteListState,
     DotPaletteListStatus,
     DotPaletteSearchParams,
+    DotPaletteSortOption,
+    DotPaletteViewMode,
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../../models';
 import {
     buildContentletsResponse,
     buildESContentParams,
+    DEFAULT_SORT_OPTIONS,
+    DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY,
+    DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY,
+    EMPTY_CONTENTLET_RESPONSE,
+    EMPTY_CONTENTTYPE_RESPONSE,
     filterAndBuildFavoriteResponse,
     getPaletteState
 } from '../../../utils';
@@ -49,19 +64,28 @@ export const DEFAULT_STATE: DotPaletteListState = {
         filter: ''
     },
     currentView: DotUVEPaletteListView.CONTENT_TYPES,
-    status: DotPaletteListStatus.LOADING
+    status: DotPaletteListStatus.LOADING,
+    layoutMode: 'grid'
 };
 
 export const DotPaletteListStore = signalStore(
     withState<DotPaletteListState>(DEFAULT_STATE),
     withComputed((store) => {
-        const pagination = store.pagination;
         const params = store.searchParams;
         return {
-            $start: computed(() => (pagination().currentPage - 1) * pagination().perPage),
             $isLoading: computed(() => store.status() === DotPaletteListStatus.LOADING),
-            $isContentTypesView: computed(() => params.selectedContentType() === ''),
-            $isContentletsView: computed(() => params.selectedContentType() !== ''),
+            $isEmpty: computed(() => store.status() === DotPaletteListStatus.EMPTY),
+            $showListLayout: computed(() => {
+                const isListLayout = store.layoutMode() === 'list';
+                const isContentletsView = store.currentView() === DotUVEPaletteListView.CONTENTLETS;
+                return isListLayout || isContentletsView;
+            }),
+            $isContentTypesView: computed(
+                () => store.currentView() === DotUVEPaletteListView.CONTENT_TYPES
+            ),
+            $isContentletsView: computed(
+                () => store.currentView() === DotUVEPaletteListView.CONTENTLETS
+            ),
             $currentSort: computed(() => ({
                 orderby: params.orderby(),
                 direction: params.direction()
@@ -117,6 +141,9 @@ export const DotPaletteListStore = signalStore(
         };
 
         return {
+            setLayoutMode(layoutMode: DotPaletteViewMode) {
+                patchState(store, { layoutMode });
+            },
             setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
                 const { contenttypes, pagination } = filterAndBuildFavoriteResponse({
                     contentTypes,
@@ -145,14 +172,23 @@ export const DotPaletteListStore = signalStore(
                     status: DotPaletteListStatus.LOADING
                 });
 
-                return getData().subscribe(({ contenttypes, pagination }) => {
-                    patchState(store, {
-                        contenttypes,
-                        pagination,
-                        currentView: DotUVEPaletteListView.CONTENT_TYPES,
-                        status: getPaletteState(contenttypes)
+                return getData()
+                    .pipe(
+                        catchError((error) => {
+                            console.error(
+                                `[DotUVEPalette Store]: Error data fetching contenttypes: ${error}`
+                            );
+                            return of(EMPTY_CONTENTTYPE_RESPONSE);
+                        })
+                    )
+                    .subscribe(({ contenttypes, pagination }) => {
+                        patchState(store, {
+                            contenttypes,
+                            pagination,
+                            currentView: DotUVEPaletteListView.CONTENT_TYPES,
+                            status: getPaletteState(contenttypes)
+                        });
                     });
-                });
             },
             /**
              * Fetch contentlets with optional parameter updates.
@@ -174,7 +210,13 @@ export const DotPaletteListStore = signalStore(
                     .pipe(
                         map((response) =>
                             buildContentletsResponse(response, Number(esParams.offset))
-                        )
+                        ),
+                        catchError((error) => {
+                            console.error(
+                                `[DotUVEPalette Store]: Error data fetching contentlets: ${error}`
+                            );
+                            return of(EMPTY_CONTENTLET_RESPONSE);
+                        })
                     )
                     .subscribe(({ contentlets, pagination }) => {
                         patchState(store, {
@@ -184,6 +226,40 @@ export const DotPaletteListStore = signalStore(
                             status: getPaletteState(contentlets)
                         });
                     });
+            }
+        };
+    }),
+    withHooks((store) => {
+        const dotLocalstorageService = inject(DotLocalstorageService);
+
+        return {
+            onInit() {
+                const layoutMode =
+                    dotLocalstorageService.getItem<DotPaletteViewMode>(
+                        DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY
+                    ) || 'grid';
+                const { orderby, direction } =
+                    dotLocalstorageService.getItem<DotPaletteSortOption>(
+                        DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY
+                    ) || DEFAULT_SORT_OPTIONS;
+                patchState(store, {
+                    layoutMode,
+                    searchParams: { ...store.searchParams(), orderby, direction }
+                });
+
+                effect(() => {
+                    dotLocalstorageService.setItem(
+                        DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY,
+                        store.layoutMode()
+                    );
+                });
+
+                effect(() => {
+                    dotLocalstorageService.setItem(DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY, {
+                        orderby: store.searchParams.orderby(),
+                        direction: store.searchParams.direction()
+                    });
+                });
             }
         };
     })

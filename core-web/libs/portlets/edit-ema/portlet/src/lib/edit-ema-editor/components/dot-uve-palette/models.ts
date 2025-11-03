@@ -127,6 +127,8 @@ export interface DotPaletteListState {
     currentView: DotUVEPaletteListView;
     /** Loading/data status */
     status: DotPaletteListStatus;
+    /** Layout mode (grid or list) */
+    layoutMode: DotPaletteViewMode;
 }
 
 /**

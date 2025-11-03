@@ -27,7 +27,6 @@ import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favor
 
 const mockStore = {
     // signals/derived used by component/template
-    $start: signal(0),
     contenttypes: signal([]),
     contentlets: signal([]),
     pagination: {
@@ -38,18 +37,27 @@ const mockStore = {
     searchParams: {
         selectedContentType: signal(''),
         filter: signal(''),
-        listType: signal(DotUVEPaletteListTypes.CONTENT)
+        listType: signal(DotUVEPaletteListTypes.CONTENT),
+        orderby: signal('name' as 'name' | 'usage'),
+        direction: signal('ASC' as 'ASC' | 'DESC')
     },
     currentView: signal(DotUVEPaletteListView.CONTENT_TYPES),
     status: signal(DotPaletteListStatus.LOADING),
+    layoutMode: signal('grid' as 'grid' | 'list'),
     $isLoading: signal(false),
+    $isEmpty: signal(false),
+    $showListLayout: signal(false),
     $emptyStateMessage: signal('empty'),
-    $currentSort: signal({ orderby: 'name', direction: 'ASC' }),
+    $currentSort: signal({
+        orderby: 'name' as 'name' | 'usage',
+        direction: 'ASC' as 'ASC' | 'DESC'
+    }),
     $isContentletsView: signal(false),
     $isContentTypesView: signal(true),
     // methods we assert on
     getContentTypes: jest.fn(),
-    getContentlets: jest.fn()
+    getContentlets: jest.fn(),
+    setLayoutMode: jest.fn()
 };
 
 describe('DotUvePaletteListComponent', () => {
@@ -404,6 +412,7 @@ describe('DotUvePaletteListComponent', () => {
             // Setup: Empty state with no content
             mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
             mockStore.status.set(DotPaletteListStatus.EMPTY);
+            mockStore.$isEmpty.set(true); // Set isEmpty to true for empty state to render
             mockStore.contenttypes.set([]);
             mockStore.$emptyStateMessage.set('uve.palette.empty.content-types.message');
 
@@ -414,7 +423,7 @@ describe('DotUvePaletteListComponent', () => {
             expect(emptyStateMessage).toBeTruthy();
 
             // Verify the message displayed matches the store's $emptyStateMessage
-            // Note: DotMessageService mock returns the key itself (line 102: get: (key: string) => key)
+            // Note: DotMessageService mock returns the key itself (line 111: get: (key: string) => key)
             expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.content-types.message');
         });
 
@@ -458,6 +467,8 @@ describe('DotUvePaletteListComponent', () => {
             // Setup: Content types view with mock data
             mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
             mockStore.status.set(DotPaletteListStatus.LOADED);
+            mockStore.$isLoading.set(false); // Ensure content renders (not loading)
+            mockStore.$isEmpty.set(false); // Ensure content renders (not empty)
             mockStore.contenttypes.set([
                 {
                     id: '1',

@@ -39,7 +39,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotPaletteListStore } from './store/store';
 
 import {
-    DotPaletteListStatus,
     DotPaletteSortOption,
     DotPaletteViewMode,
     DotUVEPaletteListTypes,
@@ -88,6 +87,8 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePaletteListComponent implements OnInit {
+    @ViewChild('favoritesPanel') favoritesPanel?: DotFavoriteSelectorComponent;
+
     $listType = input.required<DotUVEPaletteListTypes>({ alias: 'listType' });
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
@@ -99,36 +100,38 @@ export class DotUvePaletteListComponent implements OnInit {
     readonly #messageService = inject(MessageService);
     readonly #destroyRef = inject(DestroyRef);
 
-    @ViewChild('favoritesPanel') favoritesPanel?: DotFavoriteSelectorComponent;
+    readonly searchControl = new FormControl('', { nonNullable: true });
 
-    searchControl = new FormControl('', { nonNullable: true });
+    protected readonly DotUVEPaletteListView = DotUVEPaletteListView;
+    protected readonly LOADING_ROWS = LOADING_ROWS_MOCK;
 
-    readonly $start = this.#paletteListStore.$start;
-    readonly $contenttypes = this.#paletteListStore.contenttypes;
-    readonly $contentlets = this.#paletteListStore.contentlets;
-    readonly $pagination = this.#paletteListStore.pagination;
-    readonly $currentView = this.#paletteListStore.currentView;
-    readonly $status = this.#paletteListStore.status;
-    readonly $isLoading = this.#paletteListStore.$isLoading;
-    readonly $emptyStateMessage = this.#paletteListStore.$emptyStateMessage;
+    protected readonly $contenttypes = this.#paletteListStore.contenttypes;
+    protected readonly $contentlets = this.#paletteListStore.contentlets;
+    protected readonly $pagination = this.#paletteListStore.pagination;
+    protected readonly $currentView = this.#paletteListStore.currentView;
+    protected readonly $isLoading = this.#paletteListStore.$isLoading;
+    protected readonly $isEmpty = this.#paletteListStore.$isEmpty;
+    protected readonly $layoutMode = this.#paletteListStore.layoutMode;
+    protected readonly $showListLayout = this.#paletteListStore.$showListLayout;
+    protected readonly $emptyStateMessage = this.#paletteListStore.$emptyStateMessage;
 
-    readonly DotUVEPaletteListView = DotUVEPaletteListView;
-    readonly DotPaletteListStatus = DotPaletteListStatus;
-    readonly LOADING_ROWS = LOADING_ROWS_MOCK;
+    protected readonly $contextMenuItems = signal<MenuItem[]>([]);
 
-    readonly $viewMode = signal<DotPaletteViewMode>('grid');
-    readonly $contextMenuItems = signal<MenuItem[]>([]);
-
-    readonly $isListLayout = computed(() => {
-        return this.$viewMode() === 'list' || this.#paletteListStore.$isContentletsView();
-    });
-
-    readonly $showAddButton = computed(() => this.$listType() === 'FAVORITES');
+    readonly $start = computed(
+        () => (this.$pagination().currentPage - 1) * this.$pagination().perPage
+    );
+    readonly $isFavoritesList = computed(
+        () => this.$listType() === DotUVEPaletteListTypes.FAVORITES
+    );
+    readonly $showSortButton = computed(
+        () =>
+            this.$currentView() === DotUVEPaletteListView.CONTENT_TYPES && !this.$isFavoritesList()
+    );
 
     protected $menuItems = computed(() => {
-        const currentView = this.$viewMode();
+        const viewMode = this.$layoutMode();
         const currentSort = this.#paletteListStore.$currentSort();
-        const items = [
+        return [
             {
                 label: this.#dotMessageService.get('uve.palette.menu.sort.title'),
                 items: [
@@ -164,17 +167,16 @@ export class DotUvePaletteListComponent implements OnInit {
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.view.option.grid'),
                         command: () => this.onViewSelect('grid'),
-                        styleClass: currentView === 'grid' ? 'active-menu-item' : ''
+                        styleClass: viewMode === 'grid' ? 'active-menu-item' : ''
                     },
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.view.option.list'),
                         command: () => this.onViewSelect('list'),
-                        styleClass: currentView === 'list' ? 'active-menu-item' : ''
+                        styleClass: viewMode === 'list' ? 'active-menu-item' : ''
                     }
                 ]
             }
         ];
-        return items;
     });
 
     constructor() {
@@ -253,7 +255,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * @param viewOption - Selected view mode ('grid' or 'list')
      */
     protected onViewSelect(viewOption: DotPaletteViewMode) {
-        this.$viewMode.set(viewOption);
+        this.#paletteListStore.setLayoutMode(viewOption);
     }
 
     /**

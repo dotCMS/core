@@ -22,6 +22,39 @@ import { DEFAULT_PER_PAGE, DotPaletteSortOption, DotPaletteListStatus } from '..
 export const LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, index) => index);
 
 /**
+ * Empty pagination object used for error states.
+ * Sets all pagination values to 0 when data cannot be fetched.
+ */
+export const EMPTY_PAGINATION = {
+    currentPage: 0,
+    perPage: 0,
+    totalEntries: 0
+};
+
+/**
+ * Empty response object for content types.
+ * Used when an error occurs during content types fetch.
+ */
+export const EMPTY_CONTENTTYPE_RESPONSE = {
+    contenttypes: [] as DotCMSContentType[],
+    pagination: EMPTY_PAGINATION
+};
+
+/**
+ * Empty response object for contentlets.
+ * Used when an error occurs during contentlets fetch.
+ */
+export const EMPTY_CONTENTLET_RESPONSE = {
+    contentlets: [] as DotCMSContentlet[],
+    pagination: EMPTY_PAGINATION
+};
+
+export const DEFAULT_SORT_OPTIONS: DotPaletteSortOption = {
+    orderby: 'name',
+    direction: 'ASC'
+};
+
+/**
  * Determines the appropriate CSS class for sort menu items based on current sort state.
  * Returns 'active-menu-item' if the menu item matches the current sort configuration,
  * otherwise returns an empty string.
@@ -239,3 +272,13 @@ export function buildESContentParams(searchParams: {
         filter: searchParams.filter
     };
 }
+
+/**
+ * Key for storing the layout mode in the local storage.
+ */
+export const DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY = 'dot-uve-palette-layout-mode';
+
+/**
+ * Key for storing the orderby in the local storage.
+ */
+export const DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY = 'dot-uve-palette-sort-options';

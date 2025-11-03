@@ -12,15 +12,15 @@
     <p-iconField iconPosition="left" [style]="{ width: '100%' }">
         <p-inputIcon styleClass="pi pi-search" />
         <input
-            data-testid="palette-search-input"
             pInputText
+            data-testid="palette-search-input"
             styleClass="input-text-sm"
+            [formControl]="searchControl"
             [placeholder]="'search' | dm"
-            [style]="{ width: '100%' }"
-            [formControl]="searchControl" />
+            [style]="{ width: '100%' }" />
     </p-iconField>
 
-    @if ($currentView() === DotUVEPaletteListView.CONTENT_TYPES && $listType() !== 'FAVORITES') {
+    @if ($showSortButton()) {
         <p-button
             data-testid="sort-menu-button"
             icon="pi pi-arrow-right-arrow-left"
@@ -28,7 +28,7 @@
             [text]="true"
             [rounded]="true"
             (onClick)="menu.toggle($event)" />
-    } @else if ($listType() === 'FAVORITES') {
+    } @else if ($isFavoritesList()) {
         <p-button
             data-testid="add-favorites-button"
             icon="pi pi-plus"
@@ -41,11 +41,11 @@
 
 <div
     class="dot-uve-palette-list__grid"
-    [class.dot-uve-palette-list__grid--list]="$isListLayout()"
+    [class.dot-uve-palette-list__grid--list]="$showListLayout()"
     [class.dot-uve-palette-list__grid--loading]="$isLoading()">
-    @if ($status() === DotPaletteListStatus.LOADING) {
+    @if ($isLoading()) {
         <ng-container *ngTemplateOutlet="loadingTemplate" />
-    } @else if ($status() === DotPaletteListStatus.EMPTY) {
+    } @else if ($isEmpty()) {
         <ng-container *ngTemplateOutlet="emptyStateTemplate" />
     } @else {
         <ng-container *ngTemplateOutlet="contentTemplate" />
@@ -54,7 +54,7 @@
 
 <!-- Loading State Template -->
 <ng-template #loadingTemplate>
-    @let skeletonHeight = $isListLayout() ? '4rem' : '6.875rem';
+    @let skeletonHeight = $showListLayout() ? '4rem' : '6.875rem';
     @for (i of LOADING_ROWS; track i) {
         <p-skeleton width="100%" [height]="skeletonHeight" />
     }
@@ -86,7 +86,7 @@
             @for (contentType of $contenttypes(); track contentType.id) {
                 <dot-uve-palette-contenttype
                     [contentType]="contentType"
-                    [view]="$viewMode()"
+                    [view]="$layoutMode()"
                     (onSelectContentType)="onSelectContentType($event)"
                     (contextMenu)="onContextMenu(contentType); cm.show($event)" />
             }

@@ -1,10 +1,11 @@
-import { describe, expect, it, beforeEach, jest } from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import {
     DotESContentService,
     DotFavoriteContentTypeService,
+    DotLocalstorageService,
     DotPageContentTypeService
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
@@ -23,6 +24,7 @@ describe('DotPaletteListStore', () => {
     let pageContentTypeService: jest.Mocked<DotPageContentTypeService>;
     let dotESContentService: jest.Mocked<DotESContentService>;
     let dotFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
+    let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
 
     const mockContentTypes: DotCMSContentType[] = [
         {
@@ -63,7 +65,16 @@ describe('DotPaletteListStore', () => {
 
     const createService = createServiceFactory({
         service: DotPaletteListStore,
-        providers: [DotPaletteListStore],
+        providers: [
+            DotPaletteListStore,
+            {
+                provide: DotLocalstorageService,
+                useValue: {
+                    getItem: jest.fn().mockReturnValue(null),
+                    setItem: jest.fn().mockReturnValue(undefined)
+                }
+            }
+        ],
         mocks: [DotPageContentTypeService, DotESContentService, DotFavoriteContentTypeService]
     });
 
@@ -74,6 +85,7 @@ describe('DotPaletteListStore', () => {
         pageContentTypeService = spectator.inject(DotPageContentTypeService);
         dotESContentService = spectator.inject(DotESContentService);
         dotFavoriteContentTypeService = spectator.inject(DotFavoriteContentTypeService);
+        dotLocalstorageService = spectator.inject(DotLocalstorageService);
 
         // Setup default mock return values
         pageContentTypeService.get.mockReturnValue(
@@ -114,6 +126,7 @@ describe('DotPaletteListStore', () => {
             });
             expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENT_TYPES);
             expect(store.status()).toBe(DotPaletteListStatus.LOADING);
+            expect(store.layoutMode()).toBe('grid');
         });
 
         it('should initialize search params with correct defaults', () => {
@@ -132,46 +145,6 @@ describe('DotPaletteListStore', () => {
     });
 
     describe('Computed Properties', () => {
-        describe('$start', () => {
-            it('should calculate start index for page 1', () => {
-                expect(store.$start()).toBe(0);
-            });
-
-            it('should calculate start index for page 2', () => {
-                pageContentTypeService.get.mockReturnValue(
-                    of({
-                        contenttypes: mockContentTypes,
-                        pagination: {
-                            currentPage: 2,
-                            perPage: 30,
-                            totalEntries: 50
-                        }
-                    })
-                );
-
-                store.getContentTypes({ page: 2 });
-
-                expect(store.$start()).toBe(30);
-            });
-
-            it('should calculate start index for page 3', () => {
-                pageContentTypeService.get.mockReturnValue(
-                    of({
-                        contenttypes: mockContentTypes,
-                        pagination: {
-                            currentPage: 3,
-                            perPage: 30,
-                            totalEntries: 100
-                        }
-                    })
-                );
-
-                store.getContentTypes({ page: 3 });
-
-                expect(store.$start()).toBe(60);
-            });
-        });
-
         describe('$isLoading', () => {
             it('should return true when status is LOADING', () => {
                 expect(store.$isLoading()).toBe(true);
@@ -201,12 +174,73 @@ describe('DotPaletteListStore', () => {
             });
         });
 
+        describe('$isEmpty', () => {
+            it('should return false when status is LOADING', () => {
+                expect(store.$isEmpty()).toBe(false);
+            });
+
+            it('should return false when status is LOADED', () => {
+                store.getContentTypes();
+
+                expect(store.$isEmpty()).toBe(false);
+            });
+
+            it('should return true when status is EMPTY', () => {
+                pageContentTypeService.get.mockReturnValueOnce(
+                    of({
+                        contenttypes: [],
+                        pagination: {
+                            currentPage: 1,
+                            perPage: 30,
+                            totalEntries: 0
+                        }
+                    })
+                );
+
+                store.getContentTypes();
+
+                expect(store.$isEmpty()).toBe(true);
+            });
+        });
+
+        describe('$showListLayout', () => {
+            it('should return false when layoutMode is grid and in content types view', () => {
+                store.setLayoutMode('grid');
+
+                expect(store.$showListLayout()).toBe(false);
+            });
+
+            it('should return true when layoutMode is list and in content types view', () => {
+                store.setLayoutMode('list');
+
+                expect(store.$showListLayout()).toBe(true);
+            });
+
+            it('should return true when in contentlets view regardless of layout mode', () => {
+                store.setLayoutMode('grid');
+                store.getContentlets({ selectedContentType: 'Blog' });
+
+                expect(store.$showListLayout()).toBe(true);
+            });
+
+            it('should return false when back to content types view with grid layout', () => {
+                store.setLayoutMode('grid');
+                store.getContentlets({ selectedContentType: 'Blog' });
+
+                expect(store.$showListLayout()).toBe(true);
+
+                store.getContentTypes();
+
+                expect(store.$showListLayout()).toBe(false);
+            });
+        });
+
         describe('$isContentTypesView', () => {
-            it('should return true when selectedContentType is empty', () => {
+            it('should return true when in CONTENT_TYPES view', () => {
                 expect(store.$isContentTypesView()).toBe(true);
             });
 
-            it('should return false when selectedContentType is set', () => {
+            it('should return false when in CONTENTLETS view', () => {
                 store.getContentlets({ selectedContentType: 'Blog' });
 
                 expect(store.$isContentTypesView()).toBe(false);
@@ -214,11 +248,11 @@ describe('DotPaletteListStore', () => {
         });
 
         describe('$isContentletsView', () => {
-            it('should return false when selectedContentType is empty', () => {
+            it('should return false when in CONTENT_TYPES view', () => {
                 expect(store.$isContentletsView()).toBe(false);
             });
 
-            it('should return true when selectedContentType is set', () => {
+            it('should return true when in CONTENTLETS view', () => {
                 store.getContentlets({ selectedContentType: 'Blog' });
 
                 expect(store.$isContentletsView()).toBe(true);
@@ -263,6 +297,38 @@ describe('DotPaletteListStore', () => {
     });
 
     describe('Methods', () => {
+        describe('setLayoutMode', () => {
+            it('should update layoutMode to list', () => {
+                expect(store.layoutMode()).toBe('grid');
+
+                store.setLayoutMode('list');
+
+                expect(store.layoutMode()).toBe('list');
+            });
+
+            it('should update layoutMode to grid', () => {
+                store.setLayoutMode('list');
+
+                expect(store.layoutMode()).toBe('list');
+
+                store.setLayoutMode('grid');
+
+                expect(store.layoutMode()).toBe('grid');
+            });
+
+            it('should affect $showListLayout computed', () => {
+                expect(store.$showListLayout()).toBe(false);
+
+                store.setLayoutMode('list');
+
+                expect(store.$showListLayout()).toBe(true);
+
+                store.setLayoutMode('grid');
+
+                expect(store.$showListLayout()).toBe(false);
+            });
+        });
+
         describe('setContentTypesFromFavorite', () => {
             it('should update store with filtered and paginated content types', () => {
                 store.setContentTypesFromFavorite(mockContentTypes);
@@ -564,7 +630,7 @@ describe('DotPaletteListStore', () => {
 
         it('should handle pagination across multiple pages', () => {
             store.getContentTypes({ page: 1 });
-            expect(store.$start()).toBe(0);
+            expect(store.pagination().currentPage).toBe(1);
 
             pageContentTypeService.get.mockReturnValue(
                 of({
@@ -578,7 +644,7 @@ describe('DotPaletteListStore', () => {
             );
 
             store.getContentTypes({ page: 2 });
-            expect(store.$start()).toBe(30);
+            expect(store.pagination().currentPage).toBe(2);
 
             pageContentTypeService.get.mockReturnValue(
                 of({
@@ -592,7 +658,7 @@ describe('DotPaletteListStore', () => {
             );
 
             store.getContentTypes({ page: 3 });
-            expect(store.$start()).toBe(60);
+            expect(store.pagination().currentPage).toBe(3);
         });
 
         it('should handle filter changes correctly', () => {
@@ -601,6 +667,132 @@ describe('DotPaletteListStore', () => {
 
             store.getContentTypes({ filter: 'Blog' });
             expect(store.searchParams().filter).toBe('Blog');
+        });
+    });
+
+    describe('Error Handling', () => {
+        let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
+
+        beforeEach(() => {
+            consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(jest.fn());
+        });
+
+        afterEach(() => {
+            consoleErrorSpy.mockRestore();
+        });
+
+        it('should set empty state and log error when fetching contenttypes fails', () => {
+            const mockError = new Error('Failed to fetch content types');
+            pageContentTypeService.get.mockReturnValue(throwError(() => mockError));
+
+            store.getContentTypes();
+
+            expect(store.contenttypes()).toEqual([]);
+            expect(store.pagination()).toEqual({
+                currentPage: 0,
+                perPage: 0,
+                totalEntries: 0
+            });
+            expect(store.status()).toBe(DotPaletteListStatus.EMPTY);
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('[DotUVEPalette Store]: Error data fetching contenttypes')
+            );
+        });
+
+        it('should set empty state and log error when fetching contentlets fails', () => {
+            const mockError = new Error('Failed to fetch contentlets');
+            dotESContentService.get.mockReturnValue(throwError(() => mockError));
+
+            store.getContentlets({ selectedContentType: 'Blog' });
+
+            expect(store.contentlets()).toEqual([]);
+            expect(store.pagination()).toEqual({
+                currentPage: 0,
+                perPage: 0,
+                totalEntries: 0
+            });
+            expect(store.status()).toBe(DotPaletteListStatus.EMPTY);
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('[DotUVEPalette Store]: Error data fetching contentlets')
+            );
+        });
+    });
+
+    describe('LocalStorage Integration (withHooks)', () => {
+        describe('onInit - Loading from localStorage', () => {
+            it('should call getItem for layoutMode on initialization', () => {
+                // Verify localStorage was queried for layout mode
+                expect(dotLocalstorageService.getItem).toHaveBeenCalledWith(
+                    'dot-uve-palette-layout-mode'
+                );
+
+                // When null is returned, defaults to grid
+                expect(store.layoutMode()).toBe('grid');
+            });
+
+            it('should call getItem for sort options on initialization', () => {
+                // Verify localStorage was queried for sort options
+                expect(dotLocalstorageService.getItem).toHaveBeenCalledWith(
+                    'dot-uve-palette-sort-options'
+                );
+
+                // When null is returned, uses defaults
+                expect(store.searchParams().orderby).toBe('name');
+                expect(store.searchParams().direction).toBe('ASC');
+            });
+        });
+
+        describe('State Management: Layout and Sort', () => {
+            it('should update layoutMode state when changed', () => {
+                expect(store.layoutMode()).toBe('grid');
+
+                store.setLayoutMode('list');
+
+                expect(store.layoutMode()).toBe('list');
+            });
+
+            it('should update sort params when orderby changes', () => {
+                expect(store.searchParams().orderby).toBe('name');
+
+                store.getContentTypes({ orderby: 'usage' });
+
+                expect(store.searchParams().orderby).toBe('usage');
+            });
+
+            it('should update sort params when direction changes', () => {
+                expect(store.searchParams().direction).toBe('ASC');
+
+                store.getContentTypes({ direction: 'DESC' });
+
+                expect(store.searchParams().direction).toBe('DESC');
+            });
+
+            it('should update both orderby and direction together', () => {
+                store.getContentTypes({ orderby: 'usage', direction: 'DESC' });
+
+                expect(store.searchParams().orderby).toBe('usage');
+                expect(store.searchParams().direction).toBe('DESC');
+            });
+        });
+
+        describe('setLayoutMode Method', () => {
+            it('should update layoutMode state correctly', () => {
+                store.setLayoutMode('list');
+                expect(store.layoutMode()).toBe('list');
+
+                store.setLayoutMode('grid');
+                expect(store.layoutMode()).toBe('grid');
+            });
+
+            it('should affect computed $showListLayout', () => {
+                store.setLayoutMode('grid');
+                expect(store.$showListLayout()).toBe(false);
+
+                store.setLayoutMode('list');
+                expect(store.$showListLayout()).toBe(true);
+            });
         });
     });
 });
