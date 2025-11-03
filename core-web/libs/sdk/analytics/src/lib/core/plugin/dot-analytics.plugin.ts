@@ -1,12 +1,81 @@
+import { EnrichedTrackPayload } from './enricher/dot-analytics.enricher.plugin';
+
+import { DotCMSPredefinedEventType } from '../shared/constants/dot-content-analytics.constants';
 import { sendAnalyticsEvent } from '../shared/dot-content-analytics.http';
-import { DotCMSAnalyticsConfig, DotCMSAnalyticsParams } from '../shared/models';
+import { isPredefinedEventType } from '../shared/dot-content-analytics.utils';
+import {
+    DotCMSAnalyticsConfig,
+    DotCMSAnalyticsRequestBody,
+    DotCMSContentImpressionEvent,
+    DotCMSContentImpressionEventData,
+    DotCMSCustomEvent,
+    DotCMSPageViewEvent,
+    DotCMSPageViewEventData,
+    EnrichedAnalyticsPayload,
+    JsonObject
+} from '../shared/models';
 import { createAnalyticsQueue } from '../shared/queue';
 
 /**
+ * Creates a properly typed pageview event
+ */
+function createPageViewEvent(
+    data: DotCMSPageViewEventData,
+    localTime: string
+): DotCMSPageViewEvent {
+    return {
+        event_type: DotCMSPredefinedEventType.PAGEVIEW,
+        local_time: localTime,
+        data
+    };
+}
+
+/**
+ * Creates a properly typed content impression event
+ */
+function createContentImpressionEvent(
+    data: DotCMSContentImpressionEventData,
+    localTime: string
+): DotCMSContentImpressionEvent {
+    const { title, url } = data.page;
+    return {
+        event_type: DotCMSPredefinedEventType.CONTENT_IMPRESSION,
+        local_time: localTime,
+        data: {
+            content: data.content,
+            position: data.position,
+            page: { title, url }
+        }
+    };
+}
+
+/**
+ * Creates a properly typed custom event
+ */
+function createCustomEvent(
+    eventType: string,
+    customData: JsonObject,
+    localTime: string
+): DotCMSCustomEvent {
+    return {
+        event_type: eventType,
+        local_time: localTime,
+        data: {
+            custom: customData
+        }
+    };
+}
+
+/**
  * Analytics plugin for tracking page views and custom events in DotCMS applications.
- * This plugin handles sending analytics data to the DotCMS server, managing initialization,
- * and processing both automatic and manual tracking events.
- * Supports optional queue management for batching events before sending.
+ * This plugin handles:
+ * 1. Event structuring (deciding between predefined and custom events)
+ * 2. Building complete request bodies
+ * 3. Sending analytics data to the DotCMS server
+ * 4. Managing initialization and queue management
+ *
+ * The enricher plugin runs BEFORE this plugin and adds page/utm/custom data.
+ * This plugin receives enriched payloads and structures them into proper events.
  *
  * @param {DotCMSAnalyticsConfig} config - Configuration object containing API key, server URL,
  *                                     debug mode, auto page view settings, and queue config
@@ -19,29 +88,18 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
     let queue: ReturnType<typeof createAnalyticsQueue> | null = null;
 
     /**
-     * Common handler for both page views and custom events
-     * Processes events by either queuing them or sending directly
+     * Sends event to queue or directly to server
      */
-    const handleEvent = (params: DotCMSAnalyticsParams): void => {
-        const { config, payload } = params;
-
-        if (!isInitialized) {
-            throw new Error('DotCMS Analytics: Plugin not initialized');
-        }
-
-        const event = payload.events[0];
-        const context = payload.context;
+    const sendEvent = (requestBody: DotCMSAnalyticsRequestBody): void => {
+        const event = requestBody.events[0];
+        const context = requestBody.context;
 
         // Use queue or send directly
         if (enableQueue && queue) {
             queue.enqueue(event, context);
         } else {
             // Direct send without queue (when queue === false)
-            const body = {
-                context,
-                events: [event]
-            };
-            sendAnalyticsEvent(body, config);
+            sendAnalyticsEvent(requestBody, config);
         }
     };
 
@@ -66,15 +124,80 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
 
         /**
          * Track a page view event
-         * The enricher plugin has already built the complete request body
+         * Receives enriched payload from the enricher plugin and structures it into a pageview event
          */
-        page: handleEvent,
+        page: ({ payload }: { payload: EnrichedAnalyticsPayload }): void => {
+            if (!isInitialized) {
+                throw new Error('DotCMS Analytics: Plugin not initialized');
+            }
+
+            const { context, page, utm, custom, local_time } = payload;
+
+            if (!page) {
+                throw new Error('DotCMS Analytics: Missing required page data');
+            }
+
+            const pageViewData: DotCMSPageViewEventData = {
+                page,
+                ...(utm && { utm }),
+                ...(custom && { custom })
+            };
+
+            const pageViewEvent = createPageViewEvent(pageViewData, local_time);
+
+            const requestBody: DotCMSAnalyticsRequestBody = {
+                context,
+                events: [pageViewEvent]
+            };
+
+            sendEvent(requestBody);
+        },
 
         /**
-         * Track a custom event
-         * The enricher plugin has already built the complete request body
+         * Track a custom or predefined event
+         * Receives enriched payload from the enricher plugin and structures it based on event type:
+         *
+         * - Predefined events (content_impression, etc.) → structured data as-is
+         * - Custom events (any other string) → properties are already the custom data to send
          */
-        track: handleEvent,
+        track: ({ payload }: { payload: EnrichedTrackPayload }): void => {
+            if (!isInitialized) {
+                throw new Error('DotCMS Analytics: Plugin not initialized');
+            }
+
+            const { event, properties, context, local_time } = payload;
+
+            let analyticsEvent;
+
+            // Use type guard to distinguish predefined events from custom events
+            if (isPredefinedEventType(event)) {
+                // Handle predefined events (currently only content_impression)
+                if (event === DotCMSPredefinedEventType.CONTENT_IMPRESSION) {
+                    // Content impression events come with page data already added by enricher
+                    const completeImpressionData = properties as DotCMSContentImpressionEventData;
+
+                    analyticsEvent = createContentImpressionEvent(
+                        completeImpressionData,
+                        local_time
+                    );
+                } else {
+                    // Fallback for other predefined events we might add in the future
+                    // For future predefined events, wrap in custom as fallback
+                    analyticsEvent = createCustomEvent(event, properties as JsonObject, local_time);
+                }
+            } else {
+                // Custom events - properties are the custom data (already prepared by user)
+                // Wrap them in 'custom' wrapper as required by DotCMS Analytics API
+                analyticsEvent = createCustomEvent(event, properties as JsonObject, local_time);
+            }
+
+            const requestBody: DotCMSAnalyticsRequestBody = {
+                context,
+                events: [analyticsEvent]
+            };
+
+            sendEvent(requestBody);
+        },
 
         /**
          * Check if the plugin is loaded
