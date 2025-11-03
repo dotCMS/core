@@ -1,3 +1,5 @@
+import { patchState, signalState } from '@ngrx/signals';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -6,9 +8,9 @@ import {
     effect,
     inject,
     input,
+    OnInit,
     output,
-    Renderer2,
-    signal
+    Renderer2
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
@@ -17,8 +19,14 @@ import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
-import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotLanguagesService } from '@dotcms/data-access';
+import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotContentletStatusPipe,
+    DotLocaleTagPipe,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 
 import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
 
@@ -31,28 +39,104 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
-        TableModule
+        TableModule,
+        DotLocaleTagPipe
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
     styleUrl: './dot-folder-list-view.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotFolderListViewComponent {
+export class DotFolderListViewComponent implements OnInit {
     private readonly renderer = inject(Renderer2);
+    private readonly dotLanguagesService = inject(DotLanguagesService);
 
+    /**
+     * A signal that takes an array of DotContentDriveItem objects.
+     *
+     * @type {InputSignal<DotContentDriveItem[]>}
+     * @alias items
+     */
     $items = input<DotContentDriveItem[]>([], { alias: 'items' });
+
+    /**
+     * A signal that takes the total number of items.
+     *
+     * @type {InputSignal<number>}
+     * @alias totalItems
+     */
     $totalItems = input<number>(0, { alias: 'totalItems' });
+
+    /**
+     * A signal that takes the loading state.
+     *
+     * @type {InputSignal<boolean>}
+     * @alias loading
+     */
     $loading = input<boolean>(false, { alias: 'loading' });
 
+    /**
+     * An output that emits the selected items.
+     *
+     * @type {Output<DotContentDriveItem[]>}
+     * @alias selectionChange
+     */
     selectionChange = output<DotContentDriveItem[]>();
+
+    /**
+     * An output that emits the pagination event.
+     *
+     * @type {Output<LazyLoadEvent>}
+     * @alias paginate
+     */
     paginate = output<LazyLoadEvent>();
+
+    /**
+     * An output that emits the sort event.
+     *
+     * @type {Output<SortEvent>}
+     * @alias sort
+     */
     sort = output<SortEvent>();
+
+    /**
+     * An output that emits the right click event.
+     *
+     * @type {Output<ContextMenuData>}
+     * @alias rightClick
+     */
     rightClick = output<ContextMenuData>();
+
+    /**
+     * An output that emits the double click event.
+     *
+     * @type {Output<DotContentDriveItem>}
+     * @alias doubleClick
+     */
     doubleClick = output<DotContentDriveItem>();
+
+    /**
+     * An output that emits the drag start event.
+     *
+     * @type {Output<DotContentDriveItem[]>}
+     * @alias dragStart
+     */
     dragStart = output<DotContentDriveItem[]>();
+
+    /**
+     * An output that emits the drag end event.
+     *
+     * @type {Output<void>}
+     * @alias dragEnd
+     */
     dragEnd = output<void>();
 
+    /**
+     * An array of selected items.
+     *
+     * @type {DotContentDriveItem[]}
+     * @alias selectedItems
+     */
     selectedItems = [];
 
     readonly MIN_ROWS_PER_PAGE = 20;
@@ -62,15 +146,25 @@ export class DotFolderListViewComponent {
     protected readonly $showPagination = computed(
         () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
     );
+
+    /**
+     * Computed style class for the table.
+     *
+     * @type {ComputedSignal<string>}
+     * @alias styleClass
+     */
     protected readonly $styleClass = computed(() =>
         this.$items().length === 0 ? 'dotTable empty-table' : 'dotTable'
     );
 
     /**
-     * Index of the first row to be displayed in the current page.
-     * Used by PrimeNG Table for pagination state management.
+     * State of the component.
      */
-    protected readonly $currentPageFirstRowIndex = signal<number>(0);
+    readonly state = signalState({
+        isDragging: false,
+        currentPageFirstRowIndex: 0,
+        languagesMap: new Map<number, DotLanguage>()
+    });
 
     /**
      * Effect that handles pagination state management
@@ -78,7 +172,7 @@ export class DotFolderListViewComponent {
     protected readonly firstEffect = effect(() => {
         const showPagination = this.$showPagination();
         if (showPagination) {
-            this.$currentPageFirstRowIndex.set(0);
+            patchState(this.state, { currentPageFirstRowIndex: 0 });
         }
     });
 
@@ -89,6 +183,19 @@ export class DotFolderListViewComponent {
         this.$items();
         this.selectedItems = [];
     });
+
+    ngOnInit(): void {
+        // We should be getting this from the Global Store
+        // But it gets out of scope for the ticket.
+        this.dotLanguagesService.get().subscribe((languages) => {
+            const languagesMap = new Map<number, DotLanguage>();
+            languages.forEach((language) => {
+                languagesMap.set(language.id, language);
+            });
+
+            patchState(this.state, { languagesMap });
+        });
+    }
 
     /**
      * Handles right click on a content item to show context menu
@@ -105,7 +212,7 @@ export class DotFolderListViewComponent {
      * @param event The lazy load event containing pagination info
      */
     onPage(event: LazyLoadEvent) {
-        this.$currentPageFirstRowIndex.set(event.first);
+        patchState(this.state, { currentPageFirstRowIndex: event.first });
         this.paginate.emit(event);
     }
 
@@ -142,6 +249,9 @@ export class DotFolderListViewComponent {
 
         event.stopPropagation();
 
+        // Set dragging state to true
+        patchState(this.state, { isDragging: true });
+
         // Check if the dragged item is in the current selection
         const selected = this.selectedItems;
         const isDraggingSelectedItem = selected.some(
@@ -166,6 +276,9 @@ export class DotFolderListViewComponent {
 
     /**
      * Creates drag image from actual rendered thumbnails (img/icon elements)
+     * @param items The items to create the drag image from
+     * @param totalCount The total number of items
+     * @returns The drag image element
      */
     private createDragImage(items: DotContentDriveItem[], totalCount: number): HTMLElement | null {
         const container = this.renderer.createElement('div');
@@ -234,6 +347,8 @@ export class DotFolderListViewComponent {
      * Handles drag end on a content item
      */
     onDragEnd() {
+        // Reset dragging state to false
+        patchState(this.state, { isDragging: false });
         this.dragEnd.emit();
     }
 }

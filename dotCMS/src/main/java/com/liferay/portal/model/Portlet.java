@@ -29,6 +29,7 @@ public class Portlet extends PortletModel {
   protected String portletId;
   protected String portletClass;
   protected String portletSource;
+  protected String portletUrl;
 
   public static final String MAINTENANCE = "maintenance";
   public static final String DATA_VIEW_MODE_KEY = "dataViewMode";
@@ -42,7 +43,7 @@ public class Portlet extends PortletModel {
     initParams = new HashMap<>();
     portletClass = null;
     portletSource="xml";
-
+    portletUrl = null;
   }
 
   public Portlet(String portletId, String portletClass, Map<String, String> initParams) {
@@ -51,7 +52,7 @@ public class Portlet extends PortletModel {
     this.initParams = initParams;
     this.portletClass = portletClass;
     this.portletSource=initParams.getOrDefault("portletSource", "xml");
-
+    portletUrl = null;
   }
 
   public Portlet(String portletId, String groupId, String portletClass, Map<String, String> initParams) {
@@ -61,6 +62,15 @@ public class Portlet extends PortletModel {
     this.portletClass = portletClass;
     this.portletSource=initParams.getOrDefault("portletSource", "xml");
 
+  }
+
+  public Portlet(String portletId, String portletClass, Map<String, String> initParams, String portletUrl) {
+    super(portletId, "", "dotcms.org", null, false, null, true);
+    this.portletId = portletId;
+    this.initParams = initParams;
+    this.portletClass = portletClass;
+    this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = portletUrl;
   }
 
   @Deprecated
@@ -79,6 +89,7 @@ public class Portlet extends PortletModel {
     this.initParams = new HashMap<>();
     this.portletClass = null;
     this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = null;
   }
 
   @Deprecated
@@ -93,6 +104,7 @@ public class Portlet extends PortletModel {
     this.initParams = initParams;
     this.portletClass = portletClass;
     this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = null;
   }
 
   /**
@@ -166,6 +178,24 @@ public class Portlet extends PortletModel {
    */
   public String getResourceBundle() {
     return "com.liferay.portlet.StrutsResourceBundle" ;
+  }
+
+  /**
+   * Gets the portlet URL.
+   *
+   * @return the portlet URL
+   */
+  public String getPortletUrl() {
+    return this.portletUrl;
+  }
+
+  /**
+   * Sets the portlet URL.
+   *
+   * @param portletUrl the portlet URL
+   */
+  public void setPortletUrl(String portletUrl) {
+    this.portletUrl = portletUrl;
   }
 
   @Override

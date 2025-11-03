@@ -14,22 +14,53 @@
                 }
 
                 .p-datatable-tbody {
+                    tr.content-drive-table__loading-row {
+                        cursor: default;
+                        // This is the height of the row in the table
+                        // We need to set it to the same height as the row in the table
+                        // to avoid the row from being too tall or too short
+                        height: 4.3125rem;
+
+                        td {
+                            text-align: center;
+                            vertical-align: middle;
+
+                            .skeleton-wrapper {
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                height: 100%;
+                            }
+                        }
+
+                        &:hover {
+                            cursor: default;
+                            background-color: transparent;
+                        }
+                    }
+
                     tr.content-drive-table__row {
+                        td:nth-child(2) {
+                            min-width: 15.625rem;
+                        }
+
                         .content-drive-table__actions-button {
                             opacity: 0;
                             transition: opacity 0.2s ease-in-out;
                         }
 
                         &:hover {
-                            cursor: pointer;
-
                             .content-drive-table__actions-button {
                                 opacity: 1;
                             }
                         }
 
-                        &:active[draggable="true"] {
+                        &.is-dragging {
                             cursor: grabbing;
+                        }
+
+                        &:focus:not(.p-highlight) {
+                            background-color: $white;
                         }
                     }
                 }
@@ -43,31 +74,33 @@
 
                     table {
                         height: 100%;
+                        width: 100%;
                     }
                 }
-            }
-        }
-
-        tr.content-drive-table__row {
-            cursor: grab;
-
-            &:hover {
-                cursor: pointer;
-            }
-
-            &:active[draggable="true"] {
-                cursor: grabbing;
             }
         }
     }
 }
 
+.hoverable {
+    cursor: pointer;
+}
+
 .list-view-title {
     display: grid;
-    grid-template-columns: 4.5rem 1fr;
+    grid-template-columns: 4.5rem minmax(0, 1fr) min-content;
     align-items: center;
     gap: $spacing-3;
     width: 100%;
+
+    .truncate-text {
+        max-width: 100%;
+        width: fit-content;
+    }
+
+    .pi {
+        color: $color-palette-gray-700;
+    }
 }
 
 .empty-state {

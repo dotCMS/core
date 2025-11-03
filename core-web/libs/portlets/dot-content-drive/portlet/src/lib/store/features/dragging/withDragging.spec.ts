@@ -39,6 +39,7 @@ const initialState: DotContentDriveState = {
     path: '/test/path',
     filters: {},
     items: [],
+    selectedItems: [],
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
     pagination: { limit: 40, offset: 0 },

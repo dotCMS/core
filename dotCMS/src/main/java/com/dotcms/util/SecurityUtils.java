@@ -303,4 +303,100 @@ public class SecurityUtils {
     }
   }
 
+  /**
+   * Regular expression pattern for validating content type variable names.
+   * This pattern allows alphanumeric characters and underscores, starting with a letter or underscore.
+   * Made public to be reusable across the codebase.
+   */
+  public static final String VALID_VARIABLE_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
+
+  /**
+   * Validates if an identifier is safe to use in SQL queries and other security-sensitive contexts.
+   * This method checks if the identifier is one of the following valid formats:
+   * <ul>
+   *   <li>A valid UUID format</li>
+   *   <li>A known system identifier (e.g., SYSTEM_HOST, SYSTEM_FOLDER, SYSTEM_CONTAINER, SYSTEM_TEMPLATE, SYSTEM_THEME)</li>
+   *   <li>A valid content type variable name (alphanumeric with underscores, starting with letter/underscore)</li>
+   * </ul>
+   *
+   * @param identifier the identifier to validate
+   * @throws SecurityException if the identifier is null, empty, or does not match any valid format
+   */
+  public static void validateIdentifier(final String identifier) throws SecurityException {
+    if (!UtilMethods.isSet(identifier)) {
+      throw new SecurityException("Identifier cannot be null or empty");
+    }
+
+    if (!isValidIdentifier(identifier)) {
+      throw new SecurityException(
+          String.format("Invalid identifier format: '%s'. Must be a valid UUID, system identifier (SYSTEM_HOST, SYSTEM_FOLDER, SYSTEM_CONTAINER, SYSTEM_TEMPLATE, SYSTEM_THEME), or content type variable name.",
+                       identifier));
+    }
+  }
+
+  /**
+   * Checks if an identifier is valid without throwing an exception.
+   * An identifier is considered valid if it is:
+   * <ul>
+   *   <li>A valid UUID format</li>
+   *   <li>A known system identifier (SYSTEM_HOST, SYSTEM_FOLDER, SYSTEM_CONTAINER, SYSTEM_TEMPLATE, SYSTEM_THEME)</li>
+   *   <li>A valid content type variable name</li>
+   * </ul>
+   *
+   * @param identifier the identifier to check
+   * @return true if the identifier is valid, false otherwise
+   */
+  public static boolean isValidIdentifier(final String identifier) {
+    if (!UtilMethods.isSet(identifier)) {
+      return false;
+    }
+
+    // Check if it's a UUID
+    if (com.dotmarketing.util.UUIDUtil.isUUID(identifier)) {
+      return true;
+    }
+
+    // Check if it's a known system identifier
+    if (isSystemIdentifier(identifier)) {
+      return true;
+    }
+
+    // Check if it matches valid variable name pattern
+    if (identifier.matches(VALID_VARIABLE_NAME_REGEX)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Checks if the identifier is a known system identifier.
+   * System identifiers are special constants used internally by dotCMS.
+   *
+   * @param identifier the identifier to check
+   * @return true if it's a known system identifier, false otherwise
+   */
+  public static boolean isSystemIdentifier(final String identifier) {
+    return "SYSTEM_HOST".equals(identifier) ||
+           "SYSTEM_FOLDER".equals(identifier) ||
+           "SYSTEM_CONTAINER".equals(identifier) ||
+           "SYSTEM_TEMPLATE".equals(identifier) ||
+           "SYSTEM_THEME".equals(identifier);
+  }
+
+  /**
+   * Validates if a string is a valid content type variable name.
+   * Variable names must start with a letter or underscore, followed by any combination
+   * of letters, numbers, or underscores.
+   *
+   * @param variableName the variable name to validate
+   * @return true if the variable name is valid, false otherwise
+   */
+  public static boolean isValidVariableName(final String variableName) {
+    if (!UtilMethods.isSet(variableName)) {
+      return false;
+    }
+    return variableName.matches(VALID_VARIABLE_NAME_REGEX);
+  }
+
 }
