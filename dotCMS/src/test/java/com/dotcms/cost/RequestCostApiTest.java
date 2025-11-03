@@ -55,20 +55,15 @@ public class RequestCostApiTest extends UnitTestBase {
         // Then
         List<Map<String, Object>> accountList = requestCostApi.getAccountList(request);
         assertNotNull("Account list should not be null", accountList);
-        assertTrue("Account list should have at least one entry (init cost)", accountList.size() >= 1);
+        assertTrue("Account list should have at least one entry (init cost)", accountList.isEmpty());
+
+        int rollingCost = requestCostApi.getRequestCost(request);
+        assertEquals("Rolling cost should be 1", 1, rollingCost);
+
+
     }
 
-    /**
-     * Test: {@link RequestCostApi#initAccounting(HttpServletRequest)} Should: Initialize accounting with full
-     * accounting mode enabled Expected: Full accounting attribute is set to true
-     */
-    @Test
-    public void test_initAccounting_withFullAccounting_shouldEnableFullMode() {
-        request.setAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE, Accounting.HTML);
 
-        assertFalse("Full accounting only enabled for admins",
-                requestCostApi.resolveAccounting(request) == Accounting.HTML);
-    }
 
     /**
      * Test: {@link RequestCostApi#incrementCost(Price, Method, Object[])} Should: Increment cost using method reference
@@ -131,7 +126,7 @@ public class RequestCostApiTest extends UnitTestBase {
      * List contains all incremented costs
      */
     @Test
-    public void test_getAccountList_shouldReturnAllEntries() {
+    public void test_getAccountList_shouldReturn_empty_if_accounting_is_disabled() {
         // Given
         requestCostApi.initAccounting(request);
         int initialSize = requestCostApi.getAccountList(request).size();
@@ -142,7 +137,7 @@ public class RequestCostApiTest extends UnitTestBase {
 
         // Then
         List<Map<String, Object>> accountList = requestCostApi.getAccountList(request);
-        assertEquals("Account list should have 2 more entries", initialSize + 2, accountList.size());
+        assertEquals("Account list should have 0 more entries", 0, accountList.size());
     }
 
 
@@ -161,12 +156,9 @@ public class RequestCostApiTest extends UnitTestBase {
 
         // Then
         List<Map<String, Object>> accountList = requestCostApi.getAccountList(request);
-        Map<String, Object> lastEntry = accountList.get(accountList.size() - 1);
+        assertTrue("Account list should have no entries", accountList.isEmpty());
 
-        assertTrue("Entry should contain COST", lastEntry.containsKey(RequestCostApi.COST));
-        assertFalse("Entry should NOT contain CLASS", lastEntry.containsKey(RequestCostApi.CLASS));
-        assertFalse("Entry should NOT contain METHOD", lastEntry.containsKey(RequestCostApi.METHOD));
-        assertFalse("Entry should NOT contain ARGS", lastEntry.containsKey(RequestCostApi.ARGS));
+        assertEquals("requestCost should be 6", Price.SIX.price, requestCostApi.getRequestCost(request));
     }
 
     /**

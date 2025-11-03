@@ -11,6 +11,7 @@ public class RequestPrices {
         TWO(2),
         THREE(3),
         FIVE(5),
+        SIX(6),
         SEVEN(7),
         EIGHT(8),
         NINE(9),
