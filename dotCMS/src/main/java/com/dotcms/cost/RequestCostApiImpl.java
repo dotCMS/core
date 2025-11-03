@@ -33,22 +33,22 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     private final AtomicLong requestCountForWindow = new AtomicLong(0);
     private final AtomicLong requestCostForWindow = new AtomicLong(0);
+    private final Optional<Boolean> enableForTests;
     //log an accounting every X seconds
     private int requestCostTimeWindowSeconds;
     private ScheduledExecutorService scheduler;
-
     // make the request cost points look like $$
     private float requestCostDenominator = 1;
+    private volatile boolean skipZeroRequests = false;
 
-    private final Optional<Boolean> enableForTests;
     public RequestCostApiImpl() {
         enableForTests = Optional.empty();
     }
 
+
     public RequestCostApiImpl(Boolean enable) {
         enableForTests = Optional.ofNullable(enable);
     }
-
 
     @PostConstruct
     public void init() {
@@ -67,7 +67,6 @@ public class RequestCostApiImpl implements RequestCostApi {
                 requestCostTimeWindowSeconds, TimeUnit.SECONDS);
     }
 
-    private volatile boolean skipZeroRequests = false;
     private void logRequestCost() {
         try {
             if (!isAccountingEnabled()) {
@@ -125,7 +124,7 @@ public class RequestCostApiImpl implements RequestCostApi {
 
 
     private boolean isAccountingEnabled() {
-        return enableForTests.orElse(Config.getBooleanProperty("REQUEST_COST_ACCOUNTING_ENABLED", false));
+        return enableForTests.orElse(Config.getBooleanProperty("REQUEST_COST_ACCOUNTING_ENABLED", true));
     }
 
     @Override
@@ -144,6 +143,26 @@ public class RequestCostApiImpl implements RequestCostApi {
      */
     @Override
     public Accounting resolveAccounting(HttpServletRequest request) {
+        if (request == null) {
+            return Accounting.NONE;
+        }
+        Accounting optAccounting = (Accounting) request.getAttribute(REQUEST_COST_ACCOUNTING_TYPE);
+        if (optAccounting != null && optAccounting instanceof Accounting) {
+            return optAccounting;
+        }
+        Accounting accounting = _resolveAccounting(request);
+        request.setAttribute(REQUEST_COST_ACCOUNTING_TYPE, accounting);
+        return accounting;
+    }
+
+
+    /**
+     * Internal method to resolve the accounting mode from the request
+     *
+     * @param request
+     * @return
+     */
+    private Accounting _resolveAccounting(HttpServletRequest request) {
         if (!isAccountingEnabled()) {
             return Accounting.NONE;
         }
@@ -186,23 +205,22 @@ public class RequestCostApiImpl implements RequestCostApi {
         if (request == null) {
             return;
         }
-
         Accounting accounting = resolveAccounting(request);
-        Map<String, Object> load = createCostEntry(price, clazz, method, args, accounting);
 
-        getAccountList(request).add(load);
+        if (accounting == Accounting.HTML) {
+            Map<String, Object> load = createAccountingEntry(price, clazz, method, args, accounting);
+            getAccountList(request).add(load);
+        }
+        request.setAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE, getRequestCost(request) + price.price);
         requestCostForWindow.accumulateAndGet(price.price, Math::addExact);
     }
 
-    private Map<String, Object> createCostEntry(Price price, Class clazz, String method,
+    private Map<String, Object> createAccountingEntry(Price price, Class clazz, String method,
             Object[] args, Accounting accounting) {
-        if (accounting == Accounting.HTML) {
-            return Map.of(COST, price.price, METHOD, method, CLASS, clazz.getCanonicalName(), ARGS, args);
-        }
-        return Map.of(COST, price.price);
+
+        return Map.of(COST, price.price, METHOD, method, CLASS, clazz.getCanonicalName(), ARGS, args);
+
     }
-
-
 
     /**
      * Get the current cost for the request.
@@ -211,9 +229,14 @@ public class RequestCostApiImpl implements RequestCostApi {
      */
     @Override
     public int getRequestCost(HttpServletRequest request) {
-        return getAccountList(request).stream().mapToInt(m -> (int) m.get(COST)).sum();
+        int runningTotal = 0;
+        if (request.getAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE) == null) {
+            request.setAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE, 0);
+        } else {
+            runningTotal = (int) request.getAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE);
+        }
+        return runningTotal;
     }
-
 
     @Override
     public void initAccounting(HttpServletRequest request) {
@@ -240,6 +263,7 @@ public class RequestCostApiImpl implements RequestCostApi {
         Logger.debug(this.getClass(), "</Ending request cost accounting  ---");
         request.removeAttribute(REQUEST_COST_ATTRIBUTE);
         request.removeAttribute(REQUEST_COST_ACCOUNTING_TYPE);
+        request.removeAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE);
     }
 
     @Override

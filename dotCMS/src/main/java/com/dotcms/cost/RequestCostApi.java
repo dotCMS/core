@@ -1,7 +1,6 @@
 package com.dotcms.cost;
 
 
-
 import com.dotcms.cost.RequestPrices.Price;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -30,11 +29,13 @@ public interface RequestCostApi {
         }
     }
 
-    // Reqye
+    // Request Cost Header
     String REQUEST_COST_HEADER_NAME = "X-Request-Cost";
 
     String REQUEST_COST_ATTRIBUTE = "dotRequestCost";
 
+    // The cost running total attribute that is calculated and stored in the request
+    String REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE = "dotRequestCostRunningTotal";
     // this is the url parameter that needs to be set in order to show an accounting report
     String REQUEST_COST_ACCOUNTING_TYPE = "dotAccounting";
 
