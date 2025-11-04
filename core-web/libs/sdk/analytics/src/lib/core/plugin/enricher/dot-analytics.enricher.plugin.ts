@@ -3,7 +3,6 @@ import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-conte
 import {
     AnalyticsBasePayloadWithContext,
     AnalyticsTrackPayloadWithContext,
-    DotCMSContentImpressionPayload,
     EnrichedAnalyticsPayload,
     EnrichedTrackPayload
 } from '../../shared/models';
@@ -43,35 +42,23 @@ export const dotAnalyticsEnricherPlugin = () => {
 
         /**
          * TRACK EVENT ENRICHMENT - Runs after identity context injection
-         * Adds data to the root of the payload based on event type to avoid duplication.
+         * Adds page data and timestamp for predefined events.
+         * For custom events, only adds timestamp.
          *
-         * For content_impression events:
-         * - Extracts content and position from properties to root
-         * - Adds minimal page data (title, url) to root
-         *
-         * For custom events:
-         * - Only adds local_time (properties are passed as-is)
-         *
-         * @returns {EnrichedTrackPayload} Enriched payload ready for event creation
+         * @returns {EnrichedTrackPayload} Enriched payload ready for event structuring
          */
         'track:dot-analytics': ({
             payload
         }: {
             payload: AnalyticsTrackPayloadWithContext;
         }): EnrichedTrackPayload => {
-            const { event, properties } = payload;
+            const { event } = payload;
             const local_time = getLocalTime();
 
-            // For content_impression events, extract fields to root level
+            // For content_impression events, add page data
             if (event === DotCMSPredefinedEventType.CONTENT_IMPRESSION) {
-                const impressionPayload = properties as DotCMSContentImpressionPayload;
-
                 return {
                     ...payload,
-                    // Extract content and position to root (no duplication)
-                    content: impressionPayload.content,
-                    position: impressionPayload.position,
-                    // Add minimal page data to root
                     page: {
                         title: document.title,
                         url: window.location.href
