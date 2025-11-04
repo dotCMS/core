@@ -196,6 +196,17 @@ public interface ContentTypeAPI {
    */
   List<String> findUrlMappedPattern(final String pageIdentifier) throws DotDataException;
 
+  /**
+   * Returns a list of Content Types whose URL map pattern matches the given URL string using regex comparison.
+   * This method converts URL map patterns (e.g., "/news/{urlTitle}") to regex patterns and tests them against the provided URL.
+   *
+   * @param urlMap The URL string to match against content type URL map patterns.
+   *
+   * @return The list of {@link ContentType} objects whose URL map patterns match the given URL.
+   *
+   * @throws DotDataException An error occurred when interacting with the data source.
+   */
+  List<ContentType> findByUrlMapPattern(final String urlMap) throws DotDataException;
 
   /**
    * Counts the amount of Content Types in the DB filtered by the given condition.

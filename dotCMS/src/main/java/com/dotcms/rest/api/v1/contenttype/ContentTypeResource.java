@@ -1934,8 +1934,33 @@ public class ContentTypeResource implements Serializable {
 
 		if (Objects.isNull(htmlPage)) { // still null, so the page does not exist
 
-			throw new BadRequestException(
-					String.format("Page with path or ID '%s' was not found", pagePathOrId));
+			//Let's check if it is a detail page
+			//First we get the content types whose url map match the path
+			List<ContentType> contentTypes = APILocator.getContentTypeAPI(user,
+					pageMode.respectAnonPerms).findByUrlMapPattern(pagePathOrId);
+			if (!contentTypes.isEmpty()) {
+				//Then, we get the first detail page found
+				for (ContentType contentType : contentTypes) {
+					final Optional<ContentletVersionInfo> detailPageVersionInfo = APILocator.getVersionableAPI()
+							.getContentletVersionInfo(contentType.detailPage(), languageId);
+					if (detailPageVersionInfo.isPresent()) {
+						htmlPage = APILocator.getHTMLPageAssetAPI().findPage(pageMode.showLive ?
+										detailPageVersionInfo.get().getLiveInode()
+										: detailPageVersionInfo.get().getWorkingInode(),
+								user, pageMode.respectAnonPerms);
+
+						if (!Objects.isNull(htmlPage)) {
+							break;
+						}
+					}
+				}
+
+			}
+
+			if (Objects.isNull(htmlPage)) {
+				throw new BadRequestException(
+						String.format("Page with path or ID '%s' was not found", pagePathOrId));
+			}
 		}
 
 		final Set<String> repeatedTypes = new HashSet<>();

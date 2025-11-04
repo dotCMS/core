@@ -73,6 +73,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 /**
@@ -970,6 +972,51 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     DotPreconditions.checkArgument(UtilMethods.isSet(pageIdentifier), "pageIdentifier is required");
 
     return contentTypeFactory.findUrlMappedPattern(pageIdentifier);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> findByUrlMapPattern(final String urlMap) throws DotDataException {
+    DotPreconditions.checkArgument(UtilMethods.isSet(urlMap), "urlMap is required");
+
+    // Get all content types that have URL map patterns
+    List<ContentType> urlMappedTypes = contentTypeFactory.findUrlMapped();
+
+    // Filter content types whose URL map patterns match the provided URL using regex
+    return urlMappedTypes.stream()
+        .filter(contentType -> {
+          String urlMapPattern = contentType.urlMapPattern();
+          if (!UtilMethods.isSet(urlMapPattern)) {
+            return false;
+          }
+
+          try {
+            // Convert URL map pattern to regex pattern
+            // Replace {variable} placeholders with regex groups
+            String regexPattern = urlMapPattern
+                .replaceAll("\\{[^}]+\\}", "([^/]+)")  // Replace {variable} with capturing group for path segments
+                .replaceAll("\\*", ".*");  // Replace * wildcards with .* regex
+
+            // Ensure pattern matches the full URL
+            if (!regexPattern.startsWith("^")) {
+              regexPattern = "^" + regexPattern;
+            }
+            if (!regexPattern.endsWith("$")) {
+              regexPattern = regexPattern + "$";
+            }
+
+            Pattern pattern = Pattern.compile(regexPattern);
+            Matcher matcher = pattern.matcher(urlMap);
+
+            return matcher.matches();
+
+          } catch (Exception e) {
+            Logger.warn(this, "Error matching URL map pattern '" + urlMapPattern +
+                "' against URL '" + urlMap + "': " + e.getMessage());
+            return false;
+          }
+        })
+        .collect(Collectors.toList());
   }
 
   @WrapInTransaction
