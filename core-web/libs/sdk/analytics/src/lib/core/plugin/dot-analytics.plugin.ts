@@ -1,9 +1,9 @@
 import { DotCMSPredefinedEventType } from '../shared/constants/dot-content-analytics.constants';
 import { sendAnalyticsEvent } from '../shared/dot-content-analytics.http';
-import { isPredefinedEventType } from '../shared/dot-content-analytics.utils';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsRequestBody,
+    DotCMSContentImpressionPayload,
     EnrichedAnalyticsPayload,
     EnrichedTrackPayload,
     JsonObject
@@ -32,9 +32,9 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
     let queue: ReturnType<typeof createAnalyticsQueue> | null = null;
 
     /**
-     * Sends event to queue or directly to server
+     * Dispatches event to queue or directly to server
      */
-    const sendEvent = (requestBody: DotCMSAnalyticsRequestBody): void => {
+    const dispatchEvent = (requestBody: DotCMSAnalyticsRequestBody): void => {
         const event = requestBody.events[0];
         const context = requestBody.context;
 
@@ -96,16 +96,15 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                 ]
             };
 
-            sendEvent(requestBody);
+            dispatchEvent(requestBody);
         },
 
         /**
          * Track a custom or predefined event
-         * Receives enriched payload from the enricher plugin and structures it based on event type.
-         * All necessary data is in the root of the payload (no duplication).
+         * Receives enriched payload from enricher plugin and structures it into proper event format.
          *
-         * - content_impression → uses { content, position, page } from root
-         * - custom events → uses properties from payload.properties
+         * - content_impression → extracts from properties, combines with enriched page data
+         * - custom events → wraps properties in custom object
          */
         track: ({ payload }: { payload: EnrichedTrackPayload }): void => {
             if (!isInitialized) {
@@ -116,12 +115,13 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
 
             let analyticsEvent;
 
-            // Use type guard to distinguish predefined events from custom events
-            if (isPredefinedEventType(event)) {
-                // Handle predefined events (currently only content_impression)
-                if (event === DotCMSPredefinedEventType.CONTENT_IMPRESSION) {
-                    // All data is in the root (content, position, page)
-                    const { content, position, page } = payload;
+            // Handle predefined and custom events using switch for extensibility
+            switch (event) {
+                case DotCMSPredefinedEventType.CONTENT_IMPRESSION: {
+                    // Extract impression data from properties (sent by tracker)
+                    const impressionPayload = properties as DotCMSContentImpressionPayload;
+                    const { content, position } = impressionPayload;
+                    const { page } = payload; // Added by enricher
 
                     if (!content || !position || !page) {
                         throw new Error('DotCMS Analytics: Missing required impression data');
@@ -136,8 +136,11 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                             page
                         }
                     };
-                } else {
-                    // Fallback for other predefined events we might add in the future
+                    break;
+                }
+
+                default: {
+                    // Custom events - wrap properties in custom object as required by API
                     analyticsEvent = {
                         event_type: event,
                         local_time,
@@ -145,17 +148,8 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                             custom: properties as JsonObject
                         }
                     };
+                    break;
                 }
-            } else {
-                // Custom events - properties are the custom data (already prepared by user)
-                // Wrap them in 'custom' wrapper as required by DotCMS Analytics API
-                analyticsEvent = {
-                    event_type: event,
-                    local_time,
-                    data: {
-                        custom: properties as JsonObject
-                    }
-                };
             }
 
             const requestBody: DotCMSAnalyticsRequestBody = {
@@ -163,7 +157,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                 events: [analyticsEvent]
             };
 
-            sendEvent(requestBody);
+            dispatchEvent(requestBody);
         },
 
         /**
