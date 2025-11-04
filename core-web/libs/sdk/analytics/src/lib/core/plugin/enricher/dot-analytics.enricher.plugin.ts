@@ -1,21 +1,26 @@
 import { DotCMSPredefinedEventType } from '../../shared/constants/dot-content-analytics.constants';
-import { enrichPagePayloadOptimized } from '../../shared/dot-content-analytics.utils';
+import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
 import {
     AnalyticsBasePayloadWithContext,
     AnalyticsTrackPayloadWithContext,
+    DotCMSContentImpressionPageData,
     DotCMSContentImpressionPayload,
+    DotCMSEventPageData,
+    DotCMSEventUtmData,
     EnrichedAnalyticsPayload
 } from '../../shared/models';
 
 /**
- * Enriched payload interface that includes page, utm, and custom data ready for event creation.
- * This is the return type from the enricher plugin methods.
+ * Enriched payload interface for track events.
+ * Fields are added to the root based on event type to avoid duplication.
  */
 export interface EnrichedTrackPayload extends AnalyticsTrackPayloadWithContext {
-    page: EnrichedAnalyticsPayload['page'];
-    utm?: EnrichedAnalyticsPayload['utm'];
-    custom?: EnrichedAnalyticsPayload['custom'];
     local_time: string;
+    // Optional fields added based on event type
+    page?: DotCMSContentImpressionPageData | DotCMSEventPageData;
+    content?: DotCMSContentImpressionPayload['content'];
+    position?: DotCMSContentImpressionPayload['position'];
+    utm?: DotCMSEventUtmData;
 }
 
 /**
@@ -53,14 +58,14 @@ export const dotAnalyticsEnricherPlugin = () => {
 
         /**
          * TRACK EVENT ENRICHMENT - Runs after identity context injection
-         * Returns enriched payload with page data added for content_impression events
+         * Adds data to the root of the payload based on event type to avoid duplication.
          *
          * For content_impression events:
-         * - Producer plugins send only { content, position }
-         * - This enricher adds page data automatically
+         * - Extracts content and position from properties to root
+         * - Adds minimal page data (title, url) to root
          *
-         * For other events:
-         * - Just pass through the payload as-is
+         * For custom events:
+         * - Only adds local_time (properties are passed as-is)
          *
          * @returns {EnrichedTrackPayload} Enriched payload ready for event creation
          */
@@ -70,31 +75,29 @@ export const dotAnalyticsEnricherPlugin = () => {
             payload: AnalyticsTrackPayloadWithContext;
         }): EnrichedTrackPayload => {
             const { event, properties } = payload;
+            const local_time = getLocalTime();
 
-            // For content_impression events, add page data
+            // For content_impression events, extract fields to root level
             if (event === DotCMSPredefinedEventType.CONTENT_IMPRESSION) {
                 const impressionPayload = properties as DotCMSContentImpressionPayload;
-                const { page, local_time } = enrichPagePayloadOptimized(payload);
 
                 return {
                     ...payload,
-                    properties: {
-                        ...impressionPayload,
-                        page
+                    // Extract content and position to root (no duplication)
+                    content: impressionPayload.content,
+                    position: impressionPayload.position,
+                    // Add minimal page data to root
+                    page: {
+                        title: document.title,
+                        url: window.location.href
                     },
-                    page,
                     local_time
                 };
             }
 
-            // For all other events, just pass through
-            const { page, utm, custom, local_time } = enrichPagePayloadOptimized(payload);
-
+            // For custom events, just add local_time
             return {
                 ...payload,
-                page,
-                ...(utm && { utm }),
-                ...(custom && { custom }),
                 local_time
             };
         }
