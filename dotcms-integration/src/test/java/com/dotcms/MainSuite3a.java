@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableTest;
+import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTree;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -45,7 +46,8 @@ import org.junit.runners.Suite;
         Task250604UpdateFolderInodesTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
-        SecondaryCategoryPermissionTest.class
+        SecondaryCategoryPermissionTest.class,
+        Task251103AddStylePropertiesColumnInMultiTree.class
 })
 
 public class MainSuite3a {
