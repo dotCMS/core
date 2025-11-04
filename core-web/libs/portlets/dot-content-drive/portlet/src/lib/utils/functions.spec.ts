@@ -11,13 +11,52 @@ import {
     decodeByFilterKey,
     buildContentDriveQuery,
     getFolderHierarchyByPath,
-    getFolderNodesByPath
+    getFolderNodesByPath,
+    escapeLuceneSpecialChars
 } from './functions';
 
 import { SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
+    describe('escapeLuceneSpecialChars', () => {
+        it('should escape dash character', () => {
+            const result = escapeLuceneSpecialChars('profile-test');
+            expect(result).toBe('profile\\-test');
+        });
+
+        it('should escape plus character', () => {
+            const result = escapeLuceneSpecialChars('test+value');
+            expect(result).toBe('test\\+value');
+        });
+
+        it('should escape multiple special characters', () => {
+            const result = escapeLuceneSpecialChars('test+value-name');
+            expect(result).toBe('test\\+value\\-name');
+        });
+
+        it('should escape all Lucene special characters', () => {
+            const result = escapeLuceneSpecialChars('+-&|!(){}[]^"~*?:\\/');
+            expect(result).toBe('\\+\\-\\&\\|\\!\\(\\)\\{\\}\\[\\]\\^\\"\\~\\*\\?\\:\\\\\\/');
+        });
+
+        it('should not modify text without special characters', () => {
+            const result = escapeLuceneSpecialChars('normaltext');
+            expect(result).toBe('normaltext');
+        });
+
+        it('should handle empty string', () => {
+            const result = escapeLuceneSpecialChars('');
+            expect(result).toBe('');
+        });
+
+        it('should handle text with spaces and special characters', () => {
+            const result = escapeLuceneSpecialChars('profile- cool.jpg');
+            // Note: period (.) is not a special Lucene character, so it doesn't get escaped
+            expect(result).toBe('profile\\- cool.jpg');
+        });
+    });
+
     describe('decodeFilters', () => {
         it('should return an empty object when input is empty string', () => {
             const result = decodeFilters('');
@@ -385,8 +424,8 @@ describe('Utility Functions', () => {
             expect(result).toContain('+catchall:*test search*');
             // Should include title_dotraw search with boost
             expect(result).toContain('title_dotraw:*test search*^5');
-            // Should include exact title search with higher boost
-            expect(result).toContain("title:'test search'^15");
+            // Should include exact title search with higher boost (uses double quotes)
+            expect(result).toContain(`title:'test search'^15`);
             // Should include individual word searches
             expect(result).toContain('title:test^5');
             expect(result).toContain('title:search^5');
@@ -532,6 +571,98 @@ describe('Utility Functions', () => {
             expect(result).toContain('title:management^5');
             expect(result).toContain('status:published');
             expect(result).toContain('languageId:1');
+        });
+
+        it('should handle title search with special characters (dash)', () => {
+            const filters: DotContentDriveFilters = {
+                title: 'profile-'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            // Should use escaped value for title_dotraw (preserves special chars)
+            expect(result).toContain('title_dotraw:*profile\\-*');
+            // Should also search catchall with escaped value
+            expect(result).toContain('catchall:*profile\\-*');
+            // Should NOT include individual word searches for special char only searches
+            expect(result).not.toContain('title:profile^5');
+        });
+
+        it('should handle title search with special characters (plus)', () => {
+            const filters: DotContentDriveFilters = {
+                title: 'A+B'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            // Should escape the plus sign
+            expect(result).toContain('title_dotraw:*A\\+B*');
+            expect(result).toContain('catchall:*A\\+B*');
+        });
+
+        it('should handle title search with special characters and words', () => {
+            const filters: DotContentDriveFilters = {
+                title: 'profile- cool'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            // Should use escaped value for title_dotraw (space is not escaped, only the dash)
+            expect(result).toContain('title_dotraw:*profile\\- cool*');
+            // Should also include catchall with escaped value
+            expect(result).toContain('catchall:*profile\\- cool*');
+        });
+
+        it('should handle title search with multiple special characters', () => {
+            const filters: DotContentDriveFilters = {
+                title: 'test+value.name'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            // Should escape special characters (+ is escaped, period is not a Lucene special char)
+            expect(result).toContain('title_dotraw:*test\\+value.name*');
+            expect(result).toContain('catchall:*test\\+value.name*');
+        });
+
+        it('should differentiate between special char search and normal search', () => {
+            const normalFilters: DotContentDriveFilters = {
+                title: 'blog post'
+            };
+            const specialCharFilters: DotContentDriveFilters = {
+                title: 'profile-'
+            };
+
+            const normalResult = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters: normalFilters
+            });
+            const specialCharResult = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters: specialCharFilters
+            });
+
+            // Normal search should use catchall without escaping
+            expect(normalResult).toContain('+catchall:*blog post*');
+            expect(normalResult).toContain('title:blog^5');
+            expect(normalResult).toContain('title:post^5');
+
+            // Special char search should use OR clause with escaped values
+            expect(specialCharResult).toContain('+(title_dotraw:*profile\\-*');
+            expect(specialCharResult).toContain('OR catchall:*profile\\-*');
+            expect(specialCharResult).not.toContain('title:profile^5');
         });
     });
 
