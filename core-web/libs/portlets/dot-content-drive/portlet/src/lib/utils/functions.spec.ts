@@ -424,7 +424,7 @@ describe('Utility Functions', () => {
             expect(result).toContain('+catchall:*test search*');
             // Should include title_dotraw search with boost
             expect(result).toContain('title_dotraw:*test search*^5');
-            // Should include exact title search with higher boost (uses double quotes)
+            // Should include exact title search with higher boost (uses single quotes)
             expect(result).toContain(`title:'test search'^15`);
             // Should include individual word searches
             expect(result).toContain('title:test^5');
