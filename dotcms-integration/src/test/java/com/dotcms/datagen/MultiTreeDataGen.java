@@ -19,6 +19,7 @@ public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
     private String variantId = VariantAPI.DEFAULT_VARIANT.name();
     private int treeOrder;
     private HTMLPageAsset page;
+    private String styleProperties;
 
     @Override
     public MultiTree next() {
@@ -31,6 +32,7 @@ public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
         multiTree.setPersonalization(personalization);
         multiTree.setVariantId(variantId);
         multiTree.setTreeOrder(1);
+        multiTree.setStyleProperties(styleProperties);
 
         return multiTree;
     }
@@ -82,6 +84,11 @@ public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
 
     public MultiTreeDataGen setVariant(final Variant variant) {
         this.variantId = variant.name();
+        return this;
+    }
+
+    public MultiTreeDataGen setStyleProperties(final String styleProperties) {
+        this.styleProperties = styleProperties;
         return this;
     }
 }

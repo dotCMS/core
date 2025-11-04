@@ -3,7 +3,6 @@ package com.dotmarketing.beans.transform;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +18,7 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
     private static final String TREE_ORDER = "tree_order";
     private static final String PERSONALIZATION = "personalization";
     private static final String VARIANT = "variant_id";
+    private static final String STYLE_PROPERTIES = "style_properties";
 
     private final ArrayList<MultiTree> list = new ArrayList<>();
 
@@ -51,6 +51,7 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
         if (UtilMethods.isSet(map.get(VARIANT))) {
             multiTree.setVariantId(map.get(VARIANT).toString());
         }
+        multiTree.setStyleProperties((String) map.get(STYLE_PROPERTIES));
         return multiTree;
     }
 }

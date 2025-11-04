@@ -45,6 +45,8 @@ public class MultiTree implements Serializable {
 
     private String variantId;
 
+    private String styleProperties;
+
     /**
      * @param htmlPage page's id
      * @param container container's id
@@ -53,6 +55,7 @@ public class MultiTree implements Serializable {
      * @param treeOrder order to be show into the page
      * @param personalization persona's tag
      * @param variantId variant's name
+     * @param styleProperties JSON properties for styling
      */
     /** full constructor */
     public MultiTree(final String htmlPage,
@@ -61,15 +64,27 @@ public class MultiTree implements Serializable {
                      final String instanceId,
                      final int treeOrder,
                      final String personalization,
-                     final String variantId) {
+                     final String variantId,
+                     final String styleProperties) {
 
         this.parent1      = htmlPage;
         this.parent2      = container;
         this.child        = child;
         this.relationType = (instanceId == null) ? LEGACY_INSTANCE_ID : instanceId;
-        this.treeOrder    = (treeOrder < 0) ? 0 : treeOrder;
+        this.treeOrder    = Math.max(treeOrder, 0);
         this.personalization = personalization;
         this.variantId = variantId;
+        this.styleProperties = styleProperties;
+    }
+
+    public MultiTree(final String htmlPage,
+            final String container,
+            final String child,
+            final String instanceId,
+            final int treeOrder,
+            final String personalization,
+            final String variantId) {
+        this(htmlPage, container, child, instanceId, treeOrder, personalization, variantId, null);
     }
 
     /** full constructor */
@@ -80,7 +95,7 @@ public class MultiTree implements Serializable {
                      final int treeOrder) {
 
         this(htmlPage, container, child, instanceId, treeOrder, DOT_PERSONALIZATION_DEFAULT,
-                VariantAPI.DEFAULT_VARIANT.name());
+                VariantAPI.DEFAULT_VARIANT.name(), null);
     }
 
     public MultiTree(final String htmlPage,
@@ -90,7 +105,7 @@ public class MultiTree implements Serializable {
             final int treeOrder,
             final String personalization) {
 
-        this (htmlPage, container, child, instanceId, treeOrder, personalization, VariantAPI.DEFAULT_VARIANT.name());
+        this (htmlPage, container, child, instanceId, treeOrder, personalization, VariantAPI.DEFAULT_VARIANT.name(), null);
     }
 
     /** default constructor */
@@ -104,7 +119,7 @@ public class MultiTree implements Serializable {
     }
 
     private MultiTree(MultiTree tree) {
-        this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder, tree.getPersonalization(), tree.getVariantId());
+        this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder, tree.getPersonalization(), tree.getVariantId(), tree.getStyleProperties());
     }
 
     public static MultiTree buildMultitreeWithVariant(final MultiTree multiTree, final String newVariant) {
@@ -114,10 +129,10 @@ public class MultiTree implements Serializable {
     }
 
     public static MultiTree buildMultitree(final MultiTree multiTree,
-            final String newVariant, final String newPerzonalization) {
+            final String newVariant, final String newPersonalization) {
         final MultiTree newMultiTree = new MultiTree(multiTree);
         newMultiTree.setVariantId(newVariant);
-        newMultiTree.setPersonalization(newPerzonalization);
+        newMultiTree.setPersonalization(newPersonalization);
 
         return newMultiTree;
     }
@@ -128,6 +143,15 @@ public class MultiTree implements Serializable {
 
     public MultiTree setVariantId(final String variantId) {
         this.variantId = variantId;
+        return new MultiTree(this);
+    }
+
+    public String getStyleProperties() {
+        return styleProperties;
+    }
+
+    public MultiTree setStyleProperties(final String styleProperties) {
+        this.styleProperties = styleProperties;
         return new MultiTree(this);
     }
 

@@ -329,6 +329,22 @@ public interface MultiTreeAPI {
     MultiTree getMultiTree(String htmlPage, String container, String childContent) throws DotDataException;
 
     /**
+     * Gets a multi-tree by html page, container, child content, container instance,
+     * personalization, variant id, and style properties
+     * @param htmlPage html page
+     * @param container container
+     * @param childContent child content
+     * @param containerInstance container instance
+     * @param personalization personalization
+     * @param variantId variant id
+     * @param styleProperties style properties
+     * @return multi-tree
+     * @throws DotDataException thrown if an error occurs while executing the task
+     */
+    MultiTree getMultiTree(String htmlPage, String container, String childContent,
+            String containerInstance, String personalization, String variantId,
+            String styleProperties) throws DotDataException;
+    /**
      * Gets a list of MultiTrees that have the Identifier as a Parent
      * 
      * @param parent Container or Page

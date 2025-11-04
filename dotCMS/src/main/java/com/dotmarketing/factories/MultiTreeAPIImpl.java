@@ -99,9 +99,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ? and variant_id = ?";
 
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
-    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ?";
+    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ? and style_properties = ?";
 
-    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id) values (?,?,?,?,?,?,?)  ";
+    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id, style_properties) values (?,?,?,?,?,?,?,?)  ";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
     private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? and variant_id = ? order by tree_order";
@@ -261,6 +261,34 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent) throws DotDataException {
 
         return this.getMultiTree(htmlPage, container, childContent, Container.LEGACY_RELATION_TYPE);
+    }
+
+    /**
+     * Gets a multi-tree by html page, container, child content, container instance,
+     * personalization, variant id, and style properties
+     * @param htmlPage html page
+     * @param container container
+     * @param childContent child content
+     * @param containerInstance container instance
+     * @param personalization personalization
+     * @param variantId variant id
+     * @param style_properties style properties
+     * @return multi-tree
+     * @throws DotDataException thrown if an error occurs while executing the task
+     */
+    @Override
+    public MultiTree getMultiTree(final String htmlPage, final String container,
+            final String childContent,
+            final String containerInstance, final String personalization, final String variantId,
+            final String style_properties)
+            throws DotDataException {
+        final DotConnect db =
+                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container)
+                        .addParam(childContent).addParam(containerInstance)
+                        .addParam(personalization).addParam(variantId).addParam(style_properties);
+        db.loadResult();
+
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
     }
 
     @Override
@@ -764,7 +792,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             insertParams
                     .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                             tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(),
-                            copiedMultiTreeVariantId));
+                            copiedMultiTreeVariantId, tree.getStyleProperties()));
         }
         db.executeBatch(INSERT_SQL, insertParams);
     }
@@ -866,7 +894,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             for (final MultiTree tree : mTrees) {
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
-                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId(), tree.getStyleProperties()));
             }
 
             db.executeBatch(INSERT_SQL, insertParams);
@@ -912,8 +940,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         Logger.debug(this, () -> String.format("_dbInsert -> Saving MultiTree: %s", multiTree));
 
-        new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
-                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).addParam(multiTree.getVariantId()).loadResult();
+        new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage())
+                .addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
+                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder())
+                .addObject(multiTree.getPersonalization()).addParam(multiTree.getVariantId())
+                .addParam(multiTree.getStyleProperties()).loadResult();
     }
 
 
