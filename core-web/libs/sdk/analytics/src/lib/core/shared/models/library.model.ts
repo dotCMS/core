@@ -36,8 +36,6 @@ export interface ImpressionConfig {
     maxNodes?: number;
     /** Throttle time in milliseconds for intersection callbacks - default: 100 */
     throttleMs?: number;
-    /** Use requestIdleCallback for optimized processing - default: true */
-    useIdleCallback?: boolean;
 }
 
 /**

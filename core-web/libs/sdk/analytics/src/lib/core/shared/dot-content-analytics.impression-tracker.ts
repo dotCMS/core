@@ -2,11 +2,8 @@ import { getUVEState } from '@dotcms/uve';
 
 import {
     ANALYTICS_CONTENTLET_CLASS,
-    DEFAULT_IMPRESSION_DWELL_MS,
-    DEFAULT_IMPRESSION_MAX_NODES,
+    DEFAULT_IMPRESSION_CONFIG,
     DEFAULT_IMPRESSION_MUTATION_OBSERVER_DEBOUNCE_MS,
-    DEFAULT_IMPRESSION_THROTTLE_MS,
-    DEFAULT_IMPRESSION_VISIBILITY_THRESHOLD,
     IMPRESSION_EVENT_TYPE
 } from './constants';
 import { DotCMSAnalyticsConfig, DotCMSContentImpressionPayload, ImpressionConfig } from './models';
@@ -47,15 +44,13 @@ export class DotCMSImpressionTracker {
     private mutationObserver: MutationObserver | null = null;
     private elementImpressionStates = new Map<string, ImpressionState>();
     private sessionTrackedImpressions = new Set<string>();
-    private config: DotCMSAnalyticsConfig;
     private impressionConfig: Required<ImpressionConfig>;
     private currentPagePath = '';
     private subscribers = new Set<ImpressionCallback>();
+    private debug: boolean;
 
     constructor(config: DotCMSAnalyticsConfig) {
-        this.config = config;
-
-        // Merge user config with defaults
+        this.debug = config.debug ?? false;
         this.impressionConfig = this.resolveImpressionConfig(config.impressions);
     }
 
@@ -80,7 +75,7 @@ export class DotCMSImpressionTracker {
             try {
                 callback(eventName, payload);
             } catch (error) {
-                if (this.config.debug) {
+                if (this.debug) {
                     console.error('DotCMS Analytics: Error in impression subscriber:', error);
                 }
             }
@@ -91,17 +86,15 @@ export class DotCMSImpressionTracker {
     private resolveImpressionConfig(
         userConfig: ImpressionConfig | boolean | undefined
     ): Required<ImpressionConfig> {
-        // Normalize to object: if boolean/undefined, treat as empty config
-        const config = typeof userConfig === 'object' && userConfig !== null ? userConfig : {};
+        // If boolean/undefined, use defaults
+        if (typeof userConfig !== 'object' || userConfig === null) {
+            return { ...DEFAULT_IMPRESSION_CONFIG };
+        }
 
-        // Single return with defaults merged
+        // Merge user config with defaults
         return {
-            visibilityThreshold:
-                config.visibilityThreshold ?? DEFAULT_IMPRESSION_VISIBILITY_THRESHOLD,
-            dwellMs: config.dwellMs ?? DEFAULT_IMPRESSION_DWELL_MS,
-            maxNodes: config.maxNodes ?? DEFAULT_IMPRESSION_MAX_NODES,
-            throttleMs: config.throttleMs ?? DEFAULT_IMPRESSION_THROTTLE_MS,
-            useIdleCallback: config.useIdleCallback ?? false
+            ...DEFAULT_IMPRESSION_CONFIG,
+            ...userConfig
         };
     }
 
@@ -114,7 +107,7 @@ export class DotCMSImpressionTracker {
 
         // Early return if in editor mode (check for UVE markers)
         if (getUVEState()) {
-            if (this.config.debug) {
+            if (this.debug) {
                 console.warn('DotCMS Analytics: Impression tracking disabled in editor mode');
             }
 
@@ -136,7 +129,7 @@ export class DotCMSImpressionTracker {
         // Listen for page navigation to reset tracking
         this.initializePageNavigationHandler();
 
-        if (this.config.debug) {
+        if (this.debug) {
             console.warn(
                 `DotCMS Analytics: Impression tracking initialized with config:`,
                 this.impressionConfig
@@ -166,7 +159,7 @@ export class DotCMSImpressionTracker {
         );
 
         if (contentlets.length === 0) {
-            if (this.config.debug) {
+            if (this.debug) {
                 console.warn('DotCMS Analytics: No contentlets found to track');
             }
 
@@ -185,7 +178,7 @@ export class DotCMSImpressionTracker {
                 // Skip elements that shouldn't be tracked
                 const skipReason = this.shouldSkipElement(element);
                 if (skipReason) {
-                    if (this.config.debug) {
+                    if (this.debug) {
                         console.warn(
                             `DotCMS Analytics: Skipping element ${identifier} (${skipReason})`
                         );
@@ -206,7 +199,7 @@ export class DotCMSImpressionTracker {
                     observedCount++;
 
                     // Add visual debugging indicators in development
-                    if (this.config.debug) {
+                    if (this.debug) {
                         element.dataset.dotAnalyticsObserved = 'true';
                         element.style.outline = '2px solid red';
                         element.style.outlineOffset = '-2px';
@@ -216,7 +209,7 @@ export class DotCMSImpressionTracker {
             }
         }
 
-        if (this.config.debug) {
+        if (this.debug) {
             console.warn(`DotCMS Analytics: Observing ${observedCount} contentlets`);
             if (contentlets.length > maxNodesToTrack) {
                 console.warn(
@@ -245,7 +238,7 @@ export class DotCMSImpressionTracker {
             subtree: true
         });
 
-        if (this.config.debug) {
+        if (this.debug) {
             console.warn(
                 'DotCMS Analytics: MutationObserver enabled for dynamic content detection'
             );
@@ -265,7 +258,7 @@ export class DotCMSImpressionTracker {
                     }
                 });
 
-                if (this.config.debug) {
+                if (this.debug) {
                     console.warn('DotCMS Analytics: Page hidden, all impression timers cancelled');
                 }
             }
@@ -282,7 +275,7 @@ export class DotCMSImpressionTracker {
             const newPath = window.location.pathname;
 
             if (newPath !== this.currentPagePath) {
-                if (this.config.debug) {
+                if (this.debug) {
                     console.warn(
                         `DotCMS Analytics: Navigation detected (${this.currentPagePath} → ${newPath}), resetting impression tracking`
                     );
@@ -381,7 +374,7 @@ export class DotCMSImpressionTracker {
             if (this.isElementStillVisible(element)) {
                 this.trackAndSendImpression(identifier, element);
             } else {
-                if (this.config.debug) {
+                if (this.debug) {
                     console.warn(
                         `DotCMS Analytics: Dwell timer expired for ${identifier} but element no longer visible, skipping impression`
                     );
@@ -392,7 +385,7 @@ export class DotCMSImpressionTracker {
             }
         }, this.impressionConfig.dwellMs);
 
-        if (this.config.debug) {
+        if (this.debug) {
             console.warn(
                 `DotCMS Analytics: Started dwell timer for ${identifier} (${this.impressionConfig.dwellMs}ms)`
             );
@@ -409,7 +402,7 @@ export class DotCMSImpressionTracker {
         state.timer = null;
         state.visibleSince = null;
 
-        if (this.config.debug) {
+        if (this.debug) {
             console.warn(`DotCMS Analytics: Cancelled dwell timer for ${identifier}`);
         }
     }
@@ -462,7 +455,7 @@ export class DotCMSImpressionTracker {
         }
 
         // Update visual indicator in debug mode
-        if (this.config.debug) {
+        if (this.debug) {
             element.style.outline = '2px solid green';
             element.style.outlineOffset = '-2px';
 
@@ -559,7 +552,7 @@ export class DotCMSImpressionTracker {
         // Clear all subscribers
         this.subscribers.clear();
 
-        if (this.config.debug) {
+        if (this.debug) {
             console.warn('DotCMS Analytics: Impression tracking cleaned up');
         }
     }
