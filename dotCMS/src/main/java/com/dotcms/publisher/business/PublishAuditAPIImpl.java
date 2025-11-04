@@ -44,6 +44,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private static final String UPDATE_ALL_BY_BUNDLEID ="update publishing_queue_audit set status = ?, status_pojo = ?, create_date = ?, status_updated = ? where bundle_id = ? ";
 	private static final String DELETE_BY_BUNDLEID ="delete from publishing_queue_audit where bundle_id = ? ";
 	private static final String SELECT_ALL_BY_BUNDLEID = "select * from publishing_queue_audit where bundle_id = ? ";
+	private static final String SELECT_ALL_BY_BUNDLES_IDS = "select * from publishing_queue_audit where bundle_id in (%s) ";
 	private static final String SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC = "SELECT * FROM publishing_queue_audit order by status_updated desc";
 	private static final String SELECT_ALL_BY_BUNDLE_ID_QUERY = "SELECT * FROM publishing_queue_audit WHERE LOWER(bundle_id) LIKE ? ORDER BY status_updated DESC";
 	private static final String SELECT_MAX_CREATEDATE_BY_STATUS_ISNOT_BUNDLING = "select max(c.create_date) as max_date from publishing_queue_audit c where c.status != ? ";
@@ -219,6 +220,31 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		return getPublishAuditStatus(bundleId, NO_LIMIT_ASSETS);
 	}
 
+	@Override
+	@CloseDBIfOpened
+	public List<PublishAuditStatus> getPublishAuditStatuses(List<String> bundleIds)
+            throws DotPublisherException {
+		try {
+			final List<PublishAuditStatus> result = new ArrayList<>();
+
+			DotConnect dc = new DotConnect();
+			final List<String> parameter = bundleIds.stream().map(id -> "'" + id + "'").collect(Collectors.toList());
+
+			dc.setSQL(String.format(SELECT_ALL_BY_BUNDLES_IDS,  String.join(",", parameter)));
+			List<Map<String, Object>> items = dc.loadObjectResults();
+
+			for(Map<String, Object> item: items) {
+				result.add(turnIntoPublishAuditStatus(NO_LIMIT_ASSETS,  item));
+			}
+
+			return result;
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}
+
+	}
+
 	public PublishAuditStatus getPublishAuditStatus(String bundleId, int assetsLimit) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -227,24 +253,30 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.addParam(bundleId);
 
 			List<Map<String, Object>> res = dc.loadObjectResults();
+
 			if(res.size() > 1) {
 				throw new DotPublisherException("Found duplicate bundle status");
 			} else {
 				if(!res.isEmpty()) {
-					final Map<String, Object> publishAuditStatusMap = res.get(0);
-					final LimitedAssetResult limitedAssetResult = limitAssets(
-							publishAuditStatusMap.get("status_pojo").toString(), assetsLimit);
-
-					putStatusPojoAndNumberOfAssets(publishAuditStatusMap,
-							limitedAssetResult.newStatusPojo, limitedAssetResult.numberTotalOfAssets);
-					return mapper.mapObject(publishAuditStatusMap);
+					return turnIntoPublishAuditStatus(assetsLimit,  res.get(0));
 				}
+
 				return null;
 			}
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
+	}
+
+	private PublishAuditStatus turnIntoPublishAuditStatus(int assetsLimit, Map<String, Object> map) {
+		final Map<String, Object> publishAuditStatusMap = map;
+		final LimitedAssetResult limitedAssetResult = limitAssets(
+				publishAuditStatusMap.get("status_pojo").toString(), assetsLimit);
+
+		putStatusPojoAndNumberOfAssets(publishAuditStatusMap,
+				limitedAssetResult.newStatusPojo, limitedAssetResult.numberTotalOfAssets);
+		return mapper.mapObject(publishAuditStatusMap);
 	}
 
 	private void putStatusPojoAndNumberOfAssets(
