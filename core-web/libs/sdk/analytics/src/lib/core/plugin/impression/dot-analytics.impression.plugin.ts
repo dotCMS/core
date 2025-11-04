@@ -1,16 +1,10 @@
 import { AnalyticsInstance } from 'analytics';
 
 import {
-    cleanupImpressionTracking,
-    initializeImpressionTracking
-} from './dot-analytics.impression.utils';
-
+    DotCMSImpressionTracker,
+    ImpressionSubscription
+} from '../../shared/dot-content-analytics.impression-tracker';
 import { DotCMSAnalyticsConfig } from '../../shared/models';
-
-/**
- * Type for the impression tracker instance
- */
-type ImpressionTracker = ReturnType<typeof initializeImpressionTracking>;
 
 /**
  * Impression Plugin for DotAnalytics
@@ -33,7 +27,8 @@ type ImpressionTracker = ReturnType<typeof initializeImpressionTracking>;
  * @returns {Object} Plugin object with lifecycle methods
  */
 export const dotAnalyticsImpressionPlugin = (config: DotCMSAnalyticsConfig) => {
-    let impressionTracker: ImpressionTracker | null = null;
+    let impressionTracker: DotCMSImpressionTracker | null = null;
+    let subscription: ImpressionSubscription | null = null;
 
     return {
         name: 'dot-analytics-impression',
@@ -47,12 +42,14 @@ export const dotAnalyticsImpressionPlugin = (config: DotCMSAnalyticsConfig) => {
             // Only initialize if impressions config exists
             // Can be true (use defaults) or an object (custom config)
             if (config.impressions) {
-                // Pass instance.track directly - simpler and more efficient
-                // Bind to maintain proper context when called from tracker
-                impressionTracker = initializeImpressionTracking(
-                    config,
-                    instance.track.bind(instance)
-                );
+                // Create and initialize tracker
+                impressionTracker = new DotCMSImpressionTracker(config);
+                impressionTracker.initialize();
+
+                // Subscribe to impression events and call analytics track
+                subscription = impressionTracker.onImpression((eventName, payload) => {
+                    instance.track(eventName, payload);
+                });
 
                 if (config.debug) {
                     console.warn('DotCMS Analytics: Impression tracking plugin initialized');
@@ -73,8 +70,14 @@ export const dotAnalyticsImpressionPlugin = (config: DotCMSAnalyticsConfig) => {
         loaded: () => {
             if (typeof window !== 'undefined' && impressionTracker) {
                 const cleanup = () => {
+                    // Unsubscribe before cleanup
+                    if (subscription) {
+                        subscription.unsubscribe();
+                        subscription = null;
+                    }
+
                     if (impressionTracker) {
-                        cleanupImpressionTracking(impressionTracker);
+                        impressionTracker.cleanup();
                         impressionTracker = null;
 
                         if (config.debug) {

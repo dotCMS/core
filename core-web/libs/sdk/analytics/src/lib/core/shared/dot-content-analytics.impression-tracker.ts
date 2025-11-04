@@ -12,7 +12,6 @@ import {
 import { DotCMSAnalyticsConfig, DotCMSContentImpressionPayload, ImpressionConfig } from './models';
 
 import {
-    AnalyticsTrackFn,
     createDebounce,
     extractContentletData,
     extractContentletIdentifier,
@@ -28,9 +27,20 @@ interface ImpressionState {
     element: HTMLElement | null;
 }
 
+/** Callback function for impression events */
+export type ImpressionCallback = (
+    eventName: string,
+    payload: DotCMSContentImpressionPayload
+) => void;
+
+/** Subscription object with unsubscribe method */
+export interface ImpressionSubscription {
+    unsubscribe: () => void;
+}
+
 /**
  * Tracks content impressions using IntersectionObserver and dwell time.
- * Fires events when elements are visible for the configured duration.
+ * Emits events through subscriptions when impressions are detected.
  */
 export class DotCMSImpressionTracker {
     private observer: IntersectionObserver | null = null;
@@ -38,16 +48,43 @@ export class DotCMSImpressionTracker {
     private elementImpressionStates = new Map<string, ImpressionState>();
     private sessionTrackedImpressions = new Set<string>();
     private config: DotCMSAnalyticsConfig;
-    private track: AnalyticsTrackFn;
     private impressionConfig: Required<ImpressionConfig>;
     private currentPagePath = '';
+    private subscribers = new Set<ImpressionCallback>();
 
-    constructor(config: DotCMSAnalyticsConfig, track: AnalyticsTrackFn) {
+    constructor(config: DotCMSAnalyticsConfig) {
         this.config = config;
-        this.track = track;
 
         // Merge user config with defaults
         this.impressionConfig = this.resolveImpressionConfig(config.impressions);
+    }
+
+    /**
+     * Subscribe to impression events
+     * @param callback - Function called when impression is detected
+     * @returns Subscription object with unsubscribe method
+     */
+    public onImpression(callback: ImpressionCallback): ImpressionSubscription {
+        this.subscribers.add(callback);
+
+        return {
+            unsubscribe: () => {
+                this.subscribers.delete(callback);
+            }
+        };
+    }
+
+    /** Notifies all subscribers of an impression */
+    private notifySubscribers(eventName: string, payload: DotCMSContentImpressionPayload): void {
+        this.subscribers.forEach((callback) => {
+            try {
+                callback(eventName, payload);
+            } catch (error) {
+                if (this.config.debug) {
+                    console.error('DotCMS Analytics: Error in impression subscriber:', error);
+                }
+            }
+        });
     }
 
     /** Merges user config with defaults */
@@ -408,8 +445,8 @@ export class DotCMSImpressionTracker {
             }
         };
 
-        // Send through Analytics.js pipeline (Identity → Enricher → Main plugin)
-        this.track(IMPRESSION_EVENT_TYPE, impressionPayload);
+        // Notify subscribers (plugin will call analytics.track)
+        this.notifySubscribers(IMPRESSION_EVENT_TYPE, impressionPayload);
 
         // Mark as tracked in session
         this.markImpressionAsTracked(identifier);
@@ -518,6 +555,9 @@ export class DotCMSImpressionTracker {
 
         // Clear all state
         this.elementImpressionStates.clear();
+
+        // Clear all subscribers
+        this.subscribers.clear();
 
         if (this.config.debug) {
             console.warn('DotCMS Analytics: Impression tracking cleaned up');

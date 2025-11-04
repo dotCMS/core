@@ -3,8 +3,13 @@
  * Contains interfaces for SDK/library internal structures (not for end users)
  */
 
-import { DotCMSAnalyticsEventContext, DotCMSEventPageData, DotCMSEventUtmData } from './data.model';
-import { JsonObject } from './event.model';
+import {
+    DotCMSAnalyticsEventContext,
+    DotCMSContentImpressionPageData,
+    DotCMSEventPageData,
+    DotCMSEventUtmData
+} from './data.model';
+import { DotCMSContentImpressionPayload, JsonObject } from './event.model';
 import { DotCMSAnalyticsRequestBody } from './request.model';
 
 /**
@@ -195,6 +200,18 @@ export type EnrichedAnalyticsPayload = AnalyticsBasePayloadWithContext & {
     /** Local timestamp when the event occurred */
     local_time: string;
 };
+
+/**
+ * Enriched track event payload with fields added to root based on event type.
+ * Used by the enricher plugin for track events.
+ */
+export interface EnrichedTrackPayload extends AnalyticsTrackPayloadWithContext {
+    local_time: string;
+    page?: DotCMSContentImpressionPageData | DotCMSEventPageData;
+    content?: DotCMSContentImpressionPayload['content'];
+    position?: DotCMSContentImpressionPayload['position'];
+    utm?: DotCMSEventUtmData;
+}
 
 /**
  * Analytics.js instance structure for DotCMS.
