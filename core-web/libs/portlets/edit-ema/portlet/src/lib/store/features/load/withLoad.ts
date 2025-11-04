@@ -182,13 +182,6 @@ export function withLoad() {
                                                 isTraditionalPage,
                                                 status: UVE_STATUS.LOADED
                                             });
-                                        }),
-
-                                        // Add breadcrumb after the state is updated
-                                        tap(() => {
-                                            globalStore.addNewBreadcrumb({
-                                                label: pageAsset?.page.title
-                                            });
                                         })
                                     );
                                 })
@@ -232,6 +225,12 @@ export function withLoad() {
                                     );
                                     patchState(store, { pageAPIResponse, canEditPage });
                                     store.getWorkflowActions(pageAPIResponse.page.inode);
+
+                                    // Add breadcrumb after the state is updated
+
+                                    globalStore.addNewBreadcrumb({
+                                        label: pageAPIResponse?.page.title
+                                    });
                                 }),
                                 switchMap((pageAPIResponse) => {
                                     return dotLanguagesService.getLanguagesUsedPage(

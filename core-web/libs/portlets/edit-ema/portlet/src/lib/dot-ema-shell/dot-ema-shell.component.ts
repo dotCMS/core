@@ -23,6 +23,7 @@ import {
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { GlobalStore } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
@@ -44,6 +45,7 @@ import {
     sanitizeURL,
     shouldNavigate
 } from '../utils';
+
 @Component({
     selector: 'dot-ema-shell',
     providers: [
@@ -94,7 +96,7 @@ export class DotEmaShellComponent implements OnInit {
     readonly #router = inject(Router);
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
-
+    readonly #globalStore = inject(GlobalStore);
     protected readonly $shellProps = this.uveStore.$shellProps;
     protected readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
 
@@ -116,6 +118,17 @@ export class DotEmaShellComponent implements OnInit {
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
 
         this.#updateLocation(cleanedParams);
+    });
+
+    readonly $updateBreadcrumbEffect = effect(() => {
+        const pageAPIResponse = this.uveStore.pageAPIResponse();
+
+        if (pageAPIResponse) {
+            this.#globalStore.addNewBreadcrumb({
+                label: pageAPIResponse?.page.title,
+                url: this.uveStore.pageParams().url
+            });
+        }
     });
 
     ngOnInit(): void {
