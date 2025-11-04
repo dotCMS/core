@@ -176,6 +176,23 @@ paths:
           description: default response
       tags:
       - Publishing
+  /auditPublishing/getAll:
+    post:
+      operationId: getAll
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Publishing
   /bundle:
     post:
       operationId: uploadBundleAsync
@@ -1681,7 +1698,7 @@ paths:
       - JavaScript
   /license/all/{params}:
     get:
-      operationId: getAll
+      operationId: getAll_1
       parameters:
       - in: path
         name: params
@@ -12571,7 +12588,7 @@ paths:
       - System Storage
   /v1/system-table:
     get:
-      operationId: getAll_1
+      operationId: getAll_2
       responses:
         default:
           content:
