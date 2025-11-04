@@ -45,7 +45,7 @@ public class BrowserQuery {
     final User user;
     final String  filter, fileName, sortBy;
     final int offset, maxResults;
-    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties, showDefaultLangItems, useElasticsearchFiltering;
+    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties, showDefaultLangItems, useElasticsearchFiltering, filterFolderNames;
     final Set<Long> languageIds;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
@@ -101,6 +101,7 @@ public class BrowserQuery {
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
         this.useElasticsearchFiltering = builder.useElasticsearchFiltering;
+        this.filterFolderNames = builder.filterFolderNames;
         this.fileName = builder.fileName;
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
@@ -209,6 +210,7 @@ public class BrowserQuery {
 
         private User user;
         private boolean useElasticsearchFiltering = false;
+        private boolean filterFolderNames = false;
         private String filter = null;
         private String fileName = null;
         private String sortBy = "moddate";
@@ -241,6 +243,7 @@ public class BrowserQuery {
             this.hostFolderId = browserQuery.folder.isSystemFolder()
                     ? browserQuery.site.getIdentifier()
                     : browserQuery.folder.getInode();
+            this.useElasticsearchFiltering = browserQuery.useElasticsearchFiltering;
             this.forceSystemHost = browserQuery.forceSystemHost;
             this.filter = browserQuery.filter;
             this.fileName = browserQuery.fileName;
@@ -288,6 +291,16 @@ public class BrowserQuery {
          */
         public Builder withUseElasticsearchFiltering(boolean useElasticsearchFiltering) {
             this.useElasticsearchFiltering = useElasticsearchFiltering;
+            return this;
+        }
+
+        /**
+         * if we want to filter folder names when searching with Text filters
+         * @param filterFolderNames
+         * @return
+         */
+        public Builder withFilterFolderNames(boolean filterFolderNames) {
+            this.filterFolderNames = filterFolderNames;
             return this;
         }
 

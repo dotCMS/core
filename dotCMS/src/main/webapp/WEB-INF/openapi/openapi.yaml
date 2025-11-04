@@ -23152,6 +23152,8 @@ components:
     QueryFilters:
       type: object
       properties:
+        filterFolders:
+          type: boolean
         text:
           type: string
     RadioField:

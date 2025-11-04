@@ -147,8 +147,9 @@ public class ContentDriveHelper {
 
         // Enable Elasticsearch filtering for text search when filter is provided
         if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
-            builder.withUseElasticsearchFiltering(true) // Rely on ES for enhanced text filtering
-                    .withFilter(requestForm.filters().text());
+             builder.withUseElasticsearchFiltering(true) // Rely on ES for enhanced text filtering
+             .withFilterFolderNames(requestForm.filters().filterFolders())
+             .withFilter(requestForm.filters().text());
         }
 
         Logger.debug(this, String.format(

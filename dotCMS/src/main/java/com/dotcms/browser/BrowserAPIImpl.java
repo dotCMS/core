@@ -968,6 +968,9 @@ public class BrowserAPIImpl implements BrowserAPI {
                 folders.removeIf(f->!f.isShowOnMenu());
             }
 
+            if(browserQuery.filterFolderNames){
+                folders.removeIf(f->!f.getName().toLowerCase().contains(browserQuery.filter.toLowerCase()));
+            }
 
             final DotMapViewTransformer transformer = new DotFolderTransformerBuilder().withFolders(folders)
                     .withUserAndRoles(browserQuery.user, roles).build();
