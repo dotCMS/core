@@ -3,14 +3,7 @@
  * Pure functions without class dependencies for better testability and reusability
  */
 
-import { DotCMSImpressionTracker } from '../../shared/dot-content-analytics.impression-tracker';
-import { DotCMSAnalyticsConfig, ViewportMetrics } from '../../shared/models';
-
-/**
- * Type for the track function from analytics instance.
- * This is the minimal interface needed by producer plugins to emit events.
- */
-export type AnalyticsTrackFn = (eventName: string, properties?: Record<string, unknown>) => void;
+import { ViewportMetrics } from '../../shared/models';
 
 /**
  * Calculates the visibility ratio of an element in the viewport
@@ -126,27 +119,3 @@ export function extractContentletData(element: HTMLElement): {
         baseType: element.dataset.dotAnalyticsBasetype || ''
     };
 }
-
-/**
- * Initializes impression tracking with the provided analytics track function
- * @param config - Analytics configuration
- * @param track - The analytics.track function from the Analytics.js instance
- * @returns Initialized impression tracker instance
- */
-export const initializeImpressionTracking = (
-    config: DotCMSAnalyticsConfig,
-    track: AnalyticsTrackFn
-): DotCMSImpressionTracker => {
-    const tracker = new DotCMSImpressionTracker(config, track);
-    tracker.initialize();
-    return tracker;
-};
-
-/**
- * Cleans up impression tracking
- */
-export const cleanupImpressionTracking = (tracker: DotCMSImpressionTracker | null): void => {
-    if (tracker) {
-        tracker.cleanup();
-    }
-};

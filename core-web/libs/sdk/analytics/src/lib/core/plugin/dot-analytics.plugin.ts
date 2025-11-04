@@ -1,5 +1,3 @@
-import { EnrichedTrackPayload } from './enricher/dot-analytics.enricher.plugin';
-
 import { DotCMSPredefinedEventType } from '../shared/constants/dot-content-analytics.constants';
 import { sendAnalyticsEvent } from '../shared/dot-content-analytics.http';
 import { isPredefinedEventType } from '../shared/dot-content-analytics.utils';
@@ -7,6 +5,7 @@ import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsRequestBody,
     EnrichedAnalyticsPayload,
+    EnrichedTrackPayload,
     JsonObject
 } from '../shared/models';
 import { createAnalyticsQueue } from '../shared/queue';

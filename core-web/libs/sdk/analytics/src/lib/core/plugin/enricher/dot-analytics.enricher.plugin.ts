@@ -3,25 +3,10 @@ import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-conte
 import {
     AnalyticsBasePayloadWithContext,
     AnalyticsTrackPayloadWithContext,
-    DotCMSContentImpressionPageData,
     DotCMSContentImpressionPayload,
-    DotCMSEventPageData,
-    DotCMSEventUtmData,
-    EnrichedAnalyticsPayload
+    EnrichedAnalyticsPayload,
+    EnrichedTrackPayload
 } from '../../shared/models';
-
-/**
- * Enriched payload interface for track events.
- * Fields are added to the root based on event type to avoid duplication.
- */
-export interface EnrichedTrackPayload extends AnalyticsTrackPayloadWithContext {
-    local_time: string;
-    // Optional fields added based on event type
-    page?: DotCMSContentImpressionPageData | DotCMSEventPageData;
-    content?: DotCMSContentImpressionPayload['content'];
-    position?: DotCMSContentImpressionPayload['position'];
-    utm?: DotCMSEventUtmData;
-}
 
 /**
  * Plugin that enriches the analytics payload data with page, UTM, and custom data.
