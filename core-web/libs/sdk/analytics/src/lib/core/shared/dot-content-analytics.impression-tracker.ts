@@ -1,3 +1,5 @@
+import { getUVEState } from '@dotcms/uve';
+
 import {
     ANALYTICS_CONTENTLET_CLASS,
     DEFAULT_IMPRESSION_DWELL_MS,
@@ -18,26 +20,17 @@ import {
     isElementMeetingVisibilityThreshold
 } from '../plugin/impression/dot-analytics.impression.utils';
 
-/**
- * State for tracking an individual element's impression
- */
+/** Tracks the state of an element's impression (timer, visibility, tracked status) */
 interface ImpressionState {
-    /** Timer ID for dwell time tracking */
     timer: number | null;
-    /** Timestamp when element became visible */
     visibleSince: number | null;
-    /** Whether impression has been fired for this element */
     tracked: boolean;
-    /** Reference to the element for post-dwell visibility check */
     element: HTMLElement | null;
 }
 
 /**
- * Impression tracking manager for DotCMS Analytics.
- * Tracks when contentlets become visible in the viewport using IntersectionObserver.
- * Fires impression events when elements meet visibility and dwell time thresholds.
- *
- * Singleton pattern - one tracker per analytics instance.
+ * Tracks content impressions using IntersectionObserver and dwell time.
+ * Fires events when elements are visible for the configured duration.
  */
 export class DotCMSImpressionTracker {
     private observer: IntersectionObserver | null = null;
@@ -57,50 +50,25 @@ export class DotCMSImpressionTracker {
         this.impressionConfig = this.resolveImpressionConfig(config.impressions);
     }
 
-    /**
-     * Resolves impression config by merging user config with defaults
-     */
+    /** Merges user config with defaults */
     private resolveImpressionConfig(
         userConfig: ImpressionConfig | boolean | undefined
     ): Required<ImpressionConfig> {
-        // TODO: Mejorar esto, se esta duplicando esa asignación en el return.
-        // If boolean true or undefined, use all defaults
-        if (typeof userConfig !== 'object' || userConfig === null) {
-            return {
-                visibilityThreshold: DEFAULT_IMPRESSION_VISIBILITY_THRESHOLD,
-                dwellMs: DEFAULT_IMPRESSION_DWELL_MS,
-                maxNodes: DEFAULT_IMPRESSION_MAX_NODES,
-                throttleMs: DEFAULT_IMPRESSION_THROTTLE_MS,
-                useIdleCallback: false
-            };
-        }
+        // Normalize to object: if boolean/undefined, treat as empty config
+        const config = typeof userConfig === 'object' && userConfig !== null ? userConfig : {};
 
-        // If object, merge with defaults
+        // Single return with defaults merged
         return {
             visibilityThreshold:
-                userConfig.visibilityThreshold ?? DEFAULT_IMPRESSION_VISIBILITY_THRESHOLD,
-            dwellMs: userConfig.dwellMs ?? DEFAULT_IMPRESSION_DWELL_MS,
-            maxNodes: userConfig.maxNodes ?? DEFAULT_IMPRESSION_MAX_NODES,
-            throttleMs: userConfig.throttleMs ?? DEFAULT_IMPRESSION_THROTTLE_MS,
-            useIdleCallback: userConfig.useIdleCallback ?? false
+                config.visibilityThreshold ?? DEFAULT_IMPRESSION_VISIBILITY_THRESHOLD,
+            dwellMs: config.dwellMs ?? DEFAULT_IMPRESSION_DWELL_MS,
+            maxNodes: config.maxNodes ?? DEFAULT_IMPRESSION_MAX_NODES,
+            throttleMs: config.throttleMs ?? DEFAULT_IMPRESSION_THROTTLE_MS,
+            useIdleCallback: config.useIdleCallback ?? false
         };
     }
 
-    /**
-     * Initializes the impression tracking system.
-     *
-     * Flow:
-     * 1. Check for SSR and editor mode (early returns)
-     * 2. Load previously tracked impressions from session storage
-     * 3. Setup IntersectionObserver with configured visibility threshold
-     * 4. Find and observe all contentlet elements in the DOM
-     * 5. Setup MutationObserver for dynamic content detection (if enabled)
-     * 6. Setup page visibility handler to pause/resume tracking
-     *
-     * @example
-     * const tracker = new DotCMSImpressionTracker(config, analytics);
-     * tracker.initialize(); // Starts tracking impressions
-     */
+    /** Initializes tracking: sets up observers, finds contentlets, handles visibility/navigation */
     public initialize(): void {
         // Early return if SSR
         if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -108,7 +76,7 @@ export class DotCMSImpressionTracker {
         }
 
         // Early return if in editor mode (check for UVE markers)
-        if (this.isEditorMode()) {
+        if (getUVEState()) {
             if (this.config.debug) {
                 console.warn('DotCMS Analytics: Impression tracking disabled in editor mode');
             }
@@ -139,24 +107,7 @@ export class DotCMSImpressionTracker {
         }
     }
 
-    /**
-     * Checks if we're in editor mode (UVE)
-     */
-    private isEditorMode(): boolean {
-        // Check for UVE markers in window
-        return (
-            !!(window as Window & { dotcmsUVE?: unknown }).dotcmsUVE ||
-            document.body.classList.contains('dotcms-edit-mode')
-        );
-    }
-
-    /**
-     * Initializes the IntersectionObserver with configured visibility threshold.
-     *
-     * @remarks
-     * The observer uses the browser viewport as the root and triggers callbacks
-     * when elements cross the configured visibility threshold.
-     */
+    /** Sets up IntersectionObserver with configured visibility threshold */
     private initializeIntersectionObserver(): void {
         const options: IntersectionObserverInit = {
             root: null, // Use viewport as root
@@ -169,15 +120,7 @@ export class DotCMSImpressionTracker {
         }, options);
     }
 
-    /**
-     * Finds and observes all contentlet elements in the DOM.
-     *
-     * @remarks
-     * - Queries for elements with the analytics contentlet class
-     * - Limits tracking to maxNodes for performance
-     * - Initializes or updates state for each element
-     * - Skips elements without identifiers
-     */
+    /** Finds contentlets in DOM, validates them, and starts observing (respects maxNodes limit) */
     private findAndObserveContentletElements(): void {
         if (!this.observer) return;
 
@@ -246,14 +189,7 @@ export class DotCMSImpressionTracker {
         }
     }
 
-    /**
-     * Initializes MutationObserver to detect dynamically added contentlet elements.
-     *
-     * @remarks
-     * - Observes the document body for DOM changes
-     * - Debounces scans to avoid excessive processing
-     * - Automatically finds and observes new contentlets
-     */
+    /** Watches for new contentlets added to DOM (debounced for performance) */
     private initializeDynamicContentDetector(): void {
         if (typeof window === 'undefined' || typeof document === 'undefined') {
             return;
@@ -279,13 +215,7 @@ export class DotCMSImpressionTracker {
         }
     }
 
-    /**
-     * Initializes page visibility change handler.
-     *
-     * @remarks
-     * Cancels all active dwell timers when the page becomes hidden
-     * to prevent incorrect impressions from being fired.
-     */
+    /** Cancels all timers when page is hidden (prevents false impressions) */
     private initializePageVisibilityHandler(): void {
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
@@ -305,15 +235,7 @@ export class DotCMSImpressionTracker {
         });
     }
 
-    /**
-     * Initializes page navigation handler to reset tracking on route changes.
-     *
-     * @remarks
-     * - Detects when the user navigates to a different page (SPA navigation)
-     * - Resets tracked impressions to allow re-tracking on the new page
-     * - Maintains deduplication within the same page
-     * - Works with client-side routing (NextJS, React Router, etc.)
-     */
+    /** Resets tracking on SPA navigation (listens to pushState, replaceState, popstate) */
     private initializePageNavigationHandler(): void {
         // Store initial path
         this.currentPagePath = window.location.pathname;
@@ -370,16 +292,7 @@ export class DotCMSImpressionTracker {
         setInterval(checkPathChange, 1000);
     }
 
-    /**
-     * Processes IntersectionObserver callbacks.
-     *
-     * @param entries - Array of intersection entries from the observer
-     *
-     * @remarks
-     * - Starts dwell timer when element enters viewport
-     * - Cancels dwell timer when element exits viewport
-     * - Ignores callbacks when page is not visible
-     */
+    /** Handles visibility changes: starts timer on enter, cancels on exit */
     private processIntersectionChanges(entries: IntersectionObserverEntry[]): void {
         // Ignore if page is not visible
         if (document.visibilityState !== 'visible') {
@@ -402,19 +315,7 @@ export class DotCMSImpressionTracker {
         });
     }
 
-    /**
-     * Starts the dwell timer for an element impression.
-     *
-     * @param identifier - The contentlet identifier
-     * @param element - The HTML element to track
-     *
-     * @remarks
-     * - Skips if already tracked in session
-     * - Skips if timer is already running
-     * - Skips if page is not visible
-     * - Verifies element is still visible when timer expires (post-dwell check)
-     * - Only fires impression if all conditions are met
-     */
+    /** Starts dwell timer; fires impression if element still visible when timer expires */
     private startImpressionDwellTimer(identifier: string, element: HTMLElement): void {
         const state = this.elementImpressionStates.get(identifier);
 
@@ -461,14 +362,7 @@ export class DotCMSImpressionTracker {
         }
     }
 
-    /**
-     * Cancels the dwell timer for an element impression.
-     *
-     * @param identifier - The contentlet identifier
-     *
-     * @remarks
-     * Called when an element exits the viewport before the dwell time expires.
-     */
+    /** Cancels active dwell timer (element left viewport before dwell time) */
     private cancelImpressionDwellTimer(identifier: string): void {
         const state = this.elementImpressionStates.get(identifier);
 
@@ -483,21 +377,7 @@ export class DotCMSImpressionTracker {
         }
     }
 
-    /**
-     * Tracks and sends an impression event to analytics.
-     *
-     * @param identifier - The contentlet identifier
-     * @param element - The HTML element that was impressed
-     *
-     * @remarks
-     * - Calculates actual dwell time
-     * - Extracts contentlet data using utility
-     * - Calculates viewport metrics using utility
-     * - Sends ONLY impression-specific data (content, position)
-     * - Page data will be added automatically by the enricher plugin
-     * - Marks impression as tracked in session
-     * - Updates element state
-     */
+    /** Fires impression event with content & position data (page data added by enricher plugin) */
     private trackAndSendImpression(identifier: string, element: HTMLElement): void {
         const state = this.elementImpressionStates.get(identifier);
 
@@ -512,9 +392,7 @@ export class DotCMSImpressionTracker {
         // Calculate viewport metrics using utility
         const viewportMetrics = getViewportMetrics(element);
 
-        // Build impression payload with ONLY impression-specific data
-        // The enricher plugin will add page data automatically
-        // TODO: Mejorar este type
+        // Build impression payload (enricher plugin adds page data automatically)
         const impressionPayload: DotCMSContentImpressionPayload = {
             content: {
                 identifier: contentletData.identifier,
@@ -530,11 +408,7 @@ export class DotCMSImpressionTracker {
             }
         };
 
-        // Fire the impression event directly using the track function
-        // This goes through the full Analytics.js pipeline:
-        // 1. Identity Plugin → Adds context (user_id, session_id, device)
-        // 2. Enricher Plugin → Adds page data automatically
-        // 3. Main Plugin → Sends to server/queue
+        // Send through Analytics.js pipeline (Identity → Enricher → Main plugin)
         this.track(IMPRESSION_EVENT_TYPE, impressionPayload);
 
         // Mark as tracked in session
@@ -562,18 +436,7 @@ export class DotCMSImpressionTracker {
         }
     }
 
-    /**
-     * Determines if an element should be skipped from tracking.
-     *
-     * @param element - The HTML element to check
-     * @returns A string describing why the element should be skipped, or null if it should be tracked
-     *
-     * @remarks
-     * Filters out elements that are:
-     * - Zero dimensions (empty/collapsed)
-     * - Too small (< 10x10px, likely tracking pixels)
-     * - Hidden with CSS (visibility: hidden, opacity: 0)
-     */
+    /** Returns skip reason if element is hidden/too small, null if trackable */
     private shouldSkipElement(element: HTMLElement): string | null {
         const rect = element.getBoundingClientRect();
         const styles = window.getComputedStyle(element);
@@ -608,15 +471,7 @@ export class DotCMSImpressionTracker {
         return null;
     }
 
-    /**
-     * Checks if an element is still visible after dwell time expires.
-     *
-     * @param element - The HTML element to check
-     * @returns True if element is still visible and meets threshold
-     *
-     * @remarks
-     * This is the critical post-dwell check that prevents incorrect impressions.
-     */
+    /** Post-dwell check: verifies element still meets visibility threshold */
     private isElementStillVisible(element: HTMLElement): boolean {
         // Check page visibility first
         if (document.visibilityState !== 'visible') {
@@ -630,40 +485,17 @@ export class DotCMSImpressionTracker {
         );
     }
 
-    /**
-     * Checks if an impression has already been tracked in this session.
-     *
-     * @param identifier - The contentlet identifier
-     * @returns True if the impression was already tracked
-     */
+    /** Checks if impression already fired in current page session */
     private hasBeenTrackedInSession(identifier: string): boolean {
         return this.sessionTrackedImpressions.has(identifier);
     }
 
-    /**
-     * Marks an impression as tracked in the current page session.
-     *
-     * @param identifier - The contentlet identifier
-     *
-     * @remarks
-     * Adds to in-memory Set for deduplication within the current page.
-     * Tracked impressions are reset on page reload/navigation.
-     */
+    /** Marks impression as tracked (prevents duplicates in same page session) */
     private markImpressionAsTracked(identifier: string): void {
         this.sessionTrackedImpressions.add(identifier);
     }
 
-    /**
-     * Cleans up all tracking resources.
-     *
-     * @remarks
-     * - Disconnects IntersectionObserver
-     * - Disconnects MutationObserver
-     * - Clears all active dwell timers
-     * - Clears all state
-     *
-     * Should be called when the tracker is no longer needed (e.g., page unload).
-     */
+    /** Cleanup: disconnects observers, clears timers and state */
     public cleanup(): void {
         // Disconnect intersection observer
         if (this.observer) {

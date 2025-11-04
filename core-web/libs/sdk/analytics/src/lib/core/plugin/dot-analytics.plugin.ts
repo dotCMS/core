@@ -6,65 +6,10 @@ import { isPredefinedEventType } from '../shared/dot-content-analytics.utils';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsRequestBody,
-    DotCMSContentImpressionEvent,
-    DotCMSContentImpressionEventData,
-    DotCMSCustomEvent,
-    DotCMSPageViewEvent,
-    DotCMSPageViewEventData,
     EnrichedAnalyticsPayload,
     JsonObject
 } from '../shared/models';
 import { createAnalyticsQueue } from '../shared/queue';
-
-/**
- * Creates a properly typed pageview event
- */
-function createPageViewEvent(
-    data: DotCMSPageViewEventData,
-    localTime: string
-): DotCMSPageViewEvent {
-    return {
-        event_type: DotCMSPredefinedEventType.PAGEVIEW,
-        local_time: localTime,
-        data
-    };
-}
-
-/**
- * Creates a properly typed content impression event
- */
-function createContentImpressionEvent(
-    data: DotCMSContentImpressionEventData,
-    localTime: string
-): DotCMSContentImpressionEvent {
-    const { title, url } = data.page;
-    return {
-        event_type: DotCMSPredefinedEventType.CONTENT_IMPRESSION,
-        local_time: localTime,
-        data: {
-            content: data.content,
-            position: data.position,
-            page: { title, url }
-        }
-    };
-}
-
-/**
- * Creates a properly typed custom event
- */
-function createCustomEvent(
-    eventType: string,
-    customData: JsonObject,
-    localTime: string
-): DotCMSCustomEvent {
-    return {
-        event_type: eventType,
-        local_time: localTime,
-        data: {
-            custom: customData
-        }
-    };
-}
 
 /**
  * Analytics plugin for tracking page views and custom events in DotCMS applications.
@@ -137,17 +82,19 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                 throw new Error('DotCMS Analytics: Missing required page data');
             }
 
-            const pageViewData: DotCMSPageViewEventData = {
-                page,
-                ...(utm && { utm }),
-                ...(custom && { custom })
-            };
-
-            const pageViewEvent = createPageViewEvent(pageViewData, local_time);
-
             const requestBody: DotCMSAnalyticsRequestBody = {
                 context,
-                events: [pageViewEvent]
+                events: [
+                    {
+                        event_type: DotCMSPredefinedEventType.PAGEVIEW,
+                        local_time,
+                        data: {
+                            page,
+                            ...(utm && { utm }),
+                            ...(custom && { custom })
+                        }
+                    }
+                ]
             };
 
             sendEvent(requestBody);
@@ -155,10 +102,11 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
 
         /**
          * Track a custom or predefined event
-         * Receives enriched payload from the enricher plugin and structures it based on event type:
+         * Receives enriched payload from the enricher plugin and structures it based on event type.
+         * All necessary data is in the root of the payload (no duplication).
          *
-         * - Predefined events (content_impression, etc.) → structured data as-is
-         * - Custom events (any other string) → properties are already the custom data to send
+         * - content_impression → uses { content, position, page } from root
+         * - custom events → uses properties from payload.properties
          */
         track: ({ payload }: { payload: EnrichedTrackPayload }): void => {
             if (!isInitialized) {
@@ -173,22 +121,42 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
             if (isPredefinedEventType(event)) {
                 // Handle predefined events (currently only content_impression)
                 if (event === DotCMSPredefinedEventType.CONTENT_IMPRESSION) {
-                    // Content impression events come with page data already added by enricher
-                    const completeImpressionData = properties as DotCMSContentImpressionEventData;
+                    // All data is in the root (content, position, page)
+                    const { content, position, page } = payload;
 
-                    analyticsEvent = createContentImpressionEvent(
-                        completeImpressionData,
-                        local_time
-                    );
+                    if (!content || !position || !page) {
+                        throw new Error('DotCMS Analytics: Missing required impression data');
+                    }
+
+                    analyticsEvent = {
+                        event_type: DotCMSPredefinedEventType.CONTENT_IMPRESSION,
+                        local_time,
+                        data: {
+                            content,
+                            position,
+                            page
+                        }
+                    };
                 } else {
                     // Fallback for other predefined events we might add in the future
-                    // For future predefined events, wrap in custom as fallback
-                    analyticsEvent = createCustomEvent(event, properties as JsonObject, local_time);
+                    analyticsEvent = {
+                        event_type: event,
+                        local_time,
+                        data: {
+                            custom: properties as JsonObject
+                        }
+                    };
                 }
             } else {
                 // Custom events - properties are the custom data (already prepared by user)
                 // Wrap them in 'custom' wrapper as required by DotCMS Analytics API
-                analyticsEvent = createCustomEvent(event, properties as JsonObject, local_time);
+                analyticsEvent = {
+                    event_type: event,
+                    local_time,
+                    data: {
+                        custom: properties as JsonObject
+                    }
+                };
             }
 
             const requestBody: DotCMSAnalyticsRequestBody = {
