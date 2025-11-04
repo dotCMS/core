@@ -145,27 +145,13 @@ export const DEFAULT_IMPRESSION_THROTTLE_MS = 100;
 export const DEFAULT_IMPRESSION_MUTATION_OBSERVER_DEBOUNCE_MS = 250;
 
 /**
- * Minimum time remaining in milliseconds for requestIdleCallback processing
- */
-export const DEFAULT_IMPRESSION_IDLE_CALLBACK_MIN_TIME_MS = 5;
-
-/**
- * Timeout in milliseconds for requestIdleCallback
- */
-export const DEFAULT_IMPRESSION_IDLE_CALLBACK_TIMEOUT_MS = 1000;
-
-/**
- * Delay in milliseconds for resetting intersection processing flag
- */
-export const DEFAULT_IMPRESSION_PROCESSING_RESET_DELAY_MS = 100;
-
-/**
  * Default impression tracking configuration
  */
 export const DEFAULT_IMPRESSION_CONFIG = {
     visibilityThreshold: DEFAULT_IMPRESSION_VISIBILITY_THRESHOLD,
     dwellMs: DEFAULT_IMPRESSION_DWELL_MS,
-    maxNodes: DEFAULT_IMPRESSION_MAX_NODES
+    maxNodes: DEFAULT_IMPRESSION_MAX_NODES,
+    throttleMs: DEFAULT_IMPRESSION_THROTTLE_MS
 } as const;
 
 /**
