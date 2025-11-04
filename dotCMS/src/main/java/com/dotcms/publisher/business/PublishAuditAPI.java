@@ -79,6 +79,10 @@ public abstract class PublishAuditAPI {
 	//Select
 	public abstract PublishAuditStatus getPublishAuditStatus(String bundleId) throws DotPublisherException;
 
+	public abstract List<PublishAuditStatus>  getPublishAuditStatuses(List<String> bundleId)
+			throws DotPublisherException;
+
+
 	/**
 	 * Return the {@link PublishAuditStatus} for a bundle
 	 *
