@@ -97,7 +97,6 @@ type SystemOptionsType = {
         DotBinaryFieldStore,
         DotLicenseService,
         DotBinaryFieldValidatorService,
-        DotAiService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,

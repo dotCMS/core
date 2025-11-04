@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { DotUploadFileService } from '@dotcms/data-access';
 import { DotAssetSearchComponent, DotSpinnerComponent } from '@dotcms/ui';
 
 import { AssetFormComponent } from './asset-form.component';
@@ -27,7 +26,6 @@ import { PrimengModule } from '../../shared/primeng.module';
         DotUploadAssetComponent,
         DotAssetPreviewComponent
     ],
-    providers: [DotUploadFileService],
     exports: [AssetFormComponent]
 })
 export class AssetFormModule {}

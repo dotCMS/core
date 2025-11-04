@@ -17,8 +17,6 @@ import {
     DotLanguagesService,
     DotMessageService,
     DotPropertiesService,
-    DotUploadFileService,
-    DotAiService,
     DotWorkflowActionsFireService,
     DotContentTypeService
 } from '@dotcms/data-access';
@@ -85,10 +83,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         FloatingButtonComponent
     ],
     providers: [
-        DotUploadFileService,
         LoggerService,
         StringUtils,
-        DotAiService,
         ConfirmationService,
         DotPropertiesService,
         DotContentSearchService,
