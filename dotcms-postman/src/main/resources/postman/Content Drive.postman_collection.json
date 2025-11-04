@@ -5,7 +5,7 @@
 		"description": "Comprehensive tests for Content Drive search functionality including pagination, sorting, and filtering tests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/test-madhi~612b2311-2446-4663-bedc-0c17e42a1a6f/collection/10041132-1629f074-d53c-4afe-9230-aa43f982f81b?action=share&source=collection_link&creator=10041132"
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/612b2311-2446-4663-bedc-0c17e42a1a6f/collection/10041132-1629f074-d53c-4afe-9230-aa43f982f81b?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -1465,6 +1465,61 @@
 					"response": []
 				},
 				{
+					"name": "Archive Test Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Site archived successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"archived\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/{{testSiteId}}/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"{{testSiteId}}",
+								"_archive"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Delete Test Site",
 					"event": [
 						{
@@ -1480,12 +1535,14 @@
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
 					"request": {
-						"method": "PUT",
+						"method": "DELETE",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -1538,7 +1595,13 @@
 				"packages": {},
 				"requests": {},
 				"exec": [
-					""
+					"sleep = function(milliseconds) {",
+					"    const start = Date.now();",
+					"    while (Date.now() - start < milliseconds) {}",
+					"    console.log(`⏱️  Delayed ${milliseconds}ms`);",
+					"};",
+					"",
+					"sleep(3000);"
 				]
 			}
 		},
