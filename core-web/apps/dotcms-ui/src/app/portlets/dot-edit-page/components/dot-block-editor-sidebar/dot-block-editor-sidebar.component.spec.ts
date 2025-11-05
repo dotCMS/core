@@ -73,8 +73,7 @@ const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
 
 @Component({
     selector: 'dot-block-editor',
-    template: '',
-    standalone: true
+    template: ''
 })
 export class MockDotBlockEditorComponent {
     @Input() languageId = 1;

@@ -20,6 +20,8 @@ import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { camelCase } from '@dotcms/utils';
 
 import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-file-upload.model';
+import { DotAutocompleteTagsComponent } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
+import { DotSiteSelectorFieldComponent } from '../../_common/dot-site-selector-field/dot-site-selector-field.component';
 
 @Component({
     selector: 'dot-create-persona-form',
@@ -31,7 +33,9 @@ import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-fil
         InputTextModule,
         ButtonModule,
         DotMessagePipe,
-        DotFieldValidationMessageComponent
+        DotFieldValidationMessageComponent,
+        DotSiteSelectorFieldComponent,
+        DotAutocompleteTagsComponent
     ]
 })
 export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {

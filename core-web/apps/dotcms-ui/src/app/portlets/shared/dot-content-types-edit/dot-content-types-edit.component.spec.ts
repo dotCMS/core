@@ -81,8 +81,7 @@ class TestContentTypeLayoutComponent {
 
 @Component({
     selector: 'dot-content-types-form',
-    template: '',
-    standalone: true
+    template: ''
 })
 class TestContentTypesFormComponent {
     @Input() data: DotCMSContentType;

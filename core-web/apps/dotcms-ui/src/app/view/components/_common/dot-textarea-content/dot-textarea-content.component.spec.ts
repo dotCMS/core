@@ -27,8 +27,7 @@ function cleanOptionText(option) {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => MonacoEditorMockComponent)
         }
-    ],
-    standalone: true
+    ]
 })
 class MonacoEditorMockComponent {
     @Input() options: any;

@@ -16,7 +16,6 @@ import { DotSecondaryToolbarComponent } from './dot-secondary-toolbar.component'
             <div class="lower-toolbar-right">4</div>
         </dot-secondary-toolbar>
     `,
-    standalone: true,
     imports: [DotSecondaryToolbarComponent]
 })
 class HostTestComponent {}

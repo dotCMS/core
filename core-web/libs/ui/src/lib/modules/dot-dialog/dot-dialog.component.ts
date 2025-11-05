@@ -24,8 +24,7 @@ import { DialogButton, DotDialogActions } from '@dotcms/dotcms-models';
     selector: 'dot-dialog',
     templateUrl: './dot-dialog.component.html',
     styleUrls: ['./dot-dialog.component.scss'],
-    imports: [CommonModule, ButtonModule],
-    standalone: true
+    imports: [CommonModule, ButtonModule]
 })
 export class DotDialogComponent implements OnChanges {
     private el = inject(ElementRef);

@@ -145,23 +145,20 @@ const EXPERIMENT_MOCK = {
 
 @Component({
     selector: 'dot-global-message',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockGlobalMessageComponent {}
 
 @Component({
     selector: 'dot-test',
     template: '<dot-edit-content></dot-edit-content>',
-    standalone: true,
     imports: [DotEditContentComponent]
 })
 class HostTestComponent {}
 
 @Component({
     selector: 'dot-icon',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotIconComponent {
     @Input() name: string;
@@ -169,8 +166,7 @@ class MockDotIconComponent {
 
 @Component({
     selector: 'dot-whats-changed',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotWhatsChangedComponent {
     @Input() pageId: string;
@@ -179,8 +175,7 @@ class MockDotWhatsChangedComponent {
 
 @Component({
     selector: 'dot-form-selector',
-    template: '',
-    standalone: true
+    template: ''
 })
 export class MockDotFormSelectorComponent {
     @Input() show = false;
@@ -190,8 +185,7 @@ export class MockDotFormSelectorComponent {
 
 @Component({
     selector: 'dot-edit-page-toolbar',
-    template: '',
-    standalone: true
+    template: ''
 })
 export class MockDotEditPageToolbarComponent {
     @Input() pageState = mockDotRenderedPageState;
@@ -205,8 +199,7 @@ export class MockDotEditPageToolbarComponent {
 
 @Component({
     selector: 'dot-edit-page-toolbar-seo',
-    template: '',
-    standalone: true
+    template: ''
 })
 export class MockDotEditPageToolbarSeoComponent {
     @Input() pageState = mockDotRenderedPageState;
@@ -220,8 +213,7 @@ export class MockDotEditPageToolbarSeoComponent {
 
 @Component({
     selector: 'dot-palette',
-    template: '',
-    standalone: true
+    template: ''
 })
 export class MockDotPaletteComponent {
     @Input() languageId = '1';
@@ -230,8 +222,7 @@ export class MockDotPaletteComponent {
 
 @Component({
     selector: 'dot-reorder-menu',
-    template: '',
-    standalone: true
+    template: ''
 })
 export class MockDotReorderMenuComponent {
     @Input() url = '';

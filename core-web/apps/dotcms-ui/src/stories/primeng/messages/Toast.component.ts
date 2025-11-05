@@ -6,7 +6,6 @@ import { ToastModule } from 'primeng/toast';
 
 @Component({
     selector: 'dot-p-toast',
-    standalone: true,
     imports: [ToastModule, ButtonModule],
     template: `
         <p-toast></p-toast>

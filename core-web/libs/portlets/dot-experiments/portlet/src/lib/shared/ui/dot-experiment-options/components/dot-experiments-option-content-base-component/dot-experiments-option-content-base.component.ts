@@ -4,8 +4,7 @@ import { ChangeDetectionStrategy, Component, inject, OnDestroy } from '@angular/
 import { FormArray, FormGroup, FormGroupDirective } from '@angular/forms';
 
 @Component({
-    standalone: true,
-    template: '',
+        template: '',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsOptionContentBaseComponent implements OnDestroy {

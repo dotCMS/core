@@ -62,10 +62,8 @@ export interface DotActionsMenuEventParams {
 @Component({
     providers: [
         DotPageStore,
-        DotSessionStorageService,
         DialogService,
         DotESContentService,
-        DotLanguagesService,
         DotPageRenderService,
         DotPageTypesService,
         DotTempFileUploadService,
@@ -74,8 +72,7 @@ export interface DotActionsMenuEventParams {
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
         DotRouterService,
-        DotFavoritePageService,
-        DotSessionStorageService
+        DotFavoritePageService
     ],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],

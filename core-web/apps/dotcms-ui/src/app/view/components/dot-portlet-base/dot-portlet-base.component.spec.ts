@@ -23,8 +23,7 @@ class DefaultTestHostUnboxedComponent {}
 
 @Component({
     selector: 'dot-portlet-toolbar',
-    template: ``,
-    standalone: true
+    template: ``
 })
 class DotToolbarMockComponent {}
 

@@ -1,13 +1,11 @@
 <form [formGroup]="form" class="p-fluid">
-    <!-- TODO: Add dot-site-selector-field component -->
     <div class="field">
         <label dotFieldRequired for="content-type-form-host">{{ 'modes.persona.host' | dm }}</label>
-        <!-- <dot-site-selector-field
+        <dot-site-selector-field
             [system]="true"
             id="content-type-form-host"
-            width="100%"
-            formControlName="hostFolder"></dot-site-selector-field> -->
-        <input id="content-type-form-host" type="text" formControlName="hostFolder" pInputText />
+            [width]="'100%'"
+            formControlName="hostFolder"></dot-site-selector-field>
     </div>
 
     <div class="field">
@@ -55,13 +53,11 @@
             </div>
         }
     </div>
-    <!-- TODO: Add dot-autocomplete-tags component -->
     <div class="field">
         <label for="persona-other-tags">{{ 'modes.persona.other.tags' | dm }}</label>
-        <!-- <dot-autocomplete-tags
+        <dot-autocomplete-tags
             [placeholder]="'modes.persona.select.tags.placeholder' | dm"
             id="persona-other-tags"
-            formControlName="tags"></dot-autocomplete-tags> -->
-        <input id="persona-other-tags" type="text" formControlName="tags" pInputText />
+            formControlName="tags"></dot-autocomplete-tags>
     </div>
 </form>

@@ -21,8 +21,7 @@ import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `,
-    standalone: true
+    `
 })
 class MockMarkdownComponent {}
 

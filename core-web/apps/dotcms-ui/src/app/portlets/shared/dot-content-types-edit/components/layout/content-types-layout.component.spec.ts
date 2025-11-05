@@ -75,8 +75,7 @@ class TestContentTypeFieldsRowListComponent {}
 
 @Component({
     selector: 'dot-iframe',
-    template: '',
-    standalone: true
+    template: ''
 })
 class TestDotIframeComponent {
     @Input() src: string;

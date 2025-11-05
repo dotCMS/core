@@ -10,8 +10,7 @@ import { Component, Input } from '@angular/core';
 @Component({
     selector: 'dot-icon',
     styleUrls: ['./dot-icon.component.scss'],
-    templateUrl: './dot-icon.component.html',
-    standalone: true
+    templateUrl: './dot-icon.component.html'
 })
 export class DotIconComponent {
     @Input() name: string;

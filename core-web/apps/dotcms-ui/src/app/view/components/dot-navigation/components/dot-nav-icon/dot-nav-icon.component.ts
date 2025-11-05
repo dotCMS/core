@@ -7,8 +7,7 @@ import { DotIconComponent } from '@dotcms/ui';
     selector: 'dot-nav-icon',
     templateUrl: './dot-nav-icon.component.html',
     styleUrls: ['./dot-nav-icon.component.scss'],
-    imports: [CommonModule, DotIconComponent],
-    standalone: true
+    imports: [CommonModule, DotIconComponent]
 })
 export class DotNavIconComponent {
     @Input()

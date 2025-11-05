@@ -1,6 +1,8 @@
 import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
+import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
+
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotAlertConfirmComponent } from '../_common/dot-alert-confirm/dot-alert-confirm';
 import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
@@ -13,7 +15,6 @@ import { DotLargeMessageDisplayComponent } from '../dot-large-message-display/do
 import { DotMessageDisplayComponent } from '../dot-message-display/dot-message-display.component';
 import { DotNavigationComponent } from '../dot-navigation/dot-navigation.component';
 import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
-// import { DotContentCompareDialogComponent } from '../../../../libs/portlets/edit-ema/ui/src/lib/dot-content-compare/components/dot-content-compare-dialog/dot-content-compare-dialog.component';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -31,8 +32,8 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
         DotPushPublishDialogComponent,
         DotDownloadBundleDialogComponent,
         DotWizardComponent,
-        DotGenerateSecurePasswordComponent
-        // DotContentCompareDialogComponent
+        DotGenerateSecurePasswordComponent,
+        DotContentCompareDialogComponent
     ]
 })
 export class MainComponentLegacyComponent implements OnInit {

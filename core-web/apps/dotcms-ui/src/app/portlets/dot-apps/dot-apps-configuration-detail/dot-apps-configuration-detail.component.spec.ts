@@ -121,8 +121,7 @@ class MockDotAppsService {
 
 @Component({
     selector: 'dot-key-value-ng',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotKeyValueComponent {
     @Input() autoFocus: boolean;
@@ -133,8 +132,7 @@ class MockDotKeyValueComponent {
 
 @Component({
     selector: 'dot-apps-configuration-detail-form',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;
@@ -148,8 +146,7 @@ class MockDotAppsConfigurationDetailFormComponent {
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `,
-    standalone: true
+    `
 })
 class MockMarkdownComponent {}
 

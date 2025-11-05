@@ -31,8 +31,7 @@ class DotStringTemplateOutletContext {
  **/
 
 @Directive({
-    standalone: true,
-    selector: '[dotStringTemplateOutlet]'
+        selector: '[dotStringTemplateOutlet]'
 })
 export class DotStringTemplateOutletDirective implements OnChanges {
     private templateRef = inject<TemplateRef<unknown>>(TemplateRef);

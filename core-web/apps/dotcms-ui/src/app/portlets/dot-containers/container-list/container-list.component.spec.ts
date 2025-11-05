@@ -215,8 +215,7 @@ class ActivatedRouteMock {
 
 @Component({
     selector: 'dot-content-type-selector',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotContentTypeSelectorComponent {
     @Input() value: SelectItem;

@@ -45,8 +45,7 @@ class DotContentletEditorServiceMock {
 
 @Component({
     selector: 'dot-iframe-dialog',
-    template: ``,
-    standalone: true
+    template: ``
 })
 class DotIframeMockComponent {
     @Input() url;

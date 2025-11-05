@@ -36,15 +36,13 @@ class PushPublishServiceMock {
 @Component({
     selector: 'dot-test-host-component',
     template: '<dot-push-publish-dialog></dot-push-publish-dialog>',
-    standalone: true,
     imports: [DotPushPublishDialogComponent]
 })
 class TestHostComponent {}
 
 @Component({
     selector: 'dot-push-publish-form',
-    template: '',
-    standalone: true
+    template: ''
 })
 class TestDotPushPublishFormComponent {
     @Input() data: DotPushPublishDialogData;

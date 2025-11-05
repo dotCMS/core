@@ -10,8 +10,7 @@ import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-
     selector: 'dot-nav-header',
     styleUrls: ['./dot-nav-header.component.scss'],
     templateUrl: 'dot-nav-header.component.html',
-    imports: [CommonModule, ButtonModule],
-    standalone: true
+    imports: [CommonModule, ButtonModule]
 })
 export class DotNavHeaderComponent {
     /**

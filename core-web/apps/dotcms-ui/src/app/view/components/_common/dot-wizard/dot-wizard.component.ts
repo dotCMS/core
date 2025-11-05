@@ -2,10 +2,10 @@ import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
-    ComponentFactoryResolver,
     ComponentRef,
     DestroyRef,
     inject,
+    Injector,
     QueryList,
     signal,
     Type,
@@ -37,8 +37,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
-    imports: [CommonModule, DialogModule, ButtonModule, DotContainerReferenceDirective],
-    providers: [DotWizardService]
+    imports: [CommonModule, DialogModule, ButtonModule, DotContainerReferenceDirective]
 })
 export class DotWizardComponent implements AfterViewInit {
     #wizardData: { [key: string]: string };
@@ -50,7 +49,7 @@ export class DotWizardComponent implements AfterViewInit {
         pushPublish: DotPushPublishFormComponent
     };
 
-    readonly #componentFactoryResolver = inject(ComponentFactoryResolver);
+    readonly #injector = inject(Injector);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotWizardService = inject(DotWizardService);
     readonly #destroyRef = inject(DestroyRef);
@@ -137,14 +136,12 @@ export class DotWizardComponent implements AfterViewInit {
         this.#stepsValidation = [];
         this.$data().steps.forEach((step: DotWizardStep, index: number) => {
             const componentClass = this.getWizardComponent(step.component);
-            const componentInstance =
-                this.#componentFactoryResolver.resolveComponentFactory(componentClass);
             const viewContainerRef = this.#componentsHost[index].viewContainerRef;
             viewContainerRef.clear();
             const componentRef: ComponentRef<DotFormModel<unknown, unknown>> =
-                viewContainerRef.createComponent(componentInstance) as ComponentRef<
-                    DotFormModel<unknown, unknown>
-                >;
+                viewContainerRef.createComponent(componentClass, {
+                    injector: this.#injector
+                }) as ComponentRef<DotFormModel<unknown, unknown>>;
             componentRef.instance.data = step.data;
             componentRef.instance.value
                 .pipe(takeUntilDestroyed(this.#destroyRef))

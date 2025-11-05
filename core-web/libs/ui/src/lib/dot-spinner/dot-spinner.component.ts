@@ -5,8 +5,7 @@ import { Component, Input } from '@angular/core';
     selector: 'dot-spinner',
     templateUrl: './dot-spinner.component.html',
     styleUrls: ['./dot-spinner.component.scss'],
-    imports: [CommonModule],
-    standalone: true
+    imports: [CommonModule]
 })
 export class DotSpinnerComponent {
     @Input() borderSize = '';

@@ -36,8 +36,7 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
     selector: 'dot-sub-nav',
     templateUrl: './dot-sub-nav.component.html',
     styleUrls: ['./dot-sub-nav.component.scss'],
-    imports: [CommonModule, RouterModule],
-    standalone: true
+    imports: [CommonModule, RouterModule]
 })
 export class DotSubNavComponent {
     @ViewChild('ul', { static: true }) ul: ElementRef;

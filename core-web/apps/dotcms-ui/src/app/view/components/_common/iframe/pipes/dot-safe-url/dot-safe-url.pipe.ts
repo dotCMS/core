@@ -4,7 +4,8 @@ import { ActivatedRoute } from '@angular/router';
 
 import { DotRouterService } from '@dotcms/data-access';
 
-@Pipe({ name: 'dotSafeUrl', standalone: true })
+@Pipe({ name: 'dotSafeUrl'
+})
 export class DotSafeUrlPipe implements PipeTransform {
     private sanitizer = inject(DomSanitizer);
     private dotRouterService = inject(DotRouterService);

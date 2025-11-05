@@ -25,8 +25,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
  * <div dotDragHandle [editor]="editor" [pluginKey]="customKey"></div>
  */
 @Directive({
-    selector: '[dotDragHandle]',
-    standalone: true
+    selector: '[dotDragHandle]'
 })
 export class DragHandleDirective implements AfterViewInit, OnDestroy {
     /**

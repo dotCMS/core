@@ -63,8 +63,7 @@ import { DotContentletEditorService } from '../../view/components/dot-contentlet
 
 @Component({
     selector: 'dot-pages-favorite-panel',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotPagesFavoritePanelComponent {
     @Output() goToUrl = new EventEmitter<string>();
@@ -73,8 +72,7 @@ class MockDotPagesFavoritePanelComponent {
 
 @Component({
     selector: 'dot-pages-listing-panel',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotPagesListingPanelComponent {
     @Output() goToUrl = new EventEmitter<string>();
@@ -83,8 +81,7 @@ class MockDotPagesListingPanelComponent {
 
 @Component({
     selector: 'dot-add-to-bundle',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotAddToBundleComponent {
     @Input() assetIdentifier: string;

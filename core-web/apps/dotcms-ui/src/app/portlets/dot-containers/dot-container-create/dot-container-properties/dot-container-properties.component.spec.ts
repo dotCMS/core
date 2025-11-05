@@ -74,8 +74,7 @@ import { DotActionButtonComponent } from '../../../../view/components/_common/do
 
 @Component({
     selector: 'dot-container-code',
-    template: '<div></div>',
-    standalone: true
+    template: '<div></div>'
 })
 export class DotContentEditorComponent {}
 
@@ -88,8 +87,7 @@ export class DotContentEditorComponent {}
             useExisting: forwardRef(() => DotLoopEditorComponent),
             multi: true
         }
-    ],
-    standalone: true
+    ]
 })
 export class DotLoopEditorComponent {
     writeValue() {
@@ -114,8 +112,7 @@ export class DotLoopEditorComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ],
-    standalone: true
+    ]
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()

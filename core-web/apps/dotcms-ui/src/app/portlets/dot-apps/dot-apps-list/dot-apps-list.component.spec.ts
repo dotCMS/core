@@ -39,8 +39,7 @@ export class AppsServicesMock {
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `,
-    standalone: true
+    `
 })
 class MockMarkdownComponent {}
 
@@ -65,8 +64,7 @@ export const appsResponse = [
 
 @Component({
     selector: 'dot-icon',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotIconComponent {
     @Input() name: string;
@@ -74,8 +72,7 @@ class MockDotIconComponent {
 
 @Component({
     selector: 'dot-apps-import-export-dialog',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotAppsImportExportDialogComponent {
     @Input() action: string;
@@ -86,8 +83,7 @@ class MockDotAppsImportExportDialogComponent {
 
 @Component({
     selector: 'dot-not-license',
-    template: '',
-    standalone: true
+    template: ''
 })
 class MockDotNotLicenseComponent {}
 

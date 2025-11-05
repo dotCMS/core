@@ -9,7 +9,6 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 
 @Component({
     selector: 'dot-edit-content-compare',
-    standalone: true,
     imports: [ButtonModule, DotContentCompareComponent, DotMessagePipe],
     templateUrl: './dot-edit-content-compare.component.html',
     styleUrls: ['./dot-edit-content-compare.component.scss'],

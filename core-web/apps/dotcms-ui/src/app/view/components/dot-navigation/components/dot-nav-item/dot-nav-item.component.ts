@@ -31,8 +31,7 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
         DotSubNavComponent,
         DotNavIconComponent,
         DotRandomIconPipe
-    ],
-    standalone: true
+    ]
 })
 export class DotNavItemComponent {
     private hostElRef = inject(ElementRef);
