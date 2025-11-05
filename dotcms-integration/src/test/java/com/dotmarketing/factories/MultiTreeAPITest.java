@@ -29,7 +29,6 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.LayoutChanges;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -56,6 +55,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     private static final String PAGE = "PAGE";
     private static final String CONTENTLET = "CONTENTLET";
     private static final String RELATION_TYPE = "RELATION_TYPE";
+    private static MultiTreeAPI multiTreeAPI;
+    private static MultiTree testTree;
 
     final static int runs =2;
     final static int contentlets =5;
@@ -64,15 +65,15 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     public static void initData() throws Exception {
         IntegrationTestInitService.getInstance().init();
       //  testUpgradeTask();
-        buildInitalData();
-    }
-    
-    public static void buildInitalData() throws Exception {
-        buildInitalData(VariantAPI.DEFAULT_VARIANT.name());
-
+        buildInitialData();
+        multiTreeAPI = APILocator.getMultiTreeAPI();
     }
 
-    public static void buildInitalData(final String variantName) throws Exception {
+    public static void buildInitialData() throws Exception {
+        buildInitialData(VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    public static void buildInitialData(final String variantName) throws Exception {
         for(int i=0;i<runs;i++) {
             for(int j=0;j<contentlets;j++) {
                 MultiTree mt = new MultiTree()
@@ -83,10 +84,28 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                         .setInstanceId(RELATION_TYPE + i)
                         .setVariantId(variantName);
 
-                APILocator.getMultiTreeAPI().saveMultiTree(mt);
+                multiTreeAPI.saveMultiTree(mt);
             }
         }
 
+    }
+
+    private MultiTree retrieveMultiTree(int multiTreeIndex) throws DotDataException {
+        int index = multiTreeIndex < runs ? Math.max(multiTreeIndex, 0) : 0;
+        return multiTreeAPI.getMultiTree(
+                PAGE,
+                CONTAINER + index,
+                CONTENTLET + index,
+                RELATION_TYPE + index
+        );
+    }
+
+    private Map<String, Object> createDefaultStyleProperties() {
+        Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("backgroundColor", "red");
+        styleProperties.put("fontSize", "16px");
+        styleProperties.put("padding", "10px");
+        return styleProperties;
     }
 
     /**
@@ -133,7 +152,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public  void testDeletes() throws Exception {
         deleteInitialData();
-        buildInitalData() ;
+        buildInitialData() ;
         List<MultiTree> all = APILocator.getMultiTreeAPI().getAllMultiTrees();
         
         List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
@@ -147,7 +166,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public  void testReorder() throws Exception {
         deleteInitialData();
-        buildInitalData();
+        buildInitialData();
 
         MultiTree tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==0 );
@@ -176,8 +195,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         deleteInitialData();
-        buildInitalData();
-        buildInitalData(variant.name());
+        buildInitialData();
+        buildInitialData(variant.name());
 
         MultiTree tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==0 );
@@ -234,8 +253,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public  void findByChild() throws Exception {
         deleteInitialData();
-        buildInitalData() ;
-        
+        buildInitialData() ;
+
         List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTreesByChild(CONTENTLET + "0");
         
         assertTrue("getByChild returns all results", list.size() == runs );
@@ -249,18 +268,23 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @AfterClass
     public static void deleteInitialData() throws Exception {
 
-        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
+        List<MultiTree> list = multiTreeAPI.getMultiTrees(PAGE);
 
         for(MultiTree tree : list) {
-            APILocator.getMultiTreeAPI().deleteMultiTree(tree);
+            multiTreeAPI.deleteMultiTree(tree);
+        }
+
+        if (testTree != null) {
+            try {
+                multiTreeAPI.deleteMultiTree(testTree);
+            } catch (DotDataException e) {
+                // ignore if already deleted
+            }
         }
 
     }
     
-    
-    
-    
-    
+
     @Test
     public  void testSaveMultiTree() throws Exception {
         MultiTree mt = new MultiTree()
@@ -275,20 +299,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         MultiTree mt2 = APILocator.getMultiTreeAPI().getMultiTree(mt.getHtmlPage(), mt.getContainer(), mt.getContentlet(), mt.getRelationType());
         assertTrue("multiTree save and get equals", mt.equals(mt2));
     }
-    
-    
-    
 
-    
-    
-    
     @Test
     public void testLegacyMultiTreeSave() throws Exception {
 
-        
         long time = System.currentTimeMillis();
 
-        
         MultiTree multiTree = new MultiTree();
         multiTree.setHtmlPage( PAGE+time);
         multiTree.setContainer( CONTAINER +time);
@@ -341,7 +357,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         // but the objects should contain the same data
         assert(trees.equals(cachedTrees));
 
-        // there is no container entry 
+        // there is no container entry
         assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
 
 
@@ -588,9 +604,6 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Structure structure = new StructureDataGen().nextPersisted();
         final Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
         final Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
-
-        
-        
         
         final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
 
@@ -978,7 +991,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
     /**
      * Method to Test: {@link MultiTreeAPI#getMultiTreesByVariant(String, String)} (String, String)}
-     * When: Create a Page with {@link MultiTree} is different {@link Variant} and call the 
+     * When: Create a Page with {@link MultiTree} is different {@link Variant} and call the
      * {@link MultiTreeAPI#getMultiTreesByVariant(String, String)} method just for a specific {@link Variant}
      * Should: Return just the {@link MultiTree} for that {@link Variant}
      */
@@ -4258,6 +4271,105 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         assertEquals(1, contentlets.size());
         assertEquals(contentlet.getIdentifier(), contentlets.iterator().next().getContentletId());
+    }
+
+    @Test
+    public void createAndPersist_styleProperties() throws DotDataException {
+        Map<String, Object> styleProperties = createDefaultStyleProperties();
+
+        testTree = retrieveMultiTree(0);
+        testTree.setStyleProperties(styleProperties);
+        multiTreeAPI.saveMultiTree(testTree);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Retrieved multiTree should not be null", retrieved);
+        assertNotNull("Style properties should not be null", retrieved.getStyleProperties());
+        assertEquals("Style properties should have 3 entries", 3,
+                retrieved.getStyleProperties().size());
+        assertEquals("Background color should match", "red",
+                retrieved.getStyleProperties().get("backgroundColor"));
+        assertEquals("Font size should match", "16px",
+                retrieved.getStyleProperties().get("fontSize"));
+        assertEquals("Padding should match", "10px",
+                retrieved.getStyleProperties().get("padding"));
+    }
+
+    @Test
+    public void testUpdate_styleProperties() throws Exception {
+        Map<String, Object> originalProperties = createDefaultStyleProperties();
+
+        // Add style properties to the Multi Tree
+        testTree = retrieveMultiTree(0);
+        testTree.setStyleProperties(originalProperties);
+        multiTreeAPI.saveMultiTree(testTree);
+
+        // Update with new style properties
+        Map<String, Object> updatedProperties = new HashMap<>();
+        updatedProperties.put("backgroundColor", "#ff0000");
+        updatedProperties.put("margin", "20px");
+
+        testTree.setStyleProperties(updatedProperties);
+        multiTreeAPI.saveMultiTree(testTree);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Updated style properties should not be null",
+                retrieved.getStyleProperties());
+        assertEquals("Updated style properties should have 2 entries", 2,
+                retrieved.getStyleProperties().size());
+        assertEquals("Updated background color should match", "#ff0000",
+                retrieved.getStyleProperties().get("backgroundColor"));
+        assertEquals("Margin should match", "20px",
+                retrieved.getStyleProperties().get("margin"));
+        assertNull("Font size should not exist in updated properties",
+                retrieved.getStyleProperties().get("fontSize"));
+    }
+
+    @Test
+    public void testUpdate_stylePropertiesToNull() throws Exception {
+        Map<String, Object> originalProperties = createDefaultStyleProperties();
+
+        // Add style properties to the Multi Tree
+        testTree = retrieveMultiTree(0);
+        testTree.setStyleProperties(originalProperties);
+        multiTreeAPI.saveMultiTree(testTree);
+
+        // Set style properties to null
+        testTree.setStyleProperties(null);
+        multiTreeAPI.saveMultiTree(testTree);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNull("NULL style properties should be persisted",
+                retrieved.getStyleProperties());
+    }
+
+    @Test
+    public void testCreate_withNullStyleProperties() throws Exception {
+        testTree = retrieveMultiTree(0);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Retrieved multiTree should not be null", retrieved);
+        assertNull("Style properties should be null", retrieved.getStyleProperties());
+    }
+
+    @Test
+    public void testCreate_withEmptyStyleProperties() throws Exception {
+        Map<String, Object> emptyProperties = new HashMap<>();
+
+        // Add style properties to the Multi Tree
+        testTree = retrieveMultiTree(0);
+        testTree.setStyleProperties(emptyProperties);
+        multiTreeAPI.saveMultiTree(testTree);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Retrieved multiTree should not be null", retrieved);
+        assertNotNull("Style properties should not be null", retrieved.getStyleProperties());
+        assertEquals("Style properties should be empty", 0,
+                retrieved.getStyleProperties().size());
     }
 
 }

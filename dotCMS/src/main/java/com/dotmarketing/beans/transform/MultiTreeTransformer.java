@@ -1,13 +1,18 @@
 package com.dotmarketing.beans.transform;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.postgresql.util.PGobject;
 
 public class MultiTreeTransformer implements DBTransformer<MultiTree> {
 
@@ -19,6 +24,7 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
     private static final String TREE_ORDER = "tree_order";
     private static final String PERSONALIZATION = "personalization";
     private static final String VARIANT = "variant_id";
+    private static final String STYLE_PROPERTIES = "style_properties";
 
     private final ArrayList<MultiTree> list = new ArrayList<>();
 
@@ -36,6 +42,7 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
     }
 
     private static MultiTree transform(final Map<String, Object> map) {
+        final ObjectMapper jsonMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
         final MultiTree multiTree = new MultiTree();
         multiTree.setContentlet((String) map.get(CHILD));
@@ -50,6 +57,13 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
         }
         if (UtilMethods.isSet(map.get(VARIANT))) {
             multiTree.setVariantId(map.get(VARIANT).toString());
+        }
+        if  (UtilMethods.isSet(map.get(STYLE_PROPERTIES))) {
+            multiTree.setStyleProperties(Try.of(() -> jsonMapper
+                            .readValue(DbConnectionFactory.isPostgres()
+                                    ? ((PGobject) map.get(STYLE_PROPERTIES)).getValue()
+                                    : (String) map.get(STYLE_PROPERTIES), HashMap.class))
+                    .getOrElse(new HashMap<String, Object>()));
         }
         return multiTree;
     }
