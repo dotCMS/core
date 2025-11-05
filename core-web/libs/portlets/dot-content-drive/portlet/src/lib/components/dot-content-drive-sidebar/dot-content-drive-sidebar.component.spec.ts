@@ -13,14 +13,14 @@ import {
     DotContentDriveUploadFiles,
     DotTreeFolderComponent,
     DotFolderTreeNodeItem,
-    DotContentDriveMoveItems
+    DotContentDriveMoveItems,
+    ALL_FOLDER
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { ALL_FOLDER } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;
@@ -125,7 +125,8 @@ describe('DotContentDriveSidebarComponent', () => {
                 sidebarLoading: jest.fn().mockReturnValue(false),
                 loadFolders: jest.fn(),
                 loadChildFolders: jest.fn(),
-                updateFolders: jest.fn()
+                updateFolders: jest.fn(),
+                setSelectedNode: jest.fn()
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
@@ -217,6 +218,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
 
                 expect(contentDriveStore.setPath).toHaveBeenCalledWith('/documents/');
+                expect(contentDriveStore.setSelectedNode).toHaveBeenCalledWith(mockTreeNodes[1]);
             });
 
             it('should extract path from node data correctly', () => {
@@ -266,7 +268,8 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', mockEvent);
 
                 expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
-                    'demo.dotcms.com/expandable/'
+                    '/expandable/',
+                    'demo.dotcms.com'
                 );
             });
 
@@ -476,7 +479,8 @@ describe('DotContentDriveSidebarComponent', () => {
             };
             spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', expandEvent);
             expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
-                'demo.dotcms.com/test/'
+                '/test/',
+                'demo.dotcms.com'
             );
         });
     });

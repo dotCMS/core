@@ -40,9 +40,11 @@ class RouterMock {
         return this._events.asObservable();
     }
 
-    getCurrentNavigation() {
+    getCurrentNavigation(): { finalUrl: { queryParams: { [key: string]: string } } } | null {
         return {
-            finalUrl: {}
+            finalUrl: {
+                queryParams: {}
+            }
         };
     }
 
@@ -61,7 +63,7 @@ class ActivatedRouteMock {
 
 describe('DotRouterService', () => {
     let service: DotRouterService;
-    let router;
+    let router: InstanceType<typeof RouterMock>;
 
     beforeEach(waitForAsync(() => {
         const testbed = TestBed.configureTestingModule({
@@ -84,7 +86,7 @@ describe('DotRouterService', () => {
         });
 
         service = testbed.inject(DotRouterService);
-        router = testbed.inject(Router);
+        router = testbed.inject(Router) as unknown as InstanceType<typeof RouterMock>;
     }));
 
     it('should set current url value', () => {
@@ -250,7 +252,10 @@ describe('DotRouterService', () => {
 
     it('should got to porlet by URL', () => {
         service.gotoPortlet('/c/test');
-        expect(router.createUrlTree).toHaveBeenCalledWith(['/c/test'], { queryParamsHandling: '' });
+        expect(router.createUrlTree).toHaveBeenCalledWith(['/c/test'], {
+            queryParamsHandling: '',
+            queryParams: {}
+        });
         expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test'], { replaceUrl: false });
     });
 
@@ -260,9 +265,32 @@ describe('DotRouterService', () => {
             replaceUrl: false
         });
         expect(router.createUrlTree).toHaveBeenCalledWith(['/c/test?filter="Blog"'], {
-            queryParamsHandling: 'preserve'
+            queryParamsHandling: 'preserve',
+            queryParams: {}
         });
         expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test?filter="Blog"'], {
+            replaceUrl: false
+        });
+    });
+
+    it('should go to porlet by URL with queryParams', () => {
+        const queryParams = {
+            folderId: '123',
+            path: '/images'
+        };
+
+        service.gotoPortlet('/c/content-drive', {
+            queryParams
+        });
+
+        expect(router.createUrlTree).toHaveBeenCalledWith(['/c/content-drive'], {
+            queryParamsHandling: '',
+            queryParams: {
+                folderId: '123',
+                path: '/images'
+            }
+        });
+        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/content-drive'], {
             replaceUrl: false
         });
     });

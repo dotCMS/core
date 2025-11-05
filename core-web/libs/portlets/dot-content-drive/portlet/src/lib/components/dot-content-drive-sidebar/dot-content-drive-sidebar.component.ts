@@ -10,6 +10,7 @@ import {
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
 import {
+    ALL_FOLDER,
     DotContentDriveMoveItems,
     DotContentDriveUploadFiles,
     DotTreeFolderComponent
@@ -59,6 +60,7 @@ export class DotContentDriveSidebarComponent {
         const { path } = node.data;
 
         this.#store.setPath(path);
+        this.#store.setSelectedNode(node);
     }
 
     /**
@@ -69,7 +71,6 @@ export class DotContentDriveSidebarComponent {
     protected onNodeExpand(event: TreeNodeExpandEvent): void {
         const { node } = event;
         const { hostname, path } = node.data;
-        const fullPath = `${hostname}${path}`;
 
         if (node.children?.length > 0 || node.leaf) {
             node.expanded = true;
@@ -77,7 +78,7 @@ export class DotContentDriveSidebarComponent {
         }
 
         node.loading = true;
-        this.#store.loadChildFolders(fullPath).subscribe(({ folders }) => {
+        this.#store.loadChildFolders(path, hostname).subscribe(({ folders }) => {
             node.loading = false;
             node.expanded = true;
             node.leaf = folders.length === 0;
@@ -95,7 +96,7 @@ export class DotContentDriveSidebarComponent {
     protected onNodeCollapse(event: TreeNodeCollapseEvent): void {
         const { node } = event;
 
-        if (node.key === 'ALL_FOLDER') {
+        if (node.key === ALL_FOLDER.key) {
             node.expanded = true;
             return;
         }

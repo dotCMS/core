@@ -182,7 +182,14 @@ public enum ValidAnalyticsEventPayloadTransformer {
      * @return
      */
     private static JSONObject removeData(final JSONObject payload) {
+        final Map<String, Object> dataAttributes  = (Map<String, Object>) payload.get(DATA_ATTRIBUTE_NAME);
+
+        dataAttributes.remove(PAGE_ATTRIBUTE_NAME);
+
+        moveToRoot(payload, dataAttributes, Map.of());
+
         payload.remove(DATA_ATTRIBUTE_NAME);
+        payload.remove(CUSTOM_ATTRIBUTE_NAME);
         return payload;
     }
 
