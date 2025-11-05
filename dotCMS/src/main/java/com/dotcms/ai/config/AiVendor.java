@@ -7,7 +7,8 @@ package com.dotcms.ai.config;
 public enum AiVendor {
 
     OPEN_AI("openai"),
-    ANTHROPIC("anthropic");
+    ANTHROPIC("anthropic"),
+    AZURE_OPEN_AI("azureopenai");
 
     private final String vendorName;
 

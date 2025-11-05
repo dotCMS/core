@@ -1,6 +1,7 @@
 package com.dotcms.ai.api.provider;
 
 import com.dotcms.ai.api.provider.anthropic.AnthropicVendorModelProviderImpl;
+import com.dotcms.ai.api.provider.azure.AzureVendorModelProviderImpl;
 import com.dotcms.ai.api.provider.openai.OpenAiVendorModelProviderImpl;
 import com.dotcms.ai.config.AiModelConfig;
 import dev.langchain4j.model.chat.ChatModel;
@@ -22,7 +23,8 @@ public class VendorModelProviderFactory {
     private final Map<String, VendorModelProvider> providers = new ConcurrentHashMap<>();
 
     public VendorModelProviderFactory() {
-        this(List.of(new OpenAiVendorModelProviderImpl(), new AnthropicVendorModelProviderImpl()));
+        this(List.of(new OpenAiVendorModelProviderImpl(), new AnthropicVendorModelProviderImpl(),
+                new AzureVendorModelProviderImpl()));
     }
 
     public VendorModelProviderFactory(final List<VendorModelProvider> providerList) {

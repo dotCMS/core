@@ -86,6 +86,12 @@
             <version>${langchain4j.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-azure-open-ai</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-embeddings-all-minilm-l6-v2 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
