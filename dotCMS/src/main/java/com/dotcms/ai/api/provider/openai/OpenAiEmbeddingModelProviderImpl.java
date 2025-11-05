@@ -22,7 +22,7 @@ public class OpenAiEmbeddingModelProviderImpl implements EmbeddingModelProvider 
     public EmbeddingModel createEmbedding(final AiModelConfig config) {
 
         final int dimensions = ConversionUtils.toInt(
-                config.getOrDefault(AiModelConfig.MAX_OUTPUT_TOKENS, DEFAULT_DIMENSION_AS_STRING), DEFAULT_DIMENSION);
+                config.getOrDefault(AiModelConfig.DIMENSIONS, DEFAULT_DIMENSION_AS_STRING), DEFAULT_DIMENSION);
 
         return OpenAiEmbeddingModel.builder()
                 .apiKey(config.get(AiModelConfig.API_KEY))
