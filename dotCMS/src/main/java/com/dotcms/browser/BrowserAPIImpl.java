@@ -215,9 +215,9 @@ public class BrowserAPIImpl implements BrowserAPI {
         // Build the base query once outside the loop - this is the key optimization
         final String baseQuery = buildBaseESQuery(browserQuery);
 
-        //Take the seed inodes returned from the DB and partition them into smaller sets
-        //Execute parallel queries sending the subset of nodes and the text params we're searching for
-        //this next line crete futures that will bring the matching inodes returned by ES
+        //Take the seed inodes returned from the DB. Partition them into smaller sets
+        //Execute them in parallel queries. Sending the subset of nodes and the text params,
+        //We're searching for this next line crete future that will bring the matching inodes returned by ES
         partitions.forEach(partition -> futures.add(
                       submitter.submit(() -> performSearchES(baseQuery, partition, browserQuery))
                 )
@@ -237,7 +237,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         if (UtilMethods.isSet(browserQuery.filter)) {
             final String titleFilters = String.format(
-                    "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5",
+                    "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5 OR +catchall:%s*^10",
+                    browserQuery.filter,
                     browserQuery.filter,
                     browserQuery.filter,
                     browserQuery.filter);
@@ -604,8 +605,10 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
         }
 
-
-        if (browserQuery.folder != null) {
+        // Im almost certain that Folder can't be null.
+        // It is always calculated with some obscure logic that I don't want to break.
+        // Therefore, I'm introducing this skipFolder flag
+        if (browserQuery.folder != null && !browserQuery.skipFolder) {
             appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
             appendFolderQuery(countQuery, browserQuery.folder.getPath(), dump);
         }
@@ -629,7 +632,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(countQuery);
         }
 
-        Logger.debug(this, "Select Query: " + selectQuery);
+        Logger.info(this, "Select Query: " + selectQuery);
         Logger.debug(this, "Count Query: " + countQuery);
 
         return new SelectAndCountQueries(selectQuery.toString(), countQuery.toString(), parameters);

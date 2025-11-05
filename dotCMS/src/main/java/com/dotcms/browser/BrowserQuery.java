@@ -53,6 +53,7 @@ public class BrowserQuery {
     final Set<String> excludedContentTypeIds;
     final Host site;
     final boolean forceSystemHost;
+    final boolean skipFolder;
     final Folder folder;
     final Parentable directParent;
     final Role[] roles;
@@ -83,7 +84,8 @@ public class BrowserQuery {
     @Override
     public String toString() {
         return "BrowserQuery {user:" + user + ", site:" + site + ", folder:" + folder + ", filter:"
-                + filter + ", sortBy:" + sortBy
+                + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
+                + ", skipFolder:" + skipFolder
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:"
                 + showWorking + ", showArchived:"
                 + showArchived + ", showFolders:" + showFolders + ", showDefaultLangItems:"
@@ -101,6 +103,7 @@ public class BrowserQuery {
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
         this.useElasticsearchFiltering = builder.useElasticsearchFiltering;
+        this.skipFolder = builder.skipFolder;
         this.filterFolderNames = builder.filterFolderNames;
         this.fileName = builder.fileName;
         this.luceneQuery = builder.luceneQuery.toString();
@@ -126,7 +129,7 @@ public class BrowserQuery {
         this.excludedContentTypeIds = Set.copyOf(builder.excludedContentTypes);
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
-        this.folder= siteAndFolder._2;
+        this.folder = siteAndFolder._2;
         //Despite the site and folder passed, forceSystemHost makes the inclusion of SYSTEM_HOME in the query
         this.forceSystemHost = builder.forceSystemHost;
         this.directParent = this.folder.isSystemFolder() ? site : folder;
@@ -232,6 +235,12 @@ public class BrowserQuery {
         private Set<BaseContentType> baseTypes = new HashSet<>();
         private String hostFolderId = FolderAPI.SYSTEM_FOLDER;
         private boolean forceSystemHost = false;
+        private boolean skipFolder = false;
+        private boolean showOnlyMenuItems = false;
+        private Host site = null;
+        private Folder folder = null;
+        private Parentable directParent = null;
+        private Role[] roles = null;
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
@@ -285,11 +294,22 @@ public class BrowserQuery {
         }
 
         /**
+         * Introduced to allow me to skip the inclusion of a calculated folder path in the query
+         * This property ensures we don't break prior functionality
+         * @param skipFolder
+         * @return this
+         */
+        public Builder skipFolder(boolean skipFolder) {
+            this.skipFolder = skipFolder;
+            return this;
+        }
+
+        /**
          * This activates seatch text using ElasticSearch
          * @param useElasticsearchFiltering
-         * @return
+         * @return this
          */
-        public Builder withUseElasticsearchFiltering(boolean useElasticsearchFiltering) {
+        public Builder useElasticsearchFiltering(boolean useElasticsearchFiltering) {
             this.useElasticsearchFiltering = useElasticsearchFiltering;
             return this;
         }
@@ -297,9 +317,9 @@ public class BrowserQuery {
         /**
          * if we want to filter folder names when searching with Text filters
          * @param filterFolderNames
-         * @return
+         * @return this
          */
-        public Builder withFilterFolderNames(boolean filterFolderNames) {
+        public Builder filterFolderNames(boolean filterFolderNames) {
             this.filterFolderNames = filterFolderNames;
             return this;
         }
@@ -315,9 +335,9 @@ public class BrowserQuery {
         public Builder withFileName(@Nonnull String fileName) {
             if (UtilMethods.isSet(fileName)) {
                 // for exact file-name match we need to relay exclusively on the database
-                // we can not trust on the use of the title field indexed in lucene
-                // As different files can share the same title, and we need an exact match on identifier.asset_name
-                // Therefore we need to make it fail on purpose by adding a non-existing value to the query
+                // we cannot trust on the use of the title field indexed in lucene
+                // As different files can share the same title. We need an exact match on identifier.asset_name.
+                // Therefore, we need to make it fail on purpose by adding a non-existing value to the query
                 // If we include this fileNAme here BrowserAPI will try to match the title in lucene bringing back false positives
                 luceneQuery.append(StringPool.SPACE).append("___").append(fileName).append("___");
                 this.fileName = fileName;
