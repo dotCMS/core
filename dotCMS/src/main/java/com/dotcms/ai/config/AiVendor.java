@@ -8,7 +8,9 @@ public enum AiVendor {
 
     OPEN_AI("openai"),
     ANTHROPIC("anthropic"),
-    AZURE_OPEN_AI("azureopenai");
+    AZURE_OPEN_AI("azureopenai"),
+    BEDROCK("bedrock"),
+    GEMINI("gemini");
 
     private final String vendorName;
 
