@@ -20,7 +20,6 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, skip, throttleTime } from 'rxjs/operators';
 
-
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 // services

@@ -17,7 +17,7 @@ export enum SIDEBAR_SIZES {
  *
  */
 @Directive({
-        selector: '[dotSidebar]'
+    selector: '[dotSidebar]'
 })
 export class DotSidebarDirective {
     private readonly primeSidebar = inject(Sidebar, { optional: true, self: true });

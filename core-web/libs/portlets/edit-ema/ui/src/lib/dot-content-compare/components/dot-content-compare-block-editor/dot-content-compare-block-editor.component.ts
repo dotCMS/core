@@ -9,7 +9,6 @@ import { map } from 'rxjs/operators';
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotSafeHtmlPipe, DotDiffPipe } from '@dotcms/ui';
 
-
 import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
 
 @Component({

@@ -18,7 +18,7 @@ const DEFAULT_VALUE_NAME_INDEX = 'value';
  * @class DotDropdownDirective
  */
 @Directive({
-        selector: '[dotDropdown]',
+    selector: '[dotDropdown]',
     providers: [DotMessagePipe]
 })
 export class DotDropdownDirective {
