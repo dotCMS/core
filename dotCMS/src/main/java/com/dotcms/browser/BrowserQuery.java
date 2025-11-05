@@ -109,7 +109,7 @@ public class BrowserQuery {
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
-        this.maxResults = Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST);
+        this.maxResults = Math.max(builder.maxResults, MAX_FETCH_PER_REQUEST);
         this.showWorking = builder.showWorking || builder.showArchived;
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;

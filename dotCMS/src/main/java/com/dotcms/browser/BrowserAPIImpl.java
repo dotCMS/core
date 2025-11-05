@@ -42,18 +42,21 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -130,25 +133,27 @@ public class BrowserAPIImpl implements BrowserAPI {
         sqlQuery.params.forEach(dcCount::addParam);
         final int count = dcCount.getInt("count");
 
-        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
-        sqlQuery.params.forEach(dcSelect::addParam);
-        //Set Pagination params only if they make sense, this also allows me to keep the original behavior available
-        if(startRow >= 0 && maxRows > 0) {
-            dcSelect.setStartRow(startRow)
-                    .setMaxRows(maxRows);
-        }
-
+        final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
         try {
-            @SuppressWarnings("unchecked")
-            final List<Map<String,String>> inodesMapList =  dcSelect.loadResults();
-            Set<String> inodes =
-                    inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toSet());
-            if(isUseElasticSearchForTextFiltering(browserQuery) && !inodes.isEmpty()){
-                //After having applied the text filters, these are the good inodes we need to return
-                inodes = new HashSet<>(inodesByTextFromES(browserQuery, inodes));
+            final Set<String> collectedInodes = new LinkedHashSet<>();
+            if(useElasticSearchForTextFiltering){
+               collectedInodes.addAll(doElasticSearchTextFiltering(browserQuery, startRow, maxRows, sqlQuery));
+            } else {
+                final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+                sqlQuery.params.forEach(dcSelect::addParam);
+
+                //Set Pagination params only if they make sense, this also allows me to keep the original behavior available
+                if(startRow >= 0 && maxRows > 0) {
+                    dcSelect.setStartRow(startRow)
+                            .setMaxRows(maxRows);
+                }
+                @SuppressWarnings("unchecked")
+                final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
+                inodesMapList.forEach(inode -> collectedInodes.add(inode.get("inode")));
             }
+
             //Now this should load the good contentlets
-            final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(new ArrayList<>(inodes));
+            final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(new ArrayList<>(collectedInodes));
 
             final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
                     PERMISSION_READ, true, browserQuery.user);
@@ -163,6 +168,55 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
     }
 
+    private Set<String> doElasticSearchTextFiltering(BrowserQuery browserQuery, int startRow, int maxRows,
+            SelectAndCountQueries sqlQuery) throws DotDataException {
+        final Set<String> collectedInodes = new LinkedHashSet<>();
+        boolean refetch = false;
+        int startAt = startRow;
+        //This is the minimum number of rows to fetch from ES.
+        final int minCollectedToFeelHappy = MIN_COLLECTED_MATCHES.get();
+        int attempts = 0;
+        do {
+            attempts++;
+            final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+            sqlQuery.params.forEach(dcSelect::addParam);
+
+            //Set Pagination params only if they make sense, this also allows me to keep the original behavior available
+            dcSelect.setStartRow(startAt).setMaxRows(maxRows);
+
+            @SuppressWarnings("unchecked")
+            final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
+            Set<String> inodes = inodesMapList.stream().map(data -> data.get("inode"))
+                    .collect(Collectors.toSet());
+            /// the contents retuned from ES are less than the expected fo fit the page size
+            if (!inodes.isEmpty()) {
+                //After having applied the text filters, these are the good inodes we need to return
+                final Set<String> matchingInodes = new HashSet<>(inodesByTextFromES(browserQuery, inodes));
+                collectedInodes.addAll(matchingInodes);
+                if (collectedInodes.size() < minCollectedToFeelHappy) {
+                    refetch = true;
+                    //We didn't get back a lot we still have room for another attempt
+                    startAt += maxRows;
+                } else {
+                   break;
+                }
+            }
+        } while (refetch && attempts < MAX_DB_ATTEMPT.get());
+        return collectedInodes;
+    }
+
+    //We'll stop digging when we feel happy with the number of items we have collected to show
+    final Lazy<Integer> MIN_COLLECTED_MATCHES = Lazy.of(
+            () -> Config.getIntProperty("BROWSE_API_MIN_COLLECTED_MATCHES", 30));
+
+    //We'll stop trying to fetch from the DB if we don't get back enough results
+    final Lazy<Integer> MAX_DB_ATTEMPT = Lazy.of(
+            () -> Config.getIntProperty("BROWSE_API_MAX_DB_ATTEMPT", 100));
+
+    /**
+     * Represents content items under a specific parent along with the total count.
+     * This class is immutable and holds a list of content items and their total results count.
+     */
     static class ContentUnderParent {
         final List<Contentlet> contentlets;
         final int totalResults;

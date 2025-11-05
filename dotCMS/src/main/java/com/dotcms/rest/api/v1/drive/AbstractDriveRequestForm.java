@@ -258,11 +258,11 @@ public interface AbstractDriveRequestForm {
      *   <li>Default of 500 provides good balance for most use cases</li>
      * </ul>
      *
-     * @return maximum number of results to return, defaults to 500
+     * @return maximum number of results to return, defaults to 2000
      */
     @JsonProperty("maxResults")
     @Value.Default
-    default int maxResults() { return 500; }
+    default int maxResults() { return 2000; }
 
     /**
      * Field and direction for sorting results.

@@ -227,6 +227,10 @@ public class ContentDriveHelper {
         return sortBy.trim().toLowerCase().endsWith("desc");
     }
 
+    /**
+     * We never take into account Host nor Forms Content-types
+     * @return
+     */
     static Set<ContentType> getExcludedContentTypes() {
         try {
             final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
