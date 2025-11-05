@@ -13,10 +13,11 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
+
 import { DotContentDriveSearchInputComponent } from './dot-content-drive-search-input.component';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
-import { ALL_FOLDER } from '../../../../utils/tree-folder.utils';
 
 describe('DotContentDriveSearchInputComponent', () => {
     let spectator: Spectator<DotContentDriveSearchInputComponent>;

@@ -13,14 +13,14 @@ import {
     DotContentDriveUploadFiles,
     DotTreeFolderComponent,
     DotFolderTreeNodeItem,
-    DotContentDriveMoveItems
+    DotContentDriveMoveItems,
+    ALL_FOLDER
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { ALL_FOLDER } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;

@@ -1,4 +1,4 @@
-import { DotFolderListViewColumn } from './models';
+import { DotFolderListViewColumn, DotFolderTreeNodeItem } from './models';
 
 export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
     { field: 'title', header: 'title', width: '40%', order: 1, sortable: true },
@@ -17,3 +17,22 @@ export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
  * @type DOT_DRAG_ITEM
  */
 export const DOT_DRAG_ITEM = 'dotcms/item';
+
+/**
+ * @export
+ * @type ALL_FOLDER
+ * @description All folder node
+ */
+export const ALL_FOLDER: DotFolderTreeNodeItem = {
+    key: 'ALL_FOLDER',
+    label: 'content-drive.all-folder.label',
+    loading: false,
+    data: {
+        type: 'folder',
+        path: '',
+        hostname: '',
+        id: ''
+    },
+    leaf: false,
+    expanded: true
+};

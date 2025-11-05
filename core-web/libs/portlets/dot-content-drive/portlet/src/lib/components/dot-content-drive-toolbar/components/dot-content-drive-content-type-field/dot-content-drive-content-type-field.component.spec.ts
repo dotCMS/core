@@ -551,6 +551,13 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
     describe('Content Type Selection & Store Integration', () => {
         beforeEach(() => {
+            // Populate the state with content types so onChange can work
+            patchState(spectator.component.$state, {
+                contentTypes: MOCK_CONTENT_TYPES.filter(
+                    (ct) => ct.baseType !== DotCMSBaseTypesContentTypes.FORM && !ct.system
+                )
+            });
+
             // Set up component with pre-selected content types for testing
             spectator.component.$selectedContentTypes.set([
                 MOCK_CONTENT_TYPES[0], // blog

@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -9,12 +10,14 @@ import {
     DotContentDriveItem,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { mapQueryParamsToCDParams } from '@dotcms/utils';
 
 @Injectable({
     providedIn: 'root'
 })
 export class DotContentDriveNavigationService {
     readonly #router = inject(Router);
+    readonly #location = inject(Location);
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotRouterService = inject(DotRouterService);
     /**
@@ -51,6 +54,9 @@ export class DotContentDriveNavigationService {
      * @param contentlet - The contentlet to edit
      */
     #editContentlet(contentlet: DotContentDriveItem) {
+        const currentPath = this.#location.path(true);
+        const currentQueryParams = new URL(currentPath, window.location.origin).searchParams;
+
         this.#dotContentTypeService
             .getContentType(contentlet.contentType)
             .pipe(take(1))
@@ -58,8 +64,12 @@ export class DotContentDriveNavigationService {
                 const shouldRedirectToOldContentEditor =
                     !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
 
+                const mappedQueryParams = mapQueryParamsToCDParams(currentQueryParams);
+
                 if (shouldRedirectToOldContentEditor) {
-                    this.#router.navigate([`c/content/${contentlet.inode}`]);
+                    this.#router.navigate([`c/content/${contentlet.inode}`], {
+                        queryParams: mappedQueryParams
+                    });
                     return;
                 }
 

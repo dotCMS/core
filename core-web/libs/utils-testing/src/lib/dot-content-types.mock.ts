@@ -25,7 +25,6 @@ import {
     ContentTypeSelectField,
     ContentTypeTagField,
     DotCMSClazzes,
-    DotCMSClazz,
     ContentTypeTabDividerField,
     ContentTypeColumnBreakField,
     DotCMSContentType,
