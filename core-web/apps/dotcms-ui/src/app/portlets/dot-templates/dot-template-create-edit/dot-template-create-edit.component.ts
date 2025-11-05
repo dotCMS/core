@@ -11,6 +11,7 @@ import { takeUntil, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
 import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.store';
@@ -29,6 +30,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private dotSiteService = inject(SiteService);
 
     readonly #store = inject(DotTemplateStore);
+    readonly #globalStore = inject(GlobalStore);
 
     vm$: Observable<VM>;
 
@@ -50,6 +52,28 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
 
                 if (!template.identifier) {
                     this.createTemplate();
+                } else if (template.title) {
+                    // Add the template name to the breadcrumb when editing
+                    this.#globalStore.setBreadcrumbs([
+                        {
+                            label: 'Home',
+                            disabled: true
+                        },
+                        {
+                            label: 'Site',
+                            disabled: true
+                        },
+                        {
+                            label: 'Templates',
+                            target: '_self',
+                            url: '/dotAdmin/#/templates'
+                        },
+                        {
+                            label: template.title,
+                            target: '_self',
+                            url: `/dotAdmin/#/templates/edit/${template.identifier}`
+                        }
+                    ]);
                 }
             })
         );

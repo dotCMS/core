@@ -149,6 +149,52 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                 patchState(store, { breadcrumbs: [] });
             };
 
+            const processUrl = (url: string) => {
+                const menu = menuItems();
+
+                // If the menu is empty, do nothing (wait for it to load)
+                if (menu.length === 0) {
+                    return;
+                }
+
+                const newUrl = `/dotAdmin/#${url}`;
+                const breadcrumbs = store.breadcrumbs();
+                const existingIndex = breadcrumbs.findIndex((crumb) => crumb.url === newUrl);
+
+                if (existingIndex > -1) {
+                    truncateBreadcrumbs(existingIndex);
+                } else {
+                    const item = menu.find((item) => item.menuLink === url);
+
+                    if (item) {
+                        setBreadcrumbs([
+                            {
+                                label: 'Home',
+                                disabled: true
+                            },
+                            {
+                                label: item.labelParent,
+                                disabled: true
+                            },
+                            {
+                                label: item.label,
+                                target: '_self',
+                                url: newUrl
+                            }
+                        ]);
+                    } else {
+                        if (url.includes('/content?filter=')) {
+                            const filter = url.split('/content?filter=')[1];
+                            addNewBreadcrumb({
+                                label: filter,
+                                target: '_self',
+                                url: newUrl
+                            });
+                        }
+                    }
+                }
+            };
+
             const listenToRouterEvents = () => {
                 store.router.events
                     .pipe(
@@ -156,44 +202,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                         map((event: NavigationEnd) => event.urlAfterRedirects)
                     )
                     .subscribe((url) => {
-                        const menu = menuItems();
-                        const newUrl = `/dotAdmin/#${url}`;
-                        const breadcrumbs = store.breadcrumbs();
-                        const existingIndex = breadcrumbs.findIndex(
-                            (crumb) => crumb.url === newUrl
-                        );
-
-                        if (existingIndex > -1) {
-                            truncateBreadcrumbs(existingIndex);
-                        } else {
-                            const item = menu.find((item) => item.menuLink === url);
-                            if (item) {
-                                setBreadcrumbs([
-                                    {
-                                        label: 'Home',
-                                        disabled: true
-                                    },
-                                    {
-                                        label: item.labelParent,
-                                        disabled: true
-                                    },
-                                    {
-                                        label: item.label,
-                                        target: '_self',
-                                        url: newUrl
-                                    }
-                                ]);
-                            } else {
-                                if (url.includes('/content?filter=')) {
-                                    const filter = url.split('/content?filter=')[1];
-                                    addNewBreadcrumb({
-                                        label: filter,
-                                        target: '_self',
-                                        url: newUrl
-                                    });
-                                }
-                            }
-                        }
+                        processUrl(url);
                     });
             };
             return {
@@ -204,7 +213,8 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                 addNewBreadcrumb,
                 loadBreadcrumbs,
                 clearBreadcrumbs,
-                _listenToRouterEvents: listenToRouterEvents
+                _listenToRouterEvents: listenToRouterEvents,
+                _processUrl: processUrl
             };
         }),
         withHooks({
@@ -214,10 +224,29 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
 
                 store._listenToRouterEvents();
                 store.loadBreadcrumbs();
+
                 // Persist breadcrumbs to sessionStorage whenever they change
                 effect(() => {
                     const breadcrumbs = store.breadcrumbs();
                     sessionStorage.setItem(BREADCRUMBS_SESSION_KEY, JSON.stringify(breadcrumbs));
+                });
+
+                // Process current URL when menuItems become available
+                effect(() => {
+                    const menu = menuItems();
+                    const currentUrl = store.router.url;
+
+                    // When `menuItems` is loaded and we have a current URL, process the route
+                    if (menu.length > 0 && currentUrl) {
+                        const breadcrumbs = store.breadcrumbs();
+                        const newUrl = `/dotAdmin/#${currentUrl}`;
+
+                        // Only process if we don't have breadcrumbs or the last breadcrumb does not match the current URL
+                        const lastBreadcrumb = breadcrumbs[breadcrumbs.length - 1];
+                        if (breadcrumbs.length === 0 || lastBreadcrumb?.url !== newUrl) {
+                            store._processUrl(currentUrl);
+                        }
+                    }
                 });
             }
         })

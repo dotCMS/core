@@ -113,7 +113,7 @@ test.describe("Template page", () => {
 
     const breadcrumbText = breadcrumb.getBreadcrumb();
     await expect(breadcrumbText).toContainText("Home", { timeout: 10000 });
-    await expect(breadcrumbText).toContainText("Site Manager");
+    await expect(breadcrumbText).toContainText("Site");
     await expect(breadcrumbText).toContainText("Templates");
   });
 
