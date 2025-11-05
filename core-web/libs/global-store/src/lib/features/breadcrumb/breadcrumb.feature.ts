@@ -122,6 +122,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
             const addNewBreadcrumb = (item: MenuItem) => {
                 const contentEditRegex = /\/content\/.+/;
                 const url = item?.url?.replace('/dotAdmin/#', '') || '';
+
                 const lastBreadcrumb = store.lastBreadcrumb();
                 const lastBreadcrumbUrl = lastBreadcrumb?.url?.replace('/dotAdmin/#', '') || '';
 
@@ -183,7 +184,38 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                             }
                         ]);
                     } else {
-                        if (url.includes('/content?filter=')) {
+                        // Handle special case: /templates/edit/:id
+                        const templatesEditRegex = /^\/templates\/edit\/[a-zA-Z0-9-]+$/;
+                        if (templatesEditRegex.test(url)) {
+                            const templatesItem = menu.find(
+                                (item) => item.menuLink === '/templates'
+                            );
+
+                            if (templatesItem) {
+                                // Only build base breadcrumb if it doesn't exist yet
+                                const hasTemplatesBreadcrumb = breadcrumbs.some(
+                                    (crumb) => crumb.url === '/dotAdmin/#/templates'
+                                );
+
+                                if (!hasTemplatesBreadcrumb) {
+                                    setBreadcrumbs([
+                                        {
+                                            label: 'Home',
+                                            disabled: true
+                                        },
+                                        {
+                                            label: templatesItem.labelParent,
+                                            disabled: true
+                                        },
+                                        {
+                                            label: templatesItem.label,
+                                            target: '_self',
+                                            url: '/dotAdmin/#/templates'
+                                        }
+                                    ]);
+                                }
+                            }
+                        } else if (url.includes('/content?filter=')) {
                             const filter = url.split('/content?filter=')[1];
                             addNewBreadcrumb({
                                 label: filter,
@@ -241,9 +273,13 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                         const breadcrumbs = store.breadcrumbs();
                         const newUrl = `/dotAdmin/#${currentUrl}`;
 
-                        // Only process if we don't have breadcrumbs or the last breadcrumb does not match the current URL
-                        const lastBreadcrumb = breadcrumbs[breadcrumbs.length - 1];
-                        if (breadcrumbs.length === 0 || lastBreadcrumb?.url !== newUrl) {
+                        // Check if any breadcrumb matches the current URL
+                        const hasMatchingBreadcrumb = breadcrumbs.some(
+                            (crumb) => crumb.url === newUrl
+                        );
+
+                        // Only process if we don't have a matching breadcrumb for the current URL
+                        if (!hasMatchingBreadcrumb) {
                             store._processUrl(currentUrl);
                         }
                     }

@@ -53,27 +53,11 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 if (!template.identifier) {
                     this.createTemplate();
                 } else if (template.title) {
-                    // Add the template name to the breadcrumb when editing
-                    this.#globalStore.setBreadcrumbs([
-                        {
-                            label: 'Home',
-                            disabled: true
-                        },
-                        {
-                            label: 'Site',
-                            disabled: true
-                        },
-                        {
-                            label: 'Templates',
-                            target: '_self',
-                            url: '/dotAdmin/#/templates'
-                        },
-                        {
-                            label: template.title,
-                            target: '_self',
-                            url: `/dotAdmin/#/templates/edit/${template.identifier}`
-                        }
-                    ]);
+                    this.#globalStore.addNewBreadcrumb({
+                        label: template.title,
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/edit/${template.identifier}`
+                    });
                 }
             })
         );
