@@ -65,8 +65,34 @@
         <!-- <docker.platforms>linux/arm64,linux/amd64</docker.platforms>-->
         <tomcat.run.data.folder>${project.build.directory}/tomcat-run-data/${context.name}</tomcat.run.data.folder>
         <cleanup.data.folder>false</cleanup.data.folder>
+        <langchain4j.version>1.3.0</langchain4j.version>
     </properties>
     <dependencies>
+        <!-- LangChain4j core + OpenAI (use OpenAI-compatible for gateways) -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-embeddings-all-minilm-l6-v2 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
+            <version>0.36.2</version>
+        </dependency>
+
         <!-- Force dependency resolution when using also-make option even though these do not provide jar dependencies -->
         <dependency>
             <groupId>com.dotcms</groupId>

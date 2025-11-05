@@ -18,15 +18,17 @@ import java.util.stream.Collectors;
 public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
 
     private final Map<String, AiVendorNode> vendors = new ConcurrentHashMap<>();
+    private final Map<String, String> routing = new ConcurrentHashMap<>();
 
-    private AiModelConfigCatalogImpl(final Map<String, AiVendorNode> initial) {
+    private AiModelConfigCatalogImpl(final Map<String, AiVendorNode> initial, final Map<String, String> routing ) {
 
         this.vendors.putAll(initial);
+        this.routing.putAll(routing);
     }
 
     public static AiModelConfigCatalogImpl from(final AiVendorCatalogData data) {
 
-        return new AiModelConfigCatalogImpl(data.getVendors());
+        return new AiModelConfigCatalogImpl(data.getVendors(), data.getRouting());
     }
 
     // -------------------- read API --------------------
@@ -93,23 +95,55 @@ public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
     @Override
     public AiModelConfig getByPath(final String path) {
 
+        if (path == null || path.trim().isEmpty()) {
+            throw new IllegalArgumentException("Path cannot be null or empty");
+        }
+
         final String[] parts = path.split("\\.");
-        if (parts.length != 3){
-            throw new IllegalArgumentException("Path must be vendor.kind.modelKey");
+
+        final String vendor;
+        final String kind;
+        final String modelKey;
+
+        switch (parts.length) {
+
+            // ✅ Case 1: vendor only → default chat model
+            case 1:
+                vendor = parts[0];
+                kind = "chat";
+                modelKey = resolveDefaultModelKey(vendor, true);
+                break;
+
+            // ✅ Case 2: vendor.kind → default model of that kind
+            case 2:
+                vendor = parts[0];
+                kind = parts[1];
+                modelKey = resolveDefaultModelKey(vendor, "chat".equals(kind));
+                break;
+
+            // ✅ Case 3: vendor.kind.modelKey → explicit
+            case 3:
+                vendor = parts[0];
+                kind = parts[1];
+                modelKey = parts[2];
+                break;
+
+            default:
+                throw new IllegalArgumentException(
+                        "Invalid path format. Expected one of: " +
+                                "vendor | vendor.kind | vendor.kind.modelKey"
+                );
         }
 
-        final String vendor = parts[0], kind = parts[1], modelKey = parts[2];
-
-        if ("chat".equals(kind)) {
+        if ("chat".equalsIgnoreCase(kind)) {
             return getChatConfig(vendor, modelKey);
-        }
-
-        if ("embeddings".equals(kind)) {
+        } else if ("embeddings".equalsIgnoreCase(kind)) {
             return getEmbeddingsConfig(vendor, modelKey);
-        }
+        } // todo: when more add here
 
         throw new IllegalArgumentException("Unknown kind: " + kind);
     }
+
 
     /**
      * Returns the list of all chat model names available for a vendor.
@@ -132,6 +166,13 @@ public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
     public List<String> getVendorNames() {
 
         return List.copyOf(this.vendors.keySet());
+    }
+
+    @Override
+    public AiModelConfig getDefaultChatModel() {
+
+        final String vendorModelPath = this.routing.get("default-chat");
+        return this.getByPath(vendorModelPath);
     }
 
     /**
