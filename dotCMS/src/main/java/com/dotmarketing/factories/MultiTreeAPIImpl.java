@@ -104,7 +104,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ?";
 
-    private static final String jsonb = DbConnectionFactory.isPostgres() ? "?" : "?::jsonb";
+    private static final String jsonb = DbConnectionFactory.isPostgres() ? "?::jsonb" : "?";
     private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id, style_properties) values (?,?,?,?,?,?,?," + jsonb + ")  ";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
