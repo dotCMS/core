@@ -340,8 +340,15 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     gotoPortlet(link: string, navigateToPorletOptions?: DotNavigateToOptions): Promise<boolean> {
-        const { replaceUrl = false, queryParamsHandling = '' } = navigateToPorletOptions || {};
-        const url = this.router.createUrlTree([link], { queryParamsHandling });
+        const {
+            replaceUrl = false,
+            queryParamsHandling = '',
+            queryParams = {}
+        } = navigateToPorletOptions || {};
+        const url = this.router.createUrlTree([link], {
+            queryParamsHandling,
+            queryParams
+        });
 
         return this.router.navigateByUrl(url, { replaceUrl });
     }

@@ -1,7 +1,13 @@
 import { describe, expect, it } from '@jest/globals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
+import {
+    createServiceFactory,
+    SpectatorService,
+    mockProvider,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 
 import { DotContentTypeService, DotRouterService } from '@dotcms/data-access';
@@ -16,6 +22,7 @@ describe('DotContentDriveNavigationService', () => {
     let router: jest.Mocked<Router>;
     let contentTypeService: jest.Mocked<DotContentTypeService>;
     let dotRouterService: jest.Mocked<DotRouterService>;
+    let location: SpyObject<Location>;
 
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
@@ -28,6 +35,9 @@ describe('DotContentDriveNavigationService', () => {
             }),
             mockProvider(DotRouterService, {
                 goToEditPage: jest.fn()
+            }),
+            mockProvider(Location, {
+                path: jest.fn()
             })
         ]
     });
@@ -38,10 +48,12 @@ describe('DotContentDriveNavigationService', () => {
         router = spectator.inject(Router);
         contentTypeService = spectator.inject(DotContentTypeService);
         dotRouterService = spectator.inject(DotRouterService);
+        location = spectator.inject(Location);
     });
 
     afterEach(() => {
         jest.clearAllMocks();
+        location.path.mockReset();
     });
 
     describe('editContent', () => {
@@ -112,7 +124,38 @@ describe('DotContentDriveNavigationService', () => {
             service.editContent(mockContentlet);
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('news');
-            expect(router.navigate).toHaveBeenCalledWith(['c/content/test-inode-456']);
+            expect(router.navigate).toHaveBeenCalledWith(['c/content/test-inode-456'], {
+                queryParams: {}
+            });
+        });
+
+        it('should navigate to old content editor with mapped query params from Content Drive', () => {
+            const mockContentlet = createFakeContentlet({
+                contentType: 'news',
+                inode: 'test-inode-456'
+            });
+
+            const mockContentType = createFakeContentType({
+                id: 'news',
+                name: 'News',
+                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false }
+            });
+
+            // Mock the location to return a URL without CD_ prefix
+            location.path.mockReturnValue('/content-drive?folderId=123&path=/images');
+
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+
+            service.editContent(mockContentlet);
+
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith('news');
+            // The params should be sent WITH CD_ prefix added by mapQueryParamsToCDParams
+            expect(router.navigate).toHaveBeenCalledWith(['c/content/test-inode-456'], {
+                queryParams: {
+                    CD_folderId: '123',
+                    CD_path: '/images'
+                }
+            });
         });
 
         it('should navigate to old content editor when feature flag is missing', () => {
@@ -132,7 +175,9 @@ describe('DotContentDriveNavigationService', () => {
             service.editContent(mockContentlet);
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('product');
-            expect(router.navigate).toHaveBeenCalledWith(['c/content/test-inode-789']);
+            expect(router.navigate).toHaveBeenCalledWith(['c/content/test-inode-789'], {
+                queryParams: {}
+            });
         });
 
         it('should navigate to old content editor when metadata is undefined', () => {
@@ -148,7 +193,9 @@ describe('DotContentDriveNavigationService', () => {
             service.editContent(mockContentlet);
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('event');
-            expect(router.navigate).toHaveBeenCalledWith(['c/content/test-inode-000']);
+            expect(router.navigate).toHaveBeenCalledWith(['c/content/test-inode-000'], {
+                queryParams: {}
+            });
         });
     });
 
