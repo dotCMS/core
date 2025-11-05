@@ -93,6 +93,7 @@ public class AiModelConfigFactory {
         return null != modelConfigCatalog? modelConfigCatalog.getByPath(vendorModelPath):null;
     }
 
+
     private AiModelConfig findDefaultAiModelFromRoutingApp(final String siteId) throws DotDataException, DotSecurityException {
 
         AiModelConfigCatalog modelConfigCatalog = null;
@@ -107,6 +108,23 @@ public class AiModelConfigFactory {
 
 
         return null != modelConfigCatalog? modelConfigCatalog.getDefaultChatModel():null;
+    }
+
+
+    private AiModelConfig findDefaultAiModelEmbeddingFromRoutingApp(final String siteId) throws DotDataException, DotSecurityException {
+
+        AiModelConfigCatalog modelConfigCatalog = null;
+        if (!this.aiModelConfigCatalogMap.containsKey(siteId)) {
+
+            if (!loadVendorModelFromAppBySiteId(siteId)) {
+                return null;
+            }
+        }
+
+        modelConfigCatalog = this.aiModelConfigCatalogMap.get(siteId);
+
+
+        return null != modelConfigCatalog? modelConfigCatalog.getDefaultEmbeddingModel():null;
     }
 
     private boolean loadVendorModelFromAppBySiteId(final String siteId) throws DotDataException, DotSecurityException {
@@ -148,5 +166,41 @@ public class AiModelConfigFactory {
 
         final boolean useDefaultModelWhenNotFound = true;
         return getAiModelConfig(site.getIdentifier(), vendorModelPath, useDefaultModelWhenNotFound);
+    }
+
+    public Optional<AiModelConfig> getAiModelConfigOrDefaultEmbedding(final Host site, final String vendorModelPath) {
+        final boolean useDefaultModelWhenNotFound = true;
+        return getAiModelConfigEmbedding(site.getIdentifier(), vendorModelPath, useDefaultModelWhenNotFound);
+    }
+
+    private Optional<AiModelConfig> getAiModelConfigEmbedding(final String siteId, final String vendorModelPath, boolean useDefaultModelWhenNotFound) {
+
+        final SystemCache systemCache = CacheLocator.getSystemCache();
+        final AiModelConfig configFromCache = (AiModelConfig) systemCache.get(key(siteId, vendorModelPath));
+        if (null == configFromCache) {
+
+            final AiModelConfig configFromApp = Try.of(()->findAiModelFromApp(siteId, vendorModelPath)).getOrNull();
+            if (null != configFromApp) {
+
+                systemCache.put(key(siteId, vendorModelPath), configFromApp);
+                return Optional.ofNullable(configFromApp);
+            } else {
+                systemCache.put(key(siteId, vendorModelPath), configCache404);
+            }
+        }
+
+        if (configFromCache == configCache404 || null == configFromCache) {
+
+            // try the default model from routing
+            if (useDefaultModelWhenNotFound) {
+                final AiModelConfig configFromApp = Try.of(() -> findDefaultAiModelEmbeddingFromRoutingApp(siteId)).getOrNull();
+
+                return Optional.ofNullable(configFromApp);
+            }
+
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(configFromCache);
     }
 }
