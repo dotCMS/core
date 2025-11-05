@@ -69,4 +69,5 @@ public interface AiModelConfigCatalog {
 
     AiModelConfig getDefaultChatModel();
 
+    AiModelConfig getDefaultEmbeddingModel();
 }

@@ -1,6 +1,12 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.api.CompletionRequest;
+import com.dotcms.ai.api.CompletionResponse;
+import com.dotcms.ai.api.SearchContentResponse;
+import com.dotcms.ai.api.SearchForContentRequest;
+import com.dotcms.ai.config.AiModelConfig;
+import com.dotcms.ai.config.AiModelConfigFactory;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -14,12 +20,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
@@ -44,6 +52,12 @@ import java.util.Optional;
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class SearchResource {
 
+    private final AiModelConfigFactory modelConfigFactory;
+
+    @Inject
+    public SearchResource(AiModelConfigFactory modelConfigFactory) {
+        this.modelConfigFactory = modelConfigFactory;
+    }
     /**
      * Handles GET requests to test the response of the search service.
      *
@@ -126,11 +140,45 @@ public class SearchResource {
                 .init()
                 .getUser();
 
+        final Host site = WebAPILocator.getHostWebAPI().getHost(request);
+        final Optional<AiModelConfig> modelConfigOpt = this.modelConfigFactory.getAiModelConfigOrDefaultEmbedding(site, form.model);
+
+        if(modelConfigOpt.isPresent()) {
+
+            CompletionsForm finalForm = form;
+            if (StringUtils.isNotSet(form.model)) {
+                // probably get the default one
+                finalForm = CompletionsForm.copy(form).model(modelConfigOpt.get().getName()).build();
+            }
+
+            final EmbeddingsDTO searcher = EmbeddingsDTO.from(form).withUser(user).build();
+
+            Logger.debug(this, "Using new AI api for the search rag resource with the form: " + finalForm);
+            final SearchContentResponse searchContentResponse = APILocator.getDotAIAPI()
+                    .getEmbeddingsAPI().searchForContent(toSearchForContentRequest(form, searcher, modelConfigOpt.get()));
+            Logger.debug(this, ()-> "Search content response: " + searchContentResponse);
+            return Response.ok(searchContentResponse).build();
+        }
+
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(form).withUser(user).build();
 
         return Response.ok(
                 APILocator.getDotAIAPI().getEmbeddingsAPI().searchForContent(searcher).toString(),
                 MediaType.APPLICATION_JSON).build();
+    }
+
+    private SearchForContentRequest toSearchForContentRequest(final CompletionsForm form,
+                                                    final EmbeddingsDTO searcher,
+                                                    final AiModelConfig aiModelConfig) {
+
+        final SearchForContentRequest.Builder builder = SearchForContentRequest.builder()
+                .vendorModelPath(form.model)
+                .prompt(form.prompt)
+                .chatModelConfig(aiModelConfig)
+                .temperature(form.temperature)
+                .searcher(searcher);
+
+        return builder.build();
     }
 
     /**

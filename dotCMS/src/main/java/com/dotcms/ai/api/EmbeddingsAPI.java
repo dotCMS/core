@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.ai.api.embeddings.EmbeddingIndexRequest;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -25,6 +26,16 @@ public interface EmbeddingsAPI {
     String OPEN_AI_THREAD_POOL_KEY = "OpenAIThreadPool";
 
     void shutdown();
+
+    /**
+     * Does the embedding for a contentlet request
+     * @param indexRequest
+     * @return int records affected
+     * @throws Exception
+     */
+    int indexOne(EmbeddingIndexRequest indexRequest) throws Exception;
+
+
 
     /**
      * given a contentlet, a list of fields and an index, this method will do its best to turn that content into an
@@ -186,4 +197,10 @@ public interface EmbeddingsAPI {
      */
     int deleteEmbeddings(final EmbeddingsDTO dto);
 
+    /**
+     * Search embedding on the new dotAI Api
+     * @param searchForContentRequest
+     * @return SearchContentResponse
+     */
+    SearchContentResponse searchForContent(SearchForContentRequest searchForContentRequest);
 }

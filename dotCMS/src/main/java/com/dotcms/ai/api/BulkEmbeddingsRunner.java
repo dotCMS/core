@@ -35,6 +35,8 @@ public class BulkEmbeddingsRunner implements Runnable {
 
     @Override
     public void run() {
+
+        // todo: here see if the model is configured with the new api
         for (final String inode : inodes) {
             try {
                 final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, false);

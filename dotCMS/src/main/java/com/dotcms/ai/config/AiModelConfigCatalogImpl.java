@@ -175,6 +175,13 @@ public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
         return this.getByPath(vendorModelPath);
     }
 
+    @Override
+    public AiModelConfig getDefaultEmbeddingModel() {
+
+        final String vendorModelPath = this.routing.get("default-embeddings");
+        return this.getByPath(vendorModelPath);
+    }
+
     /**
      * Returns the list of all embeddings model names available for a vendor.
      *
