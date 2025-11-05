@@ -203,6 +203,37 @@ describe('DotContentletWrapperComponent', () => {
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
             });
 
+            it('should close the dialog and navigate to content-drive when CD query params exist', () => {
+                const contentDriveParams = {
+                    folderId: '123',
+                    path: '/images'
+                };
+
+                Object.defineProperty(dotRouterService, 'currentPortlet', {
+                    value: {
+                        url: '/test?CD_folderId=123&CD_path=/images',
+                        id: '123'
+                    },
+                    writable: true
+                });
+
+                jest.spyOn(dotRouterService, 'gotoPortlet');
+
+                dotIframeDialog.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'close'
+                    }
+                });
+
+                expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
+                expect(component.header).toBe('');
+                expect(component.custom.emit).toHaveBeenCalledTimes(1);
+                expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('content-drive', {
+                    queryParams: contentDriveParams
+                });
+            });
+
             it('should called goToEdit', () => {
                 dotIframeDialog.triggerEventHandler('custom', {
                     detail: {
