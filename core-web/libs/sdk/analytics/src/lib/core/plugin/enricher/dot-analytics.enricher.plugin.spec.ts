@@ -3,11 +3,12 @@
 import { dotAnalyticsEnricherPlugin } from './dot-analytics.enricher.plugin';
 
 import { DotCMSPredefinedEventType } from '../../shared/constants/dot-content-analytics.constants';
-import { enrichPagePayloadOptimized } from '../../shared/dot-content-analytics.utils';
+import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
 
 // Mock the utility functions
 jest.mock('../../shared/dot-content-analytics.utils', () => ({
-    enrichPagePayloadOptimized: jest.fn()
+    enrichPagePayloadOptimized: jest.fn(),
+    getLocalTime: jest.fn()
 }));
 
 describe('dotAnalyticsEnricherPlugin', () => {
@@ -15,6 +16,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
     const mockEnrichPagePayloadOptimized = enrichPagePayloadOptimized as jest.MockedFunction<
         typeof enrichPagePayloadOptimized
     >;
+    const mockGetLocalTime = getLocalTime as jest.MockedFunction<typeof getLocalTime>;
 
     beforeEach(() => {
         // Reset all mocks before each test
@@ -25,6 +27,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
         // Set default mock return values
         mockEnrichPagePayloadOptimized.mockReturnValue({} as any);
+        mockGetLocalTime.mockReturnValue('2024-01-01T10:00:00.000Z');
     });
 
     describe('Plugin Configuration', () => {
@@ -115,6 +118,35 @@ describe('dotAnalyticsEnricherPlugin', () => {
     });
 
     describe('Track Event Enrichment', () => {
+        let originalTitle: string;
+        let originalHref: string;
+
+        beforeEach(() => {
+            // Save originals
+            originalTitle = document.title;
+            originalHref = window.location.href;
+
+            // Mock document title and window location
+            Object.defineProperty(document, 'title', {
+                value: 'Test Page',
+                writable: true,
+                configurable: true
+            });
+
+            // Mock window.location.href
+            delete (window as any).location;
+            (window as any).location = { href: 'http://localhost/test' };
+        });
+
+        afterEach(() => {
+            // Restore originals
+            Object.defineProperty(document, 'title', {
+                value: originalTitle,
+                writable: true,
+                configurable: true
+            });
+        });
+
         it('should enrich content_impression events with page data', () => {
             // Arrange
             const mockPayload = {
@@ -138,30 +170,24 @@ describe('dotAnalyticsEnricherPlugin', () => {
                 }
             } as any;
 
-            mockEnrichPagePayloadOptimized.mockReturnValue({
-                context: mockPayload.context,
-                page: { url: '/test', title: 'Test Page' },
-                local_time: '2024-01-01T10:00:00.000Z'
-            } as any);
-
             // Act
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(mockEnrichPagePayloadOptimized).toHaveBeenCalledWith(mockPayload);
-            expect(result).toEqual({
+            // Should NOT call enrichPagePayloadOptimized for track events
+            expect(mockEnrichPagePayloadOptimized).not.toHaveBeenCalled();
+            expect(result).toMatchObject({
                 ...mockPayload,
-                properties: {
-                    content: mockPayload.properties.content,
-                    position: mockPayload.properties.position,
-                    page: { url: '/test', title: 'Test Page' }
-                },
-                page: { url: '/test', title: 'Test Page' },
-                local_time: '2024-01-01T10:00:00.000Z'
+                page: {
+                    title: 'Test Page',
+                    url: 'http://localhost/test'
+                }
             });
+            expect(result.local_time).toBeDefined();
+            expect(typeof result.local_time).toBe('string');
         });
 
-        it('should enrich custom events with page, utm, and custom data', () => {
+        it('should enrich custom events with only local_time', () => {
             // Arrange
             const mockPayload = {
                 event: 'button_click',
@@ -172,25 +198,22 @@ describe('dotAnalyticsEnricherPlugin', () => {
                 }
             } as any;
 
-            mockEnrichPagePayloadOptimized.mockReturnValue({
-                context: mockPayload.context,
-                page: { url: '/contact', title: 'Contact Us' },
-                utm: { source: 'newsletter', medium: 'email' },
-                custom: { user_segment: 'premium' },
-                local_time: '2024-01-01T10:00:00.000Z'
-            } as any);
-
             // Act
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result).toEqual({
-                ...mockPayload,
-                page: { url: '/contact', title: 'Contact Us' },
-                utm: { source: 'newsletter', medium: 'email' },
-                custom: { user_segment: 'premium' },
-                local_time: '2024-01-01T10:00:00.000Z'
+            // Should NOT call enrichPagePayloadOptimized for custom events
+            expect(mockEnrichPagePayloadOptimized).not.toHaveBeenCalled();
+            // Custom events should only have local_time added, no page/utm/custom data
+            expect(result).toMatchObject({
+                ...mockPayload
             });
+            expect(result.local_time).toBeDefined();
+            expect(typeof result.local_time).toBe('string');
+            // Should NOT have page/utm/custom data
+            expect(result.page).toBeUndefined();
+            expect(result.utm).toBeUndefined();
+            expect(result.custom).toBeUndefined();
         });
 
         it('should pass through properties without modifying them for custom events', () => {
@@ -203,12 +226,6 @@ describe('dotAnalyticsEnricherPlugin', () => {
                     validation_errors: 0
                 }
             } as any;
-
-            mockEnrichPagePayloadOptimized.mockReturnValue({
-                context: mockPayload.context,
-                page: { url: '/form', title: 'Form Page' },
-                local_time: '2024-01-01T10:00:00.000Z'
-            } as any);
 
             // Act
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
