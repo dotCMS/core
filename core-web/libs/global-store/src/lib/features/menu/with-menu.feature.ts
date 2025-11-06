@@ -322,6 +322,19 @@ export function withMenu() {
                 patchState(store, initialMenuSlice);
             }
         }))
-        // todo: add hooks to load from local storage. This could help us to persist the menu state when refresh the page.
+        /**
+         * TODO: [FEATURE] Menu state persistence
+         * Add withHooks to persist menu state (expanded items, active item) to localStorage.
+         * This will restore the menu state when the user refreshes the page.
+         *
+         * Acceptance criteria:
+         * - Persist expanded menu items to localStorage on every state change
+         * - Persist active menu item ID to localStorage
+         * - Load persisted state on feature initialization
+         * - Handle edge cases (cleared storage, corrupted data)
+         *
+         * Consider creating a GitHub issue: #XXXXX for tracking if not completed in current PR.
+         * Related to: breadcrumb state persistence already implemented in breadcrumb.feature.ts
+         */
     );
 }

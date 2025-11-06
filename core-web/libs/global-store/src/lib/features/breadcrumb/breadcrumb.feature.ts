@@ -119,12 +119,24 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                 patchState(store, { breadcrumbs: currentBreadcrumbs.slice(0, existingIndex + 1) });
             };
 
+            /**
+             * Normalizes a URL by removing the '/dotAdmin/#' prefix if present.
+             * Ensures consistent URL comparison regardless of format.
+             *
+             * @param url - The URL to normalize
+             * @returns The normalized URL path
+             */
+            const normalizeUrl = (url: string | undefined): string => {
+                if (!url) return '';
+                return url.replace(/^.*#/, ''); // Remove everything up to and including the hash
+            };
+
             const addNewBreadcrumb = (item: MenuItem) => {
                 const contentEditRegex = /\/content\/.+/;
-                const url = item?.url?.replace('/dotAdmin/#', '') || '';
+                const url = normalizeUrl(item?.url);
 
                 const lastBreadcrumb = store.lastBreadcrumb();
-                const lastBreadcrumbUrl = lastBreadcrumb?.url?.replace('/dotAdmin/#', '') || '';
+                const lastBreadcrumbUrl = normalizeUrl(lastBreadcrumb?.url);
 
                 const isSameUrl = url === lastBreadcrumbUrl;
 
