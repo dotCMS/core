@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS clickhouse_test_db;
+
 CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
 (
     -- ######################################################
@@ -15,20 +15,20 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     doc_encoding LowCardinality(String),
     local_tz_offset Int64,
     eventn_ctx_event_id String CODEC(ZSTD(3)),
-    user_agent String LowCardinality(String),
-    parsed_ua_device_brand Nullable(LowCardinality(String)) CODEC(ZSTD(3)),
-    parsed_ua_device_family Nullable(LowCardinality(String)) CODEC(ZSTD(3)),
-    parsed_ua_device_model Nullable(LowCardinality(String)),
-    parsed_ua_os_family Nullable(LowCardinality(String)) CODEC(ZSTD(3)),
+    user_agent LowCardinality(String),
+    parsed_ua_device_brand LowCardinality(String) CODEC(ZSTD(3)),
+    parsed_ua_device_family LowCardinality(String) CODEC(ZSTD(3)),
+    parsed_ua_device_model LowCardinality(String),
+    parsed_ua_os_family LowCardinality(String) CODEC(ZSTD(3)),
     parsed_ua_os_version Nullable(String),
-    parsed_ua_ua_family Nullable(LowCardinality(String)) CODEC(ZSTD(3)),
+    parsed_ua_ua_family LowCardinality(String) CODEC(ZSTD(3)),
     parsed_ua_ua_version Nullable(String),
     parsed_ua_bot UInt8,
     source_ip String,
     vp_size String,
-    utm_campaign Nullable(LowCardinality(String)) CODEC(ZSTD(3)),
-    utm_medium Nullable(LowCardinality(String)) CODEC(ZSTD(3)),
-    utm_source Nullable(LowCardinality(String)) CODEC(ZSTD(3)),
+    utm_campaign LowCardinality(String) CODEC(ZSTD(3)),
+    utm_medium LowCardinality(String) CODEC(ZSTD(3)),
+    utm_source LowCardinality(String) CODEC(ZSTD(3)),
     utm_term Nullable(String),
     utm_content Nullable(String) CODEC(ZSTD(3)),
     doc_hash Nullable(String),
@@ -152,15 +152,15 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     -- ######################################################
     --              Used in conversion event
     -- ######################################################
-    conversion_name Nullable(LowCardinality(String)) CODEC(ZSTD(3))
+    conversion_name LowCardinality(String) CODEC(ZSTD(3))
 ) Engine = MergeTree()
 PARTITION BY (customer_id, toYYYYMM(utc_time))
 ORDER BY (customer_id, context_user_id, utc_time)
 SETTINGS
-    index_granularity = 8192,
-    min_bytes_for_wide_part = 10485760,  -- 10MB
-    min_rows_for_wide_part = 100000,     -- 100k rows
-    merge_with_ttl_timeout = 3600;       -- merge once per hour
+index_granularity = 8192,
+min_bytes_for_wide_part = 10485760,  -- 10MB
+min_rows_for_wide_part = 100000,     -- 100k rows
+merge_with_ttl_timeout = 3600;       -- merge once per hour
 
 -- Time and cluster filtering
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_utc_time (utc_time) TYPE minmax GRANULARITY 1;
