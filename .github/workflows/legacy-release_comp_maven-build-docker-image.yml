@@ -28,6 +28,7 @@ on:
       custom_tag:
         description: 'Custom Docker Image Tag'
         required: false
+        type: string
     secrets:
       docker_io_username:
         description: 'Docker.io username'
