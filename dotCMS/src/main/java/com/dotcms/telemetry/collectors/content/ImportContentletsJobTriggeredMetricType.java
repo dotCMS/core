@@ -27,6 +27,6 @@ public class ImportContentletsJobTriggeredMetricType implements DBMetricType {
 
     @Override
     public String getSqlQuery() {
-        return "select * from job where queue_name='importContentlets'";
+        return "select count(*) from job where queue_name='importContentlets'";
     }
 }
