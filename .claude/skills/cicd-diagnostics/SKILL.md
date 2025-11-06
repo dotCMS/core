@@ -124,29 +124,39 @@ Diagnoses DotCMS CI/CD build failures efficiently using GitHub CLI and API.
 
 ## Diagnostic Approach
 
-### 0. Setup Diagnostic Workspace
+### 0. Setup and Load Utilities
 
-**IMPORTANT**: Create timestamped diagnostic folder in project (not /tmp):
+**IMPORTANT**: Source utility functions at the start of diagnostic:
 
 ```bash
-# Create diagnostic workspace
-DIAGNOSTIC_DIR=".claude/diagnostics/run-${RUN_ID}-$(date +%Y%m%d-%H%M%S)"
-mkdir -p "$DIAGNOSTIC_DIR"
-cd "$DIAGNOSTIC_DIR"
+# Load utility functions
+source .claude/skills/cicd-diagnostics/utils/github-api.sh
+source .claude/skills/cicd-diagnostics/utils/workspace.sh
+source .claude/skills/cicd-diagnostics/utils/log-analysis.sh
+source .claude/skills/cicd-diagnostics/utils/analysis.sh
+
+# Create or reuse diagnostic workspace (with automatic caching)
+DIAGNOSTIC_DIR=$(get_diagnostic_workspace "$RUN_ID")
+
+# Ensure .gitignore is configured
+ensure_gitignore_diagnostics
 
 # All subsequent operations use this directory
 # Advantages:
 # - Easy manual review of logs later
 # - Persists across sessions
 # - No conflicts with other runs
+# - Automatic caching of previous diagnostics
 # - Already gitignored (.claude/diagnostics/)
 ```
 
-Add to .gitignore if not present:
-```bash
-# Claude Code diagnostic outputs
-.claude/diagnostics/
-```
+**Available Utilities:**
+- **github-api.sh** - GitHub API wrappers, run/PR/issue fetching
+- **workspace.sh** - Diagnostic workspace management with caching
+- **log-analysis.sh** - Error pattern extraction from logs
+- **analysis.sh** - Failure classification and recommendations
+
+See [utils/README.md](utils/README.md) for complete function reference.
 
 ### 1. Identify Target
 
