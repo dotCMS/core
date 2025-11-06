@@ -5,7 +5,21 @@ description: Diagnoses DotCMS CI/CD build failures in GitHub Actions workflows (
 
 # CI/CD Build Diagnostics
 
-Diagnoses DotCMS CI/CD build failures efficiently using GitHub CLI and API.
+Diagnoses DotCMS CI/CD build failures efficiently using **AI-guided analysis** with utility-assisted data extraction.
+
+## Design Philosophy
+
+This skill follows an **AI-guided, utility-assisted** approach:
+
+- **Utilities** handle data access, caching, and simple extraction (bash scripts)
+- **AI** handles pattern recognition, classification, and reasoning (LLM capabilities)
+
+**Why?**
+- AI is better at recognizing new patterns and explaining reasoning
+- Utilities are better at fast, cached data access
+- This avoids brittle hardcoded classification logic
+
+See [DESIGN_PHILOSOPHY.md](DESIGN_PHILOSOPHY.md) for complete details.
 
 ## Core Workflow Types
 
@@ -122,660 +136,690 @@ Diagnoses DotCMS CI/CD build failures efficiently using GitHub CLI and API.
 - User is debugging code logic (not CI failures)
 - User asks about git operations unrelated to CI
 
-## Diagnostic Approach
+## Diagnostic Workflow
 
 ### 0. Setup and Load Utilities
 
-**IMPORTANT**: Source utility functions at the start of diagnostic:
+**CRITICAL**: All commands must run from repository root. Never use `cd` to change directories.
+
+**CRITICAL**: Always use `bash` explicitly - user's default shell may be zsh which has incompatible syntax.
+
+**CRITICAL**: Always use `bash -c` wrapper for any command using jq with `select()`, `contains()`, or sourcing utilities.
+
+Initialize the diagnostic workspace:
 
 ```bash
-# Load utility functions
-source .claude/skills/cicd-diagnostics/utils/github-api.sh
-source .claude/skills/cicd-diagnostics/utils/workspace.sh
-source .claude/skills/cicd-diagnostics/utils/log-analysis.sh
-source .claude/skills/cicd-diagnostics/utils/analysis.sh
-
-# Create or reuse diagnostic workspace (with automatic caching)
-DIAGNOSTIC_DIR=$(get_diagnostic_workspace "$RUN_ID")
-
-# Ensure .gitignore is configured
-ensure_gitignore_diagnostics
-
-# All subsequent operations use this directory
-# Advantages:
-# - Easy manual review of logs later
-# - Persists across sessions
-# - No conflicts with other runs
-# - Automatic caching of previous diagnostics
-# - Already gitignored (.claude/diagnostics/)
+# Use the init script to set up workspace
+RUN_ID=19131365567
+bash .claude/skills/cicd-diagnostics/init-diagnostic.sh "$RUN_ID"
+# Outputs: WORKSPACE=/path/to/.claude/diagnostics/run-{RUN_ID}
 ```
 
-**Available Utilities:**
-- **github-api.sh** - GitHub API wrappers, run/PR/issue fetching
-- **workspace.sh** - Diagnostic workspace management with caching
-- **log-analysis.sh** - Error pattern extraction from logs
-- **analysis.sh** - Failure classification and recommendations
+**Available utilities** (sourced via bash -c when needed):
+- **workspace.sh** - Diagnostic workspace with automatic caching
+- **github-api.sh** - GitHub API wrappers for runs/jobs/logs
+- **evidence.sh** - Evidence presentation for AI analysis (primary tool)
+- **utilities.sh** - Helper functions (extraction, comparison, frequency)
+- **log-analysis.sh** - Simple log pattern extraction
 
-See [utils/README.md](utils/README.md) for complete function reference.
+See [utils/README.md](utils/README.md) for function reference.
 
-### 1. Identify Target
+### 1. Identify Target and Create Workspace
 
-**Specific run URL provided:**
+**Extract run ID from URL or PR:**
+
 ```bash
-# Extract run ID: https://github.com/dotCMS/core/actions/runs/19131365567
+# From URL: https://github.com/dotCMS/core/actions/runs/19131365567
 RUN_ID=19131365567
 
-# Check for existing diagnostic directory from previous session
-EXISTING_DIR=$(find .claude/diagnostics -maxdepth 1 -type d -name "run-${RUN_ID}-*" 2>/dev/null | head -1)
-
-if [ -n "$EXISTING_DIR" ]; then
-  DIAGNOSTIC_DIR="$EXISTING_DIR"
-  echo "✓ Found existing diagnostic session: $DIAGNOSTIC_DIR"
-  echo "  (Logs and metadata will be reused from previous analysis)"
-else
-  # Create new workspace
-  DIAGNOSTIC_DIR=".claude/diagnostics/run-${RUN_ID}-$(date +%Y%m%d-%H%M%S)"
-  mkdir -p "$DIAGNOSTIC_DIR"
-  echo "✓ Created new diagnostic workspace: $DIAGNOSTIC_DIR"
-fi
-
-# Get run metadata (only if not already cached)
-if [ ! -f "$DIAGNOSTIC_DIR/run-metadata.json" ]; then
-  gh run view $RUN_ID --json conclusion,status,event,headBranch,headSha,workflowName,url,createdAt,updatedAt,displayTitle > "$DIAGNOSTIC_DIR/run-metadata.json"
-fi
-cat "$DIAGNOSTIC_DIR/run-metadata.json" | jq '.'
-```
-
-**PR URL or number provided:**
-```bash
-# Extract PR number: https://github.com/dotCMS/core/pull/33711 or just "33711"
+# OR from PR number (extract RUN_ID from failed check URL)
 PR_NUM=33711
+gh pr view $PR_NUM --json statusCheckRollup \
+    --jq '.statusCheckRollup[] | select(.conclusion == "FAILURE") | .detailsUrl' | head -1
+# Extract RUN_ID from the URL output
 
-# Get PR details including latest commit
-gh pr view $PR_NUM --json number,headRefOid,headRefName,title,author,statusCheckRollup > pr-info.json
+# Workspace already created by init script in step 0
+WORKSPACE="/Users/stevebolton/git/core2/.claude/diagnostics/run-${RUN_ID}"
+```
 
-# Find the most recent failed workflow run for this PR
-FAILED_RUN=$(jq -r '.statusCheckRollup[] | select(.conclusion == "FAILURE" and .workflowName == "-1 PR Check") | .detailsUrl' pr-info.json | head -1)
+### 2. Fetch Workflow Data (with caching)
 
-if [ -n "$FAILED_RUN" ]; then
-  # Extract run ID from URL: https://github.com/dotCMS/core/actions/runs/19118302390/...
-  RUN_ID=$(echo "$FAILED_RUN" | grep -oP 'runs/\K[0-9]+')
-  echo "Found failed run: $RUN_ID"
+Use helper scripts for guaranteed compatibility:
 
-  # Continue with run analysis using existing logic...
+```bash
+# Fetch metadata (uses caching)
+bash .claude/skills/cicd-diagnostics/fetch-metadata.sh "$RUN_ID" "$WORKSPACE"
+
+# Fetch jobs (uses caching)
+bash .claude/skills/cicd-diagnostics/fetch-jobs.sh "$RUN_ID" "$WORKSPACE"
+
+# Set file paths
+METADATA="$WORKSPACE/run-metadata.json"
+JOBS="$WORKSPACE/jobs-detailed.json"
+```
+
+### 3. Download Failed Job Logs
+
+Use bash -c wrapper for jq commands with `select()` (zsh incompatible):
+
+```bash
+bash -c '
+WORKSPACE="/Users/stevebolton/git/core2/.claude/diagnostics/run-19131365567"
+JOBS="$WORKSPACE/jobs-detailed.json"
+
+# Get first failed job ID and name
+FAILED_JOB_ID=$(jq -r ".jobs[] | select(.conclusion == \"failure\") | .id" "$JOBS" | head -1)
+FAILED_JOB_NAME=$(jq -r ".jobs[] | select(.conclusion == \"failure\") | .name" "$JOBS" | head -1)
+
+echo "Analyzing failed job: $FAILED_JOB_NAME (ID: $FAILED_JOB_ID)"
+
+# Download logs using helper script
+bash .claude/skills/cicd-diagnostics/fetch-logs.sh "$WORKSPACE" "$FAILED_JOB_ID"
+'
+```
+
+If analyzing a specific job by name (e.g., "CLI Tests"):
+
+```bash
+bash -c '
+WORKSPACE="/Users/stevebolton/git/core2/.claude/diagnostics/run-19131365567"
+JOBS="$WORKSPACE/jobs-detailed.json"
+
+# Filter for specific job name
+FAILED_JOB_ID=$(jq -r ".jobs[] | select(.conclusion == \"failure\") | select(.name | contains(\"CLI Tests\")) | .id" "$JOBS" | head -1)
+
+echo "CLI Tests Job ID: $FAILED_JOB_ID"
+bash .claude/skills/cicd-diagnostics/fetch-logs.sh "$WORKSPACE" "$FAILED_JOB_ID"
+'
+```
+
+### 4. Present Evidence to AI (KEY STEP!)
+
+**This is where AI-guided analysis begins.** Use `evidence.sh` to present raw data:
+
+```bash
+# Get complete diagnostic evidence package
+source .claude/skills/cicd-diagnostics/utils/evidence.sh
+
+# Check log size first
+get_log_stats "$LOG_FILE"
+
+# For large logs (>10MB), extract error sections only
+if [ "$(wc -c < "$LOG_FILE")" -gt 10485760 ]; then
+    echo "Large log detected - extracting error sections..."
+    ERROR_FILE="$WORKSPACE/error-sections.txt"
+    extract_error_sections_only "$LOG_FILE" "$ERROR_FILE"
+    LOG_TO_ANALYZE="$ERROR_FILE"
 else
-  echo "No failed runs found for PR $PR_NUM"
-  # Show all check runs for debugging
-  jq -r '.statusCheckRollup[] | "\(.name): \(.conclusion // .state)"' pr-info.json
-fi
-```
-
-**Current branch PR (no URL):**
-```bash
-CURRENT_BRANCH=$(git branch --show-current)
-gh pr list --head "$CURRENT_BRANCH" --json number,url,headRefOid,title,author > pr-info.json
-
-# Get PR workflow runs for commit
-HEAD_SHA=$(jq -r '.[0].headRefOid' pr-info.json)
-gh run list --workflow=cicd_1-pr.yml --commit=$HEAD_SHA --limit 5 --json databaseId,conclusion,status,displayTitle
-```
-
-**Overall workflow health check:**
-```bash
-# Check recent workflow health
-gh run list --workflow=cicd_2-merge-queue.yml --limit 10 --json databaseId,conclusion,displayTitle,createdAt > merge-queue-status.json
-gh run list --workflow=cicd_4-nightly.yml --limit 5 --json databaseId,conclusion,displayTitle,createdAt > nightly-status.json
-```
-
-### 2. Analyze Failed Jobs
-
-```bash
-# Get ALL jobs with detailed step information
-gh api "/repos/dotCMS/core/actions/runs/$RUN_ID/jobs" \
-  --jq '.jobs[] | {name, id, conclusion, status, started_at, completed_at, steps: [.steps[] | select(.conclusion == "failure") | {name, number, conclusion}]}' \
-  > "$DIAGNOSTIC_DIR/jobs-detailed.json"
-
-# Extract just failed jobs for quick view
-jq '.jobs[] | select(.conclusion == "failure")' "$DIAGNOSTIC_DIR/jobs-detailed.json"
-
-# List cancelled jobs (may indicate cascading failures)
-jq '.jobs[] | select(.conclusion == "cancelled")' "$DIAGNOSTIC_DIR/jobs-detailed.json"
-
-# Check artifacts (test reports, logs)
-gh api "/repos/dotCMS/core/actions/runs/$RUN_ID/artifacts" \
-  --jq '.artifacts[] | {name, id, size_in_bytes, expired}' \
-  > "$DIAGNOSTIC_DIR/artifacts.json"
-
-# Find test-related artifacts
-jq 'select(.name | contains("test-results") or contains("build-reports-test"))' "$DIAGNOSTIC_DIR/artifacts.json"
-```
-
-### 3. Efficient Log Analysis
-
-**CRITICAL**: Logs can be 100MB+. Use progressive approach with caching:
-
-```bash
-# Step 1: Get logs for ONLY failed jobs (not all jobs)
-FAILED_JOB_ID=$(jq -r '.jobs[] | select(.conclusion == "failure") | .id' "$DIAGNOSTIC_DIR/jobs-detailed.json" | head -1)
-
-# Check if logs already exist from previous session
-LOG_FILE="$DIAGNOSTIC_DIR/failed-job-${FAILED_JOB_ID}.txt"
-if [ -f "$LOG_FILE" ] && [ -s "$LOG_FILE" ]; then
-  echo "✓ Using cached logs from previous session: $LOG_FILE"
-else
-  echo "Downloading logs for failed job $FAILED_JOB_ID..."
-  gh api "/repos/dotCMS/core/actions/jobs/$FAILED_JOB_ID/logs" > "$LOG_FILE"
-  echo "✓ Logs saved to: $LOG_FILE ($(wc -c < "$LOG_FILE" | numfmt --to=iec-i)B)"
+    LOG_TO_ANALYZE="$LOG_FILE"
 fi
 
-# Step 2: Search for error patterns (priority order)
-echo "=== BUILD FAILURES ===" > "$DIAGNOSTIC_DIR/error-summary.txt"
-grep -E "\[ERROR\]|BUILD FAILURE" "$DIAGNOSTIC_DIR/failed-job-${FAILED_JOB_ID}.txt" | head -100 >> "$DIAGNOSTIC_DIR/error-summary.txt"
+# Present complete evidence package
+present_complete_diagnostic "$LOG_TO_ANALYZE" > "$WORKSPACE/evidence.txt"
 
-echo -e "\n=== TEST FAILURES ===" >> "$DIAGNOSTIC_DIR/error-summary.txt"
-grep -E "(<<< FAILURE!|Tests run:.*Failures: [1-9]|::error file=)" "$DIAGNOSTIC_DIR/failed-job-${FAILED_JOB_ID}.txt" | head -100 >> "$DIAGNOSTIC_DIR/error-summary.txt"
-
-echo -e "\n=== TIMEOUT/INFRASTRUCTURE ===" >> "$DIAGNOSTIC_DIR/error-summary.txt"
-grep -iE "(timeout|connection refused|rate limit|Process exited with an error)" "$DIAGNOSTIC_DIR/failed-job-${FAILED_JOB_ID}.txt" | head -50 >> "$DIAGNOSTIC_DIR/error-summary.txt"
-
-# Step 3: Display summary
-cat "$DIAGNOSTIC_DIR/error-summary.txt"
+# Display evidence for AI analysis
+cat "$WORKSPACE/evidence.txt"
 ```
 
-**E2E/Playwright Test Failures**:
-```bash
-# E2E tests have detailed error annotations
-grep "::error file=" "$DIAGNOSTIC_DIR/failed-job-${FAILED_JOB_ID}.txt" | \
-  sed 's/%0A/\n/g' > "$DIAGNOSTIC_DIR/e2e-failures.txt"
+**What this shows:**
+- Failed tests (JUnit, E2E, Postman)
+- Error messages with context
+- Assertion failures (expected vs actual)
+- Stack traces
+- Timing indicators (timeouts, race conditions)
+- Infrastructure indicators (Docker, DB, ES)
+- First error context (for cascade detection)
+- Failure timeline
+- Known issues matching test name
 
-# Extract test summary
-grep -E "(passed|failed|flaky|Assertion failed)" "$DIAGNOSTIC_DIR/failed-job-${FAILED_JOB_ID}.txt" | \
-  tail -50 > "$DIAGNOSTIC_DIR/test-summary.txt"
+### 5. AI Analysis (Natural Reasoning)
+
+**Now AI analyzes the evidence and provides:**
+
+1. **Root Cause Classification**
+   - New failure vs flaky test vs infrastructure
+   - Reasoning based on evidence patterns
+   - Confidence level with explanation
+
+2. **Test Fingerprint** (natural language)
+   - Test name and location
+   - Failure pattern (assertion type, timing, etc.)
+   - Key identifiers for matching similar failures
+
+3. **Known Issue Matching**
+   - Compare with open GitHub issues
+   - Match patterns from known flaky tests
+   - Check if already tracked
+
+4. **Impact Assessment**
+   - Blocking vs non-blocking
+   - PR vs merge queue differences
+   - Frequency in recent runs
+
+**Example AI Analysis:**
+
+```markdown
+## Failure Analysis
+
+**Test**: ContentTypeCommandIT.Test_Command_Content_Filter_Order_By_modDate_Ascending
+**Pattern**: Boolean flip assertion on modDate ordering
+**Match**: Issue #33746 - modDate precision timing
+
+**Classification**: Flaky Test (High Confidence)
+
+**Reasoning**:
+1. Test compares modDate ordering (second-level precision)
+2. Assertion shows intermittent true/false flip
+3. Exact match with documented issue #33746
+4. Not a functional bug (would fail consistently)
+
+**Fingerprint**:
+- test: ContentTypeCommandIT.Test_Command_Content_Filter_Order_By_modDate_Ascending
+- pattern: modDate-ordering
+- assertion: boolean-flip
+- line: 477
+- known-issue: #33746
+
+**Recommendation**: Known flaky test tracked in #33746. Fixes in progress.
 ```
 
-**Pattern priority:**
-1. Maven `[ERROR]` and `BUILD FAILURE` (most critical)
-2. Test patterns: `::error file=`, `<<< FAILURE!`, `Tests run:.*Failures:`
-3. E2E: `locator.waitFor:`, `Test timeout`, `Assertion failed`
-4. Infrastructure: `timeout`, `connection refused`, `Process exited with an error`
-5. Dependencies: `Could not resolve`, `artifact not found`
+### 6. Get Additional Context (if needed)
 
-### 4. Root Cause Classification
-
-**New Failure** - Compare with recent runs:
-```bash
-WORKFLOW_NAME=$(jq -r '.workflowName' "$DIAGNOSTIC_DIR/run-metadata.json")
-
-# Get recent run history
-gh run list --workflow="$WORKFLOW_NAME" --limit 20 \
-  --json databaseId,conclusion,headSha,displayTitle,createdAt \
-  > "$DIAGNOSTIC_DIR/recent-runs.json"
-
-# Find last successful run
-LAST_SUCCESS_SHA=$(jq -r '.[] | select(.conclusion == "success") | .headSha' "$DIAGNOSTIC_DIR/recent-runs.json" | head -1)
-CURRENT_SHA=$(jq -r '.headSha' "$DIAGNOSTIC_DIR/run-metadata.json")
-
-# Compare commits if available
-if [ -n "$LAST_SUCCESS_SHA" ] && [ "$LAST_SUCCESS_SHA" != "$CURRENT_SHA" ]; then
-  gh api "/repos/dotCMS/core/compare/$LAST_SUCCESS_SHA...$CURRENT_SHA" \
-    --jq '.commits[] | {sha: .sha[:7], message: .commit.message, author: .commit.author.name}' \
-    > "$DIAGNOSTIC_DIR/commits-since-success.json"
-fi
-```
-
-**Flaky Test** - Check historical patterns:
-```bash
-# Check nightly build history (detects flaky tests)
-gh run list --workflow=cicd_4-nightly.yml --limit 30 \
-  --json databaseId,conclusion,createdAt \
-  > "$DIAGNOSTIC_DIR/nightly-history.json"
-
-# Calculate failure rate
-TOTAL=$(jq '. | length' "$DIAGNOSTIC_DIR/nightly-history.json")
-FAILURES=$(jq '[.[] | select(.conclusion == "failure")] | length' "$DIAGNOSTIC_DIR/nightly-history.json")
-echo "Nightly failure rate: $FAILURES/$TOTAL" >> "$DIAGNOSTIC_DIR/error-summary.txt"
-```
-
-**Test Filtering Issue** - Compare PR vs merge queue:
-```bash
-# If PR passed but merge queue failed
-PR_RESULT=$(gh run list --workflow=cicd_1-pr.yml --commit=$CURRENT_SHA --limit 1 --json conclusion -q '.[0].conclusion')
-MQ_RESULT=$(gh run list --workflow=cicd_2-merge-queue.yml --commit=$CURRENT_SHA --limit 1 --json conclusion -q '.[0].conclusion')
-
-if [ "$PR_RESULT" = "success" ] && [ "$MQ_RESULT" = "failure" ]; then
-  echo "⚠️ Test Filtering Issue: PR passed but merge queue failed" >> "$DIAGNOSTIC_DIR/error-summary.txt"
-  echo "This usually indicates a test was filtered in PR but ran in merge queue" >> "$DIAGNOSTIC_DIR/error-summary.txt"
-fi
-```
-
-**Infrastructure Issue** - Check external factors:
-```bash
-# Look for infrastructure patterns
-echo -e "\n=== INFRASTRUCTURE INDICATORS ===" >> "$DIAGNOSTIC_DIR/error-summary.txt"
-grep -iE "elasticsearch.*exception|database.*error|docker.*failed|container.*exit" "$DIAGNOSTIC_DIR/failed-job-${FAILED_JOB_ID}.txt" | head -20 >> "$DIAGNOSTIC_DIR/error-summary.txt"
-```
-
-### 5. Check Known Issues
+**For comparative analysis or frequency checks:**
 
 ```bash
-# Search for known issues related to test failures
-# Extract test name from error summary
-TEST_NAME=$(grep -oP '(?<=file=)[\w/.-]+(?=,)' "$DIAGNOSTIC_DIR/error-summary.txt" | head -1 | xargs basename .spec.ts)
+# Get recent run history for workflow
+WORKFLOW_NAME=$(jq -r '.workflowName' "$METADATA")
+present_recent_runs "$WORKFLOW_NAME" 20 > "$WORKSPACE/recent-runs.txt"
 
-if [ -n "$TEST_NAME" ]; then
-  # Search for related issues
-  gh issue list --search "\"$TEST_NAME\" in:title,body" \
-    --json number,title,state,labels,createdAt \
-    --limit 10 > "$DIAGNOSTIC_DIR/related-issues.json"
+# For PR vs Merge Queue comparison
+if [[ "$WORKFLOW_NAME" == *"merge-queue"* ]]; then
+    # Check if PR passed
+    CURRENT_SHA=$(jq -r '.headSha' "$METADATA")
+    PR_RESULT=$(gh run list --workflow=cicd_1-pr.yml --commit=$CURRENT_SHA --limit 1 --json conclusion -q '.[0].conclusion')
 
-  # Show results
-  echo -e "\n=== RELATED ISSUES ===" >> "$DIAGNOSTIC_DIR/error-summary.txt"
-  jq -r '.[] | "#\(.number): \(.title) [\(.state)]"' "$DIAGNOSTIC_DIR/related-issues.json" >> "$DIAGNOSTIC_DIR/error-summary.txt"
+    if [ "$PR_RESULT" = "success" ]; then
+        echo "⚠️ Test Filtering Issue: PR passed but merge queue failed"
+        echo "This suggests test was filtered in PR but ran in merge queue"
+    fi
 fi
 
-# Check for flaky test issues
-gh issue list --label "Flakey Test" --state open \
-  --json number,title,labels \
-  --limit 10 > "$DIAGNOSTIC_DIR/flaky-tests.json"
-
-# Check for CI/CD infrastructure issues
-gh issue list --label "ci-cd" --state open \
-  --json number,title,labels \
-  --limit 10 > "$DIAGNOSTIC_DIR/cicd-issues.json"
-```
-
-### 6. Get PR Context
-
-```bash
-# Get PR details if this is a PR run
-HEAD_BRANCH=$(jq -r '.headBranch' "$DIAGNOSTIC_DIR/run-metadata.json")
-
-if [[ "$HEAD_BRANCH" =~ ^issue-([0-9]+) ]]; then
-  ISSUE_NUM=${BASH_REMATCH[1]}
-
-  # Get issue context
-  gh issue view $ISSUE_NUM \
-    --json title,body,labels,author \
-    > "$DIAGNOSTIC_DIR/pr-issue-context.json"
-
-  # Get PR if exists
-  gh pr list --head "$HEAD_BRANCH" --limit 1 \
-    --json number,title,author,commits \
-    > "$DIAGNOSTIC_DIR/pr-context.json"
+# For flaky test frequency
+if [[ "$WORKFLOW_NAME" == *"nightly"* ]]; then
+    echo "=== Nightly Build History ==="
+    gh run list --workflow=cicd_4-nightly.yml --limit 30 \
+        --json databaseId,conclusion,createdAt | \
+        jq -r '.[] | "\(.databaseId) | \(.conclusion) | \(.createdAt)"' | \
+        column -t -s '|'
 fi
 ```
 
 ### 7. Generate Comprehensive Report
 
-Create structured analysis report:
+**AI writes report naturally** (not a template):
+
+**CRITICAL**: Generate TWO separate reports:
+1. **DIAGNOSIS.md** - User-facing failure diagnosis (no skill evaluation)
+2. **ANALYSIS_EVALUATION.md** - Skill effectiveness evaluation (meta-analysis)
 
 ```bash
-cat > "$DIAGNOSTIC_DIR/DIAGNOSIS.md" <<'EOF'
-## CI/CD Failure Diagnosis: [workflow] #[run-id]
+# Generate DIAGNOSIS.md (user-facing report)
+cat > "$WORKSPACE/DIAGNOSIS.md" <<'EOF'
+# CI/CD Failure Diagnosis - Run {RUN_ID}
 
-**Root Cause**: [Category] - [Brief explanation]
-**Confidence**: [High/Medium/Low]
-
----
-
-### Executive Summary
-
-[2-3 sentence overview of what failed and why]
-
-**Key Point**: [Most important finding]
+**Analysis Date:** {DATE}
+**Run URL:** {URL}
+**Workflow:** {WORKFLOW_NAME}
+**Event:** {EVENT_TYPE}
+**Conclusion:** {CONCLUSION}
+**Analyzed By:** cicd-diagnostics skill with AI-guided analysis
 
 ---
 
-### Workflow Details
-
-- **Run ID**: [id]
-- **Workflow**: [name]
-- **Trigger**: [event]
-- **Branch**: [branch]
-- **Commit**: [sha]
-- **Author**: [author]
-- **Duration**: [duration]
-- **Timestamp**: [timestamp]
+## Executive Summary
+[2-3 sentence overview of the failure]
 
 ---
 
-### Job Status Summary
+## Failure Details
+[Specific failure information with line numbers and context]
 
-**✅ Successful Jobs** ([count]):
-- [list]
+### Failed Job
+- **Name:** {JOB_NAME}
+- **Job ID:** {JOB_ID}
+- **Duration:** {DURATION}
 
-**❌ Failed Jobs** ([count]):
-- [list with details]
-
-**⏸️ Canceled Jobs** ([count]):
-- [list]
-
----
-
-### Failure Analysis
-
-#### Primary Failure: [Job Name]
-
-**Test Results**: [X failed / Y passed (duration)]
-
-**Failed Tests**:
-1. **`[test-spec]`**
-   - **Failure Pattern**: `[error-type]`
-   - **Root Cause**: [explanation]
-   - **Specific Issues**:
-     - [detail 1]
-     - [detail 2]
-
-**Error Patterns**:
-```
-[key error messages]
-```
-
-**Infrastructure Observations**:
-- [observation 1]
-- [observation 2]
+### Specific Test Failure
+- **Test:** {TEST_NAME}
+- **Location:** Line {LINE_NUMBER}
+- **Error Type:** {ERROR_TYPE}
+- **Assertion:** {ASSERTION_MESSAGE}
 
 ---
 
-### Root Cause Classification
+## Root Cause Analysis
 
-**Type**: **[New Failure | Flaky Test | Infrastructure | Test Filtering]**
+### Classification: **{CATEGORY}** ({CONFIDENCE} Confidence)
 
-**Evidence**:
-1. [evidence point 1]
-2. [evidence point 2]
-3. [evidence point 3]
+### Evidence Supporting Diagnosis
+[Detailed evidence-based reasoning]
 
-**Frequency**: [Once | Intermittent | Consistent] ([X/Y recent runs])
-
----
-
-### Impact Assessment
-
-**Build Impact**: [❌ Blocking | ⚠️ Warning | ✅ Advisory]
-
-**Code Quality Impact**: [assessment]
-
-**Risk Level**: **[High | Medium | Low]** - [explanation]
+### Why This Is/Isn't a Code Defect
+[Clear explanation]
 
 ---
 
-### Recommendations
+## Test Fingerprint
 
-#### Immediate Actions
+**Natural Language Description:**
+[Human-readable description of failure pattern]
 
-1. **[Primary action]**
-   ```bash
-   [command or link]
-   ```
-
-2. **[Alternative action]**
-
-#### Short-term Solutions
-
-3. **[Solution 1]**
-
-4. **[Solution 2]**
-
-#### Long-term Solutions
-
-5. **[Improvement 1]**
-
-6. **[Improvement 2]**
+**Matching Criteria for Future Failures:**
+[How to identify similar failures]
 
 ---
 
-### Related Issues & Context
+## Impact Assessment
 
-- **Known Issue**: #[number] - [title]
-- **PR Issue**: #[number] - [title]
-- **Recent Successful Run**: #[id] ([date])
-- **Nightly Build Status**: [status]
+### Severity: **{SEVERITY}**
 
----
+### Business Impact
+- **Blocking:** {YES/NO}
+- **False Positive:** {YES/NO}
+- **Developer Friction:** {LEVEL}
+- **CI/CD Reliability:** {IMPACT_DESCRIPTION}
 
-### Workflow URL
-[url]
+### Frequency Analysis
+[Historical failure data]
 
----
-
-### Conclusion
-
-[Summary and recommended action]
+### Risk Assessment
+[Risk levels for different categories]
 
 ---
 
-### Diagnostic Artifacts
+## Recommendations
 
-All analysis files saved to: `$DIAGNOSTIC_DIR`
+### Immediate Actions (Unblock)
+1. [Specific action with command/link]
 
-- `run-metadata.json` - Run details
-- `jobs-detailed.json` - All jobs and steps
-- `failed-job-*.txt` - Complete logs
-- `error-summary.txt` - Extracted errors
-- `related-issues.json` - Known issues
+### Short-term Solutions (Reduce Issues)
+2. [Solution with explanation]
+
+### Long-term Improvements (Prevent Recurrence)
+3. [Systemic improvement suggestion]
+
+---
+
+## Related Context
+
+### GitHub Issues
+[Related open/closed issues]
+
+### Recent Workflow History
+[Pattern analysis from recent runs]
+
+### Related PR/Branch
+[Context about what triggered this run]
+
+---
+
+## Diagnostic Artifacts
+
+All diagnostic data saved to: `{WORKSPACE_PATH}`
+
+### Files Generated
+- `run-metadata.json` - Workflow run metadata
+- `jobs-detailed.json` - All job details
+- `failed-job-*.txt` - Complete job logs
+- `error-sections.txt` - Extracted error sections
+- `evidence.txt` - Structured evidence
 - `DIAGNOSIS.md` - This report
+- `ANALYSIS_EVALUATION.md` - Skill effectiveness evaluation
+
+---
+
+## Conclusion
+[Final summary with action items]
+
+**Action Required:**
+1. [Priority action]
+2. [Follow-up action]
+
+**Status:** [Ready for retry | Needs code fix | Investigation needed]
 EOF
 
-echo -e "\n✅ Diagnosis complete. Review: $DIAGNOSTIC_DIR/DIAGNOSIS.md"
+# Generate ANALYSIS_EVALUATION.md (skill meta-analysis)
+cat > "$WORKSPACE/ANALYSIS_EVALUATION.md" <<'EOF'
+# Skill Effectiveness Evaluation - Run {RUN_ID}
+
+**Purpose:** Meta-analysis of cicd-diagnostics skill performance for continuous improvement.
+
+---
+
+## Analysis Summary
+
+- **Run Analyzed:** {RUN_ID}
+- **Time to Diagnosis:** {DURATION}
+- **Cached Data Used:** {YES/NO}
+- **Evidence Size:** {LOG_SIZE} → {EXTRACTED_SIZE}
+- **Classification:** {CATEGORY} ({CONFIDENCE} confidence)
+
+---
+
+## What Worked Well
+
+### 1. {Category} ✅
+[Specific success with examples]
+
+### 2. {Category} ✅
+[Specific success with examples]
+
+[Additional categories as needed]
+
+---
+
+## AI Adaptive Analysis Strengths
+
+The skill successfully demonstrated AI-guided analysis by:
+
+1. **Natural Pattern Recognition**
+   [How AI identified patterns without hardcoded rules]
+
+2. **Contextual Reasoning**
+   [How AI connected evidence to root cause]
+
+3. **Cross-Reference Synthesis**
+   [How AI linked to related issues/history]
+
+4. **Confidence Assessment**
+   [How AI provided reasoning for confidence level]
+
+5. **Comprehensive Recommendations**
+   [How AI generated actionable solutions]
+
+**Key Insight:** The AI adapted to evidence rather than following rigid rules, enabling:
+- [Specific capability 1]
+- [Specific capability 2]
+- [Specific capability 3]
+
+---
+
+## What Could Be Improved
+
+### 1. {Area for Improvement}
+- **Gap:** [What was missing]
+- **Impact:** [Effect on analysis]
+- **Suggestion:** [Specific improvement idea]
+
+### 2. {Area for Improvement}
+- **Gap:** [What was missing]
+- **Impact:** [Effect on analysis]
+- **Suggestion:** [Specific improvement idea]
+
+[Additional areas as needed]
+
+---
+
+## Performance Metrics
+
+### Speed
+- **Data Fetching:** {TIME}
+- **Evidence Extraction:** {TIME}
+- **AI Analysis:** {TIME}
+- **Total Duration:** {TIME}
+- **vs Manual Analysis:** {COMPARISON}
+
+### Accuracy
+- **Root Cause Correct:** {YES/NO/PARTIAL}
+- **Known Issue Match:** {YES/NO/PARTIAL}
+- **Classification Accuracy:** {CONFIDENCE_LEVEL}
+
+### Completeness
+- [x] Identified specific failure point
+- [x] Determined root cause with reasoning
+- [x] Created natural test fingerprint
+- [x] Assessed frequency/history
+- [x] Checked known issues
+- [x] Provided actionable recommendations
+- [x] Saved diagnostic artifacts
+
+---
+
+## Design Validation
+
+### AI-Guided Approach ✅/❌
+[How well the evidence-driven AI analysis worked]
+
+### Utility Functions ✅/❌
+[How well the bash utilities performed]
+
+### Caching Strategy ✅/❌
+[How well the workspace caching worked]
+
+---
+
+## Recommendations for Skill Enhancement
+
+### High Priority
+1. [Specific improvement with rationale]
+2. [Specific improvement with rationale]
+
+### Medium Priority
+3. [Specific improvement with rationale]
+4. [Specific improvement with rationale]
+
+### Low Priority
+5. [Specific improvement with rationale]
+
+---
+
+## Comparison with Previous Approaches
+
+### Before (Hardcoded Logic)
+[Issues with rule-based classification]
+
+### After (AI-Guided)
+[Benefits of evidence-driven analysis]
+
+### Impact
+- **Accuracy:** [Improvement]
+- **Flexibility:** [Improvement]
+- **Maintainability:** [Improvement]
+
+---
+
+## Conclusion
+
+[Overall assessment of skill effectiveness]
+
+**Key Strengths:**
+- [Strength 1]
+- [Strength 2]
+- [Strength 3]
+
+**Areas for Growth:**
+- [Area 1]
+- [Area 2]
+
+**Ready for production use:** {YES/NO}
+**Recommended next steps:** [Action items]
+EOF
+
+echo "✅ Diagnosis complete: $WORKSPACE/DIAGNOSIS.md"
+echo "✅ Evaluation saved: $WORKSPACE/ANALYSIS_EVALUATION.md"
 ```
+
+**IMPORTANT**:
+- **DIAGNOSIS.md** = User-facing failure analysis (what failed, why, how to fix)
+- **ANALYSIS_EVALUATION.md** = Internal skill evaluation (how well the skill performed)
+- DO NOT mix skill effectiveness evaluation into DIAGNOSIS.md
+- Users should not see skill meta-analysis in their failure reports
 
 ### 8. Create Issue (if needed)
 
+**AI determines if issue creation needed:**
+
 ```bash
-# Only create if: new failure not tracked, or need to document flaky test
-if [ -z "$(jq -r '.[] | select(.state == "OPEN")' "$DIAGNOSTIC_DIR/related-issues.json")" ]; then
-  # No open issue exists, consider creating one
-  gh issue create \
-    --title "[CI/CD] [Brief description]" \
-    --label "bug,ci-cd,[workflow-label]" \
-    --body-file "$DIAGNOSTIC_DIR/ISSUE_TEMPLATE.md"
+# AI decides based on:
+# - Is this already tracked? (check known issues)
+# - Is this a new failure? (check recent history)
+# - Is this blocking? (impact assessment)
+
+if [ "$CREATE_ISSUE" = "yes" ]; then
+    # AI generates issue content naturally
+    gh issue create \
+        --title "[CI/CD] Brief failure description" \
+        --label "bug,ci-cd,Flakey Test" \
+        --body "$(cat <<'ISSUE'
+## Summary
+[AI-written summary]
+
+## Failure Evidence
+[Key excerpts from evidence]
+
+## Root Cause
+[AI analysis]
+
+## Reproduction
+[Steps or patterns]
+
+## Diagnostic Run
+- Run ID: $RUN_ID
+- Workspace: $WORKSPACE
+- Full report: [link to DIAGNOSIS.md if committed]
+
+## Recommendation
+[Fix suggestions]
+ISSUE
+)"
 fi
 ```
 
 ## Key Principles
 
-### Efficiency First
+### 1. Evidence-Driven Analysis
 
-**Progressive Investigation Depth**:
+**Don't hardcode classification logic**. Present evidence and let AI reason:
+
+❌ **Bad** (hardcoded):
+```bash
+if grep -q "modDate"; then
+    echo "flaky_test"
+fi
+```
+
+✅ **Good** (evidence-driven):
+```bash
+present_failure_evidence "$LOG_FILE"
+# AI sees "modDate + boolean flip + issue #33746" and concludes "flaky test"
+```
+
+### 2. Progressive Investigation
+
+Start specific, expand as needed:
+
 1. **30 seconds**: Run status + failed job identification
-2. **2 minutes**: Error pattern extraction from failed job logs
-3. **5 minutes**: Full analysis with context and comparisons
-4. **10+ minutes**: Deep dive only if patterns unclear
+2. **2 minutes**: Error evidence presentation
+3. **5 minutes**: AI analysis with context
+4. **10+ minutes**: Deep dive if patterns unclear
 
-**Start Specific, Expand as Needed**:
-- Focus on failed jobs only (not all jobs)
-- Get logs for failed jobs only (not entire workflow)
-- Search for specific error patterns (not reading everything)
-- Compare with recent runs only if root cause unclear
+### 3. Workflow Context Matters
 
-### Workflow Context Matters
+Different workflows = different failure implications:
 
-Different workflows have different failure implications:
+- **PR failures**: Code issues OR filtered tests OR flaky tests
+- **Merge queue failures**: Test filtering OR conflicts OR flaky tests
+- **Trunk failures**: Deployment/artifact issues (tests don't re-run)
+- **Nightly failures**: Flaky tests OR infrastructure degradation
 
-- **PR failures** = Code issues OR filtered tests OR flaky tests
-- **Merge queue failures** = Test filtering discrepancy OR conflicts OR flaky tests
-- **Trunk failures** = Deployment/artifact issues (tests don't re-run)
-- **Nightly failures** = Flaky tests OR infrastructure degradation
+### 4. Leverage Caching
 
-### Always Consider
+Workspace automatically caches:
+- Run metadata
+- Job details
+- Downloaded logs
+- Evidence extraction
 
-- **Test filtering differences**: PR runs subset, merge queue runs all
-- **Multiple PRs in queue**: Can cause conflicts/race conditions
-- **Infrastructure status**: GitHub Actions, Elasticsearch, Database
-- **Historical patterns**: Is this new or recurring?
-- **PR code changes**: What areas of code were modified?
+**Rerunning the skill uses cached data** (much faster!)
 
-### Diagnostic Workspace Benefits
+### 5. macOS Compatibility
 
-Using `.claude/diagnostics/run-[ID]-[timestamp]/`:
-- ✅ Easy manual review after skill completes
-- ✅ Persists across Claude sessions
-- ✅ No conflicts (timestamped directories)
-- ✅ Already gitignored
-- ✅ Organized by run ID
-- ✅ Can compare multiple runs side-by-side
+**Never use `grep -P`** (Perl regex not available on macOS):
+
+❌ **Bad**: `grep -oP '(?<=file=)[\w/.-]+(?=,)'`
+✅ **Good**: `sed -E 's/.*file=([^,]+).*/\1/'` or let AI extract
 
 ## Output Format
 
 Always provide:
 
 1. **Executive Summary** (2-3 sentences)
-2. **Root Cause** (specific category + confidence)
-3. **Evidence** (log excerpts, patterns, comparisons)
-4. **Recommendations** (immediate, short-term, long-term)
-5. **Related Context** (issues, PRs, recent runs)
-6. **Diagnostic Path** (where to find detailed files)
+2. **Root Cause** (category + confidence + reasoning)
+3. **Evidence** (key excerpts from logs)
+4. **Test Fingerprint** (natural language description)
+5. **Impact Assessment** (blocking/frequency/risk)
+6. **Recommendations** (immediate/short-term/long-term)
+7. **Related Context** (issues, PRs, history)
+8. **Diagnostic Artifacts** (workspace path)
 
 ## Success Criteria
 
 ✅ Identified specific failure point (job, step, test)
-✅ Determined root cause category (New/Flaky/Infrastructure/Filtering)
-✅ Assessed if new vs recurring (compared with history)
-✅ Checked for known issues (searched GitHub issues)
-✅ Provided actionable next steps (with commands/links)
-✅ Saved diagnostic artifacts for review
-✅ Created comprehensive report in DIAGNOSIS.md
-✅ Documented skill improvement suggestions (if any)
+✅ Determined root cause with reasoning (not just category label)
+✅ Created natural test fingerprint (not mechanical hash)
+✅ Assessed frequency/history (new vs recurring)
+✅ Checked known issues (searched GitHub)
+✅ Provided actionable recommendations
+✅ Saved diagnostic artifacts in workspace
+✅ Generated comprehensive natural report
 
-## Self-Improvement Protocol
+## Comparison with Old Approach
 
-After completing each diagnosis, the skill should reflect on its effectiveness and suggest improvements:
-
-### Track Diagnostic Challenges
-
-Document in `$DIAGNOSTIC_DIR/SKILL_IMPROVEMENTS.md`:
-
+### Before (Hardcoded Logic)
 ```bash
-cat > "$DIAGNOSTIC_DIR/SKILL_IMPROVEMENTS.md" <<'EOF'
-# Skill Improvement Suggestions
+# 100+ lines of pattern matching
+detect_flaky_patterns() {
+    if grep -qi "modDate"; then indicators+=("date_ordering"); fi
+    if grep -E "expected: <true> but was: <false>"; then indicators+=("boolean_flip"); fi
+    # ... 20 more hardcoded rules
+}
 
-## Challenges Encountered
-
-[Document any difficulties during this diagnosis]
-
-### Examples:
-- Pattern not matched: [specific error pattern that wasn't caught]
-- Inefficient process: [step that took too long or was redundant]
-- Missing trigger: [phrase/context that should have triggered skill but didn't]
-- Data not found: [expected information that was unavailable]
-- Better approach: [more efficient method discovered during diagnosis]
-
-## Suggested Improvements
-
-### 1. [Improvement Category]
-
-**Problem**: [What made diagnosis difficult]
-
-**Suggestion**: [Specific change to SKILL.md]
-
-**Location**: [Section to update]
-
-**Code/Pattern**:
-```
-[New pattern, trigger phrase, or bash command]
+classify_root_cause() {
+    if [ "$has_known_issue" = true ]; then category="flaky_test"; fi
+    # ... 50 more lines of brittle logic
+}
 ```
 
-### 2. [Next improvement]
+**Problems:**
+- Misses new patterns
+- Can't explain reasoning
+- Hard to maintain
+- macOS incompatible
 
-[Repeat pattern above]
-
-## Apply Improvements?
-
-- [ ] Yes, update skill with these suggestions
-- [ ] No, skip for now
-- [ ] Partial (specify which ones)
-
-EOF
-```
-
-### Present Improvements to User
-
-At the end of each diagnostic report, include:
-
-```markdown
----
-
-## 🔧 Skill Self-Assessment
-
-During this diagnosis, I identified [N] potential improvements to the cicd-diagnostics skill:
-
-1. **[Improvement 1 Title]**
-   - Challenge: [what was difficult]
-   - Suggestion: [specific improvement]
-
-2. **[Improvement 2 Title]**
-   - Challenge: [what was difficult]
-   - Suggestion: [specific improvement]
-
-Full details saved to: `$DIAGNOSTIC_DIR/SKILL_IMPROVEMENTS.md`
-
-**Would you like me to apply these improvements to the skill?**
-```
-
-### Common Improvement Categories
-
-Track and suggest improvements in these areas:
-
-1. **Trigger Phrase Expansion**
-   - User asked for diagnosis but skill wasn't triggered
-   - New patterns of user questions discovered
-
-2. **Error Pattern Enhancement**
-   - New error formats not currently recognized
-   - Missing grep patterns for specific test frameworks
-   - Infrastructure errors not in current list
-
-3. **Efficiency Optimizations**
-   - Redundant API calls identified
-   - More efficient bash command discovered
-   - Better jq query pattern found
-
-4. **Context Detection**
-   - Workflow types not properly identified
-   - Missing classification criteria
-   - New failure patterns discovered
-
-5. **Report Template Updates**
-   - Missing sections that would be valuable
-   - Better ways to present information
-   - Additional context that should always be included
-
-### Example Self-Assessment
-
-```markdown
-## 🔧 Skill Self-Assessment
-
-During this diagnosis, I identified 2 potential improvements:
-
-1. **E2E Playwright Error Pattern Detection**
-   - Challenge: Had to manually search for `sed 's/%0A/\n/g'` pattern for E2E failures
-   - Suggestion: Add dedicated E2E error extraction to section 3 of SKILL.md
-   - Impact: Would save 1-2 minutes on E2E test failures
-
-2. **Flaky Test Label Search**
-   - Challenge: "Flakey Test" label has inconsistent spelling (also "Flaky Test")
-   - Suggestion: Update search to use both spellings: `--search "label:\"Flakey Test\" OR label:\"Flaky Test\""`
-   - Impact: More comprehensive known issue detection
-
-Would you like me to update the cicd-diagnostics skill with these improvements?
-```
-
-### Applying Improvements
-
-If user approves, update SKILL.md:
-
+### After (AI-Guided)
 ```bash
-# 1. Read current SKILL.md
-# 2. Apply suggested changes
-# 3. Test changes don't break existing functionality
-# 4. Commit with message: "chore(skill): improve cicd-diagnostics based on run [ID] analysis"
+# Present evidence to AI
+present_complete_diagnostic "$LOG_FILE"
+
+# AI analyzes and explains:
+# "This is ContentTypeCommandIT with modDate ordering (line 477),
+#  boolean flip assertion, matching known issue #33746.
+#  Classification: Flaky Test (high confidence)"
 ```
+
+**Benefits:**
+- Recognizes new patterns
+- Explains reasoning clearly
+- Easy to maintain
+- Works on all platforms
+- More accurate
 
 ## Reference Files
 
 For detailed information:
-- [WORKFLOWS.md](WORKFLOWS.md) - Complete workflow descriptions and failure patterns
-- [LOG_ANALYSIS.md](LOG_ANALYSIS.md) - Advanced log analysis techniques and patterns
+- [DESIGN_PHILOSOPHY.md](DESIGN_PHILOSOPHY.md) - AI-guided design approach
+- [DESIGN_REVIEW.md](DESIGN_REVIEW.md) - Comprehensive architecture review
+- [WORKFLOWS.md](WORKFLOWS.md) - Workflow descriptions and patterns
+- [utils/README.md](utils/README.md) - Utility function reference
 - [ISSUE_TEMPLATE.md](ISSUE_TEMPLATE.md) - Issue creation template
 - [README.md](README.md) - Quick reference and examples

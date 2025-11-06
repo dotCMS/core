@@ -1,8 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Log Analysis Utility Functions
 # Pattern matching and error extraction from CI/CD logs
 
-set -euo pipefail
+# Note: Use 'set -e' only to allow sourcing in both bash and zsh
+set -e
 
 # Extract Maven/build failures from logs
 # Usage: extract_build_failures LOG_FILE OUTPUT_FILE

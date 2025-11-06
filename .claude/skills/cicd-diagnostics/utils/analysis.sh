@@ -1,289 +1,269 @@
-#!/bin/bash
-# Failure Analysis and Classification Utilities
-# Root cause determination and pattern analysis
+#!/usr/bin/env bash
+# Advanced Analysis Functions
+# Test frequency analysis and source code lookup
 
-set -euo pipefail
+# Note: Use 'set -e' only to allow sourcing in both bash and zsh
+set -e
 
-# Classify failure type based on patterns
-# Usage: classify_failure_type ERROR_SUMMARY_FILE JOBS_FILE
-# Returns: Classification (New Failure, Flaky Test, Infrastructure, Test Filtering)
-classify_failure_type() {
-    local error_summary="$1"
-    local jobs_file="$2"
+# Analyze test failure frequency across recent workflow runs
+# Usage: analyze_test_failure_frequency WORKFLOW_NAME TEST_NAME [LIMIT]
+# Returns: Statistics about test failures
+analyze_test_failure_frequency() {
+    local workflow="$1"
+    local test_name="$2"
+    local limit="${3:-30}"
 
-    local content=$(cat "$error_summary" 2>/dev/null || echo "")
-
-    # Infrastructure patterns
-    if echo "$content" | grep -qiE "(timeout|connection refused|rate limit|memory|elasticsearch.*exception|database.*error)"; then
-        echo "Infrastructure"
-        return
-    fi
-
-    # Test filtering (PR vs merge queue)
-    if echo "$content" | grep -qE "Test Filtering Issue"; then
-        echo "Test Filtering"
-        return
-    fi
-
-    # Flaky test indicators
-    local failed_count=$(jq '[.jobs[] | select(.conclusion == "failure")] | length' "$jobs_file" 2>/dev/null || echo "0")
-    local cancelled_count=$(jq '[.jobs[] | select(.conclusion == "cancelled")] | length' "$jobs_file" 2>/dev/null || echo "0")
-
-    if [ "$failed_count" -le 2 ] && [ "$cancelled_count" -gt 3 ]; then
-        echo "Flaky Test (Possible)"
-        return
-    fi
-
-    # Default: New failure
-    echo "New Failure"
-}
-
-# Calculate failure rate from nightly builds
-# Usage: calculate_nightly_failure_rate NIGHTLY_HISTORY_FILE
-# Returns: "X/Y (Z%)"
-calculate_nightly_failure_rate() {
-    local history_file="$1"
-
-    local total=$(jq '. | length' "$history_file" 2>/dev/null || echo "0")
-    local failures=$(jq '[.[] | select(.conclusion == "failure")] | length' "$history_file" 2>/dev/null || echo "0")
-
-    if [ "$total" -eq 0 ]; then
-        echo "0/0 (N/A)"
-        return
-    fi
-
-    local percentage=$((failures * 100 / total))
-    echo "$failures/$total (${percentage}%)"
-}
-
-# Compare PR and merge queue results
-# Usage: compare_pr_mergequeue PR_RESULT MQ_RESULT
-# Returns: Comparison summary
-compare_pr_mergequeue() {
-    local pr_result="$1"
-    local mq_result="$2"
-
-    if [ "$pr_result" = "success" ] && [ "$mq_result" = "failure" ]; then
-        echo "⚠️ Test Filtering Issue: PR passed but merge queue failed"
-        echo "This usually indicates a test was filtered in PR but ran in merge queue"
-        return
-    fi
-
-    if [ "$pr_result" = "failure" ] && [ "$mq_result" = "success" ]; then
-        echo "✓ Merge queue passed after PR failure (likely fixed in merge)"
-        return
-    fi
-
-    if [ "$pr_result" = "$mq_result" ]; then
-        echo "✓ Consistent results: both $pr_result"
-        return
-    fi
-
-    echo "⚠️ Inconsistent results: PR=$pr_result, MergeQueue=$mq_result"
-}
-
-# Determine if failure is recurring
-# Usage: is_recurring_failure CURRENT_RUN_SHA RECENT_RUNS_FILE
-# Returns: "true" or "false"
-is_recurring_failure() {
-    local current_sha="$1"
-    local recent_runs="$2"
-
-    local recent_failures=$(jq -r '[.[] | select(.conclusion == "failure" and .headSha != "'"$current_sha"'")] | length' "$recent_runs" 2>/dev/null || echo "0")
-
-    if [ "$recent_failures" -ge 2 ]; then
-        echo "true"
-    else
-        echo "false"
-    fi
-}
-
-# Get failure frequency
-# Usage: get_failure_frequency RECENT_RUNS_FILE
-# Returns: "Once", "Intermittent (X/Y)", or "Consistent (X/Y)"
-get_failure_frequency() {
-    local recent_runs="$1"
-
-    local total=$(jq '. | length' "$recent_runs" 2>/dev/null || echo "0")
-    local failures=$(jq '[.[] | select(.conclusion == "failure")] | length' "$recent_runs" 2>/dev/null || echo "0")
-
-    if [ "$failures" -eq 1 ]; then
-        echo "Once"
-        return
-    fi
-
-    local percentage=$((failures * 100 / total))
-
-    if [ "$percentage" -ge 80 ]; then
-        echo "Consistent ($failures/$total)"
-    elif [ "$percentage" -ge 20 ]; then
-        echo "Intermittent ($failures/$total)"
-    else
-        echo "Rare ($failures/$total)"
-    fi
-}
-
-# Assess impact level
-# Usage: assess_impact FAILURE_TYPE FREQUENCY ERROR_PATTERNS
-# Returns: "High", "Medium", or "Low"
-assess_impact() {
-    local failure_type="$1"
-    local frequency="$2"
-    local error_patterns="$3"
-
-    # High impact: Build failures, consistent failures, or infrastructure issues
-    if [[ "$failure_type" =~ "Infrastructure" ]] || [[ "$frequency" =~ "Consistent" ]]; then
-        echo "High"
-        return
-    fi
-
-    # High impact: Build or compilation failures
-    if echo "$error_patterns" | grep -qE "BUILD FAILURE|compilation error"; then
-        echo "High"
-        return
-    fi
-
-    # Medium impact: New failures or intermittent issues
-    if [[ "$failure_type" =~ "New" ]] || [[ "$frequency" =~ "Intermittent" ]]; then
-        echo "Medium"
-        return
-    fi
-
-    # Low impact: One-time or rare failures
-    echo "Low"
-}
-
-# Determine root cause confidence
-# Usage: determine_confidence FAILURE_TYPE ERROR_COUNT EVIDENCE_QUALITY
-# Returns: "High", "Medium", or "Low"
-determine_confidence() {
-    local failure_type="$1"
-    local error_count="$2"
-    local evidence_quality="$3"
-
-    # High confidence: Clear error patterns, deterministic failures
-    if [ "$error_count" -gt 0 ] && [[ "$evidence_quality" =~ "high" ]]; then
-        echo "High"
-        return
-    fi
-
-    # High confidence: Infrastructure issues (clear patterns)
-    if [[ "$failure_type" =~ "Infrastructure" ]] && [ "$error_count" -gt 0 ]; then
-        echo "High"
-        return
-    fi
-
-    # Medium confidence: Some evidence but not definitive
-    if [ "$error_count" -gt 0 ]; then
-        echo "Medium"
-        return
-    fi
-
-    # Low confidence: Unclear or missing evidence
-    echo "Low"
-}
-
-# Extract evidence from error summary
-# Usage: extract_evidence ERROR_SUMMARY_FILE
-# Returns: Bullet-pointed evidence list
-extract_evidence() {
-    local error_summary="$1"
-
-    echo "Evidence:"
-
-    # Look for specific error patterns
-    if grep -q "BUILD FAILURE" "$error_summary" 2>/dev/null; then
-        echo "- Build failure detected in Maven output"
-    fi
-
-    if grep -q "AssertionError" "$error_summary" 2>/dev/null; then
-        local assertion=$(grep "AssertionError" "$error_summary" | head -1)
-        echo "- Test assertion failure: $assertion"
-    fi
-
-    if grep -qiE "timeout|connection refused" "$error_summary" 2>/dev/null; then
-        echo "- Infrastructure/connectivity issues detected"
-    fi
-
-    if grep -q "expected.*to be at most" "$error_summary" 2>/dev/null; then
-        echo "- Limit/boundary violation in API response"
-    fi
-}
-
-# Generate recommendations based on failure type
-# Usage: generate_recommendations FAILURE_TYPE ERROR_SUMMARY_FILE
-# Returns: List of recommended actions
-generate_recommendations() {
-    local failure_type="$1"
-    local error_summary="$2"
-
-    echo "Recommended Actions:"
+    echo "=== TEST FAILURE FREQUENCY ANALYSIS ==="
+    echo ""
+    echo "Workflow: $workflow"
+    echo "Test: $test_name"
+    echo "Analyzing last $limit runs..."
     echo ""
 
-    case "$failure_type" in
-        "New Failure")
-            echo "1. Review recent code changes in the PR"
-            echo "2. Compare with last successful build"
-            echo "3. Check if issue reproduces locally"
-            echo "4. Fix the identified issue and push update"
-            ;;
+    local tmp_runs=$(mktemp)
+    gh run list --workflow="$workflow" --limit "$limit" \
+        --json databaseId,conclusion,createdAt > "$tmp_runs" 2>/dev/null || echo "[]" > "$tmp_runs"
 
-        "Infrastructure")
-            echo "1. Check GitHub Actions status page"
-            echo "2. Review infrastructure logs (DB, ES)"
-            echo "3. Retry the workflow"
-            echo "4. If persistent, escalate to platform team"
-            ;;
+    local total_runs=$(jq '. | length' "$tmp_runs")
 
-        "Flaky Test"*)
-            echo "1. Search for existing flaky test issues"
-            echo "2. Analyze test stability over recent runs"
-            echo "3. Create or update flaky test issue"
-            echo "4. Consider skipping test temporarily"
-            ;;
+    if [ "$total_runs" -eq 0 ]; then
+        echo "No runs found for workflow: $workflow"
+        rm -f "$tmp_runs"
+        return 1
+    fi
 
-        "Test Filtering")
-            echo "1. Review test filtering configuration"
-            echo "2. Ensure PR runs same tests as merge queue"
-            echo "3. Update workflow test filters"
-            echo "4. Re-run merge queue after fix"
-            ;;
+    # Check each run for this specific test failure
+    local failures_with_test=0
+    local total_failures=0
 
-        *)
-            echo "1. Review error logs for root cause"
-            echo "2. Search for similar issues"
-            echo "3. Reproduce locally if possible"
-            echo "4. Create issue if needed"
-            ;;
-    esac
+    echo "Checking runs for test '$test_name'..."
+
+    jq -r '.[] | "\(.databaseId) \(.conclusion)"' "$tmp_runs" | while read -r run_id conclusion; do
+        if [ "$conclusion" = "failure" ]; then
+            total_failures=$((total_failures + 1))
+
+            # Download job logs for failed runs (only check if failure present)
+            local jobs_file=$(mktemp)
+            gh api "/repos/dotCMS/core/actions/runs/$run_id/jobs" --jq '.jobs[] | select(.conclusion == "failure") | .id' > "$jobs_file" 2>/dev/null || true
+
+            if [ -s "$jobs_file" ]; then
+                while read -r job_id; do
+                    # Quick check for test name in job logs
+                    if gh api "/repos/dotCMS/core/actions/jobs/$job_id/logs" 2>/dev/null | grep -q "$test_name"; then
+                        echo "  Run $run_id: CONTAINS test failure"
+                        failures_with_test=$((failures_with_test + 1))
+                        break
+                    fi
+                done < "$jobs_file"
+            fi
+            rm -f "$jobs_file"
+        fi
+    done
+
+    rm -f "$tmp_runs"
+
+    # Calculate rates
+    local failure_rate=$((total_failures * 100 / total_runs))
+    local test_failure_rate=0
+    if [ "$total_failures" -gt 0 ]; then
+        test_failure_rate=$((failures_with_test * 100 / total_failures))
+    fi
+
+    cat <<EOF
+
+=== FREQUENCY STATISTICS ===
+Total runs analyzed: $total_runs
+Total failures: $total_failures ($failure_rate%)
+Failures with this test: $failures_with_test
+Test failure rate: $test_failure_rate% of all failures
+
+EOF
+
+    # Classification
+    if [ "$failures_with_test" -eq 0 ]; then
+        echo "ASSESSMENT: This test has NOT failed recently (new failure)"
+    elif [ "$failures_with_test" -eq 1 ]; then
+        echo "ASSESSMENT: This test has failed once recently (rare failure)"
+    elif [ "$test_failure_rate" -lt 30 ]; then
+        echo "ASSESSMENT: This test fails occasionally (intermittent/flaky)"
+    elif [ "$test_failure_rate" -lt 70 ]; then
+        echo "ASSESSMENT: This test fails frequently (very flaky)"
+    else
+        echo "ASSESSMENT: This test fails consistently (likely a real bug or broken test)"
+    fi
 }
 
-# Calculate time to resolution estimate
-# Usage: estimate_resolution_time FAILURE_TYPE COMPLEXITY
-# Returns: Estimated time range
-estimate_resolution_time() {
-    local failure_type="$1"
-    local complexity="${2:-medium}"
+# Lookup test source code
+# Usage: lookup_test_source TEST_CLASS TEST_METHOD
+# Returns: Test source code with context
+lookup_test_source() {
+    local test_class="$1"
+    local test_method="${2:-}"
 
-    case "$failure_type" in
-        "Infrastructure")
-            echo "10-30 minutes (retry or wait for service recovery)"
-            ;;
-        "Flaky Test"*)
-            echo "2-4 hours (investigation + temporary fix)"
-            ;;
-        "Test Filtering")
-            echo "30-60 minutes (configuration update)"
-            ;;
-        "New Failure")
-            case "$complexity" in
-                "low") echo "30 minutes - 2 hours" ;;
-                "medium") echo "2-4 hours" ;;
-                "high") echo "4-8 hours or more" ;;
-            esac
-            ;;
-        *)
-            echo "2-4 hours (investigation required)"
-            ;;
-    esac
+    echo "=== TEST SOURCE CODE LOOKUP ==="
+    echo ""
+    echo "Searching for: $test_class${test_method:+.$test_method}"
+    echo ""
+
+    # Find the test file
+    local test_files=$(find . -type f -name "${test_class}.java" -o -name "${test_class}.ts" 2>/dev/null | grep -v "/node_modules/\|/target/\|/build/" || true)
+
+    if [ -z "$test_files" ]; then
+        echo "❌ Test file not found: $test_class"
+        return 1
+    fi
+
+    # If multiple files, list them
+    local file_count=$(echo "$test_files" | wc -l | tr -d ' ')
+    if [ "$file_count" -gt 1 ]; then
+        echo "Found multiple matches:"
+        echo "$test_files" | nl
+        echo ""
+        # Use the first one
+        local test_file=$(echo "$test_files" | head -1)
+        echo "Using: $test_file"
+    else
+        local test_file="$test_files"
+        echo "Found: $test_file"
+    fi
+
+    echo ""
+
+    if [ -n "$test_method" ]; then
+        # Show specific test method
+        echo "=== TEST METHOD: $test_method ==="
+        echo ""
+
+        # Find the method and show 50 lines
+        grep -n -A 50 "function $test_method\|void $test_method\|@Test.*$test_method" "$test_file" 2>/dev/null || \
+            echo "Method not found (file exists but method pattern didn't match)"
+    else
+        # Show class structure (first 100 lines)
+        echo "=== CLASS STRUCTURE (first 100 lines) ==="
+        echo ""
+        head -100 "$test_file" | cat -n
+    fi
+
+    echo ""
+    echo "Full file path: $(realpath "$test_file" 2>/dev/null || echo "$test_file")"
+}
+
+# Compare PR vs Merge Queue for same commit
+# Usage: compare_pr_vs_merge_queue COMMIT_SHA
+# Returns: Comparison analysis
+compare_pr_vs_merge_queue() {
+    local commit_sha="$1"
+
+    echo "=== PR VS MERGE QUEUE COMPARISON ==="
+    echo ""
+    echo "Commit: $commit_sha"
+    echo ""
+
+    local pr_run=$(gh run list --workflow="cicd_1-pr.yml" --commit="$commit_sha" \
+        --limit 1 --json databaseId,conclusion,displayTitle,createdAt 2>/dev/null | jq -r '.[0]')
+
+    local mq_run=$(gh run list --workflow="cicd_2-merge-queue.yml" --commit="$commit_sha" \
+        --limit 1 --json databaseId,conclusion,displayTitle,createdAt 2>/dev/null | jq -r '.[0]')
+
+    if [ "$pr_run" = "null" ] || [ -z "$pr_run" ]; then
+        echo "❌ No PR run found for commit $commit_sha"
+    else
+        echo "PR Workflow:"
+        echo "$pr_run" | jq -r '"  Run ID: \(.databaseId)\n  Conclusion: \(.conclusion)\n  Title: \(.displayTitle)\n  Created: \(.createdAt)"'
+        echo ""
+    fi
+
+    if [ "$mq_run" = "null" ] || [ -z "$mq_run" ]; then
+        echo "❌ No Merge Queue run found for commit $commit_sha"
+    else
+        echo "Merge Queue Workflow:"
+        echo "$mq_run" | jq -r '"  Run ID: \(.databaseId)\n  Conclusion: \(.conclusion)\n  Title: \(.displayTitle)\n  Created: \(.createdAt)"'
+        echo ""
+    fi
+
+    # Analyze discrepancy
+    local pr_conclusion=$(echo "$pr_run" | jq -r '.conclusion // "not_found"')
+    local mq_conclusion=$(echo "$mq_run" | jq -r '.conclusion // "not_found"')
+
+    echo "=== ANALYSIS ==="
+    if [ "$pr_conclusion" = "success" ] && [ "$mq_conclusion" = "failure" ]; then
+        cat <<EOF
+
+⚠️  TEST FILTERING DISCREPANCY DETECTED
+
+The PR passed but the Merge Queue failed for the same commit.
+
+Common causes:
+1. Test Filtering: PR only runs affected tests, Merge Queue runs full suite
+2. Flaky Test: Test that wasn't run in PR failed in Merge Queue
+3. Race Condition: Different execution timing caused different results
+4. Infrastructure: Different runner environment or resource contention
+
+Recommendation: Check which tests ran in PR vs Merge Queue
+EOF
+    elif [ "$pr_conclusion" = "failure" ] && [ "$mq_conclusion" = "failure" ]; then
+        echo "✓ Both PR and Merge Queue failed (consistent failure)"
+    elif [ "$pr_conclusion" = "success" ] && [ "$mq_conclusion" = "success" ]; then
+        echo "✓ Both PR and Merge Queue passed (no issue)"
+    elif [ "$pr_conclusion" = "not_found" ] || [ "$mq_conclusion" = "not_found" ]; then
+        echo "⚠️  One or both workflows not found for this commit"
+    else
+        echo "Status: PR=$pr_conclusion, MergeQueue=$mq_conclusion"
+    fi
+}
+
+# Generate quick test failure summary
+# Usage: generate_failure_summary LOG_FILE
+# Returns: One-line summary for AI analysis
+generate_failure_summary() {
+    local log_file="$1"
+
+    local test_name=$(grep "<<< FAILURE!" "$log_file" 2>/dev/null | head -1 | sed -E 's/.*\[ERROR\] ([^ ]+) .*/\1/' || echo "Unknown")
+    local error_type=$(grep "AssertionFailedError\|Exception\|Error" "$log_file" 2>/dev/null | head -1 | sed -E 's/.*([A-Z][a-zA-Z]+Error|[A-Z][a-zA-Z]+Exception).*/\1/' || echo "Unknown")
+    local assertion=$(grep "expected:.*but was:" "$log_file" 2>/dev/null | head -1 | cut -c1-100 || echo "")
+
+    echo "Test: $test_name | Error: $error_type | Assertion: $assertion"
+}
+
+# Main analysis coordinator (calls all analysis functions)
+# Usage: run_complete_analysis RUN_ID LOG_FILE
+run_complete_analysis() {
+    local run_id="$1"
+    local log_file="$2"
+
+    echo "================================================================================"
+    echo "COMPLETE FAILURE ANALYSIS"
+    echo "================================================================================"
+    echo ""
+
+    # 1. Extract basic info
+    local test_name=$(grep "<<< FAILURE!" "$log_file" 2>/dev/null | head -1 | sed -E 's/.*\[ERROR\] ([^ ]+) .*/\1/' | cut -d'.' -f1 || echo "")
+    local workflow=$(gh run view "$run_id" --json workflowName --jq '.workflowName' 2>/dev/null || echo "Unknown")
+    local commit=$(gh run view "$run_id" --json headSha --jq '.headSha' 2>/dev/null || echo "")
+
+    echo "Run ID: $run_id"
+    echo "Workflow: $workflow"
+    echo "Commit: $commit"
+    echo "Test: $test_name"
+    echo ""
+
+    # 2. Frequency analysis
+    if [ -n "$test_name" ] && [ -n "$workflow" ]; then
+        analyze_test_failure_frequency "$workflow" "$test_name" 20
+        echo ""
+    fi
+
+    # 3. PR vs MQ comparison
+    if [ -n "$commit" ]; then
+        compare_pr_vs_merge_queue "$commit"
+        echo ""
+    fi
+
+    # 4. Test source lookup
+    if [ -n "$test_name" ]; then
+        lookup_test_source "$test_name"
+        echo ""
+    fi
+
+    echo "================================================================================"
 }

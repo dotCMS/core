@@ -1,15 +1,22 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Diagnostic Workspace Management Utilities
 # Handles creation, caching, and organization of diagnostic artifacts
 
-set -euo pipefail
+# Note: Don't use 'set -e' to prevent SIGPIPE from killing parent shell
+# Functions handle errors explicitly
 
-# Create diagnostic workspace with timestamp
+# Get repository root (works from any subdirectory)
+get_repo_root() {
+    git rev-parse --show-toplevel 2>/dev/null || echo "."
+}
+
+# Create diagnostic workspace (no timestamp - reusable by run ID)
 # Usage: create_diagnostic_workspace RUN_ID
 # Returns: Path to diagnostic directory
 create_diagnostic_workspace() {
     local run_id="$1"
-    local diagnostic_dir=".claude/diagnostics/run-${run_id}-$(date +%Y%m%d-%H%M%S)"
+    local repo_root=$(get_repo_root)
+    local diagnostic_dir="${repo_root}/.claude/diagnostics/run-${run_id}"
 
     mkdir -p "$diagnostic_dir"
     echo "$diagnostic_dir"
@@ -20,25 +27,40 @@ create_diagnostic_workspace() {
 # Returns: Path to existing directory or empty string
 find_existing_diagnostic() {
     local run_id="$1"
-    find .claude/diagnostics -maxdepth 1 -type d -name "run-${run_id}-*" 2>/dev/null | head -1
+    local repo_root=$(get_repo_root)
+    local diagnostic_dir="${repo_root}/.claude/diagnostics/run-${run_id}"
+
+    if [ -d "$diagnostic_dir" ]; then
+        echo "$diagnostic_dir"
+    else
+        echo ""
+    fi
 }
 
 # Get or create diagnostic workspace (with caching)
-# Usage: get_diagnostic_workspace RUN_ID
+# Usage: get_diagnostic_workspace RUN_ID [FORCE_CLEAN]
+# FORCE_CLEAN: Set to "clean" to remove existing workspace and start fresh
 # Returns: Path to diagnostic directory (existing or new)
 get_diagnostic_workspace() {
     local run_id="$1"
+    local force_clean="${2:-}"
+    local repo_root=$(get_repo_root)
+    local diagnostic_dir="${repo_root}/.claude/diagnostics/run-${run_id}"
 
-    local existing_dir=$(find_existing_diagnostic "$run_id")
+    # Clean existing workspace if requested
+    if [ "$force_clean" = "clean" ] && [ -d "$diagnostic_dir" ]; then
+        echo "🗑️  Cleaning existing workspace: $diagnostic_dir" >&2
+        rm -rf "$diagnostic_dir"
+    fi
 
-    if [ -n "$existing_dir" ]; then
-        echo "✓ Found existing diagnostic session: $existing_dir" >&2
-        echo "  (Logs and metadata will be reused from previous analysis)" >&2
-        echo "$existing_dir"
+    if [ -d "$diagnostic_dir" ]; then
+        echo "✓ Reusing existing diagnostic workspace: $diagnostic_dir" >&2
+        echo "  (Cached logs and metadata will be reused)" >&2
+        echo "$diagnostic_dir"
     else
-        local new_dir=$(create_diagnostic_workspace "$run_id")
-        echo "✓ Created new diagnostic workspace: $new_dir" >&2
-        echo "$new_dir"
+        mkdir -p "$diagnostic_dir"
+        echo "✓ Created new diagnostic workspace: $diagnostic_dir" >&2
+        echo "$diagnostic_dir"
     fi
 }
 
@@ -86,10 +108,13 @@ get_or_fetch_artifact() {
 # Ensure .gitignore includes diagnostic directories
 # Usage: ensure_gitignore_diagnostics
 ensure_gitignore_diagnostics() {
-    if [ ! -f .gitignore ] || ! grep -q "\.claude/diagnostics/" .gitignore 2>/dev/null; then
-        echo "" >> .gitignore
-        echo "# Claude Code diagnostic outputs" >> .gitignore
-        echo ".claude/diagnostics/" >> .gitignore
+    local repo_root=$(get_repo_root)
+    local gitignore="${repo_root}/.gitignore"
+
+    if [ ! -f "$gitignore" ] || ! grep -q "\.claude/diagnostics/" "$gitignore" 2>/dev/null; then
+        echo "" >> "$gitignore"
+        echo "# Claude Code diagnostic outputs" >> "$gitignore"
+        echo ".claude/diagnostics/" >> "$gitignore"
         echo "✓ Added .claude/diagnostics/ to .gitignore" >&2
     fi
 }
@@ -97,7 +122,8 @@ ensure_gitignore_diagnostics() {
 # List all diagnostic workspaces
 # Usage: list_diagnostic_workspaces
 list_diagnostic_workspaces() {
-    find .claude/diagnostics -maxdepth 1 -type d -name "run-*" 2>/dev/null | sort -r
+    local repo_root=$(get_repo_root)
+    find "${repo_root}/.claude/diagnostics" -maxdepth 1 -type d -name "run-*" 2>/dev/null | sort -r
 }
 
 # Get workspace age in hours

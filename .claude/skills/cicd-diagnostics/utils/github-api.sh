@@ -1,8 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # GitHub API Utility Functions for CI/CD Diagnostics
 # Provides reusable functions for interacting with GitHub API and CLI
 
-set -euo pipefail
+# Note: Use 'set -e' only to allow sourcing in both bash and zsh
+set -e
 
 # Extract run ID from GitHub Actions URL
 # Usage: extract_run_id "https://github.com/dotCMS/core/actions/runs/19118302390"
