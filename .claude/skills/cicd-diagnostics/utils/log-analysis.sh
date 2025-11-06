@@ -23,14 +23,19 @@ extract_test_failures() {
     local output_file="$2"
     local append="${3:-false}"
 
-    local output_op=">"
-    [ "$append" = "true" ] && output_op=">>"
-
-    {
-        echo ""
-        echo "=== TEST FAILURES ==="
-        grep -E "(<<< FAILURE!|Tests run:.*Failures: [1-9]|::error|FAILED)" "$log_file" 2>/dev/null | head -100 || echo "No test failures found"
-    } $output_op "$output_file"
+    if [ "$append" = "true" ]; then
+        {
+            echo ""
+            echo "=== TEST FAILURES ==="
+            grep -E "(<<< FAILURE!|Tests run:.*Failures: [1-9]|::error|FAILED)" "$log_file" 2>/dev/null | head -100 || echo "No test failures found"
+        } >> "$output_file"
+    else
+        {
+            echo ""
+            echo "=== TEST FAILURES ==="
+            grep -E "(<<< FAILURE!|Tests run:.*Failures: [1-9]|::error|FAILED)" "$log_file" 2>/dev/null | head -100 || echo "No test failures found"
+        } > "$output_file"
+    fi
 }
 
 # Extract Newman/Postman errors from logs
@@ -40,14 +45,19 @@ extract_newman_errors() {
     local output_file="$2"
     local append="${3:-false}"
 
-    local output_op=">"
-    [ "$append" = "true" ] && output_op=">>"
-
-    {
-        echo ""
-        echo "=== NEWMAN/POSTMAN ERRORS ==="
-        grep -E "(newman.*error|Assertion.*failed|Expected.*to.*but|AssertionError)" "$log_file" 2>/dev/null | head -100 || echo "No newman errors found"
-    } $output_op "$output_file"
+    if [ "$append" = "true" ]; then
+        {
+            echo ""
+            echo "=== NEWMAN/POSTMAN ERRORS ==="
+            grep -E "(newman.*error|Assertion.*failed|Expected.*to.*but|AssertionError)" "$log_file" 2>/dev/null | head -100 || echo "No newman errors found"
+        } >> "$output_file"
+    else
+        {
+            echo ""
+            echo "=== NEWMAN/POSTMAN ERRORS ==="
+            grep -E "(newman.*error|Assertion.*failed|Expected.*to.*but|AssertionError)" "$log_file" 2>/dev/null | head -100 || echo "No newman errors found"
+        } > "$output_file"
+    fi
 }
 
 # Extract infrastructure/timeout errors from logs
@@ -57,14 +67,19 @@ extract_infrastructure_errors() {
     local output_file="$2"
     local append="${3:-false}"
 
-    local output_op=">"
-    [ "$append" = "true" ] && output_op=">>"
-
-    {
-        echo ""
-        echo "=== TIMEOUT/INFRASTRUCTURE ==="
-        grep -iE "(timeout|connection refused|rate limit|Process exited with an error)" "$log_file" 2>/dev/null | head -50 || echo "No infrastructure issues found"
-    } $output_op "$output_file"
+    if [ "$append" = "true" ]; then
+        {
+            echo ""
+            echo "=== TIMEOUT/INFRASTRUCTURE ==="
+            grep -iE "(timeout|connection refused|rate limit|Process exited with an error)" "$log_file" 2>/dev/null | head -50 || echo "No infrastructure issues found"
+        } >> "$output_file"
+    else
+        {
+            echo ""
+            echo "=== TIMEOUT/INFRASTRUCTURE ==="
+            grep -iE "(timeout|connection refused|rate limit|Process exited with an error)" "$log_file" 2>/dev/null | head -50 || echo "No infrastructure issues found"
+        } > "$output_file"
+    fi
 }
 
 # Extract E2E/Playwright test failures
@@ -86,14 +101,19 @@ extract_test_summary() {
     local output_file="$2"
     local append="${3:-false}"
 
-    local output_op=">"
-    [ "$append" = "true" ] && output_op=">>"
-
-    {
-        echo ""
-        echo "=== TEST SUMMARY ==="
-        grep -E "(passed|failed|flaky|Assertion failed|assertions|iterations|requests|test-scripts)" "$log_file" 2>/dev/null | tail -50 || echo "No test summary found"
-    } $output_op "$output_file"
+    if [ "$append" = "true" ]; then
+        {
+            echo ""
+            echo "=== TEST SUMMARY ==="
+            grep -E "(passed|failed|flaky|Assertion failed|assertions|iterations|requests|test-scripts)" "$log_file" 2>/dev/null | tail -50 || echo "No test summary found"
+        } >> "$output_file"
+    else
+        {
+            echo ""
+            echo "=== TEST SUMMARY ==="
+            grep -E "(passed|failed|flaky|Assertion failed|assertions|iterations|requests|test-scripts)" "$log_file" 2>/dev/null | tail -50 || echo "No test summary found"
+        } > "$output_file"
+    fi
 }
 
 # Comprehensive error extraction (all patterns)
