@@ -1,9 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { signalStore, withState, patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
@@ -13,6 +20,8 @@ import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
@@ -55,9 +64,19 @@ describe('ContentFeature', () => {
             DotHttpErrorManagerService,
             DotWorkflowsActionsService,
             DotWorkflowService,
-            Router,
             Title,
             DotMessageService
+        ],
+        providers: [
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 

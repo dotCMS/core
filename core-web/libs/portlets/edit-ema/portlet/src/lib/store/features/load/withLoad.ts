@@ -11,7 +11,6 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../../../shared/consts';
@@ -56,7 +55,6 @@ export function withLoad() {
             const dotExperimentsService = inject(DotExperimentsService);
             const dotLicenseService = inject(DotLicenseService);
             const loginService = inject(LoginService);
-            const globalStore = inject(GlobalStore);
 
             return {
                 /**
@@ -225,12 +223,6 @@ export function withLoad() {
                                     );
                                     patchState(store, { pageAPIResponse, canEditPage });
                                     store.getWorkflowActions(pageAPIResponse.page.inode);
-
-                                    // Add breadcrumb after the state is updated
-
-                                    globalStore.addNewBreadcrumb({
-                                        label: pageAPIResponse?.page.title
-                                    });
                                 }),
                                 switchMap((pageAPIResponse) => {
                                     return dotLanguagesService.getLanguagesUsedPage(
