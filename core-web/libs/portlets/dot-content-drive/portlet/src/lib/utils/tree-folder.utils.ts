@@ -3,20 +3,6 @@ import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { BuildTreeFolderNodesParams } from '../shared/models';
 
-export const ALL_FOLDER: DotFolderTreeNodeItem = {
-    key: 'ALL_FOLDER',
-    label: 'All',
-    loading: false,
-    data: {
-        type: 'folder',
-        path: '',
-        hostname: '',
-        id: ''
-    },
-    leaf: false,
-    expanded: true
-};
-
 /**
  * Generates all parent paths from a target path
  *
