@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -195,6 +196,17 @@ public interface ContentTypeAPI {
    */
   List<String> findUrlMappedPattern(final String pageIdentifier) throws DotDataException;
 
+  /**
+   * Returns a list of Content Types whose URL map pattern matches the given URL string using regex comparison.
+   * This method converts URL map patterns (e.g., "/news/{urlTitle}") to regex patterns and tests them against the provided URL.
+   *
+   * @param urlMap The URL string to match against content type URL map patterns.
+   *
+   * @return The list of {@link ContentType} objects whose URL map patterns match the given URL.
+   *
+   * @throws DotDataException An error occurred when interacting with the data source.
+   */
+  List<ContentType> findByUrlMapPattern(final String urlMap) throws DotDataException;
 
   /**
    * Counts the amount of Content Types in the DB filtered by the given condition.
@@ -544,7 +556,15 @@ public interface ContentTypeAPI {
    * @return return a Map where the keys are the content types' variable name and the values are the number of entries
    * @throws DotDataException
    */
-  Map<String, Long> getEntriesByContentTypes() throws DotDataException;
+  Map<String, Long> getEntriesByContentTypes() throws DotStateException;
+
+  /**
+   * Return the number of entries for each content types in a specific site
+   *
+   * @return return a Map where the keys are the content types' variable name and the values are the number of entries
+   * @throws DotDataException
+   */
+  Map<String, Long> getEntriesByContentTypes(final String siteId) throws DotStateException;
   
   /**
    * Save or update a Content Type. If the Content Type already exist

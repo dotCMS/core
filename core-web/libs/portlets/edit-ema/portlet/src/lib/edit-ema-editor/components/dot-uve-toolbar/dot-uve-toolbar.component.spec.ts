@@ -94,6 +94,7 @@ const baseUVEState = {
     loadPageAsset: jest.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
+    $isEditMode: signal(false),
     $personaSelector: signal({
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
@@ -120,7 +121,9 @@ const baseUVEState = {
     lockLoading: signal(false),
     toggleLock: jest.fn(),
     socialMedia: signal(null),
-    trackUVECalendarChange: jest.fn()
+    trackUVECalendarChange: jest.fn(),
+    paletteOpen: signal(false),
+    setPaletteOpen: jest.fn()
 };
 
 const personaEventMock = {
@@ -724,6 +727,74 @@ describe('DotUveToolbarComponent', () => {
                 spectator.click(button);
 
                 expect(spy).toHaveBeenCalledWith('test-inode-other', true, false);
+            });
+        });
+
+        describe('palette toggle button', () => {
+            it('should not display palette toggle button when not in edit mode', () => {
+                baseUVEState.$isEditMode.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
+            });
+
+            it('should display palette toggle button when in edit mode', () => {
+                baseUVEState.$isEditMode.set(true);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeTruthy();
+            });
+
+            it('should call setPaletteOpen with true when palette is closed', () => {
+                const spy = jest.spyOn(store, 'setPaletteOpen');
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(false);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('uve-toolbar-palette-toggle'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(true);
+            });
+
+            it('should call setPaletteOpen with false when palette is open', () => {
+                const spy = jest.spyOn(store, 'setPaletteOpen');
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(true);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('uve-toolbar-palette-toggle'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(false);
+            });
+
+            it('should show close icon and hide open icon when palette is closed', () => {
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(false);
+                spectator.detectChanges();
+
+                const openIcon = spectator.query(byTestId('palette-open-icon'));
+                const closeIcon = spectator.query(byTestId('palette-close-icon'));
+
+                // When palette is closed, we show the "close" icon (to open it)
+                // The open icon should be hidden
+                expect(openIcon.classList.contains('hidden')).toBe(true);
+                expect(closeIcon.classList.contains('hidden')).toBe(false);
+            });
+
+            it('should show open icon and hide close icon when palette is open', () => {
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(true);
+                spectator.detectChanges();
+
+                const openIcon = spectator.query(byTestId('palette-open-icon'));
+                const closeIcon = spectator.query(byTestId('palette-close-icon'));
+
+                // When palette is open, we show the "open" icon (to close it)
+                // The close icon should be hidden
+                expect(openIcon.classList.contains('hidden')).toBe(false);
+                expect(closeIcon.classList.contains('hidden')).toBe(true);
             });
         });
     });

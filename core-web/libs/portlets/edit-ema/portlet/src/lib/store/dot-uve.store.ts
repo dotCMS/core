@@ -172,6 +172,9 @@ export const UVEStore = signalStore(
                 $languageId: computed<number>(() => {
                     return pageAPIResponse()?.viewAs.language?.id || 1;
                 }),
+                $isEditMode: computed<boolean>(() => {
+                    return pageParams()?.mode === UVE_MODE.EDIT;
+                }),
                 $isPreviewMode: computed<boolean>(() => {
                     return pageParams()?.mode === UVE_MODE.PREVIEW;
                 }),

@@ -7,7 +7,7 @@ import {
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import { DotCMSPageAssetContainers, DotCMSViewAsPersona } from '@dotcms/types';
+import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import {
     Container,
@@ -79,9 +79,9 @@ export interface EditorProps {
     };
     palette?: {
         languageId: number;
-        containers: DotCMSPageAssetContainers;
-        variantId: string;
         paletteClass: PALETTE_CLASSES;
+        pagePath: string;
+        variantId?: string;
     };
     showDialogs: boolean;
     progressBar: boolean;

@@ -302,7 +302,7 @@ describe('withEditor', () => {
                     palette: {
                         variantId: DEFAULT_VARIANT_ID,
                         languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
-                        containers: MOCK_RESPONSE_HEADLESS.containers,
+                        pagePath: MOCK_RESPONSE_HEADLESS.page.pageURI,
                         paletteClass: PALETTE_CLASSES.OPEN
                     },
                     seoResults: null

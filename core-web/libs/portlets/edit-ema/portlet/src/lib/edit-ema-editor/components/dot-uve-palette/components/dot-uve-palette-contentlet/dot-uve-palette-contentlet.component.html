@@ -1,0 +1,17 @@
+@let contentlet = $contentlet();
+
+<!-- Drag handle -->
+<div class="drag-handle">
+    <i class="pi pi-ellipsis-v"></i>
+    <i class="pi pi-ellipsis-v"></i>
+</div>
+
+<!-- Contentlet icon and name -->
+<div class="content">
+    <div class="icon">
+        <dot-contentlet-thumbnail
+            [contentlet]="contentlet"
+            [iconSize]="'24px'"></dot-contentlet-thumbnail>
+    </div>
+    <div class="name">{{ contentlet.title }}</div>
+</div>

@@ -1,0 +1,121 @@
+<div class="dot-uve-palette-list__controls">
+    @if ($currentView() === DotUVEPaletteListView.CONTENTLETS) {
+        <p-button
+            data-testid="back-to-content-types-button"
+            icon="pi pi-chevron-left"
+            styleClass="options-menu-button"
+            [text]="true"
+            [rounded]="true"
+            (onClick)="onBackToContentTypes()" />
+    }
+
+    <p-iconField iconPosition="left" [style]="{ width: '100%' }">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input
+            pInputText
+            data-testid="palette-search-input"
+            styleClass="input-text-sm"
+            [formControl]="searchControl"
+            [placeholder]="'search' | dm"
+            [style]="{ width: '100%' }" />
+    </p-iconField>
+
+    @if ($showSortButton()) {
+        <p-button
+            data-testid="sort-menu-button"
+            icon="pi pi-arrow-right-arrow-left"
+            styleClass="options-menu-button"
+            [text]="true"
+            [rounded]="true"
+            (onClick)="menu.toggle($event)" />
+    } @else if ($isFavoritesList()) {
+        <p-button
+            data-testid="add-favorites-button"
+            icon="pi pi-plus"
+            styleClass="options-menu-button"
+            [text]="true"
+            [rounded]="true"
+            (onClick)="favoritesPanel.toggle($event)" />
+    }
+</div>
+
+<div
+    class="dot-uve-palette-list__grid"
+    [class.dot-uve-palette-list__grid--list]="$showListLayout()"
+    [class.dot-uve-palette-list__grid--loading]="$isLoading()">
+    @if ($isLoading()) {
+        <ng-container *ngTemplateOutlet="loadingTemplate" />
+    } @else if ($isEmpty()) {
+        <ng-container *ngTemplateOutlet="emptyStateTemplate" />
+    } @else {
+        <ng-container *ngTemplateOutlet="contentTemplate" />
+    }
+</div>
+
+<!-- Loading State Template -->
+<ng-template #loadingTemplate>
+    @let skeletonHeight = $showListLayout() ? '4rem' : '6.875rem';
+    @for (i of LOADING_ROWS; track i) {
+        <p-skeleton width="100%" [height]="skeletonHeight" />
+    }
+</ng-template>
+
+<!-- Empty State Template -->
+<ng-template #emptyStateTemplate>
+    <div class="dot-uve-palette-list__empty">
+        <div class="dot-uve-palette-list__empty-icon">
+            <i class="pi pi-plus"></i>
+        </div>
+        <p
+            data-testid="empty-state-message"
+            class="dot-uve-palette-list__empty-text"
+            [innerHTML]="$emptyStateMessage() | dm"
+            (click)="onEmptyStateClick($event)"></p>
+    </div>
+</ng-template>
+
+<!-- Content Template -->
+<ng-template #contentTemplate>
+    @switch ($currentView()) {
+        @case (DotUVEPaletteListView.CONTENTLETS) {
+            @for (contentlet of $contentlets(); track contentlet.identifier) {
+                <dot-uve-palette-contentlet [contentlet]="contentlet" />
+            }
+        }
+        @case (DotUVEPaletteListView.CONTENT_TYPES) {
+            @for (contentType of $contenttypes(); track contentType.id) {
+                <dot-uve-palette-contenttype
+                    [contentType]="contentType"
+                    [view]="$layoutMode()"
+                    (onSelectContentType)="onSelectContentType($event)"
+                    (contextMenu)="onContextMenu(contentType); cm.show($event)" />
+            }
+        }
+    }
+</ng-template>
+
+@let totalRecords = $pagination.totalEntries();
+@if (!$isLoading() && totalRecords > 0) {
+    <p-paginator
+        (onPageChange)="onPageChange($event)"
+        [showPageLinks]="false"
+        [showJumpToPageDropdown]="false"
+        [showCurrentPageReport]="true"
+        [showFirstLastIcon]="false"
+        [first]="$start()"
+        [rows]="$pagination.perPage()"
+        [totalRecords]="$pagination.totalEntries()"
+        [currentPageReportTemplate]="'uve.palette.pagination.template' | dm" />
+}
+
+<p-menu
+    #menu
+    [model]="$menuItems()"
+    [popup]="true"
+    appendTo="body"
+    styleClass="options-menu-popup"
+    showTransitionOptions="0ms" />
+
+<p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" styleClass="no-padding" />
+
+<dot-favorite-selector #favoritesPanel />

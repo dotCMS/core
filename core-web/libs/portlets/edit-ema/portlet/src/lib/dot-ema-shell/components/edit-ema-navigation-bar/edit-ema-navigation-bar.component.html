@@ -8,16 +8,6 @@
 
 <ng-template #anchor let-item="item" let-index="index">
     <div class="edit-ema-nav-bar__item-container">
-        @if (index === 0 && $editorProps().palette) {
-            <button
-                pButton
-                data-testId="toggle-palette"
-                icon="pi pi-angle-right"
-                [ngClass]="$editorProps().palette.paletteClass"
-                class="p-button-outlined p-button-sm toggle-palette"
-                (click)="togglePalette()"></button>
-        }
-
         <a
             [routerLink]="item.isDisabled ? null : item.href"
             [queryParams]="$params()"
