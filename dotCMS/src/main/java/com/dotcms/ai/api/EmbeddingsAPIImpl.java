@@ -1,6 +1,7 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.api.embeddings.ContentTypeEmbeddingIndexRequest;
 import com.dotcms.ai.api.embeddings.DotPgVectorEmbeddingStore;
 import com.dotcms.ai.api.embeddings.EmbeddingIndexRequest;
 import com.dotcms.ai.api.embeddings.FixedSizeChunker;
@@ -8,6 +9,7 @@ import com.dotcms.ai.api.embeddings.SearchMatch;
 import com.dotcms.ai.api.embeddings.TextChunker;
 import com.dotcms.ai.api.embeddings.extractor.ContentExtractor;
 import com.dotcms.ai.api.embeddings.extractor.ExtractedContent;
+import com.dotcms.ai.api.embeddings.extractor.ExtractorContentInput;
 import com.dotcms.ai.api.embeddings.retrieval.EmbeddingStoreRetriever;
 import com.dotcms.ai.api.embeddings.retrieval.RetrievalQuery;
 import com.dotcms.ai.api.embeddings.retrieval.RetrievedChunk;
@@ -54,6 +56,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
+import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -68,6 +71,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,19 +121,27 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     public int indexOne(final EmbeddingIndexRequest embeddingIndexRequest) throws Exception {
 
+        // todo: we have to
+        // 1) take in consideration the new parameters; velocityTemplate, fields and user, keep in mind all of them could be null
+        // 2) we have to pass them to the context extract
         final String identifier = embeddingIndexRequest.getIdentifier();
         final long languageId   = embeddingIndexRequest.getLanguageId();
         final String vendorModelPath = embeddingIndexRequest.getVendorModelPath();
+        final String vendorName = AIUtil.getVendorFromPath(vendorModelPath);
         final String indexName = Objects.nonNull(embeddingIndexRequest.getIndexName())?embeddingIndexRequest.getIndexName():"default";
         final AiModelConfig modelConfig = embeddingIndexRequest.getModelConfig();
-        final EmbeddingModel embeddingModel = Objects.nonNull(vendorModelPath)?
-                this.modelProviderFactory.getEmbedding(vendorModelPath, modelConfig):defaultOnnxModel();
+        final EmbeddingModel embeddingModel = Objects.nonNull(vendorName)?
+                this.modelProviderFactory.getEmbedding(vendorName, modelConfig):defaultOnnxModel();
         // todo: this could be eventually cached by factory by index and model
         final DotPgVectorEmbeddingStore embeddingStore = DotPgVectorEmbeddingStore.builder()
                 .indexName(indexName)
                 .dimension(embeddingModel.dimension())
                 .build();
-        final ExtractedContent extractedContent = this.contentExtractor.extract(identifier, languageId);
+
+        final ExtractorContentInput extractorContentInput = ExtractorContentInput.builder()
+                .withUserId(embeddingIndexRequest.getUserId()).withFields(embeddingIndexRequest.getFields())
+                .withLanguageId(languageId).withIdentifier(identifier).withVelocityTemplate(embeddingIndexRequest.getVelocityTemplate()).build();
+        final ExtractedContent extractedContent = this.contentExtractor.extract(extractorContentInput);
         if (extractedContent == null) {
             return 0;
         }
@@ -154,6 +166,117 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         }
         return chunksIndexed;
     }
+
+    @Override
+    public int indexContentType(final ContentTypeEmbeddingIndexRequest contentTypeIndexRequest) {
+
+        final String host = contentTypeIndexRequest.getHost();
+        final String contentType = contentTypeIndexRequest.getContentType();
+        final Long languageId = contentTypeIndexRequest.getLanguageId().orElse(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final int pageSize = contentTypeIndexRequest.getPageSize();
+        final int batchSize = contentTypeIndexRequest.getBatchSize();
+        final String vendorModelPath = contentTypeIndexRequest.getVendorModelPath();
+        final String vendorName = AIUtil.getVendorFromPath(vendorModelPath);
+        final String indexName = Objects.nonNull(contentTypeIndexRequest.getIndexName())?contentTypeIndexRequest.getIndexName():"default";
+        final AiModelConfig modelConfig = contentTypeIndexRequest.getModelConfig();
+        final EmbeddingModel embeddingModel = Objects.nonNull(vendorName)?
+                this.modelProviderFactory.getEmbedding(vendorName, modelConfig):defaultOnnxModel();
+        // todo: this could be eventually cached by factory by index and model
+        final DotPgVectorEmbeddingStore embeddingStore = DotPgVectorEmbeddingStore.builder()
+                .indexName(indexName)
+                .dimension(embeddingModel.dimension())
+                .build();
+        final int safePageSize = Math.max(1, pageSize);
+        final int safeBatchSize = Math.max(1, batchSize);
+        final Iterator<ExtractedContent> iterator =
+                contentExtractor.iterator(host, contentType, languageId, safePageSize);
+
+        final List<TextSegment> segmentBuffer = new ArrayList<>(safeBatchSize);
+        int totalChunksIndexed = 0;
+
+        while (iterator.hasNext()) {
+            final ExtractedContent extractedContent = iterator.next();
+
+            try {
+                final String fullText = normalize(extractedContent);
+                if (fullText == null || fullText.isEmpty()) {
+                    continue;
+                }
+
+                final String textHash = sha256(fullText);
+                final List<String> chunks = textChunker.chunk(fullText);
+                if (chunks.isEmpty()) {
+                    continue;
+                }
+
+                for (int chunkIndex = 0; chunkIndex < chunks.size(); chunkIndex++) {
+                    final String textChunk = chunks.get(chunkIndex);
+                    final TextSegment segment = buildSegment(extractedContent, textChunk, textHash, chunkIndex);
+                    segmentBuffer.add(segment);
+
+                    if (segmentBuffer.size() >= safeBatchSize) {
+                        totalChunksIndexed += flushBatch(segmentBuffer,
+                                embeddingStore, embeddingModel);
+                    }
+                }
+
+            } catch (Exception exception) {
+                // Policy: skip on error, continue with next content
+                Logger.error(this,  exception.getMessage(), exception);
+            }
+        }
+
+        // Flush any remaining segments
+        if (!segmentBuffer.isEmpty()) {
+            totalChunksIndexed += flushBatch(segmentBuffer,
+                    embeddingStore, embeddingModel);
+        }
+
+        return totalChunksIndexed;
+    }
+
+    // ---------- helpers ----------
+
+    private int flushBatch(final List<TextSegment> segmentBuffer, final DotPgVectorEmbeddingStore embeddingStore,
+                           final EmbeddingModel embeddingModel) {
+        try {
+            // Prefer batched embedding if model supports it; fallback to per-segment
+            final List<Embedding> embeddings = embedAllSafely(segmentBuffer, embeddingModel);
+            embeddingStore.addAll(embeddings, segmentBuffer);
+            final int batchSize = segmentBuffer.size();
+            segmentBuffer.clear();
+            return batchSize;
+        } catch (Exception exception) {
+            // If batch fails, attempt to index individually to salvage progress
+            int salvaged = 0;
+            for (TextSegment segment : new ArrayList<>(segmentBuffer)) {
+                try {
+                    embeddingStore.add(embeddingModel.embed(segment).content(), segment);
+                    salvaged++;
+                } catch (Exception ignored) {
+                    // skip individual failure
+                }
+            }
+            segmentBuffer.clear();
+            return salvaged;
+        }
+    }
+
+    private List<Embedding> embedAllSafely(final List<TextSegment> segments,
+                                           final EmbeddingModel embeddingModel) {
+        try {
+            // Many EmbeddingModel implementations provide embedAll()
+            return embeddingModel.embedAll(segments).content();
+        } catch (Throwable unsupported) {
+            // Fallback: per-segment embedding
+            final List<Embedding> embeddings = new ArrayList<>(segments.size());
+            for (TextSegment segment : segments) {
+                embeddings.add(embeddingModel.embed(segment).content());
+            }
+            return embeddings;
+        }
+    }
+
 
     /** Combine title & body to slightly boost recall for short titles. */
     private static String normalize(final ExtractedContent extractedContent) {
