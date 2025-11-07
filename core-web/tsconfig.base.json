@@ -63,6 +63,7 @@
             "@dotcms/portlets/dot-experiments/portlet": [
                 "libs/portlets/dot-experiments/portlet/src/index.ts"
             ],
+            "@dotcms/portlets/dot-insights": ["libs/portlets/dot-insights/src/index.ts"],
             "@dotcms/portlets/dot-locales/portlet": [
                 "libs/portlets/dot-locales/portlet/src/index.ts"
             ],
