@@ -75,8 +75,16 @@ class SystemTableImpl implements SystemTable {
         Try.run(()-> this.systemTableFactory.saveOrUpdate(key, value))
                 .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
 
-        Try.run(()->HibernateUtil.addCommitListener(()->
-                APILocator.getLocalSystemEventsAPI().asyncNotify(new SystemTableUpdatedKeyEvent(key))));
+        Try.run(()->HibernateUtil.addCommitListener(()-> {
+
+            final SystemTableUpdatedKeyEvent systemTableUpdatedKeyEvent = new SystemTableUpdatedKeyEvent(key);
+            // first notify the local system events
+            APILocator.getLocalSystemEventsAPI().asyncNotify(systemTableUpdatedKeyEvent);
+            // then notify the cluster wide events
+            Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
+                            .push(SystemEventType.CLUSTER_WIDE_EVENT, new Payload(systemTableUpdatedKeyEvent)))
+                    .onFailure(e -> Logger.error(SystemTableImpl.class, e.getMessage()));
+        }));
     }
 
     @Override
