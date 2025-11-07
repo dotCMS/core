@@ -1,15 +1,25 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.ai.api.embeddings.EmbeddingIndexRequest;
+import com.dotcms.ai.config.AiModelConfig;
+import com.dotcms.ai.config.AiModelConfigFactory;
+import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.rest.forms.EmbeddingsForm;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
+import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -23,6 +33,7 @@ public class BulkEmbeddingsRunner implements Runnable {
     private final User user;
     private final EmbeddingsForm embeddingsForm;
     private final List<String> inodes;
+    private final AiModelConfigFactory modelConfigFactory = CDIUtils.getBeanThrows(AiModelConfigFactory.class);
 
     public BulkEmbeddingsRunner(List<String> inodes, EmbeddingsForm embeddingsForm) {
         user = Try.of(() -> APILocator
@@ -36,7 +47,9 @@ public class BulkEmbeddingsRunner implements Runnable {
     @Override
     public void run() {
 
-        // todo: here see if the model is configured with the new api
+        final Host site = Try.of(()->APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)).getOrElse(APILocator.systemHost());
+        final Optional<AiModelConfig> modelConfigOpt = this.modelConfigFactory.getAiModelConfigOrDefaultChat(site, embeddingsForm.model);
+
         for (final String inode : inodes) {
             try {
                 final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, false);
@@ -49,17 +62,48 @@ public class BulkEmbeddingsRunner implements Runnable {
                         .stream()
                         .filter(f -> embeddingsForm.fieldsAsList().contains(f.variable().toLowerCase()))
                         .collect(Collectors.toList());
-                // if a velocity template is passed in, use it.  Otherwise, try the fields
-                if (!APILocator.getDotAIAPI().getEmbeddingsAPI().generateEmbeddingsForContent(
-                        contentlet,
-                        embeddingsForm.velocityTemplate,
-                        embeddingsForm.indexName)) {
-                    APILocator.getDotAIAPI().getEmbeddingsAPI().generateEmbeddingsForContent(contentlet, fields, embeddingsForm.indexName);
+
+                if(modelConfigOpt.isPresent()) {
+
+                    EmbeddingsForm finalForm = embeddingsForm;
+                    if (StringUtils.isNotSet(embeddingsForm.model)) {
+                        // probably get the default one
+                        finalForm = EmbeddingsForm.copy(embeddingsForm).model(modelConfigOpt.get().getName()).build();
+                    }
+
+                    Logger.debug(this, "Using new AI api for the embeddings with the form: " + finalForm);
+                    final EmbeddingIndexRequest embeddingIndexRequest = toEmbeddingIndexRequest(finalForm,
+                            modelConfigOpt.get(), contentlet);
+                    APILocator.getDotAIAPI()
+                            .getEmbeddingsAPI().indexOne(embeddingIndexRequest);
+                } else {
+
+                    // if a velocity template is passed in, use it.  Otherwise, try the fields
+                    if (!APILocator.getDotAIAPI().getEmbeddingsAPI().generateEmbeddingsForContent(
+                            contentlet,
+                            embeddingsForm.velocityTemplate,
+                            embeddingsForm.indexName)) {
+                        APILocator.getDotAIAPI().getEmbeddingsAPI().generateEmbeddingsForContent(contentlet, fields, embeddingsForm.indexName);
+                    }
                 }
             } catch (Exception e) {
                 Logger.warn(this.getClass(), "unable to embed content:" + inode + " error:" + e.getMessage(), e);
             }
         }
+    }
+
+    private EmbeddingIndexRequest toEmbeddingIndexRequest(final EmbeddingsForm finalForm,
+                                                          final AiModelConfig aiModelConfig,
+                                                          final Contentlet contentlet) {
+        return EmbeddingIndexRequest.builder()
+                .withVelocityTemplate(finalForm.velocityTemplate)
+                .withUserId(finalForm.userId)
+                .withIdentifier(contentlet.getIdentifier())
+                .withLanguageId(contentlet.getLanguageId())
+                .withVendorModelPath(finalForm.model)
+                .withIndexName(finalForm.indexName)
+                .withModelConfig(aiModelConfig)
+                .build();
     }
 
 }

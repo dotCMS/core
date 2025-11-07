@@ -12,7 +12,7 @@ import java.util.NoSuchElementException;
 public interface ContentExtractor {
 
     /** Returns null if not found or not eligible. */
-    ExtractedContent extract(String identifier, long languageId) throws Exception;
+    ExtractedContent extract(ExtractorContentInput extractorContentInput) throws Exception;
 
     /**
      * Provides an iterator over extracted content, hiding pagination logic.

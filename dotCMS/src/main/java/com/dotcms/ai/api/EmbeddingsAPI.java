@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.ai.api.embeddings.ContentTypeEmbeddingIndexRequest;
 import com.dotcms.ai.api.embeddings.EmbeddingIndexRequest;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.contenttype.model.field.Field;
@@ -34,6 +35,15 @@ public interface EmbeddingsAPI {
      * @throws Exception
      */
     int indexOne(EmbeddingIndexRequest indexRequest) throws Exception;
+
+    /**
+     * Indexes all content of a content type (optionally filtered by host and language),
+     * using the ContentExtractor iterator (hides pagination) and batching persistence via addAll.
+     *
+     * @param  contentTypeIndexRequest ContentTypeEmbeddingIndexRequest
+     * @return total chunks indexed
+     */
+    int indexContentType(ContentTypeEmbeddingIndexRequest contentTypeIndexRequest); // todo: this should be receive an event listener or so to track the progress
 
 
 
