@@ -16,9 +16,10 @@ on:
           - 'GHCR.IO'
           - 'BOTH'
         default: 'DOCKER.IO'
-        custom_tag:
-          description: 'Custom Docker Image Tag'
-          required: false
+      custom_tag:
+        description: 'Custom Docker Image Tag'
+        required: false
+        type: string
 jobs:
   prepare-build:
     name: Prepare build
