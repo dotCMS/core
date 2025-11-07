@@ -454,4 +454,10 @@
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
+    <portlet>
+        <portlet-name>insights</portlet-name>
+        <display-name>Insights</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
 </portlet-app>
