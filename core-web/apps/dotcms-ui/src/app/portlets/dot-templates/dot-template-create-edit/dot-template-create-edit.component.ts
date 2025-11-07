@@ -51,6 +51,11 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 }
 
                 if (!template.identifier) {
+                    this.#globalStore.addNewBreadcrumb({
+                        label: this.dotMessageService.get('templates.create.title'),
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/create`
+                    });
                     this.createTemplate();
                 } else if (template.title) {
                     this.#globalStore.addNewBreadcrumb({
