@@ -43,16 +43,61 @@ describe('DotSubNavComponent', () => {
         fixture.detectChanges();
     });
 
-    it('should have two menu links', () => {
+    it('should have two menu links when expanded', () => {
+        component.collapsed = false;
+        fixture.detectChanges();
         expect(de.queryAll(By.css('.dot-nav-sub li')).length).toBe(2);
     });
 
-    it('should set <li> correctly', () => {
+    it('should have three list items when collapsed (group header + 2 menu items)', () => {
+        component.collapsed = true;
+        fixture.detectChanges();
+        expect(de.queryAll(By.css('.dot-nav-sub li')).length).toBe(3);
+    });
+
+    it('should NOT show group name when expanded', () => {
+        component.collapsed = false;
+        fixture.detectChanges();
+        const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
+        expect(groupName).toBeNull();
+    });
+
+    it('should show group name when collapsed', () => {
+        component.collapsed = true;
+        fixture.detectChanges();
+        const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
+        expect(groupName).not.toBeNull();
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+    });
+
+    it('should have group name element with proper styling when collapsed', () => {
+        component.collapsed = true;
+        fixture.detectChanges();
+        const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
+        expect(groupName).not.toBeNull();
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+        // Verify it's a span element (not a link) so it won't navigate
+        expect(groupName.nativeElement.tagName.toLowerCase()).toBe('span');
+    });
+
+    it('should set <li> correctly when expanded', () => {
+        component.collapsed = false;
+        fixture.detectChanges();
         const items: DebugElement[] = de.queryAll(By.css('.dot-nav-sub li'));
 
         items.forEach((item: DebugElement) => {
             expect(item.nativeElement.classList.contains('dot-nav-sub__item')).toBe(true);
         });
+    });
+
+    it('should have group header when collapsed', () => {
+        component.collapsed = true;
+        fixture.detectChanges();
+        const items: DebugElement[] = de.queryAll(By.css('.dot-nav-sub li'));
+        const groupHeader = items.find((item) =>
+            item.nativeElement.classList.contains('dot-nav-sub__group-header')
+        );
+        expect(groupHeader).not.toBeNull();
     });
 
     it('should set <a> correctly', () => {
@@ -106,6 +151,12 @@ describe('DotSubNavComponent', () => {
 
                 it('should have collapsed class', () => {
                     expect(de.query(By.css('.dot-nav-sub__collapsed'))).not.toBeNull();
+                });
+
+                it('should show group name when collapsed', () => {
+                    const groupName = de.query(By.css('.dot-nav-sub__group-name'));
+                    expect(groupName).not.toBeNull();
+                    expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
                 });
             });
 

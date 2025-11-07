@@ -1,4 +1,14 @@
 <ul [class.dot-nav-sub__collapsed]="collapsed" #ul class="dot-nav-sub">
+    @if (collapsed) {
+        <li class="dot-nav-sub__group-header" data-testid="nav-sub-group-header">
+            <span
+                class="dot-nav-sub__group-name"
+                data-testid="nav-sub-group-name"
+                (click)="$event.preventDefault(); $event.stopPropagation()">
+                {{ data.tabName }}
+            </span>
+        </li>
+    }
     @for (subItem of data.menuItems; track $index) {
         <li class="dot-nav-sub__item">
             <a
