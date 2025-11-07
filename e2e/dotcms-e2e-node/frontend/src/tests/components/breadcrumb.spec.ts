@@ -82,7 +82,7 @@ test("should display correctly on the Content Types page", async ({ page }) => {
   const breadcrumbText = breadcrumb.getBreadcrumb();
   await breadcrumbText.waitFor({ state: "visible" });
   await expect(breadcrumbText).toContainText("Home");
-  await expect(breadcrumbText).toContainText("Content Model");
+  await expect(breadcrumbText).toContainText("Schema");
 
   const title = breadcrumb.getTitle();
   await title.waitFor({ state: "visible" });
