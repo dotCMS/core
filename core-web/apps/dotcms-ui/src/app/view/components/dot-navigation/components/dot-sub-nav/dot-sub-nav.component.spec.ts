@@ -1,10 +1,14 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { DotSystemConfigService } from '@dotcms/data-access';
 import { DotMenu } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
 
@@ -31,7 +35,16 @@ describe('DotSubNavComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [DotSubNavComponent],
-            imports: [RouterTestingModule, BrowserAnimationsModule]
+            imports: [RouterTestingModule, BrowserAnimationsModule],
+            providers: [
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
+            ]
         }).compileComponents();
     }));
 

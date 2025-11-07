@@ -2,6 +2,8 @@
 
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, inject as inject_1, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
@@ -13,8 +15,14 @@ import {
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotSystemConfigService,
+    DotThemesService,
+    PaginatorService
+} from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
 
@@ -167,7 +175,14 @@ describe('DotThemeSelectorDropdownComponent', () => {
                     useValue: {
                         get: jest.fn().mockReturnValue(of(mockDotThemes[1]))
                     }
-                }
+                },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ],
             imports: [
                 FormsModule,

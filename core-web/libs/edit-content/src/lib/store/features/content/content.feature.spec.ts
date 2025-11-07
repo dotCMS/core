@@ -9,9 +9,8 @@ import {
 import { signalStore, withState, patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -31,6 +30,7 @@ import {
     DotCMSWorkflowAction,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { withContent } from './content.feature';
@@ -75,6 +75,7 @@ describe('ContentFeature', () => {
             }),
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
+            GlobalStore,
             provideHttpClient(),
             provideHttpClientTesting()
         ]

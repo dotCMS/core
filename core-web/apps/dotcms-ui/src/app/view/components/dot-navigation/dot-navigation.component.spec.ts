@@ -1,12 +1,16 @@
 import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotSystemConfigService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { DotIconModule } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
@@ -47,7 +51,14 @@ describe('DotNavigationComponent collapsed', () => {
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
-            }
+            },
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => of({}) }
+            },
+            GlobalStore,
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 

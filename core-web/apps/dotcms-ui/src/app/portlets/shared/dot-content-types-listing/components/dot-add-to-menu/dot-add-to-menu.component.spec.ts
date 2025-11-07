@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -12,8 +13,9 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotDialogModule,
     DotFieldValidationMessageComponent,
@@ -115,7 +117,14 @@ describe('DotAddToMenuComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAddToMenuService, useClass: DotAddToMenuServiceMock },
-                { provide: DotMenuService, useClass: DotMenuServiceMock }
+                { provide: DotMenuService, useClass: DotMenuServiceMock },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ]
         }).compileComponents();
 
