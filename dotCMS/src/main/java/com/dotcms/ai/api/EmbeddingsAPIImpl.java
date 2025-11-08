@@ -55,7 +55,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
-import com.liferay.util.StringPool;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -160,7 +159,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         int chunksIndexed = 0;
         for (int chunkIndex = 0; chunkIndex < chunks.size(); chunkIndex++) {
             final String textChunk = chunks.get(chunkIndex);
-            final TextSegment segment = buildSegment(extractedContent, textChunk, textHash, chunkIndex);
+            final TextSegment segment = buildSegment(extractedContent, textChunk, textHash, chunkIndex, modelConfig.get("model"));
             embeddingStore.add(embeddingModel.embed(segment).content(), segment);
             chunksIndexed++;
         }
@@ -211,7 +210,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
                 for (int chunkIndex = 0; chunkIndex < chunks.size(); chunkIndex++) {
                     final String textChunk = chunks.get(chunkIndex);
-                    final TextSegment segment = buildSegment(extractedContent, textChunk, textHash, chunkIndex);
+                    final TextSegment segment = buildSegment(extractedContent, textChunk, textHash, chunkIndex, modelConfig.get("model"));
                     segmentBuffer.add(segment);
 
                     if (segmentBuffer.size() >= safeBatchSize) {
@@ -310,7 +309,9 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     private static TextSegment buildSegment(final ExtractedContent extractedContent,
                                             final String textChunk,
                                             final String textHash,
-                                            final int chunkIndex) {
+                                            final int chunkIndex,
+                                            final String modelName) {
+
         final Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("identifier",  extractedContent.getIdentifier());
         metadata.put("host",        extractedContent.getHost());
@@ -320,7 +321,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         metadata.put("title",       extractedContent.getTitle());
         metadata.put("chunkIndex",  chunkIndex);
         metadata.put("textHash",    textHash);
-        metadata.put("modelName",   "all-minilm-l6-v2");
+        metadata.put("modelName",   modelName);
 
         return TextSegment.from(textChunk, new dev.langchain4j.data.document.Metadata(metadata));
     }

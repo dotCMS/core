@@ -14,7 +14,7 @@ public class VertexVendorModelProviderImpl implements VendorModelProvider {
 
     @Override
     public String getVendorName() {
-        return AiVendor.OPEN_AI.getVendorName();
+        return AiVendor.VERTEX.getVendorName();
     }
 
     @Override
