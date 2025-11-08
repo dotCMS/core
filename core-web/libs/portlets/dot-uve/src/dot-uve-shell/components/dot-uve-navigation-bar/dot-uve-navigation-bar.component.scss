@@ -1,0 +1,13 @@
+@use "variables" as *;
+
+:host {
+    width: 5rem;
+    max-width: 5rem;
+    height: 100%;
+    background-color: $color-palette-primary-100;
+    border-left: 1px solid $color-palette-primary-300;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}

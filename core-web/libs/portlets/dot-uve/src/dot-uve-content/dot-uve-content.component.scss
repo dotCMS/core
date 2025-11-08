@@ -1,0 +1,12 @@
+@use "variables" as *;
+
+:host {
+    display: grid;
+    grid-template-rows: min-content 1fr;
+    grid-template-columns: 1fr;
+    height: 100%;
+}
+
+dot-uve-toolbar {
+    grid-row: 1 / 2;
+}
