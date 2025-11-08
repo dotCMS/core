@@ -317,7 +317,6 @@ public class DotPgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
         final String inode = (String) md.getOrDefault(KEY_INODE, "");
         final long language = toLong(md.get(KEY_LANGUAGE), 1L);
 
-        // hash opcional del texto para idempotencia (puedes calcular SHA-256)
         final String text = textSegment.text();
         final String textHash = StringUtils.hashText(text);
         final Integer tokenCount = approxTokenCount(text);
