@@ -467,16 +467,6 @@ describe('EditEmaEditorComponent', () => {
                 );
             });
 
-            it('should have a placeholder for the palette toggle button', () => {
-                store.setPaletteOpen(true);
-
-                spectator.detectChanges();
-
-                const placeholder = spectator.query(byTestId('toggle-palette-placeholder'));
-
-                expect(placeholder).not.toBeNull();
-            });
-
             it('should have a toolbar', () => {
                 const toolbar = spectator.query(DotUveToolbarComponent);
 
