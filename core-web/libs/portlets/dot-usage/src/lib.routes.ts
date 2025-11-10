@@ -3,12 +3,12 @@ import { Route } from '@angular/router';
 import { DotContentTypeService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 
-import { DotInsightsShellComponent } from './lib/dot-insights-shell/dot-insights-shell.component';
+import { DotUsageShellComponent } from './lib/dot-usage-shell/dot-usage-shell.component';
 
-export const DotInsightsRoutes: Route[] = [
+export const DotUsageRoutes: Route[] = [
     {
         path: '',
-        component: DotInsightsShellComponent,
+        component: DotUsageShellComponent,
         providers: [GlobalStore, DotContentTypeService]
     }
 ];

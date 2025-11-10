@@ -3,7 +3,7 @@ export default {
     displayName: 'portlet',
     preset: '../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    coverageDirectory: '../../../coverage/libs/portlets/dot-insights/portlet',
+    coverageDirectory: '../../../coverage/libs/portlets/dot-usage',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
