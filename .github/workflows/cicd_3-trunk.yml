@@ -132,3 +132,21 @@ jobs:
     uses: ./.github/workflows/cicd_post-workflow-reporting.yml
     secrets:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  # Update Server job - triggers cluster shutdown with rolling restart
+  update_server:
+    name: Update Server
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    if: always() && !failure() && !cancelled()
+    needs: [ initialize, build, build-cli, test, semgrep, deployment ]
+    steps:
+      - name: Shutdown Cluster
+        run: |
+          echo "Triggering cluster shutdown with rolling delay..."
+          curl -X DELETE \
+            -w "\nHTTP Status: %{http_code}\n" \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer ${{ secrets.STAGING_TRUNK_API_TOKEN }}" \
+            "https://staging-trunk.dotcms.cloud/api/v1/maintenance/_shutdownCluster?rollingDelay=60"
+
+          echo "Cluster shutdown initiated successfully"
