@@ -1,13 +1,17 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
+import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
+
 import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
+
 @Component({
     selector: 'dot-crumbtrail',
     templateUrl: './dot-crumbtrail.component.html',
     styleUrls: ['./dot-crumbtrail.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    imports: [DotCollapseBreadcrumbComponent],
+    providers: [DotCrumbtrailService]
 })
 export class DotCrumbtrailComponent {
     /** Service responsible for managing breadcrumb data */

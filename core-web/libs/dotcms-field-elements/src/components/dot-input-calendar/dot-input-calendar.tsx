@@ -9,6 +9,7 @@ import {
     Host,
     h
 } from '@stencil/core';
+
 import { DotFieldStatus, DotFieldValueEvent, DotInputCalendarStatusEvent } from '../../models';
 import { getErrorClass, getId, getOriginalStatus, updateStatus } from '../../utils';
 
@@ -104,11 +105,11 @@ export class DotInputCalendarComponent {
     }
 
     private isInMinRange(): boolean {
-        return !!this.min ? this.value >= this.min : true;
+        return this.min ? this.value >= this.min : true;
     }
 
     private isInMaxRange(): boolean {
-        return !!this.max ? this.value <= this.max : true;
+        return this.max ? this.value <= this.max : true;
     }
 
     private blurHandler(): void {

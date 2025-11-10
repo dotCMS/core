@@ -1,16 +1,18 @@
 import { Observable, of as observableOf } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { combineLatest, switchMap } from 'rxjs/operators';
 
 import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
+import { IframeComponent } from '../../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 
 @Component({
     selector: 'dot-legacy-addtional-actions',
     templateUrl: './dot-legacy-template-additional-actions-iframe.component.html',
-    standalone: false
+    imports: [CommonModule, IframeComponent]
 })
 export class DotLegacyTemplateAdditionalActionsComponent implements OnInit {
     private route = inject(ActivatedRoute);

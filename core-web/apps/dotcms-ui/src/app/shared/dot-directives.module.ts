@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { RippleEffectModule } from '../view/directives/ripple/ripple-effect.module';
+import { DotRippleEffectDirective } from '../view/directives/ripple/ripple-effect.directive';
 
 @NgModule({
     declarations: [],
-    imports: [CommonModule, RippleEffectModule],
-    exports: []
+    imports: [CommonModule, DotRippleEffectDirective],
+    exports: [DotRippleEffectDirective]
 })
 export class DotDirectivesModule {}

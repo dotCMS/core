@@ -1,16 +1,27 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 
 import { take, takeUntil } from 'rxjs/operators';
 
 import { DotRolesService } from '@dotcms/data-access';
 import { DotRole } from '@dotcms/dotcms-models';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
+import { DotPageSelectorComponent } from '../../dot-page-selector/dot-page-selector.component';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',
@@ -35,7 +46,16 @@ interface DotCommentAndAssignValue {
     selector: 'dot-comment-and-assign-form',
     templateUrl: './dot-comment-and-assign-form.component.html',
     styleUrls: ['./dot-comment-and-assign-form.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        InputTextareaModule,
+        DropdownModule,
+        DotPageSelectorComponent,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotCommentAndAssignFormComponent
     implements OnInit, DotFormModel<DotCommentAndAssignData, DotCommentAndAssignValue>

@@ -49,6 +49,8 @@ export class SiteSelectorComponent {
     @Input()
     live: boolean;
     @Input()
+    width: string;
+    @Input()
     system: boolean;
     @Input()
     asField: boolean;
@@ -64,8 +66,8 @@ describe('SiteSelectorFieldComponent', () => {
         siteServiceMock.setFakeCurrentSite();
 
         DOTTestBed.configureTestingModule({
-            declarations: [FakeFormComponent, SiteSelectorComponent, DotSiteSelectorFieldComponent],
-            imports: [],
+            declarations: [FakeFormComponent, SiteSelectorComponent],
+            imports: [DotSiteSelectorFieldComponent],
             providers: [{ provide: SiteService, useValue: siteServiceMock }]
         });
     }));
