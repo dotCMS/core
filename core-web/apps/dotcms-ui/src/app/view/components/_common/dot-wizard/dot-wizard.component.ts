@@ -1,10 +1,11 @@
+import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
-    ComponentFactoryResolver,
     ComponentRef,
     DestroyRef,
     inject,
+    Injector,
     QueryList,
     signal,
     Type,
@@ -12,6 +13,9 @@ import {
     ViewChildren
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+import { ButtonModule } from 'primeng/button';
+import { Dialog, DialogModule } from 'primeng/dialog';
 
 import { filter, tap, delay } from 'rxjs/operators';
 
@@ -23,7 +27,6 @@ import {
     DotWizardInput,
     DotWizardStep
 } from '@dotcms/dotcms-models';
-import { DotDialogComponent } from '@dotcms/ui';
 
 import { DotFormModel } from '../../../../shared/models/dot-form/dot-form.model';
 import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
@@ -34,7 +37,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
-    standalone: false
+    imports: [CommonModule, DialogModule, ButtonModule, DotContainerReferenceDirective]
 })
 export class DotWizardComponent implements AfterViewInit {
     #wizardData: { [key: string]: string };
@@ -46,7 +49,7 @@ export class DotWizardComponent implements AfterViewInit {
         pushPublish: DotPushPublishFormComponent
     };
 
-    readonly #componentFactoryResolver = inject(ComponentFactoryResolver);
+    readonly #injector = inject(Injector);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotWizardService = inject(DotWizardService);
     readonly #destroyRef = inject(DestroyRef);
@@ -59,7 +62,7 @@ export class DotWizardComponent implements AfterViewInit {
 
     @ViewChildren(DotContainerReferenceDirective)
     formHosts: QueryList<DotContainerReferenceDirective>;
-    @ViewChild('dialog', { static: true }) dialog: DotDialogComponent;
+    @ViewChild('dialog', { static: true }) dialog: Dialog;
 
     constructor() {
         this.#dotWizardService.showDialog$
@@ -133,14 +136,12 @@ export class DotWizardComponent implements AfterViewInit {
         this.#stepsValidation = [];
         this.$data().steps.forEach((step: DotWizardStep, index: number) => {
             const componentClass = this.getWizardComponent(step.component);
-            const componentInstance =
-                this.#componentFactoryResolver.resolveComponentFactory(componentClass);
             const viewContainerRef = this.#componentsHost[index].viewContainerRef;
             viewContainerRef.clear();
             const componentRef: ComponentRef<DotFormModel<unknown, unknown>> =
-                viewContainerRef.createComponent(componentInstance) as ComponentRef<
-                    DotFormModel<unknown, unknown>
-                >;
+                viewContainerRef.createComponent(componentClass, {
+                    injector: this.#injector
+                }) as ComponentRef<DotFormModel<unknown, unknown>>;
             componentRef.instance.data = step.data;
             componentRef.instance.value
                 .pipe(takeUntilDestroyed(this.#destroyRef))

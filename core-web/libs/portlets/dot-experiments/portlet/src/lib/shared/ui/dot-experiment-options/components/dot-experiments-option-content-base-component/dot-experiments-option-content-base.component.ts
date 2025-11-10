@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, Component, inject, OnDestroy } from '@angular/
 import { FormArray, FormGroup, FormGroupDirective } from '@angular/forms';
 
 @Component({
-    standalone: true,
     template: '',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

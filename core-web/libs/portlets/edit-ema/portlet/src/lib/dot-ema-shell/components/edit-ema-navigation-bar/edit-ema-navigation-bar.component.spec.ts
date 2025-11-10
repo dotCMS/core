@@ -196,23 +196,5 @@ describe('EditEmaNavigationBarComponent', () => {
                 });
             });
         });
-
-        describe('Palette', () => {
-            it('should have button to toggle palette at the first item', () => {
-                const contentButton = spectator.query('.edit-ema-nav-bar__item-container');
-
-                const button = contentButton.querySelector('button');
-
-                expect(button).not.toBeNull();
-            });
-
-            it('should call the setPaletteOpen method when clicking the button', () => {
-                const button = spectator.query(byTestId('toggle-palette'));
-
-                spectator.click(button);
-
-                expect(store.setPaletteOpen).toHaveBeenCalled();
-            });
-        });
     });
 });

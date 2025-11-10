@@ -16,7 +16,6 @@ import {
     DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
@@ -57,7 +56,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotTemplateThumbnailFieldComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotTempFileUploadService,
@@ -82,7 +81,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                     useValue: messageServiceMock
                 }
             ],
-            imports: [FormsModule, ReactiveFormsModule, DotMessagePipe],
+            imports: [FormsModule, ReactiveFormsModule, DotTemplateThumbnailFieldComponent],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
     });
