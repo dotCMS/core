@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     doc_encoding LowCardinality(String),
     local_tz_offset Int64,
     eventn_ctx_event_id String CODEC(ZSTD(3)),
-    user_agent LowCardinality(String),
+    user_agent String,
     parsed_ua_device_brand LowCardinality(String) CODEC(ZSTD(3)),
     parsed_ua_device_family LowCardinality(String) CODEC(ZSTD(3)),
     parsed_ua_device_model LowCardinality(String),
@@ -34,12 +34,12 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     doc_hash Nullable(String),
     doc_protocol LowCardinality(String) CODEC(ZSTD(3)),
     user_language LowCardinality(String) CODEC(ZSTD(3)),
-    context_site_key LowCardinality(String),
+    context_site_auth String,
     context_user_id String CODEC(ZSTD(3)),
     screen_resolution String,
     viewport_height String,
     viewport_width String,
-    context_site_id LowCardinality(String),
+    context_site_id String,
     api_key LowCardinality(String),
     cluster_id LowCardinality(String),
     customer_id LowCardinality(String),
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     -- ######################################################
     --              Used in conversion event
     -- ######################################################
-    conversion_name LowCardinality(String) CODEC(ZSTD(3))
+    conversion_name String
 ) Engine = MergeTree()
 PARTITION BY (customer_id, toYYYYMM(utc_time))
 ORDER BY (customer_id, context_user_id, utc_time)
@@ -165,12 +165,12 @@ merge_with_ttl_timeout = 3600;       -- merge once per hour
 -- Time and cluster filtering
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_utc_time (utc_time) TYPE minmax GRANULARITY 1;
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_cluster_id (cluster_id) TYPE bloom_filter GRANULARITY 64;
-ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_cluster_id (customer_id) TYPE bloom_filter GRANULARITY 64;
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_customer_id (customer_id) TYPE bloom_filter GRANULARITY 64;
 
 -- Event-type based filtering (funnels)
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_event_type (event_type) TYPE set(100) GRANULARITY 1;
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_conversion (conversion_name) TYPE set(100) GRANULARITY 1;
 
 -- Session/User/Content filtering
-ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_sessionid (sessionid) TYPE bloom_filter GRANULARITY 64;
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_context_user_id (context_user_id) TYPE bloom_filter GRANULARITY 64;
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_content_identifier (content_identifier) TYPE bloom_filter GRANULARITY 64;
