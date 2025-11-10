@@ -5,7 +5,6 @@ import { getUVEState } from '@dotcms/uve';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-unknown',
-    standalone: true,
     template: `
         @if (isEditMode) {
             <div [style]="style" data-testid="unknown-block-type">

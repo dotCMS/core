@@ -19,7 +19,6 @@ import { DotFormatDateService } from '@dotcms/data-access';
  */
 @Pipe({
     name: 'dotTimestampToDate',
-    standalone: true,
     pure: true
 })
 export class DotTimestampToDatePipe implements PipeTransform {

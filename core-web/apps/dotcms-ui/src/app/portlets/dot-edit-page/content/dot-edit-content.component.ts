@@ -1,10 +1,15 @@
 import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, inject, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, map, pluck, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
@@ -45,14 +50,29 @@ import {
     PageModelChangeEventType,
     SeoMetaTags
 } from '@dotcms/dotcms-models';
-import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
+import {
+    DotFavoritePageComponent,
+    DotResultsSeoToolComponent,
+    DotSelectSeoToolComponent
+} from '@dotcms/portlets/dot-ema/ui';
+import { DotIconComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
+import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
+import { DotFormSelectorComponent } from './components/dot-form-selector/dot-form-selector.component';
+import { DotWhatsChangedComponent } from './components/dot-whats-changed/dot-whats-changed.component';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { DotOverlayMaskComponent } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.component';
+import { DotLoadingIndicatorComponent } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
+import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
+import { DotReorderMenuComponent } from '../../../view/components/dot-contentlet-editor/components/dot-reorder-menu/dot-reorder-menu.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotPaletteComponent } from '../components/dot-palette/dot-palette.component';
+import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -68,7 +88,27 @@ export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
     selector: 'dot-edit-content',
     templateUrl: './dot-edit-content.component.html',
     styleUrls: ['./dot-edit-content.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        ButtonModule,
+        DialogModule,
+        CheckboxModule,
+        RouterModule,
+        DotEditContentletComponent,
+        DotWhatsChangedComponent,
+        DotFormSelectorComponent,
+        DotReorderMenuComponent,
+        TooltipModule,
+        DotLoadingIndicatorComponent,
+        DotOverlayMaskComponent,
+        DotPaletteComponent,
+        DotIconComponent,
+        DotEditPageToolbarComponent,
+        DotEditPageToolbarSeoComponent,
+        DotShowHideFeatureDirective,
+        DotResultsSeoToolComponent,
+        DotSelectSeoToolComponent
+    ]
 })
 export class DotEditContentComponent implements OnInit, OnDestroy {
     private dialogService = inject(DialogService);

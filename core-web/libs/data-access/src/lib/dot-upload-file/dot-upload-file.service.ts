@@ -32,7 +32,7 @@ interface PublishContentProps {
  * @export
  * @class DotImageService
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class DotUploadFileService {
     readonly #BASE_URL = '/api/v1/workflow/actions/default';
     readonly #httpClient = inject(HttpClient);

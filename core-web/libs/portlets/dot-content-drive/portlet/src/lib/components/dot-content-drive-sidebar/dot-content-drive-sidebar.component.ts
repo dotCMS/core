@@ -10,6 +10,7 @@ import {
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
 import {
+    ALL_FOLDER,
     DotContentDriveMoveItems,
     DotContentDriveUploadFiles,
     DotTreeFolderComponent
@@ -95,7 +96,7 @@ export class DotContentDriveSidebarComponent {
     protected onNodeCollapse(event: TreeNodeCollapseEvent): void {
         const { node } = event;
 
-        if (node.key === 'ALL_FOLDER') {
+        if (node.key === ALL_FOLDER.key) {
             node.expanded = true;
             return;
         }

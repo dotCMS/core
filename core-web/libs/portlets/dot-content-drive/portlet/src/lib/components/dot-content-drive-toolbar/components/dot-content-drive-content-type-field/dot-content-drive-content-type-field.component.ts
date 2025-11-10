@@ -64,22 +64,29 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         contentTypes: []
     });
 
-    readonly $selectedContentTypes = linkedSignal<DotCMSContentType[]>(() => {
-        const contentTypesParam = this.#store.getFilterValue('contentType') as string[];
+    readonly $selectedContentTypes = linkedSignal<DotCMSContentType[]>(
+        () => {
+            const contentTypesParam = this.#store.getFilterValue('contentType') as string[];
 
-        if (!contentTypesParam) {
-            return [];
+            if (!contentTypesParam) {
+                return [];
+            }
+
+            const contentType = this.$state.contentTypes();
+
+            // Get contentTypes using the contentTypesParam
+            const contentTypes = contentType.filter((item) =>
+                contentTypesParam.includes(item.variable)
+            );
+
+            return contentTypes ?? [];
+        },
+        {
+            // It will only trigger changes when we have content types to check for.
+            equal: (a, b) =>
+                !this.$state.contentTypes().length || (a?.length === b?.length && a === b)
         }
-
-        const contentType = this.$state.contentTypes();
-
-        // Get contentTypes using the contentTypesParam
-        const contentTypes = contentType.filter((item) =>
-            contentTypesParam.includes(item.variable)
-        );
-
-        return contentTypes ?? [];
-    });
+    );
 
     /**
      * Maps the ensured content types to a string
@@ -164,6 +171,11 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      */
     protected onChange() {
         const value = this.$selectedContentTypes();
+
+        // If there is no content types, don't update the store
+        if (!this.$state.contentTypes().length) {
+            return;
+        }
 
         if (value?.length) {
             this.#store.patchFilters({
