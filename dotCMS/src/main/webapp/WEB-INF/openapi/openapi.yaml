@@ -20331,6 +20331,8 @@ components:
         offset:
           type: integer
           format: int32
+        showFolders:
+          type: boolean
         sortBy:
           type: string
     EmbeddingsForm:

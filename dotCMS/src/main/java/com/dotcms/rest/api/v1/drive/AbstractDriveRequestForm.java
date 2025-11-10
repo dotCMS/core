@@ -336,4 +336,9 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("archived")
     @Value.Default
     default boolean archived() { return false; }
+
+
+    @JsonProperty("showFolders")
+    @Value.Default
+    default boolean showFolders(){return true; }
 }

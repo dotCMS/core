@@ -123,7 +123,7 @@ public class BrowserQuery {
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
-        this.maxResults = (builder.overrideMaxResults ? builder().maxResults :  Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST));
+        this.maxResults = (builder.overrideMaxResults ? builder.maxResults :  Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST));
         this.showWorking = builder.showWorking || builder.showArchived;
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
@@ -511,7 +511,7 @@ public class BrowserQuery {
          * @param excludedContentTypes
          * @return
          */
-        public Builder withExcludedContentTypes(@Nonnull Set<String> excludedContentTypes) {
+        public Builder excludedContentTypes(@Nonnull Set<String> excludedContentTypes) {
             this.excludedContentTypes.clear();
             this.excludedContentTypes.addAll(excludedContentTypes);
             this.contentTypes.removeAll(excludedContentTypes);

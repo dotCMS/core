@@ -107,6 +107,7 @@ public class ContentDriveHelper {
         final boolean showArchived = requestForm.archived();
         final boolean showFiles = isShowFile(types);
         final boolean showDotAssets = isShowDotAsset(types);
+        final boolean showFolders = requestForm.showFolders();
         if (null != requestForm.mimeTypes()){
             builder.showMimeTypes(requestForm.mimeTypes());
         }
@@ -118,7 +119,7 @@ public class ContentDriveHelper {
             contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
         )
         //However, these are
-        .withExcludedContentTypes(
+        .excludedContentTypes(
             excludedContentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
         )
         .withBaseTypes(new ArrayList<>(types))
@@ -127,7 +128,7 @@ public class ContentDriveHelper {
         .showImages(showFiles)
         .showArchived(showArchived)
         .showWorking(!live)
-        .showFolders(true)
+        .showFolders(showFolders)
         .showLinks(false)
         .showContent(!baseContentTypes.isEmpty())
         .withLanguageIds(langIds)

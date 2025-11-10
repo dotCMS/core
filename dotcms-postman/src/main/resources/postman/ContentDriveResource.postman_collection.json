@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "1629f074-d53c-4afe-9230-aa43f982f81b",
+		"_postman_id": "7de9c7f1-b8a4-463c-be7b-6a03b6f84919",
 		"name": "Content Drive",
 		"description": "Comprehensive tests for Content Drive search functionality including pagination, sorting, and filtering tests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/612b2311-2446-4663-bedc-0c17e42a1a6f/collection/10041132-1629f074-d53c-4afe-9230-aa43f982f81b?action=share&source=collection_link&creator=10041132"
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/Content-drive~7f0bb2ad-9828-4f6f-bae2-fa93bd3a09eb/collection/10041132-7de9c7f1-b8a4-463c-be7b-6a03b6f84919?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -1315,7 +1315,9 @@
 									"    }",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
@@ -1329,7 +1331,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"Test\"\n    },\n    \"sortBy\": \"title asc\",\n    \"offset\": 0,\n    \"maxResults\": 3\n}",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"Test\"\n    },\n    \"sortBy\": \"title:asc\",\n    \"offset\": 0,\n    \"maxResults\": 3\n}",
 							"options": {
 								"raw": {
 									"language": "json"
