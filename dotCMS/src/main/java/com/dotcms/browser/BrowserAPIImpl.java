@@ -52,17 +52,21 @@ import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
@@ -137,6 +141,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         try {
             final Set<String> collectedInodes = new LinkedHashSet<>();
             if(useElasticSearchForTextFiltering){
+               //If set to "ON" we use ES to filter when text is passed
                collectedInodes.addAll(doElasticSearchTextFiltering(browserQuery, startRow, maxRows, sqlQuery));
             } else {
                 final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
@@ -152,8 +157,8 @@ public class BrowserAPIImpl implements BrowserAPI {
                 inodesMapList.forEach(inode -> collectedInodes.add(inode.get("inode")));
             }
 
-            //Now this should load the good contentlets
-            final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(new ArrayList<>(collectedInodes));
+            //Now this should load the good contentlets using parallel processing
+            final List<Contentlet> contentlets = findContentletsInParallel(collectedInodes);
 
             final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
                     PERMISSION_READ, true, browserQuery.user);
@@ -168,50 +173,378 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
     }
 
+    /**
+     * Enum defining different heuristic strategies for hybrid database/Elasticsearch search
+     */
+    public enum SearchHeuristicType {
+        // Single query chunked - fetches all inodes in one DB query, then processes in ES chunks
+        HYBRID_SINGLE_CHUNKED_QUERY_ES,
+        // Pure ES - uses Elasticsearch exclusively without any database queries */
+        PURE_ES
+    }
+
     private Set<String> doElasticSearchTextFiltering(BrowserQuery browserQuery, int startRow, int maxRows,
             SelectAndCountQueries sqlQuery) throws DotDataException {
+
+        // Get the heuristic strategy from lazy configuration
+        final SearchHeuristicType heuristicType = HEURISTIC_TYPE.get();
+
+        // Track execution time for heuristic performance analysis using modern time APIs
+        final long startTimeNanos = System.nanoTime();
+        try {
+            switch (heuristicType) {
+                case HYBRID_SINGLE_CHUNKED_QUERY_ES:
+                    return doHybridSingleChunkedQueryES(browserQuery, startRow, maxRows, sqlQuery);
+                case PURE_ES:
+                default:
+                    return doPureESQuery(browserQuery, startRow, maxRows);
+            }
+        } finally {
+            final long endTimeNanos = System.nanoTime();
+            final long executionTimeNanos = endTimeNanos - startTimeNanos;
+
+            // Convert to different time units using TimeUnit for better precision and readability
+            final long executionTimeMillis = TimeUnit.NANOSECONDS.toMillis(executionTimeNanos);
+            final long executionTimeMicros = TimeUnit.NANOSECONDS.toMicros(executionTimeNanos);
+            final double executionTimeSeconds = TimeUnit.NANOSECONDS.toSeconds(executionTimeNanos);
+
+            // Log with multiple time units for comprehensive performance analysis
+            if (executionTimeMillis > 1000) {
+                // For longer operations, show seconds with high precision
+                Logger.info(this, String.format("===== Heuristic %s execution completed in %.3f seconds (%d ms) =====",
+                    heuristicType.name(), executionTimeSeconds, executionTimeMillis));
+            } else if (executionTimeMillis > 10) {
+                // For medium operations, show milliseconds and microseconds
+                Logger.info(this, String.format("===== Heuristic %s execution completed in %d ms (%,d μs) =====",
+                    heuristicType.name(), executionTimeMillis, executionTimeMicros));
+            } else {
+                // For very fast operations, show microseconds for precision
+                Logger.info(this, String.format("===== Heuristic %s execution completed in %,d μs (%.2f ms) =====",
+                    heuristicType.name(), executionTimeMicros, executionTimeMillis / 1000.0));
+            }
+        }
+    }
+
+    /**
+     * Single Query Chunked: Fetches all inodes in a single database query without pagination,
+     * then processes them in optimally-sized ES chunks based on total count percentage.
+     */
+    Set<String> doHybridSingleChunkedQueryES(BrowserQuery browserQuery, int startRow, int maxRows,
+            SelectAndCountQueries sqlQuery) throws DotDataException {
         final Set<String> collectedInodes = new LinkedHashSet<>();
-        boolean refetch = false;
-        int startAt = startRow;
-        //This is the minimum number of rows to fetch from ES.
-        final int minCollectedToFeelHappy = MIN_COLLECTED_MATCHES.get();
-        int attempts = 0;
-        do {
-            attempts++;
-            final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
-            sqlQuery.params.forEach(dcSelect::addParam);
 
-            //Set Pagination params only if they make sense, this also allows me to keep the original behavior available
-            dcSelect.setStartRow(startAt).setMaxRows(maxRows);
+        Logger.info(this, "::::: Using Single Query Chunked for text filtering ::::");
 
-            @SuppressWarnings("unchecked")
-            final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
-            Set<String> inodes = inodesMapList.stream().map(data -> data.get("inode"))
-                    .collect(Collectors.toSet());
-            /// the contents retuned from ES are less than the expected fo fit the page size
-            if (!inodes.isEmpty()) {
-                //After having applied the text filters, these are the good inodes we need to return
-                final Set<String> matchingInodes = new HashSet<>(inodesByTextFromES(browserQuery, inodes));
-                collectedInodes.addAll(matchingInodes);
-                if (collectedInodes.size() < minCollectedToFeelHappy) {
-                    refetch = true;
-                    //We didn't get back a lot we still have room for another attempt
-                    startAt += maxRows;
-                } else {
-                   break;
+        // Execute single DB query to get ALL candidate inodes without pagination
+        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+        sqlQuery.params.forEach(dcSelect::addParam);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
+        final List<String> allCandidateInodes = inodesMapList.stream()
+                .map(data -> data.get("inode"))
+                .collect(Collectors.toList());
+
+        if (allCandidateInodes.isEmpty()) {
+            Logger.info(this, "Single Query Chunked: No candidate inodes found");
+            return collectedInodes;
+        }
+
+        final int totalCandidates = allCandidateInodes.size();
+
+        // Calculate the optimal ES chunk size based on total count
+        final int esChunkSize = calculateESChunkSizeFromTotalCount(totalCandidates);
+
+        // Process chunks in parallel for better throughput
+        return parallelChunksInES(browserQuery, allCandidateInodes, totalCandidates, esChunkSize);
+    }
+
+    /**
+     * Processes chunks of candidate inodes in parallel for improved performance.
+     * Each chunk is processed directly through ES without further internal partitioning.
+     *
+     * @param browserQuery The browser query containing search criteria
+     * @param allCandidateInodes All candidate inodes to process
+     * @param totalCandidates Total number of candidates
+     * @param esChunkSize Size of each chunk for ES processing
+     * @return Set of filtered inodes that match the search criteria
+     */
+    private Set<String> parallelChunksInES(BrowserQuery browserQuery, List<String> allCandidateInodes,
+                                               int totalCandidates, int esChunkSize) {
+        final Set<String> collectedInodes = Collections.synchronizedSet(new LinkedHashSet<>());
+        final long startTime = System.currentTimeMillis();
+
+        // Create chunks for parallel processing
+        final List<List<String>> chunks = new ArrayList<>();
+        for (int i = 0; i < totalCandidates; i += esChunkSize) {
+            final int endIndex = Math.min(i + esChunkSize, totalCandidates);
+            chunks.add(allCandidateInodes.subList(i, endIndex));
+        }
+
+        final int actualChunks = chunks.size();
+        Logger.debug(this, String.format("Processing %d chunks in parallel", actualChunks));
+
+        // Process chunks in parallel using CompletableFuture
+        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
+        final CompletableFuture[] futures = new CompletableFuture[actualChunks];
+
+        for (int i = 0; i < actualChunks; i++) {
+            final List<String> chunk = chunks.get(i);
+            final int chunkIndex = i + 1;
+
+            futures[i] = CompletableFuture
+                .supplyAsync(() -> {
+                    final long chunkStartTime = System.currentTimeMillis();
+                    Logger.debug(BrowserAPIImpl.this, String.format("Processing chunk %d/%d: %d inodes",
+                        chunkIndex, actualChunks, chunk.size()));
+
+                    // Process chunk directly without internal partitioning
+                    final Set<String> chunkMatches = processESDirectly(browserQuery, new LinkedHashSet<>(chunk));
+
+                    final long chunkDuration = System.currentTimeMillis() - chunkStartTime;
+                    final double density = chunk.isEmpty() ? 0.0 : (double) chunkMatches.size() / chunk.size();
+                    Logger.debug(BrowserAPIImpl.this, String.format(
+                        "Chunk %d/%d completed: %d candidates → %d matches (%.2f%% density) in %d ms",
+                        chunkIndex, actualChunks, chunk.size(), chunkMatches.size(), density * 100, chunkDuration));
+
+                    return chunkMatches;
+                }, submitter)
+                .orTimeout(60, TimeUnit.SECONDS)
+                .exceptionally(throwable -> {
+                    Logger.error(BrowserAPIImpl.this, String.format("Chunk %d failed: %s", chunkIndex, throwable.getMessage()), throwable);
+                    return new LinkedHashSet<>();
+                });
+        }
+
+        // Wait for all chunks to complete and collect results
+        try {
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
+            allFutures.get(120, TimeUnit.SECONDS); // Global timeout
+            for (CompletableFuture<Set<String>> future : futures) {
+                try {
+                    Set<String> chunkMatches = future.get();
+                    collectedInodes.addAll(chunkMatches);
+                } catch (Exception e) {
+                    Logger.warn(this, "Failed to get result from chunk future: " + e.getMessage());
+                    Thread.currentThread().interrupt();
                 }
             }
-        } while (refetch && attempts < MAX_DB_ATTEMPT.get());
+
+            final long totalDuration = System.currentTimeMillis() - startTime;
+            Logger.info(this, String.format(
+                "Single Query Chunked parallel processing completed: %d candidates in %d chunks → %d total matches in %d ms",
+                totalCandidates, actualChunks, collectedInodes.size(), totalDuration));
+
+        } catch (InterruptedException e) {
+            Logger.error(this, "Parallel chunk processing interrupted: " + e.getMessage(), e);
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            Logger.error(this, "Parallel chunk processing execution error: " + e.getMessage(), e);
+        } catch (TimeoutException e) {
+            Logger.error(this, "Parallel chunk processing timed out: " + e.getMessage(), e);
+        }
+
         return collectedInodes;
     }
 
-    //We'll stop digging when we feel happy with the number of items we have collected to show
-    final Lazy<Integer> MIN_COLLECTED_MATCHES = Lazy.of(
-            () -> Config.getIntProperty("BROWSE_API_MIN_COLLECTED_MATCHES", 30));
 
-    //We'll stop trying to fetch from the DB if we don't get back enough results
-    final Lazy<Integer> MAX_DB_ATTEMPT = Lazy.of(
-            () -> Config.getIntProperty("BROWSE_API_MAX_DB_ATTEMPT", 100));
+    /**
+     * Pure ES: Uses Elasticsearch exclusively without any database queries.
+     * Constructs a comprehensive ES query from browserQuery and uses the appropriate search API
+     * to return contentlets directly, bypassing all database operations.
+     */
+    private Set<String> doPureESQuery(BrowserQuery browserQuery, int startRow, int maxRows) throws DotDataException {
+        final Set<String> collectedInodes = new LinkedHashSet<>();
+
+        Logger.info(this, "::::: Using Pure ES for text filtering (no database queries) ::::");
+
+        try {
+            // Build comprehensive ES query without inode restrictions
+            final String esQuery = buildPureESQuery(browserQuery);
+
+            Logger.info(this, String.format("::: Pure ES query: %s", esQuery));
+
+            // Use ContentletAPI to search directly in ES
+            final com.dotmarketing.portlets.contentlet.business.ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+            // Execute the search using ContentletAPI with proper parameters
+            final List<Contentlet> contentlets = contentletAPI.search(
+                esQuery,
+                browserQuery.maxResults > 0 ? browserQuery.maxResults : maxRows,
+                browserQuery.offset >= 0 ? browserQuery.offset : startRow,
+                browserQuery.sortBy,
+                browserQuery.user,
+                false // respectFrontendRoles - use false for backend searches
+            );
+
+            // Extract inodes from the results
+            contentlets.forEach(contentlet -> collectedInodes.add(contentlet.getInode()));
+
+            Logger.info(this, String.format("Pure ES completed: found %d contentlets, collected %d inodes",
+                contentlets.size(), collectedInodes.size()));
+
+        } catch (final Exception e) {
+            Logger.error(this, "Error in Pure ES search: " + e.getMessage(), e);
+            throw new DotDataException("Pure ES search failed: " + e.getMessage(), e);
+        }
+
+        return collectedInodes;
+    }
+
+    /**
+     * Builds a comprehensive Elasticsearch query for Pure ES search without inode filtering.
+     * Constructs all necessary filters including system filters, content type filters,
+     * host/folder filters, language filters, and text search filters.
+     *
+     * @param browserQuery The browser query parameters
+     * @return Complete Elasticsearch query string ready for direct ES execution
+     */
+    private String buildPureESQuery(final BrowserQuery browserQuery) {
+        final StringBuilder query = new StringBuilder();
+
+        // Essential system filters (always required)
+        query.append("+systemType:false ");
+        query.append("-contentType:forms ");
+        query.append("-contentType:Host ");
+        query.append("+deleted:false ");
+
+        // Working/live content filter
+        if (browserQuery.showWorking) {
+            query.append("+working:true ");
+        } else {
+            query.append("+live:true ");
+        }
+
+        // Variant filter (always default unless specified)
+        query.append("+variant:default ");
+
+        // Host/folder filter - always include system host option
+        String hostId = browserQuery.folder.isSystemFolder()
+            ? browserQuery.site.getIdentifier()
+            : browserQuery.folder.getHostId();
+
+        if (browserQuery.forceSystemHost || browserQuery.folder.isSystemFolder()) {
+            query.append("+(conhost:").append(hostId).append(" OR conhost:SYSTEM_HOST) ");
+        } else {
+            query.append("+conhost:").append(hostId).append(" ");
+        }
+
+        // Content type filters - include specific types if provided
+        if (UtilMethods.isSet(browserQuery.contentTypeIds) && !browserQuery.contentTypeIds.isEmpty()) {
+            query.append("+contentType:(")
+                 .append(String.join(" OR ", browserQuery.contentTypeIds))
+                 .append(") ");
+        }
+
+        // Excluded content types
+        if (UtilMethods.isSet(browserQuery.excludedContentTypeIds) && !browserQuery.excludedContentTypeIds.isEmpty()) {
+            for (String excludedType : browserQuery.excludedContentTypeIds) {
+                query.append("-contentType:").append(excludedType).append(" ");
+            }
+        }
+
+        // Language filter
+        if (UtilMethods.isSet(browserQuery.languageIds) && !browserQuery.languageIds.isEmpty()) {
+            query.append("+languageId:(")
+                 .append(browserQuery.languageIds.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(" OR ")))
+                 .append(") ");
+        }
+
+        // Text search filter (the main search criteria)
+        if (UtilMethods.isSet(browserQuery.filter)) {
+            query.append("+(title:'*").append(browserQuery.filter)
+                 .append("*'^5 OR catchall:*").append(browserQuery.filter)
+                 .append("*^3 OR fileName:*").append(browserQuery.filter)
+                 .append("*^2) ");
+        }
+
+        // Base type filters
+        if (UtilMethods.isSet(browserQuery.baseTypes) && !browserQuery.baseTypes.isEmpty()) {
+            boolean hasFileAsset = browserQuery.baseTypes.contains(BaseContentType.FILEASSET);
+            boolean hasContent = browserQuery.baseTypes.contains(BaseContentType.CONTENT);
+            boolean hasDotAsset = browserQuery.baseTypes.contains(BaseContentType.DOTASSET);
+
+            if (hasFileAsset || hasContent || hasDotAsset) {
+                query.append("+baseType:(");
+                List<String> baseTypeStrings = new ArrayList<>();
+                if (hasContent) baseTypeStrings.add("" + BaseContentType.CONTENT.getType());
+                if (hasFileAsset) baseTypeStrings.add("" + BaseContentType.FILEASSET.getType());
+                if (hasDotAsset) baseTypeStrings.add("" + BaseContentType.DOTASSET.getType());
+                query.append(String.join(" OR ", baseTypeStrings));
+                query.append(") ");
+            }
+        }
+
+        // MIME type filter for file assets
+        if (UtilMethods.isSet(browserQuery.mimeTypes) && !browserQuery.mimeTypes.isEmpty()) {
+            query.append("+mimeType:(")
+                 .append(String.join(" OR ", browserQuery.mimeTypes))
+                 .append(") ");
+        }
+
+        String finalQuery = query.toString().trim();
+        Logger.debug(this, String.format("Pure ES query built: %s", finalQuery));
+        return finalQuery;
+    }
+
+    // Lazy initialization for heuristic type configuration
+    private final Lazy<SearchHeuristicType> HEURISTIC_TYPE = Lazy.of(() -> {
+        final String heuristicConfigValue = Config.getStringProperty("BROWSE_API_HEURISTIC_TYPE", "SINGLE_QUERY_CHUNKED");
+        try {
+            return SearchHeuristicType.valueOf(heuristicConfigValue.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            Logger.warn(this.getClass(), "Invalid heuristic type: " + heuristicConfigValue + ", falling back to SINGLE_QUERY_CHUNKED");
+            return SearchHeuristicType.HYBRID_SINGLE_CHUNKED_QUERY_ES;
+        }
+    });
+
+    // ===========================================
+    // CONFIGURATION PROPERTIES FOR ES CHUNK SIZING
+    // ===========================================
+
+    //Configuration for ES chunk percentage calculation
+    final Lazy<Double> SINGLE_QUERY_ES_CHUNK_PERCENTAGE = Lazy.of(
+            () -> {
+                final String value = Config.getStringProperty("BROWSE_API_SINGLE_QUERY_ES_CHUNK_PERCENTAGE", "30.0");
+                try {
+                    return Double.parseDouble(value);
+                } catch (NumberFormatException e) {
+                    Logger.warn(this.getClass(), "Invalid ES chunk percentage value: " + value + ", using default 30.0");
+                    return 30.0;
+                }
+            });
+
+    //Minimum ES chunk size to ensure reasonable performance
+    final Lazy<Integer> SINGLE_QUERY_ES_CHUNK_MIN_SIZE = Lazy.of(
+            () -> Config.getIntProperty("BROWSE_API_SINGLE_QUERY_ES_CHUNK_MIN_SIZE", 100));
+
+    /**
+     * Calculates optimal ES chunk size based on percentage of total count for processing inodes.
+     * The chunk size is calculated as a percentage of the total count, with minimum and maximum limits
+     * to ensure reasonable ES performance and memory usage.
+     *
+     * @param totalCount Total number of inodes to process
+     * @return Calculated ES chunk size within configured bounds
+     */
+    private int calculateESChunkSizeFromTotalCount(int totalCount) {
+        if (totalCount <= 0) {
+            return SINGLE_QUERY_ES_CHUNK_MIN_SIZE.get();
+        }
+
+        // Calculate chunk size as percentage of total count
+        final double percentage = SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get() / 100.0;
+        int calculatedSize = (int) Math.ceil(totalCount * percentage);
+
+        // Calculate estimated number of ES chunks
+        final int estimatedChunks = (int) Math.ceil((double) totalCount / calculatedSize);
+
+        Logger.debug(this, String.format("ES chunk size calculation: total=%d, percentage=%.1f%%, calculated=%d, final=%d, estimated ES chunks=%d",
+            totalCount, SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get(), (int) Math.ceil(totalCount * percentage), calculatedSize, estimatedChunks));
+
+        return calculatedSize;
+    }
 
     /**
      * Represents content items under a specific parent along with the total count.
@@ -229,16 +562,443 @@ public class BrowserAPIImpl implements BrowserAPI {
 
 
     /**
-     * Filters the provided set of inodes by performing text-based searches in Elasticsearch.
-     * This method partitions the inodes and executes parallel searches to improve performance.
+     * Processes inodes directly through Elasticsearch with ES clause limit awareness.
+     * This method is designed to be called from external chunking loops and handles
+     * the ES boolean clause limit (1024) by subdividing large inode sets when necessary.
      *
      * @param browserQuery The {@link BrowserQuery} containing search criteria (filter, fileName)
      * @param inodes       The set of inodes to filter through Elasticsearch text search
      * @return A filtered set of inodes that match the text search criteria
      */
-    private Set<String> inodesByTextFromES(BrowserQuery browserQuery, Set<String> inodes) {
-        final Set<String> collectedInodes = new HashSet<>();
-        //Collect the results returned by the futures and extract the matching inodes
+    Set<String> processESDirectly(BrowserQuery browserQuery, Set<String> inodes) {
+        if (inodes == null || inodes.isEmpty()) {
+            return new LinkedHashSet<>();
+        }
+
+        final int totalInodes = inodes.size();
+        final long startTime = System.currentTimeMillis();
+
+        // Calculate the maximum inodes we can handle in a single ES query
+        // considering the ES boolean clause limit and other query conditions
+        final int maxInodesPerESQuery = calculateMaxInodesPerESQuery(browserQuery);
+
+        Logger.debug(this, String.format("Direct ES processing: %d inodes, max per query: %d",
+            totalInodes, maxInodesPerESQuery));
+
+        // If we're under the limit, process directly
+        if (totalInodes <= maxInodesPerESQuery) {
+            return processSingleESQuery(browserQuery, inodes, startTime);
+        } else {
+            // Split into multiple ES queries to respect the clause limit
+            return processMultipleESQueries(browserQuery, inodes, maxInodesPerESQuery, startTime);
+        }
+    }
+
+    /**
+     * Calculates the maximum number of inodes we can include in a single ES query
+     * while staying under the boolean clause limit (1024).
+     */
+    private int calculateMaxInodesPerESQuery(BrowserQuery browserQuery) {
+        // ES has a limit of 1024 boolean clauses per query
+        final int ES_MAX_BOOLEAN_CLAUSES = 1024;
+
+        // Build base query to count how many clauses it uses
+        final String baseQuery = buildBaseESQuery(browserQuery);
+
+        // Count approximate clauses in base query (conservative estimate)
+        int baseQueryClauses = countApproximateClausesInQuery(baseQuery);
+
+        // Reserve some clauses for the base query (minimum 50, or actual count + buffer)
+        int reservedClauses = Math.max(50, baseQueryClauses + 20);
+
+        // Each inode adds one OR clause, so max inodes = remaining clauses
+        int maxInodes = ES_MAX_BOOLEAN_CLAUSES - reservedClauses;
+
+        // Safety margin - use 90% of the calculated limit
+        maxInodes = (int) (maxInodes * 0.9);
+
+        // Ensure we have at least 100 inodes minimum for efficiency
+        maxInodes = Math.max(100, maxInodes);
+
+        Logger.debug(this, String.format("ES clause calculation: base clauses≈%d, reserved=%d, max inodes=%d",
+            baseQueryClauses, reservedClauses, maxInodes));
+
+        return maxInodes;
+    }
+
+    /**
+     * Counts approximate number of boolean clauses in a query string.
+     * This is a heuristic estimation for safety.
+     */
+    private int countApproximateClausesInQuery(String query) {
+        if (query == null || query.isEmpty()) {
+            return 0;
+        }
+
+        // Count OR and AND operators as indicators of clauses
+        int orCount = (query.split(" OR ", -1).length - 1);
+        int andCount = (query.split(" AND ", -1).length - 1);
+        int plusCount = (query.split("\\+", -1).length - 1);
+        int minusCount = (query.split("\\-", -1).length - 1);
+
+        // Each field:value pair is approximately one clause
+        int colonCount = (query.split(":", -1).length - 1);
+
+        // Conservative estimate: use the highest count as base
+        int estimatedClauses = Math.max(orCount, Math.max(andCount, Math.max(plusCount, colonCount)));
+
+        // If no clear operators, estimate based on length (very conservative)
+        if (estimatedClauses == 0) {
+            estimatedClauses = Math.max(1, query.length() / 50); // ~1 clause per 50 chars
+        }
+
+        return estimatedClauses;
+    }
+
+    /**
+     * Processes a single ES query when inode count is under the limit.
+     */
+    private Set<String> processSingleESQuery(BrowserQuery browserQuery, Set<String> inodes, long startTime) {
+        final boolean live = !browserQuery.showWorking;
+        final ESSeachAPI esSearchAPI = APILocator.getEsSearchAPI();
+        final List<String> collectedInodes = new ArrayList<>();
+
+        try {
+            final String baseQuery = buildBaseESQuery(browserQuery);
+            final List<String> inodesList = new ArrayList<>(inodes);
+            final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", inodesList));
+            final String luceneQuery = inodeFilter + baseQuery;
+            final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
+
+            Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
+
+            esSearchAPI.esSearch(esQuery, live, browserQuery.user, false).forEach(result -> {
+                final Contentlet contentlet = (Contentlet) result;
+                collectedInodes.add(contentlet.getInode());
+            });
+
+            final long duration = System.currentTimeMillis() - startTime;
+            Logger.debug(this, String.format("Single ES query completed: %d inodes → %d matches in %d ms",
+                inodes.size(), collectedInodes.size(), duration));
+
+        } catch (Exception e) {
+            Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), e.getMessage()), e);
+        }
+
+        return new LinkedHashSet<>(collectedInodes);
+    }
+
+    /**
+     * Processes multiple ES queries when inode count exceeds the limit.
+     * Uses parallel processing for better performance.
+     */
+    private Set<String> processMultipleESQueries(BrowserQuery browserQuery, Set<String> inodes,
+                                                 int maxInodesPerQuery, long startTime) {
+        final Set<String> allResults = Collections.synchronizedSet(new LinkedHashSet<>());
+        final List<String> inodesList = new ArrayList<>(inodes);
+        final int totalInodes = inodesList.size();
+
+        // Create sub-batches that respect the ES clause limit
+        final List<List<String>> subBatches = new ArrayList<>();
+        for (int i = 0; i < totalInodes; i += maxInodesPerQuery) {
+            final int endIndex = Math.min(i + maxInodesPerQuery, totalInodes);
+            subBatches.add(inodesList.subList(i, endIndex));
+        }
+
+        final int batchCount = subBatches.size();
+        Logger.info(this, String.format("ES clause limit handling: splitting %d inodes into %d sub-queries (max %d inodes per query)",
+            totalInodes, batchCount, maxInodesPerQuery));
+
+        // Process sub-batches in parallel
+        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
+        final CompletableFuture<Set<String>>[] futures = new CompletableFuture[batchCount];
+
+        for (int i = 0; i < batchCount; i++) {
+            final List<String> batch = subBatches.get(i);
+            final int batchIndex = i + 1;
+
+            futures[i] = CompletableFuture
+                .supplyAsync(() -> {
+                    Logger.debug(BrowserAPIImpl.this, String.format("Processing ES sub-query %d/%d: %d inodes",
+                        batchIndex, batchCount, batch.size()));
+                    return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                }, submitter)
+                .orTimeout(60, TimeUnit.SECONDS)
+                .exceptionally(throwable -> {
+                    Logger.error(BrowserAPIImpl.this, String.format("ES sub-query %d failed: %s",
+                        batchIndex, throwable.getMessage()), throwable);
+                    return new LinkedHashSet<>();
+                });
+        }
+
+        // Collect results from all sub-queries
+        try {
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
+            allFutures.get(120, TimeUnit.SECONDS);
+
+            for (CompletableFuture<Set<String>> future : futures) {
+                try {
+                    Set<String> batchResults = future.get();
+                    allResults.addAll(batchResults);
+                } catch (Exception e) {
+                    Logger.warn(this, "Failed to get result from ES sub-query future: " + e.getMessage());
+                }
+            }
+
+            final long totalDuration = System.currentTimeMillis() - startTime;
+            Logger.info(this, String.format("Multiple ES queries completed: %d inodes in %d sub-queries → %d matches in %d ms",
+                totalInodes, batchCount, allResults.size(), totalDuration));
+
+        } catch (InterruptedException e) {
+            Logger.error(this, "Multiple ES queries interrupted: " + e.getMessage(), e);
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            Logger.error(this, "Multiple ES queries execution error: " + e.getMessage(), e);
+        } catch (TimeoutException e) {
+            Logger.error(this, "Multiple ES queries timed out: " + e.getMessage(), e);
+        }
+
+        return allResults;
+    }
+
+    /**
+     * Loads contentlets in parallel using the same 30% heuristic for chunking.
+     * This reduces database load by processing multiple smaller requests concurrently
+     * instead of one large request that could cause timeouts or memory issues.
+     *
+     * @param inodes Set of inode strings to load contentlets for
+     * @return List of loaded contentlets
+     */
+    private List<Contentlet> findContentletsInParallel(Set<String> inodes) {
+        if (inodes == null || inodes.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        final int totalInodes = inodes.size();
+        final long startTime = System.currentTimeMillis();
+
+        // Use the same 30% heuristic for contentlet loading chunks
+        final int chunkSize = calculateContentletChunkSize(totalInodes);
+
+        Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes, chunk size: %d",
+            totalInodes, chunkSize));
+
+        // If small enough, process directly
+        if (totalInodes <= chunkSize) {
+            return loadContentletsSingle(new ArrayList<>(inodes), startTime);
+        } else {
+            return loadContentletsParallel(inodes, chunkSize, startTime);
+        }
+    }
+
+    /**
+     * Calculates optimal chunk size for contentlet loading using 30% heuristic.
+     * Similar to ES chunk calculation but optimized for database operations.
+     */
+    private int calculateContentletChunkSize(int totalInodes) {
+        // Use the same percentage logic as ES chunks
+        final double percentage = SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get() / 100.0;
+        int calculatedSize = (int) Math.ceil(totalInodes * percentage);
+
+        // Apply bounds - smaller max than ES since DB operations are typically more expensive
+        final int minSize = 50;   // Minimum chunk size for efficiency
+        final int maxSize = 1000; // Maximum to avoid memory/timeout issues
+
+        calculatedSize = Math.max(calculatedSize, minSize);
+        calculatedSize = Math.min(calculatedSize, maxSize);
+
+        Logger.debug(this, String.format("Contentlet chunk calculation: %d inodes → %d per chunk (%.1f%% of total)",
+            totalInodes, calculatedSize, percentage * 100));
+
+        return calculatedSize;
+    }
+
+    /**
+     * Loads contentlets in a single request (for small sets).
+     */
+    private List<Contentlet> loadContentletsSingle(List<String> inodes, long startTime) {
+        try {
+            final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(inodes);
+            final long duration = System.currentTimeMillis() - startTime;
+            Logger.debug(this, String.format("Single contentlet load: %d inodes → %d contentlets in %d ms",
+                inodes.size(), contentlets.size(), duration));
+            return contentlets;
+        } catch (Exception e) {
+            Logger.error(this, String.format("Failed to load %d contentlets: %s", inodes.size(), e.getMessage()), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Loads contentlets in parallel chunks for better performance and reliability.
+     */
+    private List<Contentlet> loadContentletsParallel(Set<String> inodes, int chunkSize, long startTime) {
+        final List<String> inodesList = new ArrayList<>(inodes);
+        final int totalInodes = inodesList.size();
+
+        // Create chunks for parallel processing
+        final List<List<String>> chunks = new ArrayList<>();
+        for (int i = 0; i < totalInodes; i += chunkSize) {
+            final int endIndex = Math.min(i + chunkSize, totalInodes);
+            chunks.add(inodesList.subList(i, endIndex));
+        }
+
+        final int chunkCount = chunks.size();
+        Logger.info(this, String.format("Loading contentlets in parallel: %d inodes in %d chunks (chunk size: %d)",
+            totalInodes, chunkCount, chunkSize));
+
+        // Process chunks in parallel using CompletableFuture
+        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
+        final CompletableFuture<List<Contentlet>>[] futures = new CompletableFuture[chunkCount];
+
+        for (int i = 0; i < chunkCount; i++) {
+            final List<String> chunk = chunks.get(i);
+            final int chunkIndex = i + 1;
+
+            futures[i] = CompletableFuture
+                .supplyAsync(() -> {
+                    final long chunkStartTime = System.currentTimeMillis();
+                    Logger.debug(BrowserAPIImpl.this, String.format("Loading contentlet chunk %d/%d: %d inodes",
+                        chunkIndex, chunkCount, chunk.size()));
+
+                    try {
+                        final List<Contentlet> chunkContentlets = APILocator.getContentletAPI().findContentlets(chunk);
+                        final long chunkDuration = System.currentTimeMillis() - chunkStartTime;
+                        Logger.debug(BrowserAPIImpl.this, String.format(
+                            "Contentlet chunk %d/%d completed: %d inodes → %d contentlets in %d ms",
+                            chunkIndex, chunkCount, chunk.size(), chunkContentlets.size(), chunkDuration));
+                        return chunkContentlets;
+                    } catch (Exception e) {
+                        Logger.error(BrowserAPIImpl.this, String.format("Contentlet chunk %d failed: %s",
+                            chunkIndex, e.getMessage()), e);
+                        return new ArrayList<Contentlet>();
+                    }
+                }, submitter)
+                .orTimeout(90, TimeUnit.SECONDS) // Longer timeout for DB operations
+                .exceptionally(throwable -> {
+                    Logger.error(BrowserAPIImpl.this, String.format("Contentlet chunk %d timed out or failed: %s",
+                        chunkIndex, throwable.getMessage()), throwable);
+                    return new ArrayList<>();
+                });
+        }
+
+        // Collect results from all chunks
+        final List<Contentlet> allContentlets = new ArrayList<>();
+        try {
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
+            allFutures.get(180, TimeUnit.SECONDS); // Global timeout for all chunks
+
+            for (CompletableFuture<List<Contentlet>> future : futures) {
+                try {
+                    List<Contentlet> chunkContentlets = future.get();
+                    allContentlets.addAll(chunkContentlets);
+                } catch (Exception e) {
+                    Logger.warn(this, "Failed to get result from contentlet chunk future: " + e.getMessage());
+                }
+            }
+
+            final long totalDuration = System.currentTimeMillis() - startTime;
+            Logger.info(this, String.format(
+                "Parallel contentlet loading completed: %d inodes in %d chunks → %d contentlets in %d ms",
+                totalInodes, chunkCount, allContentlets.size(), totalDuration));
+
+        } catch (InterruptedException e) {
+            Logger.error(this, "Parallel contentlet loading interrupted: " + e.getMessage(), e);
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            Logger.error(this, "Parallel contentlet loading execution error: " + e.getMessage(), e);
+        } catch (TimeoutException e) {
+            Logger.error(this, "Parallel contentlet loading timed out: " + e.getMessage(), e);
+        }
+
+        return allContentlets;
+    }
+
+    /**
+     * Optimized ES processing using improved parallelism and CompletableFuture.
+     * Features:
+     * - Dynamic partition sizing based on total inodes
+     * - Non-blocking result collection with CompletableFuture.allOf()
+     * - Stream processing for better memory efficiency
+     * - Timeout handling for robustness
+     */
+    private Set<String> getOptimizedESResults(BrowserQuery browserQuery, Set<String> inodes) {
+        final int totalInodes = inodes.size();
+        final int optimalPartitionSize = calculateOptimalPartitionSize(totalInodes);
+        final long startTime = System.currentTimeMillis();
+
+        // Build base query once
+        final String baseQuery = buildBaseESQuery(browserQuery);
+
+        // Create optimized partitions
+        final List<List<String>> partitions = Lists.partition(new ArrayList<>(inodes), optimalPartitionSize);
+        final int partitionCount = partitions.size();
+
+        Logger.debug(this, String.format("ES processing: %d inodes, %d partitions of size %d",
+            totalInodes, partitionCount, optimalPartitionSize));
+
+        // Create CompletableFutures for parallel execution
+        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
+        final CompletableFuture<List<String>>[] futures = new CompletableFuture[partitionCount];
+
+        for (int i = 0; i < partitionCount; i++) {
+            final List<String> partition = partitions.get(i);
+            final int partitionIndex = i;
+
+            futures[i] = CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        return performOptimizedSearchES(baseQuery, partition, browserQuery, partitionIndex);
+                    } catch (Exception e) {
+                        Logger.warn(BrowserAPIImpl.class, String.format("Partition %d failed: %s", partitionIndex, e.getMessage()));
+                        return new ArrayList<String>();
+                    }
+                }, submitter)
+                .orTimeout(30, TimeUnit.SECONDS) // Prevent hanging threads
+                .exceptionally(throwable -> {
+                    Logger.error(BrowserAPIImpl.class, String.format("Partition %d timed out or failed: %s", partitionIndex, throwable.getMessage()));
+                    return new ArrayList<String>();
+                });
+        }
+
+        // Wait for all futures to complete and collect results efficiently
+        try {
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
+            allFutures.get(60, TimeUnit.SECONDS); // Global timeout
+
+            final Set<String> collectedInodes = Arrays.stream(futures)
+                .parallel()
+                .map(future -> {
+                    try {
+                        return future.getNow(new ArrayList<String>());
+                    } catch (Exception e) {
+                        Logger.debug(BrowserAPIImpl.class, "Future completion error: " + e.getMessage());
+                        return new ArrayList<String>();
+                    }
+                })
+                .flatMap(List::stream)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            final long elapsedTime = System.currentTimeMillis() - startTime;
+            Logger.info(this, String.format("ES processing completed: %d inodes → %d matches in %dms using %d partitions",
+                totalInodes, collectedInodes.size(), elapsedTime, partitionCount));
+
+            return collectedInodes;
+
+        } catch (TimeoutException e) {
+            Logger.error(this, "ES processing timeout after 60 seconds", e);
+            throw new DotRuntimeException("ES processing timeout", e);
+        } catch (Exception e) {
+            Logger.error(this, "ES processing failed: " + e.getMessage(), e);
+            throw new DotRuntimeException("ES processing failed", e);
+        }
+    }
+
+    /**
+     * Fallback to original ES processing method for safety.
+     */
+    private Set<String> getOriginalESResults(BrowserQuery browserQuery, Set<String> inodes) {
+        final Set<String> collectedInodes = new LinkedHashSet<>();
         getFutures(browserQuery, inodes).forEach(future -> {
             try {
                 collectedInodes.addAll(future.get());
@@ -247,6 +1007,80 @@ public class BrowserAPIImpl implements BrowserAPI {
                 Thread.currentThread().interrupt();
             }
         });
+        return collectedInodes;
+    }
+
+    /**
+     * Calculates optimal partition size for ES processing based on total inodes.
+     * Uses dynamic sizing: more inodes = larger partitions, but within reasonable bounds.
+     *
+     * @param totalInodes Total number of inodes to partition
+     * @return Optimal partition size for parallel ES processing
+     */
+    private int calculateOptimalPartitionSize(int totalInodes) {
+        // Configuration for partition sizing
+        final int minPartitionSize = Config.getIntProperty("BROWSE_API_ES_PARTITION_MIN_SIZE", 50);
+        final int maxPartitionSize = Config.getIntProperty("BROWSE_API_ES_PARTITION_MAX_SIZE", 500);
+        final int targetPartitions = Config.getIntProperty("BROWSE_API_ES_TARGET_PARTITIONS", 8);
+
+        if (totalInodes <= minPartitionSize) {
+            return totalInodes; // Single partition for small sets
+        }
+
+        // Calculate partition size to achieve target number of partitions
+        int calculatedSize = totalInodes / targetPartitions;
+
+        // Apply bounds
+        calculatedSize = Math.max(calculatedSize, minPartitionSize);
+        calculatedSize = Math.min(calculatedSize, maxPartitionSize);
+
+        Logger.debug(this, String.format("Partition calculation: %d inodes → %d per partition (%d target partitions)",
+            totalInodes, calculatedSize, totalInodes / calculatedSize));
+
+        return calculatedSize;
+    }
+
+    /**
+     * Optimized ES search method with better error handling and logging.
+     *
+     * @param baseQuery Pre-built base query
+     * @param partition Partition of inodes to search
+     * @param browserQuery Browser query context
+     * @param partitionIndex Index of this partition for logging
+     * @return List of matching inodes
+     */
+    private List<String> performOptimizedSearchES(String baseQuery, List<String> partition,
+                                                  BrowserQuery browserQuery, int partitionIndex) {
+        final long startTime = System.currentTimeMillis();
+        final boolean live = !browserQuery.showWorking;
+        final ESSeachAPI esSearchAPI = APILocator.getEsSearchAPI();
+        final List<String> collectedInodes = new ArrayList<>();
+
+        try {
+            // Build the complete query by combining the precompiled base query with the inode filter
+            final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", partition));
+            final String luceneQuery = inodeFilter + baseQuery;
+            final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
+
+            Logger.debug(BrowserAPIImpl.class, String.format("Partition %d query: %s", partitionIndex, luceneQuery));
+
+            // Execute ES search
+            esSearchAPI.esSearch(esQuery, live, browserQuery.user, false).forEach(result -> {
+                final Contentlet contentlet = (Contentlet) result;
+                collectedInodes.add(contentlet.getInode());
+            });
+
+            final long elapsedTime = System.currentTimeMillis() - startTime;
+            Logger.debug(this, String.format("Partition %d completed: %d inodes → %d matches in %dms",
+                partitionIndex, partition.size(), collectedInodes.size(), elapsedTime));
+
+        } catch (Exception e) {
+            final long elapsedTime = System.currentTimeMillis() - startTime;
+            Logger.error(this, String.format("Partition %d failed after %dms: %s",
+                partitionIndex, elapsedTime, e.getMessage()), e);
+            // Return empty list instead of throwing to allow other partitions to complete
+        }
+
         return collectedInodes;
     }
 
@@ -263,7 +1097,6 @@ public class BrowserAPIImpl implements BrowserAPI {
             final Set<String> inodes) {
         final List<Future<List<String>>> futures = new ArrayList<>();
         final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
-        Logger.info(BrowserAPIImpl.class,"inodes returned from the db : "+inodes);
         final List<List<String>> partitions = Lists.partition(new ArrayList<>(inodes), 10);
 
         // Build the base query once outside the loop - this is the key optimization
@@ -291,7 +1124,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         if (UtilMethods.isSet(browserQuery.filter)) {
             final String titleFilters = String.format(
-                    "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5 OR +catchall:%s*^10",
+                    "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5 OR +catchall:*%s*^10",
                     browserQuery.filter,
                     browserQuery.filter,
                     browserQuery.filter,
@@ -349,7 +1182,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         // Build the complete query by combining the precompiled base query with the inode filter
         final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", partition));
         final String luceneQuery = inodeFilter + baseQuery;
-        Logger.info(BrowserAPIImpl.class," Content-Drive Request Lucene Query: "+luceneQuery);
+        Logger.debug(BrowserAPIImpl.class," Content-Drive Request Lucene Query: "+luceneQuery);
         final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
         try {
             esSearchAPI.esSearch(esQuery, live, browserQuery.user, false).forEach(result -> {
@@ -529,7 +1362,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     *
+     * Paginated result
      */
     public static class PaginatedContents {
         public final List<Map<String, Object>> list;
@@ -643,10 +1476,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         final List<Object> parameters = new ArrayList<>();
         final List<Object> dump = new ArrayList<>();
 
-        if (!browserQuery.getLanguageIds().isEmpty()) {
-            appendLanguageQuery(selectQuery, browserQuery.getLanguageIds(),
+        if (!browserQuery.languageIds.isEmpty()) {
+            appendLanguageQuery(selectQuery, browserQuery.languageIds,
                     browserQuery.showDefaultLangItems);
-            appendLanguageQuery(countQuery, browserQuery.getLanguageIds(),
+            appendLanguageQuery(countQuery, browserQuery.languageIds,
                     browserQuery.showDefaultLangItems);
         }
         if (browserQuery.site != null) {

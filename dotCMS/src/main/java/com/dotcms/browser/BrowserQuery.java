@@ -43,9 +43,22 @@ import org.apache.commons.lang3.StringUtils;
 public class BrowserQuery {
     private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
     final User user;
-    final String  filter, fileName, sortBy;
-    final int offset, maxResults;
-    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties, showDefaultLangItems, useElasticsearchFiltering, filterFolderNames;
+    final String  filter;
+    final String fileName;
+    final String sortBy;
+    final int offset;
+    final int maxResults;
+    final boolean showWorking;
+    final boolean showArchived;
+    final boolean showFolders;
+    final boolean sortByDesc;
+    final boolean showLinks;
+    final boolean showMenuItemsOnly;
+    final boolean showContent;
+    final boolean showShorties;
+    final boolean showDefaultLangItems;
+    final boolean useElasticsearchFiltering;
+    final boolean filterFolderNames;
     final Set<Long> languageIds;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
@@ -57,7 +70,8 @@ public class BrowserQuery {
     final Folder folder;
     final Parentable directParent;
     final Role[] roles;
-    final List<String> extensions, mimeTypes;
+    final List<String> extensions;
+    final List<String> mimeTypes;
 
     /**
      * Returns the primary language ID for backward compatibility.
@@ -109,7 +123,7 @@ public class BrowserQuery {
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
-        this.maxResults = Math.max(builder.maxResults, MAX_FETCH_PER_REQUEST);
+        this.maxResults = (builder.overrideMaxResults ? builder().maxResults :  Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST));
         this.showWorking = builder.showWorking || builder.showArchived;
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
@@ -219,6 +233,8 @@ public class BrowserQuery {
         private String sortBy = "moddate";
         private int offset = 0;
         private int maxResults = MAX_FETCH_PER_REQUEST;
+        private boolean overrideMaxResults = false;
+        private boolean showMenuItemsOnly = false;
         private boolean showWorking = true;
         private boolean showArchived = false;
         private boolean showContent = true;
@@ -226,21 +242,15 @@ public class BrowserQuery {
         private boolean showFolders = false;
         private boolean sortByDesc = false;
         private boolean showLinks = false;
-        private boolean showMenuItemsOnly = false;
         private boolean showDefaultLangItems = false;
         private Set<Long> languageIds = new LinkedHashSet<>();
         private Set<String> contentTypes = new LinkedHashSet<>();
         private Set<String> excludedContentTypes = new LinkedHashSet<>();
         private final StringBuilder luceneQuery = new StringBuilder();
-        private Set<BaseContentType> baseTypes = new HashSet<>();
+        private final Set<BaseContentType> baseTypes = new HashSet<>();
         private String hostFolderId = FolderAPI.SYSTEM_FOLDER;
         private boolean forceSystemHost = false;
         private boolean skipFolder = false;
-        private boolean showOnlyMenuItems = false;
-        private Host site = null;
-        private Folder folder = null;
-        private Parentable directParent = null;
-        private Role[] roles = null;
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
@@ -290,6 +300,11 @@ public class BrowserQuery {
 
         public Builder withForceSystemHost(boolean forceSystemHost) {
             this.forceSystemHost = forceSystemHost;
+            return this;
+        }
+
+        public Builder overrideMaxResults(boolean overrideMaxResults) {
+            this.overrideMaxResults = overrideMaxResults;
             return this;
         }
 
