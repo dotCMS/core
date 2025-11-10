@@ -3,23 +3,11 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextModule } from 'primeng/inputtext';
-import { RadioButtonModule } from 'primeng/radiobutton';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import {
-    DotDialogModule,
-    DotFieldValidationMessageComponent,
-    DotMessagePipe,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -33,8 +21,8 @@ import {
     DotCreateCustomTool
 } from '../../../../../api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { DotMenuServiceMock } from '../../../../../view/components/dot-navigation/services/dot-navigation.service.spec';
-import { DotFormSelectorModule } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
+import { DotNavigationService } from '../../../../../view/components/dot-navigation/services/dot-navigation.service';
+import { DotFormSelectorComponent } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.component';
 
 const contentTypeVar = {
     ...dotcmsContentTypeBasicMock,
@@ -61,7 +49,7 @@ class TestHostComponent {
     contentType = contentTypeVar;
 }
 
-export class DotAddToMenuServiceMock {
+class DotAddToMenuServiceMock {
     cleanUpPorletId(_portletName: string) {
         /* */
     }
@@ -72,6 +60,35 @@ export class DotAddToMenuServiceMock {
 
     addToLayout(_portletName: string, _layoutId: string) {
         /* */
+    }
+}
+
+class DotMenuServiceMock {
+    loadMenu(_force?: boolean) {
+        return of([
+            {
+                id: '123',
+                name: 'Menu 1',
+                tabName: 'Name',
+                tabDescription: 'Description',
+                tabIcon: 'icon',
+                url: '/url/index',
+                menuItems: []
+            },
+            {
+                id: '456',
+                name: 'Menu 2',
+                tabName: 'Name 2',
+                tabDescription: 'Description 2',
+                tabIcon: 'icon2',
+                url: '/url/456',
+                menuItems: []
+            }
+        ]);
+    }
+
+    getDotMenuId(_portletId: string) {
+        return of('123');
     }
 }
 
@@ -96,26 +113,19 @@ describe('DotAddToMenuComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotAddToMenuComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
+                DotAddToMenuComponent,
                 BrowserAnimationsModule,
-                DotFormSelectorModule,
-                DotDialogModule,
-                DropdownModule,
-                InputTextModule,
-                ButtonModule,
-                RadioButtonModule,
-                ReactiveFormsModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe,
-                HttpClientTestingModule,
-                DotFieldValidationMessageComponent
+                DotFormSelectorComponent,
+                HttpClientTestingModule
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAddToMenuService, useClass: DotAddToMenuServiceMock },
-                { provide: DotMenuService, useClass: DotMenuServiceMock }
+                { provide: DotMenuService, useClass: DotMenuServiceMock },
+                DotNavigationService
             ]
         }).compileComponents();
 

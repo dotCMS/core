@@ -1,8 +1,11 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
-import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ConfirmationService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
 import { DotAlertConfirmService } from '@dotcms/data-access';
@@ -11,8 +14,6 @@ import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotAlertConfirmComponent } from './dot-alert-confirm';
 
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-
 describe('DotAlertConfirmComponent', () => {
     let component: DotAlertConfirmComponent;
     let dialogService: DotAlertConfirmService;
@@ -20,19 +21,21 @@ describe('DotAlertConfirmComponent', () => {
     let de: DebugElement;
 
     beforeEach(async () => {
-        await DOTTestBed.configureTestingModule({
-            declarations: [DotAlertConfirmComponent],
+        await TestBed.configureTestingModule({
+            imports: [DotAlertConfirmComponent, BrowserAnimationsModule],
             providers: [
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
                 },
-                DotAlertConfirmService
-            ],
-            imports: [BrowserAnimationsModule]
-        });
+                DotAlertConfirmService,
+                ConfirmationService,
+                provideHttpClient(),
+                provideHttpClientTesting()
+            ]
+        }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotAlertConfirmComponent);
+        fixture = TestBed.createComponent(DotAlertConfirmComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
         dialogService = de.injector.get(DotAlertConfirmService);

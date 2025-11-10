@@ -60,7 +60,11 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
     describe('basic', () => {
         beforeEach(waitForAsync(() => {
             DOTTestBed.configureTestingModule({
-                declarations: [DotWorkflowsSelectorFieldComponent],
+                imports: [
+                    DotWorkflowsSelectorFieldComponent,
+                    DotMessagePipe,
+                    BrowserAnimationsModule
+                ],
                 providers: [
                     {
                         provide: DotWorkflowService,
@@ -70,8 +74,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
                         provide: DotMessageService,
                         useValue: messageServiceMock
                     }
-                ],
-                imports: [DotMessagePipe, BrowserAnimationsModule]
+                ]
             });
 
             fixture = DOTTestBed.createComponent(DotWorkflowsSelectorFieldComponent);
@@ -162,7 +165,8 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
 
         beforeEach(waitForAsync(() => {
             DOTTestBed.configureTestingModule({
-                declarations: [FakeFormComponent, DotWorkflowsSelectorFieldComponent],
+                declarations: [FakeFormComponent],
+                imports: [DotWorkflowsSelectorFieldComponent, DotMessagePipe],
                 providers: [
                     {
                         provide: DotWorkflowService,
@@ -172,8 +176,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
                         provide: DotMessageService,
                         useValue: messageServiceMock
                     }
-                ],
-                imports: [DotMessagePipe]
+                ]
             });
 
             fixtureHost = DOTTestBed.createComponent(FakeFormComponent);

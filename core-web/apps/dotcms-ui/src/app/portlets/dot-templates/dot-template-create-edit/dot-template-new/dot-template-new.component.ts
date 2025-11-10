@@ -7,11 +7,13 @@ import { take } from 'rxjs/operators';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { BINARY_OPTION, DotBinaryOptionSelectorComponent } from '@dotcms/ui';
 
+import { DotTemplateCreateEditResolver } from '../resolvers/dot-template-create-edit.resolver';
+
 @Component({
     selector: 'dot-dot-template-new',
     templateUrl: './dot-template-new.component.html',
     styleUrls: ['./dot-template-new.component.scss'],
-    standalone: false
+    providers: [DialogService, DotTemplateCreateEditResolver]
 })
 export class DotTemplateNewComponent implements OnInit {
     private dialogService = inject(DialogService);

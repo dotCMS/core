@@ -5,7 +5,6 @@ import { DotMessagePipe, fadeInContent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-analytics-state-message',
-    standalone: true,
     imports: [CommonModule, DotMessagePipe],
     template: `
         <div

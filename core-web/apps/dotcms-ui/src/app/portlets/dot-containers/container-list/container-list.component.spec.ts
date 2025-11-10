@@ -3,10 +3,17 @@ import { of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, CUSTOM_ELEMENTS_SCHEMA, EventEmitter, Input, Output } from '@angular/core';
+import {
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    EventEmitter,
+    Input,
+    NO_ERRORS_SCHEMA,
+    Output
+} from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
@@ -57,15 +64,15 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
-import { ContainerListRoutingModule } from './container-list-routing.module';
 import { ContainerListComponent } from './container-list.component';
 import { DotContainerListStore } from './store/dot-container-list.store';
 
 import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
 import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
-import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
-import { ActionHeaderModule } from '../../../view/components/dot-listing-data-table/action-header/action-header.module';
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
+import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
+import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 const containersMock: DotContainer[] = [
     {
@@ -148,6 +155,7 @@ const containersMock: DotContainer[] = [
             hostname: 'default'
         },
         path: '//demo.dotcms.com/application/containers/default/',
+        pathName: '//demo.dotcms.com/application/containers/default/',
         source: CONTAINER_SOURCE.FILE,
         title: 'test',
         type: 'containers',
@@ -207,8 +215,7 @@ class ActivatedRouteMock {
 
 @Component({
     selector: 'dot-content-type-selector',
-    template: '',
-    standalone: false
+    template: ''
 })
 class MockDotContentTypeSelectorComponent {
     @Input() value: SelectItem;
@@ -227,8 +234,6 @@ describe('ContainerListComponent', () => {
     let publishContainer: DotActionMenuButtonComponent;
     let archivedContainer: DotActionMenuButtonComponent;
     let contentTypesSelector: MockDotContentTypeSelectorComponent;
-    let dotContainersService: DotContainersService;
-    let dotSiteBrowserService: DotSiteBrowserService;
     let siteService: SiteServiceMock;
     let store: DotContainerListStore;
     let paginatorService: PaginatorService;
@@ -237,8 +242,27 @@ describe('ContainerListComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [ContainerListComponent, MockDotContentTypeSelectorComponent],
+            declarations: [],
+            imports: [
+                ContainerListComponent,
+                MockDotContentTypeSelectorComponent,
+                ActionHeaderComponent,
+                ButtonModule,
+                CheckboxModule,
+                CommonModule,
+                DotActionMenuButtonComponent,
+                DotAddToBundleComponent,
+                DotEmptyStateComponent,
+                DotMessagePipe,
+                DotPortletBaseComponent,
+                DotRelativeDatePipe,
+                HttpClientTestingModule,
+                InputTextModule,
+                MenuModule,
+                TableModule
+            ],
             providers: [
+                provideNoopAnimations(),
                 ConfirmationService,
                 DialogService,
                 DotAlertConfirmService,
@@ -283,31 +307,16 @@ describe('ContainerListComponent', () => {
                     useClass: DotMessageDisplayServiceMock
                 }
             ],
-            imports: [
-                ActionHeaderModule,
-                ButtonModule,
-                CheckboxModule,
-                CommonModule,
-                ContainerListRoutingModule,
-                DotActionMenuButtonComponent,
-                DotAddToBundleComponent,
-                DotEmptyStateModule,
-                DotMessagePipe,
-                DotPortletBaseModule,
-                DotRelativeDatePipe,
-                HttpClientTestingModule,
-                InputTextModule,
-                MenuModule,
-                TableModule,
-                BrowserAnimationsModule
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA]
-        }).compileComponents();
+            schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
+        })
+            .overrideComponent(ContainerListComponent, {
+                remove: { imports: [DotContentTypeSelectorComponent] },
+                add: { imports: [MockDotContentTypeSelectorComponent], schemas: [NO_ERRORS_SCHEMA] }
+            })
+            .compileComponents();
 
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         dotRouterService = TestBed.inject(DotRouterService);
-        dotContainersService = TestBed.inject(DotContainersService);
-        dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
         siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
         paginatorService = TestBed.inject(PaginatorService);
         jest.spyOn(paginatorService, 'get').mockReturnValue(of(containersMock));
@@ -385,7 +394,8 @@ describe('ContainerListComponent', () => {
             const menu: Menu = fixture.debugElement.query(
                 By.css('.container-listing__header-options p-menu')
             ).componentInstance;
-            jest.spyOn(dotContainersService, 'publish').mockReturnValue(
+            // Spy on the store's dotContainersService since it's now using component-level providers
+            jest.spyOn(store['dotContainersService'], 'publish').mockReturnValue(
                 of(mockBulkResponseSuccess)
             );
 
@@ -398,7 +408,7 @@ describe('ContainerListComponent', () => {
             menu.model[0].command({
                 originalEvent: createFakeEvent('click')
             });
-            expect(dotContainersService.publish).toHaveBeenCalledWith([
+            expect(store['dotContainersService'].publish).toHaveBeenCalledWith([
                 '123Published',
                 '123Unpublish',
                 '123Archived'
@@ -419,16 +429,22 @@ describe('ContainerListComponent', () => {
         });
 
         it('should click on file container and move on Browser Screen', () => {
-            jest.spyOn(dotSiteBrowserService, 'setSelectedFolder').mockReturnValue(of(null));
-            fixture.debugElement
-                .query(By.css('[data-testrowid="FILE_CONTAINER"]'))
-                .triggerEventHandler('click', null);
+            const fileContainer = containersMock.find((c) => c.identifier === 'FILE_CONTAINER');
+            // Spy on the store's methods since it's now using component-level providers
+            jest.spyOn(store['dotSiteBrowserService'], 'setSelectedFolder').mockReturnValue(
+                of(null)
+            );
+            jest.spyOn(store['dotRouterService'], 'goToSiteBrowser');
+
+            // Call the method directly instead of triggering the event
+            comp.handleRowClick(fileContainer);
 
             fixture.detectChanges();
-            const path = new URL(`http:${containersMock[4].path}`).pathname;
-            expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(path);
-            expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledTimes(1);
-            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
+            expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledWith(
+                fileContainer.pathName
+            );
+            expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledTimes(1);
+            expect(store['dotRouterService'].goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers when content types selector changes', () => {

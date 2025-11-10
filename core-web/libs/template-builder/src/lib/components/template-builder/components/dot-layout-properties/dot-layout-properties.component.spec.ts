@@ -10,9 +10,9 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotLayoutPropertiesItemModule } from './dot-layout-properties-item/dot-layout-properties-item.module';
+import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item/dot-layout-properties-item.component';
 import { DotLayoutPropertiesComponent } from './dot-layout-properties.component';
-import { DotLayoutSidebarModule } from './dot-layout-property-sidebar/dot-layout-property-sidebar.module';
+import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar/dot-layout-property-sidebar.component';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -48,10 +48,11 @@ describe('DotLayoutPropertiesComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotLayoutPropertiesComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
-                DotLayoutPropertiesItemModule,
-                DotLayoutSidebarModule,
+                DotLayoutPropertiesComponent,
+                DotLayoutPropertiesItemComponent,
+                DotLayoutSidebarComponent,
                 OverlayPanelModule,
                 ButtonModule,
                 ReactiveFormsModule

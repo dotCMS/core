@@ -12,7 +12,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotNotLicenseComponent } from './dot-not-license.component';
 
-import { DotIconModule } from '../../dot-icon/dot-icon.module';
+import { DotIconComponent } from '../../dot-icon/dot-icon.component';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const messageServiceMock = new MockDotMessageService({
@@ -35,7 +35,7 @@ describe('DotNotLicenseComponent', () => {
     let spectator: Spectator<DotNotLicenseComponent>;
     const createComponent = createComponentFactory({
         component: DotNotLicenseComponent,
-        imports: [ButtonModule, DotIconModule, DotMessagePipe],
+        imports: [ButtonModule, DotIconComponent, DotMessagePipe],
         providers: [
             {
                 provide: DotMessageService,
