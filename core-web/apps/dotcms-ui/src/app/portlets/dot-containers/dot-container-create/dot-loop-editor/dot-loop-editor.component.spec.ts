@@ -85,12 +85,14 @@ describe('DotLoopEditorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
+            declarations: [DotTextareaContentMockComponent, DotTestHostComponent],
+            imports: [
                 DotLoopEditorComponent,
-                DotTextareaContentMockComponent,
-                DotTestHostComponent
+                DotMessagePipe,
+                ButtonModule,
+                ReactiveFormsModule,
+                BrowserAnimationsModule
             ],
-            imports: [DotMessagePipe, ButtonModule, ReactiveFormsModule, BrowserAnimationsModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();

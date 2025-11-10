@@ -47,3 +47,18 @@ a {
         padding: $spacing-1 $spacing-4;
     }
 }
+
+.dot-nav-sub__group-header {
+    padding: $spacing-2 $spacing-4;
+    border-bottom: 1px solid $color-palette-white-op-20;
+    margin-bottom: $spacing-1;
+    cursor: default;
+}
+
+.dot-nav-sub__group-name {
+    color: $white;
+    font-weight: $font-weight-semi-bold;
+    font-size: $font-size-md;
+    display: block;
+    user-select: none;
+}

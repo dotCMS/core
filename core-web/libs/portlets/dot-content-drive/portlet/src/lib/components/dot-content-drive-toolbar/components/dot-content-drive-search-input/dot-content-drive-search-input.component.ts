@@ -8,9 +8,10 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
+
 import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
-import { ALL_FOLDER } from '../../../../utils/tree-folder.utils';
 
 @Component({
     selector: 'dot-content-drive-search-input',

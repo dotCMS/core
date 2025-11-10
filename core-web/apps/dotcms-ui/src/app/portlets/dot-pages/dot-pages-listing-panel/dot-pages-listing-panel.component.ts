@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -11,14 +12,23 @@ import {
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 import { LazyLoadEvent } from 'primeng/api';
-import { ContextMenu } from 'primeng/contextmenu';
-import { Table } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { SkeletonModule } from 'primeng/skeleton';
+import { Table, TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
@@ -27,7 +37,22 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     selector: 'dot-pages-listing-panel',
     templateUrl: './dot-pages-listing-panel.component.html',
     styleUrls: ['./dot-pages-listing-panel.component.scss'],
-    standalone: false
+    imports: [
+        ButtonModule,
+        CheckboxModule,
+        CommonModule,
+        FormsModule,
+        DotAutofocusDirective,
+        DotMessagePipe,
+        DotRelativeDatePipe,
+        DropdownModule,
+        InputTextModule,
+        SkeletonModule,
+        TableModule,
+        TooltipModule,
+        RouterModule,
+        ContextMenuModule
+    ]
 })
 export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
     readonly store = inject(DotPageStore);

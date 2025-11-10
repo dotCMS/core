@@ -25,6 +25,10 @@ on:
         required: false
         type: boolean
         default: false
+      custom_tag:
+        description: 'Custom Docker Image Tag'
+        required: false
+        type: string
     secrets:
       docker_io_username:
         description: 'Docker.io username'
@@ -248,6 +252,7 @@ jobs:
             type=raw,value=${{ steps.set-common-vars.outputs.version }},enable=${{ steps.set-common-vars.outputs.is_release }}
             type=raw,value=latest,enable=${{ steps.set-common-vars.outputs.is_latest }}
             type=raw,value={{sha}},enable=${{ steps.set-common-vars.outputs.is_custom }}
+            type=raw,value=${{ inputs.custom_tag }},enable=${{ inputs.custom_tag != '' }}
         if: success()
 
       - name: Debug Docker Metadata

@@ -1,5 +1,12 @@
-import { DOCUMENT } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+
+import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+
+import { LOCATION_TOKEN } from '../../../../providers';
+import { DotLinkComponent } from '../../../../view/components/dot-link/dot-link.component';
 
 /**
  * Basic page information for edit mode
@@ -12,7 +19,15 @@ import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core
     templateUrl: './dot-edit-page-info.component.html',
     styleUrls: ['./dot-edit-page-info.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    imports: [
+        CommonModule,
+        ButtonModule,
+        DotCopyButtonComponent,
+        DotApiLinkComponent,
+        DotLinkComponent,
+        DotMessagePipe
+    ],
+    providers: [{ provide: LOCATION_TOKEN, useValue: window.location }]
 })
 export class DotEditPageInfoComponent {
     private document = inject<Document>(DOCUMENT);

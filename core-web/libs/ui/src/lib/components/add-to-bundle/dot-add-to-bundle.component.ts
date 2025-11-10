@@ -28,7 +28,7 @@ import { LoggerService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotBundle, DotDialogActions } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
-import { DotDialogModule } from '../../modules/dot-dialog/dot-dialog.module';
+import { DotDialogComponent } from '../../modules/dot-dialog/dot-dialog.component';
 import { DotFieldValidationMessageComponent } from '../dot-field-validation-message/dot-field-validation-message.component';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
@@ -37,7 +37,7 @@ const LAST_BUNDLE_USED = 'lastSelectedBundle';
     selector: 'dot-add-to-bundle',
     templateUrl: 'dot-add-to-bundle.component.html',
     imports: [
-        DotDialogModule,
+        DotDialogComponent,
         DotMessagePipe,
         ReactiveFormsModule,
         DropdownModule,

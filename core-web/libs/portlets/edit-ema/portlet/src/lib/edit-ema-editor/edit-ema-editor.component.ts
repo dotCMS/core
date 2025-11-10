@@ -53,13 +53,13 @@ import {
     DotCMSUVEAction
 } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
+import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
-import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
@@ -112,18 +112,17 @@ import {
         NgStyle,
         FormsModule,
         SafeUrlPipe,
-        DotSpinnerModule,
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EmaPageDropzoneComponent,
-        EditEmaPaletteComponent,
         EmaContentletToolsComponent,
         ProgressBarModule,
         DotResultsSeoToolComponent,
         DotUveToolbarComponent,
         DotBlockEditorSidebarComponent,
         DotUvePageVersionNotFoundComponent,
-        DotUveLockOverlayComponent
+        DotUveLockOverlayComponent,
+        DotUvePaletteComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -170,8 +169,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
     readonly UVE_STATUS = UVE_STATUS;
 
-    get contentWindow(): Window {
-        return this.iframe.nativeElement.contentWindow;
+    get contentWindow(): Window | null {
+        return this.iframe?.nativeElement?.contentWindow || null;
     }
 
     readonly $translatePageEffect = effect(() => {
@@ -343,6 +342,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe((event: DragEvent) => {
                 event.preventDefault(); // Prevent file opening
+
+                if (!this.iframe?.nativeElement) {
+                    return;
+                }
+
                 const iframeRect = this.iframe.nativeElement.getBoundingClientRect();
 
                 const isInsideIframe =
@@ -669,6 +673,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     #insertPageContent(): void {
         const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement) {
+            return;
+        }
+
         const doc = iframeElement.contentDocument;
 
         const enableInlineEdit = this.uveStore.$enableInlineEdit();
@@ -696,6 +705,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     handleInlineScripts(enableInlineEdit: boolean) {
         const win = this.contentWindow;
+
+        if (!win) {
+            return;
+        }
 
         fromEvent(win, 'click').subscribe((e: MouseEvent) => {
             this.handleInternalNav(e);
@@ -1469,7 +1482,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     #setSeoData() {
         const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement) {
+            return;
+        }
+
         const doc = iframeElement.contentDocument;
+
+        if (!doc) {
+            return;
+        }
+
         this.dotSeoMetaTagsService.getMetaTagsResults(doc).subscribe((results) => {
             const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
             this.uveStore.setOgTags(ogTags);

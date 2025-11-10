@@ -19,7 +19,7 @@ import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { IframeComponent } from './iframe.component';
 
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
-import { DotOverlayMaskModule } from '../../dot-overlay-mask/dot-overlay-mask.module';
+import { DotOverlayMaskComponent } from '../../dot-overlay-mask/dot-overlay-mask.component';
 import { DotSafeUrlPipe } from '../pipes/dot-safe-url/dot-safe-url.pipe';
 
 const fakeHtmlEl = {
@@ -45,10 +45,11 @@ describe('IframeComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
+            declarations: [MockDotLoadingIndicatorComponent],
             imports: [
+                IframeComponent,
                 RouterTestingModule,
-                DotOverlayMaskModule,
+                DotOverlayMaskComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotSafeUrlPipe
