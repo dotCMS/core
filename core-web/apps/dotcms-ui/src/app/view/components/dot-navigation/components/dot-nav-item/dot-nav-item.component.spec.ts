@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -6,7 +8,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotSystemConfigService } from '@dotcms/data-access';
 import { DotMenu } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 
 import { DotNavItemComponent } from './dot-nav-item.component';
@@ -81,6 +85,16 @@ describe('DotNavItemComponent', () => {
                 RouterTestingModule,
                 BrowserAnimationsModule,
                 TooltipModule,
+                DotRandomIconPipe
+            ],
+            providers: [
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotRandomIconPipe
             ]
         }).compileComponents();
