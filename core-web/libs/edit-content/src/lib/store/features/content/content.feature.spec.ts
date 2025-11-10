@@ -1,10 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { signalStore, withState, patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -13,6 +19,8 @@ import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
@@ -22,6 +30,7 @@ import {
     DotCMSWorkflowAction,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { withContent } from './content.feature';
@@ -55,9 +64,20 @@ describe('ContentFeature', () => {
             DotHttpErrorManagerService,
             DotWorkflowsActionsService,
             DotWorkflowService,
-            Router,
             Title,
             DotMessageService
+        ],
+        providers: [
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
+            GlobalStore,
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 
