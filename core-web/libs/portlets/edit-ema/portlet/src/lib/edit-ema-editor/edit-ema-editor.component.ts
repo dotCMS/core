@@ -12,6 +12,7 @@ import {
     OnInit,
     ViewChild,
     WritableSignal,
+    computed,
     effect,
     inject,
     signal,
@@ -169,7 +170,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
     readonly $paletteCurrentTab = this.uveStore.palette.currentTab;
+    readonly $isEditMode = this.uveStore.$isEditMode;
+    readonly $languageId = this.uveStore.$languageId;
+    readonly $pagePath = this.uveStore.$pagePath;
+    readonly $variantId = this.uveStore.$variantId;
     readonly UVE_STATUS = UVE_STATUS;
+
+    readonly $paletteClass = computed(() => (this.uveStore.palette.isOpen() ? 'open' : 'closed'));
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;

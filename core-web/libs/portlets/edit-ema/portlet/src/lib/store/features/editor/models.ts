@@ -14,7 +14,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { EDITOR_STATE, PALETTE_CLASSES } from '../../../shared/enums';
+import { EDITOR_STATE } from '../../../shared/enums';
 import { Orientation } from '../../models';
 
 export enum PALETTE_TABS {
@@ -86,12 +86,6 @@ export interface EditorProps {
     dropzone?: {
         bounds: Container[];
         dragItem: EmaDragItem;
-    };
-    palette?: {
-        languageId: number;
-        paletteClass: PALETTE_CLASSES;
-        pagePath: string;
-        variantId?: string;
     };
     showDialogs: boolean;
     progressBar: boolean;

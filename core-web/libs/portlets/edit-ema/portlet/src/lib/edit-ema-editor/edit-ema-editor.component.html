@@ -14,12 +14,12 @@
         data-testId="results-seo-tool"></dot-results-seo-tool>
 }
 
-@if ($editorProps().palette; as palette) {
+@if ($isEditMode()) {
     <dot-uve-palette
-        [ngClass]="palette.paletteClass"
-        [languageId]="palette.languageId"
-        [pagePath]="palette.pagePath"
-        [variantId]="palette.variantId"
+        [ngClass]="$paletteClass()"
+        [languageId]="$languageId()"
+        [pagePath]="$pagePath()"
+        [variantId]="$variantId()"
         [currentTab]="$paletteCurrentTab()"
         data-testId="palette" />
 }

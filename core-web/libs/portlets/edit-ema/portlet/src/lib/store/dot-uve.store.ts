@@ -181,6 +181,12 @@ export const UVEStore = signalStore(
                 $isLiveMode: computed<boolean>(() => {
                     return pageParams()?.mode === UVE_MODE.LIVE;
                 }),
+                $pagePath: computed<string>(() => {
+                    return pageAPIResponse()?.page.pageURI || '';
+                }),
+                $variantId: computed<string>(() => {
+                    return pageParams()?.variantName || '';
+                }),
                 $friendlyParams: computed(() => {
                     const params = {
                         ...(pageParams() ?? {}),

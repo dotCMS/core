@@ -29,7 +29,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA, UVE_FEATURE_FLAGS } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -133,7 +133,6 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const paletteOpen = store.palette.isOpen();
 
                     const isEditMode = params?.mode === UVE_MODE.EDIT;
 
@@ -159,7 +158,6 @@ export function withEditor() {
                         canEditDueToLock;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
-                    const showPalette = isEnterprise && canEditPage && isEditState && isEditMode;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
@@ -199,17 +197,6 @@ export function withEditor() {
                                   dragItem
                               }
                             : null,
-                        palette: showPalette
-                            ? {
-                                  languageId: pageAPIResponse?.viewAs.language.id,
-                                  pagePath: pageAPIResponse?.page.pageURI,
-                                  variantId: params?.variantName,
-                                  paletteClass: paletteOpen
-                                      ? PALETTE_CLASSES.OPEN
-                                      : PALETTE_CLASSES.CLOSED
-                              }
-                            : null,
-
                         seoResults: shouldShowSeoResults
                             ? {
                                   ogTags,

@@ -12,7 +12,6 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAnalyticsTrackerService } from '@dotcms/data-access';
 import { UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -27,7 +26,6 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 })
 export class DotEditorModeSelectorComponent {
     readonly #store = inject(UVEStore);
-    readonly #analyticsTracker = inject(DotAnalyticsTrackerService);
 
     /**
      * Determines whether to show the "Draft" mode option in the mode selector.
