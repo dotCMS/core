@@ -27,102 +27,101 @@ import { Verify } from '../../services/validation/Verify';
     template: `
         <form>
             <div flex layout="row" class="cw-condition-component-body">
-                <ng-template [ngForOf]="_inputs" ngFor let-input>
-                    <div *ngIf="input.type === 'spacer'" flex class="cw-input cw-input-placeholder">
-                        &nbsp;
-                    </div>
-                    <cw-input-dropdown
-                        *ngIf="input.type === 'dropdown'"
-                        (touch)="onBlur(input)"
-                        [allowAdditions]="input.allowAdditions"
-                        [class.cw-comparator-selector]="input.name === 'comparison'"
-                        [class.cw-last]="islast"
-                        [formControl]="input.control"
-                        [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                        [required]="input.required"
-                        [value]="input.value"
-                        [placeholder]="input.placeholder | async"
-                        [options]="input.options"
-                        flex
-                        class="cw-input"></cw-input-dropdown>
-
-                    <div
-                        *ngIf="input.type === 'restDropdown'"
-                        [class.cw-last]="islast"
-                        flex
-                        layout-fill
-                        layout="column"
-                        class="cw-input">
-                        <cw-input-rest-dropdown
+                @for (input of _inputs; track input) {
+                    @if (input.type === 'spacer') {
+                        <div flex class="cw-input cw-input-placeholder">&nbsp;</div>
+                    }
+                    @if (input.type === 'dropdown') {
+                        <cw-input-dropdown
                             (touch)="onBlur(input)"
-                            [value]="input.value"
-                            [formControl]="input.control"
-                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                            [minSelections]="input.minSelections"
-                            [maxSelections]="input.maxSelections"
-                            [required]="input.required"
                             [allowAdditions]="input.allowAdditions"
                             [class.cw-comparator-selector]="input.name === 'comparison'"
                             [class.cw-last]="islast"
+                            [formControl]="input.control"
+                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                            [required]="input.required"
+                            [value]="input.value"
+                            [placeholder]="input.placeholder | async"
+                            [options]="input.options"
                             flex
-                            class="cw-input"
-                            placeholder="{{ input.placeholder | async }}"
-                            optionUrl="{{ input.optionUrl }}"
-                            optionValueField="{{ input.optionValueField }}"
-                            optionLabelField="{{ input.optionLabelField }}"
-                            #rdInput="ngForm"></cw-input-rest-dropdown>
+                            class="cw-input"></cw-input-dropdown>
+                    }
+                    @if (input.type === 'restDropdown') {
                         <div
-                            *ngIf="
+                            [class.cw-last]="islast"
+                            flex
+                            layout-fill
+                            layout="column"
+                            class="cw-input">
+                            <cw-input-rest-dropdown
+                                (touch)="onBlur(input)"
+                                [value]="input.value"
+                                [formControl]="input.control"
+                                [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                                [minSelections]="input.minSelections"
+                                [maxSelections]="input.maxSelections"
+                                [required]="input.required"
+                                [allowAdditions]="input.allowAdditions"
+                                [class.cw-comparator-selector]="input.name === 'comparison'"
+                                [class.cw-last]="islast"
+                                flex
+                                class="cw-input"
+                                placeholder="{{ input.placeholder | async }}"
+                                optionUrl="{{ input.optionUrl }}"
+                                optionValueField="{{ input.optionValueField }}"
+                                optionLabelField="{{ input.optionLabelField }}"
+                                #rdInput="ngForm"></cw-input-rest-dropdown>
+                            @if (
                                 rdInput.touched &&
                                 !rdInput.valid &&
                                 (input.argIndex == null || input.argIndex < _rhArgCount)
-                            "
-                            flex="50"
-                            class="name cw-warn basic label">
-                            {{ getErrorMessage(input) }}
+                            ) {
+                                <div flex="50" class="name cw-warn basic label">
+                                    {{ getErrorMessage(input) }}
+                                </div>
+                            }
                         </div>
-                    </div>
-
-                    <div
-                        *ngIf="input.type === 'text' || input.type === 'number'"
-                        [class.cw-last]="islast"
-                        flex
-                        layout-fill
-                        layout="column"
-                        class="cw-input">
-                        <input
-                            (blur)="onBlur(input)"
-                            [placeholder]="input.placeholder | async"
-                            [formControl]="input.control"
-                            [type]="input.type"
-                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                            pInputText
-                            #fInput="ngForm" />
+                    }
+                    @if (input.type === 'text' || input.type === 'number') {
                         <div
-                            *ngIf="
+                            [class.cw-last]="islast"
+                            flex
+                            layout-fill
+                            layout="column"
+                            class="cw-input">
+                            <input
+                                (blur)="onBlur(input)"
+                                [placeholder]="input.placeholder | async"
+                                [formControl]="input.control"
+                                [type]="input.type"
+                                [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                                pInputText
+                                #fInput="ngForm" />
+                            @if (
                                 fInput.touched &&
                                 !fInput.valid &&
                                 (input.argIndex == null || input.argIndex < _rhArgCount)
-                            "
-                            flex="50"
-                            class="name cw-warn basic label">
-                            {{ getErrorMessage(input) }}
+                            ) {
+                                <div flex="50" class="name cw-warn basic label">
+                                    {{ getErrorMessage(input) }}
+                                </div>
+                            }
                         </div>
-                    </div>
-
-                    <cw-input-date
-                        *ngIf="input.type === 'datetime'"
-                        (blur)="onBlur(input)"
-                        [formControl]="input.control"
-                        [class.cw-last]="islast"
-                        [placeholder]="input.placeholder | async"
-                        [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                        [value]="input.value"
-                        flex
-                        layout-fill
-                        class="cw-input"
-                        #gInput="ngForm"></cw-input-date>
-                </ng-template>
+                    }
+                    @if (input.type === 'datetime') {
+                        <cw-input-date
+                            (blur)="onBlur(input)"
+                            [formControl]="input.control"
+                            [class.cw-last]="islast"
+                            [placeholder]="input.placeholder | async"
+                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                            [value]="input.value"
+                            flex
+                            layout-fill
+                            class="cw-input"
+                            #gInput="ngForm"></cw-input-date>
+                    }
+                }
             </div>
         </form>
     `,
