@@ -31,8 +31,7 @@ describe('AppComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [AppComponent],
-            imports: [RouterTestingModule, HttpClientTestingModule],
+            imports: [AppComponent, RouterTestingModule, HttpClientTestingModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotUiColorsService,

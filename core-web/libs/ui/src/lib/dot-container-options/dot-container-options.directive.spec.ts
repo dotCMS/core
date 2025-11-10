@@ -20,8 +20,7 @@ import { DotContainerOptionsDirective } from './dot-container-options.directive'
     imports: [DropdownModule, DotContainerOptionsDirective],
     template: `
         <p-dropdown dotContainerOptions />
-    `,
-    standalone: true
+    `
 })
 class MockContainersDropdownComponent {}
 

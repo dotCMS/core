@@ -10,7 +10,7 @@ import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/dot-apps-configuration-item.module';
+import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item/dot-apps-configuration-item.component';
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list.component';
 
 const messages = {
@@ -41,12 +41,13 @@ describe('DotAppsConfigurationListComponent', () => {
             imports: [
                 CommonModule,
                 ButtonModule,
-                DotAppsConfigurationItemModule,
+                DotAppsConfigurationItemComponent,
                 HttpClientTestingModule,
                 DotSafeHtmlPipe,
-                DotMessagePipe
+                DotMessagePipe,
+                DotAppsConfigurationListComponent
             ],
-            declarations: [DotAppsConfigurationListComponent],
+            declarations: [],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotAlertConfirmService,
