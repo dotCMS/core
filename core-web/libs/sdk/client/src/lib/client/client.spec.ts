@@ -15,6 +15,7 @@ import { PageClient } from './page/page-api';
 jest.mock('./content/content-api');
 jest.mock('./navigation/navigation-api');
 jest.mock('./page/page-api');
+jest.mock('./ai/ai-api');
 
 describe('DotCMSClient', () => {
     const originalTypeError = global.TypeError;
