@@ -1,17 +1,15 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <dot-experiments-header
         (goBack)="goToBrowserBack()"
         [isLoading]="vm.isLoading"
         [title]="vm.pageTitle" />
     <div class="dot-experiment">
-        <ng-container
-            *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments">
+        @if (vm.experiments.length) {
             <div class="dot-experiment__actions">
                 <dot-experiments-status-filter
                     (switch)="selectedStatusFilter($event)"
                     [options]="statusOptionList"
                     [selectedItems]="vm.filterStatus" />
-
                 <button
                     (click)="addExperiment()"
                     data-testId="add-experiment-button"
@@ -19,17 +17,22 @@
                     pButton
                     type="button"></button>
             </div>
-
             <dot-experiments-list-table
                 (goToContainer)="goToContainerAction($event)"
                 [experimentGroupedByStatus]="vm.experimentsFiltered" />
-        </ng-container>
+        } @else {
+            <ng-template
+                [ngTemplateOutlet]="
+                    vm.isLoading ? loadingExperiments : noExperiments
+                "></ng-template>
+        }
     </div>
-    <dot-add-to-bundle
-        *ngIf="vm.addToBundleContentId"
-        (cancel)="vm.addToBundleContentId = null"
-        [assetIdentifier]="vm.addToBundleContentId" />
-</ng-container>
+    @if (vm.addToBundleContentId) {
+        <dot-add-to-bundle
+            (cancel)="vm.addToBundleContentId = null"
+            [assetIdentifier]="vm.addToBundleContentId" />
+    }
+}
 
 <ng-template #noExperiments>
     <dot-empty-container
