@@ -76,6 +76,8 @@ tags:
   name: System Monitoring
 - description: Endpoints for managing page templates and layouts
   name: Templates
+- description: Provides business intelligence metrics for dashboard usage
+  name: Usage
 - description: Endpoints for managing content variants
   name: Variants
 - description: Endpoints that perform operations related to workflows.
@@ -13488,6 +13490,27 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/usage/summary:
+    get:
+      description: "Retrieves key business metrics optimized for dashboard display\
+        \ including content, sites, users, and system metrics"
+      operationId: getSummary
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUsageSummaryView"
+          description: Dashboard summary retrieved successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      summary: Get usage dashboard summary
+      tags:
+      - Usage
   /v1/users:
     post:
       description: "Creates a new user. Requires admin privileges or access to Users\
@@ -19743,6 +19766,23 @@ components:
       required:
       - file
       - form
+    ContentMetrics:
+      type: object
+      properties:
+        contentTypes:
+          type: integer
+          format: int64
+        contentTypesWithWorkflows:
+          type: integer
+          format: int64
+        lastContentEdited:
+          type: string
+        recentlyEdited:
+          type: integer
+          format: int64
+        totalContent:
+          type: integer
+          format: int64
     ContentReferenceView:
       type: object
       properties:
@@ -24643,6 +24683,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityUsageSummaryView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/UsageSummary"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityUserPermissionsView:
       type: object
       properties:
@@ -26138,6 +26201,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SimpleSiteVariableForm"
+    SiteMetrics:
+      type: object
+      properties:
+        activeSites:
+          type: integer
+          format: int64
+        siteAliases:
+          type: integer
+          format: int64
+        templates:
+          type: integer
+          format: int64
+        totalSites:
+          type: integer
+          format: int64
     SiteVariableForm:
       type: object
       properties:
@@ -26270,6 +26348,24 @@ components:
           - DESTROY
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
+    SystemMetrics:
+      type: object
+      properties:
+        builderTemplates:
+          type: integer
+          format: int64
+        languages:
+          type: integer
+          format: int64
+        liveContainers:
+          type: integer
+          format: int64
+        workflowSchemes:
+          type: integer
+          format: int64
+        workflowSteps:
+          type: integer
+          format: int64
     TabDividerField:
       type: object
       allOf:
@@ -26939,6 +27035,20 @@ components:
           type: string
       required:
       - upgradeTaskClass
+    UsageSummary:
+      type: object
+      properties:
+        contentMetrics:
+          $ref: "#/components/schemas/ContentMetrics"
+        lastUpdated:
+          type: string
+          format: date-time
+        siteMetrics:
+          $ref: "#/components/schemas/SiteMetrics"
+        systemMetrics:
+          $ref: "#/components/schemas/SystemMetrics"
+        userMetrics:
+          $ref: "#/components/schemas/UserMetrics"
     User:
       type: object
       properties:
@@ -27188,6 +27298,20 @@ components:
       - email
       - firstName
       - lastName
+    UserMetrics:
+      type: object
+      properties:
+        activeUsers:
+          type: integer
+          format: int64
+        lastLogin:
+          type: string
+        recentLogins:
+          type: integer
+          format: int64
+        totalUsers:
+          type: integer
+          format: int64
     VanityUrlContentType:
       type: object
       allOf:

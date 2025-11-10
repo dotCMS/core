@@ -455,8 +455,8 @@
     </portlet>
 
     <portlet>
-        <portlet-name>insights</portlet-name>
-        <display-name>Insights</display-name>
+        <portlet-name>usage</portlet-name>
+        <display-name>Usage</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
