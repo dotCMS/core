@@ -23,6 +23,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { ActionPayload, VTLFile } from '../../../shared/models';
+import { PALETTE_TABS } from '../../../store/features/editor/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 const BUTTON_WIDTH = 40;
@@ -56,6 +57,7 @@ export class EmaContentletToolsComponent implements OnChanges {
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() editVTL = new EventEmitter<VTLFile>();
     @Output() delete = new EventEmitter<ActionPayload>();
+    @Output() openStyleEditor = new EventEmitter<PALETTE_TABS>();
 
     #dotMessageService = inject(DotMessageService);
     ACTIONS_CONTAINER_WIDTH = INITIAL_ACTIONS_CONTAINER_WIDTH; // Now is dynamic based on the page type (Headless - VTL)
@@ -247,5 +249,9 @@ export class EmaContentletToolsComponent implements OnChanges {
      */
     get isContainerEmpty(): boolean {
         return this.contentletArea.payload.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET';
+    }
+
+    protected handleOpenStyleEditor() {
+        this.openStyleEditor.emit(PALETTE_TABS.STYLE_EDITOR);
     }
 }

@@ -23,12 +23,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { map } from 'rxjs/operators';
 
-import {
-    DotContentletLockerService,
-    DotDevicesService,
-    DotMessageService,
-    DotPersonalizeService
-} from '@dotcms/data-access';
+import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -45,6 +40,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { PALETTE_TABS } from '../../../store/features/editor/models';
 import { convertLocalTimeToUTC } from '../../../utils';
 
 @Component({
@@ -89,7 +85,6 @@ export class DotUveToolbarComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
-    readonly #dotContentletLockerService = inject(DotContentletLockerService);
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
@@ -102,7 +97,7 @@ export class DotUveToolbarComponent {
     readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.socialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
-    readonly $isPaletteOpen = this.#store.paletteOpen;
+    readonly $isPaletteOpen = this.#store.palette.isOpen;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -147,7 +142,7 @@ export class DotUveToolbarComponent {
     }
 
     protected togglePalette(): void {
-        this.#store.setPaletteOpen(!this.$isPaletteOpen());
+        this.#store.setPaletteOpen(!this.$isPaletteOpen(), PALETTE_TABS.CONTENTTYPE);
     }
 
     /**

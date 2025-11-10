@@ -20,6 +20,7 @@
         [languageId]="palette.languageId"
         [pagePath]="palette.pagePath"
         [variantId]="palette.variantId"
+        [currentTab]="$paletteCurrentTab()"
         data-testId="palette" />
 }
 
@@ -69,6 +70,7 @@
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
+                (openStyleEditor)="openStyleEditor($event)"
                 [hide]="contentletTools.hide"
                 [contentletArea]="contentletTools.contentletArea"
                 [isEnterprise]="contentletTools.isEnterprise"

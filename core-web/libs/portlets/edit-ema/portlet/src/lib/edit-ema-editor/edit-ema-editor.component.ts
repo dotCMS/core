@@ -89,6 +89,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { PALETTE_TABS } from '../store/features/editor/models';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
@@ -166,8 +167,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
 
-    readonly $paletteOpen = this.uveStore.paletteOpen;
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+    readonly $paletteCurrentTab = this.uveStore.palette.currentTab;
     readonly UVE_STATUS = UVE_STATUS;
 
     get contentWindow(): Window {
@@ -1488,5 +1489,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             ...this.uveStore.pageAPIResponse(),
             params: this.uveStore.pageParams()
         };
+    }
+
+    /**
+     * Open the style editor
+     *
+     * @param {PALETTE_TABS} tab
+     * @memberof EditEmaEditorComponent
+     */
+    protected openStyleEditor(tab: PALETTE_TABS) {
+        this.uveStore.setPaletteOpen(true, tab);
     }
 }

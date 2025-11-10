@@ -17,13 +17,23 @@ import {
 import { EDITOR_STATE, PALETTE_CLASSES } from '../../../shared/enums';
 import { Orientation } from '../../models';
 
+export enum PALETTE_TABS {
+    CONTENTTYPE = 0,
+    WIDGETS = 1,
+    FAVORITES = 2,
+    STYLE_EDITOR = 3
+}
+
 export interface EditorState {
     bounds: Container[];
     state: EDITOR_STATE;
     contentletArea?: ContentletArea;
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
-    paletteOpen: boolean;
+    palette?: {
+        isOpen: boolean;
+        currentTab: PALETTE_TABS;
+    };
 }
 
 export interface EditorToolbarState {

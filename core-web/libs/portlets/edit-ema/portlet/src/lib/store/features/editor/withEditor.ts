@@ -18,6 +18,7 @@ import {
     EditorState,
     PageData,
     PageDataContainer,
+    PALETTE_TABS,
     ReloadEditorContent
 } from './models';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
@@ -61,7 +62,10 @@ const initialState: EditorState = {
     contentletArea: null,
     dragItem: null,
     ogTags: null,
-    paletteOpen: true
+    palette: {
+        isOpen: true,
+        currentTab: PALETTE_TABS.CONTENTTYPE
+    }
 };
 
 /**
@@ -129,7 +133,7 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const paletteOpen = store.paletteOpen();
+                    const paletteOpen = store.palette.isOpen();
 
                     const isEditMode = params?.mode === UVE_MODE.EDIT;
 
@@ -362,8 +366,14 @@ export function withEditor() {
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
                 },
-                setPaletteOpen(paletteOpen: boolean) {
-                    patchState(store, { paletteOpen });
+                setPaletteOpen(
+                    isOpen: boolean,
+                    currentTab: PALETTE_TABS = PALETTE_TABS.CONTENTTYPE
+                ) {
+                    patchState(store, { palette: { isOpen, currentTab } });
+                },
+                setPaletteCurrentTab(currentTab: PALETTE_TABS) {
+                    patchState(store, { palette: { ...store.palette(), currentTab: currentTab } });
                 }
             };
         })
