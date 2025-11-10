@@ -170,6 +170,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
     readonly $paletteCurrentTab = this.uveStore.palette.currentTab;
+    readonly $paletteStyleConfig = this.uveStore.palette.styleConfig;
     readonly $isEditMode = this.uveStore.$isEditMode;
     readonly $languageId = this.uveStore.$languageId;
     readonly $pagePath = this.uveStore.$pagePath;
@@ -1062,6 +1063,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload) =>
                 this.#handleInlineEditingEvent(payload),
+            [DotCMSUVEAction.REGISTER_COMPONENT_STYLE_CONFIGURATION]: (
+                payload: Record<string, unknown>
+            ) => {
+                const variableName = payload.variableName as string;
+                const config = payload.config as Record<string, unknown>;
+                this.uveStore.registerStyleConfiguration(variableName, config);
+            },
             [DotCMSUVEAction.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
@@ -1504,7 +1512,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {PALETTE_TABS} tab
      * @memberof EditEmaEditorComponent
      */
-    protected openStyleEditor(tab: PALETTE_TABS) {
-        this.uveStore.setPaletteOpen(true, tab);
+    protected openStyleEditor({ tab, variableName }: { tab: PALETTE_TABS; variableName: string }) {
+        this.uveStore.openPalette({ tab, variableName });
     }
 }

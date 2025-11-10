@@ -47,7 +47,7 @@
             </div>
         </ng-template>
         @if ($currentTab() === PALETTE_TABS.STYLE_EDITOR) {
-            STYLE EDITOR
+            <pre>{{ $styleConfig() | json }}</pre>
         }
     </p-tabPanel>
 </p-tabView>

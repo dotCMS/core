@@ -183,3 +183,28 @@ export function initUVE(config: DotCMSPageResponse = {} as DotCMSPageResponse): 
         }
     };
 }
+
+/**
+ * Registers a component style configuration in the editor.
+ *
+ * @param {string} variableName - The name of the variable to register the configuration for.
+ * @param {Record<string, unknown>} config - The configuration to register.
+ * @return {*}
+ *
+ * @example
+ * ```typescript
+ * registerComponentStyleConfiguration('MY_VARIABLE_NAME', { title: { color: 'red' } });
+ * ```
+ */
+export function registerComponentStyleConfiguration(
+    variableName: string,
+    config: Record<string, unknown>
+): void {
+    sendMessageToUVE({
+        action: DotCMSUVEAction.REGISTER_COMPONENT_STYLE_CONFIGURATION,
+        payload: {
+            variableName,
+            config
+        }
+    });
+}

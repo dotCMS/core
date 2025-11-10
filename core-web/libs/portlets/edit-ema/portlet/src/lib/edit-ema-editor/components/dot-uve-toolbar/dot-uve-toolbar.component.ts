@@ -40,7 +40,6 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { PALETTE_TABS } from '../../../store/features/editor/models';
 import { convertLocalTimeToUTC } from '../../../utils';
 
 @Component({
@@ -142,7 +141,11 @@ export class DotUveToolbarComponent {
     }
 
     protected togglePalette(): void {
-        this.#store.setPaletteOpen(!this.$isPaletteOpen(), PALETTE_TABS.CONTENTTYPE);
+        if (this.$isPaletteOpen()) {
+            this.#store.closePalette();
+        } else {
+            this.#store.openPalette();
+        }
     }
 
     /**

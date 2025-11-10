@@ -150,6 +150,10 @@ export enum DotCMSUVEAction {
      */
     EDIT_CONTENTLET = 'edit-contentlet',
     /**
+     * Tell the editor to register a component style configuration
+     */
+    REGISTER_COMPONENT_STYLE_CONFIGURATION = 'register-component-style-configuration',
+    /**
      * Tell the editor to do nothing
      */
     NOOP = 'noop'

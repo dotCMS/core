@@ -58,13 +58,15 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
 
 const initialState: EditorState = {
     bounds: [],
+    styleConfigurations: {},
     state: EDITOR_STATE.IDLE,
     contentletArea: null,
     dragItem: null,
     ogTags: null,
     palette: {
         isOpen: true,
-        currentTab: PALETTE_TABS.CONTENTTYPE
+        currentTab: PALETTE_TABS.CONTENTTYPE,
+        styleConfig: {}
     }
 };
 
@@ -353,14 +355,39 @@ export function withEditor() {
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
                 },
-                setPaletteOpen(
-                    isOpen: boolean,
-                    currentTab: PALETTE_TABS = PALETTE_TABS.CONTENTTYPE
-                ) {
-                    patchState(store, { palette: { isOpen, currentTab } });
+                openPalette({
+                    tab = PALETTE_TABS.CONTENTTYPE,
+                    variableName = ''
+                }: { tab?: PALETTE_TABS; variableName?: string } = {}) {
+                    const styleConfig = store.styleConfigurations()[variableName];
+                    patchState(store, { palette: { isOpen: true, currentTab: tab, styleConfig } });
+                },
+                closePalette() {
+                    patchState(store, {
+                        palette: {
+                            isOpen: false,
+                            currentTab: PALETTE_TABS.CONTENTTYPE,
+                            styleConfig: {}
+                        }
+                    });
                 },
                 setPaletteCurrentTab(currentTab: PALETTE_TABS) {
                     patchState(store, { palette: { ...store.palette(), currentTab: currentTab } });
+                },
+                registerStyleConfiguration(
+                    variableName: string,
+                    styleConfiguration: Record<string, unknown>
+                ) {
+                    const currentStyleConfigurations = store.styleConfigurations();
+                    const newStyleConfigurations = {
+                        ...currentStyleConfigurations,
+                        [variableName]: styleConfiguration
+                    };
+                    patchState(store, { styleConfigurations: newStyleConfigurations });
+                },
+                getStyleConfiguration(variableName: string): Record<string, unknown> | undefined {
+                    const currentStyleConfigurations = store.styleConfigurations();
+                    return currentStyleConfigurations[variableName];
                 }
             };
         })

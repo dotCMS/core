@@ -27,12 +27,15 @@ export enum PALETTE_TABS {
 export interface EditorState {
     bounds: Container[];
     state: EDITOR_STATE;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    styleConfigurations: Record<string, any>;
     contentletArea?: ContentletArea;
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
     palette?: {
         isOpen: boolean;
         currentTab: PALETTE_TABS;
+        styleConfig: Record<string, unknown>;
     };
 }
 
