@@ -1,5 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -33,7 +34,8 @@ interface DotLargeMessageDisplayParams {
     selector: 'dot-large-message-display',
     templateUrl: './dot-large-message-display.component.html',
     styleUrls: ['./dot-large-message-display.component.scss'],
-    standalone: false
+    imports: [CommonModule, DotDialogComponent],
+    providers: [DotParseHtmlService]
 })
 export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, AfterViewInit {
     private dotcmsEventsService = inject(DotcmsEventsService);

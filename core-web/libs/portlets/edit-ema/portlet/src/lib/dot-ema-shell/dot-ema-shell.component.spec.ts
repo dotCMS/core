@@ -311,6 +311,13 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            {
+                provide: DotMessageService,
+                useValue: {
+                    get: jest.fn().mockReturnValue('Mock Message'),
+                    init: jest.fn()
+                }
             }
         ]
     });

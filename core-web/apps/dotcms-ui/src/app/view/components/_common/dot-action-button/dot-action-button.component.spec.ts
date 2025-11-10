@@ -16,8 +16,8 @@ describe('ActionButtonComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotActionButtonComponent],
             imports: [
+                DotActionButtonComponent,
                 BrowserAnimationsModule,
                 MenuModule,
                 ButtonModule,

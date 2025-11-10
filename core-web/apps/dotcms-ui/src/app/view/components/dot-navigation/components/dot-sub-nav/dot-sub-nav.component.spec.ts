@@ -34,8 +34,7 @@ describe('DotSubNavComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotSubNavComponent],
-            imports: [RouterTestingModule, BrowserAnimationsModule],
+            imports: [RouterTestingModule, BrowserAnimationsModule, DotSubNavComponent],
             providers: [
                 {
                     provide: DotSystemConfigService,

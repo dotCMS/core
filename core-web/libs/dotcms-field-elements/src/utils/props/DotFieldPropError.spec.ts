@@ -1,6 +1,5 @@
-import { PropValidationInfo } from './models';
-
 import DotFieldPropError from './DotFieldPropError';
+import { PropValidationInfo } from './models';
 
 describe('DotFieldPropError', () => {
     const propInfo: PropValidationInfo<string> = {

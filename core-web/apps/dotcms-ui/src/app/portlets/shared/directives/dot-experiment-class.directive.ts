@@ -14,7 +14,6 @@ const EDIT_PAGE_VARIANT = 'edit-page-variant-mode';
  * 2. If is assigned to DotEditPageNavComponent set the component in isVariantMode
  */
 @Directive({
-    standalone: true,
     selector: '[dotExperimentClass]'
 })
 export class DotExperimentClassDirective implements OnDestroy {

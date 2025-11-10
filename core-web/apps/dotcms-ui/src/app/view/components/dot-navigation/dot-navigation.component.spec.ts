@@ -11,18 +11,17 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotSystemConfigService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
-import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
+import { DotNavIconComponent } from './components/dot-nav-icon/dot-nav-icon.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
-import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.component';
 import { DotNavigationComponent } from './dot-navigation.component';
 import { DotNavigationService } from './services/dot-navigation.service';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
 
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { DotRandomIconPipeModule } from '../../pipes/dot-radom-icon/dot-random-icon.pipe.module';
+import { DotRandomIconPipe } from '../../pipes/dot-radom-icon/dot-random-icon.pipe';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 describe('DotNavigationComponent collapsed', () => {
@@ -32,13 +31,12 @@ describe('DotNavigationComponent collapsed', () => {
 
     const createComponent = createComponentFactory({
         component: DotNavigationComponent,
-        entryComponents: [DotSubNavComponent, DotNavItemComponent],
         imports: [
-            DotNavIconModule,
-            DotIconModule,
+            DotNavIconComponent,
+            DotIconComponent,
             BrowserAnimationsModule,
             TooltipModule,
-            DotRandomIconPipeModule
+            DotRandomIconPipe
         ],
         providers: [
             provideRouter([]),
@@ -170,13 +168,12 @@ describe('DotNavigationComponent expanded', () => {
 
     const createComponent = createComponentFactory({
         component: DotNavigationComponent,
-        entryComponents: [DotSubNavComponent, DotNavItemComponent],
         imports: [
-            DotNavIconModule,
-            DotIconModule,
+            DotNavIconComponent,
+            DotIconComponent,
             BrowserAnimationsModule,
             TooltipModule,
-            DotRandomIconPipeModule
+            DotRandomIconPipe
         ],
         providers: [
             provideRouter([]),

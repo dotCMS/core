@@ -1,6 +1,9 @@
 import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
+import { Subject, Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
@@ -9,6 +12,15 @@ import { GlobalStore } from '@dotcms/store';
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
 import { DotCrumbtrailComponent } from './dot-crumbtrail.component';
+
+@Injectable()
+class MockDotNavigationService {
+    onNavigationEnd(): Observable<unknown> {
+        return new Subject();
+    }
+
+    items$ = new Subject();
+}
 
 describe('DotCrumbtrailComponent', () => {
     let spectator: Spectator<DotCrumbtrailComponent>;
