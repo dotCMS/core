@@ -1,11 +1,15 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { DotContentletsComponent } from './dot-contentlets/dot-contentlets.component';
+import { DotWorkflowTaskComponent } from './dot-workflow-task/dot-workflow-task.component';
 
 @Component({
     selector: 'dot-portlet-detail',
     templateUrl: './dot-portlet-detail.component.html',
     styleUrls: ['./dot-portlet-detail.component.scss'],
-    standalone: false
+    imports: [CommonModule, DotWorkflowTaskComponent, DotContentletsComponent]
 })
 export class DotPortletDetailComponent implements OnInit {
     private route = inject(ActivatedRoute);

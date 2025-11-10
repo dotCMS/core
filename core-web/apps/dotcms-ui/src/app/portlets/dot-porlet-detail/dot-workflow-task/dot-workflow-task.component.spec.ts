@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
@@ -25,6 +26,7 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPropertiesService,
     DotRouterService,
     DotUiColorsService,
     DotWizardService,
@@ -44,6 +46,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -55,9 +58,11 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotWorkflowTaskDetailModule } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
+import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 
 @Injectable()
@@ -67,6 +72,10 @@ class MockDotWorkflowTaskDetailService {
 
 const messageServiceMock = new MockDotMessageService({
     'workflow.task.dialog.header': 'Task Detail'
+});
+
+const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
+    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled
 });
 
 describe('DotWorkflowTaskComponent', () => {
@@ -81,12 +90,12 @@ describe('DotWorkflowTaskComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotWorkflowTaskComponent],
             imports: [
-                DotWorkflowTaskDetailModule,
+                DotWorkflowTaskDetailComponent,
                 BrowserAnimationsModule,
                 RouterTestingModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                DotWorkflowTaskComponent
             ],
             providers: [
                 DotWorkflowTaskDetailService,
@@ -114,6 +123,8 @@ describe('DotWorkflowTaskComponent', () => {
                 },
                 DotCustomEventHandlerService,
                 DotLicenseService,
+                DotMenuService,
+                IframeOverlayService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 DotIframeService,
                 DotContentletEditorService,
@@ -141,7 +152,13 @@ describe('DotWorkflowTaskComponent', () => {
                 DotGlobalMessageService,
                 DotGenerateSecurePasswordService,
                 DotEventsService,
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKeys: () => of(createFeatureFlagResponse())
+                    }
+                }
             ]
         });
 
@@ -203,19 +220,16 @@ describe('DotWorkflowTaskComponent', () => {
             detail: {
                 name: 'workflow-wizard',
                 data: {
-                    callback: 'test'
+                    workflow: {
+                        actionInputs: []
+                    },
+                    callback: 'test',
+                    inode: '123'
                 }
             }
         };
 
-        taskDetail.triggerEventHandler('custom', {
-            detail: {
-                name: 'workflow-wizard',
-                data: {
-                    callback: 'test'
-                }
-            }
-        });
+        taskDetail.triggerEventHandler('custom', mockEvent);
         expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
     });
 });

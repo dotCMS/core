@@ -38,13 +38,14 @@ describe('DotAssigneeFormComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotCommentAndAssignFormComponent],
+            declarations: [TestHostComponent],
             providers: [
                 DotRolesService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotFormatDateService
             ],
             imports: [
+                DotCommentAndAssignFormComponent,
                 HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,

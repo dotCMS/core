@@ -4,7 +4,6 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Pipe({
     name: 'dotContentletStatus',
-    standalone: true,
     pure: true
 })
 export class DotContentletStatusPipe implements PipeTransform {

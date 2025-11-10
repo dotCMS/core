@@ -9,8 +9,7 @@ import { DotLanguage } from '@dotcms/dotcms-models';
  * Returns '-' if languageId is invalid, languagesMap is not provided, language is not found, or isoCode is missing.
  */
 @Pipe({
-    name: 'dotLocaleTag',
-    standalone: true
+    name: 'dotLocaleTag'
 })
 export class DotLocaleTagPipe implements PipeTransform {
     /**

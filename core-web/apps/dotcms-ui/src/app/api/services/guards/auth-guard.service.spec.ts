@@ -34,10 +34,8 @@ describe('ValidAuthGuardService', () => {
         authGuardService = TestBed.inject(AuthGuardService);
         dotRouterService = TestBed.inject(DotRouterService);
         loginService = TestBed.inject(LoginService);
-        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-            'toString'
-        ]);
+        mockRouterStateSnapshot = { url: '/test' } as RouterStateSnapshot;
+        mockActivatedRouteSnapshot = {} as ActivatedRouteSnapshot;
     });
 
     it('should allow access to the requested route, User is logged in', () => {

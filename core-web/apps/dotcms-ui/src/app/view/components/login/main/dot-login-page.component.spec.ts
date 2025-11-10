@@ -26,8 +26,8 @@ describe('DotLoginPageComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotLoginPageComponent],
             imports: [
+                DotLoginPageComponent,
                 BrowserAnimationsModule,
                 FormsModule,
                 ButtonModule,

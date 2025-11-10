@@ -24,8 +24,7 @@ const DEFAULT_VALUE_NAME_INDEX = 'value';
  * @class DotContainerOptionsDirective
  */
 @Directive({
-    selector: 'p-dropdown[dotContainerOptions]',
-    standalone: true
+    selector: 'p-dropdown[dotContainerOptions]'
 })
 export class DotContainerOptionsDirective implements OnInit {
     private readonly primeDropdown = inject(Dropdown, { optional: true, self: true });

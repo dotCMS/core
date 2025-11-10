@@ -28,7 +28,6 @@ const MOCK_UVE_STATE_EDIT = {
 
 @Component({
     selector: 'dotcms-block-editor-renderer-custom-component',
-    standalone: true,
     template: '<div>Custom Component</div>'
 })
 export class DotCMSBlockEditorRendererCustomComponent {

@@ -1,10 +1,15 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { MenuItem } from 'primeng/api';
-import { DialogService } from 'primeng/dynamicdialog';
+import { MenuItem, SharedModule } from 'primeng/api';
+import { AutoFocusModule } from 'primeng/autofocus';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { MenuModule } from 'primeng/menu';
 
 import { pluck, take, takeUntil } from 'rxjs/operators';
 
@@ -25,18 +30,40 @@ import {
     DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
 import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
 import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
+import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
 import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 @Component({
     selector: 'dot-template-list',
     templateUrl: './dot-template-list.component.html',
     styleUrls: ['./dot-template-list.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotListingDataTableComponent,
+        DotMessagePipe,
+        DotRelativeDatePipe,
+        SharedModule,
+        CheckboxModule,
+        MenuModule,
+        ButtonModule,
+        DotActionMenuButtonComponent,
+        DotAddToBundleComponent,
+        DynamicDialogModule,
+        DotEmptyStateComponent,
+        AutoFocusModule
+    ],
+    providers: [DotTemplatesService, DialogService, DotSiteBrowserService]
 })
 export class DotTemplateListComponent implements OnInit, OnDestroy {
     private dotAlertConfirmService = inject(DotAlertConfirmService);

@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -24,7 +25,12 @@ const squarePlus =
     selector: 'dot-asset-card-list',
     templateUrl: './dot-asset-card-list.component.html',
     styleUrls: ['./dot-asset-card-list.component.scss'],
-    imports: [ScrollerModule, DotAssetCardComponent, DotAssetCardSkeletonComponent],
+    imports: [
+        ScrollerModule,
+        DotAssetCardComponent,
+        DotAssetCardSkeletonComponent,
+        NgTemplateOutlet
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetCardListComponent implements OnChanges {

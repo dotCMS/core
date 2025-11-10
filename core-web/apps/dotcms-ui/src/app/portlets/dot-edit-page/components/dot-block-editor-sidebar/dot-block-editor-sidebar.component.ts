@@ -1,11 +1,17 @@
 import { Observable, of, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { SidebarModule } from 'primeng/sidebar';
 
 import { switchMap, take, takeUntil } from 'rxjs/operators';
 
-import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -14,6 +20,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 export interface BlockEditorInput {
     content: { [key: string]: string };
@@ -28,7 +35,15 @@ export interface BlockEditorInput {
     selector: 'dot-block-editor-sidebar',
     templateUrl: './dot-block-editor-sidebar.component.html',
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        FormsModule,
+        BlockEditorModule,
+        SidebarModule,
+        ButtonModule,
+        ConfirmDialogModule,
+        DotMessagePipe
+    ]
 })
 export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);

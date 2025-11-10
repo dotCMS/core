@@ -1,6 +1,18 @@
 import { animate, style, transition, trigger } from '@angular/animations';
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core';
-import { ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+    ControlValueAccessor,
+    FormControl,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule
+} from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 
 @Component({
     animations: [
@@ -11,14 +23,20 @@ import { ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR } from '@angular/f
     selector: 'dot-loop-editor',
     templateUrl: './dot-loop-editor.component.html',
     styleUrls: ['./dot-loop-editor.component.scss'],
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        ButtonModule,
+        DotMessagePipe,
+        DotTextareaContentComponent
+    ],
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotLoopEditorComponent),
             multi: true
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotLoopEditorComponent implements ControlValueAccessor, OnInit {
     @Input() isEditorVisible = false;

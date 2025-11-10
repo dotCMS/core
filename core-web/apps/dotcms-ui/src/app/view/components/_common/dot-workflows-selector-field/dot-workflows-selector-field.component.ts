@@ -1,10 +1,14 @@
 import { Observable } from 'rxjs';
 
-import { Component, forwardRef, OnInit, inject } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Component, forwardRef, inject, OnInit } from '@angular/core';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { MultiSelectModule } from 'primeng/multiselect';
 
 import { DotWorkflowService } from '@dotcms/data-access';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-workflows-selector-field',
@@ -17,7 +21,7 @@ import { DotCMSWorkflow } from '@dotcms/dotcms-models';
             useExisting: forwardRef(() => DotWorkflowsSelectorFieldComponent)
         }
     ],
-    standalone: false
+    imports: [CommonModule, FormsModule, MultiSelectModule, DotMessagePipe]
 })
 export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor, OnInit {
     private dotWorkflowService = inject(DotWorkflowService);

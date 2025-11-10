@@ -34,8 +34,9 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPersonaSelectorOptionComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
+                DotPersonaSelectorOptionComponent,
                 BrowserAnimationsModule,
                 DotAvatarDirective,
                 BadgeModule,

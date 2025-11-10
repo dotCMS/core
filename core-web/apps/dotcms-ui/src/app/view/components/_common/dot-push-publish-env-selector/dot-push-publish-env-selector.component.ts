@@ -1,10 +1,15 @@
+import { CommonModule } from '@angular/common';
 import { Component, forwardRef, Input, OnInit, ViewEncapsulation, inject } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { MultiSelectModule } from 'primeng/multiselect';
 
 import { take } from 'rxjs/operators';
 
 import { PushPublishService } from '@dotcms/data-access';
 import { DotEnvironment } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -18,7 +23,7 @@ import { DotEnvironment } from '@dotcms/dotcms-models';
             useExisting: forwardRef(() => PushPublishEnvSelectorComponent)
         }
     ],
-    standalone: false
+    imports: [CommonModule, FormsModule, ButtonModule, MultiSelectModule, DotMessagePipe]
 })
 export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAccessor {
     private pushPublishService = inject(PushPublishService);

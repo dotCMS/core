@@ -1,4 +1,5 @@
 import { dotValidateDate, dotValidateTime, dotParseDate, isValidDateSlot } from './date';
+
 import { DotDateSlot } from '../../../models';
 
 const dateSlot: DotDateSlot = { time: '10:10:10', date: '2019-10-10' };

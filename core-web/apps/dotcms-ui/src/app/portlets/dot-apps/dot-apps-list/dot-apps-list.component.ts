@@ -1,21 +1,39 @@
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
+import { DotIconComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
+
+import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 
 import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({
     selector: 'dot-apps-list',
     templateUrl: './dot-apps-list.component.html',
     styleUrls: ['./dot-apps-list.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        InputTextModule,
+        ButtonModule,
+        DotAppsCardComponent,
+        DotAppsImportExportDialogComponent,
+        DotNotLicenseComponent,
+        DotIconComponent,
+        DotPortletBaseComponent,
+        DotMessagePipe
+    ]
 })
 export class DotAppsListComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);

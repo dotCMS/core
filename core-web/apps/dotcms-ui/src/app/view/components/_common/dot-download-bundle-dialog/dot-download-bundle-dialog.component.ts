@@ -1,9 +1,18 @@
 import { Observable, of, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { DropdownModule } from 'primeng/dropdown';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, map, take, takeUntil } from 'rxjs/operators';
 
@@ -13,6 +22,7 @@ import {
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { DotDialogActions } from '@dotcms/dotcms-models';
+import { DotDialogComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
 import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
@@ -28,7 +38,17 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
     selector: 'dot-download-bundle-dialog',
     templateUrl: './dot-download-bundle-dialog.component.html',
     styleUrls: ['./dot-download-bundle-dialog.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        DropdownModule,
+        SelectButtonModule,
+        DotDialogComponent,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ],
+    providers: [DotPushPublishFiltersService]
 })
 export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     fb = inject(UntypedFormBuilder);

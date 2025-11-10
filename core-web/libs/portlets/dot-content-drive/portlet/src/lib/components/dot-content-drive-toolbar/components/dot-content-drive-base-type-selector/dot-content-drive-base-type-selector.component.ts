@@ -23,8 +23,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     selector: 'dot-content-drive-base-type-selector',
     templateUrl: './dot-content-drive-base-type-selector.component.html',
     styleUrl: './dot-content-drive-base-type-selector.component.scss',
-    imports: [MultiSelectModule, FormsModule, CheckboxModule, DotMessagePipe],
-    standalone: true
+    imports: [MultiSelectModule, FormsModule, CheckboxModule, DotMessagePipe]
 })
 export class DotContentDriveBaseTypeSelectorComponent {
     $selectedBaseTypes = linkedSignal<string[]>(() => {

@@ -1,16 +1,14 @@
 import { Observable, of as observableOf } from 'rxjs';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { TooltipModule } from 'primeng/tooltip';
-
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     getExperimentMock,
     MockDotMessageService,
@@ -71,7 +69,7 @@ export class MockDotPropertiesService {
     template: `
         <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>
     `,
-    standalone: false
+    imports: [DotEditPageNavComponent]
 })
 class TestHostComponent {
     @Input()
@@ -104,12 +102,10 @@ describe('DotEditPageNavComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 RouterTestingModule,
-                TooltipModule,
-                DotIconModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe
+                HttpClientTestingModule,
+                DotEditPageNavComponent,
+                TestHostComponent
             ],
-            declarations: [DotEditPageNavComponent, TestHostComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotLicenseService, useClass: MockDotLicenseService },

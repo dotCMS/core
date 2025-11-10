@@ -138,7 +138,8 @@ export class DotCrumbtrailService {
         const portletId = replaceSectionsMap[sections[0]] || sections[0];
 
         const isEditPage =
-            (sections && sections[0] == 'edit-page') || sections[0].includes('edit-ema');
+            (sections && sections[0] == 'edit-page') ||
+            (sections[0] && sections[0].includes('edit-ema'));
 
         return this.getMenuLabel(portletId).pipe(
             switchMap(

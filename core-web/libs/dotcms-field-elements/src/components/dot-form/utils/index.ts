@@ -1,11 +1,13 @@
-import { DotFormFields } from './fields';
-import { getStringFromDotKeyArray, isStringType } from '../../../utils';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn,
     DotCMSContentTypeFieldVariable
 } from '@dotcms/dotcms-models';
+
+import { DotFormFields } from './fields';
+
+import { getStringFromDotKeyArray, isStringType } from '../../../utils';
 
 export const DOT_ATTR_PREFIX = 'dot';
 

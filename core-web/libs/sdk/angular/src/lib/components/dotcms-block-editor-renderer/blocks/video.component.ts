@@ -4,7 +4,6 @@ import { BlockEditorNode } from '@dotcms/types';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-video',
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <video

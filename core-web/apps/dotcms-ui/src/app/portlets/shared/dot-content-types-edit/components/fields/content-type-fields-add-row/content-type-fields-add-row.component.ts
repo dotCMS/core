@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -13,10 +14,14 @@ import {
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 /**
  * Display select columns row
@@ -29,7 +34,7 @@ import { DotEventsService, DotMessageService } from '@dotcms/data-access';
     selector: 'dot-add-rows',
     styleUrls: ['./content-type-fields-add-row.component.scss'],
     templateUrl: './content-type-fields-add-row.component.html',
-    standalone: false
+    imports: [CommonModule, ButtonModule, TooltipModule, SplitButtonModule, DotMessagePipe]
 })
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     private dotEventsService = inject(DotEventsService);

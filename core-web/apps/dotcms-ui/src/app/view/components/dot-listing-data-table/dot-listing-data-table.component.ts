@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ContentChild,
@@ -12,15 +13,29 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
-import { Table } from 'primeng/table';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ContextMenuModule } from 'primeng/contextmenu';
+import { InputTextModule } from 'primeng/inputtext';
+import { Table, TableModule } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
-import { OrderDirection, PaginatorService } from '@dotcms/data-access';
-import { LoggerService } from '@dotcms/dotcms-js';
+import { DotCrudService, OrderDirection, PaginatorService } from '@dotcms/data-access';
+import { DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
 import { DotActionMenuItem } from '@dotcms/dotcms-models';
+import {
+    DotActionMenuButtonComponent,
+    DotIconComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotStringFormatPipe
+} from '@dotcms/ui';
+
+import { ActionHeaderComponent } from './action-header/action-header.component';
 
 import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
 import { ButtonAction } from '../../../shared/models/action-header/button-action.model';
@@ -32,6 +47,9 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
 
 @Component({
     providers: [
+        DotCrudService,
+        DotcmsConfigService,
+        LoggerService,
         PaginatorService,
         {
             provide: Table,
@@ -42,7 +60,21 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     selector: 'dot-listing-data-table',
     styleUrls: ['./dot-listing-data-table.component.scss'],
     templateUrl: 'dot-listing-data-table.component.html',
-    standalone: false
+    imports: [
+        ActionHeaderComponent,
+        CommonModule,
+        FormsModule,
+        RouterModule,
+        TableModule,
+        InputTextModule,
+        CheckboxModule,
+        ContextMenuModule,
+        DotActionMenuButtonComponent,
+        DotIconComponent,
+        DotMessagePipe,
+        DotRelativeDatePipe,
+        DotStringFormatPipe
+    ]
 })
 export class DotListingDataTableComponent implements OnInit {
     loggerService = inject(LoggerService);

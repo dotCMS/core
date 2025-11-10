@@ -89,8 +89,7 @@ const defaultVmMock: ConfigurationViewModel = {
     selector: `p-confirmPopup`,
     template: `
         ConfirmPopupMockComponent
-    `,
-    standalone: true
+    `
 })
 export class ConfirmPopupMockComponent {}
 

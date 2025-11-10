@@ -12,7 +12,6 @@ import StarterKit from '@tiptap/starter-kit';
 
 @Component({
     selector: 'dot-block-editor',
-    standalone: true,
     imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: '<div>Block Editor Mock</div>'
@@ -28,11 +27,17 @@ export class BlockEditorMockComponent implements OnInit {
         });
 
         this.editor.on('create', () => {
-            this.editor.commands.setContent(this.value, true);
+            if (this.value) {
+                this.editor.commands.setContent(this.value, true);
+                // Emit valueChange after setting content
+                setTimeout(() => {
+                    this.valueChange.emit(this.editor.getJSON());
+                }, 0);
+            }
         });
 
         this.editor.on('update', () => {
-            this.valueChange.emit();
+            this.valueChange.emit(this.editor.getJSON());
         });
     }
 }

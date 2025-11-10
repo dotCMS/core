@@ -4,17 +4,24 @@ import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/c
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
+    DotAlertConfirmService,
     DotDevicesService,
+    DotHttpErrorManagerService,
     DotLanguagesService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPageStateService,
     DotPersonalizeService,
-    DotPersonasService
+    DotPersonasService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
@@ -125,14 +132,26 @@ describe('DotEditPageViewAsControllerComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotTestHostComponent,
-                DotEditPageViewAsControllerComponent,
                 MockDotPersonaSelectorComponent,
                 MockDotDeviceSelectorComponent,
                 MockDotLanguageSelectorComponent
             ],
-            imports: [BrowserAnimationsModule, TooltipModule, DotSafeHtmlPipe, DotMessagePipe],
+            imports: [
+                BrowserAnimationsModule,
+                DotEditPageViewAsControllerComponent,
+                TooltipModule,
+                DotSafeHtmlPipe,
+                DotMessagePipe
+            ],
             providers: [
+                provideRouter([]),
                 DotLicenseService,
+                DotSessionStorageService,
+                DotWorkflowActionsFireService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                DotMessageDisplayService,
+                DotRouterService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock

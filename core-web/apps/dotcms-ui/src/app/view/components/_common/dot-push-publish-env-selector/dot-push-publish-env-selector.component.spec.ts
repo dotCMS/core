@@ -77,8 +77,8 @@ describe('PushPublishEnvSelectorComponent', () => {
         pushPublishServiceMock = new PushPublishServiceMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [PushPublishEnvSelectorComponent, TestHostComponent],
-            imports: [BrowserAnimationsModule, DotMessagePipe],
+            declarations: [TestHostComponent],
+            imports: [PushPublishEnvSelectorComponent, BrowserAnimationsModule, DotMessagePipe],
             providers: [
                 PushPublishService,
                 { provide: PushPublishService, useValue: pushPublishServiceMock },

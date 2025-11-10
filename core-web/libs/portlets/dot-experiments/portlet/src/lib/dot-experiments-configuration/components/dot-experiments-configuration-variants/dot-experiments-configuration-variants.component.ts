@@ -30,7 +30,7 @@ import {
 import {
     DotCopyButtonComponent,
     DotDynamicDirective,
-    DotIconModule,
+    DotIconComponent,
     DotMessagePipe
 } from '@dotcms/ui';
 
@@ -47,7 +47,7 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
     imports: [
         CommonModule,
         DotMessagePipe,
-        DotIconModule,
+        DotIconComponent,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,

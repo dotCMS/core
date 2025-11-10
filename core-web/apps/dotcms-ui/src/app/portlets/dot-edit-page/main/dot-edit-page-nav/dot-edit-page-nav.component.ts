@@ -1,8 +1,10 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, AsyncPipe, CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, ViewChild, inject } from '@angular/core';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute, Params, RouterModule } from '@angular/router';
+
+import { TooltipModule } from 'primeng/tooltip';
 
 import { map } from 'rxjs/operators';
 
@@ -16,6 +18,7 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
@@ -40,7 +43,15 @@ interface DotEditPageNavItem {
     selector: 'dot-edit-page-nav',
     templateUrl: './dot-edit-page-nav.component.html',
     styleUrls: ['./dot-edit-page-nav.component.scss'],
-    standalone: false
+    imports: [
+        AsyncPipe,
+        CommonModule,
+        RouterModule,
+        TooltipModule,
+        DotIconComponent,
+        DotMessagePipe,
+        DotPageToolsSeoComponent
+    ]
 })
 export class DotEditPageNavComponent implements OnChanges {
     private dotLicenseService = inject(DotLicenseService);

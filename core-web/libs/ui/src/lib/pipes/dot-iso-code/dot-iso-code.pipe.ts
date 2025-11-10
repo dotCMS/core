@@ -11,8 +11,7 @@ import { Pipe, PipeTransform } from '@angular/core';
  * {{ 'invalid' | dotIsoCode }} -> 'invalid'
  */
 @Pipe({
-    name: 'dotIsoCode',
-    standalone: true
+    name: 'dotIsoCode'
 })
 export class DotIsoCodePipe implements PipeTransform {
     /**

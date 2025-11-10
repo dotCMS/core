@@ -5,7 +5,7 @@ import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 /*
  * Custom Pipe that returns the relative date.
  */
-@Pipe({ name: 'dotRelativeDate', standalone: true })
+@Pipe({ name: 'dotRelativeDate' })
 export class DotRelativeDatePipe implements PipeTransform {
     private readonly dotFormatDateService = inject(DotFormatDateService);
     private readonly dotMessageService = inject(DotMessageService);

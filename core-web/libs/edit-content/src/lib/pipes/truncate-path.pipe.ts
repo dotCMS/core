@@ -9,7 +9,6 @@ import { Pipe, PipeTransform } from '@angular/core';
  */
 @Pipe({
     name: 'truncatePath',
-    standalone: true,
     pure: true
 })
 export class TruncatePathPipe implements PipeTransform {
