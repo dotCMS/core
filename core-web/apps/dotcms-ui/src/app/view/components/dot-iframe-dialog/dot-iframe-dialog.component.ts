@@ -13,11 +13,13 @@ import { filter } from 'rxjs/operators';
 
 import { DotDialogComponent } from '@dotcms/ui';
 
+import { IframeComponent } from '../_common/iframe/iframe-component/iframe.component';
+
 @Component({
     selector: 'dot-iframe-dialog',
     templateUrl: './dot-iframe-dialog.component.html',
     styleUrls: ['./dot-iframe-dialog.component.scss'],
-    standalone: false
+    imports: [DotDialogComponent, IframeComponent]
 })
 export class DotIframeDialogComponent implements OnChanges, OnInit {
     @ViewChild('dialog', { static: true })

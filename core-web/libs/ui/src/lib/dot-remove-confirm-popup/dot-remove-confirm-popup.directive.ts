@@ -9,8 +9,7 @@ import { ConfirmationService } from 'primeng/api';
  * When the 'Escape' key is pressed, it closes it using the confirmation service.
  */
 @Directive({
-    selector: 'p-confirmPopup[dotRemoveConfirmPopupWithEscape]',
-    standalone: true
+    selector: 'p-confirmPopup[dotRemoveConfirmPopupWithEscape]'
 })
 export class DotRemoveConfirmPopupWithEscapeDirective {
     private confirmationService: ConfirmationService = inject(ConfirmationService);

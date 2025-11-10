@@ -24,7 +24,7 @@ const headers = new HttpHeaders({
     'Content-Type': 'application/json'
 });
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class DotAiService {
     #http: HttpClient = inject(HttpClient);
 

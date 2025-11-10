@@ -5,13 +5,13 @@ import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { SharedModule } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
-
-import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 
 @Component({
     selector: 'dot-host-component',
@@ -95,11 +95,11 @@ describe('SearchableDropdownComponent', () => {
         });
 
         await TestBed.configureTestingModule({
-            declarations: [SearchableDropdownComponent, HostTestComponent],
+            declarations: [HostTestComponent],
             imports: [
-                ...SEARCHABLE_NGFACES_MODULES,
+                SearchableDropdownComponent,
                 BrowserAnimationsModule,
-                DotIconModule,
+                DotIconComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe
             ],
@@ -482,11 +482,12 @@ describe('SearchableDropdownComponent', () => {
         });
 
         await TestBed.configureTestingModule({
-            declarations: [SearchableDropdownComponent, HostTestExternalTemplateComponent],
+            declarations: [HostTestExternalTemplateComponent],
             imports: [
-                ...SEARCHABLE_NGFACES_MODULES,
+                SearchableDropdownComponent,
                 BrowserAnimationsModule,
-                DotIconModule,
+                SharedModule,
+                DotIconComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe
             ],

@@ -5,8 +5,7 @@ import { NgControl } from '@angular/forms';
  * Directive for trimming the input value on blur.
  */
 @Directive({
-    selector: '[dotTrimInput]',
-    standalone: true
+    selector: '[dotTrimInput]'
 })
 export class DotTrimInputDirective implements AfterViewInit {
     private readonly ngControl = inject(NgControl, { optional: true, self: true });

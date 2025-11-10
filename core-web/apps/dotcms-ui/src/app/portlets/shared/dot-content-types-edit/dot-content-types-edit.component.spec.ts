@@ -31,7 +31,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
-import { DotDialogModule, DotIconModule } from '@dotcms/ui';
+import { DotDialogComponent, DotIconComponent } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
@@ -71,8 +71,7 @@ class TestContentTypeFieldsDropZoneComponent {
 
 @Component({
     selector: 'dot-content-type-layout',
-    template: '<ng-content></ng-content>',
-    standalone: false
+    template: '<ng-content></ng-content>'
 })
 class TestContentTypeLayoutComponent {
     @Input() contentType: DotCMSContentType;
@@ -82,8 +81,7 @@ class TestContentTypeLayoutComponent {
 
 @Component({
     selector: 'dot-content-types-form',
-    template: '',
-    standalone: false
+    template: ''
 })
 class TestContentTypesFormComponent {
     @Input() data: DotCMSContentType;
@@ -135,11 +133,11 @@ describe('DotContentTypesEditComponent', () => {
             declarations: [
                 DotContentTypesEditComponent,
                 TestContentTypeFieldsDropZoneComponent,
-                TestContentTypesFormComponent,
-                TestContentTypeLayoutComponent,
                 TestDotMenuComponent
             ],
             imports: [
+                TestContentTypeLayoutComponent,
+                TestContentTypesFormComponent,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'content-types-angular',
@@ -147,8 +145,8 @@ describe('DotContentTypesEditComponent', () => {
                     }
                 ]),
                 BrowserAnimationsModule,
-                DotIconModule,
-                DotDialogModule,
+                DotIconComponent,
+                DotDialogComponent,
                 HttpClientTestingModule,
                 ButtonModule
             ],
