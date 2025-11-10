@@ -298,7 +298,7 @@ public class BrowserQuery {
             return this;
         }
 
-        public Builder withForceSystemHost(boolean forceSystemHost) {
+        public Builder forceSystemHost(boolean forceSystemHost) {
             this.forceSystemHost = forceSystemHost;
             return this;
         }

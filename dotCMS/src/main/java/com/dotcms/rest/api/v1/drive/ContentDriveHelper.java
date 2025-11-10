@@ -147,7 +147,7 @@ public class ContentDriveHelper {
             builder.withHostOrFolderId(folder.getInode());
         }
         //This ensures that despite the site passed systemHost will be included too
-        builder.withForceSystemHost(requestForm.includeSystemHost());
+        builder.forceSystemHost(requestForm.includeSystemHost());
 
         // Enable Elasticsearch filtering for text search when filter is provided
         if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
