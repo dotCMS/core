@@ -1,7 +1,9 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -13,6 +15,8 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
     DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -55,7 +59,16 @@ describe('DotEditContentStore', () => {
             mockProvider(DotCurrentUserService),
             mockProvider(DialogService),
             mockProvider(DotVersionableService),
-            mockProvider(ConfirmationService)
+            mockProvider(ConfirmationService),
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 

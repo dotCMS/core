@@ -21,6 +21,10 @@ p-toolbar::ng-deep {
         height: $toolbar-height;
         padding: 0 $spacing-3 0 0;
     }
+
+    .p-toolbar-group-left {
+        min-width: 0;
+    }
 }
 
 dot-toolbar-user {

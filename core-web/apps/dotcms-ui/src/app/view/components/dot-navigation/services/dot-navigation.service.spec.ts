@@ -2,6 +2,8 @@
 
 import { Observable, of, Subject } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
@@ -9,9 +11,15 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { skip } from 'rxjs/operators';
 
-import { DotEventsService, DotIframeService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotIframeService,
+    DotRouterService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotNavigationService } from './dot-navigation.service';
@@ -213,7 +221,14 @@ describe('DotNavigationService', () => {
                             .fn()
                             .mockReturnValue(new Promise((resolve) => resolve(true)))
                     }
-                }
+                },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ],
             imports: [RouterTestingModule]
         });

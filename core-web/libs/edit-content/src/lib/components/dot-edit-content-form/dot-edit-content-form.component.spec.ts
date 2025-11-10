@@ -8,6 +8,8 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
@@ -99,7 +101,8 @@ describe('DotFormComponent', () => {
             mockProvider(GlobalStore, {
                 loadCurrentSite: jest.fn(),
                 setCurrentSite: jest.fn(),
-                siteDetails: jest.fn().mockReturnValue(null)
+                siteDetails: jest.fn().mockReturnValue(null),
+                addNewBreadcrumb: jest.fn()
             }),
             {
                 provide: ActivatedRoute,
@@ -151,7 +154,9 @@ describe('DotFormComponent', () => {
                         cluster: { clusterId: 'cluster-id', companyKeyDigest: 'digest' }
                     })
                 )
-            })
+            }),
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 
