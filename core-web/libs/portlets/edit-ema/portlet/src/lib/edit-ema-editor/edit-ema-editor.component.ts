@@ -58,8 +58,8 @@ import { WINDOW, isEqual } from '@dotcms/utils';
 
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
+import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
-import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
@@ -115,14 +115,14 @@ import {
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EmaPageDropzoneComponent,
-        EditEmaPaletteComponent,
         EmaContentletToolsComponent,
         ProgressBarModule,
         DotResultsSeoToolComponent,
         DotUveToolbarComponent,
         DotBlockEditorSidebarComponent,
         DotUvePageVersionNotFoundComponent,
-        DotUveLockOverlayComponent
+        DotUveLockOverlayComponent,
+        DotUvePaletteComponent
     ],
     providers: [
         DotCopyContentModalService,
