@@ -86,7 +86,10 @@ public class ContentTypeHandler implements IHandler {
 	public ContentTypeHandler(final PublisherConfig config) {
 
 		this.config = config;
-		this.typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		// Use user from config if available (bundle owner), otherwise fall back to system user
+		// This is important for background thread execution where HTTP request context is not available
+		final User user = config.getUser() != null ? config.getUser() : APILocator.systemUser();
+		this.typeAPI = APILocator.getContentTypeAPI(user);
 		this.fieldAPI = APILocator.getContentTypeFieldAPI();
 		this.userAPI = APILocator.getUserAPI();
 		this.permissionAPI = APILocator.getPermissionAPI();
