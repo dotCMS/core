@@ -14,6 +14,16 @@ import { BaseApiClient } from '../../base/base-api';
 import { DEFAULT_AI_CONFIG, DEFAULT_QUERY } from '../shared/const';
 import { DotCMSAISearchResponse, OnFullfilled, OnRejected } from '../shared/types';
 
+/**
+ * Class for executing AI searches.
+ *
+ * @template T - The type of the contentlet.
+ * @param config - The configuration for the client.
+ * @param requestOptions - The request options for the client.
+ * @param httpClient - The HTTP client for the client.
+ * @param params - The parameters for the search.
+ * @param prompt - The prompt for the search.
+ */
 export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
     #params: DotCMSAISearchParams;
     #prompt: string;
@@ -30,6 +40,45 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
         this.#prompt = prompt;
     }
 
+    /**
+     * Executes the AI search and returns a promise with the search results.
+     *
+     * @param onfulfilled - Callback function to handle the search results.
+     * @param onrejected - Callback function to handle the search error.
+     * @returns Promise with the search results or the error.
+     * @example
+     * ```typescript
+     * const results = await client.ai.search('machine learning articles', {
+     *   query: {
+     *     indexName: 'content_index',
+     *     limit: 20,
+     *     contentType: 'BlogPost',
+     *     languageId: 'en'
+     *   },
+     *   ai: {
+     *     threshold: 0.7
+     *   }
+     * });
+     * ```
+     * @example
+     * ```typescript
+     * client.ai.search('machine learning articles', {
+     *   query: {
+     *     indexName: 'content_index',
+     *     limit: 20,
+     *     contentType: 'BlogPost',
+     *     languageId: 'en'
+     *   },
+     *   ai: {
+     *     threshold: 0.7
+     *   }
+     * }).then((results) => {
+     *   console.log(results);
+     * }).catch((error) => {
+     *   console.error(error);
+     * });
+     * ```
+     */
     then(
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
@@ -113,41 +162,27 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
             ...ai
         };
 
+        const entriesQueryParameters = [
+            ['searchLimit', 'limit'],
+            ['searchOffset', 'offset'],
+            ['site', 'siteId'],
+            ['language', 'languageId'],
+            ['contentType', 'contentType'],
+            ['indexName', 'indexName']
+        ];
+
         // Map SDK query parameters to backend parameter names
-        if (combinedQuery.limit !== undefined) {
-            searchParams.append('searchLimit', String(combinedQuery.limit));
-        }
-        if (combinedQuery.offset !== undefined) {
-            searchParams.append('searchOffset', String(combinedQuery.offset));
-        }
-        if (combinedQuery.siteId !== undefined) {
-            searchParams.append('site', combinedQuery.siteId);
-        } else if (this.siteId) {
-            searchParams.append('site', this.siteId);
-        }
+        entriesQueryParameters.forEach(([key, value]) => {
+            if (combinedQuery[value as keyof DotCMSAISearchQuery] !== undefined) {
+                searchParams.append(key, String(combinedQuery[value as keyof DotCMSAISearchQuery]));
+            }
+        });
 
-        if (combinedQuery.contentType !== undefined) {
-            searchParams.append('contentType', combinedQuery.contentType);
-        }
-
-        if (combinedQuery.indexName !== undefined) {
-            searchParams.append('indexName', combinedQuery.indexName);
-        }
-
-        if (combinedQuery.languageId !== undefined) {
-            searchParams.append('language', combinedQuery.languageId);
-        }
-
-        // Map SDK AI config parameters to backend parameter names
-        if (combinedAI?.threshold !== undefined) {
-            searchParams.append('threshold', String(combinedAI.threshold));
-        }
-        if (combinedAI?.distanceFunction !== undefined) {
-            searchParams.append('operator', combinedAI.distanceFunction);
-        }
-        if (ai?.responseLength !== undefined) {
-            searchParams.append('responseLength', String(combinedAI.responseLength));
-        }
+        Object.entries(combinedAI).forEach(([key, value]) => {
+            if (value !== undefined) {
+                searchParams.append(key, String(value));
+            }
+        });
 
         searchParams.append('query', prompt);
 

@@ -65,6 +65,24 @@ export class AIClient extends BaseApiClient {
      *   }
      * });
      * ```
+     * @example
+     * ```typescript
+     * client.ai.search('machine learning articles', {
+     *   query: {
+     *     indexName: 'content_index',
+     *     limit: 20,
+     *     contentType: 'BlogPost',
+     *     languageId: 'en'
+     *   },
+     *   ai: {
+     *     threshold: 0.7,
+     *     distanceFunction: DISTANCE_FUNCTIONS.cosine
+     *   }
+     * }).then((results) => {
+     *   console.log(results);
+     * }).catch((error) => {
+     *   console.error(error);
+     * });
      */
     search<T extends DotCMSBasicContentlet>(
         prompt: string,

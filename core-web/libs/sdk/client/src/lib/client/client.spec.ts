@@ -6,6 +6,7 @@ import {
 } from '@dotcms/types';
 
 import { FetchHttpClient } from './adapters/fetch-http-client';
+import { AIClient } from './ai/ai-api';
 import { createDotCMSClient } from './client';
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
@@ -70,6 +71,12 @@ describe('DotCMSClient', () => {
             }),
             expectedRequestOptions,
             expect.any(FetchHttpClient) // httpClient
+        );
+
+        expect(AIClient).toHaveBeenCalledWith(
+            expect.objectContaining(validConfig),
+            expectedRequestOptions,
+            expect.any(FetchHttpClient)
         );
     });
 

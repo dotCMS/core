@@ -13,7 +13,7 @@ export const DEFAULT_AI_CONFIG = {
  * Default values for search query
  */
 export const DEFAULT_QUERY = {
-    limit: 10,
+    limit: 1000,
     offset: 0,
     indexName: 'default'
 } as const;
