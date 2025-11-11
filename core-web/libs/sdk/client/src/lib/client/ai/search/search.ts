@@ -77,29 +77,6 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
         );
     }
 
-    //
-    async stream(callback: (data: { done: boolean; value: unknown }) => void): Promise<void> {
-        const stream = await this.fetchStream<T>();
-
-        const reader = stream.getReader();
-
-        try {
-            // eslint-disable-next-line no-constant-condition
-            while (true) {
-                const { done, value } = await reader.read();
-
-                callback({ done, value });
-                if (done) break;
-            }
-        } catch (error) {
-            throw new Error(
-                `AI Search failed for '${this.#prompt}' (stream): ${error instanceof Error ? error.message : 'Unknown error'}`
-            );
-        } finally {
-            reader.releaseLock();
-        }
-    }
-
     private fetch<T extends DotCMSBasicContentlet>(): Promise<DotCMSAISearchResponse<T>> {
         const searchParams = this.buildSearchParams(this.#prompt, this.#params);
         const url = new URL('/api/v1/ai/search', this.dotcmsUrl);
@@ -109,21 +86,6 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
             ...this.requestOptions,
             headers: {
                 ...this.requestOptions.headers
-            },
-            method: 'GET'
-        });
-    }
-
-    private fetchStream<T extends DotCMSBasicContentlet>(): Promise<ReadableStream<T>> {
-        const searchParams = this.buildSearchParams(this.#prompt, this.#params);
-        const url = new URL('/api/v1/ai/search', this.dotcmsUrl);
-        url.search = searchParams.toString();
-
-        return this.httpClient.request<ReadableStream<T>>(url.toString(), {
-            ...this.requestOptions,
-            headers: {
-                ...this.requestOptions.headers,
-                'Content-Type': 'application/octet-stream'
             },
             method: 'GET'
         });
