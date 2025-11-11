@@ -75,11 +75,7 @@
                         #rowElement
                         data-testId="row">
                         <div class="grid-stack-item-content grid-stack">
-                            @for (
-                                box of row.subGridOpts?.children;
-                                track identify(i, box);
-                                let i = $index
-                            ) {
+                            @for (box of row.subGridOpts?.children; track identify($index, box)) {
                                 <div
                                     [attr.gs-id]="box.id"
                                     [attr.gs-auto]="true"

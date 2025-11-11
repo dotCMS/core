@@ -400,7 +400,11 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     ): void {
         // The gridstack model is polutted with the subgrid data
         // So we need to delete the node from the GridStack Model
-        this.grid.engine.nodes.find((node) => node.id === rowID).subGrid?.removeWidget(element);
+        if (this.grid?.engine) {
+            this.grid.engine.nodes
+                .find((node) => node.id === rowID)
+                ?.subGrid?.removeWidget(element);
+        }
 
         this.store.removeColumn({ ...column, parentId: rowID as string });
     }
