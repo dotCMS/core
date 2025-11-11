@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
+import javax.servlet.http.HttpServletRequest;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
@@ -951,9 +952,30 @@ public class FieldAPIImpl implements FieldAPI {
     if (fieldVar.key().equals(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)) {
         final UniqueFieldValidationStrategyResolver resolver =
               CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
-        final User user = Try.of(() -> WebAPILocator.getUserWebAPI()
-                        .getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
-                        .getOrElse(APILocator.systemUser());
+        // During bundle publishing or background jobs, HTTP request context is not available
+        // because bundle processing runs in background threads (Quartz jobs or thread pools).
+        // The HTTP request lifecycle completes before the background thread executes, and
+        // Tomcat recycles request objects after the HTTP response completes.
+        //
+        // SECURITY NOTE: This method is called during ContentType save operations. The actual
+        // permission checks are performed earlier in the call chain by ContentTypeAPI using
+        // the user from PublisherConfig (bundle owner). The user here is only used for sending
+        // notifications, not for permission checks. Using systemUser as fallback is acceptable
+        // for notifications in background thread contexts.
+        User user = Try.of(() -> {
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            if (request != null) {
+                return WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+            }
+            return (User) null;
+        }).getOrElse((User) null);
+        
+        // If no user from request (bundle publishing, background jobs), use system user
+        // This is safe because permission checks happen earlier in ContentTypeAPI.save()
+        if (user == null) {
+            user = APILocator.systemUser();
+        }
+        
         try {
             this.sendStartRecalculationNotification(user, field);
             resolver.get().recalculate(field, false);

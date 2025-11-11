@@ -54,6 +54,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -82,6 +83,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     private static final String LOAD_CONTENTTYPE_DETAILS_FROM_CACHE = "LOAD_CONTENTTYPE_DETAILS_FROM_CACHE";
     private static final String INODE_COLUMN = "inode";
+
+    /**
+     * Maximum number of results to return when limit is -1 (no limit specified).
+     * This prevents unbounded queries from consuming excessive resources.
+     */
+    private static final int MAX_QUERY_LIMIT = 10000;
+
     final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
 
@@ -759,7 +767,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     if (limit == 0) {
         throw new DotDataException("The 'limit' param must be greater than 0");
     }
-    limit = (limit < 0) ? 10000 : limit;
+    limit = (limit < 0) ? MAX_QUERY_LIMIT : limit;
 
     // Our legacy code passes in raw sql conditions. We need to detect
     // and handle those
@@ -1415,6 +1423,304 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         final Map results = (Map) dc.loadResults().get(0);
         return Long.valueOf(results.get("count").toString());
  }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @CloseDBIfOpened
+    public List<ContentType> searchMultipleTypes(final String search, final Collection<BaseContentType> types,
+                                                  final String orderBy, final int limit, final int offset,
+                                                  final String siteId, final List<String> requestedContentTypes)
+            throws DotDataException {
+
+        if (types == null || types.isEmpty()) {
+            throw new DotDataException("The 'types' parameter must not be empty");
+        }
+
+        if (limit == 0) {
+            throw new DotDataException("The 'limit' param must be greater than 0");
+        }
+
+        final int effectiveLimit = (limit < 0) ? MAX_QUERY_LIMIT : limit;
+
+        try {
+            // Parse search conditions
+            final SearchCondition searchCondition = new SearchCondition(search);
+
+            // SECURITY: Sanitize orderBy parameter to prevent SQL injection
+            String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+            if (sanitizedOrderBy.isEmpty()) {
+                sanitizedOrderBy = ContentTypeFactory.MOD_DATE_COLUMN;
+            }
+
+            // Extract direction from original orderBy for comparator (sanitizeSortBy strips direction)
+            final String orderByForComparator = extractOrderByForComparator(orderBy, sanitizedOrderBy);
+
+            // SECURITY: Validate and prepare site parameters
+            final List<String> validatedSites = UtilMethods.isSet(siteId)
+                ? validateSiteIds(List.of(siteId))
+                : Collections.emptyList();
+
+            // STEP 1: Handle ensure parameter - fetch specifically requested content types first
+            final List<ContentType> result = new ArrayList<>();
+            final Set<String> includedIds = new HashSet<>();
+
+            if (requestedContentTypes != null && !requestedContentTypes.isEmpty()) {
+                Logger.debug(this, () -> String.format("Processing ensure parameter with %d requested types: %s",
+                        requestedContentTypes.size(), String.join(", ", requestedContentTypes)));
+
+                // Fetch the specifically requested content types
+                final List<ContentType> ensureTypes = find(requestedContentTypes, search, 0, -1, orderBy);
+
+                // Add them to results, respecting the limit
+                for (ContentType ct : ensureTypes) {
+                    if (result.size() < effectiveLimit) {
+                        result.add(ct);
+                        includedIds.add(ct.inode());
+                        includedIds.add(ct.id());
+                    } else {
+                        break;
+                    }
+                }
+
+                Logger.debug(this, () -> String.format("Added %d ensure types to results", result.size()));
+
+                // Early return if limit already reached
+                if (result.size() >= effectiveLimit) {
+                    return result;
+                }
+            }
+
+            // STEP 2: Calculate remaining limit for the UNION query
+            final int remainingLimit = effectiveLimit - result.size();
+
+            // Build UNION query for multiple types
+            final DotConnect dc = new DotConnect();
+            final StringBuilder unionQuery = new StringBuilder();
+            final List<Object> parameters = new ArrayList<>();
+
+            boolean first = true;
+            for (BaseContentType type : types) {
+                if (!first) {
+                    unionQuery.append(" UNION ALL ");
+                }
+                first = false;
+
+                // Build individual SELECT for this type
+                if (LOAD_FROM_CACHE.get()) {
+                    unionQuery.append(ContentTypeSql.SELECT_ONLY_INODE_FIELD);
+                } else {
+                    unionQuery.append(ContentTypeSql.SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE);
+                }
+
+                unionQuery.append(" and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) ");
+
+                // Add parameters for this type's search
+                parameters.add(searchCondition.search);
+                parameters.add(searchCondition.search.toLowerCase());
+                parameters.add(searchCondition.search);
+
+                // SECURITY: Add safe condition if present
+                if (searchCondition.safeCondition != null) {
+                    unionQuery.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
+                    if (searchCondition.safeCondition.value != null) {
+                        if ("structuretype".equals(searchCondition.safeCondition.field)) {
+                            parameters.add(Integer.parseInt(searchCondition.safeCondition.value));
+                        } else if (isBooleanField(searchCondition.safeCondition.field)) {
+                            parameters.add(Boolean.parseBoolean(searchCondition.safeCondition.value));
+                        } else {
+                            parameters.add(searchCondition.safeCondition.value);
+                        }
+                    }
+                }
+
+                // SECURITY: Add community edition filtering
+                if (searchCondition.isCommunityEdition) {
+                    unionQuery.append(" AND structuretype <> ").append(BaseContentType.FORM.getType())
+                              .append(" AND structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
+                }
+
+                // SECURITY: Add sites filter using parameterized LIKE clauses
+                if (!validatedSites.isEmpty()) {
+                    String likeConditions = validatedSites.stream()
+                        .map(site -> "host LIKE ? ESCAPE '\\'")
+                        .collect(Collectors.joining(" OR "));
+                    unionQuery.append(" AND (").append(likeConditions).append(") ");
+                    for (String site : validatedSites) {
+                        String escapedPattern = "%" + escapeLikePattern(site) + "%";
+                        parameters.add(escapedPattern);
+                    }
+                } else {
+                    unionQuery.append(" AND host IS NOT NULL ");
+                }
+
+                // Add type filtering for this specific base type
+                final int baseType = type.getType();
+                unionQuery.append(" and structuretype >= ? and structuretype <= ? ");
+                parameters.add(baseType);
+                parameters.add((baseType == 0) ? 100000 : baseType);
+
+                if (LOAD_FROM_CACHE.get()) {
+                    unionQuery.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
+                }
+            }
+
+            // Add ORDER BY only when NOT loading from cache
+            // When loading from cache, we only select inode, so ORDER BY columns aren't available
+            // We'll sort in Java after loading from cache instead
+            if (!LOAD_FROM_CACHE.get()) {
+                unionQuery.append(" order by ").append(sanitizedOrderBy);
+            }
+
+            // Execute the UNION query
+            dc.setSQL(unionQuery.toString());
+            dc.setMaxRows(remainingLimit);
+            dc.setStartRow(offset);
+
+            // Add all parameters in order
+            for (Object param : parameters) {
+                dc.addParam(param);
+            }
+
+            Logger.debug(this, () -> "MULTI-TYPE UNION QUERY: " + dc.getSQL());
+
+            // Transform results
+            final List<ContentType> queryResults;
+            if (LOAD_FROM_CACHE.get()) {
+                // Load from cache then sort in Java (SQL ORDER BY not available with inode-only select)
+                queryResults = dc.loadObjectResults()
+                        .stream()
+                        .map(typeMap -> Try.of(() -> find((String) typeMap.get(INODE_COLUMN)))
+                                .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
+                                        String.format("Failed to retrieve Content Type with Inode '%s': %s",
+                                                typeMap.get(INODE_COLUMN), ExceptionUtil.getErrorMessage(e)), e))
+                                .getOrNull())
+                        .filter(Objects::nonNull)
+                        .sorted(createContentTypeComparator(orderByForComparator))
+                        .collect(Collectors.toList());
+            } else {
+                queryResults = new DbContentTypeTransformer(dc.loadObjectResults()).asList();
+            }
+
+            // STEP 3: Merge UNION query results with ensure types, avoiding duplicates
+            for (ContentType ct : queryResults) {
+                // Skip if already included from ensure parameter
+                if (!includedIds.contains(ct.inode()) && !includedIds.contains(ct.id())) {
+                    result.add(ct);
+                    if (result.size() >= effectiveLimit) {
+                        break;
+                    }
+                }
+            }
+
+            // STEP 4: Sort the final merged results
+            // When ensure parameter is used, we need to re-sort the combined list
+            // to maintain consistent ordering across ensure and query results
+            if (!result.isEmpty()) {
+                result.sort(createContentTypeComparator(orderByForComparator));
+            }
+
+            Logger.debug(this, () -> String.format("Final result size: %d (limit: %d)", result.size(), effectiveLimit));
+
+            return result;
+
+        } catch (Exception e) {
+            throw new DotDataException("Failed to search multiple content types: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Extracts the orderBy parameter with direction preserved for use in the comparator.
+     * Since sanitizeSortBy() strips the direction, we need to reconstruct it from the original orderBy.
+     *
+     * @param originalOrderBy The original orderBy parameter (e.g., "name asc", "mod_date desc")
+     * @param sanitizedOrderBy The sanitized orderBy (field name only, e.g., "name", "mod_date")
+     * @return The orderBy string with direction preserved (e.g., "name asc", "mod_date desc")
+     */
+    String extractOrderByForComparator(final String originalOrderBy, final String sanitizedOrderBy) {
+        if (originalOrderBy == null || originalOrderBy.trim().isEmpty()) {
+            return sanitizedOrderBy;
+        }
+
+        final String lowerOrderBy = originalOrderBy.trim().toLowerCase();
+        final boolean isDescending = lowerOrderBy.contains("desc") || lowerOrderBy.startsWith("-");
+        final boolean isAscending = lowerOrderBy.contains("asc");
+
+        if (isDescending) {
+            return sanitizedOrderBy + " desc";
+        } else if (isAscending) {
+            return sanitizedOrderBy + " asc";
+        } else {
+            // Default to ascending if no direction specified
+            return sanitizedOrderBy + " asc";
+        }
+    }
+
+    /**
+     * Creates a comparator for sorting ContentType objects based on the orderBy parameter.
+     * Uses rule-based field name normalization from ContentTypeFieldNames for consistency.
+     * Supports sorting by: name, variable, velocity_var_name, mod_date, description.
+     *
+     * @param orderBy The orderBy parameter (e.g., "name", "name desc", "modDate asc")
+     * @return A comparator for ContentType objects
+     */
+    java.util.Comparator<ContentType> createContentTypeComparator(final String orderBy) {
+        if (orderBy == null || orderBy.trim().isEmpty()) {
+            return java.util.Comparator.comparing(ct -> ct.name() != null ? ct.name().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+        }
+
+        // Parse orderBy to extract field and direction
+        final String[] parts = orderBy.trim().toLowerCase().split("\\s+");
+        final String field = com.dotcms.contenttype.util.ContentTypeFieldNames.normalize(parts[0]);
+        final boolean descending = parts.length > 1 && "desc".equals(parts[1]);
+
+        // Create base comparator based on normalized field name
+        final java.util.Comparator<ContentType> comparator = createFieldComparator(field);
+
+        // Reverse if descending
+        return descending ? comparator.reversed() : comparator;
+    }
+
+    /**
+     * Creates a comparator for a specific ContentType field.
+     * Field name should already be normalized via ContentTypeFieldNames.normalize().
+     *
+     * @param normalizedField The normalized database field name (e.g., "mod_date", "velocity_var_name")
+     * @return A comparator for the specified field
+     */
+    private java.util.Comparator<ContentType> createFieldComparator(final String normalizedField) {
+        switch (normalizedField) {
+            case com.dotcms.contenttype.util.ContentTypeFieldNames.NAME:
+                return java.util.Comparator.comparing(
+                    ct -> ct.name() != null ? ct.name().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
+            case com.dotcms.contenttype.util.ContentTypeFieldNames.VELOCITY_VAR_NAME:
+                return java.util.Comparator.comparing(
+                    ct -> ct.variable() != null ? ct.variable().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
+            case com.dotcms.contenttype.util.ContentTypeFieldNames.MOD_DATE:
+                return java.util.Comparator.comparing(
+                    ContentType::modDate,
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
+            case com.dotcms.contenttype.util.ContentTypeFieldNames.DESCRIPTION:
+                return java.util.Comparator.comparing(
+                    ct -> ct.description() != null ? ct.description().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
+            default:
+                // Default to name if unknown field
+                Logger.debug(this, () -> "Unknown field for comparator: " + normalizedField + ", defaulting to name");
+                return java.util.Comparator.comparing(
+                    ct -> ct.name() != null ? ct.name().toLowerCase() : "",
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+        }
+    }
+
  private void dbUpdateModDate(ContentType type) throws DotDataException{
 	 DotConnect dc = new DotConnect();
 	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);

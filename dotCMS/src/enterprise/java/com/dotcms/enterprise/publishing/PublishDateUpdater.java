@@ -95,10 +95,20 @@ public class PublishDateUpdater {
 
     /**
      * Calculates the previous job run time based on the cron expression configuration.
-     * This is used to determine if content should have been published in a previous job run.
+     * This is used as a fallback when JobExecutionContext.getPreviousFireTime() is not available.
+     * 
+     * This method is primarily used in:
+     * - First run scenarios (when Quartz returns null for previousFireTime)
+     * - Test scenarios (tests don't have JobExecutionContext)
+     * - Manual invocations (direct API calls)
      *
      * @param currentFireTime The current job execution time
      * @return The previous fire time, or null if it cannot be calculated
+     * 
+     * NOTE: For a valid cron expression (e.g., "0 0/1 * * * ?"), this should rarely return null.
+     * If it does return null in normal scenarios (not first run), it indicates a calculation bug
+     * that should be investigated. However, when null is returned, shouldPublishContent() will
+     * default to publishing content, which is a safe fallback behavior.
      */
     @VisibleForTesting
     public static Date getPreviousJobRunTime(final Date currentFireTime) {
@@ -120,17 +130,42 @@ public class PublishDateUpdater {
             final long intervalMillis = nextAfterCurrent.getTime() - currentFireTime.getTime();
 
             // Go back slightly more than the interval to find the previous execution
-            final long searchBackMillis = (long) (intervalMillis * 1.1);
+            // Use a minimum of 1 minute to ensure we go back far enough
+            final long minSearchBackMillis = 60 * 1000; // 1 minute
+            final long searchBackMillis = Math.max((long) (intervalMillis * 1.1), minSearchBackMillis);
             final Date searchTime = new Date(currentFireTime.getTime() - searchBackMillis);
 
-            final Date previousTime = cronExpression.getNextValidTimeAfter(searchTime);
+            // Try to find the previous execution time
+            // getNextValidTimeAfter returns the NEXT time AFTER the given time, so we need to
+            // ensure searchTime is before the previous execution to find it correctly
+            Date previousTime = cronExpression.getNextValidTimeAfter(searchTime);
 
+            // If we found a valid previous time, verify it's before current time
             if (previousTime != null && previousTime.before(currentFireTime)) {
-                return previousTime;
+                // Ensure the previous time is not too far back (more than 2 intervals)
+                // This helps avoid edge cases where the calculation goes too far back
+                final long maxIntervalMillis = intervalMillis * 2;
+                final long timeDiff = currentFireTime.getTime() - previousTime.getTime();
+                if (timeDiff > 0 && timeDiff <= maxIntervalMillis) {
+                    return previousTime;
+                }
+            }
+
+            // Fallback: try going back by exactly one interval, but ensure we're before the previous execution
+            // We need to go back far enough that getNextValidTimeAfter will find the previous execution
+            final Date fallbackSearchTime = new Date(currentFireTime.getTime() - intervalMillis - 1000); // Subtract 1 extra second
+            previousTime = cronExpression.getNextValidTimeAfter(fallbackSearchTime);
+            
+            if (previousTime != null && previousTime.before(currentFireTime)) {
+                final long timeDiff = currentFireTime.getTime() - previousTime.getTime();
+                // Verify it's within reasonable bounds (not more than 2 intervals)
+                if (timeDiff > 0 && timeDiff <= intervalMillis * 2) {
+                    return previousTime;
+                }
             }
 
             Logger.warn(PublishDateUpdater.class,
-                    "Could not determine previous job run time");
+                    "Could not determine previous job run time for currentFireTime: " + currentFireTime);
             return null;
 
         } catch (ParseException e) {
@@ -197,6 +232,11 @@ public class PublishDateUpdater {
 
     @WrapInTransaction
     public static void updatePublishExpireDates(final Date fireTime) throws DotDataException, DotSecurityException {
+        updatePublishExpireDates(fireTime, null);
+    }
+
+    @WrapInTransaction
+    public static void updatePublishExpireDates(final Date fireTime, final Date previousFireTime) throws DotDataException, DotSecurityException {
 
 	    if(LicenseUtil.getLevel()< LicenseLevel.PROFESSIONAL.level){
 	        return;
@@ -213,7 +253,33 @@ public class PublishDateUpdater {
                     .search(luceneQueryToPublish, 0, 0,
                             null, systemUser, false);
 
-            Date previousJobRunTime = getPreviousJobRunTime(fireTime);
+            // Use provided previousFireTime if available (from JobExecutionContext), 
+            // otherwise calculate it from cron expression
+            // 
+            // FALLBACK SCENARIOS (when previousFireTime is null):
+            // 1. First run: JobExecutionContext.getPreviousFireTime() returns null on first execution (legitimate)
+            // 2. Tests: Tests don't have JobExecutionContext, so they use the calculation fallback (legitimate)
+            // 3. Manual invocation: Direct calls to updatePublishExpireDates() without JobExecutionContext (legitimate)
+            // 4. Invalid previousFireTime: When validation fails (shouldn't happen, but handled gracefully)
+            //
+            // NOTE: The calculation fallback should be reliable. If getPreviousJobRunTime() returns null
+            // in normal scenarios (not first run), that indicates a bug. However, when null is returned,
+            // shouldPublishContent() defaults to publishing content, which is a safe fallback behavior.
+            Date previousJobRunTime = previousFireTime;
+            
+            // Validate previousFireTime if provided (should be before fireTime)
+            if (previousJobRunTime != null && !previousJobRunTime.before(fireTime)) {
+                Logger.warn(PublishDateUpdater.class,
+                        "Invalid previousFireTime (" + previousJobRunTime + 
+                        ") is not before fireTime (" + fireTime + 
+                        "). Falling back to calculation.");
+                previousJobRunTime = null;
+            }
+            
+            // If not provided or invalid, calculate it from cron expression
+            if (previousJobRunTime == null) {
+                previousJobRunTime = getPreviousJobRunTime(fireTime);
+            }
 
             for (final Contentlet contentlet : contentletToPublish) {
                 try {

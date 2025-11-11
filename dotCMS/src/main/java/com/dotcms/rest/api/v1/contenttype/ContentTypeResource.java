@@ -1609,13 +1609,7 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	private String getOrderByRealName(final String orderbyParam) {
-		if ("modDate".equals(orderbyParam)){
-			return "mod_date";
-		}else if ("variable".equals(orderbyParam)) {
-			return "velocity_var_name";
-		} else {
-			return orderbyParam;
-		}
+		return com.dotcms.contenttype.util.ContentTypeFieldNames.normalize(orderbyParam);
 	}
 
 

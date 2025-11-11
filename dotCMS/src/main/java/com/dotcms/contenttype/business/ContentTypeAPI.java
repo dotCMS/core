@@ -551,6 +551,33 @@ public interface ContentTypeAPI {
           throws DotDataException;
 
   /**
+   * Searches for Content Types matching multiple base types in a single efficient database query.
+   * This method uses a UNION query to combine results from multiple base types, sort them,
+   * and paginate efficiently at the database level.
+   * <p>
+   * This is significantly more performant and scalable than querying each type separately
+   * and combining results in memory, especially with large numbers of content types.
+   *
+   * @param condition          Filter condition that Content Types must meet. It's internally
+   *                           sanitized by the API.
+   * @param types              Collection of Base Content Types to search for (must not be empty).
+   * @param orderBy            The order-by clause, which is internally sanitized by the API.
+   * @param limit              Maximum number of items to return in the result set, for pagination.
+   *                           Use -1 for no limit (up to 10000).
+   * @param offset             The page offset in the result set, for pagination purposes.
+   * @param siteId             The ID of the Site that Content Types live in. Can be null or empty for all sites.
+   * @param requestedContentTypes Optional list of specific content type variables to ensure are included.
+   *
+   * @return The list of {@link ContentType} objects matching the criteria, sorted and paginated.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
+   */
+  List<ContentType> searchMultipleTypes(final String condition, final java.util.Collection<BaseContentType> types,
+                                        final String orderBy, final int limit, final int offset,
+                                        final String siteId, final List<String> requestedContentTypes)
+          throws DotDataException;
+
+  /**
    * Return the number of entries for each content types
    *
    * @return return a Map where the keys are the content types' variable name and the values are the number of entries
