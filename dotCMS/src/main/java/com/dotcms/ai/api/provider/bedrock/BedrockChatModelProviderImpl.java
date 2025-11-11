@@ -34,7 +34,7 @@ public class BedrockChatModelProviderImpl implements ChatModelProvider {
         final String accessKeyId      = config.getOrDefault("accessKeyId", "");
         final String secretAccessKey  = config.getOrDefault("secretAccessKey", "");
         final String region      = config.getOrDefault("region", "");
-        final String modelId     = config.getOrDefault(AiModelConfig.MODEL, "");
+        final String modelId     = config.getOrDefault(AiModelConfig.MODEL+"Id", "");
         final double temperature = ConversionUtils.toDouble(
                 config.getOrDefault(AiModelConfig.TEMPERATURE, "0.3"),
                 0.3);
@@ -42,8 +42,10 @@ public class BedrockChatModelProviderImpl implements ChatModelProvider {
                 config.getOrDefault(AiModelConfig.TIMEOUT_MS, "30000"),
                 30000L);
 
-        final AwsCredentials credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
-        final AwsCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(credentials);
+        //final AwsCredentials credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+        //final AwsCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(credentials);
+        JwtToAwsCredentialsProvider credentialsProvider =
+                new JwtToAwsCredentialsProvider(accessKeyId, "user", Region.of(region));
 
         final BedrockRuntimeClient bedrockClient = BedrockRuntimeClient.builder()
                 .region(Region.of(region))
