@@ -298,20 +298,31 @@ public class BrowserQuery {
             return this;
         }
 
+        /**
+         * When set, search includes items that belong to system-host
+         * @param forceSystemHost
+         * @return
+         */
         public Builder forceSystemHost(boolean forceSystemHost) {
             this.forceSystemHost = forceSystemHost;
             return this;
         }
 
+        /**
+         * There's a hard limit configured, this allows me to bypass that limit
+         * @param overrideMaxResults
+         * @return
+         */
         public Builder overrideMaxResults(boolean overrideMaxResults) {
             this.overrideMaxResults = overrideMaxResults;
             return this;
         }
 
         /**
-         * Introduced to allow me to skip the inclusion of a calculated folder path in the query
-         * This property ensures we don't break prior functionality
-         * @param skipFolder
+         * Introduced to allow skipping the inclusion of a calculated folder path in the base query
+         * This property ensures we don't break prior functionality.
+         * This is useful if we want to retrieve everything under a site root. No folder should be included
+         * @param skipFolder flag
          * @return this
          */
         public Builder skipFolder(boolean skipFolder) {
@@ -320,8 +331,8 @@ public class BrowserQuery {
         }
 
         /**
-         * This activates seatch text using ElasticSearch
-         * @param useElasticsearchFiltering
+         * This activates search text using ElasticSearch
+         * @param useElasticsearchFiltering flag
          * @return this
          */
         public Builder useElasticsearchFiltering(boolean useElasticsearchFiltering) {
@@ -331,7 +342,7 @@ public class BrowserQuery {
 
         /**
          * if we want to filter folder names when searching with Text filters
-         * @param filterFolderNames
+         * @param filterFolderNames flag
          * @return this
          */
         public Builder filterFolderNames(boolean filterFolderNames) {
@@ -493,12 +504,6 @@ public class BrowserQuery {
             return this;
         }
 
-        public Builder withContentTypes(@Nonnull List<String> contentTypes) {
-            this.contentTypes.clear();
-            this.contentTypes.addAll(contentTypes);
-            return this;
-        }
-
         public Builder addContentType(@Nonnull String contentType) {
             if (UtilMethods.isSet(contentType)) {
                 this.contentTypes.add(contentType);
@@ -518,6 +523,11 @@ public class BrowserQuery {
             return this;
         }
 
+        /**
+         * Base Types override content-types
+         * @param types baseTypes
+         * @return
+         */
         public Builder withBaseTypes(@Nonnull List<BaseContentType> types) {
             baseTypes.addAll(types);
             return this;

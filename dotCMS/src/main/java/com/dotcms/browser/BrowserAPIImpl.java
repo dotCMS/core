@@ -1260,10 +1260,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 appendSystemHostQuery(countQuery);
             }
         }
-
-        // Im almost certain that Folder can't be null.
-        // It is always calculated with some obscure logic that I don't want to break.
-        // Therefore, I'm introducing this skipFolder flag
+        //This property allows the exclusion of the folder in the base query
         if (browserQuery.folder != null && !browserQuery.skipFolder) {
             appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
             appendFolderQuery(countQuery, browserQuery.folder.getPath(), dump);
