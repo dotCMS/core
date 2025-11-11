@@ -190,4 +190,23 @@ describe('DotPageApiService', () => {
             expect(requestHeaders.get('Content-Type')).toEqual('application/json');
         });
     });
+
+    describe('saveContentlet', () => {
+        it('should send a PUT request with indexPolicy=WAIT_FOR query param', () => {
+            const contentlet = {
+                inode: 'test-inode-123',
+                title: 'Test Title',
+                body: 'Test Content'
+            };
+
+            spectator.service.saveContentlet({ contentlet }).subscribe();
+
+            const { request } = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/EDIT?inode=test-inode-123&indexPolicy=WAIT_FOR',
+                HttpMethod.PUT
+            );
+
+            expect(request.body).toEqual({ contentlet });
+        });
+    });
 });
