@@ -30,6 +30,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotFolderTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.transform.DotMapViewTransformer;
@@ -201,27 +202,27 @@ public class BrowserAPIImpl implements BrowserAPI {
                     return doPureESQuery(browserQuery, startRow, maxRows);
             }
         } finally {
-            final long endTimeNanos = System.nanoTime();
-            final long executionTimeNanos = endTimeNanos - startTimeNanos;
+            final boolean debugEnabled = Logger.isDebugEnabled(BrowserAPIImpl.class);
+            if(debugEnabled) {
+                final long endTimeNanos = System.nanoTime();
+                final long executionTimeNanos = endTimeNanos - startTimeNanos;
 
-            // Convert to different time units using TimeUnit for better precision and readability
-            final long executionTimeMillis = TimeUnit.NANOSECONDS.toMillis(executionTimeNanos);
-            final long executionTimeMicros = TimeUnit.NANOSECONDS.toMicros(executionTimeNanos);
-            final double executionTimeSeconds = TimeUnit.NANOSECONDS.toSeconds(executionTimeNanos);
+                // Convert to milliseconds and seconds for performance analysis
+                final long executionTimeMillis = TimeUnit.NANOSECONDS.toMillis(executionTimeNanos);
+                final double executionTimeSeconds = executionTimeNanos / 1_000_000_000.0;
 
-            // Log with multiple time units for comprehensive performance analysis
-            if (executionTimeMillis > 1000) {
-                // For longer operations, show seconds with high precision
-                Logger.info(this, String.format("===== Heuristic %s execution completed in %.3f seconds (%d ms) =====",
-                    heuristicType.name(), executionTimeSeconds, executionTimeMillis));
-            } else if (executionTimeMillis > 10) {
-                // For medium operations, show milliseconds and microseconds
-                Logger.info(this, String.format("===== Heuristic %s execution completed in %d ms (%,d μs) =====",
-                    heuristicType.name(), executionTimeMillis, executionTimeMicros));
-            } else {
-                // For very fast operations, show microseconds for precision
-                Logger.info(this, String.format("===== Heuristic %s execution completed in %,d μs (%.2f ms) =====",
-                    heuristicType.name(), executionTimeMicros, executionTimeMillis / 1000.0));
+                // Log with seconds and milliseconds only
+                if (executionTimeMillis > 1000) {
+                    // For longer operations, show seconds with high precision
+                    Logger.debug(this, String.format(
+                            "===== Heuristic %s execution completed in %.3f seconds (%d ms) =====",
+                            heuristicType.name(), executionTimeSeconds, executionTimeMillis));
+                } else {
+                    // For shorter operations, show milliseconds
+                    Logger.debug(this, String.format(
+                            "===== Heuristic %s execution completed in %d ms =====",
+                            heuristicType.name(), executionTimeMillis));
+                }
             }
         }
     }
@@ -358,7 +359,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             // Build comprehensive ES query without inode restrictions
             final String esQuery = buildPureESQuery(browserQuery);
 
-            Logger.info(this, String.format("::: Pure ES query: %s", esQuery));
+            Logger.debug(this, String.format("::: Pure ES query: %s", esQuery));
 
             // Use ContentletAPI to search directly in ES
             final com.dotmarketing.portlets.contentlet.business.ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -487,7 +488,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     // Lazy initialization for heuristic type configuration
     private final Lazy<SearchHeuristicType> HEURISTIC_TYPE = Lazy.of(() -> {
-        final String heuristicConfigValue = Config.getStringProperty("BROWSE_API_HEURISTIC_TYPE", "SINGLE_QUERY_CHUNKED");
+        final String heuristicConfigValue = Config.getStringProperty("BROWSE_API_HEURISTIC_TYPE", "HYBRID_SINGLE_CHUNKED_QUERY_ES");
         try {
             return SearchHeuristicType.valueOf(heuristicConfigValue.toUpperCase());
         } catch (IllegalArgumentException e) {
@@ -834,12 +835,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int totalInodes = inodesList.size();
 
         // Create chunks for parallel processing
-        final List<List<String>> chunks = new ArrayList<>();
-        for (int i = 0; i < totalInodes; i += chunkSize) {
-            final int endIndex = Math.min(i + chunkSize, totalInodes);
-            chunks.add(inodesList.subList(i, endIndex));
-        }
-
+        final List<List<String>> chunks = createChunks(inodesList, chunkSize);
         final int chunkCount = chunks.size();
         Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes in %d chunks (chunk size: %d)",
             totalInodes, chunkCount, chunkSize));
@@ -847,7 +843,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         // Process chunks in parallel using CompletableFuture
         final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
         final CompletableFuture<List<Contentlet>>[] futures = new CompletableFuture[chunkCount];
-
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         for (int i = 0; i < chunkCount; i++) {
             final List<String> chunk = chunks.get(i);
             final int chunkIndex = i + 1;
@@ -859,7 +855,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                         chunkIndex, chunkCount, chunk.size()));
 
                     try {
-                        final List<Contentlet> chunkContentlets = APILocator.getContentletAPI().findContentlets(chunk);
+                        final List<Contentlet> chunkContentlets = contentletAPI.findContentlets(chunk);
                         final long chunkDuration = System.currentTimeMillis() - chunkStartTime;
                         Logger.debug(BrowserAPIImpl.this, String.format(
                             "Contentlet chunk %d/%d completed: %d inodes → %d contentlets in %d ms",
@@ -910,6 +906,76 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         return allContentlets;
+    }
+
+    /**
+     * Hydrates contentlets in parallel using chunks for improved performance.
+     *
+     * @param contentlets List of contentlets to hydrate
+     * @param browserQuery Browser query parameters for hydration
+     * @param roles User roles for permission checking
+     * @param resultList Output list to add hydrated results to
+     */
+    private void hydrateContentletsInParallel(final List<Contentlet> contentlets,
+                                              final BrowserQuery browserQuery,
+                                              final Role[] roles,
+                                              final List<Map<String, Object>> resultList) {
+        final int totalContentlets = contentlets.size();
+        final int chunkSize = Math.max(1, Math.min(10, totalContentlets / 4));
+        final List<List<Contentlet>> chunks = createChunks(contentlets, chunkSize);
+
+        final List<CompletableFuture<List<Map<String, Object>>>> futures = chunks.stream()
+            .map(chunk -> CompletableFuture.supplyAsync(() -> {
+                final List<Map<String, Object>> chunkResults = new ArrayList<>(chunk.size());
+                for (final Contentlet contentlet : chunk) {
+                    try {
+                        final Map<String, Object> contentMap = hydrate(browserQuery, contentlet, roles);
+                        chunkResults.add(contentMap);
+                    } catch (DotDataException | DotSecurityException e) {
+                        Logger.error(this, "Error hydrating contentlet " + contentlet.getInode() + ": " + e.getMessage(), e);
+                        throw new DotRuntimeException("Failed to hydrate contentlet: " + contentlet.getInode(), e);
+                    }
+                }
+                return chunkResults;
+            }, DotConcurrentFactory.getInstance().getSubmitter()))
+            .collect(Collectors.toList());
+
+        // Collect results maintaining order
+        for (final CompletableFuture<List<Map<String, Object>>> future : futures) {
+            try {
+                resultList.addAll(future.get(30, TimeUnit.SECONDS));
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                Logger.error(this, "Error in parallel hydration: " + e.getMessage(), e);
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                throw new DotRuntimeException("Failed to hydrate contentlets in parallel", e);
+            }
+        }
+    }
+
+    /**
+     * Creates chunks from a list with the specified chunk size.
+     *
+     * @param list The list to split into chunks
+     * @param chunkSize The size of each chunk
+     * @return List of chunks, each containing at most chunkSize elements
+     */
+    private <T> List<List<T>> createChunks(List<T> list, int chunkSize) {
+        /*
+        if (list == null || list.isEmpty() || chunkSize <= 0) {
+            return new ArrayList<>();
+        }
+
+        final List<List<T>> chunks = new ArrayList<>();
+        final int totalSize = list.size();
+
+        for (int i = 0; i < totalSize; i += chunkSize) {
+            final int endIndex = Math.min(i + chunkSize, totalSize);
+            chunks.add(list.subList(i, endIndex));
+        }*/
+
+        return Lists.partition(list, chunkSize);
     }
 
     /**
@@ -1118,10 +1184,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             contentTotalCount = fromDB.totalResults;
             contentCount = fromDB.contentlets.size();
 
-            for (final Contentlet contentlet : fromDB.contentlets) {
-                final Map<String, Object> contentMap = hydrate(browserQuery, contentlet, roles);
-                list.add(contentMap);
-            }
+            // Parallelize hydration with chunks
+            hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles, list);
         }
 
         // Final sorting (optional: maybe you only need to sort within each block before slicing)
@@ -1159,29 +1223,93 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private @NotNull Map<String, Object> hydrate(BrowserQuery browserQuery,
             Contentlet contentlet, Role[] roles) throws DotDataException, DotSecurityException {
-        Map<String, Object> contentMap;
+
+        final long hydrationStartTime = System.nanoTime();
+        final String contentletId = contentlet.getInode();
+        final String contentType = contentlet.getContentType().variable();
+
+        try {
+            // Step 1: Content mapping based on type
+            final long mappingStartTime = System.nanoTime();
+            Map<String, Object> contentMap = createContentMap(contentlet);
+            final long mappingDuration = System.nanoTime() - mappingStartTime;
+
+            // Step 2: Shorty identifiers (if requested)
+            final long shortiesStartTime = System.nanoTime();
+            if (browserQuery.showShorties) {
+                contentMap.put("shortyIdentifier", this.shortyIdAPI.shortify(contentlet.getIdentifier()));
+                contentMap.put("shortyInode", this.shortyIdAPI.shortify(contentlet.getInode()));
+            }
+            final long shortiesDuration = System.nanoTime() - shortiesStartTime;
+
+            // Step 3: Permissions calculation
+            final long permissionsStartTime = System.nanoTime();
+            final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(contentlet, roles, browserQuery.user);
+            final long permissionsDuration = System.nanoTime() - permissionsStartTime;
+
+            // Step 4: Workflow data
+            final long workflowStartTime = System.nanoTime();
+            final WfData wfdata = new WfData(contentlet, permissions, browserQuery.user, browserQuery.showArchived);
+            contentMap.put("wfActionMapList", wfdata.wfActionMapList);
+            contentMap.put("contentEditable", wfdata.contentEditable);
+            contentMap.put("permissions", permissions);
+            final long workflowDuration = System.nanoTime() - workflowStartTime;
+
+            // Calculate total duration and log performance details
+            final long totalDuration = System.nanoTime() - hydrationStartTime;
+            final long totalMillis = TimeUnit.NANOSECONDS.toMillis(totalDuration);
+
+
+            // Log slow hydrations for performance analysis
+            if (totalMillis > 100) {
+                Logger.warn(this, String.format(
+                    "SLOW HYDRATION: contentlet=%s, type=%s, total=%dms [mapping=%dms, shorties=%dms, permissions=%dms, workflow=%dms]",
+                    contentletId, contentType, totalMillis,
+                    TimeUnit.NANOSECONDS.toMillis(mappingDuration),
+                    TimeUnit.NANOSECONDS.toMillis(shortiesDuration),
+                    TimeUnit.NANOSECONDS.toMillis(permissionsDuration),
+                    TimeUnit.NANOSECONDS.toMillis(workflowDuration)
+                ));
+            }
+
+            return contentMap;
+
+        } catch (DotDataException | DotSecurityException e) {
+            final long totalDuration = System.nanoTime() - hydrationStartTime;
+            final long totalMillis = TimeUnit.NANOSECONDS.toMillis(totalDuration);
+            Logger.error(this, String.format(
+                "HYDRATION ERROR: contentlet=%s, type=%s, duration=%dms, error=%s",
+                contentletId, contentType, totalMillis, e.getMessage()
+            ), e);
+            throw e;
+        } catch (Exception e) {
+            final long totalDuration = System.nanoTime() - hydrationStartTime;
+            final long totalMillis = TimeUnit.NANOSECONDS.toMillis(totalDuration);
+            Logger.error(this, String.format(
+                "HYDRATION UNEXPECTED ERROR: contentlet=%s, type=%s, duration=%dms, error=%s",
+                contentletId, contentType, totalMillis, e.getMessage()
+            ), e);
+            throw new DotRuntimeException("Failed to hydrate contentlet: " + contentletId, e);
+        }
+    }
+
+    /**
+     * Creates the appropriate content map based on contentlet type.
+     * Extracted for better performance tracking and maintainability.
+     */
+    private Map<String, Object> createContentMap(Contentlet contentlet)  {
         final Optional<BaseContentType> baseType = contentlet.getBaseType();
         if (baseType.isPresent() && baseType.get() == BaseContentType.FILEASSET) {
             final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-            contentMap = fileAssetMap(fileAsset);
+            return fileAssetMap(fileAsset);
         } else if (baseType.isPresent() && baseType.get() == BaseContentType.DOTASSET) {
-            contentMap = dotAssetMap(contentlet);
+            return dotAssetMap(contentlet);
         } else if (baseType.isPresent() &&  baseType.get() == BaseContentType.HTMLPAGE) {
             final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-            contentMap = htmlPageMap(page);
+            return htmlPageMap(page);
         } else {
-            contentMap = dotContentMap(contentlet);
+            return dotContentMap(contentlet);
         }
-        if (browserQuery.showShorties) {
-            contentMap.put("shortyIdentifier", this.shortyIdAPI.shortify(contentlet.getIdentifier()));
-            contentMap.put("shortyInode", this.shortyIdAPI.shortify(contentlet.getInode()));
-        }
-        final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(contentlet, roles, browserQuery.user);
-        final WfData wfdata = new WfData(contentlet, permissions, browserQuery.user, browserQuery.showArchived);
-        contentMap.put("wfActionMapList", wfdata.wfActionMapList);
-        contentMap.put("contentEditable", wfdata.contentEditable);
-        contentMap.put("permissions", permissions);
-        return contentMap;
     }
 
     private List<Map<String, Object>> filterReturnList(final BrowserQuery browserQuery, final List<Map<String, Object>> returnList) {
