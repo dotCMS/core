@@ -51,7 +51,7 @@ public class AiModelConfigFactory {
 
         final SystemCache systemCache = CacheLocator.getSystemCache();
         final AiModelConfig configFromCache = (AiModelConfig) systemCache.get(key(siteId, vendorModelPath));
-        if (null == configFromCache) {
+            if (null == configFromCache) {
 
             final AiModelConfig configFromApp = Try.of(()->findAiModelFromApp(siteId, vendorModelPath)).getOrNull();
             if (null != configFromApp) {
