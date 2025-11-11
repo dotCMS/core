@@ -7,12 +7,13 @@ import {
     DotErrorAISearch,
     DotHttpClient,
     DotHttpError,
-    DotRequestOptions
+    DotRequestOptions,
+    DotCMSAISearchResponse
 } from '@dotcms/types';
 
 import { BaseApiClient } from '../../base/base-api';
 import { DEFAULT_AI_CONFIG, DEFAULT_QUERY } from '../shared/const';
-import { DotCMSAISearchResponse, OnFullfilled, OnRejected } from '../shared/types';
+import { OnFullfilled, OnRejected } from '../shared/types';
 
 /**
  * Class for executing AI searches.

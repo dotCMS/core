@@ -1,4 +1,4 @@
-import { DotCMSBasicContentlet, DotErrorAISearch } from '@dotcms/types';
+import { DotCMSAISearchResponse, DotCMSBasicContentlet, DotErrorAISearch } from '@dotcms/types';
 
 /**
  * Callback for a fulfilled promise.
@@ -26,16 +26,3 @@ export type OnRejected =
     | ((error: DotErrorAISearch) => DotErrorAISearch | PromiseLike<DotErrorAISearch>)
     | undefined
     | null;
-
-export interface DotCMSAISearchResponse<T extends DotCMSBasicContentlet> {
-    dotCMSResults: DotCMSAISearchContentletData<T>[];
-}
-
-export interface DotCMSAISearchMatch {
-    distance: number;
-    extractedText: string;
-}
-
-export type DotCMSAISearchContentletData<T extends DotCMSBasicContentlet> = T & {
-    matches?: DotCMSAISearchMatch[];
-};

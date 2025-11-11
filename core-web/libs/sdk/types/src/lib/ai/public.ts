@@ -1,4 +1,5 @@
 import { DotHttpError } from '../client/public';
+import { DotCMSBasicContentlet } from '../page/public';
 
 /**
  * Query parameters for AI search - defines what and where to search
@@ -172,3 +173,47 @@ export class DotErrorAISearch extends Error {
         };
     }
 }
+
+/**
+ * The response from the AI search.
+ * @public
+ * @interface DotCMSAISearchResponse
+ */
+export interface DotCMSAISearchResponse<T extends DotCMSBasicContentlet> {
+    /**
+     * The results from the AI search.
+     * @property {DotCMSAISearchContentletData<T>[]} dotCMSResults - The results from the AI search.
+     */
+    dotCMSResults: DotCMSAISearchContentletData<T>[];
+}
+
+/**
+ * The match from the AI search.
+ * @public
+ * @interface DotCMSAISearchMatch
+ */
+export interface DotCMSAISearchMatch {
+    /**
+     * The distance from the AI search.
+     * @property {number} distance - The distance from the AI search.
+     */
+    distance: number;
+    /**
+     * The extracted text from the AI search.
+     * @property {string} extractedText - The extracted text from the AI search.
+     */
+    extractedText: string;
+}
+
+/**
+ * The contentlet data from the AI search.
+ * @public
+ * @interface DotCMSAISearchContentletData
+ */
+export type DotCMSAISearchContentletData<T extends DotCMSBasicContentlet> = T & {
+    /**
+     * The matches from the AI search.
+     * @property {DotCMSAISearchMatch[]} matches - The matches from the AI search.
+     */
+    matches?: DotCMSAISearchMatch[];
+};

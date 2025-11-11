@@ -31,6 +31,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   [How-to Guides](#how-to-guides)
     -   [How to Fetch Complete Pages](#how-to-fetch-complete-pages)
     -   [How to Query Content Collections](#how-to-query-content-collections)
+    -   [How to Use AI-Powered Search](#how-to-use-ai-powered-search)
     -   [How to Work with GraphQL](#how-to-work-with-graphql)
     -   [How to Use with TypeScript](#how-to-use-with-typescript)
     -   [How to Enable Page Editing](#how-to-enable-page-editing)
@@ -39,6 +40,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
     -   [HTTP Client Configuration](#http-client-configuration)
     -   [page.get() Method](#pageget-method)
     -   [content.getCollection() Method](#contentgetcollection-method)
+    -   [ai.search() Method](#aisearch-method)
     -   [navigation.get() Method](#navigationget-method)
     -   [Error Handling](#error-handling)
 -   [Concepts & Architecture](#concepts--architecture)
@@ -212,6 +214,338 @@ const products = await client.content
         .field('discontinued').equals('true')
     )
     .limit(10);
+```
+
+### How to Use AI-Powered Search
+
+The `client.ai.search()` method enables semantic search using AI embeddings to find content based on meaning rather than exact keyword matches.
+
+#### Prerequisites
+
+Before using AI-powered search, ensure your dotCMS instance is properly configured:
+
+> [!IMPORTANT]
+> **Required Setup:**
+> 1. **dotAI must be activated** in your dotCMS instance
+> 2. **OpenAI API Key** must be configured in dotCMS
+> 3. **PostgreSQL 15+ with pgvector extension** must be installed
+> 4. **Content indexes** must be created and configured in dotAI
+>
+> For detailed setup instructions, see the [dotCMS dotAI documentation](https://dev.dotcms.com/docs/dotai).
+
+#### Basic AI Search
+```typescript
+// Search for content semantically related to your query
+const results = await client.ai.search('articles about machine learning');
+console.log(results.dotCMSResults);
+```
+
+#### Customizing Search Parameters
+```typescript
+// Fine-tune search with query parameters
+const results = await client.ai.search('artificial intelligence tutorials', {
+    query: {
+        limit: 20,
+        offset: 0,
+        contentType: 'BlogPost',
+        languageId: '1',
+        indexName: 'content_index' // Required if using a custom index
+    }
+});
+```
+
+> [!IMPORTANT]
+> If you've created a custom AI search index in dotCMS (different from the default), you **must** specify the `indexName` parameter. The SDK defaults to `'default'`, which may not match your custom index configuration.
+
+#### Adjusting AI Configuration
+```typescript
+import { DISTANCE_FUNCTIONS } from '@dotcms/types';
+
+// Customize AI search behavior with threshold and distance function
+const results = await client.ai.search('deep learning concepts', {
+    ai: {
+        threshold: 0.75,              // Higher threshold = more relevant results
+        distanceFunction: DISTANCE_FUNCTIONS.cosine, // Distance calculation method
+        responseLength: 2048           // Maximum response length
+    }
+});
+```
+
+#### Complete Example with All Options
+```typescript
+// Combine query and AI parameters for precise control
+const results = await client.ai.search('best practices for content management', {
+    query: {
+        limit: 10,
+        offset: 0,
+        contentType: 'Article',
+        languageId: '1',
+        siteId: 'my-site',
+        indexName: 'articles_index'
+    },
+    ai: {
+        threshold: 0.8,
+        distanceFunction: DISTANCE_FUNCTIONS.innerProduct,
+        responseLength: 1024
+    }
+});
+
+// Access results with match scores
+results.dotCMSResults.forEach(result => {
+    console.log(result.title);
+    console.log('Matches:', result.matches); // Distance and extracted text
+});
+```
+
+#### Understanding Distance Functions
+
+The SDK supports multiple distance functions for vector similarity:
+
+```typescript
+import { DISTANCE_FUNCTIONS } from '@dotcms/types';
+
+// Available distance functions:
+DISTANCE_FUNCTIONS.cosine        // '<=>' - Cosine similarity (default)
+DISTANCE_FUNCTIONS.innerProduct  // '<#>' - Inner product similarity
+DISTANCE_FUNCTIONS.L2            // '<->' - Euclidean distance
+DISTANCE_FUNCTIONS.L1            // '<+>' - Manhattan distance
+DISTANCE_FUNCTIONS.hamming       // '<~>' - Hamming distance
+DISTANCE_FUNCTIONS.jaccard       // '<%>' - Jaccard similarity
+```
+
+### How to Use with TypeScript
+
+The SDK is built with TypeScript and provides comprehensive type definitions through the `@dotcms/types` package for enhanced developer experience and type safety.
+
+#### Basic Type Usage
+
+```typescript
+import { createDotCMSClient } from '@dotcms/client';
+import type {
+    DotCMSPageAsset,
+    DotCMSPageResponse,
+    DotCMSBasicContentlet,
+    DotCMSNavigationItem,
+    DotCMSAISearchResponse,
+    DotErrorPage,
+    DotErrorContent,
+    DotErrorAISearch
+} from '@dotcms/types';
+
+const client = createDotCMSClient({
+    dotcmsUrl: 'https://your-dotcms-instance.com',
+    authToken: 'your-auth-token',
+    siteId: 'your-site-id'
+});
+```
+
+#### Typing Page Responses
+
+```typescript
+import type { DotCMSPageAsset } from '@dotcms/types';
+
+// Basic page fetch with type inference
+const { pageAsset } = await client.page.get('/about-us');
+// pageAsset is automatically typed as DotCMSPageAsset
+
+// Explicit typing
+const response: { pageAsset: DotCMSPageAsset } = await client.page.get('/about-us');
+
+// Access typed properties
+console.log(pageAsset.page.title);        // string
+console.log(pageAsset.layout.body.rows);  // Row[]
+console.log(pageAsset.viewAs.language);   // LanguageView
+```
+
+#### Typing Content Collections
+
+```typescript
+import type { DotCMSBasicContentlet } from '@dotcms/types';
+
+// Define your custom content type interface
+interface BlogPost extends DotCMSBasicContentlet {
+    title: string;
+    body: string;
+    author: string;
+    publishDate: string;
+    tags: string[];
+}
+
+// Use the generic type parameter for type-safe content
+const response = await client.content
+    .getCollection<BlogPost>('Blog')
+    .limit(10);
+
+// Now contentlets are typed as BlogPost[]
+response.contentlets.forEach(post => {
+    console.log(post.title);      // ✅ Type-safe: string
+    console.log(post.author);     // ✅ Type-safe: string
+    console.log(post.publishDate); // ✅ Type-safe: string
+});
+```
+
+#### Typing AI Search Results
+
+```typescript
+import type {
+    DotCMSAISearchResponse,
+    DotCMSBasicContentlet,
+    DISTANCE_FUNCTIONS
+} from '@dotcms/types';
+
+// Define your content type
+interface Article extends DotCMSBasicContentlet {
+    title: string;
+    content: string;
+    category: string;
+}
+
+// Type-safe AI search
+const results: DotCMSAISearchResponse<Article> = await client.ai.search<Article>(
+    'machine learning tutorials',
+    {
+        query: {
+            limit: 20,
+            contentType: 'Article'
+        },
+        ai: {
+            threshold: 0.75,
+            distanceFunction: DISTANCE_FUNCTIONS.cosine
+        }
+    }
+);
+
+// Access typed results with match information
+results.dotCMSResults.forEach(article => {
+    console.log(article.title);           // ✅ Type-safe: string
+    console.log(article.category);        // ✅ Type-safe: string
+
+    // Access AI match data
+    article.matches?.forEach(match => {
+        console.log(match.distance);      // ✅ Type-safe: number
+        console.log(match.extractedText); // ✅ Type-safe: string
+    });
+});
+```
+
+#### Typing Navigation
+
+```typescript
+import type { DotCMSNavigationItem } from '@dotcms/types';
+
+// Navigation is automatically typed
+const nav: DotCMSNavigationItem[] = await client.navigation.get('/', {
+    depth: 2,
+    languageId: 1
+});
+
+// Access typed navigation properties
+nav.forEach(item => {
+    console.log(item.title);    // ✅ Type-safe: string
+    console.log(item.href);     // ✅ Type-safe: string
+    console.log(item.children); // ✅ Type-safe: DotCMSNavigationItem[] | undefined
+});
+```
+
+#### Type-Safe Error Handling
+
+```typescript
+import type {
+    DotHttpError,
+    DotErrorPage,
+    DotErrorContent,
+    DotErrorAISearch
+} from '@dotcms/types';
+
+try {
+    const { pageAsset } = await client.page.get('/about-us');
+} catch (error) {
+    // Type guard for specific error types
+    if (error instanceof DotErrorPage) {
+        // TypeScript knows this is DotErrorPage
+        console.error('Page error:', error.message);
+        console.error('Context:', error.context);
+        if (error.httpError) {
+            console.error('Status:', error.httpError.status); // ✅ Type-safe
+        }
+    } else if (error instanceof DotErrorContent) {
+        // TypeScript knows this is DotErrorContent
+        console.error('Content error:', error.contentType);
+        console.error('Operation:', error.operation);
+    } else if (error instanceof DotErrorAISearch) {
+        // TypeScript knows this is DotErrorAISearch
+        console.error('AI Search error:', error.prompt);
+        console.error('Parameters:', error.params);
+    }
+}
+```
+
+#### Custom Content Types with Relationships
+
+```typescript
+import type { DotCMSBasicContentlet } from '@dotcms/types';
+
+// Define related content types
+interface Author extends DotCMSBasicContentlet {
+    name: string;
+    email: string;
+    bio: string;
+}
+
+interface Category extends DotCMSBasicContentlet {
+    categoryName: string;
+    description: string;
+}
+
+// Main content type with relationships
+interface BlogPost extends DotCMSBasicContentlet {
+    title: string;
+    body: string;
+    author: Author;        // Nested type
+    category: Category;    // Nested type
+    tags: string[];
+    publishDate: string;
+}
+
+// Fetch with depth to include relationships
+const response = await client.content
+    .getCollection<BlogPost>('Blog')
+    .depth(2)
+    .limit(5);
+
+// Access nested typed properties
+response.contentlets.forEach(post => {
+    console.log(post.title);              // ✅ string
+    console.log(post.author.name);        // ✅ string
+    console.log(post.author.email);       // ✅ string
+    console.log(post.category.categoryName); // ✅ string
+});
+```
+
+#### Using with Async/Await and Promises
+
+```typescript
+import type {
+    DotCMSPageAsset,
+    GetCollectionResponse
+} from '@dotcms/types';
+
+// Async function with typed return
+async function fetchBlogPosts(): Promise<GetCollectionResponse<BlogPost>> {
+    return await client.content
+        .getCollection<BlogPost>('Blog')
+        .limit(10);
+}
+
+// Promise chain with types
+client.page.get('/about-us')
+    .then((response: { pageAsset: DotCMSPageAsset }) => {
+        console.log(response.pageAsset.page.title);
+        return response;
+    })
+    .catch((error: DotErrorPage) => {
+        console.error(error.message);
+    });
 ```
 
 ### How to Work with GraphQL
@@ -420,6 +754,96 @@ getCollection<T = DotCMSBasicContentlet>(
 const blogs = await client.content.getCollection('Blog').limit(10).page(1);
 ```
 
+### ai.search() Method
+
+Performs semantic search using AI embeddings to find content based on meaning rather than exact keyword matches.
+
+> [!NOTE]
+> **Prerequisites:** This feature requires dotAI to be activated in your dotCMS instance with a configured OpenAI API key. See the [dotAI setup documentation](https://dev.dotcms.com/docs/dotai) for configuration details.
+
+```typescript
+search<T extends DotCMSBasicContentlet>(
+  prompt: string,
+  params?: DotCMSAISearchParams
+): Promise<DotCMSAISearchResponse<T>>
+```
+
+#### Parameters
+
+| Parameter | Type                  | Required | Description                           |
+| --------- | --------------------- | -------- | ------------------------------------- |
+| `prompt`  | string                | ✅       | Natural language search query         |
+| `params`  | DotCMSAISearchParams  | ❌       | Search configuration options          |
+
+#### Search Parameters (params.query)
+
+| Option        | Type             | Description                              |
+| ------------- | ---------------- | ---------------------------------------- |
+| `limit`       | number           | Maximum number of results (default: 1000) |
+| `offset`      | number           | Number of results to skip (default: 0)   |
+| `contentType` | string           | Filter by specific content type          |
+| `languageId`  | string           | Filter by language ID                    |
+| `siteId`      | string           | Filter by site ID                        |
+| `indexName`   | string           | Search index name (default: 'default'). **Required if using a custom index.** |
+
+#### AI Configuration (params.ai)
+
+| Option             | Type   | Description                                     |
+| ------------------ | ------ | ----------------------------------------------- |
+| `threshold`        | number | Minimum similarity score (0-1, default: 0.5)    |
+| `distanceFunction` | string | Distance calculation method (default: cosine)   |
+| `responseLength`   | number | Maximum response length (default: 1024)         |
+
+#### Response
+
+```typescript
+interface DotCMSAISearchResponse<T> {
+    dotCMSResults: Array<T & {
+        matches?: Array<{
+            distance: number;      // Similarity score
+            extractedText: string; // Matched text excerpt
+        }>;
+    }>;
+}
+```
+
+#### Examples
+
+**Basic Search:**
+```typescript
+const results = await client.ai.search('machine learning articles');
+```
+
+**With Parameters:**
+```typescript
+import { DISTANCE_FUNCTIONS } from '@dotcms/types';
+
+const results = await client.ai.search('AI tutorials', {
+    query: {
+        limit: 20,
+        contentType: 'BlogPost',
+        languageId: '1'
+    },
+    ai: {
+        threshold: 0.75,
+        distanceFunction: DISTANCE_FUNCTIONS.cosine
+    }
+});
+```
+
+**Promise-Style:**
+```typescript
+client.ai.search('content management best practices', {
+    query: { limit: 10 },
+    ai: { threshold: 0.8 }
+}).then((results) => {
+    console.log('Found:', results.dotCMSResults.length);
+    return results;
+}).catch((error) => {
+    console.error('Search failed:', error.message);
+});
+```
+
 ### navigation.get() Method
 
 ```typescript
@@ -457,12 +881,13 @@ The SDK provides comprehensive error handling with specific error types for diff
 
 #### Error Types
 
-| Error Type          | When It's Thrown                           | Properties                                          |
-| ------------------- | ------------------------------------------ | --------------------------------------------------- |
-| `DotHttpError`      | HTTP/network failures (4xx/5xx, timeouts) | `status`, `statusText`, `headers`, `body`           |
-| `DotErrorPage`      | Page API failures                          | `httpError?`, `context` (query, variables)         |
-| `DotErrorContent`   | Content API failures                       | `contentType`, `operation`, `httpError?`, `query?` |
-| `DotErrorNavigation`| Navigation API failures                    | `path`, `httpError?`                               |
+| Error Type           | When It's Thrown                           | Properties                                          |
+| -------------------- | ------------------------------------------ | --------------------------------------------------- |
+| `DotHttpError`       | HTTP/network failures (4xx/5xx, timeouts) | `status`, `statusText`, `headers`, `body`           |
+| `DotErrorPage`       | Page API failures                          | `httpError?`, `context` (query, variables)         |
+| `DotErrorContent`    | Content API failures                       | `contentType`, `operation`, `httpError?`, `query?` |
+| `DotErrorAISearch`   | AI Search API failures                     | `prompt`, `params`, `httpError?`                   |
+| `DotErrorNavigation` | Navigation API failures                    | `path`, `httpError?`                               |
 
 #### Basic Error Handling
 ```typescript
@@ -505,6 +930,22 @@ try {
     if (error instanceof DotErrorNavigation) {
         console.error('Navigation error:', error.message);
         console.error('Path:', error.path);
+        if (error.httpError) {
+            console.error('HTTP status:', error.httpError.status);
+        }
+    }
+}
+```
+
+#### AI Search Error Handling
+```typescript
+try {
+    const results = await client.ai.search('machine learning');
+} catch (error) {
+    if (error instanceof DotErrorAISearch) {
+        console.error('AI Search error:', error.message);
+        console.error('Prompt:', error.prompt);
+        console.error('Parameters:', error.params);
         if (error.httpError) {
             console.error('HTTP status:', error.httpError.status);
         }
@@ -570,13 +1011,14 @@ DotHttpError: "Network request failed"
 
 ### Choosing the Right Method
 
-The dotCMS Client SDK provides three core methods for fetching data. Use this quick guide to decide which one is best for your use case:
+The dotCMS Client SDK provides four core methods for fetching data. Use this quick guide to decide which one is best for your use case:
 
-| Method                    | Use When You Need...                                          | Best For                                                                                                                                                                                         |
-| ------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `client.page.get()`       | A full page with layout, containers, and related content      | **Rendering entire pages** with a single request. Ideal for headless setups, SSR/SSG frameworks, and cases where you want everything—page structure, content, and navigation—tied to a URL path. |
+| Method                           | Use When You Need...                                          | Best For                                                                                                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `client.page.get()`              | A full page with layout, containers, and related content      | **Rendering entire pages** with a single request. Ideal for headless setups, SSR/SSG frameworks, and cases where you want everything—page structure, content, and navigation—tied to a URL path. |
 | `client.content.getCollection()` | A filtered list of content items from a specific content type | Populating dynamic blocks, lists, search results, widgets, or reusable components.                                                                                                               |
-| `client.navigation.get()` | Only the site's navigation structure (folders and links)      | Standalone menus or use cases where navigation is needed outside of page context.                                                                                                                |
+| `client.ai.search()`             | Semantic/AI-powered content discovery based on natural language | **Intelligent search experiences** where users describe what they're looking for in natural language. Great for search features, content recommendations, and finding relevant content by meaning rather than exact keywords. |
+| `client.navigation.get()`        | Only the site's navigation structure (folders and links)      | Standalone menus or use cases where navigation is needed outside of page context.                                                                                                                |
 
 #### Start with `page.get()`: The One-Request Solution
 
@@ -594,15 +1036,16 @@ Only use `content.getCollection()` or `navigation.get()` if you have advanced ne
 
 ### Architecture Overview
 
-The SDK follows a client-builder pattern with three main APIs:
+The SDK follows a client-builder pattern with four main APIs:
 
 - **Page API** (`client.page.get()`) - Fetches complete page content with layout and containers
 - **Content API** (`client.content.getCollection()`) - Builder pattern for querying content collections
+- **AI API** (`client.ai.search()`) - AI-powered semantic search using embeddings and vector similarity
 - **Navigation API** (`client.navigation.get()`) - Fetches site navigation structure
 
 All APIs support:
 - Type-safe responses with TypeScript
-- GraphQL query extensions
+- GraphQL query extensions (Page API)
 - Localization and personalization
 - Browser and Node.js compatibility
 

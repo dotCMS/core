@@ -7,13 +7,13 @@ import {
     DotErrorAISearch,
     DotCMSAISearchParams,
     DotCMSBasicContentlet,
-    DISTANCE_FUNCTIONS
+    DISTANCE_FUNCTIONS,
+    DotCMSAISearchResponse
 } from '@dotcms/types';
 
 import { AISearch } from './search';
 
 import { FetchHttpClient } from '../../adapters/fetch-http-client';
-import { DotCMSAISearchResponse } from '../shared/types';
 
 // Mock the FetchHttpClient
 jest.mock('../../adapters/fetch-http-client');
