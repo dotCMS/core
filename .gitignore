@@ -197,3 +197,5 @@ local/
 
 # Claude Code diagnostic outputs
 .claude/diagnostics/
+.tmp-tarballs/
+.tarballs/

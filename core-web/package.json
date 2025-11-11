@@ -42,7 +42,12 @@
         "test:dotcms:ci": "../mvnw -pl :dotcms-core-web test",
         "update": "nx migrate latest",
         "workspace-generator": "nx workspace-generator",
-        "help": "nx help"
+        "help": "nx help",
+        "pack:angular": "node scripts/dev-pack.js angular",
+        "pack:angular-ssr": "node scripts/dev-pack.js angular-ssr",
+        "pack:nextjs": "node scripts/dev-pack.js nextjs",
+        "pack:astro": "node scripts/dev-pack.js astro",
+        "pack:vuejs": "node scripts/dev-pack.js vuejs"
     },
     "private": false,
     "dependencies": {
