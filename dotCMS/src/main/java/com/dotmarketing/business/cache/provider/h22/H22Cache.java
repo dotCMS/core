@@ -1,6 +1,7 @@
 package com.dotmarketing.business.cache.provider.h22;
 
 import com.dotcms.cache.CacheValue;
+import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -127,25 +128,26 @@ public class H22Cache extends CacheProvider {
     }
 
 
+    @Override
+    public void init() throws Exception {
 
-
-	@Override
-	public void init() throws Exception {
-
+        if (ShutdownCoordinator.isShutdownStarted()) {
+            return;
+        }
         if (isInitialized.compareAndSet(false, true)) {
+
+            Logger.info(this, "Starting H22 Cache Async Executor Service");
+            Try.run(() -> executorService.shutdownNow());
+            executorService = spawnNewThreadPool();
+
             // init the databases
             for (int i = 0; i < numberOfDbs; i++) {
                 getPool(i, true);
             }
-            if (executorService == null || executorService.isShutdown()
-                    || ((ThreadPoolExecutor) executorService).isTerminating()) {
-                Logger.info(this, "H22 Cache Async Executor Service has shut down, creating a new one");
-                Try.run(() -> executorService.shutdownNow());
-                executorService = spawnNewThreadPool();
-            }
+
         }
 
-	}
+    }
 
 	@Override
 	public boolean isInitialized() throws Exception {
@@ -746,6 +748,10 @@ public class H22Cache extends CacheProvider {
 	}
 
 	private void handleError(final Exception ex, final Fqn fqn) {
+        if (ex.getCause() != null && ex.getCause() instanceof java.lang.InterruptedException) {
+            Logger.debug(this.getClass(), ex.getMessage() + ": cache shutting down, ignoring", ex);
+            return;
+        }
 	    DONT_CACHE_ME.put(fqn.id, fqn.toString());
 		// debug all errors
 		Logger.debug(this.getClass(), ex.getMessage() + " on " + fqn, ex);
