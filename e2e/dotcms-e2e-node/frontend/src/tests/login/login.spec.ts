@@ -17,7 +17,8 @@ validCredentials.forEach(({ username, password }) => {
 
     const breadcrumbComponent = new BreadcrumbComponent(page);
     const breadcrumb = breadcrumbComponent.getBreadcrumb();
-    await expect(breadcrumb).toHaveText("Getting Started");
+    await expect(breadcrumb).toContainText("Home");
+    await expect(breadcrumb).toContainText("Getting Started");
 
     const title = breadcrumbComponent.getTitle();
     await expect(title).toHaveText("Welcome");

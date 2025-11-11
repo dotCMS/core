@@ -3,7 +3,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -22,6 +23,7 @@ import {
     DotFormatDateService,
     DotIframeService,
     DotRouterService,
+    DotSystemConfigService,
     DotUiColorsService
 } from '@dotcms/data-access';
 import {
@@ -35,6 +37,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotDialogComponent,
     DotGravatarDirective,
@@ -87,7 +90,14 @@ describe('DotToolbarUserComponent', () => {
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 DotFormatDateService,
-                DotToolbarUserStore
+                DotToolbarUserStore,
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ],
             imports: [
                 BrowserAnimationsModule,
