@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -6,15 +8,19 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotSystemConfigService } from '@dotcms/data-access';
 import { DotMenu } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { GlobalStore } from '@dotcms/store';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { DotNavItemComponent } from './dot-nav-item.component';
 
-import { LABEL_IMPORTANT_ICON } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
-import { DotRandomIconPipeModule } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe.module';
+import {
+    LABEL_IMPORTANT_ICON,
+    DotRandomIconPipe
+} from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
 import { dotMenuMock } from '../../services/dot-navigation.service.spec';
-import { DotNavIconModule } from '../dot-nav-icon/dot-nav-icon.module';
+import { DotNavIconComponent } from '../dot-nav-icon/dot-nav-icon.component';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
 @Component({
@@ -70,14 +76,26 @@ describe('DotNavItemComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
+            declarations: [TestHostComponent],
             imports: [
-                DotNavIconModule,
-                DotIconModule,
+                DotNavItemComponent,
+                DotSubNavComponent,
+                DotNavIconComponent,
+                DotIconComponent,
                 RouterTestingModule,
                 BrowserAnimationsModule,
                 TooltipModule,
-                DotRandomIconPipeModule
+                DotRandomIconPipe
+            ],
+            providers: [
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                DotRandomIconPipe
             ]
         }).compileComponents();
     }));
