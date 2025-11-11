@@ -138,7 +138,7 @@ export class DotPageApiService {
      */
     saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
         return this.http.put(
-            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
+            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}&indexPolicy=WAIT_FOR`,
             { contentlet }
         );
     }
