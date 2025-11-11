@@ -841,7 +841,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         final int chunkCount = chunks.size();
-        Logger.info(this, String.format("Loading contentlets in parallel: %d inodes in %d chunks (chunk size: %d)",
+        Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes in %d chunks (chunk size: %d)",
             totalInodes, chunkCount, chunkSize));
 
         // Process chunks in parallel using CompletableFuture
@@ -896,7 +896,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
 
             final long totalDuration = System.currentTimeMillis() - startTime;
-            Logger.info(this, String.format(
+            Logger.debug(this, String.format(
                 "Parallel contentlet loading completed: %d inodes in %d chunks → %d contentlets in %d ms",
                 totalInodes, chunkCount, allContentlets.size(), totalDuration));
 
@@ -1285,7 +1285,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(countQuery);
         }
 
-        Logger.info(this, "Select Query: " + selectQuery);
+        Logger.debug(this, "Select Query: " + selectQuery);
         Logger.debug(this, "Count Query: " + countQuery);
 
         return new SelectAndCountQueries(selectQuery.toString(), countQuery.toString(), parameters);
