@@ -234,7 +234,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             SelectAndCountQueries sqlQuery) throws DotDataException {
         final Set<String> collectedInodes = new LinkedHashSet<>();
 
-        Logger.info(this, "::::: Using Single Query Chunked for text filtering ::::");
+        Logger.debug(this, "::::: Using Single Query Chunked for text filtering ::::");
 
         // Execute single DB query to get ALL candidate inodes without pagination
         final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
@@ -247,7 +247,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 .collect(Collectors.toList());
 
         if (allCandidateInodes.isEmpty()) {
-            Logger.info(this, "Single Query Chunked: No candidate inodes found");
+            Logger.debug(this, "Single Query Chunked: No candidate inodes found");
             return collectedInodes;
         }
 
@@ -327,7 +327,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
 
             final long totalDuration = System.currentTimeMillis() - startTime;
-            Logger.info(this, String.format(
+            Logger.debug(this, String.format(
                 "Single Query Chunked parallel processing completed: %d candidates in %d chunks → %d total matches in %d ms",
                 totalCandidates, actualChunks, collectedInodes.size(), totalDuration));
 
@@ -352,7 +352,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     private Set<String> doPureESQuery(BrowserQuery browserQuery, int startRow, int maxRows) throws DotDataException {
         final Set<String> collectedInodes = new LinkedHashSet<>();
 
-        Logger.info(this, "::::: Using Pure ES for text filtering (no database queries) ::::");
+        Logger.debug(this, "::::: Using Pure ES for text filtering (no database queries) ::::");
 
         try {
             // Build comprehensive ES query without inode restrictions
@@ -376,7 +376,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             // Extract inodes from the results
             contentlets.forEach(contentlet -> collectedInodes.add(contentlet.getInode()));
 
-            Logger.info(this, String.format("Pure ES completed: found %d contentlets, collected %d inodes",
+            Logger.debug(this, String.format("Pure ES completed: found %d contentlets, collected %d inodes",
                 contentlets.size(), collectedInodes.size()));
 
         } catch (final Exception e) {
