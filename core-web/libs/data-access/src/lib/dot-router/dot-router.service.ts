@@ -15,13 +15,15 @@ import { filter } from 'rxjs/operators';
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotRouterService {
     private router = inject(Router);
     private route = inject(ActivatedRoute);
 
     portletReload$ = new Subject();
-    private _storedRedirectUrl: string;
+    private _storedRedirectUrl: string | null = '';
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
     private _routeCanBeDeactivated = new BehaviorSubject(true);

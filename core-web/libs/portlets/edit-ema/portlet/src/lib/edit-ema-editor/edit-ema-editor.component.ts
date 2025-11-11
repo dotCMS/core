@@ -998,13 +998,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     [dataset.fieldName]: payload.content
                 };
 
+                this.uveStore.setUveStatus(UVE_STATUS.LOADING);
                 this.dotPageApiService
                     .saveContentlet({ contentlet })
                     .pipe(
                         take(1),
-                        tap(() => {
-                            this.uveStore.setUveStatus(UVE_STATUS.LOADING);
-                        }),
                         tapResponse(
                             () => {
                                 this.messageService.add({

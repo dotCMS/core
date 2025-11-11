@@ -122,7 +122,10 @@ public class PublisherQueueJob implements StatefulJob {
 	public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
 		try {
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
-			PublishDateUpdater.updatePublishExpireDates(jobExecutionContext.getFireTime());
+			// Use JobExecutionContext.getPreviousFireTime() when available for accurate previous run time
+			PublishDateUpdater.updatePublishExpireDates(
+					jobExecutionContext.getFireTime(), 
+					jobExecutionContext.getPreviousFireTime());
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
 			List<Map<String, Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
 			if (null == bundles) {

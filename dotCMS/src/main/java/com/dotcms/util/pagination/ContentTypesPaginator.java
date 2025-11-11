@@ -6,7 +6,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.util.SQLUtil;
@@ -137,38 +136,50 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
         final Set<BaseContentType> types = BaseContentType.fromNames(baseTypeNames); //This will get me BaseType Any if none is passed
         try {
             long totalRecords = 0L;
-            final Set<ContentType> collectedContentTypes = new LinkedHashSet<>();
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
-            for (final BaseContentType type : types) { //We're going to iterate over all passed types
-                if (UtilMethods.isSet(varNamesList)) {
-                    List<ContentType> optionalTypeList = this.contentTypeAPI.find(varNamesList, filter, offset, limit, orderByParam);
-                    if(!type.equals(BaseContentType.ANY)) { //If this is Any type, we don't need to filter'
-                        optionalTypeList = optionalTypeList.stream()
-                                .filter(contentType -> contentType.baseType().equals(type))
-                                .collect(Collectors.toList());
-                    }
-                    if(!optionalTypeList.isEmpty()){
-                        collectedContentTypes.addAll(optionalTypeList);
-                        //in this case our universe is the total number of varNames.
-                        //in case you're wondering, It's not accumulative
-                        totalRecords = varNamesList.size();
-                    }
-                } else if (UtilMethods.isSet(siteList)) {
-                    collectedContentTypes.addAll(this.contentTypeAPI.search(siteList, filter, type, orderByParam, limit, offset));
-                    totalRecords += this.getTotalRecords(BLANK, type, siteList);
-                } else {
-                    collectedContentTypes.addAll(this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId, requestedContentTypes));
+            final List<ContentType> contentTypes;
+
+            // When querying multiple base types, use efficient database-level UNION query
+            // For single type or variable name queries, use existing optimized paths
+            if (types.size() > 1 && !UtilMethods.isSet(varNamesList) && !UtilMethods.isSet(siteList)) {
+                // MULTI-TYPE EFFICIENT PATH: Use database UNION query for optimal performance
+                contentTypes = this.contentTypeAPI.searchMultipleTypes(filter, types, orderByParam,
+                        limit, offset, siteId, requestedContentTypes);
+
+                // Calculate total records across all types
+                for (final BaseContentType type : types) {
                     totalRecords += getTotalRecords(filter, type, List.of(siteId));
                 }
+            } else {
+                // SINGLE-TYPE OR SPECIAL CASES PATH: Use existing logic
+                final Set<ContentType> collectedContentTypes = new LinkedHashSet<>();
+
+                for (final BaseContentType type : types) {
+                    if (UtilMethods.isSet(varNamesList)) {
+                        List<ContentType> optionalTypeList = this.contentTypeAPI.find(varNamesList, filter, offset, limit, orderByParam);
+                        if(!type.equals(BaseContentType.ANY)) { //If this is Any type, we don't need to filter'
+                            optionalTypeList = optionalTypeList.stream()
+                                    .filter(contentType -> contentType.baseType().equals(type))
+                                    .collect(Collectors.toList());
+                        }
+                        if(!optionalTypeList.isEmpty()){
+                            collectedContentTypes.addAll(optionalTypeList);
+                            //in this case our universe is the total number of varNames.
+                            //in case you're wondering, It's not accumulative
+                            totalRecords = varNamesList.size();
+                        }
+                    } else if (UtilMethods.isSet(siteList)) {
+                        collectedContentTypes.addAll(this.contentTypeAPI.search(siteList, filter, type, orderByParam, limit, offset));
+                        totalRecords += this.getTotalRecords(BLANK, type, siteList);
+                    } else {
+                        collectedContentTypes.addAll(this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId, requestedContentTypes));
+                        totalRecords += getTotalRecords(filter, type, List.of(siteId));
+                    }
+                }
+
+                // For collected results from individual queries, apply pagination slice
+                contentTypes = applySafeSlice(new ArrayList<>(collectedContentTypes), offset, limit);
             }
-            //Since we're combining multiple types, we need to slice the result to remain consistent with pagination params
-
-            // This ensures that the resulting list follows the orderBy param
-            ContentTypeHelper contentTypeHelper = new ContentTypeHelper();
-            final Set<ContentType> sortedCollectedContentTypes = new LinkedHashSet<>(
-                    contentTypeHelper.sortContentTypes(collectedContentTypes, orderByParam));
-
-            final List<ContentType> contentTypes = applySafeSlice(new ArrayList<>(sortedCollectedContentTypes), offset, limit);
             final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
             setEntriesAttribute(user, contentTypesTransform,
                     this.workflowAPI.findSchemesMapForContentType(contentTypes),
