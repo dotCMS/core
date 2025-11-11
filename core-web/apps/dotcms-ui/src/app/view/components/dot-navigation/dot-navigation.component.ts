@@ -3,6 +3,7 @@ import { Component, HostBinding, HostListener, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotNavHeaderComponent } from './components/dot-nav-header/dot-nav-header.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
@@ -19,7 +20,8 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 export class DotNavigationComponent {
     /**
      * A private readonly instance of `DotNavigationService` injected into the component.
-     * This service is used to manage the navigation logic within the application.
+     * This service is used to manage navigation actions (goTo, toggle, setOpen, etc.)
+     * but not for reading menu state, which comes from the GlobalStore.
      */
     readonly #dotNavigationService = inject(DotNavigationService);
 
@@ -30,16 +32,20 @@ export class DotNavigationComponent {
     readonly #iframeOverlayService = inject(IframeOverlayService);
 
     /**
-     * Signal representing the menu items from the DotNavigationService.
-     *
-     * This signal is synchronized with the `items$` observable from the `DotNavigationService`.
-     * The `requireSync` option ensures that the signal is updated synchronously with the observable.
-     *
-     * @type {Signal<MenuItem[]>}
+     * A readonly instance of the GlobalStore injected into the component.
+     * This store provides the menu state signal for rendering the navigation.
      */
-    $menu = toSignal(this.#dotNavigationService.items$, {
-        requireSync: true
-    });
+    readonly #globalStore = inject(GlobalStore);
+
+    /**
+     * Signal representing the menu items from the GlobalStore.
+     *
+     * This signal reads from the `menuItemsTemp` state in the GlobalStore,
+     * which is fed by the DotNavigationService. The component only reads from the store.
+     *
+     * @type {Signal<DotMenu[]>}
+     */
+    $menu = this.#globalStore.menuItemsTemp;
 
     /**
      * Signal indicating whether the navigation is collapsed.

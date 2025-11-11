@@ -28,6 +28,7 @@ describe('DotNavigationComponent collapsed', () => {
     let spectator: Spectator<DotNavigationComponent>;
     let navigationService: SpyObject<DotNavigationService>;
     let iframeOverlayService: SpyObject<IframeOverlayService>;
+    let globalStore: InstanceType<typeof GlobalStore>;
 
     const createComponent = createComponentFactory({
         component: DotNavigationComponent,
@@ -43,7 +44,6 @@ describe('DotNavigationComponent collapsed', () => {
             DotMenuService,
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService, {
-                items$: of([dotMenuMock(), dotMenuMock1()]),
                 collapsed$: of(true)
             }),
             {
@@ -67,6 +67,10 @@ describe('DotNavigationComponent collapsed', () => {
 
         navigationService = spectator.inject(DotNavigationService);
         iframeOverlayService = spectator.inject(IframeOverlayService);
+        globalStore = spectator.inject(GlobalStore);
+
+        // Set menu items in the GlobalStore instead of using service's items$
+        globalStore.setMenuItemsTemp([dotMenuMock(), dotMenuMock1()]);
     });
 
     it('should have all menus closed', () => {
@@ -165,6 +169,7 @@ describe('DotNavigationComponent expanded', () => {
     let spectator: Spectator<DotNavigationComponent>;
     let navigationService: SpyObject<DotNavigationService>;
     let iframeOverlayService: SpyObject<IframeOverlayService>;
+    let globalStore: InstanceType<typeof GlobalStore>;
 
     const createComponent = createComponentFactory({
         component: DotNavigationComponent,
@@ -180,13 +185,19 @@ describe('DotNavigationComponent expanded', () => {
             DotMenuService,
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService, {
-                items$: of([dotMenuMock(), dotMenuMock1()]),
                 collapsed$: of(false)
             }),
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
-            }
+            },
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => of({}) }
+            },
+            GlobalStore,
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 
@@ -197,6 +208,10 @@ describe('DotNavigationComponent expanded', () => {
 
         navigationService = spectator.inject(DotNavigationService);
         iframeOverlayService = spectator.inject(IframeOverlayService);
+        globalStore = spectator.inject(GlobalStore);
+
+        // Set menu items in the GlobalStore instead of using service's items$
+        globalStore.setMenuItemsTemp([dotMenuMock(), dotMenuMock1()]);
     });
 
     it('should have all menus closed', () => {
