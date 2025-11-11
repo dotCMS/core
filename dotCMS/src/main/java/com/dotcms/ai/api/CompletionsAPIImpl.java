@@ -165,21 +165,26 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     @Override
     public CompletionResponse raw(final CompletionRequest completionRequest) {
 
-        Logger.debug(this, ()-> "Doing raw request: " + completionRequest);
-        final AiModelConfig modelConfig = completionRequest.getChatModelConfig();
-        final String vendorName = AIUtil.getVendorFromPath(completionRequest.getVendorModelPath());
-        final Float temperature = completionRequest.getTemperature();
-        final ChatModel chatModel = this.modelProviderFactory.get(vendorName,
-                Objects.nonNull(temperature)? AiModelConfig.withTemperature(modelConfig, temperature).build(): // if the temperature is set, lets override the config
-                        completionRequest.getChatModelConfig());
-        final String userPrompt = completionRequest.getPrompt();
-        final String systemPrompt = completionRequest.getSystemPrompt();
-        final UserMessage userMessage = new UserMessage(userPrompt);
-        final List<ChatMessage> messages = StringUtils.isSet(systemPrompt)?
-                List.of(new SystemMessage(systemPrompt), userMessage):List.of(userMessage);
-        final ChatResponse chatResponse = chatModel.chat(messages);
-        return new CompletionResponse(chatResponse.aiMessage().text(),
-                chatResponse.aiMessage(), chatResponse.metadata());
+        try {
+            Logger.debug(this, () -> "Doing raw request: " + completionRequest);
+            final AiModelConfig modelConfig = completionRequest.getChatModelConfig();
+            final String vendorName = AIUtil.getVendorFromPath(completionRequest.getVendorModelPath());
+            final Float temperature = completionRequest.getTemperature();
+            final ChatModel chatModel = this.modelProviderFactory.get(vendorName,
+                    Objects.nonNull(temperature) ? AiModelConfig.withTemperature(modelConfig, temperature).build() : // if the temperature is set, lets override the config
+                            completionRequest.getChatModelConfig());
+            final String userPrompt = completionRequest.getPrompt();
+            final String systemPrompt = completionRequest.getSystemPrompt();
+            final UserMessage userMessage = new UserMessage(userPrompt);
+            final List<ChatMessage> messages = StringUtils.isSet(systemPrompt) ?
+                    List.of(new SystemMessage(systemPrompt), userMessage) : List.of(userMessage);
+            final ChatResponse chatResponse = chatModel.chat(messages);
+            return new CompletionResponse(chatResponse.aiMessage().text(),
+                    chatResponse.aiMessage(), chatResponse.metadata());
+        } catch (Exception ex) {
+            Logger.error(this, "Error on completions raw request" + ex.getMessage(), ex);
+            throw new DotRuntimeException(ex);
+        }
     }
 
     @Override

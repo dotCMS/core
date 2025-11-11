@@ -47,6 +47,7 @@ public class BedrockChatModelProviderImpl implements ChatModelProvider {
         JwtToAwsCredentialsProvider credentialsProvider =
                 new JwtToAwsCredentialsProvider(accessKeyId, "user", Region.of(region));
 
+        // Received an UnknownHostException when attempting to interact with a service. See cause for the exact endpoint that is failing to resolve. If this is happening on an endpoint that previously worked, there may be a network connectivity issue or your DNS cache could be storing endpoints for too long.c
         final BedrockRuntimeClient bedrockClient = BedrockRuntimeClient.builder()
                 .region(Region.of(region))
                 .credentialsProvider(credentialsProvider)

@@ -149,6 +149,40 @@
           "dimensions": 768
         }
       }
+    },
+
+    "gemini": {
+      "apiKey": "{{GOOGLE_API_KEY}}",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+      "timeoutMs": 30000,
+      "rateLimitQps": 8,
+      "retries": 2,
+      "chat": {
+        "gemini-1-5-pro": {
+          "model": "models/gemini-1.5-pro-latest",
+          "temperature": 0.2,
+          "topP": 0.95,
+          "topK": 40,
+          "maxOutputTokens": 4096,
+          "default": true
+        },
+        "gemini-1-5-flash": {
+          "model": "models/gemini-1.5-flash-latest",
+          "temperature": 0.3,
+          "topP": 0.95,
+          "topK": 40,
+          "maxOutputTokens": 2048
+        }
+      },
+      "embeddings": {
+        "text-embedding-004": {
+          "model": "models/text-embedding-004",
+          "dimensions": 768,
+          "timeoutMs": 20000,
+          "default": true
+        }
+      }
     }
+
   }
 }
