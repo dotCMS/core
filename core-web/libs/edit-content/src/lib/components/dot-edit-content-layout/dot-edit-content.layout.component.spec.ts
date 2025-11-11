@@ -26,12 +26,15 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
     DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     MOCK_MULTIPLE_WORKFLOW_ACTIONS,
@@ -90,6 +93,9 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(MessageService),
             mockProvider(DialogService),
             mockProvider(DotLanguagesService),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
+            GlobalStore,
             {
                 provide: DotCurrentUserService,
                 useValue: {
