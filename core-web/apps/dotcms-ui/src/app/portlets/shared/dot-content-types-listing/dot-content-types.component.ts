@@ -1,5 +1,6 @@
 import { forkJoin, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -24,13 +25,20 @@ import {
     DotEnvironment,
     StructureTypeView
 } from '@dotcms/dotcms-models';
+import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { DotAddToMenuComponent } from './components/dot-add-to-menu/dot-add-to-menu.component';
 import { DotContentTypeStore } from './dot-content-type.store';
 
+import { DotAddToMenuService } from '../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
 import { ButtonModel } from '../../../shared/models/action-header/button.model';
 import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
+import { DotBaseTypeSelectorComponent } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.component';
 import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 type DotRowActions = {
     pushPublish: boolean;
@@ -50,8 +58,23 @@ type DotRowActions = {
     selector: 'dot-content-types',
     styleUrls: ['./dot-content-types.component.scss'],
     templateUrl: 'dot-content-types.component.html',
-    providers: [DotContentTypeStore],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotListingDataTableComponent,
+        DotBaseTypeSelectorComponent,
+        DotAddToBundleComponent,
+        DotAddToMenuComponent,
+        DotPortletBaseComponent
+    ],
+    providers: [
+        DotContentTypeStore,
+        DotContentTypesInfoService,
+        DotCrudService,
+        DotContentTypeService,
+        DotAddToMenuService,
+        DotMenuService,
+        DotNavigationService
+    ]
 })
 export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private contentTypesInfoService = inject(DotContentTypesInfoService);

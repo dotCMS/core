@@ -83,9 +83,9 @@ describe('DotDialogComponent', () => {
 
         beforeEach(waitForAsync(() => {
             TestBed.configureTestingModule({
-                imports: [ButtonModule, BrowserAnimationsModule],
+                imports: [ButtonModule, BrowserAnimationsModule, DotDialogComponent],
                 providers: [],
-                declarations: [DotDialogComponent, TestHostComponent]
+                declarations: [TestHostComponent]
             }).compileComponents();
         }));
 
@@ -480,9 +480,9 @@ describe('DotDialogComponent', () => {
 
         beforeEach(waitForAsync(() => {
             TestBed.configureTestingModule({
-                imports: [ButtonModule, BrowserAnimationsModule],
+                imports: [ButtonModule, BrowserAnimationsModule, DotDialogComponent],
                 providers: [],
-                declarations: [DotDialogComponent, TestHost2Component]
+                declarations: [TestHost2Component]
             }).compileComponents();
         }));
 

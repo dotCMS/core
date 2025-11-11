@@ -9,7 +9,7 @@ import {
     INotification,
     NotificationIcons
 } from '../../../../../../../shared/models/notifications/notification.model';
-import { DotCustomTimeModule } from '../../../../../_common/dot-custom-time.component/dot-custom-time.module';
+import { CustomTimeComponent } from '../../../../../_common/dot-custom-time.component/dot-custom-time.component';
 
 /** Map of notification types to their corresponding PrimeNG icon classes */
 const notificationIcons: NotificationIcons = {
@@ -32,7 +32,7 @@ const notificationIcons: NotificationIcons = {
  */
 @Component({
     selector: 'dot-notification-item',
-    imports: [ButtonModule, DotCustomTimeModule, LowerCasePipe, DotMessagePipe],
+    imports: [ButtonModule, CustomTimeComponent, LowerCasePipe, DotMessagePipe],
     styleUrls: ['./dot-notification-item.component.scss'],
     templateUrl: 'dot-notification-item.component.html'
 })

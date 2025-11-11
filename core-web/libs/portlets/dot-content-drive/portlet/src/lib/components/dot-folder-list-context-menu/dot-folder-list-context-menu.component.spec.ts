@@ -3,6 +3,7 @@ import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngn
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItemCommandEvent, MessageService } from 'primeng/api';
@@ -13,6 +14,7 @@ import {
     DotFolderService,
     DotMessageService,
     DotRenderMode,
+    DotSiteService,
     DotSystemConfigService,
     DotWizardService,
     DotWorkflowActionsFireService,
@@ -67,7 +69,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
             }),
-            mockProvider(Router),
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
             mockProvider(DotWorkflowActionsFireService, {
                 fireTo: jest.fn().mockReturnValue(of({}))
             }),
@@ -79,6 +85,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     queryParams: {}
                 }
             }),
+            mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
             mockProvider(DotWizardService, {
                 open: jest.fn().mockReturnValue(of({}))
@@ -91,7 +98,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 lockContent: jest.fn().mockReturnValue(of(mockContentlet)),
                 unlockContent: jest.fn().mockReturnValue(of(mockContentlet))
             }),
-            provideHttpClient()
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 
