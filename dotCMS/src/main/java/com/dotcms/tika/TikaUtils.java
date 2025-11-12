@@ -4,10 +4,8 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
-import com.dotcms.storage.model.ExtendedMetadataFields;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.storage.model.ExtendedMetadataFields;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -40,13 +38,15 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.felix.framework.OSGISystem;
 
 public class TikaUtils {
 
     public static final int SIZE = 1024;
     public static final int DEFAULT_META_DATA_MAX_SIZE = 5;
-    private final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+    private final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     private TikaProxyService tikaService;
     private boolean osgiInitialized;
