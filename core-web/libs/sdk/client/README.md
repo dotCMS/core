@@ -19,7 +19,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 
 > **📋 Migration Guides:**
 > - **From Alpha Version?** If you're upgrading from the alpha version of `@dotcms/client`, please see our [Migration Guide](./MIGRATION.md) for step-by-step instructions.
-> - **From v1.1.x to v1.2.0?** See the [Changelog](#v120) section below for new AI Search API features.
+> - **From v1.2.x to v1.3.0?** See the [Changelog](#v130) section below for new AI Search API features.
 > - **From v1.0.x to v1.1.1?** See the [Changelog](#v111) section below for new features and improvements.
 
 ## Table of Contents
@@ -52,7 +52,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   [Contributing](#contributing)
 -   [Licensing](#licensing)
 -   [Changelog](#changelog)
-    -   [v1.2.0](#v120)
+    -   [v1.3.0](#v130)
     -   [v1.1.1](#v111)
 
 ## Getting Started
@@ -1111,9 +1111,7 @@ Please ensure your code follows the existing style and includes appropriate test
 
 ## Changelog
 
-### v1.2.0
-
-Version 1.2.0 introduces the new AI Search API for semantic content discovery using AI embeddings.
+### v1.3.0
 
 #### ✨ Added - AI Search API (Experimental)
 

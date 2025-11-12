@@ -269,7 +269,7 @@ Please ensure your code follows the existing style and includes appropriate test
 
 ## Changelog
 
-### [1.2.0]
+### [1.3.0]
 
 #### ✨ Added - AI Search Types (Experimental)
 
