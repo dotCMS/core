@@ -196,15 +196,11 @@ export function initUVE(config: DotCMSPageResponse = {} as DotCMSPageResponse): 
  * registerComponentStyleConfiguration('MY_VARIABLE_NAME', { title: { color: 'red' } });
  * ```
  */
-export function registerComponentStyleConfiguration(
-    variableName: string,
-    config: Record<string, unknown>
-): void {
+export function registerStyleSchemas(schemas: Record<string, Record<string, unknown>>): void {
     sendMessageToUVE({
-        action: DotCMSUVEAction.REGISTER_COMPONENT_STYLE_CONFIGURATION,
+        action: DotCMSUVEAction.REGISTER_STYLE_SCHEMAS,
         payload: {
-            variableName,
-            config
+            schemas
         }
     });
 }

@@ -152,7 +152,7 @@ export enum DotCMSUVEAction {
     /**
      * Tell the editor to register a component style configuration
      */
-    REGISTER_COMPONENT_STYLE_CONFIGURATION = 'register-component-style-configuration',
+    REGISTER_STYLE_SCHEMAS = 'register-style-schemas',
     /**
      * Tell the editor to do nothing
      */

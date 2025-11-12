@@ -2,24 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
 
 import { DotCMSEditableText } from "@dotcms/react";
-import { registerComponentStyleConfiguration } from "@dotcms/uve";
 
 function Banner(contentlet) {
     const { title, caption, inode, image, link, buttonText } = contentlet;
-
-    useEffect(() => {
-        registerComponentStyleConfiguration("Banner", {
-            title: {
-                color: {
-                    type: "single select",
-                    options: ["#000000", "#FFFFFF", "#000000", "#FFFFFF"]
-                },
-            },
-        });
-    }, []);
 
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">

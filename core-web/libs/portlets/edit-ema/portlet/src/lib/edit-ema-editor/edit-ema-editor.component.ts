@@ -1070,12 +1070,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload) =>
                 this.#handleInlineEditingEvent(payload),
-            [DotCMSUVEAction.REGISTER_COMPONENT_STYLE_CONFIGURATION]: (
-                payload: Record<string, unknown>
-            ) => {
-                const variableName = payload.variableName as string;
-                const config = payload.config as Record<string, unknown>;
-                this.uveStore.registerStyleConfiguration(variableName, config);
+            [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: {
+                schemas: { contentType: string; configuration: Record<string, unknown> }[];
+            }) => {
+                const { schemas } = payload;
+
+                const schemasMap = schemas.reduce((acc, schema) => {
+                    const { contentType, configuration } = schema;
+                    acc[contentType] = configuration;
+                    return acc;
+                }, {});
+
+                this.uveStore.registerStyleSchemas(schemasMap);
             },
             [DotCMSUVEAction.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */

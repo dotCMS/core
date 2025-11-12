@@ -379,16 +379,8 @@ export function withEditor() {
                 setPaletteCurrentTab(currentTab: PALETTE_TABS) {
                     patchState(store, { palette: { ...store.palette(), currentTab: currentTab } });
                 },
-                registerStyleConfiguration(
-                    variableName: string,
-                    styleConfiguration: Record<string, unknown>
-                ) {
-                    const currentStyleConfigurations = store.styleConfigurations();
-                    const newStyleConfigurations = {
-                        ...currentStyleConfigurations,
-                        [variableName]: styleConfiguration
-                    };
-                    patchState(store, { styleConfigurations: newStyleConfigurations });
+                registerStyleSchemas(schemas: Record<string, Record<string, unknown>>) {
+                    patchState(store, { styleConfigurations: schemas });
                 },
                 getStyleConfiguration(variableName: string): Record<string, unknown> | undefined {
                     const currentStyleConfigurations = store.styleConfigurations();
