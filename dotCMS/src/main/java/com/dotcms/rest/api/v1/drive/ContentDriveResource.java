@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,7 +32,7 @@ import org.glassfish.jersey.server.JSONP;
  * <p>This resource provides drive-like functionality for browsing and searching content assets.</p>
  * <p>Enables navigation through content structures with filtering and search capabilities.</p>
  */
-@Path("/v1/content/drive")
+@Path("/v1/drive")
 @Tag(name = "Content Drive", description = "Drive-like content browsing and search functionality")
 public class ContentDriveResource {
 
@@ -41,15 +42,27 @@ public class ContentDriveResource {
      * Search content assets using drive functionality
      */
     @Operation(
-        summary = "Search content assets with drive functionality",
-        description = "Search and browse content assets using drive-like functionality with filtering, navigation, and content type filtering capabilities"
+        summary = "Search content assets with drive functionality (Internal API)",
+        description = "⚠️ **INTERNAL API - NOT FOR EXTERNAL USE** ⚠️\n\n" +
+                     "This endpoint is designed exclusively for dotCMS internal operations and UI components. " +
+                     "It is not intended for external integrations or third-party applications.\n\n" +
+                     "**Important Notice:**\n" +
+                     "• This API may change without notice in future versions\n" +
+                     "• No backward compatibility guarantees\n" +
+                     "• dotCMS does not provide support tickets for this endpoint\n" +
+                     "• Use at your own risk for custom implementations\n\n" +
+                     "**Functionality:** Search and browse content assets using drive-like functionality " +
+                     "with filtering, navigation, and content type filtering capabilities.",
+        tags = {"Internal APIs"}
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
                     description = "Drive search results retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(type = "object",
-                                                      description = "Drive search response containing filtered assets, folders, and navigation metadata with content type filtering"))),
+                        schema = @Schema(type = "object",
+                        description = "Drive search response containing filtered assets, folders, and navigation metadata with content type filtering")
+                    )
+        ),
         @ApiResponse(responseCode = "401",
                     description = "Unauthorized access",
                     content = @Content(mediaType = "application/json")),
@@ -60,6 +73,7 @@ public class ContentDriveResource {
                     description = "Invalid request parameters or malformed drive request",
                     content = @Content(mediaType = "application/json"))
     })
+    @Hidden
     @Path("/search")
     @POST
     @JSONP

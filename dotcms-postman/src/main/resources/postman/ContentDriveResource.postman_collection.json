@@ -477,14 +477,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -539,14 +538,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -599,14 +597,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -678,14 +675,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -746,14 +742,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -814,14 +809,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -898,14 +892,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -983,14 +976,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -1056,14 +1048,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -1125,14 +1116,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -1186,14 +1176,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -1250,14 +1239,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -1339,14 +1327,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
@@ -1406,14 +1393,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/drive/search",
+							"raw": "{{serverURL}}/api/v1/drive/search",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
 								"drive",
 								"search"
 							]
