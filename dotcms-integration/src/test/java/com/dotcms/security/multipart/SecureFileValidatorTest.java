@@ -2,6 +2,7 @@ package com.dotcms.security.multipart;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import java.sql.Array;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,8 +42,7 @@ public class SecureFileValidatorTest {
      * @throws DotSecurityException
      */
     @Test(expected = IllegalArgumentException.class)
-    public void Test_Validate_Illegal_File_ext()
-            throws DotDataException, DotSecurityException {
+    public void Test_Validate_Illegal_File_ext() {
 
         final SecureFileValidator secureFileValidator = new IllegalFileExtensionsValidator();
         final String filenameHeader = "Content-Disposition: attachment; filename=\"filename.sh\"";
@@ -63,8 +63,7 @@ public class SecureFileValidatorTest {
      * @throws DotSecurityException
      */
     @Test(expected = IllegalArgumentException.class)
-    public void Test_Validate_Illegal_Path_ext()
-            throws DotDataException, DotSecurityException {
+    public void Test_Validate_Illegal_Path_ext() {
 
         final SecureFileValidator secureFileValidator = new IllegalTraversalFilePathValidator();
         final String filenameHeader = "Content-Disposition: attachment; filename=\"../../../filename.sh\"";
@@ -73,4 +72,19 @@ public class SecureFileValidatorTest {
         secureFileValidator.validate(filename);
     }
 
+
+    @Test
+    public void Test_Validate_Legal_FileNameWith2Dots() {
+        final SecureFileValidator secureFileValidator = new IllegalFileExtensionsValidator();
+        final String[] files = {
+            "Screenshot 2025-03-18 at 4.09.02 p.m..png",
+            "Meeting notes 3.15.24 ..draft.docx",
+            "Report Q1..Q2 2024.pdf"
+        };
+        for (String filename : files) {
+            final String filenameHeader = String.format("Content-Disposition: attachment; filename=\"%s\"",filename);
+            final String parsed = ContentDispositionFileNameParser.parse(filenameHeader);
+            secureFileValidator.validate(parsed);
+        }
+    }
 }
