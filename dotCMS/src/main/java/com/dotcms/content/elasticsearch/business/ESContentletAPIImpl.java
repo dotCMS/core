@@ -8196,7 +8196,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void validateFileAsset(final Contentlet contentlet, final String contentIdentifier,
             final ContentType contentType) {
 
-        if (contentlet.getHost() != null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))) {
+        if (contentlet.getHost() != null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (
+                !UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder()
+                        .equals(FolderAPI.SYSTEM_FOLDER))) {
             final FileAssetValidationException cve = DotContentletValidationException.fileAssetBuilder(
                     Sneaky.sneak(() -> LanguageUtil.get(
                             "message.contentlet.fileasset.invalid.hostfolder")))
