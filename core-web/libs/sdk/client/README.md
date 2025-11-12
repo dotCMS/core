@@ -19,6 +19,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 
 > **📋 Migration Guides:**
 > - **From Alpha Version?** If you're upgrading from the alpha version of `@dotcms/client`, please see our [Migration Guide](./MIGRATION.md) for step-by-step instructions.
+> - **From v1.1.x to v1.2.0?** See the [Changelog](#v120) section below for new AI Search API features.
 > - **From v1.0.x to v1.1.1?** See the [Changelog](#v111) section below for new features and improvements.
 
 ## Table of Contents
@@ -51,6 +52,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   [Contributing](#contributing)
 -   [Licensing](#licensing)
 -   [Changelog](#changelog)
+    -   [v1.2.0](#v120)
     -   [v1.1.1](#v111)
 
 ## Getting Started
@@ -218,6 +220,9 @@ const products = await client.content
 
 ### How to Use AI-Powered Search
 
+> [!WARNING]
+> **Experimental Feature:** The AI API is currently experimental and may undergo breaking changes in future releases. Use with caution in production environments.
+
 The `client.ai.search()` method enables semantic search using AI embeddings to find content based on meaning rather than exact keyword matches.
 
 #### Prerequisites
@@ -236,59 +241,69 @@ Before using AI-powered search, ensure your dotCMS instance is properly configur
 #### Basic AI Search
 ```typescript
 // Search for content semantically related to your query
-const results = await client.ai.search('articles about machine learning');
+const results = await client.ai.search(
+    'articles about machine learning',
+    'content_index'
+);
 console.log(results.dotCMSResults);
 ```
 
 #### Customizing Search Parameters
 ```typescript
 // Fine-tune search with query parameters
-const results = await client.ai.search('artificial intelligence tutorials', {
-    query: {
-        limit: 20,
-        offset: 0,
-        contentType: 'BlogPost',
-        languageId: '1',
-        indexName: 'content_index' // Required if using a custom index
+const results = await client.ai.search(
+    'artificial intelligence tutorials',
+    'content_index',
+    {
+        query: {
+            limit: 20,
+            offset: 0,
+            contentType: 'BlogPost',
+            languageId: '1'
+        }
     }
-});
+);
 ```
-
-> [!IMPORTANT]
-> If you've created a custom AI search index in dotCMS (different from the default), you **must** specify the `indexName` parameter. The SDK defaults to `'default'`, which may not match your custom index configuration.
 
 #### Adjusting AI Configuration
 ```typescript
 import { DISTANCE_FUNCTIONS } from '@dotcms/types';
 
 // Customize AI search behavior with threshold and distance function
-const results = await client.ai.search('deep learning concepts', {
-    ai: {
-        threshold: 0.75,              // Higher threshold = more relevant results
-        distanceFunction: DISTANCE_FUNCTIONS.cosine, // Distance calculation method
-        responseLength: 2048           // Maximum response length
+const results = await client.ai.search(
+    'deep learning concepts',
+    'content_index',
+    {
+        config: {
+            threshold: 0.75,              // Higher threshold = more relevant results
+            distanceFunction: DISTANCE_FUNCTIONS.cosine, // Distance calculation method
+            responseLength: 2048           // Maximum response length
+        }
     }
-});
+);
 ```
 
 #### Complete Example with All Options
 ```typescript
 // Combine query and AI parameters for precise control
-const results = await client.ai.search('best practices for content management', {
-    query: {
-        limit: 10,
-        offset: 0,
-        contentType: 'Article',
-        languageId: '1',
-        siteId: 'my-site',
-        indexName: 'articles_index'
-    },
-    ai: {
-        threshold: 0.8,
-        distanceFunction: DISTANCE_FUNCTIONS.innerProduct,
-        responseLength: 1024
+const results = await client.ai.search(
+    'best practices for content management',
+    'articles_index',
+    {
+        query: {
+            limit: 10,
+            offset: 0,
+            contentType: 'Article',
+            languageId: '1',
+            siteId: 'my-site'
+        },
+        config: {
+            threshold: 0.8,
+            distanceFunction: DISTANCE_FUNCTIONS.innerProduct,
+            responseLength: 1024
+        }
     }
-});
+);
 
 // Access results with match scores
 results.dotCMSResults.forEach(result => {
@@ -403,12 +418,13 @@ interface Article extends DotCMSBasicContentlet {
 // Type-safe AI search
 const results: DotCMSAISearchResponse<Article> = await client.ai.search<Article>(
     'machine learning tutorials',
+    'content_index',
     {
         query: {
             limit: 20,
             contentType: 'Article'
         },
-        ai: {
+        config: {
             threshold: 0.75,
             distanceFunction: DISTANCE_FUNCTIONS.cosine
         }
@@ -756,6 +772,9 @@ const blogs = await client.content.getCollection('Blog').limit(10).page(1);
 
 ### ai.search() Method
 
+> [!WARNING]
+> **Experimental Feature:** The AI API is currently experimental and may undergo breaking changes in future releases. Use with caution in production environments.
+
 Performs semantic search using AI embeddings to find content based on meaning rather than exact keyword matches.
 
 > [!NOTE]
@@ -764,16 +783,18 @@ Performs semantic search using AI embeddings to find content based on meaning ra
 ```typescript
 search<T extends DotCMSBasicContentlet>(
   prompt: string,
+  indexName: string,
   params?: DotCMSAISearchParams
 ): Promise<DotCMSAISearchResponse<T>>
 ```
 
 #### Parameters
 
-| Parameter | Type                  | Required | Description                           |
-| --------- | --------------------- | -------- | ------------------------------------- |
-| `prompt`  | string                | ✅       | Natural language search query         |
-| `params`  | DotCMSAISearchParams  | ❌       | Search configuration options          |
+| Parameter   | Type                  | Required | Description                           |
+| ----------- | --------------------- | -------- | ------------------------------------- |
+| `prompt`    | string                | ✅       | Natural language search query         |
+| `indexName` | string                | ✅       | Name of the AI search index to query  |
+| `params`    | DotCMSAISearchParams  | ❌       | Search configuration options          |
 
 #### Search Parameters (params.query)
 
@@ -784,9 +805,8 @@ search<T extends DotCMSBasicContentlet>(
 | `contentType` | string           | Filter by specific content type          |
 | `languageId`  | string           | Filter by language ID                    |
 | `siteId`      | string           | Filter by site ID                        |
-| `indexName`   | string           | Search index name (default: 'default'). **Required if using a custom index.** |
 
-#### AI Configuration (params.ai)
+#### AI Configuration (params.config)
 
 | Option             | Type   | Description                                     |
 | ------------------ | ------ | ----------------------------------------------- |
@@ -811,32 +831,43 @@ interface DotCMSAISearchResponse<T> {
 
 **Basic Search:**
 ```typescript
-const results = await client.ai.search('machine learning articles');
+const results = await client.ai.search(
+    'machine learning articles',
+    'content_index'
+);
 ```
 
 **With Parameters:**
 ```typescript
 import { DISTANCE_FUNCTIONS } from '@dotcms/types';
 
-const results = await client.ai.search('AI tutorials', {
-    query: {
-        limit: 20,
-        contentType: 'BlogPost',
-        languageId: '1'
-    },
-    ai: {
-        threshold: 0.75,
-        distanceFunction: DISTANCE_FUNCTIONS.cosine
+const results = await client.ai.search(
+    'AI tutorials',
+    'content_index',
+    {
+        query: {
+            limit: 20,
+            contentType: 'BlogPost',
+            languageId: '1'
+        },
+        config: {
+            threshold: 0.75,
+            distanceFunction: DISTANCE_FUNCTIONS.cosine
+        }
     }
-});
+);
 ```
 
 **Promise-Style:**
 ```typescript
-client.ai.search('content management best practices', {
-    query: { limit: 10 },
-    ai: { threshold: 0.8 }
-}).then((results) => {
+client.ai.search(
+    'content management best practices',
+    'content_index',
+    {
+        query: { limit: 10 },
+        config: { threshold: 0.8 }
+    }
+).then((results) => {
     console.log('Found:', results.dotCMSResults.length);
     return results;
 }).catch((error) => {
@@ -940,11 +971,12 @@ try {
 #### AI Search Error Handling
 ```typescript
 try {
-    const results = await client.ai.search('machine learning');
+    const results = await client.ai.search('machine learning', 'content_index');
 } catch (error) {
     if (error instanceof DotErrorAISearch) {
         console.error('AI Search error:', error.message);
         console.error('Prompt:', error.prompt);
+        console.error('Index Name:', error.indexName);
         console.error('Parameters:', error.params);
         if (error.httpError) {
             console.error('HTTP status:', error.httpError.status);
@@ -1017,7 +1049,7 @@ The dotCMS Client SDK provides four core methods for fetching data. Use this qui
 | -------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `client.page.get()`              | A full page with layout, containers, and related content      | **Rendering entire pages** with a single request. Ideal for headless setups, SSR/SSG frameworks, and cases where you want everything—page structure, content, and navigation—tied to a URL path. |
 | `client.content.getCollection()` | A filtered list of content items from a specific content type | Populating dynamic blocks, lists, search results, widgets, or reusable components.                                                                                                               |
-| `client.ai.search()`             | Semantic/AI-powered content discovery based on natural language | **Intelligent search experiences** where users describe what they're looking for in natural language. Great for search features, content recommendations, and finding relevant content by meaning rather than exact keywords. |
+| `client.ai.search()`             | Semantic/AI-powered content discovery based on natural language | **Intelligent search experiences** where users describe what they're looking for in natural language. Great for search features, content recommendations, and finding relevant content by meaning rather than exact keywords. ⚠️ **Experimental API** |
 | `client.navigation.get()`        | Only the site's navigation structure (folders and links)      | Standalone menus or use cases where navigation is needed outside of page context.                                                                                                                |
 
 #### Start with `page.get()`: The One-Request Solution
@@ -1040,7 +1072,7 @@ The SDK follows a client-builder pattern with four main APIs:
 
 - **Page API** (`client.page.get()`) - Fetches complete page content with layout and containers
 - **Content API** (`client.content.getCollection()`) - Builder pattern for querying content collections
-- **AI API** (`client.ai.search()`) - AI-powered semantic search using embeddings and vector similarity
+- **AI API** (`client.ai.search()`) - AI-powered semantic search using embeddings and vector similarity ⚠️ **Experimental**
 - **Navigation API** (`client.navigation.get()`) - Fetches site navigation structure
 
 All APIs support:
@@ -1078,6 +1110,58 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 Please ensure your code follows the existing style and includes appropriate tests.
 
 ## Changelog
+
+### v1.2.0
+
+Version 1.2.0 introduces the new AI Search API for semantic content discovery using AI embeddings.
+
+#### ✨ Added - AI Search API (Experimental)
+
+> **⚠️ Experimental Feature:** The AI API is experimental and may undergo breaking changes in future releases.
+
+**New Features:**
+- **`client.ai.search()`** - AI-powered semantic search using embeddings and vector similarity
+- Search content by meaning rather than exact keyword matches
+- Support for custom AI search indexes
+- Configurable similarity thresholds and distance functions
+- `DotErrorAISearch` error class for AI-specific error handling with prompt and index context
+
+**Prerequisites:**
+- Requires dotAI to be activated in your dotCMS instance
+- OpenAI API key must be configured
+- PostgreSQL 15+ with pgvector extension
+- Content indexes must be created in dotAI
+
+**Basic Usage:**
+```typescript
+// Semantic search with required index name
+const results = await client.ai.search(
+    'machine learning articles',
+    'content_index'
+);
+
+// With advanced configuration
+const results = await client.ai.search(
+    'AI tutorials',
+    'content_index',
+    {
+        query: {
+            limit: 20,
+            contentType: 'BlogPost'
+        },
+        config: {
+            threshold: 0.75,
+            distanceFunction: DISTANCE_FUNCTIONS.cosine
+        }
+    }
+);
+```
+
+**Key Features:**
+- Type-safe with full TypeScript support
+- Supports multiple distance functions (cosine, L2, inner product, etc.)
+- Returns match scores and extracted text excerpts
+- Integrates seamlessly with existing content workflows
 
 ### v1.1.1
 

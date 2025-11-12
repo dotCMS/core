@@ -28,17 +28,19 @@ import { OnFullfilled, OnRejected } from '../shared/types';
 export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
     #params: DotCMSAISearchParams;
     #prompt: string;
-
+    #indexName: string;
     constructor(
         config: DotCMSClientConfig,
         requestOptions: DotRequestOptions,
         httpClient: DotHttpClient,
-        params: DotCMSAISearchParams,
-        prompt: string
+        prompt: string,
+        indexName: string,
+        params: DotCMSAISearchParams = {}
     ) {
         super(config, requestOptions, httpClient);
         this.#params = params;
         this.#prompt = prompt;
+        this.#indexName = indexName;
     }
 
     /**
@@ -49,28 +51,26 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
      * @returns Promise with the search results or the error.
      * @example
      * ```typescript
-     * const results = await client.ai.search('machine learning articles', {
+     * const results = await client.ai.search('machine learning articles', 'content_index', {
      *   query: {
-     *     indexName: 'content_index',
      *     limit: 20,
      *     contentType: 'BlogPost',
      *     languageId: 'en'
      *   },
-     *   ai: {
+     *   config: {
      *     threshold: 0.7
      *   }
      * });
      * ```
      * @example
      * ```typescript
-     * client.ai.search('machine learning articles', {
+     * client.ai.search('machine learning articles', 'content_index', {
      *   query: {
-     *     indexName: 'content_index',
      *     limit: 20,
      *     contentType: 'BlogPost',
      *     languageId: 'en'
      *   },
-     *   ai: {
+     *   config: {
      *     threshold: 0.7
      *   }
      * }).then((results) => {
@@ -103,7 +103,8 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
                         message: `AI Search failed for '${this.#prompt}' (fetch): ${error.message}`,
                         httpError: error,
                         params: this.#params,
-                        prompt: this.#prompt
+                        prompt: this.#prompt,
+                        indexName: this.#indexName
                     });
                 } else {
                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -111,7 +112,8 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
                         message: `AI Search failed for '${this.#prompt}' (fetch): ${errorMessage}`,
                         httpError: undefined,
                         params: this.#params,
-                        prompt: this.#prompt
+                        prompt: this.#prompt,
+                        indexName: this.#indexName
                     });
                 }
 
@@ -151,16 +153,16 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
      */
     private buildSearchParams(prompt: string, params: DotCMSAISearchParams = {}): URLSearchParams {
         const searchParams = new URLSearchParams();
-        const { query = {}, ai = {} } = params;
+        const { query = {}, config = {} } = params;
 
         const combinedQuery: DotCMSAISearchQuery = {
             ...DEFAULT_QUERY,
             siteId: this.siteId,
             ...query
         };
-        const combinedAI: DotCMSAIConfig = {
+        const combinedConfig: DotCMSAIConfig = {
             ...DEFAULT_AI_CONFIG,
-            ...ai
+            ...config
         };
 
         const entriesQueryParameters = [
@@ -168,8 +170,7 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
             ['searchOffset', 'offset'],
             ['site', 'siteId'],
             ['language', 'languageId'],
-            ['contentType', 'contentType'],
-            ['indexName', 'indexName']
+            ['contentType', 'contentType']
         ];
 
         // Map SDK query parameters to backend parameter names
@@ -179,14 +180,14 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
             }
         });
 
-        Object.entries(combinedAI).forEach(([key, value]) => {
+        Object.entries(combinedConfig).forEach(([key, value]) => {
             if (value !== undefined) {
                 searchParams.append(key, String(value));
             }
         });
 
+        searchParams.append('indexName', this.#indexName);
         searchParams.append('query', prompt);
-
         return searchParams;
     }
 }

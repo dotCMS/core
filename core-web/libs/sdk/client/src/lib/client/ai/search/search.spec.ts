@@ -87,13 +87,15 @@ describe('AISearch', () => {
 
     it('should initialize with valid configuration', () => {
         const prompt = 'machine learning';
+        const indexName = 'default';
         const params: DotCMSAISearchParams = {};
         const aiSearch = new AISearch(
             config,
             requestOptions,
             new FetchHttpClient(),
-            params,
-            prompt
+            prompt,
+            indexName,
+            params
         );
         expect(aiSearch).toBeDefined();
     });
@@ -101,28 +103,33 @@ describe('AISearch', () => {
     describe('successful requests', () => {
         it('should build a query for a basic AI search with default parameters', async () => {
             const prompt = 'machine learning articles';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             await aiSearch;
 
-            const expectedUrl = new URL('http://localhost:8080/api/v1/ai/search');
-            expectedUrl.searchParams.append('searchLimit', '1000');
-            expectedUrl.searchParams.append('searchOffset', '0');
-            expectedUrl.searchParams.append('site', 'test-site');
-            expectedUrl.searchParams.append('indexName', 'default');
-            expectedUrl.searchParams.append('threshold', '0.5');
-            expectedUrl.searchParams.append('distanceFunction', '<=>');
-            expectedUrl.searchParams.append('responseLength', '1024');
-            expectedUrl.searchParams.append('query', 'machine learning articles');
+            const calledUrl = mockRequest.mock.calls[0][0];
+            const url = new URL(calledUrl);
 
-            expect(mockRequest).toHaveBeenCalledWith(expectedUrl.toString(), {
+            expect(url.pathname).toBe('/api/v1/ai/search');
+            expect(url.searchParams.get('searchLimit')).toBe('1000');
+            expect(url.searchParams.get('searchOffset')).toBe('0');
+            expect(url.searchParams.get('site')).toBe('test-site');
+            expect(url.searchParams.get('indexName')).toBe('default');
+            expect(url.searchParams.get('threshold')).toBe('0.5');
+            expect(url.searchParams.get('distanceFunction')).toBe('<=>');
+            expect(url.searchParams.get('responseLength')).toBe('1024');
+            expect(url.searchParams.get('query')).toBe('machine learning articles');
+
+            expect(mockRequest).toHaveBeenCalledWith(calledUrl, {
                 ...baseRequest,
                 headers: {}
             });
@@ -130,13 +137,15 @@ describe('AISearch', () => {
 
         it('should return the AI search results in the response', async () => {
             const prompt = 'artificial intelligence';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             const response = await aiSearch;
@@ -148,38 +157,42 @@ describe('AISearch', () => {
 
         it('should build a query with custom query parameters', async () => {
             const prompt = 'technology trends';
+            const indexName = 'custom_index';
             const params: DotCMSAISearchParams = {
                 query: {
                     limit: 50,
                     offset: 10,
                     contentType: 'BlogPost',
-                    languageId: '2',
-                    indexName: 'custom_index'
+                    languageId: '2'
                 }
             };
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             await aiSearch;
 
-            const expectedUrl = new URL('http://localhost:8080/api/v1/ai/search');
-            expectedUrl.searchParams.append('searchLimit', '50');
-            expectedUrl.searchParams.append('searchOffset', '10');
-            expectedUrl.searchParams.append('site', 'test-site');
-            expectedUrl.searchParams.append('language', '2');
-            expectedUrl.searchParams.append('contentType', 'BlogPost');
-            expectedUrl.searchParams.append('indexName', 'custom_index');
-            expectedUrl.searchParams.append('threshold', '0.5');
-            expectedUrl.searchParams.append('distanceFunction', '<=>');
-            expectedUrl.searchParams.append('responseLength', '1024');
-            expectedUrl.searchParams.append('query', 'technology trends');
+            const calledUrl = mockRequest.mock.calls[0][0];
+            const url = new URL(calledUrl);
 
-            expect(mockRequest).toHaveBeenCalledWith(expectedUrl.toString(), {
+            expect(url.pathname).toBe('/api/v1/ai/search');
+            expect(url.searchParams.get('searchLimit')).toBe('50');
+            expect(url.searchParams.get('searchOffset')).toBe('10');
+            expect(url.searchParams.get('site')).toBe('test-site');
+            expect(url.searchParams.get('language')).toBe('2');
+            expect(url.searchParams.get('contentType')).toBe('BlogPost');
+            expect(url.searchParams.get('indexName')).toBe('custom_index');
+            expect(url.searchParams.get('threshold')).toBe('0.5');
+            expect(url.searchParams.get('distanceFunction')).toBe('<=>');
+            expect(url.searchParams.get('responseLength')).toBe('1024');
+            expect(url.searchParams.get('query')).toBe('technology trends');
+
+            expect(mockRequest).toHaveBeenCalledWith(calledUrl, {
                 ...baseRequest,
                 headers: {}
             });
@@ -187,8 +200,9 @@ describe('AISearch', () => {
 
         it('should build a query with custom AI configuration', async () => {
             const prompt = 'data science';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {
-                ai: {
+                config: {
                     threshold: 0.75,
                     distanceFunction: DISTANCE_FUNCTIONS.innerProduct,
                     responseLength: 2048
@@ -198,23 +212,27 @@ describe('AISearch', () => {
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             await aiSearch;
 
-            const expectedUrl = new URL('http://localhost:8080/api/v1/ai/search');
-            expectedUrl.searchParams.append('searchLimit', '1000');
-            expectedUrl.searchParams.append('searchOffset', '0');
-            expectedUrl.searchParams.append('site', 'test-site');
-            expectedUrl.searchParams.append('indexName', 'default');
-            expectedUrl.searchParams.append('threshold', '0.75');
-            expectedUrl.searchParams.append('distanceFunction', '<#>');
-            expectedUrl.searchParams.append('responseLength', '2048');
-            expectedUrl.searchParams.append('query', 'data science');
+            const calledUrl = mockRequest.mock.calls[0][0];
+            const url = new URL(calledUrl);
 
-            expect(mockRequest).toHaveBeenCalledWith(expectedUrl.toString(), {
+            expect(url.pathname).toBe('/api/v1/ai/search');
+            expect(url.searchParams.get('searchLimit')).toBe('1000');
+            expect(url.searchParams.get('searchOffset')).toBe('0');
+            expect(url.searchParams.get('site')).toBe('test-site');
+            expect(url.searchParams.get('indexName')).toBe('default');
+            expect(url.searchParams.get('threshold')).toBe('0.75');
+            expect(url.searchParams.get('distanceFunction')).toBe('<#>');
+            expect(url.searchParams.get('responseLength')).toBe('2048');
+            expect(url.searchParams.get('query')).toBe('data science');
+
+            expect(mockRequest).toHaveBeenCalledWith(calledUrl, {
                 ...baseRequest,
                 headers: {}
             });
@@ -222,16 +240,16 @@ describe('AISearch', () => {
 
         it('should build a query with both custom query and AI parameters', async () => {
             const prompt = 'deep learning tutorials';
+            const indexName = 'tutorials_index';
             const params: DotCMSAISearchParams = {
                 query: {
                     limit: 25,
                     offset: 5,
                     contentType: 'Tutorial',
                     languageId: '1',
-                    siteId: 'my-site',
-                    indexName: 'tutorials_index'
+                    siteId: 'my-site'
                 },
-                ai: {
+                config: {
                     threshold: 0.8,
                     distanceFunction: DISTANCE_FUNCTIONS.innerProduct,
                     responseLength: 512
@@ -241,25 +259,29 @@ describe('AISearch', () => {
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             await aiSearch;
 
-            const expectedUrl = new URL('http://localhost:8080/api/v1/ai/search');
-            expectedUrl.searchParams.append('searchLimit', '25');
-            expectedUrl.searchParams.append('searchOffset', '5');
-            expectedUrl.searchParams.append('site', 'my-site');
-            expectedUrl.searchParams.append('language', '1');
-            expectedUrl.searchParams.append('contentType', 'Tutorial');
-            expectedUrl.searchParams.append('indexName', 'tutorials_index');
-            expectedUrl.searchParams.append('threshold', '0.8');
-            expectedUrl.searchParams.append('distanceFunction', '<#>');
-            expectedUrl.searchParams.append('responseLength', '512');
-            expectedUrl.searchParams.append('query', 'deep learning tutorials');
+            const calledUrl = mockRequest.mock.calls[0][0];
+            const url = new URL(calledUrl);
 
-            expect(mockRequest).toHaveBeenCalledWith(expectedUrl.toString(), {
+            expect(url.pathname).toBe('/api/v1/ai/search');
+            expect(url.searchParams.get('searchLimit')).toBe('25');
+            expect(url.searchParams.get('searchOffset')).toBe('5');
+            expect(url.searchParams.get('site')).toBe('my-site');
+            expect(url.searchParams.get('language')).toBe('1');
+            expect(url.searchParams.get('contentType')).toBe('Tutorial');
+            expect(url.searchParams.get('indexName')).toBe('tutorials_index');
+            expect(url.searchParams.get('threshold')).toBe('0.8');
+            expect(url.searchParams.get('distanceFunction')).toBe('<#>');
+            expect(url.searchParams.get('responseLength')).toBe('512');
+            expect(url.searchParams.get('query')).toBe('deep learning tutorials');
+
+            expect(mockRequest).toHaveBeenCalledWith(calledUrl, {
                 ...baseRequest,
                 headers: {}
             });
@@ -276,23 +298,27 @@ describe('AISearch', () => {
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                'default',
+                params
             );
 
             await aiSearch;
 
-            const expectedUrl = new URL('http://localhost:8080/api/v1/ai/search');
-            expectedUrl.searchParams.append('searchLimit', '1000');
-            expectedUrl.searchParams.append('searchOffset', '0');
-            expectedUrl.searchParams.append('site', 'custom-site');
-            expectedUrl.searchParams.append('indexName', 'default');
-            expectedUrl.searchParams.append('threshold', '0.5');
-            expectedUrl.searchParams.append('distanceFunction', '<=>');
-            expectedUrl.searchParams.append('responseLength', '1024');
-            expectedUrl.searchParams.append('query', 'test prompt');
+            const calledUrl = mockRequest.mock.calls[0][0];
+            const url = new URL(calledUrl);
 
-            expect(mockRequest).toHaveBeenCalledWith(expectedUrl.toString(), {
+            expect(url.pathname).toBe('/api/v1/ai/search');
+            expect(url.searchParams.get('searchLimit')).toBe('1000');
+            expect(url.searchParams.get('searchOffset')).toBe('0');
+            expect(url.searchParams.get('site')).toBe('custom-site');
+            expect(url.searchParams.get('indexName')).toBe('default');
+            expect(url.searchParams.get('threshold')).toBe('0.5');
+            expect(url.searchParams.get('distanceFunction')).toBe('<=>');
+            expect(url.searchParams.get('responseLength')).toBe('1024');
+            expect(url.searchParams.get('query')).toBe('test prompt');
+
+            expect(mockRequest).toHaveBeenCalledWith(calledUrl, {
                 ...baseRequest,
                 headers: {}
             });
@@ -300,13 +326,15 @@ describe('AISearch', () => {
 
         it('should handle onfulfilled callback', async () => {
             const prompt = 'callback test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             const onfulfilledCallback = jest.fn((data) => {
@@ -321,13 +349,15 @@ describe('AISearch', () => {
 
         it('should return original data when onfulfilled callback returns undefined', async () => {
             const prompt = 'undefined callback test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             const onfulfilledCallback = jest.fn((_data) => {
@@ -342,13 +372,15 @@ describe('AISearch', () => {
 
         it('should handle special characters in prompt', async () => {
             const prompt = 'search: "artificial intelligence" AND machine learning';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             await aiSearch;
@@ -364,13 +396,15 @@ describe('AISearch', () => {
     describe('fetch is rejected', () => {
         it('should trigger onrejected callback with generic error', (done) => {
             const prompt = 'error test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             // Mock the request to return a rejected promise
@@ -398,6 +432,7 @@ describe('AISearch', () => {
 
         it('should trigger catch method with generic error', (done) => {
             const prompt = 'catch test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {
                 query: {
                     contentType: 'Article'
@@ -407,8 +442,9 @@ describe('AISearch', () => {
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             // Mock the request to return a rejected promise
@@ -430,13 +466,15 @@ describe('AISearch', () => {
 
         it('should trigger catch of try catch block with generic error', async () => {
             const prompt = 'try catch test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             // Mock a network error
@@ -460,17 +498,15 @@ describe('AISearch', () => {
 
         it('should throw DotErrorAISearch when HTTP request fails with 404', async () => {
             const prompt = 'http error test';
-            const params: DotCMSAISearchParams = {
-                query: {
-                    indexName: 'non_existent_index'
-                }
-            };
+            const indexName = 'non_existent_index';
+            const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             const httpError = new DotHttpError({
@@ -501,8 +537,9 @@ describe('AISearch', () => {
 
         it('should throw DotErrorAISearch when HTTP request fails with 500', async () => {
             const prompt = 'server error test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {
-                ai: {
+                config: {
                     threshold: 0.9
                 }
             };
@@ -510,8 +547,9 @@ describe('AISearch', () => {
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             const httpError = new DotHttpError({
@@ -542,6 +580,7 @@ describe('AISearch', () => {
 
         it('should handle HttpError in onrejected callback', (done) => {
             const prompt = 'onrejected http error test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {
                 query: {
                     languageId: '2'
@@ -551,8 +590,9 @@ describe('AISearch', () => {
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             const httpError = new DotHttpError({
@@ -588,13 +628,15 @@ describe('AISearch', () => {
 
         it('should return original error when onrejected callback returns undefined', async () => {
             const prompt = 'undefined error callback test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             mockRequest.mockRejectedValue(new Error('Test error'));
@@ -611,13 +653,15 @@ describe('AISearch', () => {
 
         it('should handle non-Error objects in rejection', async () => {
             const prompt = 'non-error rejection test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             // Mock the request to reject with a non-Error object
@@ -652,8 +696,9 @@ describe('AISearch', () => {
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                'default',
+                params
             );
 
             await aiSearch;
@@ -673,13 +718,15 @@ describe('AISearch', () => {
 
         it('should handle empty params object', async () => {
             const prompt = 'empty params test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {};
             const aiSearch = new AISearch(
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             await aiSearch;
@@ -700,13 +747,14 @@ describe('AISearch', () => {
 
         it('should handle numeric values as strings in URL params', async () => {
             const prompt = 'numeric test';
+            const indexName = 'default';
             const params: DotCMSAISearchParams = {
                 query: {
                     limit: 50,
                     offset: 10,
                     languageId: '2'
                 },
-                ai: {
+                config: {
                     threshold: 0.85,
                     responseLength: 2048
                 }
@@ -715,8 +763,9 @@ describe('AISearch', () => {
                 config,
                 requestOptions,
                 new FetchHttpClient(),
-                params,
-                prompt
+                prompt,
+                indexName,
+                params
             );
 
             await aiSearch;

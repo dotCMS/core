@@ -59,6 +59,7 @@ class DotCMSClient {
 
     /**
      * Client for AI-related operations.
+     * @experimental This client is experimental and may be subject to change.
      */
     ai: AIClient;
 

@@ -30,12 +30,6 @@ export interface DotCMSAISearchQuery {
      */
     contentType?: string;
     /**
-     * The name of the index you want to search in.
-     * @property {string} indexName - The name of the index you want to search in.
-     * @default default
-     */
-    indexName?: string;
-    /**
      * The language id to search in.
      * @property {string} languageId - The language id to search in.
      */
@@ -90,9 +84,9 @@ export interface DotCMSAISearchParams {
     query?: DotCMSAISearchQuery;
     /**
      * AI configuration parameters controlling how results are processed.
-     * @property {DotCMSAIConfig} ai - The AI configuration parameters.
+     * @property {DotCMSAIConfig} config - The AI configuration parameters.
      */
-    ai?: DotCMSAIConfig;
+    config?: DotCMSAIConfig;
 }
 
 /**
@@ -138,23 +132,26 @@ export class DotErrorAISearch extends Error {
 
     public readonly prompt?: string;
     public readonly params?: DotCMSAISearchParams;
-
+    public readonly indexName?: string;
     constructor({
         message,
         httpError,
         prompt,
-        params
+        params,
+        indexName
     }: {
         message: string;
         httpError?: DotHttpError;
         prompt?: string;
         params?: DotCMSAISearchParams;
+        indexName?: string;
     }) {
         super(message);
         this.name = 'DotCMAISearchError';
         this.httpError = httpError;
         this.prompt = prompt;
         this.params = params;
+        this.indexName = indexName;
         // Ensure proper prototype chain for instanceof checks
         Object.setPrototypeOf(this, DotErrorAISearch.prototype);
     }
@@ -169,6 +166,7 @@ export class DotErrorAISearch extends Error {
             httpError: this.httpError?.toJSON(),
             prompt: this.prompt,
             params: this.params,
+            indexName: this.indexName,
             stack: this.stack
         };
     }

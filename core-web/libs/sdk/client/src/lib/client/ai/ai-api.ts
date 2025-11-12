@@ -13,6 +13,7 @@ import { BaseApiClient } from '../base/base-api';
 /**
  * Client for interacting with the DotCMS AI API.
  * Provides methods to interact with AI features.
+ * @experimental This client is experimental and may be subject to change.
  */
 export class AIClient extends BaseApiClient {
     /**
@@ -51,30 +52,34 @@ export class AIClient extends BaseApiClient {
      *
      * @param params - Search parameters with query and AI configuration
      * @returns Promise with search results
+     * @experimental This method is experimental and may be subject to change.
+     * @template T - The type of the contentlet.
+     * @param prompt - The prompt for the search.
+     * @param indexName - The name of the index you want to search in.
+     * @param params - Search parameters with query and AI configuration.
+     * @example
      * @example
      * ```typescript
-     * const results = await client.ai.search('machine learning articles', {
+     * const results = await client.ai.search('machine learning articles', 'content_index', {
      *   query: {
-     *     indexName: 'content_index',
      *     limit: 20,
      *     contentType: 'BlogPost',
      *     languageId: 'en'
      *   },
-     *   ai: {
+     *   config: {
      *     threshold: 0.7
      *   }
      * });
      * ```
      * @example
      * ```typescript
-     * client.ai.search('machine learning articles', {
+     * client.ai.search('machine learning articles', 'content_index', {
      *   query: {
-     *     indexName: 'content_index',
      *     limit: 20,
      *     contentType: 'BlogPost',
      *     languageId: 'en'
      *   },
-     *   ai: {
+     *   config: {
      *     threshold: 0.7,
      *     distanceFunction: DISTANCE_FUNCTIONS.cosine
      *   }
@@ -86,8 +91,16 @@ export class AIClient extends BaseApiClient {
      */
     search<T extends DotCMSBasicContentlet>(
         prompt: string,
-        params: DotCMSAISearchParams
+        indexName: string,
+        params: DotCMSAISearchParams = {}
     ): AISearch<T> {
-        return new AISearch<T>(this.config, this.requestOptions, this.httpClient, params, prompt);
+        return new AISearch<T>(
+            this.config,
+            this.requestOptions,
+            this.httpClient,
+            prompt,
+            indexName,
+            params
+        );
     }
 }

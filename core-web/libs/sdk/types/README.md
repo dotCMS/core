@@ -69,12 +69,14 @@ import {
 
 ### AI Search
 
+> **⚠️ Experimental:** The AI Search types are experimental and may undergo breaking changes in future releases.
+
 **AI Search Parameters:**
 
 | Type | Description |
 |------|-------------|
 | [DotCMSAISearchParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L85) | Complete AI search parameters including query and AI config |
-| [DotCMSAISearchQuery](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L9) | Query parameters (limit, offset, contentType, indexName, etc.) |
+| [DotCMSAISearchQuery](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L9) | Query parameters (limit, offset, contentType, etc.) |
 | [DotCMSAIConfig](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L50) | AI configuration (threshold, distanceFunction, responseLength) |
 | [DISTANCE_FUNCTIONS](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L103) | Available distance functions for vector similarity |
 
@@ -90,7 +92,7 @@ import {
 
 | Type | Description |
 |------|-------------|
-| [DotErrorAISearch](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L136) | AI Search API specific error with prompt and params context |
+| [DotErrorAISearch](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L136) | AI Search API specific error with prompt, indexName and params context |
 
 ### dotCMS Content & Pages
 
@@ -230,6 +232,7 @@ if (error instanceof DotErrorContent) {
 if (error instanceof DotErrorAISearch) {
   // AI Search-specific error context
   console.error('AI Search failed for prompt:', error.prompt);
+  console.error('Index name:', error.indexName);
   console.error('Search params:', error.params);
 }
 ```
@@ -266,6 +269,22 @@ Please ensure your code follows the existing style and includes appropriate test
 
 ## Changelog
 
+### [1.2.0]
+
+#### ✨ Added - AI Search Types (Experimental)
+
+> **⚠️ Experimental:** AI Search types are experimental and may undergo breaking changes in future releases.
+
+**New AI Search Types:**
+- `DotCMSAISearchParams` - Complete AI search parameters including query and AI config
+- `DotCMSAISearchQuery` - Query parameters (limit, offset, contentType, etc.)
+- `DotCMSAIConfig` - AI configuration (threshold, distanceFunction, responseLength)
+- `DotCMSAISearchResponse<T>` - AI search API response structure
+- `DotCMSAISearchContentletData<T>` - Contentlet with AI match information
+- `DotCMSAISearchMatch` - Individual match with distance score and extracted text
+- `DotErrorAISearch` - AI Search API specific error with prompt, indexName, and params context
+- `DISTANCE_FUNCTIONS` - Available distance functions for vector similarity (cosine, L2, inner product, etc.)
+
 ### [1.1.1]
 
 #### Added
@@ -275,14 +294,6 @@ Please ensure your code follows the existing style and includes appropriate test
 - `DotErrorPage` class for page-specific errors with GraphQL query context
 - `DotErrorContent` class for content API errors with operation details
 - `DotErrorNavigation` class for navigation-specific error handling
-- `DotErrorAISearch` class for AI search-specific errors with prompt and params context
-- `DotCMSAISearchParams` interface for AI search parameters
-- `DotCMSAISearchQuery` interface for AI search query configuration
-- `DotCMSAIConfig` interface for AI configuration options
-- `DotCMSAISearchResponse` interface for AI search responses
-- `DotCMSAISearchMatch` interface for AI match data with distance scores
-- `DotCMSAISearchContentletData` type for contentlets with AI match information
-- `DISTANCE_FUNCTIONS` constant with vector similarity distance functions
 - `DotGraphQLApiResponse` interface for GraphQL API responses
 - `HttpErrorDetails` interface for HTTP error standardization
 - All error classes include `toJSON()` methods for easy logging and serialization
