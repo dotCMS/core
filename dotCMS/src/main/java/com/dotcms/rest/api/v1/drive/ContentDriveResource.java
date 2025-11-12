@@ -33,7 +33,6 @@ import org.glassfish.jersey.server.JSONP;
  * <p>Enables navigation through content structures with filtering and search capabilities.</p>
  */
 @Path("/v1/drive")
-@Tag(name = "Content Drive", description = "Drive-like content browsing and search functionality")
 public class ContentDriveResource {
 
     private final ContentDriveHelper helper = ContentDriveHelper.newInstance();

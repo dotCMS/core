@@ -45,8 +45,6 @@ tags:
 - description: Returns the content types valid for a page based on the container/types
     on the layout
   name: getPagesContentTypes
-- description: Drive-like content browsing and search functionality
-  name: Content Drive
 - description: Endpoints for managing folder structure and organization
   name: Folders
 - description: Form management and processing
