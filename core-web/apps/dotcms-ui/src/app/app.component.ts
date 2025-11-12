@@ -8,12 +8,13 @@ import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-j
 import { DotLicense } from '@dotcms/dotcms-models';
 
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
 
 @Component({
     selector: 'dot-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
-    imports: [RouterOutlet]
+    imports: [RouterOutlet, DotAlertConfirmComponent]
 })
 export class AppComponent implements OnInit {
     private dotCmsConfigService = inject(DotcmsConfigService);
