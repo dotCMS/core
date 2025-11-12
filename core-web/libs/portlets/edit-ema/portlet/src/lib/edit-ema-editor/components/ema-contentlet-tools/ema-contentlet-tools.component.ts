@@ -57,7 +57,11 @@ export class EmaContentletToolsComponent implements OnChanges {
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() editVTL = new EventEmitter<VTLFile>();
     @Output() delete = new EventEmitter<ActionPayload>();
-    @Output() openStyleEditor = new EventEmitter<{ tab: PALETTE_TABS; variableName: string }>();
+    @Output() openStyleEditor = new EventEmitter<{
+        tab: PALETTE_TABS;
+        variableName: string;
+        identifier: string;
+    }>();
 
     #dotMessageService = inject(DotMessageService);
     ACTIONS_CONTAINER_WIDTH = INITIAL_ACTIONS_CONTAINER_WIDTH; // Now is dynamic based on the page type (Headless - VTL)
@@ -252,8 +256,9 @@ export class EmaContentletToolsComponent implements OnChanges {
     }
 
     protected handleOpenStyleEditor() {
-        const variableName = this.contentletArea.payload.contentlet.contentType;
+        const { contentlet } = this.contentletArea.payload;
+        const { contentType, identifier } = contentlet;
         const tab = PALETTE_TABS.STYLE_EDITOR;
-        this.openStyleEditor.emit({ tab, variableName });
+        this.openStyleEditor.emit({ tab, variableName: contentType, identifier });
     }
 }

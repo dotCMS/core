@@ -57,6 +57,7 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
 };
 
 const initialState: EditorState = {
+    activeContentletIdentifier: null,
     bounds: [],
     styleConfigurations: {},
     state: EDITOR_STATE.IDLE,
@@ -357,10 +358,14 @@ export function withEditor() {
                 },
                 openPalette({
                     tab = PALETTE_TABS.CONTENTTYPE,
-                    variableName = ''
-                }: { tab?: PALETTE_TABS; variableName?: string } = {}) {
+                    variableName = '',
+                    identifier = null
+                }: { tab?: PALETTE_TABS; variableName?: string; identifier?: string | null } = {}) {
                     const styleConfig = store.styleConfigurations()[variableName];
-                    patchState(store, { palette: { isOpen: true, currentTab: tab, styleConfig } });
+                    patchState(store, {
+                        palette: { isOpen: true, currentTab: tab, styleConfig },
+                        activeContentletIdentifier: identifier
+                    });
                 },
                 closePalette() {
                     patchState(store, {

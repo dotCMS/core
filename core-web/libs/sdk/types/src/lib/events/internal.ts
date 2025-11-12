@@ -30,5 +30,9 @@ export enum __DOTCMS_UVE_EVENT__ {
     /**
      * Copy contentlet inline editing success
      */
-    UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS = 'uve-copy-contentlet-inline-editing-success'
+    UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS = 'uve-copy-contentlet-inline-editing-success',
+    /**
+     * Active Contentlet
+     */
+    UVE_ACTIVE_CONTENTLET = 'uve-active-contentlet'
 }

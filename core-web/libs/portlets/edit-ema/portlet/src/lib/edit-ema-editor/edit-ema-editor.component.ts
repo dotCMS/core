@@ -224,6 +224,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         );
     });
 
+    readonly $handleActiveContentletEffect = effect(() => {
+        const identifier = this.uveStore.activeContentletIdentifier() ?? null;
+        const name = __DOTCMS_UVE_EVENT__.UVE_ACTIVE_CONTENTLET;
+
+        this.contentWindow?.postMessage({ name, identifier }, this.host);
+    });
+
     ngOnInit(): void {
         this.handleDragEvents();
 
@@ -1512,7 +1519,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {PALETTE_TABS} tab
      * @memberof EditEmaEditorComponent
      */
-    protected openStyleEditor({ tab, variableName }: { tab: PALETTE_TABS; variableName: string }) {
-        this.uveStore.openPalette({ tab, variableName });
+    protected openStyleEditor({
+        tab,
+        variableName,
+        identifier
+    }: {
+        tab: PALETTE_TABS;
+        variableName: string;
+        identifier: string;
+    }) {
+        this.uveStore.openPalette({ tab, variableName, identifier });
     }
 }

@@ -24,6 +24,7 @@ import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
 interface DotCMSContentletRendererProps {
     contentlet: DotCMSBasicContentlet;
     container: string;
+    style: React.CSSProperties;
 }
 
 /**
@@ -52,13 +53,13 @@ interface CustomComponentProps {
  * />
  * ```
  */
-export function Contentlet({ contentlet, container }: DotCMSContentletRendererProps) {
+export function Contentlet({ contentlet, container, style }: DotCMSContentletRendererProps) {
     const ref = useRef<HTMLDivElement | null>(null);
     const isDevMode = useIsDevMode();
     const isAnalyticsActive = useIsAnalyticsActive();
     const haveContent = useCheckVisibleContent(ref);
 
-    const style = useMemo(
+    const contentletStyle = useMemo(
         () => (isDevMode ? { minHeight: haveContent ? undefined : '4rem' } : {}),
         [isDevMode, haveContent]
     );
@@ -94,7 +95,7 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
             data-dot-object="contentlet"
             className={containerClassName}
             ref={ref}
-            style={style}>
+            style={{ ...style, ...contentletStyle }}>
             <CustomComponent contentlet={contentlet} />
         </div>
     );

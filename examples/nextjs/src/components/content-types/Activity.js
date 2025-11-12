@@ -1,20 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect } from 'react';
-import { registerComponentStyleConfiguration } from '@dotcms/uve';
 
 function Activity({ title, description, image, inode, urlTitle }) {
-
-    useEffect(() => {
-        registerComponentStyleConfiguration("Activity", {
-            title: {
-                type: "text",
-                label: "Title",
-                required: true,
-            },
-        });
-    }, []);
-
     return (
         <article className="p-4 overflow-hidden bg-white rounded-sm shadow-lg mb-4">
             {image && (

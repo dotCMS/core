@@ -25,6 +25,7 @@ export enum PALETTE_TABS {
 }
 
 export interface EditorState {
+    activeContentletIdentifier: string | null;
     bounds: Container[];
     state: EDITOR_STATE;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

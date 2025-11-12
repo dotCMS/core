@@ -10,7 +10,15 @@ import {
 import { ContainerNotFound, EmptyContainer } from './ContainerFallbacks';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
+import useActiveContentlet from '../../hooks/useIsActive';
 import { Contentlet } from '../Contentlet/Contentlet';
+
+const ACTIVE_STYLES = {
+    outline: '2px solid #5B8DEF',
+    outlineOffset: '2px',
+    boxShadow: '0 0 0 4px rgba(91, 141, 239, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1)',
+    transition: 'all 0.2s ease-in-out'
+};
 
 /**
  * @internal
@@ -44,6 +52,7 @@ type DotCMSContainerRendererProps = {
  */
 export function Container({ container }: DotCMSContainerRendererProps) {
     const { pageAsset } = useContext(DotCMSPageContext);
+    const activeContentlet = useActiveContentlet();
 
     const containerData = useMemo(
         () => getContainersData(pageAsset, container),
@@ -69,6 +78,7 @@ export function Container({ container }: DotCMSContainerRendererProps) {
         <div {...dotAttributes}>
             {contentlets.map((contentlet: DotCMSBasicContentlet) => (
                 <Contentlet
+                    style={activeContentlet === contentlet.identifier ? ACTIVE_STYLES : {}}
                     key={contentlet.identifier}
                     contentlet={contentlet}
                     container={JSON.stringify(containerData)}
