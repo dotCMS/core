@@ -100,7 +100,7 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
 
                 if (error instanceof DotHttpError) {
                     contentError = new DotErrorAISearch({
-                        message: `AI Search failed for '${this.#prompt}' (fetch): ${error.message}`,
+                        message: `AI Search failed (fetch): ${error.message}`,
                         httpError: error,
                         params: this.#params,
                         prompt: this.#prompt,
@@ -109,7 +109,7 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
                 } else {
                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                     contentError = new DotErrorAISearch({
-                        message: `AI Search failed for '${this.#prompt}' (fetch): ${errorMessage}`,
+                        message: `AI Search failed (fetch): ${errorMessage}`,
                         httpError: undefined,
                         params: this.#params,
                         prompt: this.#prompt,

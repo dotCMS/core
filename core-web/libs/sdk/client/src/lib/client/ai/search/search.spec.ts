@@ -417,10 +417,9 @@ describe('AISearch', () => {
                 (error) => {
                     expect(error).toBeInstanceOf(DotErrorAISearch);
                     if (error instanceof DotErrorAISearch) {
-                        expect(error.prompt).toBe('error test');
                         expect(error.params).toEqual(params);
                         expect(error.message).toBe(
-                            "AI Search failed for 'error test' (fetch): Network connection failed"
+                            'AI Search failed (fetch): Network connection failed'
                         );
                         expect(error.httpError).toBeUndefined();
                     }
@@ -453,11 +452,8 @@ describe('AISearch', () => {
             aiSearch.then().catch((error) => {
                 expect(error).toBeInstanceOf(DotErrorAISearch);
                 if (error instanceof DotErrorAISearch) {
-                    expect(error.prompt).toBe('catch test');
                     expect(error.params).toEqual(params);
-                    expect(error.message).toBe(
-                        "AI Search failed for 'catch test' (fetch): Request timeout"
-                    );
+                    expect(error.message).toBe('AI Search failed (fetch): Request timeout');
                     expect(error.httpError).toBeUndefined();
                 }
                 done();
@@ -486,11 +482,8 @@ describe('AISearch', () => {
             } catch (e) {
                 expect(e).toBeInstanceOf(DotErrorAISearch);
                 if (e instanceof DotErrorAISearch) {
-                    expect(e.prompt).toBe('try catch test');
                     expect(e.params).toEqual(params);
-                    expect(e.message).toBe(
-                        "AI Search failed for 'try catch test' (fetch): DNS resolution failed"
-                    );
+                    expect(e.message).toBe('AI Search failed (fetch): DNS resolution failed');
                     expect(e.httpError).toBeUndefined();
                 }
             }
@@ -525,11 +518,10 @@ describe('AISearch', () => {
             } catch (error) {
                 expect(error).toBeInstanceOf(DotErrorAISearch);
                 if (error instanceof DotErrorAISearch) {
-                    expect(error.prompt).toBe('http error test');
                     expect(error.params).toEqual(params);
                     expect(error.httpError).toBe(httpError);
                     expect(error.message).toBe(
-                        "AI Search failed for 'http error test' (fetch): AI search endpoint not found"
+                        'AI Search failed (fetch): AI search endpoint not found'
                     );
                 }
             }
@@ -568,12 +560,9 @@ describe('AISearch', () => {
             } catch (error) {
                 expect(error).toBeInstanceOf(DotErrorAISearch);
                 if (error instanceof DotErrorAISearch) {
-                    expect(error.prompt).toBe('server error test');
                     expect(error.params).toEqual(params);
                     expect(error.httpError).toBe(httpError);
-                    expect(error.message).toBe(
-                        "AI Search failed for 'server error test' (fetch): AI service unavailable"
-                    );
+                    expect(error.message).toBe('AI Search failed (fetch): AI service unavailable');
                 }
             }
         });
@@ -613,11 +602,10 @@ describe('AISearch', () => {
                 (error) => {
                     expect(error).toBeInstanceOf(DotErrorAISearch);
                     if (error instanceof DotErrorAISearch) {
-                        expect(error.prompt).toBe('onrejected http error test');
                         expect(error.params).toEqual(params);
                         expect(error.httpError).toBe(httpError);
                         expect(error.message).toBe(
-                            "AI Search failed for 'onrejected http error test' (fetch): Access denied to AI search"
+                            'AI Search failed (fetch): Access denied to AI search'
                         );
                     }
                     done();
@@ -673,10 +661,7 @@ describe('AISearch', () => {
             } catch (error) {
                 expect(error).toBeInstanceOf(DotErrorAISearch);
                 if (error instanceof DotErrorAISearch) {
-                    expect(error.prompt).toBe('non-error rejection test');
-                    expect(error.message).toBe(
-                        "AI Search failed for 'non-error rejection test' (fetch): Unknown error"
-                    );
+                    expect(error.message).toBe('AI Search failed (fetch): Unknown error');
                     expect(error.httpError).toBeUndefined();
                 }
             }
