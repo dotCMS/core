@@ -13,7 +13,6 @@ import { componentSchemas } from "@/config/component-schemas";
 export default function SchemaRegistry() {
     useEffect(() => {
         registerStyleSchemas(componentSchemas);
-        console.log("[SchemaRegistry] Registered ", componentSchemas.length, " component schemas");
     }, []); // Empty dependency array ensures this runs only once
 
     // This component doesn't render anything

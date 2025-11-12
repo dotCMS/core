@@ -16,5 +16,16 @@ export const componentSchemas = [
                 },
             },
         }
+    },
+    {
+        contentType: "Activity",
+        configuration: {
+            title: {
+                color: {
+                    type: "Multiple Select",
+                    options: ["#000000", "#FFFFFF", "#000000", "#FFFFFF"]
+                },
+            },
+        }
     }
 ]
