@@ -8,6 +8,8 @@ import {
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -22,6 +24,8 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
     DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -69,14 +73,22 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotContentTypeService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageService),
-            mockProvider(Router),
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
             mockProvider(ConfirmationService),
             mockProvider(DotContentletService),
             mockProvider(DotLanguagesService),
             mockProvider(DotVersionableService),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
             mockProvider(DialogService),
+            provideHttpClient(),
+            provideHttpClientTesting(),
             {
                 provide: DotCurrentUserService,
                 useValue: {
