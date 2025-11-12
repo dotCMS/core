@@ -24,6 +24,7 @@ import com.dotcms.content.elasticsearch.util.PaginationUtil;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.DotAssetValidationException;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -43,6 +44,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -7631,6 +7633,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.validateFileAsset(contentlet, contentIdentifier, contentType);
         }
 
+        if(contentlet.isDotAsset()){
+            this.validateDotAsset(contentlet);
+        }
+
         if (BaseContentType.HTMLPAGE.getType() == contentType.baseType().getType()) {
             this.validateHtmlPage(contentlet, contentIdentifier, contentType);
         }
@@ -8190,9 +8196,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void validateFileAsset(final Contentlet contentlet, final String contentIdentifier,
             final ContentType contentType) {
 
-        if (contentlet.getHost() != null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (
-                !UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder()
-                        .equals(FolderAPI.SYSTEM_FOLDER))) {
+        if (contentlet.getHost() != null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))) {
             final FileAssetValidationException cve = DotContentletValidationException.fileAssetBuilder(
                     Sneaky.sneak(() -> LanguageUtil.get(
                             "message.contentlet.fileasset.invalid.hostfolder")))
@@ -8264,7 +8268,42 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    final static Pattern dnsPattern = Pattern.compile(dnsRegEx);
+    /**
+     * Simple dotAssetValidation
+     * @param contentlet
+     * @throws DotAssetValidationException
+     */
+    private void validateDotAsset(final Contentlet contentlet) throws DotAssetValidationException {
+        try {
+            final FolderAPI folderAPI = APILocator.getFolderAPI();
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
+            final Folder folder = UtilMethods.isSet(contentlet.getFolder()) ?
+                    folderAPI.find(contentlet.getFolder(),
+                            systemUser, false) :
+                    folderAPI.findSystemFolder();
+            final String fileName =
+                    contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR) != null
+                            ? contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName()
+                            : BLANK;
+            if (UtilMethods.isNotSet(fileName)) {
+                throw new DotAssetValidationException(
+                        "Unable to get The Asset From the Given dotAsset Contentlet");
+            }
+            if (!folderAPI.matchFilter(folder, fileName)) {
+                final String fileExtension = UtilMethods.getFileExtension(fileName);
+                throw new DotAssetValidationException(String.format(
+                        "The target folder %s does not accept the given file extension %s",
+                        folder.getPath(), fileExtension));
+            }
+        } catch (Exception e) {
+            if (e instanceof DotAssetValidationException) {
+                throw (DotAssetValidationException) e;
+            }
+            Logger.warn(this, e.getMessage());
+        }
+    }
+
+    static final Pattern dnsPattern = Pattern.compile(dnsRegEx);
 
     /**
      * Host validation method shared by HostResource and ContentletWebAPI
