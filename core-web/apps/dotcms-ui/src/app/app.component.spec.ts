@@ -8,7 +8,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotLicenseService, DotMessageService, DotUiColorsService } from '@dotcms/data-access';
+import { ConfirmationService } from 'primeng/api';
+
+import {
+    DotAlertConfirmService,
+    DotLicenseService,
+    DotMessageService,
+    DotUiColorsService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -40,7 +47,9 @@ describe('AppComponent', () => {
                 LoggerService,
                 StringUtils,
                 DotLicenseService,
-                DotMessageService
+                DotMessageService,
+                DotAlertConfirmService,
+                ConfirmationService
             ]
         });
 
@@ -50,7 +59,7 @@ describe('AppComponent', () => {
         dotLicenseService = TestBed.inject(DotLicenseService);
         dotNavLogoService = TestBed.inject(DotNavLogoService);
 
-        jest.spyOn<any>(dotCmsConfigService, 'getConfig').mockReturnValue(
+        jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
             of({
                 colors: {
                     primary: '#123',
@@ -66,7 +75,7 @@ describe('AppComponent', () => {
                     level: 200,
                     levelName: 'test level'
                 }
-            })
+            }) as any
         );
         jest.spyOn(dotUiColorsService, 'setColors');
         jest.spyOn(dotMessageService, 'init');
@@ -86,6 +95,11 @@ describe('AppComponent', () => {
     it('should have router-outlet', () => {
         fixture.detectChanges();
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
+    });
+
+    it('should have dot-alert-confirm component', () => {
+        fixture.detectChanges();
+        expect(de.query(By.css('dot-alert-confirm')) !== null).toBe(true);
     });
 
     it('should set ui colors', () => {
