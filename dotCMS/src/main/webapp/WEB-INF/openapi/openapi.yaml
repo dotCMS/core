@@ -1063,7 +1063,7 @@ paths:
       - Search
   /es/search:
     get:
-      operationId: search_3
+      operationId: search_2
       parameters:
       - in: query
         name: depth
@@ -5835,40 +5835,6 @@ paths:
       summary: Unlock a given contentlet by the current user
       tags:
       - Content
-  /v1/content/drive/search:
-    post:
-      description: "Search and browse content assets using drive-like functionality\
-        \ with filtering, navigation, and content type filtering capabilities"
-      operationId: search_2
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DriveRequestForm"
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: object
-                description: "Drive search response containing filtered assets, folders,\
-                  \ and navigation metadata with content type filtering"
-          description: Drive search results retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Invalid request parameters or malformed drive request
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized access
-        "404":
-          content:
-            application/json: {}
-          description: Not found. Site or folder not found at the specified path
-      summary: Search content assets with drive functionality
-      tags:
-      - Content Drive
   /v1/content/fileassets/{inode}/resourcelink:
     get:
       operationId: findResourceLink_1
@@ -20268,73 +20234,6 @@ components:
             type: string
           versionable:
             type: boolean
-    DriveRequestForm:
-      type: object
-      properties:
-        archived:
-          type: boolean
-        assetPath:
-          type: string
-        baseTypes:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        contentTypes:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        filters:
-          $ref: "#/components/schemas/QueryFilters"
-        includeSystemHost:
-          type: boolean
-        language:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        live:
-          type: boolean
-        maxResults:
-          type: integer
-          format: int32
-        mimeTypes:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        offset:
-          type: integer
-          format: int32
-        showFolders:
-          type: boolean
-        sortBy:
-          type: string
     EmbeddingsForm:
       type: object
       properties:
@@ -21928,8 +21827,17 @@ components:
           $ref: "#/components/schemas/JobView"
     ImmutableListString:
       type: array
+      description: "List of file patterns that are allowed in this folder (e.g., *.jpg,\
+        \ *.pdf)"
+      example:
+      - '*.jpg'
+      - '*.png'
+      - '*.pdf'
       items:
         type: string
+        description: "List of file patterns that are allowed in this folder (e.g.,\
+          \ *.jpg, *.pdf)"
+        example: "[\"*.jpg\",\"*.png\",\"*.pdf\"]"
       properties:
         empty:
           type: boolean
@@ -23198,13 +23106,6 @@ components:
         quantile:
           type: number
           format: double
-    QueryFilters:
-      type: object
-      properties:
-        filterFolders:
-          type: boolean
-        text:
-          type: string
     RadioField:
       type: object
       allOf:
