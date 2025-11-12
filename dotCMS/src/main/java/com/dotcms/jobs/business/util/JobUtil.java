@@ -8,6 +8,7 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
@@ -16,11 +17,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -42,14 +38,7 @@ public class JobUtil {
      * Jackson mapper configuration and lazy initialized instance.
      */
     private static final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        mapper.registerModule(new Jdk8Module());
-        mapper.registerModule(new GuavaModule());
-        mapper.registerModule(new JavaTimeModule());
-        mapper.registerModule(new VersioningModule());
-        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        return mapper;
+        return DotObjectMapperProvider.getInstance().getIso8610ObjectMapper();
     });
 
     private JobUtil() {
