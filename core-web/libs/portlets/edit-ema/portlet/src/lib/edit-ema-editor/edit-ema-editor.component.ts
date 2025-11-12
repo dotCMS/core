@@ -916,6 +916,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [DotCMSUVEAction.SET_CONTENTLET]: (contentletArea: ClientContentletArea) => {
                 const payload = this.uveStore.getPageSavePayload(contentletArea.payload);
 
+                const identifier = contentletArea.payload.contentlet.identifier;
+                const activeContentletIdentifier = this.uveStore.activeContentletIdentifier();
+
+                // Avoid showing tools on an active contentlet
+                if (activeContentletIdentifier === identifier) {
+                    return;
+                }
+
                 this.uveStore.setEditorContentletArea({
                     ...contentletArea,
                     payload
