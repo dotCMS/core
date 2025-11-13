@@ -72,13 +72,23 @@ public class SecureFileValidatorTest {
     }
 
 
+    /**
+     * This method test validate
+     * Given scenario: the file path is valid but contains series of ..
+     * Expected Result: Test should pass
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
-    public void Test_Validate_Legal_FileNameWith2Dots() {
+    public void Test_Validate_Legal_FileNameWith_N_Dots() {
         final SecureFileValidator secureFileValidator = new IllegalFileExtensionsValidator();
         final String[] files = {
             "Screenshot 2025-03-18 at 4.09.02 p.m..png",
             "Meeting notes 3.15.24 ..draft.docx",
-            "Report Q1..Q2 2024.pdf"
+            "Report Q1..Q2 2024.pdf",
+            "lol.....png",
+            "test...again...png",
+            ".....png"
         };
         for (String filename : files) {
             final String filenameHeader = String.format("Content-Disposition: attachment; filename=\"%s\"",filename);
