@@ -255,7 +255,7 @@ public interface AbstractDriveRequestForm {
      * <ul>
      *   <li>Higher values may impact response time</li>
      *   <li>Consider using smaller page sizes (10-50) for better user experience</li>
-     *   <li>Default of 500 provides good balance for most use cases</li>
+     *   <li>Default of 2000 provides good balance for most use cases</li>
      * </ul>
      *
      * @return maximum number of results to return, defaults to 2000
