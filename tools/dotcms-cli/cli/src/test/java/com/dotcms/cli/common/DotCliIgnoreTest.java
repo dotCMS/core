@@ -13,6 +13,56 @@ class DotCliIgnoreTest {
     @TempDir
     Path tempDir;
 
+    /**
+     * Creates a default .dotcliignore file with common patterns for testing.
+     * This helper method provides a standard set of patterns that can be used
+     * across multiple tests.
+     *
+     * @param targetDir the directory where the .dotcliignore file should be created
+     * @throws IOException if an I/O error occurs while writing the file
+     */
+    private void createDefaultDotCliIgnore(Path targetDir) throws IOException {
+        Path ignoreFile = targetDir.resolve(".dotcliignore");
+        String defaultPatterns =
+                "# Version control\n" +
+                ".git/\n" +
+                ".svn/\n" +
+                "\n" +
+                "# Dependencies\n" +
+                "node_modules/\n" +
+                "vendor/\n" +
+                "\n" +
+                "# Build outputs\n" +
+                "build/\n" +
+                "dist/\n" +
+                "target/\n" +
+                "*.class\n" +
+                "\n" +
+                "# OS files\n" +
+                "**/.DS_Store\n" +
+                "**/Thumbs.db\n" +
+                "\n" +
+                "# Log files\n" +
+                "*.log\n" +
+                "\n" +
+                "# Temporary files\n" +
+                "*.tmp\n" +
+                "*.temp\n";
+        Files.writeString(ignoreFile, defaultPatterns);
+    }
+
+    /**
+     * Creates a custom .dotcliignore file with the specified patterns.
+     *
+     * @param targetDir the directory where the .dotcliignore file should be created
+     * @param patterns the patterns to write to the file
+     * @throws IOException if an I/O error occurs while writing the file
+     */
+    private void createCustomDotCliIgnore(Path targetDir, String patterns) throws IOException {
+        Path ignoreFile = targetDir.resolve(".dotcliignore");
+        Files.writeString(ignoreFile, patterns);
+    }
+
     @Test
     void testNoPatternsWhenNoFileExists() {
         // Arrange & Act
@@ -31,8 +81,7 @@ class DotCliIgnoreTest {
     @Test
     void testSimpleFilePatterns() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
-        Files.writeString(ignoreFile,
+        createCustomDotCliIgnore(tempDir,
                 "*.log\n" +
                 "*.tmp\n" +
                 "test.txt\n"
@@ -49,10 +98,30 @@ class DotCliIgnoreTest {
     }
 
     @Test
+    void testDefaultPatterns() throws IOException {
+        // Arrange
+        createDefaultDotCliIgnore(tempDir);
+
+        // Act
+        DotCliIgnore dotCliIgnore = DotCliIgnore.create(tempDir);
+
+        // Assert - verify default patterns work
+        assertTrue(dotCliIgnore.getPatternCount() > 0, "Should have patterns loaded");
+
+        // Test default patterns
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve(".git").resolve("config")));
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("node_modules").resolve("package.json")));
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("test.log")));
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("subdir").resolve(".DS_Store")));
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("build").resolve("output.jar")));
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("temp.tmp")));
+        assertFalse(dotCliIgnore.shouldIgnore(tempDir.resolve("readme.md")));
+    }
+
+    @Test
     void testDirectoryPatterns() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
-        Files.writeString(ignoreFile,
+        createCustomDotCliIgnore(tempDir,
                 "build/\n" +
                 "dist/\n" +
                 "target/\n"
@@ -72,8 +141,7 @@ class DotCliIgnoreTest {
     @Test
     void testDoubleStarPattern() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
-        Files.writeString(ignoreFile,
+        createCustomDotCliIgnore(tempDir,
                 "**/.DS_Store\n" +
                 "**/node_modules/\n"
         );
@@ -92,8 +160,7 @@ class DotCliIgnoreTest {
     @Test
     void testNegationPattern() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
-        Files.writeString(ignoreFile,
+        createCustomDotCliIgnore(tempDir,
                 "*.log\n" +
                 "!important.log\n"
         );
@@ -111,8 +178,7 @@ class DotCliIgnoreTest {
     @Test
     void testCommentsAndBlankLines() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
-        Files.writeString(ignoreFile,
+        createCustomDotCliIgnore(tempDir,
                 "# This is a comment\n" +
                 "\n" +
                 "*.log\n" +
@@ -131,13 +197,12 @@ class DotCliIgnoreTest {
     }
 
     @Test
-    void testInvalidPatternThrowsException() {
+    void testInvalidPatternThrowsException() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
+        createCustomDotCliIgnore(tempDir, "!\n"); // Negation with no pattern
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            Files.writeString(ignoreFile, "!\n"); // Negation with no pattern
             DotCliIgnore.create(tempDir);
         });
     }
@@ -145,8 +210,7 @@ class DotCliIgnoreTest {
     @Test
     void testEmptyIgnoreFile() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
-        Files.writeString(ignoreFile, "");
+        createCustomDotCliIgnore(tempDir, "");
 
         // Act
         DotCliIgnore dotCliIgnore = DotCliIgnore.create(tempDir);
@@ -169,8 +233,7 @@ class DotCliIgnoreTest {
     @Test
     void testFileFilter() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
-        Files.writeString(ignoreFile, "*.log\n");
+        createCustomDotCliIgnore(tempDir, "*.log\n");
 
         DotCliIgnore dotCliIgnore = DotCliIgnore.create(tempDir);
 
@@ -200,13 +263,13 @@ class DotCliIgnoreTest {
         Files.createDirectories(subDir3);
 
         // Root .dotcliignore - ignores all .log files
-        Files.writeString(rootDir.resolve(".dotcliignore"), "*.log\n");
+        createCustomDotCliIgnore(rootDir, "*.log\n");
 
         // Subdirectory .dotcliignore - ignores .tmp files and re-includes important.log
-        Files.writeString(subDir1.resolve(".dotcliignore"), "*.tmp\n!important.log\n");
+        createCustomDotCliIgnore(subDir1, "*.tmp\n!important.log\n");
 
         // Deep subdirectory .dotcliignore - ignores .bak files
-        Files.writeString(subDir3.resolve(".dotcliignore"), "*.bak\n");
+        createCustomDotCliIgnore(subDir3, "*.bak\n");
 
         // Act - create DotCliIgnore from the deepest directory
         DotCliIgnore dotCliIgnore = DotCliIgnore.create(subDir3, rootDir);
@@ -232,10 +295,10 @@ class DotCliIgnoreTest {
         Files.createDirectories(subDir);
 
         // Root ignores all .txt files
-        Files.writeString(rootDir.resolve(".dotcliignore"), "*.txt\n");
+        createCustomDotCliIgnore(rootDir, "*.txt\n");
 
         // Subdirectory re-includes specific .txt file
-        Files.writeString(subDir.resolve(".dotcliignore"), "!important.txt\n");
+        createCustomDotCliIgnore(subDir, "!important.txt\n");
 
         // Act
         DotCliIgnore dotCliIgnore = DotCliIgnore.create(subDir, rootDir);
@@ -266,10 +329,9 @@ class DotCliIgnoreTest {
     @Test
     void testTrailingSpaceTrimming() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
         // Pattern with trailing spaces (should be trimmed)
         // Pattern with escaped trailing space (should be preserved)
-        Files.writeString(ignoreFile,
+        createCustomDotCliIgnore(tempDir,
                 "*.log   \n" +  // Trailing spaces should be removed
                 "*.tmp\\ \n" +  // Escaped trailing space should be preserved
                 "test.txt    \n" +  // Multiple trailing spaces should be removed
@@ -298,9 +360,8 @@ class DotCliIgnoreTest {
     @Test
     void testEscapedBackslashBeforeTrailingSpace() throws IOException {
         // Arrange
-        Path ignoreFile = tempDir.resolve(".dotcliignore");
         // Test escaped backslash (\\) followed by trailing space
-        Files.writeString(ignoreFile,
+        createCustomDotCliIgnore(tempDir,
                 "pattern\\\\   \n"  // Escaped backslash, trailing spaces should be removed
         );
 

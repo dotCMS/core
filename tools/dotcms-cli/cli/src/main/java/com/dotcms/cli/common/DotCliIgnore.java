@@ -113,8 +113,9 @@ public class DotCliIgnore {
 
     /**
      * Loads patterns hierarchically from .dotcliignore files starting from startPath
-     * up to workspaceRoot. Patterns are loaded from child to parent, so patterns
-     * closer to the file being checked have higher precedence.
+     * up to workspaceRoot. Patterns are loaded from parent to child (root to leaf),
+     * so patterns closer to the file being checked have higher precedence and are
+     * evaluated last.
      *
      * @param startPath the starting directory to load patterns from
      * @param workspaceRoot the workspace root directory (top boundary)
@@ -125,17 +126,15 @@ public class DotCliIgnore {
         Path currentPath = startPath.toAbsolutePath().normalize();
         final Path rootPath = workspaceRoot.toAbsolutePath().normalize();
 
-        int filesLoaded = 0;
+        // Collect all .dotcliignore file paths from child to parent
+        List<Path> ignoreFilePaths = new ArrayList<>();
 
         // Walk up the directory tree from startPath to workspaceRoot
         while (currentPath != null) {
-
             final Path ignoreFile = currentPath.resolve(DOTCLIIGNORE_FILE);
 
             if (Files.exists(ignoreFile) && Files.isRegularFile(ignoreFile)) {
-                logger.debug("Loading .dotcliignore from: " + ignoreFile);
-                loadIgnoreFile(ignoreFile);
-                filesLoaded++;
+                ignoreFilePaths.add(ignoreFile);
             }
 
             // Stop if we've reached the workspace root or can't go higher
@@ -147,8 +146,16 @@ public class DotCliIgnore {
             currentPath = currentPath.getParent();
         }
 
-        if (filesLoaded > 0) {
-            logger.debug(String.format("Loaded %d .dotcliignore file(s) hierarchically", filesLoaded));
+        // Load patterns in reverse order (parent to child) so child patterns
+        // are evaluated last and have higher precedence
+        for (int i = ignoreFilePaths.size() - 1; i >= 0; i--) {
+            Path ignoreFile = ignoreFilePaths.get(i);
+            logger.debug("Loading .dotcliignore from: " + ignoreFile);
+            loadIgnoreFile(ignoreFile);
+        }
+
+        if (!ignoreFilePaths.isEmpty()) {
+            logger.debug(String.format("Loaded %d .dotcliignore file(s) hierarchically", ignoreFilePaths.size()));
         } else {
             logger.debug("No .dotcliignore files found in hierarchy");
         }
@@ -284,38 +291,56 @@ public class DotCliIgnore {
 
     /**
      * Converts a .gitignore-style pattern to a Java glob pattern.
+     * Java's glob syntax requires special handling to match .gitignore behavior:
+     * - Simple patterns like "*.log" should match at root AND in subdirectories
+     * - Directory patterns like "build/" should match the directory and its contents
      *
      * @param pattern the .gitignore-style pattern
      * @return the equivalent glob pattern
      */
     private String convertToGlobPattern(String pattern) {
+        // Handle patterns starting with / (absolute from workspace root)
+        if (pattern.startsWith("/")) {
+            // Absolute path from workspace root (relative to base path)
+            return pattern.substring(1);
+        }
+
+        // Handle patterns starting with ** and ending with / (e.g., "**/node_modules/")
+        if (pattern.startsWith("**/") && pattern.endsWith("/")) {
+            // Remove both prefix and suffix, then build comprehensive pattern
+            String dirName = pattern.substring(3, pattern.length() - 1); // Remove "**/" and "/"
+            // Match: dir, dir/*, dir/subdir, dir/subdir/*, **/dir, **/dir/*, etc.
+            return "{" + dirName + "," + dirName + "/**,**/" + dirName + ",**/" + dirName + "/**}";
+        }
+
+        // Handle patterns already containing ** (full path wildcards)
+        if (pattern.startsWith("**/")) {
+            // Pattern explicitly uses **, but also needs to match at root level
+            // e.g., "**/.DS_Store" should match both ".DS_Store" and "dir/.DS_Store"
+            String patternWithoutPrefix = pattern.substring(3); // Remove "**/"
+            return "{" + patternWithoutPrefix + "," + pattern + "}";
+        }
+
         // Handle directory patterns (ending with /)
         if (pattern.endsWith("/")) {
             // Match directory and everything inside it
             // Remove trailing slash and add patterns for both directory and contents
             String dirPattern = pattern.substring(0, pattern.length() - 1);
-            return "**/" + dirPattern + "{,/**}";
+            // Match: dir, dir/*, dir/subdir, dir/subdir/*, etc.
+            return "{" + dirPattern + "," + dirPattern + "/**,**/" + dirPattern + ",**/" + dirPattern + "/**}";
         }
 
-        // Handle patterns starting with /
-        if (pattern.startsWith("/")) {
-            // Absolute path from workspace root
-            return pattern.substring(1);
-        }
-
-        // Handle patterns already containing ** (full path wildcards)
-        if (pattern.startsWith("**/")) {
-            return pattern;
-        }
-
-        // Handle patterns containing /
+        // Handle patterns containing / (path patterns)
         if (pattern.contains("/")) {
-            // If it contains /, it's a path pattern
-            return "**/" + pattern;
+            // Match both at root and in subdirectories
+            // e.g., "src/*.log" should match "src/error.log" and "project/src/error.log"
+            return "{" + pattern + ",**/" + pattern + "}";
         }
 
-        // Simple filename patterns
-        return "**/" + pattern;
+        // Simple filename patterns (no directory separators)
+        // Must match at root level AND in any subdirectory
+        // e.g., "*.log" should match "error.log" and "dir/error.log"
+        return "{" + pattern + ",**/" + pattern + "}";
     }
 
     /**
