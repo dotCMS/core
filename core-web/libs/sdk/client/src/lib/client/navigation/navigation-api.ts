@@ -8,19 +8,24 @@ import {
     DotErrorNavigation
 } from '@dotcms/types';
 
-export class NavigationClient {
-    private requestOptions: DotRequestOptions;
-    private BASE_URL: string;
-    private httpClient: DotHttpClient;
+import { BaseApiClient } from '../base/base-api';
 
+export class NavigationClient extends BaseApiClient {
+    private BASE_URL: string;
+
+    /**
+     * Creates a new NavigationClient instance.
+     * @param {DotCMSClientConfig} config - Configuration options for the DotCMS client
+     * @param {DotRequestOptions} requestOptions - Options for fetch requests including authorization headers
+     * @param {DotHttpClient} httpClient - HTTP client for making requests
+     */
     constructor(
         config: DotCMSClientConfig,
         requestOptions: DotRequestOptions,
         httpClient: DotHttpClient
     ) {
-        this.requestOptions = requestOptions;
+        super(config, requestOptions, httpClient);
         this.BASE_URL = `${config?.dotcmsUrl}/api/v1/nav`;
-        this.httpClient = httpClient;
     }
 
     /**

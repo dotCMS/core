@@ -6,6 +6,7 @@ import {
     DotErrorContent
 } from '@dotcms/types';
 
+import { BaseApiClient } from '../../../base/base-api';
 import { CONTENT_API_URL } from '../../shared/const';
 import {
     GetCollectionResponse,
@@ -27,7 +28,7 @@ import { sanitizeQuery } from '../query/utils';
  * @class CollectionBuilder
  * @template T Represents the type of the content type to fetch. Defaults to unknown.
  */
-export class CollectionBuilder<T = unknown> {
+export class CollectionBuilder<T = unknown> extends BaseApiClient {
     #page = 1;
     #limit = 10;
     #depth = 0;
@@ -39,9 +40,6 @@ export class CollectionBuilder<T = unknown> {
     #rawQuery?: string;
     #languageId: number | string = 1;
     #draft = false;
-    #requestOptions: DotRequestOptions;
-    #httpClient: DotHttpClient;
-    #config: DotCMSClientConfig;
 
     /**
      * Creates an instance of CollectionBuilder.
@@ -57,11 +55,8 @@ export class CollectionBuilder<T = unknown> {
         contentType: string,
         httpClient: DotHttpClient
     ) {
-        this.#requestOptions = requestOptions;
-        this.#config = config;
+        super(config, requestOptions, httpClient);
         this.#contentType = contentType;
-        this.#httpClient = httpClient;
-        this.#config = config;
 
         // Build the default query with the contentType field
         this.#defaultQuery = new QueryBuilder().field('contentType').equals(this.#contentType);
@@ -97,18 +92,7 @@ export class CollectionBuilder<T = unknown> {
      * @memberof CollectionBuilder
      */
     private get url() {
-        return `${this.#config.dotcmsUrl}${CONTENT_API_URL}`;
-    }
-
-    /**
-     * Returns the site ID from the configuration.
-     *
-     * @readonly
-     * @private
-     * @memberof CollectionBuilder
-     */
-    private get siteId() {
-        return this.#config.siteId;
+        return `${this.config.dotcmsUrl}${CONTENT_API_URL}`;
     }
 
     /**
@@ -442,11 +426,11 @@ export class CollectionBuilder<T = unknown> {
 
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
-        return this.#httpClient.request<GetCollectionRawResponse<T>>(this.url, {
-            ...this.#requestOptions,
+        return this.httpClient.request<GetCollectionRawResponse<T>>(this.url, {
+            ...this.requestOptions,
             method: 'POST',
             headers: {
-                ...this.#requestOptions.headers,
+                ...this.requestOptions.headers,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
