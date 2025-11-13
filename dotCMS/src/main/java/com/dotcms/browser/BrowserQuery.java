@@ -43,18 +43,35 @@ import org.apache.commons.lang3.StringUtils;
 public class BrowserQuery {
     private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
     final User user;
-    final String  filter, fileName, sortBy;
-    final int offset, maxResults;
-    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties, showDefaultLangItems, useElasticsearchFiltering;
+    final String  filter;
+    final String fileName;
+    final String sortBy;
+    final int offset;
+    final int maxResults;
+    final boolean showWorking;
+    final boolean showArchived;
+    final boolean showFolders;
+    final boolean sortByDesc;
+    final boolean showLinks;
+    final boolean showMenuItemsOnly;
+    final boolean showContent;
+    final boolean showShorties;
+    final boolean showDefaultLangItems;
+    final boolean useElasticsearchFiltering;
+    final boolean filterFolderNames;
     final Set<Long> languageIds;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
     final Set<String> contentTypeIds;
+    final Set<String> excludedContentTypeIds;
     final Host site;
+    final boolean forceSystemHost;
+    final boolean skipFolder;
     final Folder folder;
     final Parentable directParent;
     final Role[] roles;
-    final List<String> extensions, mimeTypes;
+    final List<String> extensions;
+    final List<String> mimeTypes;
 
     /**
      * Returns the primary language ID for backward compatibility.
@@ -81,7 +98,8 @@ public class BrowserQuery {
     @Override
     public String toString() {
         return "BrowserQuery {user:" + user + ", site:" + site + ", folder:" + folder + ", filter:"
-                + filter + ", sortBy:" + sortBy
+                + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
+                + ", skipFolder:" + skipFolder
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:"
                 + showWorking + ", showArchived:"
                 + showArchived + ", showFolders:" + showFolders + ", showDefaultLangItems:"
@@ -99,11 +117,13 @@ public class BrowserQuery {
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
         this.useElasticsearchFiltering = builder.useElasticsearchFiltering;
+        this.skipFolder = builder.skipFolder;
+        this.filterFolderNames = builder.filterFolderNames;
         this.fileName = builder.fileName;
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
-        this.maxResults = Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST);
+        this.maxResults = (builder.overrideMaxResults ? builder.maxResults :  Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST));
         this.showWorking = builder.showWorking || builder.showArchived;
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
@@ -120,9 +140,12 @@ public class BrowserQuery {
                 : ImmutableSet.copyOf(builder.baseTypes);
         this.languageIds = Set.copyOf(builder.languageIds);
         this.contentTypeIds = Set.copyOf(builder.contentTypes);
+        this.excludedContentTypeIds = Set.copyOf(builder.excludedContentTypes);
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
-        this.folder= siteAndFolder._2;
+        this.folder = siteAndFolder._2;
+        //Despite the site and folder passed, forceSystemHost makes the inclusion of SYSTEM_HOME in the query
+        this.forceSystemHost = builder.forceSystemHost;
         this.directParent = this.folder.isSystemFolder() ? site : folder;
         this.roles= Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0])).getOrElse(new Role[0]);
     }
@@ -204,11 +227,14 @@ public class BrowserQuery {
 
         private User user;
         private boolean useElasticsearchFiltering = false;
+        private boolean filterFolderNames = false;
         private String filter = null;
         private String fileName = null;
         private String sortBy = "moddate";
         private int offset = 0;
         private int maxResults = MAX_FETCH_PER_REQUEST;
+        private boolean overrideMaxResults = false;
+        private boolean showMenuItemsOnly = false;
         private boolean showWorking = true;
         private boolean showArchived = false;
         private boolean showContent = true;
@@ -216,13 +242,15 @@ public class BrowserQuery {
         private boolean showFolders = false;
         private boolean sortByDesc = false;
         private boolean showLinks = false;
-        private boolean showMenuItemsOnly = false;
         private boolean showDefaultLangItems = false;
         private Set<Long> languageIds = new LinkedHashSet<>();
         private Set<String> contentTypes = new LinkedHashSet<>();
+        private Set<String> excludedContentTypes = new LinkedHashSet<>();
         private final StringBuilder luceneQuery = new StringBuilder();
-        private Set<BaseContentType> baseTypes = new HashSet<>();
+        private final Set<BaseContentType> baseTypes = new HashSet<>();
         private String hostFolderId = FolderAPI.SYSTEM_FOLDER;
+        private boolean forceSystemHost = false;
+        private boolean skipFolder = false;
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
@@ -234,6 +262,8 @@ public class BrowserQuery {
             this.hostFolderId = browserQuery.folder.isSystemFolder()
                     ? browserQuery.site.getIdentifier()
                     : browserQuery.folder.getInode();
+            this.useElasticsearchFiltering = browserQuery.useElasticsearchFiltering;
+            this.forceSystemHost = browserQuery.forceSystemHost;
             this.filter = browserQuery.filter;
             this.fileName = browserQuery.fileName;
             if (browserQuery.luceneQuery != null) {
@@ -249,6 +279,7 @@ public class BrowserQuery {
             this.showLinks = browserQuery.showLinks;
             this.languageIds = new LinkedHashSet<>(browserQuery.languageIds);
             this.contentTypes = new LinkedHashSet<>(browserQuery.contentTypeIds);
+            this.excludedContentTypes = new LinkedHashSet<>(browserQuery.excludedContentTypeIds);
             this.showMenuItemsOnly = browserQuery.showMenuItemsOnly;
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;
@@ -268,12 +299,54 @@ public class BrowserQuery {
         }
 
         /**
-         * This activates seatch text using ElasticSearch
-         * @param useElasticsearchFiltering
+         * When set, search includes items that belong to system-host
+         * @param forceSystemHost
          * @return
          */
-        public Builder withUseElasticsearchFiltering(boolean useElasticsearchFiltering) {
+        public Builder forceSystemHost(boolean forceSystemHost) {
+            this.forceSystemHost = forceSystemHost;
+            return this;
+        }
+
+        /**
+         * There's a hard limit configured, this allows me to bypass that limit
+         * @param overrideMaxResults
+         * @return
+         */
+        public Builder overrideMaxResults(boolean overrideMaxResults) {
+            this.overrideMaxResults = overrideMaxResults;
+            return this;
+        }
+
+        /**
+         * Introduced to allow skipping the inclusion of a calculated folder path in the base query
+         * This property ensures we don't break prior functionality.
+         * This is useful if we want to retrieve everything under a site root. No folder should be included
+         * @param skipFolder flag
+         * @return this
+         */
+        public Builder skipFolder(boolean skipFolder) {
+            this.skipFolder = skipFolder;
+            return this;
+        }
+
+        /**
+         * This activates search text using ElasticSearch
+         * @param useElasticsearchFiltering flag
+         * @return this
+         */
+        public Builder useElasticsearchFiltering(boolean useElasticsearchFiltering) {
             this.useElasticsearchFiltering = useElasticsearchFiltering;
+            return this;
+        }
+
+        /**
+         * if we want to filter folder names when searching with Text filters
+         * @param filterFolderNames flag
+         * @return this
+         */
+        public Builder filterFolderNames(boolean filterFolderNames) {
+            this.filterFolderNames = filterFolderNames;
             return this;
         }
 
@@ -288,9 +361,9 @@ public class BrowserQuery {
         public Builder withFileName(@Nonnull String fileName) {
             if (UtilMethods.isSet(fileName)) {
                 // for exact file-name match we need to relay exclusively on the database
-                // we can not trust on the use of the title field indexed in lucene
-                // As different files can share the same title, and we need an exact match on identifier.asset_name
-                // Therefore we need to make it fail on purpose by adding a non-existing value to the query
+                // we cannot trust on the use of the title field indexed in lucene
+                // As different files can share the same title. We need an exact match on identifier.asset_name.
+                // Therefore, we need to make it fail on purpose by adding a non-existing value to the query
                 // If we include this fileNAme here BrowserAPI will try to match the title in lucene bringing back false positives
                 luceneQuery.append(StringPool.SPACE).append("___").append(fileName).append("___");
                 this.fileName = fileName;
@@ -431,12 +504,6 @@ public class BrowserQuery {
             return this;
         }
 
-        public Builder withContentTypes(@Nonnull List<String> contentTypes) {
-            this.contentTypes.clear();
-            this.contentTypes.addAll(contentTypes);
-            return this;
-        }
-
         public Builder addContentType(@Nonnull String contentType) {
             if (UtilMethods.isSet(contentType)) {
                 this.contentTypes.add(contentType);
@@ -444,6 +511,23 @@ public class BrowserQuery {
             return this;
         }
 
+        /**
+         * This option is useful if we want to build a query that implicitly takes into account every content-type except for the ones specified.
+         * @param excludedContentTypes
+         * @return
+         */
+        public Builder excludedContentTypes(@Nonnull Set<String> excludedContentTypes) {
+            this.excludedContentTypes.clear();
+            this.excludedContentTypes.addAll(excludedContentTypes);
+            this.contentTypes.removeAll(excludedContentTypes);
+            return this;
+        }
+
+        /**
+         * Base Types override content-types
+         * @param types baseTypes
+         * @return
+         */
         public Builder withBaseTypes(@Nonnull List<BaseContentType> types) {
             baseTypes.addAll(types);
             return this;
