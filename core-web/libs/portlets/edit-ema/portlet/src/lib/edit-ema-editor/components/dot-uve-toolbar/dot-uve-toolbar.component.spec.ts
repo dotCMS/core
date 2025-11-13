@@ -49,7 +49,6 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import {
     getFullPageURL,
     createFavoritePagesURL,
-    createFullURL,
     sanitizeURL,
     convertLocalTimeToUTC
 } from '../../../utils';
@@ -72,7 +71,6 @@ const bookmarksUrl = createFavoritePagesURL({
 const baseUVEToolbarState = {
     editor: {
         bookmarksUrl,
-        copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
         apiUrl: `${'http://localhost'}${pageAPI}`
     },
     preview: null,

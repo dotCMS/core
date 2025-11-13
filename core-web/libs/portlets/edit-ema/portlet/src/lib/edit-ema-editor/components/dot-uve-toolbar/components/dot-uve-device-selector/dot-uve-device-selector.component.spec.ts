@@ -18,12 +18,7 @@ import {
 } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { Orientation } from '../../../../../store/models';
-import {
-    sanitizeURL,
-    getFullPageURL,
-    createFavoritePagesURL,
-    createFullURL
-} from '../../../../../utils';
+import { sanitizeURL, getFullPageURL, createFavoritePagesURL } from '../../../../../utils';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -43,7 +38,6 @@ const bookmarksUrl = createFavoritePagesURL({
 const baseUVEToolbarState = {
     editor: {
         bookmarksUrl,
-        copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
         apiUrl: `${'http://localhost'}${pageAPI}`
     },
     preview: null,
