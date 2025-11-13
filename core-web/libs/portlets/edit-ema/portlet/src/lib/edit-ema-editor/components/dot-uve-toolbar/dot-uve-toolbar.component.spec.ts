@@ -426,6 +426,148 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
+        describe('$copyURL computed signal', () => {
+            it('should construct URL with clientHost and url from pageParams', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe('https://example.com/my-page');
+            });
+
+            it('should strip /index suffix from URL', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page/index',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe('https://example.com/my-page');
+            });
+
+            it('should strip /index.html suffix from URL', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page/index.html',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe('https://example.com/my-page');
+            });
+
+            it('should fallback to window.location.origin when clientHost is not provided', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page',
+                    clientHost: undefined
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe(`${window.location.origin}/my-page`);
+            });
+
+            it('should handle root URL with index.html', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/index.html',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe('https://example.com/');
+            });
+
+            it('should handle root URL with just /index', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/index',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe('https://example.com/');
+            });
+
+            it('should handle URL without index suffix (no change)', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/about-us',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe('https://example.com/about-us');
+            });
+
+            it('should handle nested paths with /index.html', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/docs/api/index.html',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe('https://example.com/docs/api');
+            });
+
+            it('should default to root path when url is undefined', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: undefined,
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe('https://example.com/');
+            });
+
+            it('should handle empty clientHost with fallback to window.location.origin', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/test',
+                    clientHost: ''
+                });
+                spectator.detectChanges();
+
+                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
+                const copyURL = copyButton.getAttribute('ng-reflect-text');
+
+                expect(copyURL).toBe(`${window.location.origin}/test`);
+            });
+        });
+
         describe('API URL', () => {
             it('should have api link button', () => {
                 expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
