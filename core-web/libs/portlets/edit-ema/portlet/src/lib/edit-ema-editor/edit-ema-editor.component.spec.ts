@@ -64,6 +64,8 @@ import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
+    CONTENTLETS_MOCK_FOR_EDITOR,
+    CONTENT_TYPE_MOCK_FOR_EDITOR,
     DotCurrentUserServiceMock,
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
@@ -85,8 +87,6 @@ import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-ve
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
-import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
-import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
@@ -350,9 +350,9 @@ const createRouting = () =>
             {
                 provide: DotContentTypeService,
                 useValue: {
-                    filterContentTypes: () => of([CONTENT_TYPE_MOCK]),
-                    getContentTypes: () => of([CONTENT_TYPE_MOCK]),
-                    getContentType: () => of(CONTENT_TYPE_MOCK)
+                    filterContentTypes: () => of([CONTENT_TYPE_MOCK_FOR_EDITOR]),
+                    getContentTypes: () => of([CONTENT_TYPE_MOCK_FOR_EDITOR]),
+                    getContentType: () => of(CONTENT_TYPE_MOCK_FOR_EDITOR)
                 }
             },
             {
@@ -682,7 +682,7 @@ describe('EditEmaEditorComponent', () => {
                             origin: HOST,
                             data: {
                                 action: DotCMSUVEAction.EDIT_CONTENTLET,
-                                payload: CONTENTLETS_MOCK[0]
+                                payload: CONTENTLETS_MOCK_FOR_EDITOR[0]
                             }
                         })
                     );
@@ -1652,7 +1652,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should call the setEditorDragItem from the store for contentlets', () => {
-                        const contentlet = CONTENTLETS_MOCK[0];
+                        const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
 
@@ -1696,7 +1696,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should call the setEditorDragItem from the store for contentlets and move', () => {
-                        const contentlet = CONTENTLETS_MOCK[0];
+                        const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const container = {
                             acceptTypes:
@@ -1965,7 +1965,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should do the place item flow when dropping a contentlet and is not moving', () => {
-                        const contentlet = CONTENTLETS_MOCK[0];
+                        const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const savePageSpy = jest.spyOn(store, 'savePage');
 
@@ -2027,7 +2027,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should handle duplicated content', () => {
-                        const contentlet = CONTENTLETS_MOCK[0];
+                        const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const savePapeSpy = jest.spyOn(store, 'savePage');
 
@@ -2090,7 +2090,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should do the place item flow when dropping a contentlet and is moving', () => {
-                        const contentlet = CONTENTLETS_MOCK[0];
+                        const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const savePapeSpy = jest.spyOn(store, 'savePage');
 
@@ -2166,7 +2166,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should handle duplicated content when moving', () => {
-                        const contentlet = CONTENTLETS_MOCK[0];
+                        const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const savePageSpy = jest.spyOn(store, 'savePage');
                         const resetEditorPropertiesSpy = jest.spyOn(store, 'resetEditorProperties');
@@ -2238,7 +2238,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should open dialog when dropping a content-type', () => {
-                        const contentType = CONTENT_TYPE_MOCK[0];
+                        const contentType = CONTENT_TYPE_MOCK_FOR_EDITOR[0];
 
                         jest.spyOn(store, 'setEditorState');
 
