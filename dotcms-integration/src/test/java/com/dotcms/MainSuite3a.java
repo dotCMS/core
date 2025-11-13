@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
@@ -43,7 +44,8 @@ import org.junit.runners.Suite;
         Task250604UpdateFolderInodesTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
-        SecondaryCategoryPermissionTest.class
+        SecondaryCategoryPermissionTest.class,
+        OpenAIVisionAPIImplTest.class
 })
 
 public class MainSuite3a {
