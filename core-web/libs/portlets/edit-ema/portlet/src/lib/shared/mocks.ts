@@ -1048,7 +1048,8 @@ export const dotPropertiesServiceMock = {
     getFeatureFlags: () =>
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false,
-            [FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK]: false
+            [FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK]: false,
+            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: false
         })
 };
 
