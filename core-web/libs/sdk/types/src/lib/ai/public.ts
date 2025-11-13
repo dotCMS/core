@@ -31,9 +31,9 @@ export interface DotCMSAISearchQuery {
     contentType?: string;
     /**
      * The language id to search in.
-     * @property {string} languageId - The language id to search in.
+     * @property {number | string} languageId - The language id to search in.
      */
-    languageId?: string;
+    languageId?: number | string;
 }
 
 /**

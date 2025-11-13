@@ -56,7 +56,7 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
      *   query: {
      *     limit: 20,
      *     contentType: 'BlogPost',
-     *     languageId: 'en'
+     *     languageId: '1' // or 1
      *   },
      *   config: {
      *     threshold: 0.7
@@ -69,7 +69,7 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
      *   query: {
      *     limit: 20,
      *     contentType: 'BlogPost',
-     *     languageId: 'en'
+     *     languageId: '1' // or 1
      *   },
      *   config: {
      *     threshold: 0.7

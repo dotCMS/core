@@ -572,7 +572,7 @@ describe('AISearch', () => {
             const indexName = 'default';
             const params: DotCMSAISearchParams = {
                 query: {
-                    languageId: '2'
+                    languageId: 2
                 }
             };
             const aiSearch = new AISearch(
