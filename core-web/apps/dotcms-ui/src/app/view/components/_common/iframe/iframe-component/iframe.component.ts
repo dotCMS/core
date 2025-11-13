@@ -255,10 +255,8 @@ export class IframeComponent implements OnInit, OnDestroy {
     }
 
     private isIframeHaveContent(): boolean {
-        return (
-            this.iframeElement &&
-            this.iframeElement.nativeElement.contentWindow.document.body.innerHTML.length
-        );
+        return !!this.iframeElement?.nativeElement?.contentWindow?.document?.body?.innerHTML
+            ?.length;
     }
 
     private setArgs(args: unknown[]): unknown[] {

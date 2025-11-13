@@ -377,13 +377,21 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     /**
      * @description This method is used to identify items by id
      *
-     * @param {number} _
+     * @param {number} index
      * @param {GridStackWidget} w
      * @return {*}
      * @memberof TemplateBuilderComponent
      */
-    identify(_: number, w: GridStackWidget): string {
-        return w.id as string;
+    identify(index: number, w: GridStackWidget): string {
+        // Ensure we always return a unique string
+        // Combine ID with index to prevent Angular 20 NG0955 errors about duplicate keys
+        // This handles cases where the same ID might appear in different rows
+        const id = w?.id;
+        if (id != null && id !== '') {
+            return `${String(id)}-${index}`;
+        }
+        // Fallback to index if ID is not available
+        return `item-${index}`;
     }
 
     /**

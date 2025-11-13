@@ -36,7 +36,7 @@ const UNITS = {
     providers: [DecimalPipe],
     selector: 'cw-visitors-location-component',
     template: `
-        @if (comparisonDropdown != null) {
+        @if (comparisonDropdown !== null) {
             <div flex layout="row" class="cw-visitors-location cw-condition-component-body">
                 <cw-input-dropdown
                     (onDropDownChange)="comparisonChange.emit($event)"

@@ -1,5 +1,5 @@
 <ul class="edit-page-nav">
-    @for (item of model | async; track item) {
+    @for (item of model | async; track item.label) {
         <li data-testId="menuListItems">
             @if (!item.needsEntepriseLicense) {
                 <a

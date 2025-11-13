@@ -14,7 +14,7 @@ import { ServerSideTypeModel } from './services/ServerSideFieldModel';
 @Component({
     selector: 'rule-action',
     template: `
-        @if (typeDropdown != null) {
+        @if (typeDropdown !== null) {
             <div flex layout="row" class="cw-rule-action cw-entry">
                 <div flex="25" layout="row" class="cw-row-start-area">
                     <cw-input-dropdown

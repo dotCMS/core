@@ -5,7 +5,7 @@
         <ng-container *ngTemplateOutlet="unboxed"></ng-container>
     </dot-portlet-box>
 } @else {
-    <ng-content></ng-content>
+    <ng-container *ngTemplateOutlet="unboxed"></ng-container>
 }
 
 <ng-template #unboxed><ng-content></ng-content></ng-template>

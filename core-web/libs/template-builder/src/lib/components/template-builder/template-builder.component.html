@@ -83,7 +83,7 @@
                                     [attr.gs-y]="box.y"
                                     [attr.gs-w]="box.w"
                                     [attr.gs-h]="box.h"
-                                    [attr.data-testId]="'box-' + i"
+                                    [attr.data-testId]="'box-' + $index"
                                     class="grid-stack-item sub"
                                     #boxElement>
                                     <dotcms-template-builder-box
@@ -91,7 +91,7 @@
                                         (addContainer)="addContainer(box, row.id, $event)"
                                         (deleteContainer)="deleteContainer(box, row.id, $event)"
                                         (editClasses)="editBoxStyleClasses(row.id, box)"
-                                        [attr.data-testId]="'builder-box-' + i"
+                                        [attr.data-testId]="'builder-box-' + $index"
                                         [containerMap]="vm.containerMap"
                                         [items]="box.containers"
                                         [width]="box.w"

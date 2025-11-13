@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService, Site } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
@@ -116,7 +116,6 @@ export const expectedPagesMap: DotPageSelectorItem[] = [
 ];
 
 describe('DotPageSelectorService', () => {
-    let injector: TestBed;
     let dotPageSelectorService: DotPageSelectorService;
     let httpMock: HttpTestingController;
 
@@ -128,9 +127,8 @@ describe('DotPageSelectorService', () => {
                 DotPageSelectorService
             ]
         });
-        injector = getTestBed();
-        dotPageSelectorService = injector.get(DotPageSelectorService);
-        httpMock = injector.get(HttpTestingController);
+        dotPageSelectorService = TestBed.inject(DotPageSelectorService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get a page by identifier', () => {

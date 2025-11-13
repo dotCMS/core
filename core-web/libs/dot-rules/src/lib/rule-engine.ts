@@ -138,7 +138,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                         (deleteCondition)="deleteCondition.emit($event)"
                         (deleteRule)="deleteRule.emit($event)"
                         [rule]="rule"
-                        [hidden]="isFiltered(rule) == true"
+                        [hidden]="isFiltered(rule) === true"
                         [environmentStores]="environmentStores"
                         [ruleActions]="rule._ruleActions"
                         [ruleActionTypes]="ruleActionTypes"
@@ -287,7 +287,7 @@ export class RuleEngineComponent implements OnDestroy {
         let isFiltering;
         if (value === null) {
             const re = new RegExp(field + ':[\\w]*');
-            isFiltering = this.filterText.match(re) != null;
+            isFiltering = this.filterText.match(re) !== null;
         } else {
             isFiltering = this.filterText.indexOf(field + ':' + value) >= 0;
         }

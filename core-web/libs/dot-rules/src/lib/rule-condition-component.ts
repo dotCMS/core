@@ -15,7 +15,7 @@ import { I18nService } from './services/system/locale/I18n';
 @Component({
     selector: 'rule-condition',
     template: `
-        @if (typeDropdown != null) {
+        @if (typeDropdown !== null) {
             <div flex layout="row" class="cw-condition cw-entry">
                 <div class="cw-btn-group cw-condition-toggle">
                     @if (index !== 0) {

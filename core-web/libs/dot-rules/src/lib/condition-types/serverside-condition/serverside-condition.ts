@@ -6,7 +6,6 @@ import {
     ChangeDetectionStrategy,
     inject
 } from '@angular/core';
-import { UntypedFormBuilder } from '@angular/forms';
 
 import { of } from 'rxjs/internal/observable/of';
 
@@ -74,7 +73,7 @@ import { Verify } from '../../services/validation/Verify';
                             @if (
                                 rdInput.touched &&
                                 !rdInput.valid &&
-                                (input.argIndex == null || input.argIndex < _rhArgCount)
+                                (input.argIndex === null || input.argIndex < _rhArgCount)
                             ) {
                                 <div flex="50" class="name cw-warn basic label">
                                     {{ getErrorMessage(input) }}
@@ -100,7 +99,7 @@ import { Verify } from '../../services/validation/Verify';
                             @if (
                                 fInput.touched &&
                                 !fInput.valid &&
-                                (input.argIndex == null || input.argIndex < _rhArgCount)
+                                (input.argIndex === null || input.argIndex < _rhArgCount)
                             ) {
                                 <div flex="50" class="name cw-warn basic label">
                                     {{ getErrorMessage(input) }}
@@ -328,7 +327,7 @@ export class ServersideCondition {
             value: currentValue
         };
         if (!input.value) {
-            input.value = inputType.selected != null ? inputType.selected : '';
+            input.value = inputType.selected !== null ? inputType.selected : '';
         }
 
         return input;
@@ -351,7 +350,7 @@ export class ServersideCondition {
         }
 
         const currentValue = this.componentInstance.getParameterValue(param.key);
-        let needsCustomAttribute = currentValue != null;
+        let needsCustomAttribute = currentValue !== null;
 
         Object.keys(options).forEach((key: any) => {
             const option = options[key];
@@ -392,7 +391,7 @@ export class ServersideCondition {
             value: currentValue
         };
         if (!input.value) {
-            input.value = inputType.selected != null ? inputType.selected : '';
+            input.value = inputType.selected !== null ? inputType.selected : '';
         }
 
         return input;

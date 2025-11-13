@@ -21,10 +21,10 @@
                 (goToContainer)="goToContainerAction($event)"
                 [experimentGroupedByStatus]="vm.experimentsFiltered" />
         } @else {
-            <ng-template
+            <ng-container
                 [ngTemplateOutlet]="
                     vm.isLoading ? loadingExperiments : noExperiments
-                "></ng-template>
+                "></ng-container>
         }
     </div>
     @if (vm.addToBundleContentId) {
