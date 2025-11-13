@@ -23,12 +23,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { map } from 'rxjs/operators';
 
-import {
-    DotContentletLockerService,
-    DotDevicesService,
-    DotMessageService,
-    DotPersonalizeService
-} from '@dotcms/data-access';
+import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -89,7 +84,6 @@ export class DotUveToolbarComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
-    readonly #dotContentletLockerService = inject(DotContentletLockerService);
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
@@ -120,6 +114,13 @@ export class DotUveToolbarComponent {
         return previewDate;
     });
 
+    protected readonly $copyURL: Signal<string> = computed(() => {
+        const { url = '/', clientHost } = this.$pageParams();
+        const path = url.replace(/\/index(\.html)?$/, '');
+
+        return new URL(path, clientHost || window.location.origin).toString();
+    });
+
     readonly $pageInode = computed(() => {
         return this.#store.pageAPIResponse()?.page.inode;
     });
@@ -127,8 +128,8 @@ export class DotUveToolbarComponent {
     readonly $actions = this.#store.workflowLoading;
     readonly $workflowLoding = this.#store.workflowLoading;
 
-    defaultDevices = DEFAULT_DEVICES;
-    $MIN_DATE = signal(this.#getMinDate());
+    protected defaultDevices = DEFAULT_DEVICES;
+    protected $MIN_DATE = signal(this.#getMinDate());
 
     /**
      * Fetch the page on a given date

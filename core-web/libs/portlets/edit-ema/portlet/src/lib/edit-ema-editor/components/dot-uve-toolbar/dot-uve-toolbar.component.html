@@ -31,7 +31,7 @@
             icon="pi pi-copy"
             styleClass="p-button-text p-button-sm p-button-rounded"
             (cdkCopyToClipboardCopied)="triggerCopyToast()"
-            [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
+            [cdkCopyToClipboard]="$copyURL()"
             data-testId="uve-toolbar-copy-url" />
 
         <a
