@@ -815,3 +815,18 @@ export const MOCK_API_RESPONSE: DotCMSAPIResponse<DotCMSContentType[]> = {
     permissions: [],
     i18nMessagesMap: {}
 };
+
+export const CONTENT_TYPE_MOCK_FOR_EDITOR = [
+    {
+        name: 'Test Content Type',
+        variable: 'Test1',
+        icon: 'icon',
+        baseType: 'CONTENT'
+    },
+    {
+        name: 'Test Content Type 2',
+        variable: 'Test2',
+        icon: 'icon',
+        baseType: 'CONTENT'
+    }
+];
