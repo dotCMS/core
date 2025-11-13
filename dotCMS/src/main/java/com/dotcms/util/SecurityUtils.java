@@ -34,7 +34,9 @@ import io.vavr.control.Try;
 public class SecurityUtils {
 
   private static final List<SecureFileValidator> secureFileValidatorList = new ImmutableList.Builder<SecureFileValidator>()
-          .add(new IllegalTraversalFilePathValidator()).add(new IllegalFileExtensionsValidator()).build(); // todo: could be good to have the ability to add more SecureFileValidator by OSGI
+          .add(new IllegalTraversalFilePathValidator())
+          .add(new IllegalFileExtensionsValidator()).build();
+  // todo: could be good to have the ability to add more SecureFileValidator by OSGI
 
   /**
    * Contains the different delay strategies that can be used to halt the normal flow of a request or
