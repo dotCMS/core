@@ -3838,42 +3838,6 @@ paths:
       summary: Download asset file
       tags:
       - Web Assets
-  /v1/assets/drive:
-    post:
-      description: Search and browse assets using drive-like functionality with filtering
-        and navigation capabilities
-      operationId: drive
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DriveRequestForm"
-        description: Drive search request parameters
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: object
-                description: Drive search response containing assets and navigation
-                  data
-          description: Drive search results retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Invalid request parameters
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized access
-        "404":
-          content:
-            application/json: {}
-          description: Not found. e.g Site/folder not found
-      summary: Search assets with drive functionality
-      tags:
-      - Web Assets
   /v1/assets/folders:
     post:
       description: Create a new folder at the specified path with the provided configuration
@@ -20369,74 +20333,6 @@ components:
             type: string
           versionable:
             type: boolean
-    DriveRequestForm:
-      type: object
-      properties:
-        assetPath:
-          type: string
-        baseTypes:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        contentTypes:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        filter:
-          type: string
-        language:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        live:
-          type: boolean
-        maxResults:
-          type: integer
-          format: int32
-        offset:
-          type: integer
-          format: int32
-        showArchived:
-          type: boolean
-        showContent:
-          type: boolean
-        showDotAssets:
-          type: boolean
-        showFiles:
-          type: boolean
-        showFolders:
-          type: boolean
-        showImages:
-          type: boolean
-        showLinks:
-          type: boolean
-        showPages:
-          type: boolean
-        sortBy:
-          type: string
-        working:
-          type: boolean
     EmbeddingsForm:
       type: object
       properties:
