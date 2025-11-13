@@ -2,7 +2,6 @@ package com.dotcms.security.multipart;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import java.sql.Array;
 import org.junit.Assert;
 import org.junit.Test;
 
