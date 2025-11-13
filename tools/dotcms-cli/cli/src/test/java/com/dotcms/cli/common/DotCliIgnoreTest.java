@@ -375,4 +375,43 @@ class DotCliIgnoreTest {
         assertFalse(dotCliIgnore.shouldIgnore(tempDir.resolve("pattern\\ ")),
                    "Pattern should not match with trailing space when backslash is escaped");
     }
+
+    @Test
+    void testDirectorySpecificFilePatterns() throws IOException {
+        // Arrange - test patterns like "src/*.log" that specify directory + filename
+        createCustomDotCliIgnore(tempDir,
+                "src/*.log\n" +
+                "test/data/*.tmp\n" +
+                "docs/**/*.draft\n"
+        );
+
+        // Act
+        DotCliIgnore dotCliIgnore = DotCliIgnore.create(tempDir);
+
+        // Assert - files in specified directories should be ignored
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("src").resolve("test.log")),
+                  "Should ignore .log files in src/ directory");
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("src").resolve("error.log")),
+                  "Should ignore .log files in src/ directory");
+
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("test").resolve("data").resolve("temp.tmp")),
+                  "Should ignore .tmp files in test/data/ directory");
+
+        // Pattern with ** in the middle matches files in subdirectories
+        // Note: docs/**/*.draft won't match docs/file.draft (no subdir), but will match docs/sub/file.draft
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("docs").resolve("sub").resolve("file.draft")),
+                  "Should ignore .draft files in docs/ subdirectories");
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("docs").resolve("a").resolve("b").resolve("file.draft")),
+                  "Should ignore .draft files in deeply nested docs/ subdirectories");
+
+        // Files in other directories should NOT be ignored
+        assertFalse(dotCliIgnore.shouldIgnore(tempDir.resolve("lib").resolve("test.log")),
+                   "Should not ignore .log files in other directories");
+        assertFalse(dotCliIgnore.shouldIgnore(tempDir.resolve("test.log")),
+                   "Should not ignore .log files at root level");
+
+        // Nested src/ directories should also match (due to **/src/*.log pattern)
+        assertTrue(dotCliIgnore.shouldIgnore(tempDir.resolve("project").resolve("src").resolve("debug.log")),
+                  "Should ignore .log files in nested src/ directories");
+    }
 }
