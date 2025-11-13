@@ -11,6 +11,7 @@ import {
     DotCMSAISearchResponse
 } from '@dotcms/types';
 
+import { appendMappedParams } from '../../../utils/params/utils';
 import { BaseApiClient } from '../../base/base-api';
 import { DEFAULT_AI_CONFIG, DEFAULT_QUERY } from '../shared/const';
 import { OnFullfilled, OnRejected } from '../shared/types';
@@ -165,27 +166,25 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
             ...config
         };
 
-        const entriesQueryParameters = [
+        const entriesQueryParameters: Array<Array<string>> = [
             ['searchLimit', 'limit'],
             ['searchOffset', 'offset'],
             ['site', 'siteId'],
             ['language', 'languageId'],
-            ['contentType', 'contentType']
+            ['contentType']
         ];
 
         // Map SDK query parameters to backend parameter names
-        entriesQueryParameters.forEach(([key, value]) => {
-            if (combinedQuery[value as keyof DotCMSAISearchQuery] !== undefined) {
-                searchParams.append(key, String(combinedQuery[value as keyof DotCMSAISearchQuery]));
-            }
-        });
+        appendMappedParams(searchParams, combinedQuery, entriesQueryParameters);
 
-        Object.entries(combinedConfig).forEach(([key, value]) => {
-            if (value !== undefined) {
-                searchParams.append(key, String(value));
-            }
-        });
+        // Map config parameters using the same key names
+        appendMappedParams(
+            searchParams,
+            combinedConfig,
+            Object.keys(combinedConfig).map((key) => [key])
+        );
 
+        // Add search-specific parameters
         searchParams.append('indexName', this.#indexName);
         searchParams.append('query', prompt);
         return searchParams;
