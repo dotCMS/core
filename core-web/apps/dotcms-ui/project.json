@@ -61,13 +61,19 @@
                     }
                 ],
                 "styles": [
+                    "node_modules/prismjs/themes/prism-okaidia.css",
                     "node_modules/primeicons/primeicons.css",
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeflex/primeflex.css",
                     "node_modules/primeng/resources/primeng.min.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
                 ],
-                "scripts": [],
+                "scripts": [
+                    "node_modules/prismjs/prism.js",
+                    "node_modules/prismjs/components/prism-css.min.js",
+                    "node_modules/prismjs/components/prism-typescript.min.js",
+                    "node_modules/prismjs/components/prism-bash.min.js"
+                ],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },

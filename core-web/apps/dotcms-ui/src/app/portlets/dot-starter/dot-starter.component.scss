@@ -157,6 +157,15 @@ markdown {
     display: flex;
     gap: $spacing-4;
 
+    &::ng-deep {
+        markdown {
+            code {
+                padding: 0;
+                white-space: pre-wrap;
+            }
+        }
+    }
+
     &__video {
         width: 640px;
         height: 360px;
@@ -180,9 +189,6 @@ markdown {
     }
 
     &__section {
-    }
-
-    &__command {
     }
 
     &__command-description {

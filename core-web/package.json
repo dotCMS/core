@@ -118,7 +118,7 @@
         "next": "^14.0.4",
         "ng-packagr": "19.2.2",
         "ng2-dragula": "5.0.1",
-        "ngx-markdown": "18.1.0",
+        "ngx-markdown": "^20.1.0",
         "ngx-tiptap": "^12.0.0",
         "node-fetch": "^2.6.1",
         "primeflex": "3.3.1",
