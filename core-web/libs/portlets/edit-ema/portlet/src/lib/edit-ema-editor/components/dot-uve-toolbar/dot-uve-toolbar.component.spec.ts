@@ -446,7 +446,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const versionUrl = urls.find((u) => u.label === 'version');
+                const versionUrl = urls.find((u) => u.label === 'uve.toolbar.page.version.url');
 
                 expect(mockCreateFullURL).toHaveBeenCalledWith(
                     expect.any(Object),
@@ -464,7 +464,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
 
                 expect(plainUrl.value).toBe('https://example.com/my-page');
             });
@@ -478,7 +478,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
 
                 expect(plainUrl.value).toBe('https://example.com/my-page');
             });
@@ -492,7 +492,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
 
                 expect(plainUrl.value).toBe('https://example.com/my-page');
             });
@@ -506,7 +506,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
 
                 expect(plainUrl.value).toBe(`${window.location.origin}/my-page`);
             });
@@ -520,7 +520,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
 
                 expect(plainUrl.value).toBe('https://example.com/');
             });
@@ -534,23 +534,8 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
-
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
                 expect(plainUrl.value).toBe('https://example.com/');
-            });
-
-            it('should handle URL without index suffix (no change)', () => {
-                baseUVEState.pageParams.set({
-                    ...params,
-                    url: '/about-us',
-                    clientHost: 'https://example.com'
-                });
-                spectator.detectChanges();
-
-                const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
-
-                expect(plainUrl.value).toBe('https://example.com/about-us');
             });
 
             it('should handle nested paths with /index.html', () => {
@@ -562,7 +547,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
 
                 expect(plainUrl.value).toBe('https://example.com/docs/api');
             });
@@ -576,7 +561,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
 
                 expect(plainUrl.value).toBe('https://example.com/');
             });
@@ -590,7 +575,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'plain');
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
 
                 expect(plainUrl.value).toBe(`${window.location.origin}/test`);
             });

@@ -124,11 +124,11 @@ export class DotUveToolbarComponent {
 
         return [
             {
-                label: 'plain',
+                label: 'uve.toolbar.page.live.url',
                 value: new URL(path, host).toString()
             },
             {
-                label: 'version',
+                label: 'uve.toolbar.page.version.url',
                 value: createFullURL(params, siteId)
             }
         ];
