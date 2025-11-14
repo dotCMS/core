@@ -38,7 +38,7 @@
                         <div class="url-item">
                             <span class="url-label">{{ url.label | dm }}:</span>
                             <div class="url-value">
-                                <span>{{ url.value }}</span>
+                                <a [href]="url.value" target="_blank">{{ url.value }}</a>
                                 <p-button
                                     icon="pi pi-copy"
                                     styleClass="p-button-text p-button-sm p-button-rounded"

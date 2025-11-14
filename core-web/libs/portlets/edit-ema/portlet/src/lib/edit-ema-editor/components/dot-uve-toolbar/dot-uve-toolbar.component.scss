@@ -87,7 +87,7 @@
     min-height: 28px;
     width: 100%;
 
-    span {
+    a {
         color: $black;
         text-decoration: none;
         flex: 1 0 0;
@@ -95,6 +95,10 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: 0.875rem;
+
+        &:hover {
+            text-decoration: underline;
+        }
     }
 
     p-button {
