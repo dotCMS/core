@@ -11,6 +11,7 @@ The `@dotcms/types` package contains TypeScript type definitions for the dotCMS 
 - [Installation](#installation)
 - [Commonly Used Types](#commonly-used-types)
 - [Type Hierarchy (Jump to Definitions)](#type-hierarchy-jump-to-definitions)
+  - [AI Search](#ai-search)
   - [dotCMS Content & Pages](#dotcms-content--pages)
   - [Universal Visual Editor (UVE)](#universal-visual-editor-uve)
   - [Block Editor](#block-editor)
@@ -57,11 +58,41 @@ import {
   DotHttpError,
   DotErrorPage,
   DotErrorContent,
-  DotErrorNavigation
+  DotErrorNavigation,
+  DotErrorAISearch,
+  DotCMSAISearchParams,
+  DISTANCE_FUNCTIONS
 } from '@dotcms/types';
 ```
 
 ## Type Hierarchy (Jump to Definitions)
+
+### AI Search
+
+> **⚠️ Experimental:** The AI Search types are experimental and may undergo breaking changes in future releases.
+
+**AI Search Parameters:**
+
+| Type | Description |
+|------|-------------|
+| [DotCMSAISearchParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L85) | Complete AI search parameters including query and AI config |
+| [DotCMSAISearchQuery](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L9) | Query parameters (limit, offset, contentType, etc.) |
+| [DotCMSAIConfig](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L50) | AI configuration (threshold, distanceFunction, responseLength) |
+| [DISTANCE_FUNCTIONS](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L103) | Available distance functions for vector similarity |
+
+**AI Search Response:**
+
+| Type | Description |
+|------|-------------|
+| [DotCMSAISearchResponse](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L182) | AI search API response structure |
+| [DotCMSAISearchContentletData](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L213) | Contentlet with AI match information |
+| [DotCMSAISearchMatch](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L195) | Individual match with distance score and extracted text |
+
+**AI Search Errors:**
+
+| Type | Description |
+|------|-------------|
+| [DotErrorAISearch](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L136) | AI Search API specific error with prompt, indexName and params context |
 
 ### dotCMS Content & Pages
 
@@ -166,6 +197,7 @@ import {
 | [DotErrorPage](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1253) | Page API errors with GraphQL context |
 | [DotErrorContent](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/content/public.ts#L7) | Content API specific error handling |
 | [DotErrorNavigation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/nav/public.ts#L7) | Navigation API error handling |
+| [DotErrorAISearch](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/ai/public.ts#L136) | AI Search API error handling with prompt and params |
 
 ## Usage Examples
 
@@ -176,7 +208,8 @@ import {
   DotHttpError,
   DotErrorPage,
   DotErrorContent,
-  DotErrorNavigation
+  DotErrorNavigation,
+  DotErrorAISearch
 } from '@dotcms/types';
 
 // Type-safe error handling
@@ -194,6 +227,13 @@ if (error instanceof DotErrorPage) {
 if (error instanceof DotErrorContent) {
   // Content-specific error context
   console.error(`${error.operation} failed for ${error.contentType}`);
+}
+
+if (error instanceof DotErrorAISearch) {
+  // AI Search-specific error context
+  console.error('AI Search failed for prompt:', error.prompt);
+  console.error('Index name:', error.indexName);
+  console.error('Search params:', error.params);
 }
 ```
 
@@ -228,6 +268,22 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 Please ensure your code follows the existing style and includes appropriate tests.
 
 ## Changelog
+
+### [1.3.0]
+
+#### ✨ Added - AI Search Types (Experimental)
+
+> **⚠️ Experimental:** AI Search types are experimental and may undergo breaking changes in future releases.
+
+**New AI Search Types:**
+- `DotCMSAISearchParams` - Complete AI search parameters including query and AI config
+- `DotCMSAISearchQuery` - Query parameters (limit, offset, contentType, etc.)
+- `DotCMSAIConfig` - AI configuration (threshold, distanceFunction, responseLength)
+- `DotCMSAISearchResponse<T>` - AI search API response structure
+- `DotCMSAISearchContentletData<T>` - Contentlet with AI match information
+- `DotCMSAISearchMatch` - Individual match with distance score and extracted text
+- `DotErrorAISearch` - AI Search API specific error with prompt, indexName, and params context
+- `DISTANCE_FUNCTIONS` - Available distance functions for vector similarity (cosine, L2, inner product, etc.)
 
 ### [1.1.1]
 
