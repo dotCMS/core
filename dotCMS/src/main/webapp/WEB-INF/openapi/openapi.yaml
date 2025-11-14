@@ -2481,6 +2481,48 @@ paths:
           description: default response
       tags:
       - AI
+  /v1/ai/configuration/chat/models/site/{siteId}:
+    get:
+      operationId: listAllChatModels
+      parameters:
+      - description: |+
+          Identifier of site to populate the advanceProviderSettings.
+
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseAiModelSummaryEntityView"
+          description: default response
+      tags:
+      - AI
+  /v1/ai/configuration/embedding/models/site/{siteId}:
+    get:
+      operationId: listAllEmbeddingModels
+      parameters:
+      - description: |+
+          Identifier of site to populate the advanceProviderSettings.
+
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseAiModelSummaryEntityView"
+          description: default response
+      tags:
+      - AI
   /v1/ai/embeddings:
     delete:
       operationId: delete
@@ -18658,6 +18700,15 @@ components:
           $ref: "#/components/schemas/PushPublishBean"
         pushPublishBean:
           $ref: "#/components/schemas/PushPublishBean"
+    AiModelSummaryView:
+      type: object
+      properties:
+        name:
+          type: string
+        vendor:
+          type: string
+        vendorModelPath:
+          type: string
     Announcement:
       type: object
       properties:
@@ -19302,6 +19353,8 @@ components:
           type: array
           items:
             type: string
+        embeddingModel:
+          type: string
         fieldVar:
           type: string
         indexName:
@@ -23420,6 +23473,31 @@ components:
       required:
       - password
       - token
+    ResponseAiModelSummaryEntityView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiModelSummaryView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseContentletWorkflowStatusView:
       type: object
       properties:
