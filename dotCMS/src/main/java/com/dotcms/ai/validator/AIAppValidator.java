@@ -4,8 +4,6 @@ import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.InvalidAIKeyException;
-import com.dotcms.ai.client.AIProxyClient;
-import com.dotcms.ai.client.AIRequest;
 import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.api.system.event.message.MessageSeverity;
