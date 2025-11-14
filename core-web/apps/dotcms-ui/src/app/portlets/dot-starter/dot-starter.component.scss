@@ -1,18 +1,20 @@
 @use "variables" as *;
 
 :host {
-    display: block;
+    display: flex;
     height: 100%;
-    overflow: auto;
+    position: relative;
+    flex-direction: column;
 }
 
 .dot-onboarding {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-6;
-    margin: 0 auto;
-    max-width: 80rem;
-    padding: 0 $spacing-6 $spacing-8;
+    flex: 1;
+    overflow: auto;
+
+    &__content {
+        max-width: 80rem;
+        margin: 0 auto;
+    }
 
     &__intro {
         display: flex;
@@ -68,94 +70,24 @@
     }
 
     &__progress {
-        align-items: center;
-        background-color: rgba($white, 0.95);
-        backdrop-filter: blur(8px);
+        background-color: $white;
         border-top: 1px solid $color-palette-gray-200;
-        bottom: 0;
-        box-shadow: 0 -12px 24px rgba($black, 0.06);
-        display: flex;
-        gap: $spacing-4;
-        justify-content: space-between;
-        left: 0;
-        padding: $spacing-4 $spacing-6;
-        position: sticky;
-        right: 0;
         z-index: 5;
+        flex-shrink: 0;
     }
 
-    &__progress-left {
+    &__progress-container {
         display: flex;
-        flex-direction: column;
-        gap: $spacing-2;
-    }
-
-    &__current-label {
-        color: $color-palette-gray-600;
-        font-size: $font-size-xs;
-        font-weight: $font-weight-bold;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-    }
-
-    &__current-content {
+        justify-content: space-between;
         align-items: center;
-        display: flex;
-        flex-wrap: wrap;
-        gap: $spacing-3;
-    }
-
-    &__current-title {
-        color: $black;
-        font-size: $font-size-xl;
-        font-weight: $font-weight-bold;
-        margin: 0;
-    }
-
-    &__progress-right {
-        align-items: center;
-        display: flex;
-        gap: $spacing-4;
+        max-width: 80rem;
+        margin: 0 auto;
     }
 
     &__progress-ring {
-        align-items: center;
         display: flex;
-        justify-content: center;
-    }
-
-    &__progress-count {
-        display: flex;
-        flex-direction: column;
         gap: $spacing-1;
-    }
-
-    &__progress-counter {
-        color: $black;
-        font-size: $font-size-xl;
-        font-weight: $font-weight-bold;
-    }
-
-    &__progress-subtitle {
-        color: $color-palette-gray-600;
-        font-size: $font-size-sm;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-    }
-
-    &__reset {
-        min-width: 12rem;
-    }
-
-    &__steps {
-        .p-accordion {
-            border: 0;
-            box-shadow: none;
-        }
-
-        .p-accordion-header {
-            font-size: $font-size-lg;
-        }
+        align-items: center;
     }
 }
 
@@ -164,12 +96,16 @@
     flex-direction: column;
     gap: $spacing-4;
 
-    &__header {
-        align-items: center;
+    &__progress-count {
         display: flex;
-        flex-wrap: wrap;
-        gap: $spacing-3;
-        justify-content: space-between;
+        flex-direction: column;
+        gap: $spacing-2;
+    }
+
+    &__progress-ring {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-2;
     }
 
     &__status {
@@ -256,38 +192,10 @@
     }
 }
 
-@media (max-width: 768px) {
-    .dot-onboarding {
-        padding: 0 $spacing-3 $spacing-6;
-        gap: $spacing-5;
-
-        &__reset {
-            width: 100%;
-        }
-
-        &__progress {
-            align-items: flex-start;
-            flex-direction: column;
-            gap: $spacing-3;
-        }
-
-        &__progress-right {
-            width: 100%;
-            justify-content: space-between;
-        }
-    }
-
-    .dot-step__action {
-        width: 100%;
-    }
-}
-
 :host ::ng-deep {
     .dot-onboarding__progress-ring {
         .p-knob-text {
-            color: $black;
-            font-size: $font-size-lg;
-            font-weight: $font-weight-bold;
+            display: none;
         }
     }
 }

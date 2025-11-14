@@ -579,7 +579,7 @@ export class DotStarterComponent implements OnInit {
             return 'All steps complete';
         }
 
-        return `${step.number}. ${step.title}`;
+        return step.title;
     }
 
     get currentStepPosition(): number {

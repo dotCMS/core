@@ -1,9 +1,10 @@
 <div class="dot-onboarding">
-    <section class="dot-onboarding__intro">
-        <h1 class="dot-onboarding__title">{{ content.title }}</h1>
-        <p class="dot-onboarding__description">{{ content.description }}</p>
+    <div class="dot-onboarding__content">
+        <section class="dot-onboarding__intro">
+            <h1 class="dot-onboarding__title">{{ content.title }}</h1>
+            <p class="dot-onboarding__description">{{ content.description }}</p>
 
-        <!-- <div class="dot-onboarding__prerequisites" *ngIf="content.prerequisites.length">
+            <!-- <div class="dot-onboarding__prerequisites" *ngIf="content.prerequisites.length">
             <h2 class="dot-onboarding__section-title">Prerequisites</h2>
 
             <ul class="dot-onboarding__prerequisites-list">
@@ -13,123 +14,117 @@
                 </li>
             </ul>
         </div> -->
-    </section>
+        </section>
 
-    <section class="dot-onboarding__steps">
-        <p-accordion [multiple]="true">
-            <p-accordionTab
-                *ngFor="let step of content.steps"
-                [header]="step.number + '. ' + step.title">
-                <div class="dot-step">
-                    <div class="dot-step__header">
-                        <span
-                            class="dot-step__status"
-                            [class.dot-step__status--done]="isStepCompleted(step.id)">
-                            {{ isStepCompleted(step.id) ? 'Completed' : 'In Progress' }}
-                        </span>
-                        <button
-                            type="button"
-                            pButton
-                            class="dot-step__action"
-                            [icon]="isStepCompleted(step.id) ? 'pi pi-undo' : 'pi pi-check'"
-                            [label]="
-                                isStepCompleted(step.id) ? 'Mark as Incomplete' : 'Mark as Complete'
-                            "
-                            (click)="toggleStepCompletion(step.id)"></button>
-                    </div>
-
-                    <div class="dot-step__body">
-                        <div class="dot-step__section" *ngIf="step.description">
-                            <markdown [data]="step.description"></markdown>
+        <section class="dot-onboarding__steps">
+            <p-accordion [multiple]="true">
+                <p-accordionTab
+                    *ngFor="let step of content.steps"
+                    [header]="step.number + '. ' + step.title">
+                    <div class="dot-step">
+                        <div class="dot-step__header">
+                            <span
+                                class="dot-step__status"
+                                [class.dot-step__status--done]="isStepCompleted(step.id)">
+                                {{ isStepCompleted(step.id) ? 'Completed' : 'In Progress' }}
+                            </span>
+                            <button
+                                type="button"
+                                pButton
+                                class="dot-step__action"
+                                [icon]="isStepCompleted(step.id) ? 'pi pi-undo' : 'pi pi-check'"
+                                [label]="
+                                    isStepCompleted(step.id)
+                                        ? 'Mark as Incomplete'
+                                        : 'Mark as Complete'
+                                "
+                                (click)="toggleStepCompletion(step.id)"></button>
                         </div>
 
-                        <div class="dot-step__section" *ngIf="step.notes?.length">
-                            <h4>Notes</h4>
-                            <ul>
-                                <li *ngFor="let note of step.notes">
-                                    <markdown [data]="note"></markdown>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div class="dot-step__section" *ngIf="step.commands?.length">
-                            <h4>Commands</h4>
-                            <div class="dot-step__command" *ngFor="let command of step.commands">
-                                <p class="dot-step__command-description">
-                                    {{ command.description }}
-                                </p>
-                                <markdown [data]="formatCommand(command)"></markdown>
+                        <div class="dot-step__body">
+                            <div class="dot-step__section" *ngIf="step.description">
+                                <markdown [data]="step.description"></markdown>
                             </div>
-                        </div>
 
-                        <div class="dot-step__section" *ngIf="step.explanation">
-                            <h4>Explanation</h4>
-                            <markdown [data]="step.explanation"></markdown>
-                        </div>
-
-                        <div class="dot-step__section" *ngIf="step.verification?.length">
-                            <h4>Verification</h4>
-                            <ul>
-                                <li *ngFor="let item of step.verification">
-                                    <markdown [data]="item"></markdown>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div class="dot-step__section" *ngIf="step.troubleshooting?.length">
-                            <h4>Troubleshooting</h4>
-                            <div
-                                class="dot-step__troubleshooting"
-                                *ngFor="let item of step.troubleshooting">
-                                <p class="dot-step__problem">{{ item.problem }}</p>
+                            <div class="dot-step__section" *ngIf="step.notes?.length">
+                                <h4>Notes</h4>
                                 <ul>
-                                    <li *ngFor="let solution of item.solutions">
-                                        <markdown [data]="solution"></markdown>
+                                    <li *ngFor="let note of step.notes">
+                                        <markdown [data]="note"></markdown>
                                     </li>
                                 </ul>
                             </div>
+
+                            <div class="dot-step__section" *ngIf="step.commands?.length">
+                                <h4>Commands</h4>
+                                <div
+                                    class="dot-step__command"
+                                    *ngFor="let command of step.commands">
+                                    <p class="dot-step__command-description">
+                                        {{ command.description }}
+                                    </p>
+                                    <markdown [data]="formatCommand(command)"></markdown>
+                                </div>
+                            </div>
+
+                            <div class="dot-step__section" *ngIf="step.explanation">
+                                <h4>Explanation</h4>
+                                <markdown [data]="step.explanation"></markdown>
+                            </div>
+
+                            <div class="dot-step__section" *ngIf="step.verification?.length">
+                                <h4>Verification</h4>
+                                <ul>
+                                    <li *ngFor="let item of step.verification">
+                                        <markdown [data]="item"></markdown>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="dot-step__section" *ngIf="step.troubleshooting?.length">
+                                <h4>Troubleshooting</h4>
+                                <div
+                                    class="dot-step__troubleshooting"
+                                    *ngFor="let item of step.troubleshooting">
+                                    <p class="dot-step__problem">{{ item.problem }}</p>
+                                    <ul>
+                                        <li *ngFor="let solution of item.solutions">
+                                            <markdown [data]="solution"></markdown>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </p-accordionTab>
-        </p-accordion>
-    </section>
+                </p-accordionTab>
+            </p-accordion>
+        </section>
+    </div>
 </div>
 
 <section class="dot-onboarding__progress" aria-label="Progress tracker">
-    <div class="dot-onboarding__progress-left">
-        <span class="dot-onboarding__current-label">Current step</span>
-        <div class="dot-onboarding__current-content">
-            <h2 class="dot-onboarding__current-title">
+    <div class="dot-onboarding__progress-container">
+        <div class="dot-onboarding__progress-left">
+            <p class="dot-onboarding__current-title">
+                <span class="dot-onboarding__progress-counter">
+                    {{ currentStepPosition }}/{{ totalSteps }}
+                </span>
                 {{ currentStepLabel }}
-            </h2>
-
-            <button
-                type="button"
-                pButton
-                class="dot-onboarding__reset"
-                icon="pi pi-refresh"
-                label="Reset Progress"
-                (click)="resetProgress()"
-                [disabled]="!hasProgress"></button>
+            </p>
+            <!-- <button type="button" pButton icon="pi pi-refresh" label="Reset Progress" (click)="resetProgress()"
+                [disabled]="!hasProgress"></button> -->
         </div>
-    </div>
 
-    <div class="dot-onboarding__progress-right">
         <div class="dot-onboarding__progress-ring">
+            <span class="dot-onboarding__progress-percentage">
+                {{ progress | number: '1.0-0' }}%
+            </span>
             <p-knob
                 [(ngModel)]="progress"
                 [readonly]="true"
-                [size]="110"
-                [strokeWidth]="10"
-                valueTemplate="{value}%"></p-knob>
-        </div>
-
-        <div class="dot-onboarding__progress-count">
-            <span class="dot-onboarding__progress-counter">
-                {{ currentStepPosition }}/{{ totalSteps }}
-            </span>
-            <span class="dot-onboarding__progress-subtitle">steps</span>
+                [size]="24"
+                [strokeWidth]="4"
+                valueTemplate=" "></p-knob>
         </div>
     </div>
 </section>
