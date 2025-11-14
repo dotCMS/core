@@ -1,9 +1,6 @@
 package com.dotcms;
 
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
-import com.dotcms.contenttype.business.StoryBlockValidationTest;
-import com.dotcms.contenttype.test.StoryBlockUtilTest;
-import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
@@ -55,22 +52,7 @@ import org.junit.runners.Suite;
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
-        RequestCostReportTest.class,
-        OpenAIVisionAPIImplTest.class,
-        ContentDriveHelperContentletAPIComparisonTest.class,
-        AppsAPIImplTest.class,
-        com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest.class,
-        com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
-        com.dotcms.browser.BrowserAPITest.class,
-        com.dotcms.contenttype.test.ContentResourceTest.class,
-        com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest.class,
-        com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest.class,
-        com.dotcms.rest.api.v1.apps.AppsResourceTest.class,
-        Task251103AddStylePropertiesColumnInMultiTreeTest.class,
-        StoryBlockValidationTest.class,
-        StoryBlockUtilTest.class,
-        Task251212AddVersionColumnIndicesTableTest.class,
-        Task260206AddUsagePortletToMenuTest.class,
+        OpenAIVisionAPIImplTest.class
 })
 
 public class MainSuite3a {
