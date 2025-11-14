@@ -3,16 +3,19 @@ import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-conte
 import {
     AnalyticsBasePayloadWithContext,
     AnalyticsTrackPayloadWithContext,
-    DotCMSAnalyticsRequestBody
+    EnrichedAnalyticsPayload,
+    EnrichedTrackPayload
 } from '../../shared/models';
 
 /**
- * Plugin that enriches the analytics payload data based on the event type.
- * Uses Analytics.js lifecycle events to inject context before processing.
+ * Plugin that enriches the analytics payload data with page, UTM, and custom data.
+ * Uses Analytics.js lifecycle events to inject enriched data before the main plugin processes it.
+ *
  * The identity plugin runs FIRST to inject context: { session_id, site_auth, user_id, device }
  * This enricher plugin runs SECOND to add page/utm/custom data.
+ * The main plugin runs THIRD to structure events and send to server.
  *
- * Returns the final request body structure ready to send to the server.
+ * This plugin is ONLY responsible for data enrichment - NOT for event structuring or business logic.
  */
 export const dotAnalyticsEnricherPlugin = () => {
     return {
@@ -20,60 +23,54 @@ export const dotAnalyticsEnricherPlugin = () => {
 
         /**
          * PAGE VIEW ENRICHMENT - Runs after identity context injection
-         * Returns the complete request body for pageview events
-         * @returns {DotCMSAnalyticsRequestBody} Complete request body ready to send
+         * Returns enriched payload with page, utm, and custom data added
+         * @returns {EnrichedAnalyticsPayload} Enriched payload ready for event creation
          */
         'page:dot-analytics': ({
             payload
         }: {
             payload: AnalyticsBasePayloadWithContext;
-        }): DotCMSAnalyticsRequestBody => {
-            const { context, page, utm, custom, local_time } = enrichPagePayloadOptimized(payload);
+        }): EnrichedAnalyticsPayload => {
+            const enrichedData = enrichPagePayloadOptimized(payload);
 
-            if (!page) {
+            if (!enrichedData.page) {
                 throw new Error('DotCMS Analytics: Missing required page data');
             }
 
-            return {
-                context,
-                events: [
-                    {
-                        event_type: DotCMSPredefinedEventType.PAGEVIEW,
-                        local_time,
-                        data: {
-                            page,
-                            ...(utm && { utm }),
-                            ...(custom && { custom })
-                        }
-                    }
-                ]
-            };
+            return enrichedData;
         },
 
         /**
          * TRACK EVENT ENRICHMENT - Runs after identity context injection
-         * Returns the complete request body for custom events
-         * @returns {DotCMSAnalyticsRequestBody} Complete request body ready to send
+         * Adds page data and timestamp for predefined events.
+         * For custom events, only adds timestamp.
+         *
+         * @returns {EnrichedTrackPayload} Enriched payload ready for event structuring
          */
         'track:dot-analytics': ({
             payload
         }: {
             payload: AnalyticsTrackPayloadWithContext;
-        }): DotCMSAnalyticsRequestBody => {
-            const { event, properties, context } = payload;
+        }): EnrichedTrackPayload => {
+            const { event } = payload;
             const local_time = getLocalTime();
 
+            // For content_impression events, add page data
+            if (event === DotCMSPredefinedEventType.CONTENT_IMPRESSION) {
+                return {
+                    ...payload,
+                    page: {
+                        title: document.title,
+                        url: window.location.href
+                    },
+                    local_time
+                };
+            }
+
+            // For custom events, just add local_time
             return {
-                context,
-                events: [
-                    {
-                        event_type: event,
-                        local_time,
-                        data: {
-                            custom: properties
-                        }
-                    }
-                ]
+                ...payload,
+                local_time
             };
         }
     };

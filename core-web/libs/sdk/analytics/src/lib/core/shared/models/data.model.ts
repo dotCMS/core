@@ -95,7 +95,7 @@ export interface DotCMSEventUtmData {
 }
 
 /**
- * Page data structure for DotCMS analytics.
+ * Page data structure for DotCMS analytics (used in pageview events).
  * Contains comprehensive information about the current page and its context
  * within the DotCMS environment.
  */
@@ -110,3 +110,43 @@ export type DotCMSEventPageData = Pick<
     /** Persona identifier */
     persona?: string;
 };
+
+/**
+ * Minimal page data for content impression events.
+ * Contains only essential page information (title and url) to keep payload lightweight.
+ */
+export type DotCMSContentImpressionPageData = Pick<DotCMSEventPageData, 'title' | 'url'>;
+
+/**
+ * Data structure for content impression events.
+ * Tracks when a contentlet becomes visible in the viewport.
+ */
+export interface DotCMSImpressionEventData {
+    /** Contentlet identification data extracted from data-dot-analytics-* attributes */
+    contentlet: {
+        /** Unique identifier of the contentlet */
+        identifier: string;
+        /** Inode of the contentlet */
+        inode: string;
+        /** Content type name */
+        contentType: string;
+        /** Title of the contentlet */
+        title: string;
+        /** Base type of the contentlet (e.g., CONTENT, WIDGET) */
+        baseType: string;
+    };
+    /** Viewport position and visibility metrics */
+    viewport: {
+        /** Percentage offset from top of viewport (0-100) */
+        offsetPercentage: number;
+        /** Percentage of element visible in viewport (0-1) */
+        visibilityRatio: number;
+    };
+    /** Timing information about the impression */
+    timing: {
+        /** Time in milliseconds the element was continuously visible */
+        dwellTime: number;
+        /** ISO 8601 timestamp when the impression was fired */
+        timestamp: string;
+    };
+}

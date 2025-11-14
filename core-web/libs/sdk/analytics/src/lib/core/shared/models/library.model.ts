@@ -3,11 +3,14 @@
  * Contains interfaces for SDK/library internal structures (not for end users)
  */
 
-import { DotCMSAnalyticsEventContext, DotCMSEventPageData, DotCMSEventUtmData } from './data.model';
-import { JsonObject } from './event.model';
+import {
+    DotCMSAnalyticsEventContext,
+    DotCMSContentImpressionPageData,
+    DotCMSEventPageData,
+    DotCMSEventUtmData
+} from './data.model';
+import { DotCMSContentImpressionPayload, JsonObject } from './event.model';
 import { DotCMSAnalyticsRequestBody } from './request.model';
-
-import { DotCMSCustomEventType } from '../constants';
 
 /**
  * Configuration for event queue management.
@@ -18,6 +21,40 @@ export interface QueueConfig {
     eventBatchSize?: number;
     /** Time in milliseconds between flushes - sends pending events (default: 5000) */
     flushInterval?: number;
+}
+
+/**
+ * Configuration for content impression tracking.
+ * Controls how content visibility is detected and tracked.
+ */
+export interface ImpressionConfig {
+    /** Minimum percentage of element visible (0.0 to 1.0) - default: 0.5 */
+    visibilityThreshold?: number;
+    /** Minimum time in milliseconds element must be visible - default: 750 */
+    dwellMs?: number;
+    /** Maximum number of elements to track (performance limit) - default: 1000 */
+    maxNodes?: number;
+    /** Throttle time in milliseconds for intersection callbacks - default: 100 */
+    throttleMs?: number;
+}
+
+/**
+ * Interface for contentlet data extracted from DOM elements
+ */
+export interface ContentletData {
+    identifier: string;
+    inode: string;
+    contentType: string;
+    title: string;
+    baseType: string;
+}
+
+/**
+ * Interface for viewport metrics
+ */
+export interface ViewportMetrics {
+    offsetPercentage: number;
+    visibilityRatio: number;
 }
 
 /**
@@ -71,16 +108,24 @@ export interface DotCMSAnalyticsConfig {
      * - `QueueConfig`: Enable queuing with custom settings
      */
     queue?: QueueConfig | boolean;
+
+    /**
+     * Content impression tracking configuration:
+     * - `undefined` or `false` (default): Impression tracking disabled
+     * - `true`: Enable with default settings (threshold: 0.5, dwell: 750ms, maxNodes: 1000)
+     * - `ImpressionConfig`: Enable with custom settings
+     */
+    impressions?: ImpressionConfig | boolean;
 }
 
 /**
  * Track event payload with context.
- * This is the payload for custom track events after the identity plugin adds context.
+ * This is the payload for track events after the identity plugin adds context.
  * Used in the track:dot-analytics enricher plugin.
  */
 export interface AnalyticsTrackPayloadWithContext extends AnalyticsBasePayload {
-    /** The custom event name (any string except 'pageview') */
-    event: DotCMSCustomEventType;
+    /** The event name (can be predefined or custom) */
+    event: string;
     /** Analytics context added by identity plugin */
     context: DotCMSAnalyticsEventContext;
 }
@@ -102,29 +147,16 @@ type AnalyticsBasePayloadType = 'page' | 'track';
  * Analytics.js hook parameter types for DotCMS.
  * Represents the payload structure used by Analytics.js lifecycle hooks
  * for intercepting and modifying analytics events.
+ *
+ * Properties are flexible (Record<string, unknown>) to support both:
+ * - Page events: with page-specific fields (title, url, path, etc.)
+ * - Track events: with any custom event data structure
  */
 export interface AnalyticsBasePayload {
     /** The type of analytics event */
     type: AnalyticsBasePayloadType;
-    /** Properties associated with the event */
-    properties: {
-        /** Page title */
-        title: string;
-        /** Page URL */
-        url: string;
-        /** Page path */
-        path: string;
-        /** URL hash fragment */
-        hash: string;
-        /** URL search parameters */
-        search: string;
-        /** Viewport width */
-        width: number;
-        /** Viewport height */
-        height: number;
-        /** Referrer URL */
-        referrer?: string;
-    };
+    /** Properties associated with the event (flexible structure) */
+    properties: Record<string, unknown>;
     /** Configuration options for the event */
     options: Record<string, unknown>;
     /** User identifier */
@@ -166,6 +198,18 @@ export type EnrichedAnalyticsPayload = AnalyticsBasePayloadWithContext & {
     /** Local timestamp when the event occurred */
     local_time: string;
 };
+
+/**
+ * Enriched track event payload with fields added to root based on event type.
+ * Used by the enricher plugin for track events.
+ */
+export interface EnrichedTrackPayload extends AnalyticsTrackPayloadWithContext {
+    local_time: string;
+    page?: DotCMSContentImpressionPageData | DotCMSEventPageData;
+    content?: DotCMSContentImpressionPayload['content'];
+    position?: DotCMSContentImpressionPayload['position'];
+    utm?: DotCMSEventUtmData;
+}
 
 /**
  * Analytics.js instance structure for DotCMS.
