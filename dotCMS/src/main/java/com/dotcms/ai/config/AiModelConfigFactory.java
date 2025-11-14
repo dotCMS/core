@@ -3,6 +3,7 @@ package com.dotcms.ai.config;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.config.parser.AiModelConfigParser;
 import com.dotcms.ai.config.parser.AiVendorCatalogData;
+import com.dotcms.ai.rest.AiModelSummaryView;
 import com.dotcms.business.SystemCache;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
@@ -19,6 +20,7 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -202,5 +204,35 @@ public class AiModelConfigFactory {
         }
 
         return Optional.ofNullable(configFromCache);
+    }
+
+    public List<AiModelSummaryView> getAllChatModelNames(final Host site) throws DotDataException, DotSecurityException {
+
+        AiModelConfigCatalog modelConfigCatalog = null;
+        if (!this.aiModelConfigCatalogMap.containsKey(site.getIdentifier())) {
+
+            if (!loadVendorModelFromAppBySiteId(site.getIdentifier())) {
+                return null;
+            }
+        }
+
+        modelConfigCatalog = this.aiModelConfigCatalogMap.get(site.getIdentifier());
+
+        return modelConfigCatalog.getAllChatModelSummaries();
+    }
+
+    public List<AiModelSummaryView> getAllEmbeddingModelNames(Host site) throws DotDataException, DotSecurityException {
+
+        AiModelConfigCatalog modelConfigCatalog = null;
+        if (!this.aiModelConfigCatalogMap.containsKey(site.getIdentifier())) {
+
+            if (!loadVendorModelFromAppBySiteId(site.getIdentifier())) {
+                return null;
+            }
+        }
+
+        modelConfigCatalog = this.aiModelConfigCatalogMap.get(site.getIdentifier());
+
+        return modelConfigCatalog.getAllEmbeddingModelSummaries();
     }
 }

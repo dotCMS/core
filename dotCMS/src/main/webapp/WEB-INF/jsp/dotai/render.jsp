@@ -1,6 +1,65 @@
 <script type="application/javascript" src="/html/portlet/ext/dotai/dotai.js"></script>
 <script>
+
+    async function fetchNewAIConfiguration(modelName) {
+
+            let ok = false;
+            try {
+                const response = await fetch("/api/v1/ai/configuration/chat/models/site/SYSTEM_HOST");
+                console.log('models response: ', response);
+                if (response.ok) {
+
+                    const data =  await response.json();
+                    console.log('models data: ', data);
+                    // if there any models availables
+                    if (data && data.entity && data.entity.length > 0) {
+                        console.log("Models from endpoint:", data.entity);
+                        data.entity.forEach(model => {
+                            const newOption = document.createElement("option");
+                            newOption.value = model.vendorModelPath;
+                            newOption.text = `${model.vendor} - ${model.name}`;
+                            modelName.appendChild(newOption);
+                        });
+
+                        ok = true;
+                    }
+                }
+            } catch (err) {
+                console.warn("Error loading the models, usign fallback:", err);
+            }
+    }
+
+    async function fetchNewAIEmbeddingConfiguration(embeddingModelName) {
+
+        let ok = false;
+        try {
+            const response = await fetch("/api/v1/ai/configuration/embedding/models/site/SYSTEM_HOST");
+            console.log('models response: ', response);
+            if (response.ok) {
+
+                const data =  await response.json();
+                console.log('embedding models data: ', data);
+                // if there any models availables
+                if (data && data.entity && data.entity.length > 0) {
+                    console.log("Models from endpoint:", data.entity);
+                    data.entity.forEach(model => {
+                        const newOption = document.createElement("option");
+                        newOption.value = model.vendorModelPath;
+                        newOption.text = `${model.vendor} - ${model.name}`;
+                        embeddingModelName.appendChild(newOption);
+                    });
+
+                    ok = true;
+                }
+            }
+        } catch (err) {
+            console.warn("Error loading the models, usign fallback:", err);
+        }
+    }
+
+
     dojo.addOnLoad(function () {
+        console.log("dojo add On Load dotAI");
         setUpValuesFromPreferences();
         refreshIndexes()
             .then(() => {
@@ -10,11 +69,30 @@
 
         refreshConfigs().then(() => {
             writeConfigTable();
-            writeModelToDropdown();
-            alert
+
+            console.log("Calling writeModelToDropdown....");
+            const modelName = document.getElementById("modelName");
+            let options = modelName.getElementsByTagName('option');
+            for (let i = options.length - 1; i >= 1; i--) {
+                modelName.removeChild(options[i]);
+            }
+
+            let ok = fetchNewAIConfiguration(modelName);
+
+            if(!ok) {
+                writeModelToDropdown();
+            }
+
             if (dotAiState.config["apiKey"] != "*****") {
                 document.getElementById("openAIKeyWarn").style.display = "block";
             }
+
+            const modelEmbeddingName = document.getElementById("embeddingModelName");
+            let embedOptions = modelEmbeddingName.getElementsByTagName('option');
+            for (let i = embedOptions.length - 1; i >= 1; i--) {
+                modelEmbeddingName.removeChild(options[i]);
+            }
+            fetchNewAIEmbeddingConfiguration(modelEmbeddingName);
         });
         showResultTables();
     });
@@ -130,6 +208,16 @@
                             <td>
                                 <select name="model" id="modelName" style="min-width:400px;">
                                     <option disabled="true" placeholder="Select a Model">Select a Model</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th style="width:30%">
+                                Embedding Model:
+                            </th>
+                            <td>
+                                <select name="embeddingModel" id="embeddingModelName" style="min-width:400px;">
+                                    <option disabled="true" placeholder="Select a Model">Select an embedding Model</option>
                                 </select>
                             </td>
                         </tr>

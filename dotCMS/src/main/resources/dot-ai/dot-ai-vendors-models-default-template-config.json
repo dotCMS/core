@@ -44,7 +44,6 @@
         }
       }
     },
-
     "anthropic": {
       "apiKey": "{{ANTHROPIC_API_KEY}}",
       "baseUrl": "https://api.anthropic.com",
@@ -64,7 +63,6 @@
         }
       }
     },
-
     "azureopenai": {
       "apiKey": "{{AZURE_OPENAI_API_KEY}}",
       "endpoint": "https://your-azure-openai-resource.openai.azure.com",
@@ -91,7 +89,6 @@
         }
       }
     },
-
     "bedrock": {
       "region": "{{AWS_REGION}}",
       "accessKeyId": "{{AWS_ACCESS_KEY_ID}}",
@@ -119,7 +116,6 @@
         }
       }
     },
-
     "vertex": {
       "projectId": "{{GCP_PROJECT_ID}}",
       "location": "us-central1",
@@ -150,7 +146,6 @@
         }
       }
     },
-
     "gemini": {
       "apiKey": "{{GOOGLE_API_KEY}}",
       "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
@@ -165,6 +160,13 @@
           "topK": 40,
           "maxOutputTokens": 4096,
           "default": true
+        },
+        "gemini-2-5-flash": {
+          "model": "gemini-2.5-flash",
+          "temperature": 0.3,
+          "topP": 0.95,
+          "topK": 40,
+          "maxOutputTokens": 2048
         },
         "gemini-1-5-flash": {
           "model": "models/gemini-1.5-flash-latest",
@@ -183,6 +185,5 @@
         }
       }
     }
-
   }
 }

@@ -389,6 +389,7 @@ public class DotPgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
         metadata.put(KEY_CONTENT_TYPE, combinedRow.get("content_type"));
         metadata.put("indexName", combinedRow.get("index_name"));
         metadata.put(KEY_TITLE, combinedRow.get("title"));
+        metadata.put(KEY_INODE, combinedRow.getOrDefault(KEY_INODE, KEY_IDENTIFIER)); // todo: remove this workaround
         return new Metadata(metadata);
     }
 }

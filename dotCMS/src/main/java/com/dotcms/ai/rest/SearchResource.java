@@ -1,9 +1,6 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.api.CompletionRequest;
-import com.dotcms.ai.api.CompletionResponse;
-import com.dotcms.ai.api.SearchContentResponse;
 import com.dotcms.ai.api.SearchForContentRequest;
 import com.dotcms.ai.config.AiModelConfig;
 import com.dotcms.ai.config.AiModelConfigFactory;
@@ -141,12 +138,12 @@ public class SearchResource {
                 .getUser();
 
         final Host site = WebAPILocator.getHostWebAPI().getHost(request);
-        final Optional<AiModelConfig> modelConfigOpt = this.modelConfigFactory.getAiModelConfigOrDefaultEmbedding(site, form.model);
+        final Optional<AiModelConfig> modelConfigOpt = this.modelConfigFactory.getAiModelConfigOrDefaultEmbedding(site, form.embeddingModel);
 
         if(modelConfigOpt.isPresent()) {
 
             CompletionsForm finalForm = form;
-            if (StringUtils.isNotSet(form.model)) {
+            if (StringUtils.isNotSet(form.embeddingModel)) {
                 // probably get the default one
                 finalForm = CompletionsForm.copy(form).model(modelConfigOpt.get().getName()).build();
             }
@@ -154,7 +151,7 @@ public class SearchResource {
             final EmbeddingsDTO searcher = EmbeddingsDTO.from(form).withUser(user).build();
 
             Logger.debug(this, "Using new AI api for the search rag resource with the form: " + finalForm);
-            final SearchContentResponse searchContentResponse = APILocator.getDotAIAPI()
+            final JSONObject searchContentResponse = APILocator.getDotAIAPI()
                     .getEmbeddingsAPI().searchForContent(toSearchForContentRequest(form, searcher, modelConfigOpt.get()));
             Logger.debug(this, ()-> "Search content response: " + searchContentResponse);
             return Response.ok(searchContentResponse).build();
@@ -172,7 +169,7 @@ public class SearchResource {
                                                     final AiModelConfig aiModelConfig) {
 
         final SearchForContentRequest.Builder builder = SearchForContentRequest.builder()
-                .vendorModelPath(form.model)
+                .vendorModelPath(form.embeddingModel)
                 .prompt(form.prompt)
                 .chatModelConfig(aiModelConfig)
                 .temperature(form.temperature)

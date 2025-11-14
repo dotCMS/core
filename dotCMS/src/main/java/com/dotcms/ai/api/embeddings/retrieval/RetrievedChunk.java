@@ -17,8 +17,9 @@ public final class RetrievedChunk {
     private final int chunkIndex;
     private final String text;
     private final double score;
+    private final String inode;
 
-    private RetrievedChunk(Builder builder) {
+    private RetrievedChunk(final Builder builder) {
         this.docId = Objects.requireNonNull(builder.docId);
         this.title = builder.title;
         this.url = builder.url;
@@ -29,9 +30,11 @@ public final class RetrievedChunk {
         this.chunkIndex = builder.chunkIndex;
         this.text = Objects.requireNonNull(builder.text);
         this.score = builder.score;
+        this.inode = builder.inode;
     }
 
     // --- Getters ---
+    public String getInode() { return inode; }
     public String getDocId() { return docId; }
     public String getTitle() { return title; }
     public String getUrl() { return url; }
@@ -72,8 +75,10 @@ public final class RetrievedChunk {
                 .identifier(chunk.getIdentifier())
                 .languageId(chunk.getLanguageId())
                 .fieldVar(chunk.getFieldVar())
+                .inode(chunk.getInode())
                 .chunkIndex(chunk.getChunkIndex())
                 .text(chunk.getText())
+                .inode(chunk.getInode())
                 .score(chunk.getScore());
     }
 
@@ -84,6 +89,7 @@ public final class RetrievedChunk {
         private String url;
         private String contentType;
         private String identifier;
+        private String inode;
         private String languageId;
         private String fieldVar;
         private int chunkIndex;
@@ -97,6 +103,7 @@ public final class RetrievedChunk {
         public Builder url(String url) { this.url = url; return this; }
         public Builder contentType(String contentType) { this.contentType = contentType; return this; }
         public Builder identifier(String identifier) { this.identifier = identifier; return this; }
+        public Builder inode(String inode) { this.inode = inode; return this; }
         public Builder languageId(String languageId) { this.languageId = languageId; return this; }
         public Builder fieldVar(String fieldVar) { this.fieldVar = fieldVar; return this; }
         public Builder chunkIndex(int chunkIndex) { this.chunkIndex = chunkIndex; return this; }

@@ -121,30 +121,25 @@ const writeIndexesToDropdowns = async () => {
     }
 };
 
-
 const writeModelToDropdown = async () => {
-    const modelName = document.getElementById("modelName");
-    let options = modelName.getElementsByTagName('option');
 
-    for (i = 1; i < options.length; i++) {
-        indexName.removeChild(options[i]);
-    }
+    // --- Fallback ---
+    if (dotAiState && dotAiState.config && dotAiState.config.availableModels) {
+        for (let i = 0; i < dotAiState.config.availableModels.length; i++) {
+            const model = dotAiState.config.availableModels[i];
+            if (model.type !== 'TEXT') continue;
 
-    for (i = 0; i < dotAiState.config.availableModels.length; i++) {
-        if (dotAiState.config.availableModels[i].type !== 'TEXT') {
-            continue;
+            const newOption = document.createElement("option");
+            newOption.value = model.name;
+            newOption.text = model.current
+                ? `${model.name} (default)`
+                : model.name;
+            if (model.current) newOption.selected = true;
+            modelName.appendChild(newOption);
         }
-
-        const newOption = document.createElement("option");
-        newOption.value = dotAiState.config.availableModels[i].name;
-        newOption.text = `${dotAiState.config.availableModels[i].name}`
-        if (dotAiState.config.availableModels[i].current) {
-            newOption.selected = true;
-            newOption.text = `${dotAiState.config.availableModels[i].name} (default)`
-        }
-        modelName.appendChild(newOption);
     }
 };
+
 
 
 const writeConfigTable = async () => {
