@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostBinding, HostListener, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 
+import { DotEventsService, DotRouterService } from '@dotcms/data-access';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotNavHeaderComponent } from './components/dot-nav-header/dot-nav-header.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
-import { DotNavigationService } from './services/dot-navigation.service';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
@@ -18,41 +18,46 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 })
 export class DotNavigationComponent {
     /**
-     * A private readonly instance of `DotNavigationService` injected into the component.
-     * This service is used to manage the navigation logic within the application.
-     */
-    readonly #dotNavigationService = inject(DotNavigationService);
-
-    /**
      * A readonly instance of the IframeOverlayService injected into the component.
      * This service is used to manage the iframe overlay functionality within the application.
      */
     readonly #iframeOverlayService = inject(IframeOverlayService);
 
     /**
-     * Signal representing the menu items from the DotNavigationService.
-     *
-     * This signal is synchronized with the `items$` observable from the `DotNavigationService`.
-     * The `requireSync` option ensures that the signal is updated synchronously with the observable.
-     *
-     * @type {Signal<MenuItem[]>}
+     * A readonly instance of the GlobalStore injected into the component.
+     * This store provides the menu state signal for rendering the navigation.
      */
-    $menu = toSignal(this.#dotNavigationService.items$, {
-        requireSync: true
-    });
+    readonly #globalStore = inject(GlobalStore);
+
+    /**
+     * A readonly instance of the DotRouterService injected into the component.
+     * This service is used for navigation operations.
+     */
+    readonly #dotRouterService = inject(DotRouterService);
+
+    /**
+     * A readonly instance of the DotEventsService injected into the component.
+     * This service is used for event notifications.
+     */
+    readonly #dotEventsService = inject(DotEventsService);
+
+    /**
+     * Signal representing the menu items from the GlobalStore menu feature.
+     *
+     * This signal reads from the `menuItems` state in the menu feature.
+     *
+     * @type {Signal<DotMenu[]>}
+     */
+    $menu = this.#globalStore.menuItems;
 
     /**
      * Signal indicating whether the navigation is collapsed.
      *
-     * This signal is synchronized with the `collapsed$` observable from the
-     * `DotNavigationService`. It ensures that the state of the navigation
-     * (collapsed or expanded) is kept in sync with the service.
+     * This signal reads from the `isNavigationCollapsed` state in the menu feature.
      *
      * @type {Signal<boolean>}
      */
-    $isCollapsed = toSignal(this.#dotNavigationService.collapsed$, {
-        requireSync: true
-    });
+    $isCollapsed = this.#globalStore.isNavigationCollapsed;
 
     @HostBinding('style.overflow-y') get overFlow() {
         return this.$isCollapsed() ? '' : 'auto';
@@ -69,7 +74,9 @@ export class DotNavigationComponent {
         $event.originalEvent.stopPropagation();
 
         if (!$event.originalEvent.ctrlKey && !$event.originalEvent.metaKey) {
-            this.#dotNavigationService.reloadCurrentPortlet($event.data.id);
+            if (this.#dotRouterService.currentPortlet.id === $event.data.id) {
+                this.#dotRouterService.reloadCurrentPortlet($event.data.id);
+            }
             this.#iframeOverlayService.hide();
         }
     }
@@ -83,14 +90,14 @@ export class DotNavigationComponent {
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu; toggleOnly?: boolean }): void {
         if (this.$isCollapsed()) {
-            this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
+            this.#dotRouterService.gotoPortlet(event.data.menuItems[0].menuLink);
         } else {
             // Check if the menu is not already open to prevent redundant navigation actions.
             if (!event.data.isOpen && !event.toggleOnly) {
-                this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
+                this.#dotRouterService.gotoPortlet(event.data.menuItems[0].menuLink);
             }
 
-            this.#dotNavigationService.setOpen(event.data.id);
+            this.#globalStore.setMenuOpen(event.data.id);
         }
     }
 
@@ -102,7 +109,7 @@ export class DotNavigationComponent {
     @HostListener('document:click')
     handleDocumentClick(): void {
         if (this.$isCollapsed()) {
-            this.#dotNavigationService.closeAllSections();
+            this.#globalStore.closeAllMenuSections();
         }
     }
 
@@ -112,6 +119,7 @@ export class DotNavigationComponent {
      * @memberof DotNavigationComponent
      */
     handleCollapseButtonClick(): void {
-        this.#dotNavigationService.toggle();
+        this.#dotEventsService.notify('dot-side-nav-toggle');
+        this.#globalStore.toggleNavigation();
     }
 }

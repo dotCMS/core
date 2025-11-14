@@ -170,7 +170,6 @@ export class DotNavigationService {
     private dotLocalstorageService = inject(DotLocalstorageService);
     private titleService = inject(Title);
     readonly #globalStore = inject(GlobalStore);
-
     private _collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
     private _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
     private _appMainTitle: string;
@@ -182,8 +181,7 @@ export class DotNavigationService {
 
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
             this.setMenu(menus);
-
-            this.#globalStore.setMenuItemsTemp(menus);
+            this.#globalStore.setMenuItems(menus);
         });
 
         this.onNavigationEnd()
