@@ -9,10 +9,15 @@ import {
 
 import { computed, effect, inject } from '@angular/core';
 
-import { DotEventsService, DotLocalstorageService, DotRouterService } from '@dotcms/data-access';
+import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import { initialMenuSlice } from './menu.slice';
+
+// Import DotMenuService from the app (optional dependency to avoid circular deps)
+// Note: This creates a dependency from the library to the app, but it's necessary
+// to move the menu loading logic here and break the circular dependency
+import { DotMenuService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-menu.service';
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
 
@@ -80,69 +85,63 @@ export function withMenu() {
                 }, []);
             })
         })),
-        withMethods(
-            (
-                store,
-                dotRouterService = inject(DotRouterService),
-                dotEventsService = inject(DotEventsService)
-            ) => ({
-                /**
-                 * Sets the menu items array.
-                 *
-                 * @param menuItems - Array of DotMenu objects
-                 */
-                setMenuItems: (menuItems: DotMenu[]) => {
-                    patchState(store, { menuItems });
-                },
+        withMethods((store) => ({
+            /**
+             * Sets the menu items array.
+             *
+             * @param menuItems - Array of DotMenu objects
+             */
+            setMenuItems: (menuItems: DotMenu[]) => {
+                patchState(store, { menuItems });
+            },
 
-                /**
-                 * Sets the active menu item ID.
-                 *
-                 * @param id - The ID of the menu item to set as active
-                 */
-                setActiveMenuItemId: (id: string | null) => {
-                    patchState(store, { activeMenuItemId: id });
-                },
+            /**
+             * Sets the active menu item ID.
+             *
+             * @param id - The ID of the menu item to set as active
+             */
+            setActiveMenuItemId: (id: string | null) => {
+                patchState(store, { activeMenuItemId: id });
+            },
 
-                /**
-                 * Navigates to a portlet by URL.
-                 *
-                 * @param url - The URL to navigate to
-                 */
-                goTo: (url: string) => {
-                    dotRouterService.gotoPortlet(url);
-                },
+            /**
+             * Sets a menu as open by its ID.
+             *
+             * @param id - The menu ID to set as open
+             */
+            setMenuOpen: (id: string) => {
+                const updatedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                    menu.isOpen = menu.isOpen ? false : id === menu.id;
+                    return menu;
+                });
+                patchState(store, {
+                    menuItems: updatedMenu
+                });
+            },
 
-                /**
-                 * Reloads the current portlet if it matches the given ID.
-                 *
-                 * @param id - The portlet ID to reload
-                 */
-                reloadCurrentPortlet: (id: string) => {
-                    if (dotRouterService.currentPortlet.id === id) {
-                        dotRouterService.reloadCurrentPortlet(id);
-                    }
-                },
+            /**
+             * Closes all menu sections.
+             */
+            closeAllMenuSections: () => {
+                const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                    menu.isOpen = false;
+                    return menu;
+                });
+                patchState(store, {
+                    menuItems: closedMenu
+                });
+            },
 
-                /**
-                 * Sets a menu as open by its ID.
-                 *
-                 * @param id - The menu ID to set as open
-                 */
-                setMenuOpen: (id: string) => {
-                    const updatedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
-                        menu.isOpen = menu.isOpen ? false : id === menu.id;
-                        return menu;
-                    });
-                    patchState(store, {
-                        menuItems: updatedMenu
-                    });
-                },
-
-                /**
-                 * Closes all menu sections.
-                 */
-                closeAllMenuSections: () => {
+            /**
+             * Toggles the navigation menu collapsed/expanded state.
+             */
+            toggleNavigation: () => {
+                const isCollapsed = store.isNavigationCollapsed();
+                patchState(store, {
+                    isNavigationCollapsed: !isCollapsed
+                });
+                if (!isCollapsed) {
+                    // Close all sections when collapsing
                     const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
                         menu.isOpen = false;
                         return menu;
@@ -150,67 +149,8 @@ export function withMenu() {
                     patchState(store, {
                         menuItems: closedMenu
                     });
-                },
-
-                /**
-                 * Toggles the navigation menu collapsed/expanded state.
-                 */
-                toggleNavigation: () => {
-                    dotEventsService.notify('dot-side-nav-toggle');
-                    const isCollapsed = store.isNavigationCollapsed();
-                    patchState(store, {
-                        isNavigationCollapsed: !isCollapsed
-                    });
-                    if (!isCollapsed) {
-                        // Close all sections when collapsing
-                        const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
-                            menu.isOpen = false;
-                            return menu;
-                        });
-                        patchState(store, {
-                            menuItems: closedMenu
-                        });
-                    } else {
-                        // Open active sections when expanding
-                        const expandedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
-                            let isActive = false;
-                            menu.menuItems.forEach((item: DotMenuItem) => {
-                                if (item.active) {
-                                    isActive = true;
-                                }
-                            });
-                            menu.isOpen = isActive;
-                            return menu;
-                        });
-                        patchState(store, {
-                            menuItems: expandedMenu
-                        });
-                    }
-                },
-
-                /**
-                 * Collapses the navigation menu.
-                 */
-                collapseNavigation: () => {
-                    patchState(store, {
-                        isNavigationCollapsed: true
-                    });
-                    const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
-                        menu.isOpen = false;
-                        return menu;
-                    });
-                    patchState(store, {
-                        menuItems: closedMenu
-                    });
-                },
-
-                /**
-                 * Expands the navigation menu.
-                 */
-                expandNavigation: () => {
-                    patchState(store, {
-                        isNavigationCollapsed: false
-                    });
+                } else {
+                    // Open active sections when expanding
                     const expandedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
                         let isActive = false;
                         menu.menuItems.forEach((item: DotMenuItem) => {
@@ -224,16 +164,54 @@ export function withMenu() {
                     patchState(store, {
                         menuItems: expandedMenu
                     });
-                },
-
-                /**
-                 * Resets the menu state to initial values.
-                 */
-                resetMenuState: () => {
-                    patchState(store, initialMenuSlice);
                 }
-            })
-        ),
+            },
+
+            /**
+             * Collapses the navigation menu.
+             */
+            collapseNavigation: () => {
+                patchState(store, {
+                    isNavigationCollapsed: true
+                });
+                const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                    menu.isOpen = false;
+                    return menu;
+                });
+                patchState(store, {
+                    menuItems: closedMenu
+                });
+            },
+
+            /**
+             * Expands the navigation menu.
+             */
+            expandNavigation: () => {
+                patchState(store, {
+                    isNavigationCollapsed: false
+                });
+                const expandedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                    let isActive = false;
+                    menu.menuItems.forEach((item: DotMenuItem) => {
+                        if (item.active) {
+                            isActive = true;
+                        }
+                    });
+                    menu.isOpen = isActive;
+                    return menu;
+                });
+                patchState(store, {
+                    menuItems: expandedMenu
+                });
+            },
+
+            /**
+             * Resets the menu state to initial values.
+             */
+            resetMenuState: () => {
+                patchState(store, initialMenuSlice);
+            }
+        })),
         withHooks({
             onInit(store) {
                 // Load navigation collapsed state from localStorage
@@ -261,6 +239,16 @@ export function withMenu() {
                     const isCollapsed = store.isNavigationCollapsed();
                     dotLocalstorageService.setItem<boolean>(DOTCMS_MENU_STATUS, isCollapsed);
                 });
+
+                // Load menu items from DotMenuService if available
+                // Using optional injection to avoid circular dependency issues
+                // DotMenuService is provided in the app, so it might not be available in all contexts
+                const dotMenuService = inject(DotMenuService, { optional: true });
+                if (dotMenuService) {
+                    dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
+                        store.setMenuItems(menus);
+                    });
+                }
             }
         })
     );

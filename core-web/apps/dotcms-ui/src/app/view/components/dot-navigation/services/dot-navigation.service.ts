@@ -14,7 +14,6 @@ import {
 } from '@dotcms/data-access';
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
 
@@ -169,7 +168,6 @@ export class DotNavigationService {
     private router = inject(Router);
     private dotLocalstorageService = inject(DotLocalstorageService);
     private titleService = inject(Title);
-    readonly #globalStore = inject(GlobalStore);
 
     private _collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
     private _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
@@ -182,8 +180,6 @@ export class DotNavigationService {
 
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
             this.setMenu(menus);
-
-            this.#globalStore.setMenuItems(menus);
         });
 
         this.onNavigationEnd()

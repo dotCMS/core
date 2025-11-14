@@ -8,7 +8,7 @@ import { provideRouter } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotSystemConfigService } from '@dotcms/data-access';
+import { DotEventsService, DotRouterService, DotSystemConfigService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
@@ -29,6 +29,7 @@ describe('DotNavigationComponent collapsed', () => {
     let navigationService: SpyObject<DotNavigationService>;
     let iframeOverlayService: SpyObject<IframeOverlayService>;
     let globalStore: InstanceType<typeof GlobalStore>;
+    let dotRouterService: SpyObject<DotRouterService>;
 
     const createComponent = createComponentFactory({
         component: DotNavigationComponent,
@@ -45,6 +46,10 @@ describe('DotNavigationComponent collapsed', () => {
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService, {
                 collapsed$: of(true)
+            }),
+            mockProvider(DotEventsService),
+            mockProvider(DotRouterService, {
+                currentPortlet: { id: '123' }
             }),
             {
                 provide: LoginService,
@@ -68,6 +73,7 @@ describe('DotNavigationComponent collapsed', () => {
         navigationService = spectator.inject(DotNavigationService);
         iframeOverlayService = spectator.inject(IframeOverlayService);
         globalStore = spectator.inject(GlobalStore);
+        dotRouterService = spectator.inject(DotRouterService);
 
         // Set menu items in the GlobalStore instead of using service's items$
         globalStore.setMenuItems([dotMenuMock(), dotMenuMock1()]);
@@ -95,8 +101,17 @@ describe('DotNavigationComponent collapsed', () => {
     it('should close on document click', () => {
         spectator.detectChanges();
 
+        // First, open a menu section
+        globalStore.setMenuOpen('123');
+        expect(globalStore.menuItems().find((m) => m.id === '123')?.isOpen).toBe(true);
+
+        // Then click on document (when collapsed)
         spectator.dispatchMouseEvent(spectator.element, 'click');
-        expect(navigationService.closeAllSections).toHaveBeenCalledTimes(1);
+        // When collapsed, clicking should close all menu sections via GlobalStore
+        const items = globalStore.menuItems();
+        items.forEach((menu) => {
+            expect(menu.isOpen).toBe(false);
+        });
     });
 
     describe('itemClick event', () => {
@@ -115,8 +130,8 @@ describe('DotNavigationComponent collapsed', () => {
             });
 
             expect(stopPropSpy).toHaveBeenCalled();
-            expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
-            expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
+            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
             expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
         });
 
@@ -135,7 +150,7 @@ describe('DotNavigationComponent collapsed', () => {
             });
 
             expect(stopPropSpy).toHaveBeenCalled();
-            expect(navigationService.reloadCurrentPortlet).not.toHaveBeenCalled();
+            expect(dotRouterService.reloadCurrentPortlet).not.toHaveBeenCalled();
         });
     });
 
@@ -148,8 +163,8 @@ describe('DotNavigationComponent collapsed', () => {
                 data: dotMenuMock()
             });
 
-            expect(navigationService.goTo).toHaveBeenCalledWith('url/link1');
-            expect(navigationService.goTo).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/link1');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
         it('should not have scroll', () => {
@@ -170,6 +185,8 @@ describe('DotNavigationComponent expanded', () => {
     let navigationService: SpyObject<DotNavigationService>;
     let iframeOverlayService: SpyObject<IframeOverlayService>;
     let globalStore: InstanceType<typeof GlobalStore>;
+    let dotEventsService: SpyObject<DotEventsService>;
+    let dotRouterService: SpyObject<DotRouterService>;
 
     const createComponent = createComponentFactory({
         component: DotNavigationComponent,
@@ -186,6 +203,10 @@ describe('DotNavigationComponent expanded', () => {
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService, {
                 collapsed$: of(false)
+            }),
+            mockProvider(DotEventsService),
+            mockProvider(DotRouterService, {
+                currentPortlet: { id: '123' }
             }),
             {
                 provide: LoginService,
@@ -209,9 +230,22 @@ describe('DotNavigationComponent expanded', () => {
         navigationService = spectator.inject(DotNavigationService);
         iframeOverlayService = spectator.inject(IframeOverlayService);
         globalStore = spectator.inject(GlobalStore);
+        dotEventsService = spectator.inject(DotEventsService);
+        dotRouterService = spectator.inject(DotRouterService);
 
         // Set menu items in the GlobalStore instead of using service's items$
-        globalStore.setMenuItems([dotMenuMock(), dotMenuMock1()]);
+        // Create menus without active items to avoid auto-opening when expanding
+        const menuWithoutActive = {
+            ...dotMenuMock(),
+            menuItems: dotMenuMock().menuItems.map((item) => ({ ...item, active: false }))
+        };
+        const menu1WithoutActive = {
+            ...dotMenuMock1(),
+            menuItems: dotMenuMock1().menuItems.map((item) => ({ ...item, active: false }))
+        };
+        globalStore.setMenuItems([menuWithoutActive, menu1WithoutActive]);
+        // Set navigation as expanded
+        globalStore.expandNavigation();
     });
 
     it('should have all menus closed', () => {
@@ -229,14 +263,16 @@ describe('DotNavigationComponent expanded', () => {
         const items = spectator.queryAll(DotNavItemComponent);
 
         expect(items.length).toBe(2);
-        expect(items[0].data).toEqual(dotMenuMock());
-        expect(items[1].data).toEqual(dotMenuMock1());
+        // Verify the structure, not exact equality since we modified active states
+        expect(items[0].data.id).toBe('123');
+        expect(items[1].data.id).toBe('456');
     });
 
     it('should close on document click', () => {
         spectator.detectChanges();
 
         spectator.dispatchMouseEvent(spectator.element, 'click');
+        // When expanded, clicking should not close sections
         expect(navigationService.closeAllSections).not.toHaveBeenCalledTimes(1);
     });
 
@@ -256,8 +292,8 @@ describe('DotNavigationComponent expanded', () => {
             });
 
             expect(stopPropSpy).toHaveBeenCalled();
-            expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
-            expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
+            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
             expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
         });
 
@@ -276,7 +312,7 @@ describe('DotNavigationComponent expanded', () => {
             });
 
             expect(stopPropSpy).toHaveBeenCalled();
-            expect(navigationService.reloadCurrentPortlet).not.toHaveBeenCalled();
+            expect(dotRouterService.reloadCurrentPortlet).not.toHaveBeenCalled();
         });
 
         it('should have scroll', () => {
@@ -300,17 +336,23 @@ describe('DotNavigationComponent expanded', () => {
                 data: mockMenu
             });
 
-            expect(navigationService.goTo).toHaveBeenCalledWith('url/link1');
-            expect(navigationService.goTo).toHaveBeenCalledTimes(1);
-            expect(navigationService.setOpen).toHaveBeenCalledWith('123');
-            expect(navigationService.setOpen).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/link1');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
+            // Verify menu is set as open in GlobalStore
+            const items = globalStore.menuItems();
+            const menu = items.find((m) => m.id === '123');
+            expect(menu?.isOpen).toBe(true);
         });
 
         it('should only set open when menu is already open', () => {
             spectator.detectChanges();
 
+            // First, open the menu
+            globalStore.setMenuOpen('123');
+            expect(globalStore.menuItems().find((m) => m.id === '123')?.isOpen).toBe(true);
+
             const mockMenu = {
-                ...dotMenuMock(),
+                ...globalStore.menuItems().find((m) => m.id === '123'),
                 isOpen: true
             };
 
@@ -319,9 +361,11 @@ describe('DotNavigationComponent expanded', () => {
                 data: mockMenu
             });
 
-            expect(navigationService.goTo).not.toHaveBeenCalled();
-            expect(navigationService.setOpen).toHaveBeenCalledWith('123');
-            expect(navigationService.setOpen).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+            // Verify menu is toggled (closed) in GlobalStore
+            const items = globalStore.menuItems();
+            const menu = items.find((m) => m.id === '123');
+            expect(menu?.isOpen).toBe(false);
         });
     });
 
@@ -331,7 +375,8 @@ describe('DotNavigationComponent expanded', () => {
 
             spectator.component.handleCollapseButtonClick();
 
-            expect(navigationService.toggle).toHaveBeenCalledTimes(1);
+            expect(dotEventsService.notify).toHaveBeenCalledWith('dot-side-nav-toggle');
+            expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
         });
     });
 });

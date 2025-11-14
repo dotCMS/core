@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostBinding, HostListener, inject } from '@angular/core';
 
+import { DotEventsService, DotRouterService } from '@dotcms/data-access';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -27,6 +28,18 @@ export class DotNavigationComponent {
      * This store provides the menu state signal for rendering the navigation.
      */
     readonly #globalStore = inject(GlobalStore);
+
+    /**
+     * A readonly instance of the DotRouterService injected into the component.
+     * This service is used for navigation operations.
+     */
+    readonly #dotRouterService = inject(DotRouterService);
+
+    /**
+     * A readonly instance of the DotEventsService injected into the component.
+     * This service is used for event notifications.
+     */
+    readonly #dotEventsService = inject(DotEventsService);
 
     /**
      * Signal representing the menu items from the GlobalStore menu feature.
@@ -61,7 +74,9 @@ export class DotNavigationComponent {
         $event.originalEvent.stopPropagation();
 
         if (!$event.originalEvent.ctrlKey && !$event.originalEvent.metaKey) {
-            this.#globalStore.reloadCurrentPortlet($event.data.id);
+            if (this.#dotRouterService.currentPortlet.id === $event.data.id) {
+                this.#dotRouterService.reloadCurrentPortlet($event.data.id);
+            }
             this.#iframeOverlayService.hide();
         }
     }
@@ -75,11 +90,11 @@ export class DotNavigationComponent {
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu; toggleOnly?: boolean }): void {
         if (this.$isCollapsed()) {
-            this.#globalStore.goTo(event.data.menuItems[0].menuLink);
+            this.#dotRouterService.gotoPortlet(event.data.menuItems[0].menuLink);
         } else {
             // Check if the menu is not already open to prevent redundant navigation actions.
             if (!event.data.isOpen && !event.toggleOnly) {
-                this.#globalStore.goTo(event.data.menuItems[0].menuLink);
+                this.#dotRouterService.gotoPortlet(event.data.menuItems[0].menuLink);
             }
 
             this.#globalStore.setMenuOpen(event.data.id);
@@ -104,6 +119,7 @@ export class DotNavigationComponent {
      * @memberof DotNavigationComponent
      */
     handleCollapseButtonClick(): void {
+        this.#dotEventsService.notify('dot-side-nav-toggle');
         this.#globalStore.toggleNavigation();
     }
 }
