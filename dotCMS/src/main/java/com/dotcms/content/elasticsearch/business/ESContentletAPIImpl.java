@@ -48,6 +48,8 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -223,7 +225,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.activation.MimeType;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -231,8 +235,7 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -409,6 +412,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @RequestCost(Price.CONTENT_FROM_CACHE)
     @CloseDBIfOpened
     @Override
     public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles, boolean ignoreBlockEditor)
@@ -1560,6 +1564,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+
     @Override
     public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset,
             String sortBy, User user, boolean respectFrontendRoles)
@@ -1808,6 +1813,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return loadPageByIdentifier(ident, live, 0L, user, frontRoles);
     }
 
+    @RequestCost(Price.CONTENT_GET_REFERENCES)
     @CloseDBIfOpened
     @Override
     public List<Map<String, Object>> getContentletReferences(final Contentlet contentlet,
@@ -2239,6 +2245,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @RequestCost(Price.CONTENT_GET_RELATED)
     @Override
     public List<Contentlet> getRelatedContent(final Contentlet contentlet, final Relationship rel,
             final User user,
@@ -2280,6 +2287,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *                              permissions.
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
+    @RequestCost(Price.CONTENT_GET_RELATED)
     private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
             final User user, final boolean respectFrontendRoles, final int limitParam,
             final int offset)
@@ -2375,6 +2383,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *                              permissions.
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
+    @RequestCost(Price.CONTENT_GET_RELATED)
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
             final User user, final boolean respectFrontendRoles, int limitParam, final int offset)
             throws DotSecurityException, DotDataException {
@@ -2611,6 +2620,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return Optional.empty();
     }
 
+    @RequestCost(Price.CONTENT_DELETE)
     @Override
     public boolean delete(final Contentlet contentlet, final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -2819,6 +2829,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @RequestCost(Price.CONTENT_DELETE)
     @WrapInTransaction
     @Override
     public boolean destroy(final List<Contentlet> contentlets, final User user,
@@ -4596,6 +4607,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 pullByParents, limit, offset, sortBy, -1, null);
     }
 
+    @RequestCost(Price.CONTENT_GET_RELATED)
     @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(final Contentlet contentlet,
@@ -7185,6 +7197,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return contentlets;
     }
+
 
     @CloseDBIfOpened
     @Override
