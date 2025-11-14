@@ -26,7 +26,6 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 
 describe('DotNavigationComponent collapsed', () => {
     let spectator: Spectator<DotNavigationComponent>;
-    let navigationService: SpyObject<DotNavigationService>;
     let iframeOverlayService: SpyObject<IframeOverlayService>;
     let globalStore: InstanceType<typeof GlobalStore>;
     let dotRouterService: SpyObject<DotRouterService>;
@@ -70,7 +69,6 @@ describe('DotNavigationComponent collapsed', () => {
             detectChanges: false
         });
 
-        navigationService = spectator.inject(DotNavigationService);
         iframeOverlayService = spectator.inject(IframeOverlayService);
         globalStore = spectator.inject(GlobalStore);
         dotRouterService = spectator.inject(DotRouterService);

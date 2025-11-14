@@ -14,11 +14,6 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import { initialMenuSlice } from './menu.slice';
 
-// Import DotMenuService from the app (optional dependency to avoid circular deps)
-// Note: This creates a dependency from the library to the app, but it's necessary
-// to move the menu loading logic here and break the circular dependency
-import { DotMenuService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-menu.service';
-
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
 
 /**
@@ -239,16 +234,6 @@ export function withMenu() {
                     const isCollapsed = store.isNavigationCollapsed();
                     dotLocalstorageService.setItem<boolean>(DOTCMS_MENU_STATUS, isCollapsed);
                 });
-
-                // Load menu items from DotMenuService if available
-                // Using optional injection to avoid circular dependency issues
-                // DotMenuService is provided in the app, so it might not be available in all contexts
-                const dotMenuService = inject(DotMenuService, { optional: true });
-                if (dotMenuService) {
-                    dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
-                        store.setMenuItems(menus);
-                    });
-                }
             }
         })
     );
