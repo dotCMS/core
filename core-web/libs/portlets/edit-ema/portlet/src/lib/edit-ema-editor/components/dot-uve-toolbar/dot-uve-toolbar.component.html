@@ -26,14 +26,31 @@
         <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
         <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
         <p-button
-            [pTooltip]="'editpage.header.copy' | dm"
+            (click)="op.toggle($event)"
+            [pTooltip]="'Page URLs' | dm"
             tooltipPosition="bottom"
             icon="pi pi-copy"
             styleClass="p-button-text p-button-sm p-button-rounded"
-            (cdkCopyToClipboardCopied)="triggerCopyToast()"
-            [cdkCopyToClipboard]="$copyURL()"
-            data-testId="uve-toolbar-copy-url" />
-
+            data-testId="uve-toolbar-copy-url">
+            <p-overlayPanel #op>
+                <div class="url-list">
+                    @for (url of $pageURLS(); track url.value) {
+                        <div class="url-item">
+                            <span class="url-label">{{ url.label | dm }}:</span>
+                            <div class="url-value">
+                                <span>{{ url.value }}</span>
+                                <p-button
+                                    icon="pi pi-copy"
+                                    styleClass="p-button-text p-button-sm p-button-rounded"
+                                    (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                                    [cdkCopyToClipboard]="url.value"
+                                    data-testId="copy-url-button" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </p-overlayPanel>
+        </p-button>
         <a
             title="Page API URL"
             [pTooltip]="'uve.toolbar.page.api.url' | dm"

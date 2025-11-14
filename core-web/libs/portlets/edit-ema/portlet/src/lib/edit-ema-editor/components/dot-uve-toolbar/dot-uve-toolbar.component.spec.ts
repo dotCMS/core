@@ -50,8 +50,18 @@ import {
     getFullPageURL,
     createFavoritePagesURL,
     sanitizeURL,
-    convertLocalTimeToUTC
+    convertLocalTimeToUTC,
+    createFullURL
 } from '../../../utils';
+
+// Mock createFullURL to avoid issues with invalid URLs in tests
+jest.mock('../../../utils', () => ({
+    ...jest.requireActual('../../../utils'),
+    createFullURL: jest.fn((params, siteId) => {
+        const { url = '/', clientHost = 'http://localhost:3000' } = params;
+        return `${clientHost}${url}?siteId=${siteId}&version=true`;
+    })
+}));
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -402,21 +412,18 @@ describe('DotUveToolbarComponent', () => {
                 );
             });
 
-            it('should have attrs', () => {
-                expect(button.attributes).toEqual({
-                    icon: 'pi pi-copy',
-                    'data-testId': 'uve-toolbar-copy-url',
-                    'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
-                    'ng-reflect-icon': 'pi pi-copy',
-                    'ng-reflect-text': 'http://localhost:3000/test-url',
-                    'ng-reflect-tooltip-position': 'bottom',
-                    tooltipPosition: 'bottom',
-                    styleClass: 'p-button-text p-button-sm p-button-rounded'
-                });
+            it('should have button to open overlay', () => {
+                expect(button).toBeTruthy();
+                expect(button.attributes['icon']).toBe('pi pi-copy');
+                expect(button.attributes['data-testId']).toBe('uve-toolbar-copy-url');
             });
 
-            it('should call messageService.add', () => {
-                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
+            it('should call messageService.add when copy button in overlay is clicked', () => {
+                const copyButton = spectator.debugElement.query(
+                    By.css('[data-testId="copy-url-button"]')
+                );
+
+                spectator.triggerEventHandler(copyButton, 'cdkCopyToClipboardCopied', {});
 
                 expect(messageService.add).toHaveBeenCalledWith({
                     severity: 'success',
@@ -426,7 +433,28 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        describe('$copyURL computed signal', () => {
+        describe('$pageURLS computed signal', () => {
+            it('should call createFullURL to generate version URL', () => {
+                const mockCreateFullURL = createFullURL as jest.Mock;
+                mockCreateFullURL.mockClear();
+
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const versionUrl = urls.find((u) => u.label === 'Version');
+
+                expect(mockCreateFullURL).toHaveBeenCalledWith(
+                    expect.any(Object),
+                    expect.any(String)
+                );
+                expect(versionUrl).toBeTruthy();
+            });
+
             it('should construct URL with clientHost and url from pageParams', () => {
                 baseUVEState.pageParams.set({
                     ...params,
@@ -435,10 +463,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe('https://example.com/my-page');
+                expect(plainUrl.value).toBe('https://example.com/my-page');
             });
 
             it('should strip /index suffix from URL', () => {
@@ -449,10 +477,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe('https://example.com/my-page');
+                expect(plainUrl.value).toBe('https://example.com/my-page');
             });
 
             it('should strip /index.html suffix from URL', () => {
@@ -463,10 +491,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe('https://example.com/my-page');
+                expect(plainUrl.value).toBe('https://example.com/my-page');
             });
 
             it('should fallback to window.location.origin when clientHost is not provided', () => {
@@ -477,10 +505,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe(`${window.location.origin}/my-page`);
+                expect(plainUrl.value).toBe(`${window.location.origin}/my-page`);
             });
 
             it('should handle root URL with index.html', () => {
@@ -491,10 +519,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe('https://example.com/');
+                expect(plainUrl.value).toBe('https://example.com/');
             });
 
             it('should handle root URL with just /index', () => {
@@ -505,10 +533,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe('https://example.com/');
+                expect(plainUrl.value).toBe('https://example.com/');
             });
 
             it('should handle URL without index suffix (no change)', () => {
@@ -519,10 +547,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe('https://example.com/about-us');
+                expect(plainUrl.value).toBe('https://example.com/about-us');
             });
 
             it('should handle nested paths with /index.html', () => {
@@ -533,10 +561,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe('https://example.com/docs/api');
+                expect(plainUrl.value).toBe('https://example.com/docs/api');
             });
 
             it('should default to root path when url is undefined', () => {
@@ -547,10 +575,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe('https://example.com/');
+                expect(plainUrl.value).toBe('https://example.com/');
             });
 
             it('should handle empty clientHost with fallback to window.location.origin', () => {
@@ -561,10 +589,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const copyButton = spectator.query(byTestId('uve-toolbar-copy-url'));
-                const copyURL = copyButton.getAttribute('ng-reflect-text');
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'Plain');
 
-                expect(copyURL).toBe(`${window.location.origin}/test`);
+                expect(plainUrl.value).toBe(`${window.location.origin}/test`);
             });
         });
 

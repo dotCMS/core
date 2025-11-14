@@ -18,6 +18,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { ChipModule } from 'primeng/chip';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -40,31 +41,32 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { convertLocalTimeToUTC } from '../../../utils';
+import { convertLocalTimeToUTC, createFullURL } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
     imports: [
         NgClass,
+        FormsModule,
+        ReactiveFormsModule,
         ButtonModule,
+        CalendarModule,
+        ChipModule,
+        ClipboardModule,
+        ClipboardModule,
+        OverlayPanelModule,
         ToolbarModule,
+        SplitButtonModule,
+        DotMessagePipe,
+        DotEditorModeSelectorComponent,
         DotEmaBookmarksComponent,
         DotEmaInfoDisplayComponent,
         DotEmaRunningExperimentComponent,
-        ClipboardModule,
-        CalendarModule,
-        SplitButtonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        EditEmaPersonaSelectorComponent,
-        EditEmaLanguageSelectorComponent,
-        ClipboardModule,
+        DotToggleLockButtonComponent,
         DotUveDeviceSelectorComponent,
-        DotMessagePipe,
         DotUveWorkflowActionsComponent,
-        ChipModule,
-        DotEditorModeSelectorComponent,
-        DotToggleLockButtonComponent
+        EditEmaLanguageSelectorComponent,
+        EditEmaPersonaSelectorComponent
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -114,11 +116,22 @@ export class DotUveToolbarComponent {
         return previewDate;
     });
 
-    protected readonly $copyURL: Signal<string> = computed(() => {
-        const { url = '/', clientHost } = this.$pageParams();
+    readonly $pageURLS: Signal<{ label: string; value: string }[]> = computed(() => {
+        const params = this.$pageParams();
+        const siteId = this.#store.pageAPIResponse()?.site?.identifier;
+        const { url = '/', clientHost } = params;
         const path = url.replace(/\/index(\.html)?$/, '');
 
-        return new URL(path, clientHost || window.location.origin).toString();
+        return [
+            {
+                label: 'Plain',
+                value: new URL(path, clientHost || window.location.origin).toString()
+            },
+            {
+                label: 'Version',
+                value: createFullURL(params, siteId)
+            }
+        ];
     });
 
     readonly $pageInode = computed(() => {
