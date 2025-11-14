@@ -1,6 +1,8 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, ViewChild, inject } from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotIconComponent, DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
@@ -9,7 +11,13 @@ import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-
     selector: 'dot-palette-content-type',
     templateUrl: './dot-palette-content-type.component.html',
     styleUrls: ['./dot-palette-content-type.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotMessagePipe,
+        DotIconComponent,
+        DotSpinnerComponent,
+        DotPaletteInputFilterComponent
+    ]
 })
 export class DotPaletteContentTypeComponent {
     private dotContentletEditorService = inject(DotContentletEditorService);

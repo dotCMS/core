@@ -1,0 +1,61 @@
+@use "variables" as *;
+
+:host {
+    border-right: 1px solid $color-palette-gray-200;
+    position: relative;
+    background: $color-palette-surface-light; // #F9FAFB
+    width: 18.75rem;
+    height: 100%; // Ensure the component takes full height
+    min-height: 0; // Allow shrinking
+
+    // Tab header styling
+    ::ng-deep .p-tabview {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+
+        .p-tabview-panels {
+            height: 100%;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .p-tabview-panel {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .p-tabview-nav li {
+            .p-tabview-nav-link {
+                height: 70px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+
+                .pi {
+                    width: 14px;
+                    height: 14px;
+                    color: $color-palette-gray-600;
+                    font-size: $font-size-default;
+                }
+            }
+
+            &.p-highlight .p-tabview-nav-link {
+                border-bottom: 2px solid $color-palette-primary;
+
+                .pi {
+                    color: $color-palette-gray-800;
+                }
+            }
+        }
+    }
+
+    .tab-header {
+        align-items: center;
+        display: flex;
+        flex: 1;
+        height: 100%;
+        justify-content: center;
+    }
+}

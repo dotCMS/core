@@ -8,6 +8,8 @@ import {
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -22,6 +24,8 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
     DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -69,14 +73,22 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotContentTypeService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageService),
-            mockProvider(Router),
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
             mockProvider(ConfirmationService),
             mockProvider(DotContentletService),
             mockProvider(DotLanguagesService),
             mockProvider(DotVersionableService),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
             mockProvider(DialogService),
+            provideHttpClient(),
+            provideHttpClientTesting(),
             {
                 provide: DotCurrentUserService,
                 useValue: {
@@ -108,6 +120,7 @@ describe('DotEditContentSidebarComponent', () => {
 
         // Mock the initial UI state
         jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+            view: 'form',
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,
@@ -126,6 +139,17 @@ describe('DotEditContentSidebarComponent', () => {
                 permissions: []
             })
         );
+        dotEditContentService.getPushPublishHistory.mockReturnValue(
+            of({
+                entity: [],
+                pagination: null,
+                errors: [],
+                i18nMessagesMap: {},
+                messages: [],
+                permissions: []
+            })
+        );
+        dotEditContentService.deletePushPublishHistory.mockReturnValue(of({}));
         dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
         dotContentletService.canLock.mockReturnValue(of({ canLock: true } as DotContentletCanLock));
 
@@ -358,6 +382,50 @@ describe('DotEditContentSidebarComponent', () => {
                 component.onVersionsPageChange(2);
 
                 expect(storeSpy).toHaveBeenCalledWith({ identifier: 'test-identifier', page: 2 });
+            }));
+        });
+
+        describe('Push Publish History Integration', () => {
+            it('should call onPushPublishPageChange when history component emits pushPublishPageChange', fakeAsync(() => {
+                // Switch to history tab first
+                store.setActiveSidebarTab(1);
+                tick();
+                spectator.detectChanges();
+
+                const storeSpy = jest.spyOn(store, 'loadPushPublishHistory');
+                const component = spectator.component;
+
+                // Mock the identifier signal to return a test value
+                Object.defineProperty(component, '$identifier', {
+                    value: jest.fn().mockReturnValue('test-identifier'),
+                    writable: true
+                });
+
+                // Call the method directly
+                component.onPushPublishPageChange(3);
+
+                expect(storeSpy).toHaveBeenCalledWith({ identifier: 'test-identifier', page: 3 });
+            }));
+
+            it('should call onDeletePushPublishHistory when history component emits deletePushPublishHistory', fakeAsync(() => {
+                // Switch to history tab first
+                store.setActiveSidebarTab(1);
+                tick();
+                spectator.detectChanges();
+
+                const storeSpy = jest.spyOn(store, 'deletePushPublishHistory');
+                const component = spectator.component;
+
+                // Mock the identifier signal to return a test value
+                Object.defineProperty(component, '$identifier', {
+                    value: jest.fn().mockReturnValue('test-identifier'),
+                    writable: true
+                });
+
+                // Call the method directly
+                component.onDeletePushPublishHistory();
+
+                expect(storeSpy).toHaveBeenCalledWith('test-identifier');
             }));
         });
 

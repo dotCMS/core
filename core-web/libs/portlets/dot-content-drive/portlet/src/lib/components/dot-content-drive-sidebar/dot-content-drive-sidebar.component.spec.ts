@@ -12,15 +12,15 @@ import { DotFolder } from '@dotcms/dotcms-models';
 import {
     DotContentDriveUploadFiles,
     DotTreeFolderComponent,
-    DotFolderTreeNodeItem
+    DotFolderTreeNodeItem,
+    DotContentDriveMoveItems,
+    ALL_FOLDER
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { ALL_FOLDER } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;
@@ -101,7 +101,6 @@ describe('DotContentDriveSidebarComponent', () => {
         component: DotContentDriveSidebarComponent,
         imports: [DotTreeFolderComponent],
         providers: [
-            mockProvider(DotMessageService, new MockDotMessageService({})),
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(mockSiteDetails)
             }),
@@ -126,7 +125,11 @@ describe('DotContentDriveSidebarComponent', () => {
                 sidebarLoading: jest.fn().mockReturnValue(false),
                 loadFolders: jest.fn(),
                 loadChildFolders: jest.fn(),
-                updateFolders: jest.fn()
+                updateFolders: jest.fn(),
+                setSelectedNode: jest.fn()
+            }),
+            mockProvider(DotMessageService, {
+                get: jest.fn().mockImplementation((key: string) => key)
             })
         ]
     });
@@ -215,6 +218,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
 
                 expect(contentDriveStore.setPath).toHaveBeenCalledWith('/documents/');
+                expect(contentDriveStore.setSelectedNode).toHaveBeenCalledWith(mockTreeNodes[1]);
             });
 
             it('should extract path from node data correctly', () => {
@@ -264,7 +268,8 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', mockEvent);
 
                 expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
-                    'demo.dotcms.com/expandable/'
+                    '/expandable/',
+                    'demo.dotcms.com'
                 );
             });
 
@@ -383,7 +388,12 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 const mockUploadEvent: DotContentDriveUploadFiles = {
                     files: mockFileList,
-                    targetFolderId: 'folder-1'
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: 'folder-1',
+                        type: 'folder'
+                    }
                 };
 
                 let emittedValue: DotContentDriveUploadFiles | undefined;
@@ -400,7 +410,31 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 expect(emittedValue).toBeDefined();
                 expect(emittedValue?.files).toBe(mockFileList);
-                expect(emittedValue?.targetFolderId).toBe('folder-1');
+                expect(emittedValue?.targetFolder.id).toBe('folder-1');
+            });
+        });
+
+        describe('moveItems', () => {
+            it('should emit moveItems event when dot-tree-folder emits moveItems', () => {
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    }
+                };
+
+                let emittedValue: DotContentDriveMoveItems | undefined;
+
+                spectator.component.moveItems.subscribe((event) => {
+                    emittedValue = event;
+                });
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'moveItems', mockMoveEvent);
+
+                expect(emittedValue).toBeDefined();
+                expect(emittedValue?.targetFolder).toEqual(mockMoveEvent.targetFolder);
             });
         });
     });
@@ -445,7 +479,8 @@ describe('DotContentDriveSidebarComponent', () => {
             };
             spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', expandEvent);
             expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
-                'demo.dotcms.com/test/'
+                '/test/',
+                'demo.dotcms.com'
             );
         });
     });

@@ -1,13 +1,23 @@
 import { Analytics } from 'analytics';
 
+import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '@dotcms/uve/internal';
+
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
-import { DotCMSAnalytics, DotCMSAnalyticsConfig } from './shared/dot-content-analytics.model';
 import {
     cleanupActivityTracking,
-    updateSessionActivity
+    validateAnalyticsConfig
 } from './shared/dot-content-analytics.utils';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
+
+// Extend Window interface for analytics properties
+declare global {
+    interface Window {
+        [ANALYTICS_WINDOWS_ACTIVE_KEY]?: boolean;
+        [ANALYTICS_WINDOWS_CLEANUP_KEY]?: () => void;
+    }
+}
 
 /**
  * Creates an analytics instance for content analytics tracking.
@@ -18,14 +28,14 @@ import {
 export const initializeContentAnalytics = (
     config: DotCMSAnalyticsConfig
 ): DotCMSAnalytics | null => {
-    if (!config.siteAuth) {
-        console.error('DotContentAnalytics: Missing "siteAuth" in configuration');
+    // Validate required configuration
+    const missingFields = validateAnalyticsConfig(config);
+    if (missingFields) {
+        console.error(`DotCMS Analytics: Missing ${missingFields.join(' and ')} in configuration`);
 
-        return null;
-    }
-
-    if (!config.server) {
-        console.error('DotContentAnalytics: Missing "server" in configuration');
+        if (typeof window !== 'undefined') {
+            window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
+        }
 
         return null;
     }
@@ -35,7 +45,7 @@ export const initializeContentAnalytics = (
         debug: config.debug,
         plugins: [
             dotAnalyticsIdentityPlugin(config), // Inject identity context (user_id, session_id, local_tz)
-            dotAnalyticsEnricherPlugin(), // Enrich with page, device, utm data
+            dotAnalyticsEnricherPlugin(), // Enrich and clean payload with page, device, utm data and custom data
             dotAnalytics(config) // Send events to server
         ]
     });
@@ -45,26 +55,30 @@ export const initializeContentAnalytics = (
 
     if (typeof window !== 'undefined') {
         window.addEventListener('beforeunload', cleanup);
-        window.__dotAnalyticsCleanup = cleanup;
+        window[ANALYTICS_WINDOWS_CLEANUP_KEY] = cleanup;
+        window[ANALYTICS_WINDOWS_ACTIVE_KEY] = true;
+
+        // Dispatch custom event to notify subscribers that analytics is ready
+        window.dispatchEvent(new CustomEvent('dotcms:analytics:ready'));
     }
 
     return {
         /**
          * Track a page view.
-         * @param {Record<string, unknown>} payload - The payload to track.
+         * Session activity is automatically updated by the identity plugin.
+         * @param payload - Optional custom data to include with the page view (any valid JSON object)
          */
-        pageView: (payload: Record<string, unknown> = {}) => {
-            updateSessionActivity();
+        pageView: (payload: JsonObject = {}) => {
             analytics?.page(payload);
         },
 
         /**
          * Track a custom event.
-         * @param {string} eventName - The name of the event to track.
-         * @param {Record<string, unknown>} payload - The payload to track.
+         * Session activity is automatically updated by the identity plugin.
+         * @param eventName - The name of the event to track
+         * @param payload - Custom data to include with the event (any valid JSON object)
          */
-        track: (eventName: string, payload: Record<string, unknown> = {}) => {
-            updateSessionActivity();
+        track: (eventName: string, payload: JsonObject = {}) => {
             analytics?.track(eventName, payload);
         }
     };

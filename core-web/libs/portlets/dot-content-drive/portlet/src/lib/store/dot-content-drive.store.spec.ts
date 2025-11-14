@@ -57,6 +57,7 @@ describe('DotContentDriveStore', () => {
             expect(store.path()).toBe(DEFAULT_PATH);
             expect(store.filters()).toEqual({});
             expect(store.items()).toEqual([]);
+            expect(store.selectedItems()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
@@ -293,6 +294,52 @@ describe('DotContentDriveStore', () => {
                 });
             });
         });
+
+        describe('setSelectedItems', () => {
+            it('should set selected items', () => {
+                const selectedItems = [MOCK_ITEMS[0], MOCK_ITEMS[1]];
+
+                store.setSelectedItems(selectedItems);
+
+                expect(store.selectedItems()).toEqual(selectedItems);
+                expect(store.selectedItems().length).toBe(2);
+            });
+
+            it('should replace existing selected items', () => {
+                // First set some items
+                const firstSelection = [MOCK_ITEMS[0]];
+                store.setSelectedItems(firstSelection);
+                expect(store.selectedItems()).toEqual(firstSelection);
+
+                // Then replace with new selection
+                const secondSelection = [MOCK_ITEMS[1], MOCK_ITEMS[2]];
+                store.setSelectedItems(secondSelection);
+
+                expect(store.selectedItems()).toEqual(secondSelection);
+                expect(store.selectedItems().length).toBe(2);
+            });
+
+            it('should clear selected items when passed empty array', () => {
+                // First set some items
+                store.setSelectedItems([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+                expect(store.selectedItems().length).toBe(2);
+
+                // Then clear
+                store.setSelectedItems([]);
+
+                expect(store.selectedItems()).toEqual([]);
+                expect(store.selectedItems().length).toBe(0);
+            });
+
+            it('should handle single item selection', () => {
+                const selectedItem = [MOCK_ITEMS[0]];
+
+                store.setSelectedItems(selectedItem);
+
+                expect(store.selectedItems()).toEqual(selectedItem);
+                expect(store.selectedItems().length).toBe(1);
+            });
+        });
     });
 });
 describe('DotContentDriveStore - onInit', () => {
@@ -374,7 +421,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
     });
 
     beforeEach(() => {
-        jest.restoreAllMocks();
+        jest.clearAllMocks();
     });
 
     it('should fetch content when store has a non-SYSTEM_HOST site', () => {
@@ -384,6 +431,19 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         expect(store.items()).toEqual(MOCK_ITEMS);
         expect(store.totalItems()).toBe(MOCK_ITEMS.length);
         expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+    });
+
+    it('should clear selected items when loading items', () => {
+        // Set some selected items
+        store.setSelectedItems([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+        expect(store.selectedItems().length).toBe(2);
+
+        // Trigger loadItems by flushing effects
+        spectator.flushEffects();
+
+        // Selected items should be cleared
+        expect(store.selectedItems()).toEqual([]);
+        expect(store.selectedItems().length).toBe(0);
     });
 
     it('should handle errors from content search service', () => {
@@ -408,6 +468,20 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             limit: DEFAULT_PAGINATION.limit,
             offset: DEFAULT_PAGINATION.offset,
             sort: 'baseType desc'
+        });
+    });
+
+    it('should handle sorting with score when query includes title', () => {
+        // Set sort in store
+        store.patchFilters({ title: 'test' });
+
+        spectator.service.loadItems();
+
+        expect(contentSearchService.get).toHaveBeenCalledWith({
+            query: expect.any(String),
+            limit: DEFAULT_PAGINATION.limit,
+            offset: DEFAULT_PAGINATION.offset,
+            sort: 'score,modDate desc'
         });
     });
 

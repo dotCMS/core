@@ -1,9 +1,17 @@
 import { describe, expect } from '@jest/globals';
-import { SpyObject, createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
+import {
+    SpyObject,
+    createComponentFactory,
+    Spectator,
+    byTestId,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -20,6 +28,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPropertiesService,
+    DotSiteService,
+    DotSystemConfigService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     PushPublishService
@@ -196,7 +206,20 @@ describe('DotEmaShellComponent', () => {
                 useValue: {
                     getCurrentUser: () => of({})
                 }
-            }
+            },
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
+            mockProvider(DotSiteService, {
+                getCurrentSite: () => of(null)
+            }),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: () => of({})
+            }),
+            provideHttpClient(),
+            provideHttpClientTesting()
         ],
         declarations: [
             MockComponent(DotEmaDialogComponent),
@@ -288,6 +311,13 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            {
+                provide: DotMessageService,
+                useValue: {
+                    get: jest.fn().mockReturnValue('Mock Message'),
+                    init: jest.fn()
+                }
             }
         ]
     });

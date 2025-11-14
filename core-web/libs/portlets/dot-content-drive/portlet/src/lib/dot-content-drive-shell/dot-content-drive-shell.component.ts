@@ -1,3 +1,6 @@
+import { patchState, signalState } from '@ngrx/signals';
+import { BehaviorSubject, of } from 'rxjs';
+
 import { Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -16,17 +19,22 @@ import { DialogModule } from 'primeng/dialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
+import { catchError, delay, switchMap } from 'rxjs/operators';
+
 import {
     DotFolderService,
     DotUploadFileService,
     DotLocalstorageService,
     DotWorkflowsActionsService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
-    DotContentDriveUploadFiles
+    DotContentDriveUploadFiles,
+    DotFolderTreeNodeData,
+    DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
@@ -41,7 +49,9 @@ import {
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
-    ERROR_MESSAGE_LIFE
+    ERROR_MESSAGE_LIFE,
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+    MINIMUM_LOADING_TIME
 } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
@@ -80,7 +90,7 @@ export class DotContentDriveShellComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
-
+    readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
@@ -91,11 +101,16 @@ export class DotContentDriveShellComponent {
 
     readonly $dialog = this.#store.dialog;
 
-    readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
     readonly DIALOG_TYPE = DIALOG_TYPE;
 
-    // Default to false to avoid showing the message banner on init
-    readonly $showMessage = signal<boolean>(false);
+    // Component state for loading and showing message
+    readonly state = signalState({
+        $loading: this.$status() === DotContentDriveStatus.LOADING,
+        $showMessage: false
+    });
+
+    readonly $loading = this.state.$loading;
+    readonly $showMessage = this.state.$showMessage;
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
 
@@ -122,10 +137,50 @@ export class DotContentDriveShellComponent {
         this.#location.go(urlTree.toString());
     });
 
+    // We need to delay the loading to preserve a consistent loading with no flickering
+    readonly delayedLoading = new BehaviorSubject<{ loading: boolean; delayTime: number }>({
+        loading: this.$status() === DotContentDriveStatus.LOADING,
+        delayTime: 0
+    });
+
+    // Actual elapsedTime, starting on 0 for no delay on initialization
+    readonly elapsedTime = signal(0);
+
+    readonly delayedLoadingEffect = effect(() => {
+        const loading = this.$status() === DotContentDriveStatus.LOADING;
+
+        let delayTime = 0;
+
+        if (loading) {
+            // When transitioning to loading, show immediately and record start time
+            this.elapsedTime.set(Date.now());
+            delayTime = 0;
+        } else {
+            // When transitioning to loaded, ensure minimum 2 second display time
+            const elapsed = Date.now() - this.elapsedTime();
+
+            // Get the maximum time between 0 and the rest of the elapsed time to cover 1.2 second
+            // If the substraction of 1.2 second is negative, we dont need to delay, because we already waited more than 1.2 second
+            delayTime = Math.max(0, MINIMUM_LOADING_TIME - elapsed);
+        }
+
+        this.delayedLoading.next({ loading, delayTime });
+    });
+
     ngOnInit() {
-        this.$showMessage.set(
-            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY) // The existence of the key means the message banner has been hidden
-        );
+        patchState(this.state, {
+            $showMessage: !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY)
+        });
+
+        // Delay pipe to update the internal loading state
+        // Use switchMaps to prevent rapid changes
+        this.delayedLoading
+            .pipe(switchMap(({ loading, delayTime }) => of(loading).pipe(delay(delayTime))))
+            .subscribe((loading) =>
+                patchState(this.state, {
+                    $loading: loading
+                })
+            );
     }
 
     protected onPaginate(event: LazyLoadEvent) {
@@ -191,7 +246,10 @@ export class DotContentDriveShellComponent {
      * @memberof DotContentDriveShellComponent
      */
     protected onCloseMessage() {
-        this.$showMessage.set(false);
+        patchState(this.state, {
+            $showMessage: false
+        });
+
         this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
     }
 
@@ -212,23 +270,38 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        const targetFolderId = this.#store.selectedNode()?.data.id;
+        const targetFolder = this.#store.selectedNode()?.data;
 
-        this.resolveFilesUpload({ files, targetFolderId });
+        this.resolveFilesUpload({ files, targetFolder });
+    }
+
+    /**
+     * Handles drag start event on a content item
+     */
+    protected onDragStart(event: DotContentDriveItem[]) {
+        this.#store.patchContextMenu({ triggeredEvent: null, contentlet: null });
+        this.#store.setDragItems(event);
+    }
+
+    /**
+     * Handles drag end event on a content item
+     */
+    protected onDragEnd() {
+        this.#store.cleanDragItems();
     }
 
     /**
      * Resolves the upload of multiple files or a single file
      * @param files The files to upload
      */
-    protected resolveFilesUpload({ files, targetFolderId }: DotContentDriveUploadFiles) {
+    protected resolveFilesUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
         if (files.length > 1) {
-            this.uploadFiles({ files, targetFolderId });
+            this.uploadFiles({ files, targetFolder });
 
             return;
         }
 
-        this.uploadFile({ files, targetFolderId });
+        this.uploadFile({ files, targetFolder });
     }
 
     /**
@@ -238,7 +311,7 @@ export class DotContentDriveShellComponent {
      * @param {FileList} files
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadFiles({ files, targetFolderId }: DotContentDriveUploadFiles) {
+    protected uploadFiles({ files, targetFolder }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
@@ -246,21 +319,21 @@ export class DotContentDriveShellComponent {
             life: WARNING_MESSAGE_LIFE
         });
 
-        this.uploadFile({ files, targetFolderId });
+        this.uploadFile({ files, targetFolder });
     }
 
     /**
      * Uploads a file to the content drive
      * @param file The file to upload
      */
-    protected uploadFile({ files, targetFolderId }: DotContentDriveUploadFiles) {
+    protected uploadFile({ files, targetFolder }: DotContentDriveUploadFiles) {
         this.#messageService.add({
             severity: 'info',
             summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
             detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
         });
 
-        this.uploadDotAsset(files[0], targetFolderId);
+        this.uploadDotAsset(files[0], targetFolder);
     }
 
     /**
@@ -271,11 +344,11 @@ export class DotContentDriveShellComponent {
      * @param {string} hostFolder
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadDotAsset(file: File, hostFolder: string) {
+    protected uploadDotAsset(file: File, hostFolder: DotFolderTreeNodeData) {
         this.#fileService
             .uploadDotAsset(file, {
                 baseType: 'dotAsset',
-                hostFolder,
+                hostFolder: hostFolder?.id,
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
@@ -305,5 +378,118 @@ export class DotContentDriveShellComponent {
                     });
                 }
             });
+    }
+
+    /**
+     * Handles when items are moved to a folder
+     *
+     * @param {DotContentDriveMoveItems} event - The move items event
+     */
+    protected onMoveItems(event: DotContentDriveMoveItems): void {
+        const { folderName, assetCount, pathToMove, dragItems } = this.getMoveMetadata(event);
+
+        const dragItemsInodes = dragItems.map((item) => item.inode);
+
+        this.#messageService.add({
+            severity: 'info',
+            summary: this.#dotMessageService.get(
+                'content-drive.move-to-folder-in-progress',
+                folderName
+            ),
+            detail: this.#dotMessageService.get(
+                'content-drive.move-to-folder-in-progress-detail',
+                assetCount.toString(),
+                `${assetCount > 1 ? 's ' : ' '}`
+            )
+        });
+
+        this.#dotWorkflowActionsFireService
+            .bulkFire({
+                additionalParams: {
+                    assignComment: {
+                        assign: '',
+                        comment: ''
+                    },
+                    pushPublish: {},
+                    additionalParamsMap: {
+                        _path_to_move: pathToMove
+                    }
+                },
+                contentletIds: dragItemsInodes,
+                workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+            })
+            .pipe(
+                catchError(() => {
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.move-to-folder-error'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-error-detail'
+                        ),
+                        life: ERROR_MESSAGE_LIFE
+                    });
+
+                    return of({ successCount: 0, fails: [] });
+                })
+            )
+            .subscribe(({ successCount, fails }) => {
+                if (successCount > 0) {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-success'
+                        ),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-success-detail',
+                            successCount.toString(),
+                            `${successCount > 1 ? 's ' : ' '}`,
+                            folderName
+                        ),
+                        life: SUCCESS_MESSAGE_LIFE
+                    });
+                    this.#store.loadItems();
+                }
+
+                fails.forEach(({ errorMessage, inode }) => {
+                    const item = dragItems.find((item) => item.inode === inode);
+
+                    const title = item?.title ?? inode;
+
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-error-with-title',
+                            title
+                        ),
+                        detail: errorMessage,
+                        life: ERROR_MESSAGE_LIFE
+                    });
+                });
+
+                this.#store.cleanDragItems();
+            });
+    }
+
+    protected getMoveMetadata(event: DotContentDriveMoveItems) {
+        const dragItems = this.#store.dragItems();
+
+        const path = event.targetFolder.path?.length > 0 ? event.targetFolder.path : '/';
+
+        const pathToMove = `//${event.targetFolder.hostname}${path}`;
+
+        const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
+
+        const folderName = cleanPath?.length > 0 ? cleanPath : pathToMove;
+
+        return {
+            pathToMove: pathToMove,
+            folderName: folderName,
+            assetCount: dragItems.length,
+            dragItems
+        };
+    }
+
+    protected onSelectItems(items: DotContentDriveItem[]) {
+        this.#store.setSelectedItems(items);
     }
 }

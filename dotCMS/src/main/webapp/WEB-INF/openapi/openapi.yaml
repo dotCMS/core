@@ -174,6 +174,23 @@ paths:
           description: default response
       tags:
       - Publishing
+  /auditPublishing/getAll:
+    post:
+      operationId: getAll
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Publishing
   /bundle:
     post:
       operationId: uploadBundleAsync
@@ -1679,7 +1696,7 @@ paths:
       - JavaScript
   /license/all/{params}:
     get:
-      operationId: getAll
+      operationId: getAll_1
       parameters:
       - in: path
         name: params
@@ -3729,42 +3746,6 @@ paths:
             application/json: {}
           description: Asset not found
       summary: Download asset file
-      tags:
-      - Web Assets
-  /v1/assets/drive:
-    post:
-      description: Search and browse assets using drive-like functionality with filtering
-        and navigation capabilities
-      operationId: drive
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DriveRequestForm"
-        description: Drive search request parameters
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: object
-                description: Drive search response containing assets and navigation
-                  data
-          description: Drive search results retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Invalid request parameters
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized access
-        "404":
-          content:
-            application/json: {}
-          description: Not found. e.g Site/folder not found
-      summary: Search assets with drive functionality
       tags:
       - Web Assets
   /v1/assets/folders:
@@ -6450,6 +6431,12 @@ paths:
         name: sites
         schema:
           type: string
+      - description: "Guarantee Content Types to be included in the response: Comma-separated\
+          \ content type keys (e.g. `activity, blog, product`)."
+        in: query
+        name: ensure
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -6967,6 +6954,36 @@ paths:
           enum:
           - ASC
           - DESC
+      - description: "List of variable names of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
+        in: query
+        name: type
+        schema:
+          type: array
+          enum:
+          - ANY
+          - CONTENT
+          - WIDGET
+          - FORM
+          - FILEASSET
+          - HTMLPAGE
+          - PERSONA
+          - VANITY_URL
+          - KEY_VALUE
+          - DOTASSET
+          items:
+            type: string
+            enum:
+            - ANY
+            - CONTENT
+            - WIDGET
+            - FORM
+            - FILEASSET
+            - HTMLPAGE
+            - PERSONA
+            - VANITY_URL
+            - KEY_VALUE
+            - DOTASSET
+        style: form
       - description: Filter by site identifier.
         in: query
         name: host
@@ -8611,6 +8628,7 @@ paths:
       - Folders
   /v1/folder/{siteName}:
     delete:
+      description: Delete one or more path for a site if they exist
       operationId: deleteFolders
       parameters:
       - in: path
@@ -8626,11 +8644,25 @@ paths:
               items:
                 type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example:
+                entity:
+                - /folder-1/folder-2/target-folder
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Folders deleted successfully
+        "401":
+          description: Unauthorized access
+        "403":
+          description: Insufficient permissions to delete folders
+        "404":
+          description: Folders not found
+      summary: Delete one or more path for a site
       tags:
       - Folders
   /v1/forgotpassword:
@@ -12550,7 +12582,7 @@ paths:
       - System Storage
   /v1/system-table:
     get:
-      operationId: getAll_1
+      operationId: getAll_2
       responses:
         default:
           content:
@@ -13857,6 +13889,36 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Find an user
+      tags:
+      - Users
+  /v1/users/{userId}/permissions:
+    get:
+      description: "Retrieves permissions for a user's individual role, organized\
+        \ by asset type and permission scope"
+      operationId: getUserPermissions
+      parameters:
+      - description: User ID or email address
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUserPermissionsView"
+          description: User permissions retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid user id
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Get user permissions
       tags:
       - Users
   /v1/variants:
@@ -20183,74 +20245,6 @@ components:
             type: string
           versionable:
             type: boolean
-    DriveRequestForm:
-      type: object
-      properties:
-        assetPath:
-          type: string
-        baseTypes:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        contentTypes:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        filter:
-          type: string
-        language:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        live:
-          type: boolean
-        maxResults:
-          type: integer
-          format: int32
-        offset:
-          type: integer
-          format: int32
-        showArchived:
-          type: boolean
-        showContent:
-          type: boolean
-        showDotAssets:
-          type: boolean
-        showFiles:
-          type: boolean
-        showFolders:
-          type: boolean
-        showImages:
-          type: boolean
-        showLinks:
-          type: boolean
-        showPages:
-          type: boolean
-        sortBy:
-          type: string
-        working:
-          type: boolean
     EmbeddingsForm:
       type: object
       properties:
@@ -24562,6 +24556,31 @@ components:
           items:
             type: string
     ResponseEntityTagOperationView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityUserPermissionsView:
       type: object
       properties:
         entity:

@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
@@ -8,7 +9,9 @@ import {
     DotRouterService,
     DotIframeService
 } from '@dotcms/data-access';
+import { mapParamsFromEditContentlet } from '@dotcms/utils';
 
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 export interface DotCMSEditPageEvent {
@@ -33,7 +36,7 @@ interface DotCSMSavePageEvent {
     selector: 'dot-contentlet-wrapper',
     templateUrl: './dot-contentlet-wrapper.component.html',
     styleUrls: ['./dot-contentlet-wrapper.component.scss'],
-    standalone: false
+    imports: [CommonModule, DotIframeDialogComponent]
 })
 export class DotContentletWrapperComponent {
     private dotContentletEditorService = inject(DotContentletEditorService);
@@ -150,6 +153,19 @@ export class DotContentletWrapperComponent {
         this.isContentletModified = false;
         this.header = '';
         this.shutdown.emit();
+
+        const searchParams = new URL(
+            this.dotRouterService.currentPortlet.url,
+            window.location.origin
+        ).searchParams;
+
+        const contentDriveParams = mapParamsFromEditContentlet(searchParams);
+
+        if (Object.keys(contentDriveParams).length) {
+            this.dotRouterService.gotoPortlet('content-drive', {
+                queryParams: contentDriveParams
+            });
+        }
     }
 
     /**

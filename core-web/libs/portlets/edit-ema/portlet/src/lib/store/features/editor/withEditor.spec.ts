@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotPropertiesService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
@@ -74,6 +75,9 @@ describe('withEditor', () => {
             mockProvider(ActivatedRoute),
             mockProvider(Router),
             mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -298,7 +302,7 @@ describe('withEditor', () => {
                     palette: {
                         variantId: DEFAULT_VARIANT_ID,
                         languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
-                        containers: MOCK_RESPONSE_HEADLESS.containers,
+                        pagePath: MOCK_RESPONSE_HEADLESS.page.pageURI,
                         paletteClass: PALETTE_CLASSES.OPEN
                     },
                     seoResults: null

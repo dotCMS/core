@@ -15,6 +15,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -34,6 +35,7 @@ import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import {
+    dotPropertiesServiceMock,
     getNewVanityUrl,
     getVanityUrl,
     HEADLESS_BASE_QUERY_PARAMS,
@@ -104,6 +106,10 @@ describe('withLoad', () => {
                 useValue: {
                     getByInode: () => of([])
                 }
+            },
+            {
+                provide: DotPropertiesService,
+                useValue: dotPropertiesServiceMock
             },
             {
                 provide: DotPageApiService,

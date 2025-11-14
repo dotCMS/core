@@ -110,11 +110,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotEditPageStateControllerComponent,
-                DotEditPageLockInfoComponent
-            ],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -142,6 +138,8 @@ describe('DotEditPageStateControllerComponent', () => {
                 DotPropertiesService
             ],
             imports: [
+                DotEditPageStateControllerComponent,
+                DotEditPageLockInfoComponent,
                 InputSwitchModule,
                 SelectButtonModule,
                 TooltipModule,

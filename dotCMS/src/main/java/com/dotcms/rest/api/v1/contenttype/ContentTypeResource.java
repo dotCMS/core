@@ -10,6 +10,7 @@ import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
@@ -71,6 +72,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.LinkedHashSet;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -1423,7 +1425,9 @@ public class ContentTypeResource implements Serializable {
 	 * @param siteId       The identifier of the Site where the requested Content Types live.
 	 * @param sites        A comma-separated list of Site identifiers or Site Keys where the
 	 *                     requested Content Types live.
-	 *
+     * @param ensureContentTypesParam
+     *                     A comma-separated list of Content Types guaranteed to be included in the
+     *                     Content Type list response if they exist and are valid.
 	 * @return A JSON response with the paginated list of Content Types.
 	 *
 	 * @throws DotDataException An error occurred when retrieving information from the database.
@@ -1489,68 +1493,80 @@ public class ContentTypeResource implements Serializable {
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
-	public final Response getContentTypes(@Context final HttpServletRequest httpRequest,
-										  @Context final HttpServletResponse httpResponse,
-										  @QueryParam(PaginationUtil.FILTER) @Parameter(schema = @Schema(type = "string"),
-												  description = "String to filter/search for specific content types; leave blank to return all."
-										  ) final String filter,
-										  @QueryParam(PaginationUtil.PAGE) @Parameter(schema = @Schema(type = "integer"),
-												  description = "Page number in response pagination.\n\nDefault: `1`"
-										  ) final int page,
-										  @QueryParam(PaginationUtil.PER_PAGE) @Parameter(schema = @Schema(type = "integer"),
-												  description = "Number of results per page for pagination.\n\nDefault: `10`"
-										  ) final int perPage,
-										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(
-												  schema = @Schema(type = "string"),
-												  description = "Column(s) to sort the results. Multiple columns can be " +
-														  "combined in a comma-separated list. Column names can also be set " +
-														  "within a SQL string function, such as `upper()`.\n\n" +
-														  "Some possible values:\n\n" +
-														  "`name`, `velocity_var_name`, `mod_date`, `sort_order`\n\n" +
-														  "`description`, `structuretype`, `category`, `inode`"
-										  ) String orderByParam,
-										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) @Parameter(
-												  schema = @Schema(
-														  type = "string",
-														  allowableValues = {"ASC", "DESC"},
-														  defaultValue = "ASC",
-														  required = true
-												  ),
-												  description = "Sort direction: choose between ascending or descending."
-										  ) String direction,
-										  @QueryParam("type") @Parameter(
-												  schema = @Schema(
-														  type = "array",
-														  allowableValues = {
-																  "ANY", "CONTENT", "WIDGET",
-																  "FORM", "FILEASSET", "HTMLPAGE", "PERSONA",
-																  "VANITY_URL", "KEY_VALUE", "DOTASSET"
-														  }
-												  ),
-                                                  style = ParameterStyle.FORM,
-												  description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
-										  ) List<String> types,
-										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
-												  description = "Filter by site identifier."
-										  ) final String siteId,
-										  @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) @Parameter(schema = @Schema(type = "string"),
-												  description = "Multi-site filter: Takes comma-separated list of site identifiers or keys."
-										  ) final String sites) throws DotDataException {
+    public final Response getContentTypes(@Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            @QueryParam(PaginationUtil.FILTER) @Parameter(schema = @Schema(type = "string"),
+                    description = "String to filter/search for specific content types; leave blank to return all."
+            ) final String filter,
+            @QueryParam(PaginationUtil.PAGE) @Parameter(schema = @Schema(type = "integer"),
+                    description = "Page number in response pagination.\n\nDefault: `1`"
+            ) final int page,
+            @QueryParam(PaginationUtil.PER_PAGE) @Parameter(schema = @Schema(type = "integer"),
+                    description = "Number of results per page for pagination.\n\nDefault: `10`"
+            ) final int perPage,
+            @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(
+                    schema = @Schema(type = "string"),
+                    description = "Column(s) to sort the results. Multiple columns can be " +
+                            "combined in a comma-separated list. Column names can also be set " +
+                            "within a SQL string function, such as `upper()`.\n\n" +
+                            "Some possible values:\n\n" +
+                            "`name`, `velocity_var_name`, `mod_date`, `sort_order`\n\n" +
+                            "`description`, `structuretype`, `category`, `inode`"
+            ) String orderByParam,
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) @Parameter(
+                    schema = @Schema(
+                            type = "string",
+                            allowableValues = {"ASC", "DESC"},
+                            defaultValue = "ASC",
+                            required = true
+                    ),
+                    description = "Sort direction: choose between ascending or descending."
+            ) String direction,
+            @QueryParam("type") @Parameter(
+                    schema = @Schema(
+                            type = "array",
+                            allowableValues = {
+                                    "ANY", "CONTENT", "WIDGET",
+                                    "FORM", "FILEASSET", "HTMLPAGE", "PERSONA",
+                                    "VANITY_URL", "KEY_VALUE", "DOTASSET"
+                            }
+                    ),
+                    style = ParameterStyle.FORM,
+                    description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
+            ) List<String> type,
+            @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
+                    description = "Filter by site identifier."
+            ) final String siteId,
+            @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) @Parameter(schema = @Schema(type = "string"),
+                    description = "Multi-site filter: Takes comma-separated list of site identifiers or keys."
+            ) final String sites,
+            @QueryParam(ContentTypesPaginator.ENSURE) @Parameter(schema = @Schema(type = "string"),
+                    description = "Guarantee Content Types to be included in the response: " +
+                            "Comma-separated content type keys (e.g. `activity, blog, product`)."
+            ) String ensureContentTypesParam) throws DotDataException {
 
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(httpRequest, httpResponse)
 				.rejectWhenNoUser(true)
 				.init().getUser();
 		final String orderBy = this.getOrderByRealName(orderByParam);
+
 		try {
 			final Map<String, Object> extraParams = new HashMap<>();
-			if (null != types) {
-                //Remove dupe and preserve order
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(types));
+			if (null != type) {
+                //Remove empty strings and duplicates, preserve order
+				final List<String> filteredTypes = type.stream()
+					.filter(UtilMethods::isSet)
+					.collect(Collectors.toList());
+				if (!filteredTypes.isEmpty()) {
+					extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(filteredTypes));
+				}
 			}
+
 			if (null != siteId) {
 				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
 			}
+
 			if (UtilMethods.isSet(sites)) {
 				// SECURITY: Validate sites parameter to prevent SQL injection
 				List<String> siteList = Arrays.asList(sites.split(COMMA));
@@ -1570,6 +1586,12 @@ public class ContentTypeResource implements Serializable {
 				}
 				extraParams.put(ContentTypesPaginator.SITES_PARAMETER_NAME, siteList);
 			}
+
+            if (ensureContentTypesParam != null) {
+                extraParams.put(ContentTypesPaginator.ENSURE,
+                        contentTypeHelper.getEnsuredContentTypes(ensureContentTypesParam));
+            }
+
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
 			return paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
 					OrderDirection.valueOf(direction), extraParams);
@@ -1587,13 +1609,7 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	private String getOrderByRealName(final String orderbyParam) {
-		if ("modDate".equals(orderbyParam)){
-			return "mod_date";
-		}else if ("variable".equals(orderbyParam)) {
-			return "velocity_var_name";
-		} else {
-			return orderbyParam;
-		}
+		return com.dotcms.contenttype.util.ContentTypeFieldNames.normalize(orderbyParam);
 	}
 
 
@@ -1747,6 +1763,18 @@ public class ContentTypeResource implements Serializable {
 												  ),
 												  description = "Sort direction: choose between ascending or descending."
 										  ) String direction,
+										   @QueryParam("type") @Parameter(
+												  schema = @Schema(
+														  type = "array",
+														  allowableValues = {
+														  	"ANY", "CONTENT", "WIDGET",
+														  	"FORM", "FILEASSET", "HTMLPAGE", "PERSONA",
+														  	"VANITY_URL", "KEY_VALUE", "DOTASSET"
+														  }
+												  ),
+												  style = ParameterStyle.FORM,
+												  description = "List of variable names of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
+										  ) List<String> types,
 										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
 												  description = "Filter by site identifier."
 										  ) final String siteId) throws DotDataException, DotSecurityException {
@@ -1772,9 +1800,20 @@ public class ContentTypeResource implements Serializable {
 				languageId, pageMode, user, filter);
 		final boolean isUsage = "usage".equalsIgnoreCase(orderBy);
 
+		//If set, we need to consider only the content types that belong to the specific base types
+		if (null != types) {
+			//Remove empty strings and duplicates, preserve order
+			final List<String> filteredTypes = types.stream()
+					.filter(UtilMethods::isSet)
+					.collect(Collectors.toList());
+			if (!filteredTypes.isEmpty()) {
+				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(filteredTypes));
+			}
+		}
+
 		if (isUsage) {
 
-			typeVarNames = doUsage(page, perPage, direction, user, typeVarNames, extraParams);
+			typeVarNames = doUsage(page, siteId, perPage, direction, user, typeVarNames, extraParams);
 		}
 
 		if (null != siteId) {
@@ -1813,6 +1852,7 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	private List<String> doUsage(final int page,
+								 final String siteId,
 								 final int perPage,
 								 final String direction,
 								 final User user, List<String> typeVarNames,
@@ -1820,7 +1860,7 @@ public class ContentTypeResource implements Serializable {
 
 		final boolean isAscending =  OrderDirection.ASC.name().equalsIgnoreCase(direction);
 		final Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI
-				(user, true).getEntriesByContentTypes();
+				(user, true).getEntriesByContentTypes(siteId);
 		// here are filtered and sorted, but we need to paginate them.
 		this.sort(typeVarNames, isAscending, user, entriesByContentTypes);
 		typeVarNames = this.paginate(typeVarNames, page, perPage);
@@ -1888,8 +1928,33 @@ public class ContentTypeResource implements Serializable {
 
 		if (Objects.isNull(htmlPage)) { // still null, so the page does not exist
 
-			throw new BadRequestException(
-					String.format("Page with path or ID '%s' was not found", pagePathOrId));
+			//Let's check if it is a detail page
+			//First we get the content types whose url map match the path
+			List<ContentType> contentTypes = APILocator.getContentTypeAPI(user,
+					pageMode.respectAnonPerms).findByUrlMapPattern(pagePathOrId);
+			if (!contentTypes.isEmpty()) {
+				//Then, we get the first detail page found
+				for (ContentType contentType : contentTypes) {
+					final Optional<ContentletVersionInfo> detailPageVersionInfo = APILocator.getVersionableAPI()
+							.getContentletVersionInfo(contentType.detailPage(), languageId);
+					if (detailPageVersionInfo.isPresent()) {
+						htmlPage = APILocator.getHTMLPageAssetAPI().findPage(pageMode.showLive ?
+										detailPageVersionInfo.get().getLiveInode()
+										: detailPageVersionInfo.get().getWorkingInode(),
+								user, pageMode.respectAnonPerms);
+
+						if (!Objects.isNull(htmlPage)) {
+							break;
+						}
+					}
+				}
+
+			}
+
+			if (Objects.isNull(htmlPage)) {
+				throw new BadRequestException(
+						String.format("Page with path or ID '%s' was not found", pagePathOrId));
+			}
 		}
 
 		final Set<String> repeatedTypes = new HashSet<>();

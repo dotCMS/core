@@ -19,6 +19,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
+import { withDragging } from './features/dragging/withDragging';
 import { withSidebar } from './features/sidebar/withSidebar';
 
 import {
@@ -43,6 +44,7 @@ const initialState: DotContentDriveState = {
     path: DEFAULT_PATH,
     filters: {},
     items: [],
+    selectedItems: [],
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
@@ -126,24 +128,30 @@ export const DotContentDriveStore = signalStore(
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
+            setSelectedItems(items: DotContentDriveItem[]) {
+                patchState(store, { selectedItems: items });
+            },
             loadItems() {
                 const { query, pagination, sort, currentSite } = store.$searchParams();
                 const { limit, offset } = pagination;
                 const { field, order } = sort;
 
-                patchState(store, { status: DotContentDriveStatus.LOADING });
+                patchState(store, { status: DotContentDriveStatus.LOADING, selectedItems: [] });
 
                 // Avoid fetching content for SYSTEM_HOST sites
                 if (currentSite?.identifier === SYSTEM_HOST.identifier) {
                     return;
                 }
 
+                // Since we are using scored search for the title we need to sort by score desc
+                const extraSort = query.includes('title') ? 'score,' : '';
+
                 contentSearchService
                     .get<ESContent>({
                         query,
                         limit,
                         offset,
-                        sort: `${field} ${order}`
+                        sort: `${extraSort}${field} ${order}`
                     })
                     .pipe(
                         take(1),
@@ -209,5 +217,6 @@ export const DotContentDriveStore = signalStore(
     }),
     withContextMenu(),
     withDialog(),
-    withSidebar()
+    withSidebar(),
+    withDragging()
 );

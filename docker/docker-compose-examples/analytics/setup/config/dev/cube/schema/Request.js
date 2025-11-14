@@ -18,6 +18,10 @@ cube('request', {
             utm_campaign, utm_medium, utm_source, utm_term, utm_content,
             context_site_key, context_site_id, sessionid, context_user_id, request_id,
             cluster_id, customer_id, utc_time,
+            content_identifier, content_inode, content_title, content_content_type,
+            conversion_name,
+            position_viewport_offset_pct,position_dom_index,
+            element_text, element_type, element_id, element_class, element_attributes,
             custom_1, custom_2, custom_3, custom_4, custom_5, custom_6, custom_7, custom_8, custom_9, custom_10,
             custom_11, custom_12, custom_13, custom_14, custom_15, custom_16, custom_17, custom_18, custom_19, custom_20,
             custom_21, custom_22, custom_23, custom_24, custom_25, custom_26, custom_27, custom_28, custom_29, custom_30,
@@ -275,6 +279,79 @@ cube('request', {
       title: 'Cluster ID',
       description: 'Multi-tenant cluster identifier for security filtering'
     },
+    contentIdentifier: {
+      sql: `content_identifier`,
+      type: `string`,
+      title: 'Content Identifier',
+      description: 'Content Identifier'
+    },
+    contentInode: {
+      sql: `content_inode`,
+      type: `string`,
+      title: 'Content Inode',
+      description: 'Content Inode'
+    },
+    contentTitle: {
+      sql: `content_title`,
+      type: `string`,
+      title: 'Content Title',
+      description: 'Content Title'
+    },
+    contentType: {
+      sql: `content_content_type`,
+      type: `string`,
+      title: 'Content Type',
+      description: 'Content Type'
+    },
+    viewPostOffset: {
+      sql: `position_viewport_offset_pct`,
+      type: `number`,
+      title: 'View Post Offset',
+      description: 'Browser Viewport Offset when the event occurred'
+    },
+    domIndex: {
+      sql: `position_dom_index`,
+      type: `number`,
+      title: 'Dom Index',
+      description: 'Element index in the DOM'
+    },
+    elementText: {
+      sql: `element_text`,
+      type: `string`,
+      title: 'Element Text',
+      description: 'Text of the DOM Element that was clicked'
+    },
+    elementType: {
+      sql: `element_type`,
+      type: `string`,
+      title: 'Element Type',
+      description: 'Type of the DOM Element that was clicked'
+    },
+    elementId: {
+      sql: `element_id`,
+      type: `string`,
+      title: 'Element Id',
+      description: 'Id of the DOM Element that was clicked'
+    },
+    elementClass: {
+      sql: `element_class`,
+      type: `string`,
+      title: 'Element Class',
+      description: 'Classes of the DOM Element that was clicked'
+    },
+    elementAttributes: {
+      sql: `JSONExtract(element_attributes, 'Array(String)')`,
+      type: `string`,
+      title: 'Element Attributes',
+      description: 'Attributes of the DOM Element that was clicked'
+    },
+    conversionName: {
+      sql: `conversion_name`,
+      type: `string`,
+      title: 'Conversion Name',
+      description: 'A human-readable identifier used to label and distinguish a specific conversion type'
+    },
+
     // Custom Attributes - Flexible fields for additional analytics data
     custom_1: { sql: `custom_1`, type: `string`, title: 'Custom Field 1', description: 'Custom analytics field 1' },
     custom_2: { sql: `custom_2`, type: `string`, title: 'Custom Field 2', description: 'Custom analytics field 2' },

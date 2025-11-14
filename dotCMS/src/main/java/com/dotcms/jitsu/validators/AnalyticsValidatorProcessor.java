@@ -82,7 +82,8 @@ public class AnalyticsValidatorProcessor {
         new JsonObjectTypeValidator(),
         new JsonArrayTypeValidator(),
         new DateValidator(),
-        new SiteAuthValidator()
+        new SiteAuthValidator(),
+        new NumberTypeValidator()
     );
 
     public Validators getGlobalValidators(){
@@ -259,7 +260,8 @@ public class AnalyticsValidatorProcessor {
         JSON_OBJECT,
         JSON_ARRAY,
         STRING,
-        DATE;
+        DATE,
+        NUMBER;
     }
 
 }

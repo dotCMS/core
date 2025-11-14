@@ -112,7 +112,7 @@ export class DotContentDriveDialogFolderComponent {
             finalPath += `${path.replace(/\/$/, '')}`;
         }
 
-        return `${finalPath}/${url}`;
+        return `//${finalPath}/${url}/`;
     });
 
     /**

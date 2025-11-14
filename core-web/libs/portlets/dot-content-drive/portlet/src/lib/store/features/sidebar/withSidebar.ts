@@ -6,17 +6,19 @@ import {
     withState,
     withHooks
 } from '@ngrx/signals';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
-import { inject, effect, EffectRef } from '@angular/core';
+import { inject } from '@angular/core';
+
+import { catchError, take, tap } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveState } from '../../../shared/models';
 import { getFolderHierarchyByPath, getFolderNodesByPath } from '../../../utils/functions';
-import { ALL_FOLDER, buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
+import { buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
 
 interface WithSidebarState {
     sidebarLoading: boolean;
@@ -57,28 +59,48 @@ export function withSidebar() {
                 const urlFolderPath = store.path() || '';
                 const fullPath = `${currentSite.hostname}${urlFolderPath}`;
 
-                getFolderHierarchyByPath(fullPath, dotFolderService).subscribe((folders) => {
-                    const { rootNodes, selectedNode } = buildTreeFolderNodes({
-                        folderHierarchyLevels: folders,
-                        targetPath: urlFolderPath || '/',
-                        rootNode: realAllFolder
-                    });
+                getFolderHierarchyByPath(fullPath, dotFolderService)
+                    .pipe(
+                        take(1),
+                        catchError((response) => {
+                            const error = response.error;
+                            if (error?.message) {
+                                console.error('Error loading folders:', error.message);
+                            } else {
+                                console.error('Error loading folders:', response);
+                            }
 
-                    patchState(store, {
-                        sidebarLoading: false,
-                        folders: [realAllFolder, ...rootNodes],
-                        selectedNode: selectedNode
+                            return of([[realAllFolder as DotFolder]]);
+                        })
+                    )
+                    .subscribe((folders) => {
+                        const { rootNodes, selectedNode } = buildTreeFolderNodes({
+                            folderHierarchyLevels: folders,
+                            targetPath: urlFolderPath || '/',
+                            rootNode: realAllFolder
+                        });
+
+                        patchState(store, {
+                            sidebarLoading: false,
+                            folders: [realAllFolder, ...rootNodes],
+                            selectedNode: selectedNode
+                        });
                     });
-                });
             },
 
             /**
              * Loads child folders for a specific path
              */
             loadChildFolders: (
-                path: string
+                path: string,
+                hostname?: string
             ): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> => {
-                return getFolderNodesByPath(path, dotFolderService);
+                const host = hostname || store.currentSite()?.hostname;
+                const fullPath = `${host}${path}`;
+
+                return getFolderNodesByPath(fullPath, dotFolderService).pipe(
+                    tap(() => patchState(store, { path }))
+                );
             },
             /**
              * Sets the selected node
@@ -95,22 +117,9 @@ export function withSidebar() {
             }
         })),
         withHooks((store) => {
-            let pathEffect: EffectRef;
-
             return {
                 onInit() {
-                    /**
-                     * Listen to path changes and reload the folders.
-                     * This effect is triggered when:
-                     * - User performs a search
-                     * - Folders are created/updated/deleted (CRUD operations)
-                     */
-                    pathEffect = effect(() => {
-                        store.loadFolders();
-                    });
-                },
-                onDestroy() {
-                    pathEffect?.destroy();
+                    store.loadFolders();
                 }
             };
         })
