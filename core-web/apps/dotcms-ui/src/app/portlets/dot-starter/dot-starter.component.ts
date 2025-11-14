@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 
 interface OnboardingCommand {
     code: string;
@@ -101,7 +101,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
 - **@dotcms/react**: Provides React-specific hooks and components for rendering dotCMS content
 - **@dotcms/types**: TypeScript type definitions for dotCMS SDK`,
             verification: [
-                'Check your \`package.json\` - you should see the packages listed in dependencies'
+                'Check your `package.json` - you should see the packages listed in dependencies'
             ]
         },
         {
@@ -148,8 +148,8 @@ Replace \`your-api-key-here\` with the actual API Key you copied from dotCMS.
 
 This setup keeps your API key safe while allowing necessary configuration to be accessible where needed.`,
             verification: [
-                'Check that \`.env.local\` exists in your project root',
-                "Ensure it's listed in \`.gitignore\` (Next.js adds this by default)"
+                'Check that `.env.local` exists in your project root',
+                "Ensure it's listed in `.gitignore` (Next.js adds this by default)"
             ]
         },
         {
@@ -192,15 +192,15 @@ export default async function Home() {
             verification: [
                 'Open http://localhost:3000 in your browser',
                 'You should see a JSON output displaying the page data from dotCMS',
-                'Look for the \`containers\` object - it should contain banner and default containers with content',
-                '\`page.title\` should show "Home"',
-                'Banner data should include: \`title\`, \`caption\`, \`image\`, and \`link\` fields'
+                'Look for the `containers` object - it should contain banner and default containers with content',
+                '`page.title` should show "Home"',
+                'Banner data should include: `title`, `caption`, `image`, and `link` fields'
             ],
             troubleshooting: [
                 {
                     problem: '"Failed to fetch" or network error',
                     solutions: [
-                        'Check that \`NEXT_PUBLIC_DOTCMS_URL\` is set correctly in \`.env.local\`',
+                        'Check that `NEXT_PUBLIC_DOTCMS_URL` is set correctly in `.env.local`',
                         'Verify your dotCMS instance is accessible: https://minstarter.dotcms.com',
                         'Restart your dev server after adding environment variables'
                     ]
@@ -208,23 +208,23 @@ export default async function Home() {
                 {
                     problem: 'Authentication error (401)',
                     solutions: [
-                        'Verify \`DOTCMS_TOKEN\` in \`.env.local\` matches your API key exactly',
+                        'Verify `DOTCMS_TOKEN` in `.env.local` matches your API key exactly',
                         'Check that there are no extra spaces or quotes around the token',
                         "Ensure the API key hasn't been revoked in dotCMS"
                     ]
                 },
                 {
-                    problem: "Page shows \"Cannot read property '/' of undefined\"",
+                    problem: 'Page shows "Cannot read property \'/\' of undefined"',
                     solutions: [
-                        'The page might not exist in dotCMS. Check that the home page (\`/\`) is published',
+                        'The page might not exist in dotCMS. Check that the home page (`/`) is published',
                         'Try accessing the dotCMS page directly to confirm it exists'
                     ]
                 },
                 {
                     problem: 'Build error with environment variables',
                     solutions: [
-                        'Ensure \`.env.local\` is in the project root (same level as \`package.json\`)',
-                        'Restart your Next.js dev server after creating \`.env.local\`'
+                        'Ensure `.env.local` is in the project root (same level as `package.json`)',
+                        'Restart your Next.js dev server after creating `.env.local`'
                     ]
                 }
             ]
@@ -392,23 +392,23 @@ Here's the flow of data from dotCMS to your screen:
                     solutions: [
                         'Check the browser console for errors',
                         'Verify the content type name in dotCMS is exactly "Banner" (case-sensitive)',
-                        'Ensure \`COMPONENTS_MAP\` key matches: \`Banner: Banner\`',
+                        'Ensure `COMPONENTS_MAP` key matches: `Banner: Banner`',
                         'Check that the banner container has content in dotCMS'
                     ]
                 },
                 {
                     problem: 'TypeScript error - "Property \'identifier\' is missing"',
                     solutions: [
-                        'This is normal - the \`identifier\` prop is passed by dotCMS automatically',
-                        'Make sure all component props are marked as optional with \`?\` (e.g., \`title?: string\`)'
+                        'This is normal - the `identifier` prop is passed by dotCMS automatically',
+                        'Make sure all component props are marked as optional with `?` (e.g., `title?: string`)'
                     ]
                 },
                 {
                     problem: 'Image not loading or broken image icon',
                     solutions: [
-                        'Check that \`NEXT_PUBLIC_DOTCMS_URL\` is set correctly (no trailing slash)',
+                        'Check that `NEXT_PUBLIC_DOTCMS_URL` is set correctly (no trailing slash)',
                         'Verify the image exists in dotCMS by checking the idPath in the JSON from Step 4',
-                        'The \`unoptimized\` prop on the Image component is required for external URLs'
+                        'The `unoptimized` prop on the Image component is required for external URLs'
                     ]
                 },
                 {
@@ -421,8 +421,8 @@ Here's the flow of data from dotCMS to your screen:
                 {
                     problem: 'Content shows but with missing fields',
                     solutions: [
-                        'The Banner component handles optional fields gracefully with \`?\` operators',
-                        'Check the field names in dotCMS match exactly (case-sensitive): \`title\`, \`caption\`, \`image\`, \`link\`'
+                        'The Banner component handles optional fields gracefully with `?` operators',
+                        'Check the field names in dotCMS match exactly (case-sensitive): `title`, `caption`, `image`, `link`'
                     ]
                 }
             ]
@@ -514,8 +514,7 @@ export class DotStarterComponent implements OnInit {
 
     progress = 0;
     private completedSteps = new Set<string>();
-
-    constructor(@Inject(PLATFORM_ID) private platformId: object) {}
+    private readonly platformId = inject(PLATFORM_ID);
 
     ngOnInit(): void {
         this.loadProgress();

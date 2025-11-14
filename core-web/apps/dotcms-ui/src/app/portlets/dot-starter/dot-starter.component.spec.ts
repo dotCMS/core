@@ -1,10 +1,11 @@
+import { MarkdownModule } from 'ngx-markdown';
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { MarkdownModule } from 'ngx-markdown';
 
 import { DotStarterComponent } from './dot-starter.component';
 
@@ -45,9 +46,9 @@ describe('DotStarterComponent', () => {
         expect(element.querySelector('.dot-onboarding__title')?.textContent).toContain(
             'dotCMS Headless Integration Onboarding'
         );
-        expect(element.querySelectorAll('.dot-onboarding__prerequisites-list li').length).toBeGreaterThan(
-            0
-        );
+        expect(
+            element.querySelectorAll('.dot-onboarding__prerequisites-list li').length
+        ).toBeGreaterThan(0);
     });
 
     it('should mark a step as completed and update progress', () => {
@@ -102,4 +103,3 @@ describe('DotStarterComponent', () => {
         expect(element.querySelector('.dot-step__status')?.textContent).toContain('In Progress');
     });
 });
-
