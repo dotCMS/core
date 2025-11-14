@@ -434,7 +434,7 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
         paramsCopy['host_id'] = siteId;
     }
 
-    const clientHost = paramsCopy?.clientHost ?? window.location.origin;
+    const clientHost = paramsCopy?.clientHost || window.location.origin;
     const url = paramsCopy?.url;
 
     // Clean the params that are not needed for the page
