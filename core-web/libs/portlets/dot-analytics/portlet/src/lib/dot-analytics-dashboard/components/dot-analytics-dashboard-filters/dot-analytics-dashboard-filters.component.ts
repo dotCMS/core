@@ -1,7 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 import { format, parse } from 'date-fns';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -36,7 +35,7 @@ import { isValidCustomDateRange } from '../../utils/dot-analytics.utils';
  */
 @Component({
     selector: 'dot-analytics-dashboard-filters',
-    imports: [CommonModule, CalendarModule, DropdownModule, FormsModule, DotMessagePipe],
+    imports: [CalendarModule, DropdownModule, FormsModule, DotMessagePipe],
     templateUrl: './dot-analytics-dashboard-filters.component.html',
     styleUrls: ['./dot-analytics-dashboard-filters.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

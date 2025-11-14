@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import {
     FormsModule,
@@ -47,7 +46,6 @@ interface DotCommentAndAssignValue {
     templateUrl: './dot-comment-and-assign-form.component.html',
     styleUrls: ['./dot-comment-and-assign-form.component.scss'],
     imports: [
-        CommonModule,
         FormsModule,
         ReactiveFormsModule,
         InputTextareaModule,

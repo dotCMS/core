@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -21,7 +20,7 @@ import { DotIconComponent } from '@dotcms/ui';
     selector: 'dot-message-display',
     styleUrls: ['dot-message-display.component.scss'],
     templateUrl: 'dot-message-display.component.html',
-    imports: [CommonModule, ToastModule, DotIconComponent]
+    imports: [ToastModule, DotIconComponent]
 })
 export class DotMessageDisplayComponent implements OnInit, OnDestroy {
     private dotMessageDisplayService = inject(DotMessageDisplayService);

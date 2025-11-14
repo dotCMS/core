@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -34,7 +33,6 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
     templateUrl: './dot-template-builder.component.html',
     styleUrls: ['./dot-template-builder.component.scss'],
     imports: [
-        CommonModule,
         DotMessagePipe,
         DotTemplateAdvancedComponent,
         TabViewModule,

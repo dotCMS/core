@@ -1,6 +1,5 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import {
     FormsModule,
@@ -39,7 +38,6 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
     templateUrl: './dot-download-bundle-dialog.component.html',
     styleUrls: ['./dot-download-bundle-dialog.component.scss'],
     imports: [
-        CommonModule,
         FormsModule,
         ReactiveFormsModule,
         DropdownModule,

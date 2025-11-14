@@ -1,6 +1,7 @@
 import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
+import { By } from '@angular/platform-browser';
 
 import { AvatarModule } from 'primeng/avatar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -71,13 +72,31 @@ describe('DotPushpublishTimelineItemComponent', () => {
         });
 
         it('should display correct user avatar label', () => {
-            const avatar = spectator.query(byTestId('user-avatar'));
-            expect(avatar.getAttribute('ng-reflect-label')).toBe('A'); // First letter of 'Admin User'
+            const avatarElement = spectator.query(byTestId('user-avatar'));
+            expect(avatarElement).toBeTruthy();
+
+            // Access the PrimeNG Avatar component instance to verify label property
+            const avatarDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="user-avatar"]')
+            );
+            const avatarComponent = avatarDebugElement?.componentInstance;
+
+            expect(avatarComponent).toBeTruthy();
+            expect(avatarComponent.label).toBe('A'); // First letter of 'Admin User'
         });
 
         it('should pass full bundle ID to copy button', () => {
-            const copyButton = spectator.query(byTestId('copy-bundle-id'));
-            expect(copyButton.getAttribute('ng-reflect-copy')).toBe('01K6NY6Z8V92T6SAF582WMTKYQ');
+            const copyButtonElement = spectator.query(byTestId('copy-bundle-id'));
+            expect(copyButtonElement).toBeTruthy();
+
+            // Access the DotCopyButtonComponent instance to verify copy property
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.copy()).toBe('01K6NY6Z8V92T6SAF582WMTKYQ');
         });
     });
 
@@ -118,13 +137,25 @@ describe('DotPushpublishTimelineItemComponent', () => {
 
             const userName = spectator.query(byTestId('pushpublish-user'));
             const bundleIdText = spectator.query(byTestId('bundle-id-text'));
-            const avatar = spectator.query(byTestId('user-avatar'));
-            const copyButton = spectator.query(byTestId('copy-bundle-id'));
 
             expect(userName.textContent?.trim()).toBe('System Administrator');
             expect(bundleIdText.textContent?.trim()).toBe('XYZ789');
-            expect(avatar.getAttribute('ng-reflect-label')).toBe('S');
-            expect(copyButton.getAttribute('ng-reflect-copy')).toBe('XYZ789NEWBUNDLE123');
+
+            // Access the PrimeNG Avatar component instance to verify label property
+            const avatarDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="user-avatar"]')
+            );
+            const avatarComponent = avatarDebugElement?.componentInstance;
+            expect(avatarComponent).toBeTruthy();
+            expect(avatarComponent.label).toBe('S');
+
+            // Access the DotCopyButtonComponent instance to verify copy property
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.copy()).toBe('XYZ789NEWBUNDLE123');
         });
     });
 });

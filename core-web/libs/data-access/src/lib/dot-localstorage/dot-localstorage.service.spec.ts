@@ -7,7 +7,7 @@ describe('DotLocalstorageService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({});
 
-        service = TestBed.get(DotLocalstorageService);
+        service = TestBed.inject(DotLocalstorageService);
     });
 
     describe('setItem', () => {

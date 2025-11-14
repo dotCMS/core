@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, OnInit, ViewChild, inject } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
@@ -17,7 +16,7 @@ export const SHOW_DIFF_STYLES =
     selector: 'dot-whats-changed',
     templateUrl: './dot-whats-changed.component.html',
     styleUrls: ['./dot-whats-changed.component.scss'],
-    imports: [CommonModule, IframeComponent, DotMessagePipe]
+    imports: [IframeComponent, DotMessagePipe]
 })
 export class DotWhatsChangedComponent implements OnInit, OnChanges {
     private dotEditPageService = inject(DotEditPageService);

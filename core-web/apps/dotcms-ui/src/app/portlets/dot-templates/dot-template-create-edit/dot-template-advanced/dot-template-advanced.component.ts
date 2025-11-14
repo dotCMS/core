@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -48,7 +47,6 @@ interface MonacoEditor {
     templateUrl: './dot-template-advanced.component.html',
     styleUrls: ['./dot-template-advanced.scss'],
     imports: [
-        CommonModule,
         DotContainerSelectorComponent,
         DotTextareaContentComponent,
         DotPortletBaseComponent,

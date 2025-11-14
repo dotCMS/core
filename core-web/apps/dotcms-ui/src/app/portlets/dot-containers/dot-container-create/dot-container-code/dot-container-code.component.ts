@@ -1,7 +1,6 @@
 import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
 
 import { trigger, transition, style, animate } from '@angular/animations';
-import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -38,7 +37,6 @@ interface DotContainerContent extends DotCMSContentType {
     templateUrl: './dot-container-code.component.html',
     styleUrls: ['./dot-container-code.component.scss'],
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         TabViewModule,
         MenuModule,

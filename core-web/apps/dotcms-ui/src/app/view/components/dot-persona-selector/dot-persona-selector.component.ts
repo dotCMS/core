@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -35,7 +34,6 @@ export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
     styleUrls: ['./dot-persona-selector.component.scss'],
     templateUrl: 'dot-persona-selector.component.html',
     imports: [
-        CommonModule,
         FormsModule,
         ButtonModule,
         TooltipModule,

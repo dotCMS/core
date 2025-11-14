@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -27,7 +26,7 @@ import { DotIconComponent } from '@dotcms/ui';
     templateUrl: './dot-device-selector.component.html',
     styleUrls: ['./dot-device-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, DropdownModule, FormsModule, DotIconComponent],
+    imports: [DropdownModule, FormsModule, DotIconComponent],
     providers: [DotDevicesService]
 })
 export class DotDeviceSelectorComponent implements OnInit, OnChanges {

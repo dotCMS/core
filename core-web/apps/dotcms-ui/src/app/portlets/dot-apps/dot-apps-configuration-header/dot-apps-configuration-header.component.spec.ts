@@ -141,7 +141,10 @@ describe('DotAppsConfigurationHeaderComponent', () => {
 
         expect(image).toBe(component.app.iconUrl);
         expect(size).toBe('xlarge');
-        expect(avatar.attributes['ng-reflect-text']).toBe(component.app.name);
+        // In Angular 20, ng-reflect-* attributes are not available
+        // Verify the text property on the DotAvatarDirective instance
+        const avatarDirective = avatar.injector.get(DotAvatarDirective);
+        expect(avatarDirective.text).toBe(component.app.name);
 
         expect(dotCopy.label).toBe(component.app.key);
         expect(dotCopy.copy).toBe(component.app.key);

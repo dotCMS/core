@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotPortletBoxComponent } from './components/dot-portlet-box/dot-portlet-box.component';
@@ -68,18 +68,28 @@ describe('DotPortletBaseComponent', () => {
         expect(toolbar).toBeNull();
     });
 
-    it('should render unboxed content', () => {
+    it('should render unboxed content', fakeAsync(() => {
         const testFixture = TestBed.createComponent(DefaultTestHostUnboxedComponent);
         testFixture.detectChanges();
+        tick(); // Wait for projection to complete
+        testFixture.detectChanges(); // Trigger another change detection after tick
 
         const content: DebugElement = testFixture.debugElement.query(By.css('dot-portlet-base'));
+        const component = content.componentInstance;
 
+        // Verify that boxed is false
+        expect(component.boxed).toBe(false);
+
+        // Verify that dot-portlet-box is not rendered when boxed is false
         const box: DebugElement = content.query(By.css('dot-portlet-box'));
         expect(box).toBeNull();
 
+        // After fixing the template to use *ngTemplateOutlet="unboxed" in @else,
+        // the projected content should now be available
         const child = content.query(By.css('div'));
+        expect(child).not.toBeNull();
         expect(child.nativeElement.innerHTML).toBe('Hello World');
-    });
+    }));
 
     it('should render toolbar as first child', () => {
         const testFixture = TestBed.createComponent(DefaultTestHostWithToolbarComponent);

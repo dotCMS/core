@@ -111,8 +111,10 @@ describe('ContentTypesFieldsListComponent', () => {
 
         it('should add dragula attr', () => {
             const ulElement = de.query(By.css('ul'));
-            expect('fields-bag').toEqual(ulElement.attributes['ng-reflect-dragula']);
-            expect('source').toEqual(ulElement.attributes['data-drag-type']);
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the dragula attribute directly on the native element
+            expect(ulElement.nativeElement.getAttribute('dragula')).toBe('fields-bag');
+            expect(ulElement.nativeElement.getAttribute('data-drag-type')).toBe('source');
         });
     });
 

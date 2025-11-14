@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -179,9 +180,13 @@ describe('DotTemplateBuilderComponent', () => {
         });
 
         it('should have tab title "Design"', () => {
-            const panel = spectator.query(byTestId('builder'));
-            // The header is set via Angular binding, so we need to check the actual property
-            expect(panel?.getAttribute('ng-reflect-header')).toBe('Design');
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the header by checking the PrimeNG TabPanel component instance
+            const panelDebugElement = spectator.debugElement.query(
+                By.css('[data-testId="builder"]')
+            );
+            const tabPanelComponent = panelDebugElement?.componentInstance;
+            expect(tabPanelComponent?.header).toBe('Design');
         });
 
         it('should not show <dot-template-advanced>', () => {
@@ -203,10 +208,14 @@ describe('DotTemplateBuilderComponent', () => {
 
         it('should set the themeId @Input correctly', () => {
             const templateBuilder = spectator.query(byTestId('new-template-builder'));
-            // Since ng-reflect-template shows [object Object], let's check that the component exists
-            // and has the template input bound (the actual object binding is working)
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the component exists and has the template input bound by checking the component instance
             expect(templateBuilder).toExist();
-            expect(templateBuilder?.getAttribute('ng-reflect-template')).toBeDefined();
+            const templateBuilderDebugElement = spectator.debugElement.query(
+                By.css('[data-testId="new-template-builder"]')
+            );
+            const templateBuilderComponent = templateBuilderDebugElement?.componentInstance;
+            expect(templateBuilderComponent?.template).toBeDefined();
         });
 
         it('should trigger onTemplateItemChange new-template-builder when the layout is changed', () => {
@@ -232,18 +241,25 @@ describe('DotTemplateBuilderComponent', () => {
         });
 
         it('should have tab title "Code"', () => {
-            const panel = spectator.query(byTestId('builder'));
-            // The header is set via Angular binding, so we need to check the actual property
-            expect(panel?.getAttribute('ng-reflect-header')).toBe('Code');
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the header by checking the PrimeNG TabPanel component instance
+            const panelDebugElement = spectator.debugElement.query(
+                By.css('[data-testId="builder"]')
+            );
+            const tabPanelComponent = panelDebugElement?.componentInstance;
+            expect(tabPanelComponent?.header).toBe('Code');
         });
 
         it('should show dot-template-advanced and pass attr', () => {
             const advancedComponent = spectator.query('dot-template-advanced');
             expect(advancedComponent).toExist();
-            expect(advancedComponent).toHaveAttribute(
-                'ng-reflect-body',
-                '<html><body>Test</body></html>'
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the body property directly on the component instance using debugElement
+            const advancedComponentDebugElement = spectator.debugElement.query(
+                By.css('dot-template-advanced')
             );
+            const advancedComponentInstance = advancedComponentDebugElement?.componentInstance;
+            expect(advancedComponentInstance?.body).toBe('<html><body>Test</body></html>');
         });
 
         it('should emit events from dot-template-advanced', () => {

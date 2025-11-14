@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, Input, OnChanges, ViewChild } from '@angular/core';
 
 import { DotRouterService } from '@dotcms/data-access';
@@ -10,7 +9,7 @@ import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-
     selector: 'dot-container-history',
     templateUrl: './dot-container-history.component.html',
     styleUrls: ['./dot-container-history.component.scss'],
-    imports: [CommonModule, DotPortletBoxComponent, IframeComponent]
+    imports: [DotPortletBoxComponent, IframeComponent]
 })
 export class DotContainerHistoryComponent implements OnChanges {
     @Input() containerId: string;

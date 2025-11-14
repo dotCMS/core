@@ -4,7 +4,7 @@ import { Observable, of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed, waitForAsync } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -29,17 +29,18 @@ import { DotMenuService } from '../../../../api/services/dot-menu.service';
 class RouterMock {
     _events: Subject<any> = new Subject();
     _routerState: any;
+    _currentNavigation: any = {
+        extras: {
+            state: {
+                menuId: '123'
+            }
+        }
+    };
 
     url = '';
 
-    getCurrentNavigation() {
-        return {
-            extras: {
-                state: {
-                    menuId: '123'
-                }
-            }
-        };
+    currentNavigation() {
+        return this._currentNavigation;
     }
 
     get events() {
@@ -84,9 +85,7 @@ class TitleServiceMock {
         return 'dotCMS platform';
     }
 
-    setTitle(_title: string): void {
-        /* */
-    }
+    setTitle = jest.fn();
 }
 
 class DotcmsEventsServiceMock {
@@ -404,11 +403,12 @@ describe('DotNavigationService', () => {
         router.triggerNavigationEnd('/123');
     });
 
-    it('should set Page title based on url', () => {
+    it('should set Page title based on url', fakeAsync(() => {
         router.triggerNavigationEnd('url/link1');
+        tick();
         expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
         expect(titleService.setTitle).toHaveBeenCalledTimes(1);
-    });
+    }));
 
     // TODO: needs to fix this, looks like the dotcmsEventsService instance is different here not sure why.
     xit('should subscribe to UPDATE_PORTLET_LAYOUTS websocket event', () => {

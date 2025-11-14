@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -21,7 +20,6 @@ import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-h
     templateUrl: './dot-apps-configuration-detail.component.html',
     styleUrls: ['./dot-apps-configuration-detail.component.scss'],
     imports: [
-        CommonModule,
         ButtonModule,
         DotKeyValueComponent,
         DotAppsConfigurationHeaderComponent,

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -23,7 +22,6 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
     styleUrls: ['./dot-toolbar.component.scss'],
     templateUrl: './dot-toolbar.component.html',
     imports: [
-        CommonModule,
         ToolbarModule,
         DividerModule,
         DotCrumbtrailComponent,

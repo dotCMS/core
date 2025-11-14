@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-card>
         <ng-template pTemplate="title">
             <div class="variant--title__wrapper flex justify-content-between">
@@ -17,35 +17,37 @@
                     [maxLength]="maxVariantsAllowed"></dot-experiments-configuration-items-count>
             </div>
         </ng-template>
-
-        <ng-container
-            *ngFor="
-                let variant of vm.trafficProportion.variants;
-                let first = first;
-                let last = last
-            ">
+        @for (
+            variant of vm.trafficProportion.variants;
+            track variant;
+            let first = $first;
+            let last = $last
+        ) {
             <p-card [ngClass]="{ first: first, last: last }" data-testId="variant-row-card">
                 <div
                     class="variant--row__wrapper flex flex-row align-items-center align-content-between gap-2">
                     <div class="flex flex-grow-1 flex-row align-items-center gap-2">
-                        <ng-container
-                            *ngIf="
-                                variant.name === defaultVariantName || vm.disabledTooltipLabel;
-                                else editVariantNameTpl
-                            ">
+                        @if (variant.name === defaultVariantName || vm.disabledTooltipLabel) {
                             <span data-testId="variant-name-original">{{ variant.name }}</span>
-                        </ng-container>
-
-                        <dot-copy-button
-                            *ngIf="variant.url"
-                            [copy]="url + '&variantName=' + variant.id"
-                            [label]="'editpage.header.copy' | dm"
-                            [tooltipText]="
-                                'dot.common.message.pageurl.copy.clipboard' | dm
-                            "></dot-copy-button>
+                        } @else {
+                            <dot-experiments-inplace-edit-text
+                                (textChanged)="editVariantName($event, variant, vm.experimentId)"
+                                [isLoading]="vm.status && vm.status.status === statusList.SAVING"
+                                [maxCharacterLength]="maxInputTitleLength"
+                                [required]="true"
+                                [showErrorMsg]="false"
+                                [text]="variant.name" />
+                        }
+                        @if (variant.url) {
+                            <dot-copy-button
+                                [copy]="url + '&variantName=' + variant.id"
+                                [label]="'editpage.header.copy' | dm"
+                                [tooltipText]="
+                                    'dot.common.message.pageurl.copy.clipboard' | dm
+                                "></dot-copy-button>
+                        }
                     </div>
                     <span class="separator">|</span>
-
                     <div
                         [pTooltip]="vm.disabledTooltipLabel | dm"
                         [tooltipDisabled]="!vm.disabledTooltipLabel"
@@ -61,14 +63,11 @@
                             }}"
                             pButton></button>
                     </div>
-
-                    <ng-container
-                        *ngIf="
-                            variant.name === defaultVariantName ||
-                                !vm.isExperimentADraft ||
-                                vm.pageSate.lockedByAnotherUser;
-                            else editableButtonTpl
-                        ">
+                    @if (
+                        variant.name === defaultVariantName ||
+                        !vm.isExperimentADraft ||
+                        vm.pageSate.lockedByAnotherUser
+                    ) {
                         <button
                             (click)="goToEditPageVariant(variant, dotPageMode.PREVIEW)"
                             class="p-button-sm p-button-outlined no-padding"
@@ -76,8 +75,15 @@
                             label="{{ 'experiments.configure.variants.view' | dm }}"
                             pButton
                             type="button"></button>
-                    </ng-container>
-
+                    } @else {
+                        <button
+                            (click)="goToEditPageVariant(variant, dotPageMode.EDIT)"
+                            class="p-button-sm p-button-outlined no-padding p-button-warning"
+                            data-testId="variant-edit-button"
+                            label="{{ 'experiments.action.edit' | dm }}"
+                            pButton
+                            type="button"></button>
+                    }
                     <div
                         [pTooltip]="vm.disabledTooltipLabel | dm"
                         [tooltipDisabled]="
@@ -100,28 +106,7 @@
                     </div>
                 </div>
             </p-card>
-
-            <ng-template #editableButtonTpl>
-                <button
-                    (click)="goToEditPageVariant(variant, dotPageMode.EDIT)"
-                    class="p-button-sm p-button-outlined no-padding p-button-warning"
-                    data-testId="variant-edit-button"
-                    label="{{ 'experiments.action.edit' | dm }}"
-                    pButton
-                    type="button"></button>
-            </ng-template>
-
-            <ng-template #editVariantNameTpl>
-                <dot-experiments-inplace-edit-text
-                    (textChanged)="editVariantName($event, variant, vm.experimentId)"
-                    [isLoading]="vm.status && vm.status.status === statusList.SAVING"
-                    [maxCharacterLength]="maxInputTitleLength"
-                    [required]="true"
-                    [showErrorMsg]="false"
-                    [text]="variant.name" />
-            </ng-template>
-        </ng-container>
-
+        }
         <ng-template pTemplate="footer">
             <div
                 [pTooltip]="vm.disabledTooltipLabel | dm"
@@ -147,6 +132,6 @@
             </div>
         </ng-template>
     </p-card>
-</ng-container>
+}
 
 <ng-container dotDynamic></ng-container>

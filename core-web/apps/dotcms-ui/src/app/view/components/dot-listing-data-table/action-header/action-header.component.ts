@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     Component,
     Input,
@@ -22,7 +21,7 @@ import { DotActionButtonComponent } from '../../_common/dot-action-button/dot-ac
     selector: 'dot-action-header',
     styleUrls: ['./action-header.component.scss'],
     templateUrl: 'action-header.component.html',
-    imports: [CommonModule, SplitButtonModule, DotActionButtonComponent, DotMessagePipe]
+    imports: [SplitButtonModule, DotActionButtonComponent, DotMessagePipe]
 })
 export class ActionHeaderComponent implements OnChanges {
     private dotMessageService = inject(DotMessageService);

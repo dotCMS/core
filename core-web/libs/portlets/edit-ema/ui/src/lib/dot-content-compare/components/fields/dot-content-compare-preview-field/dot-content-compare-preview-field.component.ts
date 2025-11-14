@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -7,7 +6,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-content-compare-preview-field',
     templateUrl: './dot-content-compare-preview-field.component.html',
     styleUrls: ['./dot-content-compare-preview-field.component.scss'],
-    imports: [CommonModule, DotMessagePipe]
+    imports: [DotMessagePipe]
 })
 export class DotContentComparePreviewFieldComponent implements OnChanges {
     @Input() fileURL: string;

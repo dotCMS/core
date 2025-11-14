@@ -247,6 +247,11 @@ describe('DotContentDriveSidebarComponent', () => {
 
         describe('onNodeExpand', () => {
             it('should handle onNodeExpand event when node has no children', () => {
+                // Mock the store's loadChildFolders method to return an observable
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ parent: mockFolders[0], folders: [] })
+                );
+
                 const nodeWithoutChildren: DotFolderTreeNodeItem = {
                     key: 'expandable-folder',
                     label: '/expandable/',

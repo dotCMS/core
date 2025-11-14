@@ -1,7 +1,7 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { DOCUMENT, AsyncPipe, CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, ViewChild, inject } from '@angular/core';
+import { AsyncPipe, CommonModule } from '@angular/common';
+import { Component, Input, OnChanges, ViewChild, inject, DOCUMENT } from '@angular/core';
 import { ActivatedRoute, Params, RouterModule } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';

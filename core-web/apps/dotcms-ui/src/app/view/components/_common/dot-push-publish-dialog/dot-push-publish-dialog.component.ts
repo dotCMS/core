@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -31,7 +30,6 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     styleUrls: ['./dot-push-publish-dialog.component.scss'],
     templateUrl: 'dot-push-publish-dialog.component.html',
     imports: [
-        CommonModule,
         FormsModule,
         ReactiveFormsModule,
         CalendarModule,

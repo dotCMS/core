@@ -5,7 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -94,20 +94,22 @@ describe('DotPersonaSelectedItemComponent', () => {
     });
 
     describe('tooltip properties', () => {
-        let container: HTMLDivElement;
+        let container: DebugElement;
 
         it('should set properties to null when enable', () => {
-            container = de.query(By.css('.dot-persona-selector__container')).nativeElement;
-            expect(container.getAttribute('ng-reflect-tooltip-position')).toEqual(null);
-            expect(container.getAttribute('ng-reflect-content')).toEqual(null);
+            container = de.query(By.css('.dot-persona-selector__container'));
+            const tooltipDirective = container.injector.get(Tooltip);
+            expect(tooltipDirective.content).toBeNull();
+            expect(tooltipDirective.tooltipPosition).toBeNull();
         });
 
         it('should set properties correctly when disable', () => {
             component.disabled = true;
             fixture.detectChanges();
-            container = de.query(By.css('.dot-persona-selector__container')).nativeElement;
-            expect(container.getAttribute('ng-reflect-tooltip-position')).toEqual('bottom');
-            expect(container.getAttribute('ng-reflect-content')).toEqual('Add content...');
+            container = de.query(By.css('.dot-persona-selector__container'));
+            const tooltipDirective = container.injector.get(Tooltip);
+            expect(tooltipDirective.tooltipPosition).toBe('bottom');
+            expect(tooltipDirective.content).toBe('Add content...');
         });
     });
 });

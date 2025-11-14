@@ -1,6 +1,7 @@
 import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
-import { ActivatedRoute } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -42,8 +43,15 @@ describe('DotEmaRunningExperimentComponent', () => {
     });
 
     it('should have a tag with router link', () => {
-        const tag = spectator.query(byTestId('runningExperimentTag'));
-
-        expect(tag.getAttribute('ng-reflect-router-link')).toBeTruthy();
+        // In Angular 20, ng-reflect-* attributes are not available
+        // Verify the routerLink directive is present and configured
+        const tagDebugElement = spectator.debugElement.query(
+            By.css('[data-testId="runningExperimentTag"]')
+        );
+        const routerLinkDirective = tagDebugElement?.injector.get(RouterLink, null);
+        expect(routerLinkDirective).toBeTruthy();
+        // Verify that the tag element exists and has routerLink directive applied
+        // The routerLink directive is applied to the p-tag element
+        expect(tagDebugElement).toBeTruthy();
     });
 });

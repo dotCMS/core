@@ -7,6 +7,8 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { Tooltip } from 'primeng/tooltip';
+
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
@@ -244,8 +246,9 @@ describe('DotEditPageNavComponent', () => {
                 expect(menuListItems[1].nativeElement.classList).toContain(
                     'edit-page-nav__item--disabled'
                 );
-                expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-content')).toBe(
-                    'Can’t edit advanced template'
+                const tooltipDirective = menuListItems[1].injector.get(Tooltip);
+                expect(tooltipDirective.content).toBe(
+                    messageServiceMock.get('editpage.toolbar.nav.layout.advance.disabled')
                 );
             });
 
@@ -288,9 +291,8 @@ describe('DotEditPageNavComponent', () => {
                     const label = item.query(By.css('.edit-page-nav__item-text'));
                     expect(label.nativeElement.textContent.trim()).toBe(labels[index]);
 
-                    expect(item.nativeElement.getAttribute('ng-reflect-content')).toBe(
-                        'Enterprise only'
-                    );
+                    const tooltipDirective = item.injector.get(Tooltip);
+                    expect(tooltipDirective.content).toBe('Enterprise only');
                 });
             });
 
@@ -334,8 +336,9 @@ describe('DotEditPageNavComponent', () => {
             it('should the layout option have the proper attribute & message key for tooltip', () => {
                 fixture.detectChanges();
                 const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-                const layoutTooltipHTML = menuListItems[1].nativeElement.outerHTML;
-                expect(layoutTooltipHTML).toContain(
+                const layoutItem = menuListItems[1];
+                const tooltipDirective = layoutItem.injector.get(Tooltip);
+                expect(tooltipDirective.content).toBe(
                     messageServiceMock.get('editpage.toolbar.nav.license.enterprise.only')
                 );
             });

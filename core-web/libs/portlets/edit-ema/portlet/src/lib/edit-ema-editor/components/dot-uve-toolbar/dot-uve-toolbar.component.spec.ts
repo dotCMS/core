@@ -8,6 +8,7 @@ import { DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { Tooltip } from 'primeng/tooltip';
 
 import {
     DotAnalyticsTrackerService,
@@ -335,11 +336,13 @@ describe('DotUveToolbarComponent', () => {
                     inode: '123'
                 });
                 spectator.detectChanges();
-                expect(
-                    spectator
-                        .query(byTestId('uve-toolbar-unlock-button'))
-                        .getAttribute('ng-reflect-disabled')
-                ).toEqual('true');
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the disabled property on the p-button component instance
+                const buttonDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="uve-toolbar-unlock-button"]')
+                );
+                const buttonComponent = buttonDebugElement?.componentInstance;
+                expect(buttonComponent?.disabled).toBe(true);
             });
 
             it('should be loading', () => {
@@ -353,11 +356,13 @@ describe('DotUveToolbarComponent', () => {
                     }
                 });
                 spectator.detectChanges();
-                expect(
-                    spectator
-                        .query(byTestId('uve-toolbar-unlock-button'))
-                        .getAttribute('ng-reflect-loading')
-                ).toEqual('true');
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the loading property on the p-button component instance
+                const buttonDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="uve-toolbar-unlock-button"]')
+                );
+                const buttonComponent = buttonDebugElement?.componentInstance;
+                expect(buttonComponent?.loading).toBe(true);
             });
 
             it('should call store.toggleLock when unlock button is clicked', () => {
@@ -405,16 +410,23 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should have attrs', () => {
-                expect(button.attributes).toEqual({
-                    icon: 'pi pi-copy',
-                    'data-testId': 'uve-toolbar-copy-url',
-                    'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
-                    'ng-reflect-icon': 'pi pi-copy',
-                    'ng-reflect-text': 'http://localhost:3000/test-url',
-                    'ng-reflect-tooltip-position': 'bottom',
-                    tooltipPosition: 'bottom',
-                    styleClass: 'p-button-text p-button-sm p-button-rounded'
-                });
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify properties directly on the p-button component instance
+                const buttonComponent = button?.componentInstance;
+                expect(buttonComponent?.icon).toBe('pi pi-copy');
+                expect(buttonComponent?.styleClass).toBe(
+                    'p-button-text p-button-sm p-button-rounded'
+                );
+                // Verify tooltipPosition on the Tooltip directive instance
+                const tooltipDirective = button?.injector.get(Tooltip);
+                expect(tooltipDirective?.tooltipPosition).toBe('bottom');
+                // Verify data-testId attribute on the native element
+                expect(button?.nativeElement.getAttribute('data-testId')).toBe(
+                    'uve-toolbar-copy-url'
+                );
+                // Verify that the copyUrl is set (it includes query params in the actual implementation)
+                const copyUrl = spectator.component.$toolbar().editor.copyUrl;
+                expect(copyUrl).toContain('http://localhost:3000/test-url');
             });
 
             it('should call messageService.add', () => {

@@ -1,6 +1,6 @@
 import { HttpRequest } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import {
     DotCMSContentType,
@@ -42,7 +42,6 @@ const responseData: DotCMSContentType[] = [
 ] as DotCMSContentType[];
 
 describe('DotContentletService', () => {
-    let injector: TestBed;
     let dotContentTypeService: DotContentTypeService;
     let httpMock: HttpTestingController;
 
@@ -51,9 +50,8 @@ describe('DotContentletService', () => {
             imports: [HttpClientTestingModule],
             providers: [DotContentTypeService]
         });
-        injector = getTestBed();
-        dotContentTypeService = injector.get(DotContentTypeService);
-        httpMock = injector.get(HttpTestingController);
+        dotContentTypeService = TestBed.inject(DotContentTypeService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should call the BE with correct endpoint url and method for getContentTypes()', (done) => {

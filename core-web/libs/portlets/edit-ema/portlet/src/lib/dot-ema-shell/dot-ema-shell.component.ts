@@ -1,4 +1,4 @@
-import { CommonModule, Location } from '@angular/common';
+import { Location } from '@angular/common';
 import { Component, DestroyRef, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
@@ -75,7 +75,6 @@ import {
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
     imports: [
-        CommonModule,
         ConfirmDialogModule,
         ToastModule,
         EditEmaNavigationBarComponent,
