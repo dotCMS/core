@@ -108,25 +108,6 @@
         gap: $spacing-2;
     }
 
-    &__status {
-        background-color: $color-palette-gray-200;
-        border-radius: $border-radius-xl;
-        color: $color-palette-gray-800;
-        font-size: $font-size-sm;
-        font-weight: $font-weight-semi-bold;
-        padding: $spacing-1 $spacing-3;
-        text-transform: uppercase;
-
-        &--done {
-            background-color: $color-palette-secondary-op-20;
-            color: $color-palette-secondary-700;
-        }
-    }
-
-    &__action {
-        min-width: 16rem;
-    }
-
     &__body {
         display: flex;
         flex-direction: column;

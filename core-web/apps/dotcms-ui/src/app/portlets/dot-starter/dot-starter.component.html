@@ -23,15 +23,21 @@
                     [header]="step.number + '. ' + step.title">
                     <div class="dot-step">
                         <div class="dot-step__header">
-                            <span
-                                class="dot-step__status"
-                                [class.dot-step__status--done]="isStepCompleted(step.id)">
-                                {{ isStepCompleted(step.id) ? 'Completed' : 'In Progress' }}
-                            </span>
+                            <p-tag
+                                [class]="
+                                    isStepCompleted(step.id) ? 'sm p-tag-success' : 'sm p-tag-info'
+                                "
+                                [icon]="
+                                    isStepCompleted(step.id)
+                                        ? 'pi pi-check-circle'
+                                        : 'pi pi-spinner'
+                                "
+                                [value]="
+                                    isStepCompleted(step.id) ? 'Completed' : 'In Progress'
+                                "></p-tag>
                             <button
                                 type="button"
                                 pButton
-                                class="dot-step__action"
                                 [icon]="isStepCompleted(step.id) ? 'pi pi-undo' : 'pi pi-check'"
                                 [label]="
                                     isStepCompleted(step.id)

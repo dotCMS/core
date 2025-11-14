@@ -9,6 +9,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
 import { KnobModule } from 'primeng/knob';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { TagModule } from 'primeng/tag';
 
 import { DotStarterComponent } from './dot-starter.component';
 import { dotStarterRoutes } from './dot-starter.routes';
@@ -23,7 +24,8 @@ import { dotStarterRoutes } from './dot-starter.routes';
         ProgressBarModule,
         KnobModule,
         ButtonModule,
-        MarkdownModule
+        MarkdownModule,
+        TagModule
     ]
 })
 export class DotStarterModule {}
