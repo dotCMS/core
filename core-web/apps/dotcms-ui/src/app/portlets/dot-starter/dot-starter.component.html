@@ -15,34 +15,11 @@
         </div> -->
     </section>
 
-    <section class="dot-onboarding__progress">
-        <div class="dot-onboarding__progress-header">
-            <h2 class="dot-onboarding__section-title">Progress</h2>
-            <button
-                type="button"
-                pButton
-                class="dot-onboarding__reset"
-                icon="pi pi-refresh"
-                label="Reset Progress"
-                (click)="resetProgress()"
-                [disabled]="!hasProgress"></button>
-        </div>
-
-        <p-progressBar [value]="progress" [showValue]="false"></p-progressBar>
-
-        <div class="dot-onboarding__progress-meta">
-            <span class="dot-onboarding__progress-percentage">
-                {{ progress | number: '1.0-0' }}%
-            </span>
-            <span class="dot-onboarding__progress-label">
-                {{ progressLabel }}
-            </span>
-        </div>
-    </section>
-
     <section class="dot-onboarding__steps">
         <p-accordion [multiple]="true">
-            <p-accordionTab *ngFor="let step of content.steps" [header]="step.number + '. ' + step.title">
+            <p-accordionTab
+                *ngFor="let step of content.steps"
+                [header]="step.number + '. ' + step.title">
                 <div class="dot-step">
                     <div class="dot-step__header">
                         <span
@@ -55,7 +32,9 @@
                             pButton
                             class="dot-step__action"
                             [icon]="isStepCompleted(step.id) ? 'pi pi-undo' : 'pi pi-check'"
-                            [label]="isStepCompleted(step.id) ? 'Mark as Incomplete' : 'Mark as Complete'"
+                            [label]="
+                                isStepCompleted(step.id) ? 'Mark as Incomplete' : 'Mark as Complete'
+                            "
                             (click)="toggleStepCompletion(step.id)"></button>
                     </div>
 
@@ -76,7 +55,9 @@
                         <div class="dot-step__section" *ngIf="step.commands?.length">
                             <h4>Commands</h4>
                             <div class="dot-step__command" *ngFor="let command of step.commands">
-                                <p class="dot-step__command-description">{{ command.description }}</p>
+                                <p class="dot-step__command-description">
+                                    {{ command.description }}
+                                </p>
                                 <markdown [data]="formatCommand(command)"></markdown>
                             </div>
                         </div>
@@ -97,7 +78,9 @@
 
                         <div class="dot-step__section" *ngIf="step.troubleshooting?.length">
                             <h4>Troubleshooting</h4>
-                            <div class="dot-step__troubleshooting" *ngFor="let item of step.troubleshooting">
+                            <div
+                                class="dot-step__troubleshooting"
+                                *ngFor="let item of step.troubleshooting">
                                 <p class="dot-step__problem">{{ item.problem }}</p>
                                 <ul>
                                     <li *ngFor="let solution of item.solutions">
@@ -112,3 +95,41 @@
         </p-accordion>
     </section>
 </div>
+
+<section class="dot-onboarding__progress" aria-label="Progress tracker">
+    <div class="dot-onboarding__progress-left">
+        <span class="dot-onboarding__current-label">Current step</span>
+        <div class="dot-onboarding__current-content">
+            <h2 class="dot-onboarding__current-title">
+                {{ currentStepLabel }}
+            </h2>
+
+            <button
+                type="button"
+                pButton
+                class="dot-onboarding__reset"
+                icon="pi pi-refresh"
+                label="Reset Progress"
+                (click)="resetProgress()"
+                [disabled]="!hasProgress"></button>
+        </div>
+    </div>
+
+    <div class="dot-onboarding__progress-right">
+        <div class="dot-onboarding__progress-ring">
+            <p-knob
+                [(ngModel)]="progress"
+                [readonly]="true"
+                [size]="110"
+                [strokeWidth]="10"
+                valueTemplate="{value}%"></p-knob>
+        </div>
+
+        <div class="dot-onboarding__progress-count">
+            <span class="dot-onboarding__progress-counter">
+                {{ currentStepPosition }}/{{ totalSteps }}
+            </span>
+            <span class="dot-onboarding__progress-subtitle">steps</span>
+        </div>
+    </div>
+</section>

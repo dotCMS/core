@@ -542,16 +542,64 @@ export class DotStarterComponent implements OnInit {
         this.updateProgress();
     }
 
-    get progressLabel(): string {
-        return `${this.completedSteps.size}/${this.content.steps.length} steps complete`;
-    }
-
     get progressPercentage(): number {
         if (!this.content.steps.length) {
             return 0;
         }
 
         return (this.completedSteps.size / this.content.steps.length) * 100;
+    }
+
+    get totalSteps(): number {
+        return this.content.steps.length;
+    }
+
+    get currentStep(): OnboardingStep | null {
+        if (!this.content.steps.length) {
+            return null;
+        }
+
+        const nextStep = this.content.steps.find((step) => !this.completedSteps.has(step.id));
+
+        return nextStep ?? this.content.steps[this.content.steps.length - 1];
+    }
+
+    get currentStepLabel(): string {
+        if (!this.content.steps.length) {
+            return 'No steps available';
+        }
+
+        if (this.completedSteps.size >= this.totalSteps) {
+            return 'All steps complete';
+        }
+
+        const step = this.currentStep;
+
+        if (!step) {
+            return 'All steps complete';
+        }
+
+        return `${step.number}. ${step.title}`;
+    }
+
+    get currentStepPosition(): number {
+        if (!this.content.steps.length) {
+            return 0;
+        }
+
+        if (this.completedSteps.size >= this.totalSteps) {
+            return this.totalSteps;
+        }
+
+        const step = this.currentStep;
+
+        if (!step) {
+            return 0;
+        }
+
+        const index = this.content.steps.findIndex((item) => item.id === step.id);
+
+        return index === -1 ? 0 : index + 1;
     }
 
     get hasProgress(): boolean {
