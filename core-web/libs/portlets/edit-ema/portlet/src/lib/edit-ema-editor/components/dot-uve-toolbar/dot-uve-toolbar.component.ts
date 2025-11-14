@@ -119,16 +119,16 @@ export class DotUveToolbarComponent {
     readonly $pageURLS: Signal<{ label: string; value: string }[]> = computed(() => {
         const params = this.$pageParams();
         const siteId = this.#store.pageAPIResponse()?.site?.identifier;
-        const { url = '/', clientHost } = params;
-        const path = url.replace(/\/index(\.html)?$/, '');
+        const host = params.clientHost || window.location.origin;
+        const path = params.url?.replace(/\/index(\.html)?$/, '') || '/';
 
         return [
             {
-                label: 'Plain',
-                value: new URL(path, clientHost || window.location.origin).toString()
+                label: 'plain',
+                value: new URL(path, host).toString()
             },
             {
-                label: 'Version',
+                label: 'version',
                 value: createFullURL(params, siteId)
             }
         ];
