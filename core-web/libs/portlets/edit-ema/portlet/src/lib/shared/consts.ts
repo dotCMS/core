@@ -67,7 +67,10 @@ export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
 };
 
 // Add the Feature flags we want to fetch for UVE
-export const UVE_FEATURE_FLAGS = [FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK];
+export const UVE_FEATURE_FLAGS = [
+    FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
+    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR
+];
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {
     icon: 'pi pi-desktop',
