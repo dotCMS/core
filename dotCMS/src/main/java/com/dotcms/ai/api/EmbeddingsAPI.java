@@ -212,5 +212,12 @@ public interface EmbeddingsAPI {
      * @param searchForContentRequest
      * @return SearchContentResponse
      */
-    SearchContentResponse searchForContent(SearchForContentRequest searchForContentRequest);
+    SearchContentResponse searchForContentRaw(SearchForContentRequest searchForContentRequest);
+
+    /**
+     * Search embedding on the new dotAI Api and returns the chunks as a contentlet on json
+     * @param searchForContentRequest
+     * @return
+     */
+    JSONObject searchForContent(SearchForContentRequest searchForContentRequest);
 }

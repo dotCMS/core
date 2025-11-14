@@ -3,6 +3,7 @@ package com.dotcms.ai.config;
 
 import com.dotcms.ai.config.parser.AiVendorCatalogData;
 import com.dotcms.ai.config.parser.AiVendorNode;
+import com.dotcms.ai.rest.AiModelSummaryView;
 import com.google.common.collect.ImmutableList;
 
 import java.util.*;
@@ -32,6 +33,58 @@ public final class AiModelConfigCatalogImpl implements AiModelConfigCatalog {
     }
 
     // -------------------- read API --------------------
+
+    /**
+    * Returns all embedding models as summary objects
+    */
+    @Override
+    public List<AiModelSummaryView> getAllEmbeddingModelSummaries() {
+
+        return vendors.entrySet().stream()
+                .flatMap(entry -> entry.getValue().getEmbeddings().keySet().stream()
+                        .map(modelKey ->
+                                AiModelSummaryView.builder()
+                                        .vendor(entry.getKey())
+                                        .name(modelKey)
+                                        .vendorModelPath(entry.getKey() + ".embeddings." + modelKey)
+                                        .build()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns all chat models as summary objects
+     */
+    @Override
+    public List<AiModelSummaryView> getAllChatModelSummaries() {
+
+        return vendors.entrySet().stream()
+                .flatMap(entry -> entry.getValue().getChatModels().keySet().stream()
+                        .map(modelKey ->
+                                AiModelSummaryView.builder()
+                                        .vendor(entry.getKey())
+                                        .name(modelKey)
+                                        .vendorModelPath(entry.getKey() + ".chat." + modelKey)
+                                        .build()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns chat models summary group by vendor
+     * @param vendor String
+     * @return
+     */
+    @Override
+    public List<AiModelSummaryView> getChatModelSummariesByVendor(final String vendor) {
+        final AiVendorNode node = getVendorOrThrow(vendor);
+        return node.getChatModels().keySet().stream()
+                .map(modelKey ->
+                        AiModelSummaryView.builder()
+                                .vendor(vendor)
+                                .name(modelKey)
+                                .vendorModelPath(vendor + ".chat." + modelKey)
+                                .build())
+                .collect(Collectors.toList());
+    }
 
     public AiModelConfig getChatConfig(final AiVendor  vendor) {
 

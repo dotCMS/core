@@ -15,6 +15,7 @@ public final class SearchMatch {
     private final String host;
     private final String variant;
     private final String url;
+    private final String inode;
 
     private SearchMatch(final Builder builder) {
         this.id = Objects.requireNonNull(builder.id, "ID cannot be null");
@@ -27,6 +28,7 @@ public final class SearchMatch {
         this.host = builder.host;
         this.variant = builder.variant;
         this.url = builder.url;
+        this.inode = builder.inode;
     }
 
     // Getters
@@ -52,6 +54,10 @@ public final class SearchMatch {
 
     public Optional<String> getContentType() {
         return Optional.ofNullable(contentType);
+    }
+
+    public String getInode() {
+        return inode;
     }
 
     public Optional<String> getLanguage() {
@@ -120,6 +126,7 @@ public final class SearchMatch {
         private String title;
         private String snippet;
         private String identifier;
+        private String inode;
         private String contentType;
         private String language;
         private String host;
@@ -175,6 +182,11 @@ public final class SearchMatch {
 
         public Builder withUrl(String url) {
             this.url = url;
+            return this;
+        }
+
+        public Builder withInode(String inode) {
+            this.inode = inode;
             return this;
         }
 

@@ -38,6 +38,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rest.ContentHelper;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -314,6 +315,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
         final Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("identifier",  extractedContent.getIdentifier());
+        metadata.put("inode",       extractedContent.getInode());
         metadata.put("host",        extractedContent.getHost());
         metadata.put("variant",     extractedContent.getVariant());
         metadata.put("contentType", extractedContent.getContentType());
@@ -630,7 +632,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     }
 
     @Override
-    public SearchContentResponse searchForContent(final SearchForContentRequest searchForContentRequest) {
+    public SearchContentResponse searchForContentRaw(final SearchForContentRequest searchForContentRequest) {
 
         Logger.debug(this, ()-> "Doing search for content request: " + searchForContentRequest);
         final AiModelConfig modelConfig = searchForContentRequest.getChatModelConfig();
@@ -671,6 +673,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                     .withId(retrievedChunk.getDocId())
                     .withScore(retrievedChunk.getScore())
                     .withTitle(retrievedChunk.getTitle())
+                    .withInode(retrievedChunk.getInode())
                     .withSnippet(truncate(retrievedChunk.getText(), 600))
                     .withIdentifier(retrievedChunk.getIdentifier())
                     .withContentType(retrievedChunk.getContentType())
@@ -681,6 +684,44 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         }).collect(Collectors.toList());
 
         return SearchContentResponse.of(matches, matches.size(), Map.of("latencyMs", (endMillis - startMillis)));
+    }
+
+    public JSONObject searchForContent(final SearchForContentRequest searchForContentRequest) {
+
+        final SearchContentResponse searchContentResponse =  this.searchForContentRaw(searchForContentRequest);
+        final List<EmbeddingsDTO> searchResults =  searchContentResponse.getMatches().stream()
+                .map( searchMatch -> toEmbeddingsDTO(searchForContentRequest, searchMatch))
+                .collect(Collectors.toList());
+        return reduceChunksToContent(searchForContentRequest.getSearcher(), searchResults);
+    }
+
+    private EmbeddingsDTO toEmbeddingsDTO(final SearchForContentRequest searchForContentRequest,
+                                          final SearchMatch searchMatch) {
+
+        final EmbeddingsDTO.Builder builder = new EmbeddingsDTO.Builder();
+                if (searchMatch.getContentType().isPresent()) {
+
+                    builder.withContentType(searchMatch.getContentType().get());
+                }
+
+                if (searchMatch.getLanguage().isPresent()) {
+
+                    builder.withLanguage(ConversionUtils.toLong(searchMatch.getLanguage().get(), 0l));
+                }
+
+                if(searchMatch.getHost().isPresent()) {
+
+                    builder.withHost(searchMatch.getHost().get());
+                }
+
+                builder.withIdentifier(searchMatch.getId())
+                        .withInode(searchMatch.getInode())
+                        .withTitle(searchMatch.getTitle())
+                        .withIndexName(searchForContentRequest.getSearcher().indexName)
+                        .withOperator(searchForContentRequest.getSearcher().operator)
+                        .withThreshold(searchForContentRequest.getSearcher().threshold)
+                        .withExtractedText(searchMatch.getSnippet());
+        return builder.build();
     }
 
     private static String truncate(final String text, final int max) {
