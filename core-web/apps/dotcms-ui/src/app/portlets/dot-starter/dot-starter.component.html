@@ -17,52 +17,60 @@
         </section>
 
         <section class="dot-onboarding__steps">
-            <p-accordion [multiple]="true">
-                <p-accordionTab
-                    *ngFor="let step of content.steps"
-                    [header]="step.number + '. ' + step.title">
-                    <div class="dot-step">
-                        <div class="dot-step__header">
-                            <p-tag
-                                [class]="
-                                    isStepCompleted(step.id) ? 'sm p-tag-success' : 'sm p-tag-info'
-                                "
-                                [icon]="
-                                    isStepCompleted(step.id)
-                                        ? 'pi pi-check-circle'
-                                        : 'pi pi-spinner'
-                                "
-                                [value]="
-                                    isStepCompleted(step.id) ? 'Completed' : 'In Progress'
-                                "></p-tag>
-                            <button
-                                type="button"
-                                pButton
-                                [icon]="isStepCompleted(step.id) ? 'pi pi-undo' : 'pi pi-check'"
-                                [label]="
-                                    isStepCompleted(step.id)
-                                        ? 'Mark as Incomplete'
-                                        : 'Mark as Complete'
-                                "
-                                (click)="toggleStepCompletion(step.id)"></button>
-                        </div>
+            <p-accordion [multiple]="false">
+                <p-accordionTab *ngFor="let step of content.steps">
+                    <ng-template pTemplate="header">
+                        <div class="flex justify-content-between align-items-center w-full">
+                            <span class="font-bold white-space-nowrap">
+                                {{ step.number + '. ' + step.title }}
+                            </span>
 
-                        <div class="dot-step__body">
-                            <div class="dot-step__section" *ngIf="step.description">
-                                <markdown [data]="step.description"></markdown>
+                            <div class="flex align-items-center gap-2">
+                                <p-tag
+                                    [class]="
+                                        isStepCompleted(step.id)
+                                            ? 'sm p-tag-success'
+                                            : 'sm p-tag-info'
+                                    "
+                                    [icon]="
+                                        isStepCompleted(step.id)
+                                            ? 'pi pi-check-circle'
+                                            : 'pi pi-spinner'
+                                    "
+                                    [value]="
+                                        isStepCompleted(step.id) ? 'Completed' : 'In Progress'
+                                    "></p-tag>
+                                <button
+                                    type="button"
+                                    pButton
+                                    size="small"
+                                    [outlined]="true"
+                                    [icon]="isStepCompleted(step.id) ? 'pi pi-undo' : 'pi pi-check'"
+                                    [label]="
+                                        isStepCompleted(step.id)
+                                            ? 'Mark as Incomplete'
+                                            : 'Mark as Complete'
+                                    "
+                                    (click)="toggleStepCompletion(step.id)"></button>
                             </div>
+                        </div>
+                    </ng-template>
+                    <div class="dot-step">
+                        <div class="dot-step__video"></div>
+                        <div class="dot-step__body">
+                            <markdown *ngIf="step.description" [data]="step.description"></markdown>
 
-                            <div class="dot-step__section" *ngIf="step.notes?.length">
-                                <h4>Notes</h4>
+                            <ng-container *ngIf="step.notes?.length">
+                                <h3>Notes</h3>
                                 <ul>
                                     <li *ngFor="let note of step.notes">
                                         <markdown [data]="note"></markdown>
                                     </li>
                                 </ul>
-                            </div>
+                            </ng-container>
 
                             <div class="dot-step__section" *ngIf="step.commands?.length">
-                                <h4>Commands</h4>
+                                <h3>Commands</h3>
                                 <div
                                     class="dot-step__command"
                                     *ngFor="let command of step.commands">
@@ -74,12 +82,12 @@
                             </div>
 
                             <div class="dot-step__section" *ngIf="step.explanation">
-                                <h4>Explanation</h4>
+                                <h3>Explanation</h3>
                                 <markdown [data]="step.explanation"></markdown>
                             </div>
 
                             <div class="dot-step__section" *ngIf="step.verification?.length">
-                                <h4>Verification</h4>
+                                <h3>Verification</h3>
                                 <ul>
                                     <li *ngFor="let item of step.verification">
                                         <markdown [data]="item"></markdown>
@@ -88,7 +96,7 @@
                             </div>
 
                             <div class="dot-step__section" *ngIf="step.troubleshooting?.length">
-                                <h4>Troubleshooting</h4>
+                                <h3>Troubleshooting</h3>
                                 <div
                                     class="dot-step__troubleshooting"
                                     *ngFor="let item of step.troubleshooting">

@@ -7,6 +7,100 @@
     flex-direction: column;
 }
 
+:host,
+markdown {
+    font-size: 1em;
+    line-height: 1.5em;
+
+    &::ng-deep {
+        h1,
+        .h1 {
+            font-size: 4.21428571em;
+            line-height: 1.06779661em;
+            margin-top: 0.3559322em;
+            margin-bottom: 0.7118644em;
+        }
+        h2,
+        .h2 {
+            font-size: 2.64285714em;
+            line-height: 1.13513514em;
+            margin-top: 0.56756757em;
+            margin-bottom: 0.56756757em;
+        }
+        h3,
+        .h3 {
+            font-size: 1.64285714em;
+            line-height: 1.82608696em;
+            margin-top: 0.91304348em;
+            margin-bottom: 0em;
+        }
+        h4,
+        .h4 {
+            font-size: 1em;
+            line-height: 1.5em;
+            margin-top: 1.5em;
+            margin-bottom: 0em;
+        }
+        h5,
+        .h5 {
+            font-size: 1em;
+            line-height: 1.5em;
+            margin-top: 1.5em;
+            margin-bottom: 0em;
+        }
+        p,
+        ul,
+        ol,
+        pre,
+        table,
+        blockquote {
+            margin-top: 0em;
+            margin-bottom: 1.5em;
+
+            // markdown component render a <p> inside the <li> tags
+            &::ng-deep markdown p {
+                margin: 0;
+                padding: 0;
+            }
+        }
+        ul ul,
+        ol ol,
+        ul ol,
+        ol ul {
+            margin-top: 0em;
+            margin-bottom: 0em;
+        }
+
+        /* Let's make sure all's aligned */
+        hr,
+        .hr {
+            border: 1px solid;
+            margin: -1px 0;
+        }
+        a,
+        b,
+        i,
+        strong,
+        em,
+        small,
+        code {
+            line-height: 0;
+        }
+        sub,
+        sup {
+            line-height: 0;
+            position: relative;
+            vertical-align: baseline;
+        }
+        sup {
+            top: -0.5em;
+        }
+        sub {
+            bottom: -0.25em;
+        }
+    }
+}
+
 .dot-onboarding {
     flex: 1;
     overflow: auto;
@@ -23,50 +117,18 @@
     }
 
     &__title {
-        color: $black;
-        font-size: $font-size-xxl;
-        font-weight: $font-weight-bold;
-        margin: 0;
     }
 
     &__description {
-        color: $color-palette-gray-700;
-        font-size: $font-size-lg;
-        margin: 0;
     }
 
     &__section-title {
-        color: $black;
-        font-size: $font-size-xl;
-        font-weight: $font-weight-semi-bold;
-        margin: 0 0 $spacing-2;
     }
 
     &__prerequisites {
-        background-color: $color-palette-gray-100;
-        border-radius: $border-radius-lg;
-        padding: $spacing-4;
     }
 
     &__prerequisites-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: $spacing-2;
-
-        li {
-            align-items: center;
-            color: $color-palette-gray-800;
-            display: flex;
-            gap: $spacing-2;
-
-            i {
-                color: $color-palette-primary;
-                font-size: $font-size-xl;
-            }
-        }
     }
 
     &__progress {
@@ -93,8 +155,14 @@
 
 .dot-step {
     display: flex;
-    flex-direction: column;
     gap: $spacing-4;
+
+    &__video {
+        width: 640px;
+        height: 360px;
+        background-color: $color-palette-gray-200;
+        flex-shrink: 0;
+    }
 
     &__progress-count {
         display: flex;
@@ -109,74 +177,20 @@
     }
 
     &__body {
-        display: flex;
-        flex-direction: column;
-        gap: $spacing-4;
     }
 
     &__section {
-        display: flex;
-        flex-direction: column;
-        gap: $spacing-2;
-
-        h4 {
-            color: $black;
-            font-size: $font-size-lg;
-            font-weight: $font-weight-semi-bold;
-            margin: 0;
-        }
-
-        ul {
-            margin: 0;
-            padding-left: $spacing-4;
-
-            li {
-                margin-bottom: $spacing-1;
-
-                &:last-child {
-                    margin-bottom: 0;
-                }
-            }
-        }
     }
 
     &__command {
-        background-color: $color-palette-gray-100;
-        border-radius: $border-radius-md;
-        border: 1px solid $color-palette-gray-200;
-        padding: $spacing-3;
-
-        markdown {
-            display: block;
-
-            pre {
-                margin: 0;
-            }
-        }
     }
 
     &__command-description {
-        color: $color-palette-gray-800;
-        font-weight: $font-weight-semi-bold;
-        margin: 0 0 $spacing-2;
     }
 
     &__troubleshooting {
-        border-left: 3px solid $color-palette-yellow;
-        padding-left: $spacing-3;
     }
 
     &__problem {
-        color: $color-palette-yellow-shade;
-        font-weight: $font-weight-semi-bold;
-        margin: 0;
-    }
-}
-
-:host ::ng-deep {
-    .dot-onboarding__progress-ring {
-        .p-knob-text {
-            display: none;
-        }
     }
 }
