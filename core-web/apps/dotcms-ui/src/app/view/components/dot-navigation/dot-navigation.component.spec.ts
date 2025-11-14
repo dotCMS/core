@@ -70,7 +70,7 @@ describe('DotNavigationComponent collapsed', () => {
         globalStore = spectator.inject(GlobalStore);
 
         // Set menu items in the GlobalStore instead of using service's items$
-        globalStore.setMenuItemsTemp([dotMenuMock(), dotMenuMock1()]);
+        globalStore.setMenuItems([dotMenuMock(), dotMenuMock1()]);
     });
 
     it('should have all menus closed', () => {
@@ -211,7 +211,7 @@ describe('DotNavigationComponent expanded', () => {
         globalStore = spectator.inject(GlobalStore);
 
         // Set menu items in the GlobalStore instead of using service's items$
-        globalStore.setMenuItemsTemp([dotMenuMock(), dotMenuMock1()]);
+        globalStore.setMenuItems([dotMenuMock(), dotMenuMock1()]);
     });
 
     it('should have all menus closed', () => {

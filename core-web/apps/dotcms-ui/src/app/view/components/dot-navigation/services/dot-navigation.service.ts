@@ -183,7 +183,7 @@ export class DotNavigationService {
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
             this.setMenu(menus);
 
-            this.#globalStore.setMenuItemsTemp(menus);
+            this.#globalStore.setMenuItems(menus);
         });
 
         this.onNavigationEnd()

@@ -2,29 +2,33 @@ import {
     patchState,
     signalStoreFeature,
     withComputed,
+    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
+import { DotEventsService, DotLocalstorageService, DotRouterService } from '@dotcms/data-access';
+import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import { initialMenuSlice } from './menu.slice';
 
+const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
+
 /**
- * Custom Store Feature for managing menu state using PrimeNG MenuItem interface.
+ * Custom Store Feature for managing menu state using DotMenu interface.
  *
  * This feature provides state management for menu-related data including
- * menu items, expanded states, active items, and visibility. It works
- * seamlessly with PrimeNG's MenuItem structure.
+ * menu items, navigation collapsed state, active items, and navigation operations.
  *
  * ## Features
- * - Manages menu items using PrimeNG's MenuItem interface
+ * - Manages menu items using DotMenu interface
  * - Tracks active menu item by ID
- * - Manages expanded/collapsed submenus
- * - Provides methods for menu state manipulation
+ * - Manages navigation collapsed/expanded state
+ * - Provides methods for menu state manipulation and navigation
  * - Includes computed selectors for common use cases
+ * - Persists navigation state to localStorage
  * - Full TypeScript support with strict typing
  *
  */
@@ -34,27 +38,14 @@ export function withMenu() {
         withComputed(({ menuItems, activeMenuItemId }) => ({
             /**
              * Computed signal that finds and returns the active menu item.
-             * Searches recursively through all menu items.
              *
-             * @returns The active MenuItem or null if not found
-             * ```
+             * @returns The active DotMenu or null if not found
              */
             activeMenuItem: computed(() => {
                 const activeId = activeMenuItemId();
                 if (!activeId) return null;
 
-                const findItem = (items: MenuItem[]): MenuItem | null => {
-                    for (const item of items) {
-                        if (item.id === activeId) return item;
-                        if (item.items) {
-                            const found = findItem(item.items);
-                            if (found) return found;
-                        }
-                    }
-                    return null;
-                };
-
-                return findItem(menuItems());
+                return menuItems().find((menu) => menu.id === activeId) || null;
             }),
 
             /**
@@ -65,276 +56,212 @@ export function withMenu() {
             isMenuItemActive: computed(() => (id: string) => activeMenuItemId() === id),
 
             /**
-             * Computed signal that finds a menu item by ID.
+             * Computed signal that finds a menu by ID.
              *
-             * @returns A function that takes an ID and returns the MenuItem or null
+             * @returns A function that takes an ID and returns the DotMenu or null
              */
-            findMenuItemById: computed(() => (id: string): MenuItem | null => {
-                const findItem = (items: MenuItem[]): MenuItem | null => {
-                    for (const item of items) {
-                        if (item.id === id) return item;
-                        if (item.items) {
-                            const found = findItem(item.items);
-                            if (found) return found;
-                        }
-                    }
-                    return null;
-                };
-
-                return findItem(menuItems());
+            findMenuItemById: computed(() => (id: string): DotMenu | null => {
+                return menuItems().find((menu) => menu.id === id) || null;
             }),
 
             /**
-             * Computed signal that checks if a menu item is expanded.
+             * Computed signal that returns the flattened menu items for breadcrumbs.
              *
-             * @returns A function that takes a menu item ID and returns whether it's expanded
+             * @returns Array of DotMenuItem objects with labelParent property
              */
-            isMenuItemExpanded: computed(() => (id: string): boolean => {
-                const findItem = (items: MenuItem[]): boolean => {
-                    for (const item of items) {
-                        if (item.id === id) return item.expanded ?? false;
-                        if (item.items) {
-                            const result = findItem(item.items);
-                            if (item.id === id || result) return result;
-                        }
-                    }
-                    return false;
-                };
-
-                return findItem(menuItems());
-            }),
-
-            /**
-             * Computed signal that returns all visible menu items (recursively).
-             *
-             * @returns Array of visible MenuItem objects
-             */
-            visibleMenuItems: computed(() => {
-                const filterVisible = (items: MenuItem[]): MenuItem[] => {
-                    return items
-                        .filter((item) => item.visible !== false)
-                        .map((item) => ({
-                            ...item,
-                            items: item.items ? filterVisible(item.items) : undefined
-                        }));
-                };
-
-                return filterVisible(menuItems());
-            }),
-
-            /**
-             * Computed signal that returns the count of expanded menu items.
-             *
-             * @returns The number of expanded menu items
-             */
-            expandedMenuItemsCount: computed(() => {
-                let count = 0;
-                const countExpanded = (items: MenuItem[]): void => {
-                    items.forEach((item) => {
-                        if (item.expanded) count++;
-                        if (item.items) countExpanded(item.items);
-                    });
-                };
-
-                countExpanded(menuItems());
-                return count;
-            }),
-
-            /**
-             * Computed signal that returns whether any menu items are expanded.
-             *
-             * @returns `true` if any menu items are expanded, `false` otherwise
-             */
-            hasExpandedMenuItems: computed(() => {
-                const hasExpanded = (items: MenuItem[]): boolean => {
-                    return items.some((item) => {
-                        if (item.expanded) return true;
-                        if (item.items) return hasExpanded(item.items);
-                        return false;
-                    });
-                };
-
-                return hasExpanded(menuItems());
-            }),
-
-            /**
-             * Computed signal that returns all menu items with children (parent items).
-             *
-             * @returns Array of MenuItem objects that have children
-             */
-            parentMenuItems: computed(() => {
-                const getParents = (items: MenuItem[]): MenuItem[] => {
-                    const parents: MenuItem[] = [];
-                    items.forEach((item) => {
-                        if (item.items && item.items.length > 0) {
-                            parents.push(item);
-                            parents.push(...getParents(item.items));
-                        }
-                    });
-                    return parents;
-                };
-
-                return getParents(menuItems());
+            flattenMenuItems: computed(() => {
+                const menu = menuItems();
+                return menu.reduce<DotMenuItem[]>((acc, menu: DotMenu) => {
+                    const items = menu.menuItems.map((item) => ({
+                        ...item,
+                        labelParent: menu.tabName
+                    }));
+                    return [...acc, ...items];
+                }, []);
             })
         })),
-        withMethods((store) => ({
-            /**
-             * Sets the menu items array.
-             *
-             * @param menuItems - Array of MenuItem objects
-             */
-            setMenuItems: (menuItems: MenuItem[]) => {
-                patchState(store, { menuItems });
-            },
+        withMethods(
+            (
+                store,
+                dotRouterService = inject(DotRouterService),
+                dotEventsService = inject(DotEventsService)
+            ) => ({
+                /**
+                 * Sets the menu items array.
+                 *
+                 * @param menuItems - Array of DotMenu objects
+                 */
+                setMenuItems: (menuItems: DotMenu[]) => {
+                    patchState(store, { menuItems });
+                },
 
-            /**
-             * Sets the active menu item ID.
-             *
-             * @param id - The ID of the menu item to set as active
-             */
-            setActiveMenuItemId: (id: string | null) => {
-                patchState(store, { activeMenuItemId: id });
-            },
+                /**
+                 * Sets the active menu item ID.
+                 *
+                 * @param id - The ID of the menu item to set as active
+                 */
+                setActiveMenuItemId: (id: string | null) => {
+                    patchState(store, { activeMenuItemId: id });
+                },
 
-            /**
-             * Toggles the expanded state of a menu item by ID.
-             * Works recursively through nested menu items.
-             *
-             * @param id - The ID of the menu item to toggle
-             */
-            toggleMenuItemExpanded: (id: string) => {
-                const toggleExpanded = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => {
-                        if (item.id === id) {
-                            return { ...item, expanded: !item.expanded };
-                        }
-                        if (item.items) {
-                            return { ...item, items: toggleExpanded(item.items) };
-                        }
-                        return item;
+                /**
+                 * Navigates to a portlet by URL.
+                 *
+                 * @param url - The URL to navigate to
+                 */
+                goTo: (url: string) => {
+                    dotRouterService.gotoPortlet(url);
+                },
+
+                /**
+                 * Reloads the current portlet if it matches the given ID.
+                 *
+                 * @param id - The portlet ID to reload
+                 */
+                reloadCurrentPortlet: (id: string) => {
+                    if (dotRouterService.currentPortlet.id === id) {
+                        dotRouterService.reloadCurrentPortlet(id);
+                    }
+                },
+
+                /**
+                 * Sets a menu as open by its ID.
+                 *
+                 * @param id - The menu ID to set as open
+                 */
+                setMenuOpen: (id: string) => {
+                    const updatedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                        menu.isOpen = menu.isOpen ? false : id === menu.id;
+                        return menu;
                     });
-                };
-
-                patchState(store, (state) => ({
-                    menuItems: toggleExpanded(state.menuItems)
-                }));
-            },
-
-            /**
-             * Expands a menu item by ID.
-             * Works recursively through nested menu items.
-             *
-             * @param id - The ID of the menu item to expand
-             */
-            expandMenuItem: (id: string) => {
-                const expandItem = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => {
-                        if (item.id === id) {
-                            return { ...item, expanded: true };
-                        }
-                        if (item.items) {
-                            return { ...item, items: expandItem(item.items) };
-                        }
-                        return item;
+                    patchState(store, {
+                        menuItems: updatedMenu
                     });
-                };
+                },
 
-                patchState(store, (state) => ({
-                    menuItems: expandItem(state.menuItems)
-                }));
-            },
-
-            /**
-             * Collapses a menu item by ID.
-             * Works recursively through nested menu items.
-             *
-             * @param id - The ID of the menu item to collapse
-             */
-            collapseMenuItem: (id: string) => {
-                const collapseItem = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => {
-                        if (item.id === id) {
-                            return { ...item, expanded: false };
-                        }
-                        if (item.items) {
-                            return { ...item, items: collapseItem(item.items) };
-                        }
-                        return item;
+                /**
+                 * Closes all menu sections.
+                 */
+                closeAllMenuSections: () => {
+                    const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                        menu.isOpen = false;
+                        return menu;
                     });
-                };
-
-                patchState(store, (state) => ({
-                    menuItems: collapseItem(state.menuItems)
-                }));
-            },
-
-            /**
-             * Collapses all menu items recursively.
-             */
-            collapseAllMenuItems: () => {
-                const collapseAll = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => ({
-                        ...item,
-                        expanded: false,
-                        items: item.items ? collapseAll(item.items) : undefined
-                    }));
-                };
-
-                patchState(store, (state) => ({
-                    menuItems: collapseAll(state.menuItems)
-                }));
-            },
-
-            /**
-             * Updates a specific menu item by ID.
-             * Works recursively through nested menu items.
-             *
-             * @param id - The ID of the menu item to update
-             * @param updates - Partial MenuItem object with properties to update
-             *
-             * @example
-             * ```typescript
-             * store.updateMenuItem('menu-1', { disabled: true, badge: '5' });
-             * ```
-             */
-            updateMenuItem: (id: string, updates: Partial<MenuItem>) => {
-                const updateItem = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => {
-                        if (item.id === id) {
-                            return { ...item, ...updates };
-                        }
-                        if (item.items) {
-                            return { ...item, items: updateItem(item.items) };
-                        }
-                        return item;
+                    patchState(store, {
+                        menuItems: closedMenu
                     });
-                };
+                },
 
-                patchState(store, (state) => ({
-                    menuItems: updateItem(state.menuItems)
-                }));
-            },
+                /**
+                 * Toggles the navigation menu collapsed/expanded state.
+                 */
+                toggleNavigation: () => {
+                    dotEventsService.notify('dot-side-nav-toggle');
+                    const isCollapsed = store.isNavigationCollapsed();
+                    patchState(store, {
+                        isNavigationCollapsed: !isCollapsed
+                    });
+                    if (!isCollapsed) {
+                        // Close all sections when collapsing
+                        const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                            menu.isOpen = false;
+                            return menu;
+                        });
+                        patchState(store, {
+                            menuItems: closedMenu
+                        });
+                    } else {
+                        // Open active sections when expanding
+                        const expandedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                            let isActive = false;
+                            menu.menuItems.forEach((item: DotMenuItem) => {
+                                if (item.active) {
+                                    isActive = true;
+                                }
+                            });
+                            menu.isOpen = isActive;
+                            return menu;
+                        });
+                        patchState(store, {
+                            menuItems: expandedMenu
+                        });
+                    }
+                },
 
-            /**
-             * Resets the menu state to initial values.
-             */
-            resetMenuState: () => {
-                patchState(store, initialMenuSlice);
+                /**
+                 * Collapses the navigation menu.
+                 */
+                collapseNavigation: () => {
+                    patchState(store, {
+                        isNavigationCollapsed: true
+                    });
+                    const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                        menu.isOpen = false;
+                        return menu;
+                    });
+                    patchState(store, {
+                        menuItems: closedMenu
+                    });
+                },
+
+                /**
+                 * Expands the navigation menu.
+                 */
+                expandNavigation: () => {
+                    patchState(store, {
+                        isNavigationCollapsed: false
+                    });
+                    const expandedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
+                        let isActive = false;
+                        menu.menuItems.forEach((item: DotMenuItem) => {
+                            if (item.active) {
+                                isActive = true;
+                            }
+                        });
+                        menu.isOpen = isActive;
+                        return menu;
+                    });
+                    patchState(store, {
+                        menuItems: expandedMenu
+                    });
+                },
+
+                /**
+                 * Resets the menu state to initial values.
+                 */
+                resetMenuState: () => {
+                    patchState(store, initialMenuSlice);
+                }
+            })
+        ),
+        withHooks({
+            onInit(store) {
+                // Load navigation collapsed state from localStorage
+                const dotLocalstorageService = inject(DotLocalstorageService);
+                const savedMenuStatus = dotLocalstorageService.getItem<boolean>(DOTCMS_MENU_STATUS);
+                if (savedMenuStatus !== null) {
+                    patchState(store, {
+                        isNavigationCollapsed: savedMenuStatus === false ? false : true
+                    });
+                }
+
+                // Listen to localStorage changes for menu status
+                dotLocalstorageService
+                    .listen<boolean>(DOTCMS_MENU_STATUS)
+                    .subscribe((collapsed: boolean) => {
+                        if (collapsed) {
+                            store.collapseNavigation();
+                        } else {
+                            store.expandNavigation();
+                        }
+                    });
+
+                // Persist navigation collapsed state to localStorage whenever it changes
+                effect(() => {
+                    const isCollapsed = store.isNavigationCollapsed();
+                    dotLocalstorageService.setItem<boolean>(DOTCMS_MENU_STATUS, isCollapsed);
+                });
             }
-        }))
-        /**
-         * TODO: [FEATURE] Menu state persistence
-         * Add withHooks to persist menu state (expanded items, active item) to localStorage.
-         * This will restore the menu state when the user refreshes the page.
-         *
-         * Acceptance criteria:
-         * - Persist expanded menu items to localStorage on every state change
-         * - Persist active menu item ID to localStorage
-         * - Load persisted state on feature initialization
-         * - Handle edge cases (cleared storage, corrupted data)
-         *
-         * Consider creating a GitHub issue: #XXXXX for tracking if not completed in current PR.
-         * Related to: breadcrumb state persistence already implemented in breadcrumb.feature.ts
-         */
+        })
     );
 }

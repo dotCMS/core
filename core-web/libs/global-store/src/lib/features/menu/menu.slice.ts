@@ -1,39 +1,23 @@
-import { MenuItem } from 'primeng/api';
-
-/**
- * Mock menu items for initial state.
- * TODO: Replace with data from the API
- */
-const mockMenuItems: MenuItem[] = [
-    { id: '1', label: 'Home', url: '/', icon: 'pi pi-home' },
-    { id: '2', label: 'About', url: '/about', icon: 'pi pi-info-circle' },
-    { id: '3', label: 'Contact', url: '/contact', icon: 'pi pi-envelope' },
-    {
-        id: '4',
-        label: 'Services',
-        url: '/services',
-        icon: 'pi pi-briefcase',
-        items: [
-            { id: '5', label: 'Service 1', url: '/services/service1' },
-            { id: '6', label: 'Service 2', url: '/services/service2' },
-            { id: '7', label: 'Service 3', url: '/services/service3' }
-        ]
-    }
-];
+import { DotMenu } from '@dotcms/dotcms-models';
 
 /**
  * Menu slice state interface.
- * Contains the menu items and the active menu item ID.
+ * Contains the menu items, navigation collapsed state, and active menu item ID.
  *
- * @property menuItems - Array of MenuItem objects (supports nested structure)
+ * @property menuItems - Array of DotMenu objects
+ * @property isNavigationCollapsed - Whether the navigation menu is collapsed
  * @property activeMenuItemId - ID of the currently active menu item, or null if none
  */
 export interface MenuSlice {
     /**
-     * Array of menu items using PrimeNG's MenuItem interface.
-     * Supports nested menu structures through the `items` property.
+     * Array of DotMenu objects representing the navigation menu structure.
      */
-    menuItems: MenuItem[];
+    menuItems: DotMenu[];
+
+    /**
+     * Whether the navigation menu is collapsed.
+     */
+    isNavigationCollapsed: boolean;
 
     /**
      * ID of the currently active menu item.
@@ -43,6 +27,7 @@ export interface MenuSlice {
 }
 
 export const initialMenuSlice: MenuSlice = {
-    menuItems: mockMenuItems,
+    menuItems: [],
+    isNavigationCollapsed: true,
     activeMenuItemId: null
 };

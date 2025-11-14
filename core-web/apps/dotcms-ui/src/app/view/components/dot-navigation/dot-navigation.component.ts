@@ -1,13 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostBinding, HostListener, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotNavHeaderComponent } from './components/dot-nav-header/dot-nav-header.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
-import { DotNavigationService } from './services/dot-navigation.service';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
@@ -18,13 +16,6 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
     imports: [CommonModule, DotNavHeaderComponent, DotNavItemComponent]
 })
 export class DotNavigationComponent {
-    /**
-     * A private readonly instance of `DotNavigationService` injected into the component.
-     * This service is used to manage navigation actions (goTo, toggle, setOpen, etc.)
-     * but not for reading menu state, which comes from the GlobalStore.
-     */
-    readonly #dotNavigationService = inject(DotNavigationService);
-
     /**
      * A readonly instance of the IframeOverlayService injected into the component.
      * This service is used to manage the iframe overlay functionality within the application.
@@ -38,27 +29,22 @@ export class DotNavigationComponent {
     readonly #globalStore = inject(GlobalStore);
 
     /**
-     * Signal representing the menu items from the GlobalStore.
+     * Signal representing the menu items from the GlobalStore menu feature.
      *
-     * This signal reads from the `menuItemsTemp` state in the GlobalStore,
-     * which is fed by the DotNavigationService. The component only reads from the store.
+     * This signal reads from the `menuItems` state in the menu feature.
      *
      * @type {Signal<DotMenu[]>}
      */
-    $menu = this.#globalStore.menuItemsTemp;
+    $menu = this.#globalStore.menuItems;
 
     /**
      * Signal indicating whether the navigation is collapsed.
      *
-     * This signal is synchronized with the `collapsed$` observable from the
-     * `DotNavigationService`. It ensures that the state of the navigation
-     * (collapsed or expanded) is kept in sync with the service.
+     * This signal reads from the `isNavigationCollapsed` state in the menu feature.
      *
      * @type {Signal<boolean>}
      */
-    $isCollapsed = toSignal(this.#dotNavigationService.collapsed$, {
-        requireSync: true
-    });
+    $isCollapsed = this.#globalStore.isNavigationCollapsed;
 
     @HostBinding('style.overflow-y') get overFlow() {
         return this.$isCollapsed() ? '' : 'auto';
@@ -75,7 +61,7 @@ export class DotNavigationComponent {
         $event.originalEvent.stopPropagation();
 
         if (!$event.originalEvent.ctrlKey && !$event.originalEvent.metaKey) {
-            this.#dotNavigationService.reloadCurrentPortlet($event.data.id);
+            this.#globalStore.reloadCurrentPortlet($event.data.id);
             this.#iframeOverlayService.hide();
         }
     }
@@ -89,14 +75,14 @@ export class DotNavigationComponent {
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu; toggleOnly?: boolean }): void {
         if (this.$isCollapsed()) {
-            this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
+            this.#globalStore.goTo(event.data.menuItems[0].menuLink);
         } else {
             // Check if the menu is not already open to prevent redundant navigation actions.
             if (!event.data.isOpen && !event.toggleOnly) {
-                this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
+                this.#globalStore.goTo(event.data.menuItems[0].menuLink);
             }
 
-            this.#dotNavigationService.setOpen(event.data.id);
+            this.#globalStore.setMenuOpen(event.data.id);
         }
     }
 
@@ -108,7 +94,7 @@ export class DotNavigationComponent {
     @HostListener('document:click')
     handleDocumentClick(): void {
         if (this.$isCollapsed()) {
-            this.#dotNavigationService.closeAllSections();
+            this.#globalStore.closeAllMenuSections();
         }
     }
 
@@ -118,6 +104,6 @@ export class DotNavigationComponent {
      * @memberof DotNavigationComponent
      */
     handleCollapseButtonClick(): void {
-        this.#dotNavigationService.toggle();
+        this.#globalStore.toggleNavigation();
     }
 }
