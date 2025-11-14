@@ -15,36 +15,13 @@ import {
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
+import { BaseApiClient } from '../base/base-api';
 
 /**
  * Client for interacting with the DotCMS Page API.
  * Provides methods to retrieve and manipulate pages.
  */
-export class PageClient {
-    /**
-     * Request options including authorization headers.
-     * @private
-     */
-    private requestOptions: DotRequestOptions;
-
-    /**
-     * Site ID for page requests.
-     * @private
-     */
-    private siteId: string;
-
-    /**
-     * DotCMS URL for page requests.
-     * @private
-     */
-    private dotcmsUrl: string;
-
-    /**
-     * HTTP client for making requests.
-     * @private
-     */
-    private httpClient: DotHttpClient;
-
+export class PageClient extends BaseApiClient {
     /**
      * Creates a new PageClient instance.
      *
@@ -73,10 +50,7 @@ export class PageClient {
         requestOptions: DotRequestOptions,
         httpClient: DotHttpClient
     ) {
-        this.requestOptions = requestOptions;
-        this.siteId = config.siteId || '';
-        this.dotcmsUrl = config.dotcmsUrl;
-        this.httpClient = httpClient;
+        super(config, requestOptions, httpClient);
     }
 
     /**
