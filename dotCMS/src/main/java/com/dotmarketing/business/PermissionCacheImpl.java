@@ -35,10 +35,11 @@ public class PermissionCacheImpl extends PermissionCache {
 	 * @see com.dotmarketing.business.PermissionCache#addToPermissionCache(java.lang.String, java.util.List)
 	 */
 	protected List<Permission> addToPermissionCache(String key, List<Permission> permissions) {
-        key = primaryGroup + key;
-        // Add the key to the cache
-        cache.put(key, permissions,primaryGroup);
-
+        if (!(permissions == null || permissions.isEmpty())) {
+            key = primaryGroup + key;
+            // Add the key to the cache
+            cache.put(key, permissions, primaryGroup);
+        }
         return permissions;
     }
 
