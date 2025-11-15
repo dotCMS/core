@@ -10,6 +10,9 @@ import { ButtonModule } from 'primeng/button';
 import { KnobModule } from 'primeng/knob';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { ButtonCopyComponent } from '@dotcms/ui';
 
 import { DotStarterComponent } from './dot-starter.component';
 import { dotStarterRoutes } from './dot-starter.routes';
@@ -17,6 +20,7 @@ import { dotStarterRoutes } from './dot-starter.routes';
 @NgModule({
     declarations: [DotStarterComponent],
     imports: [
+        ButtonCopyComponent,
         CommonModule,
         RouterModule.forChild(dotStarterRoutes),
         AccordionModule,
@@ -25,7 +29,8 @@ import { dotStarterRoutes } from './dot-starter.routes';
         KnobModule,
         ButtonModule,
         MarkdownModule,
-        TagModule
+        TagModule,
+        TooltipModule
     ]
 })
 export class DotStarterModule {}

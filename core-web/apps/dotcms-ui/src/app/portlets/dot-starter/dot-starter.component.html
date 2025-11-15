@@ -77,7 +77,15 @@
                                     <p class="dot-step__command-description">
                                         {{ command.description }}
                                     </p>
-                                    <markdown [data]="formatCommand(command)"></markdown>
+
+                                    <ng-template #buttonTemplate>
+                                        <!-- <p-button size="small" icon="pi pi-copy" [text]="true" /> -->
+                                        <dot-button-copy />
+                                    </ng-template>
+                                    <markdown
+                                        clipboard
+                                        [data]="formatCommand(command)"
+                                        [clipboardButtonTemplate]="buttonTemplate"></markdown>
                                 </div>
                             </div>
 
