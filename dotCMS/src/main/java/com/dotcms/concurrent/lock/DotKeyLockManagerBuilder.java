@@ -3,6 +3,7 @@ package com.dotcms.concurrent.lock;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.util.concurrent.TimeUnit;
 
 public class DotKeyLockManagerBuilder {
@@ -35,7 +36,9 @@ public class DotKeyLockManagerBuilder {
         final int stripes = Config.getIntProperty(lockManagerName + DOTCMS_CONCURRENT_LOCK_STRIPES, 
                         Config.getIntProperty(DOTCMS_CONCURRENT_LOCK_STRIPES,StripedLockImpl.DEFAULT_STRIPES));
         final int time = Config.getIntProperty(lockManagerName + DOTCMS_CONCURRENT_LOCK_STRIPES_TIME, StripedLockImpl.DEFAULT_TIME);
-        final TimeUnit timeUnit = TimeUnit.valueOf(Config.getStringProperty(lockManagerName + DOTCMS_CONCURRENT_LOCK_STRIPES_TIMEUNIT, StripedLockImpl.DEFAULT_TU.name()));
+        final TimeUnit timeUnit = Try.of(()-> TimeUnit.valueOf(Config.getStringProperty(lockManagerName + DOTCMS_CONCURRENT_LOCK_STRIPES_TIMEUNIT,
+                StripedLockImpl.DEFAULT_TU.name())
+        )).getOrElse(StripedLockImpl.DEFAULT_TU);
         return new StripedLockImpl<>(stripes, time, timeUnit);
     }
 }

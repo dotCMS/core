@@ -1,5 +1,6 @@
-import { DotAssetService } from './dot-asset.service';
 import { DotAssetCreateOptions } from '@dotcms/dotcms-models';
+
+import { DotAssetService } from './dot-asset.service';
 
 // TODO: fix this test, it not work as espected
 xdescribe('DotAssetService', () => {
