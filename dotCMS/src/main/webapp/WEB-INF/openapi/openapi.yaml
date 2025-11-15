@@ -6,7 +6,7 @@ servers:
 - description: dotCMS Server
   url: /
 tags:
-- description: AI-powered content generation and analysis endpoints
+- description: AI to support configuration endpoints
   name: AI
 - description: Content type field definitions and configuration
   name: Content Type Field
@@ -2475,6 +2475,58 @@ paths:
         "500":
           description: Internal server error
       summary: Generate AI completions from raw prompt
+      tags:
+      - AI
+  /v1/ai/configuration/_loadcustomproviders/{siteId}:
+    get:
+      operationId: loadCustomProviders
+      parameters:
+      - description: |+
+          Identifier of site to populate the advanceProviderSettings.
+
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: default response
+      tags:
+      - AI
+  /v1/ai/configuration/_loadmodelconfig/site/{siteId}/vendor/{vendor}:
+    get:
+      operationId: loadModelConfigCatalog
+      parameters:
+      - description: |+
+          Identifier of site.
+
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+      - description: |+
+          Identifier of vendor.
+
+        in: path
+        name: vendor
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+          description: default response
       tags:
       - AI
   /v1/ai/embeddings:
