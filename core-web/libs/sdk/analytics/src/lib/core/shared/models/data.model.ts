@@ -55,6 +55,9 @@ export interface DotCMSAnalyticsEventContext {
     session_id: string;
     /** Unique user identifier */
     user_id: string;
+
+    /** Device and browser information */
+    device: DotCMSEventDeviceData;
 }
 
 /**

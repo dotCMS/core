@@ -15,13 +15,15 @@ import { filter } from 'rxjs/operators';
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotRouterService {
     private router = inject(Router);
     private route = inject(ActivatedRoute);
 
     portletReload$ = new Subject();
-    private _storedRedirectUrl: string;
+    private _storedRedirectUrl: string | null = '';
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
     private _routeCanBeDeactivated = new BehaviorSubject(true);
@@ -338,8 +340,15 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     gotoPortlet(link: string, navigateToPorletOptions?: DotNavigateToOptions): Promise<boolean> {
-        const { replaceUrl = false, queryParamsHandling = '' } = navigateToPorletOptions || {};
-        const url = this.router.createUrlTree([link], { queryParamsHandling });
+        const {
+            replaceUrl = false,
+            queryParamsHandling = '',
+            queryParams = {}
+        } = navigateToPorletOptions || {};
+        const url = this.router.createUrlTree([link], {
+            queryParamsHandling,
+            queryParams
+        });
 
         return this.router.navigateByUrl(url, { replaceUrl });
     }

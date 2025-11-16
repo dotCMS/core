@@ -28,7 +28,6 @@ import { htmlToMarkdown } from './markdown.utils';
     selector: 'dot-editor-context-menu',
     templateUrl: './dot-context-menu.component.html',
     styleUrls: ['./dot-context-menu.component.scss'],
-    standalone: true,
     imports: [CommonModule, ContextMenuModule, RippleModule, DotMessagePipe]
 })
 export class DotContextMenuComponent {

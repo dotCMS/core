@@ -94,6 +94,7 @@ const baseUVEState = {
     loadPageAsset: jest.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
+    $isEditMode: signal(false),
     $personaSelector: signal({
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
@@ -116,8 +117,13 @@ const baseUVEState = {
     clearDeviceAndSocialMedia: jest.fn(),
     device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default')),
     $unlockButton: signal(null),
+    $toggleLockOptions: signal(null),
+    lockLoading: signal(false),
+    toggleLock: jest.fn(),
     socialMedia: signal(null),
-    trackUVECalendarChange: jest.fn()
+    trackUVECalendarChange: jest.fn(),
+    paletteOpen: signal(false),
+    setPaletteOpen: jest.fn()
 };
 
 const personaEventMock = {
@@ -156,7 +162,6 @@ describe('DotUveToolbarComponent', () => {
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
     let devicesService: DotDevicesService;
-    let dotContentletLockerService: DotContentletLockerService;
     let personalizeService: DotPersonalizeService;
 
     const fixedDate = new Date('2024-01-01');
@@ -248,7 +253,6 @@ describe('DotUveToolbarComponent', () => {
             messageService = spectator.inject(MessageService, true);
             devicesService = spectator.inject(DotDevicesService);
             confirmationService = spectator.inject(ConfirmationService, true);
-            dotContentletLockerService = spectator.inject(DotContentletLockerService);
             personalizeService = spectator.inject(DotPersonalizeService, true);
         });
 
@@ -356,11 +360,11 @@ describe('DotUveToolbarComponent', () => {
                 ).toEqual('true');
             });
 
-            it('should call dotContentletLockerService.unlockPage', () => {
-                const spy = jest.spyOn(dotContentletLockerService, 'unlock');
+            it('should call store.toggleLock when unlock button is clicked', () => {
+                const spy = jest.spyOn(store, 'toggleLock');
 
                 baseUVEState.$unlockButton.set({
-                    loading: true,
+                    loading: false,
                     disabled: false,
                     inode: '123',
                     info: {
@@ -372,7 +376,8 @@ describe('DotUveToolbarComponent', () => {
 
                 spectator.click(byTestId('uve-toolbar-unlock-button'));
 
-                expect(spy).toHaveBeenCalledWith('123');
+                // The unlock button calls toggleLock with the inode, true (is locked), and false (not locked by current user)
+                expect(spy).toHaveBeenCalledWith('123', true, false);
             });
         });
 
@@ -571,6 +576,226 @@ describe('DotUveToolbarComponent', () => {
 
         it('should have persona selector', () => {
             expect(spectator.query(byTestId('uve-toolbar-persona-selector'))).toBeTruthy();
+        });
+
+        describe('toggle lock button', () => {
+            it('should not display toggle lock button when feature is disabled', () => {
+                baseUVEState.$toggleLockOptions.set(null);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('toggle-lock-button'))).toBeNull();
+            });
+
+            it('should display toggle lock button when toggle lock options are available', () => {
+                baseUVEState.$toggleLockOptions.set({
+                    inode: 'test-inode',
+                    isLocked: false,
+                    lockedBy: '',
+                    canLock: true,
+                    isLockedByCurrentUser: false,
+                    showBanner: false,
+                    showOverlay: false
+                });
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('toggle-lock-button'))).toBeTruthy();
+            });
+
+            it('should display unlocked state when page is not locked', () => {
+                baseUVEState.$toggleLockOptions.set({
+                    inode: 'test-inode',
+                    isLocked: false,
+                    lockedBy: '',
+                    canLock: true,
+                    isLockedByCurrentUser: false,
+                    showBanner: false,
+                    showOverlay: false
+                });
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                expect(button.classList.contains('lock-button--unlocked')).toBe(true);
+                expect(button.classList.contains('lock-button--locked')).toBe(false);
+            });
+
+            it('should display locked state when page is locked by current user', () => {
+                baseUVEState.$toggleLockOptions.set({
+                    inode: 'test-inode',
+                    isLocked: true,
+                    lockedBy: 'current-user',
+                    canLock: true,
+                    isLockedByCurrentUser: true,
+                    showBanner: false,
+                    showOverlay: false
+                });
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                expect(button.classList.contains('lock-button--locked')).toBe(true);
+                expect(button.classList.contains('lock-button--unlocked')).toBe(false);
+            });
+
+            it('should call store.toggleLock when unlocked button is clicked', () => {
+                const spy = jest.spyOn(store, 'toggleLock');
+
+                baseUVEState.$toggleLockOptions.set({
+                    inode: 'test-inode-unlock',
+                    isLocked: false,
+                    lockedBy: '',
+                    canLock: true,
+                    isLockedByCurrentUser: false,
+                    showBanner: false,
+                    showOverlay: false
+                });
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith('test-inode-unlock', false, false);
+            });
+
+            it('should call store.toggleLock when locked button is clicked', () => {
+                const spy = jest.spyOn(store, 'toggleLock');
+
+                baseUVEState.$toggleLockOptions.set({
+                    inode: 'test-inode-lock',
+                    isLocked: true,
+                    lockedBy: 'current-user',
+                    canLock: true,
+                    isLockedByCurrentUser: true,
+                    showBanner: false,
+                    showOverlay: false
+                });
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith('test-inode-lock', true, true);
+            });
+
+            it('should disable button when lock operation is loading', () => {
+                baseUVEState.$toggleLockOptions.set({
+                    inode: 'test-inode',
+                    isLocked: false,
+                    lockedBy: '',
+                    canLock: true,
+                    isLockedByCurrentUser: false,
+                    showBanner: false,
+                    showOverlay: false
+                });
+                baseUVEState.lockLoading.set(true);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                expect(button.hasAttribute('disabled')).toBe(true);
+            });
+
+            it('should enable button when lock operation is not loading', () => {
+                baseUVEState.$toggleLockOptions.set({
+                    inode: 'test-inode',
+                    isLocked: false,
+                    lockedBy: '',
+                    canLock: true,
+                    isLockedByCurrentUser: false,
+                    showBanner: false,
+                    showOverlay: false
+                });
+                baseUVEState.lockLoading.set(false);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                expect(button.hasAttribute('disabled')).toBe(false);
+            });
+
+            it('should call store.toggleLock with correct params for page locked by another user', () => {
+                const spy = jest.spyOn(store, 'toggleLock');
+
+                baseUVEState.$toggleLockOptions.set({
+                    inode: 'test-inode-other',
+                    isLocked: true,
+                    lockedBy: 'another-user',
+                    canLock: true,
+                    isLockedByCurrentUser: false,
+                    showBanner: true,
+                    showOverlay: true
+                });
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('toggle-lock-button'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith('test-inode-other', true, false);
+            });
+        });
+
+        describe('palette toggle button', () => {
+            it('should not display palette toggle button when not in edit mode', () => {
+                baseUVEState.$isEditMode.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
+            });
+
+            it('should display palette toggle button when in edit mode', () => {
+                baseUVEState.$isEditMode.set(true);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeTruthy();
+            });
+
+            it('should call setPaletteOpen with true when palette is closed', () => {
+                const spy = jest.spyOn(store, 'setPaletteOpen');
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(false);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('uve-toolbar-palette-toggle'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(true);
+            });
+
+            it('should call setPaletteOpen with false when palette is open', () => {
+                const spy = jest.spyOn(store, 'setPaletteOpen');
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(true);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('uve-toolbar-palette-toggle'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(false);
+            });
+
+            it('should show close icon and hide open icon when palette is closed', () => {
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(false);
+                spectator.detectChanges();
+
+                const openIcon = spectator.query(byTestId('palette-open-icon'));
+                const closeIcon = spectator.query(byTestId('palette-close-icon'));
+
+                // When palette is closed, we show the "close" icon (to open it)
+                // The open icon should be hidden
+                expect(openIcon.classList.contains('hidden')).toBe(true);
+                expect(closeIcon.classList.contains('hidden')).toBe(false);
+            });
+
+            it('should show open icon and hide close icon when palette is open', () => {
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(true);
+                spectator.detectChanges();
+
+                const openIcon = spectator.query(byTestId('palette-open-icon'));
+                const closeIcon = spectator.query(byTestId('palette-close-icon'));
+
+                // When palette is open, we show the "open" icon (to close it)
+                // The close icon should be hidden
+                expect(openIcon.classList.contains('hidden')).toBe(false);
+                expect(closeIcon.classList.contains('hidden')).toBe(true);
+            });
         });
     });
 

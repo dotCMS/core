@@ -7,7 +7,10 @@ import java.util.Arrays;
  * These events are storage into a Jitsu Server.
  */
 public enum EventType {
-    PAGE_VIEW("pageview");
+    PAGE_VIEW("pageview"),
+    CONTENT_IMPRESSION("content_impression"),
+    CONTENT_CLICK("content_click"),
+    CONVERSION("conversion");
 
     private String name;
 

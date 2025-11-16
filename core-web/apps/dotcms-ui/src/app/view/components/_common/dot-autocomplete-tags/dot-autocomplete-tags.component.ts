@@ -1,7 +1,9 @@
+import { CommonModule } from '@angular/common';
 import { Component, forwardRef, Input, OnInit, ViewChild, inject } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
-import { AutoComplete, AutoCompleteUnselectEvent } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteUnselectEvent, AutoCompleteModule } from 'primeng/autocomplete';
+import { ChipsModule } from 'primeng/chips';
 
 import { take } from 'rxjs/operators';
 
@@ -18,14 +20,14 @@ import { DotTag } from '@dotcms/dotcms-models';
     selector: 'dot-autocomplete-tags',
     templateUrl: './dot-autocomplete-tags.component.html',
     styleUrls: ['./dot-autocomplete-tags.component.scss'],
+    imports: [CommonModule, ChipsModule, AutoCompleteModule, FormsModule],
     providers: [
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotAutocompleteTagsComponent)
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccessor {
     private dotTagsService = inject(DotTagsService);

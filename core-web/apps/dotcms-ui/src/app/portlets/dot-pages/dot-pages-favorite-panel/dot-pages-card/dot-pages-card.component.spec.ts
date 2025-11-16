@@ -1,19 +1,8 @@
-import { CommonModule } from '@angular/common';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { TooltipModule } from 'primeng/tooltip';
-
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    DotIconModule,
-    DotMessagePipe,
-    DotPagesFavoritePageEmptySkeletonComponent,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
@@ -29,17 +18,7 @@ describe('DotPagesCardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [
-                CommonModule,
-                CardModule,
-                DotIconModule,
-                DotPagesFavoritePageEmptySkeletonComponent,
-                TooltipModule,
-                DotSafeHtmlPipe,
-                ButtonModule,
-                DotMessagePipe
-            ],
-            declarations: [DotPagesCardComponent],
+            imports: [DotPagesCardComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
     }));

@@ -1,6 +1,7 @@
-import { PropValidationInfo } from '../models/PropValidationInfo';
-import DotFieldPropError from '../DotFieldPropError';
 import { dotValidateDate, dotValidateTime, dotParseDate, isValidDateSlot } from './date';
+
+import DotFieldPropError from '../DotFieldPropError';
+import { PropValidationInfo } from '../models/PropValidationInfo';
 
 /**
  * Check if the value of PropValidationInfo is a string.

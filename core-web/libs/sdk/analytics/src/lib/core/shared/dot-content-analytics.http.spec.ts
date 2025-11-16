@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { ANALYTICS_ENDPOINT } from './constants';
-import { sendAnalyticsEventToServer } from './dot-content-analytics.http';
+import { sendAnalyticsEvent } from './dot-content-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSCustomEventRequestBody,
@@ -83,7 +83,7 @@ describe('DotAnalytics HTTP Utils', () => {
         mockConsoleWarn.mockRestore();
     });
 
-    describe('sendAnalyticsEventToServer', () => {
+    describe('sendAnalyticsEvent', () => {
         describe('Happy Path', () => {
             it('should send POST request with correct parameters when successful', async () => {
                 // Mock successful response
@@ -95,7 +95,7 @@ describe('DotAnalytics HTTP Utils', () => {
                 mockFetch.mockResolvedValue(mockResponse);
 
                 // Execute function
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to keepalive=false
 
                 // Verify fetch was called correctly
                 expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -105,6 +105,36 @@ describe('DotAnalytics HTTP Utils', () => {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(mockPayload)
+                    }
+                );
+
+                // Verify no errors were logged
+                expect(mockConsoleError).not.toHaveBeenCalled();
+                expect(mockConsoleWarn).not.toHaveBeenCalled();
+            });
+
+            it('should send POST request with keepalive and credentials omit when keepalive=true', async () => {
+                // Mock successful response
+                const mockResponse = {
+                    ok: true,
+                    status: 200
+                } as Response;
+
+                mockFetch.mockResolvedValue(mockResponse);
+
+                // Execute function with keepalive
+                await sendAnalyticsEvent(mockPayload, mockConfig, true);
+
+                // Verify fetch was called with keepalive options
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+                expect(mockFetch).toHaveBeenCalledWith(
+                    `${mockConfig.server}${ANALYTICS_ENDPOINT}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(mockPayload),
+                        keepalive: true,
+                        credentials: 'omit'
                     }
                 );
 
@@ -124,11 +154,28 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, debugConfig);
+                await sendAnalyticsEvent(mockPayload, debugConfig); // defaults to keepalive=false
 
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
-                    'DotCMS Analytics: HTTP Body to send:',
-                    JSON.stringify(mockPayload, null, 2)
+                    `DotCMS Analytics: Sending ${mockPayload.events.length} event(s)`,
+                    { payload: mockPayload }
+                );
+            });
+
+            it('should log keepalive mode in debug information when keepalive=true', async () => {
+                const debugConfig = { ...mockConfig, debug: true };
+                const mockResponse = {
+                    ok: true,
+                    status: 200
+                } as Response;
+
+                mockFetch.mockResolvedValue(mockResponse);
+
+                await sendAnalyticsEvent(mockPayload, debugConfig, true);
+
+                expect(mockConsoleWarn).toHaveBeenCalledWith(
+                    `DotCMS Analytics: Sending ${mockPayload.events.length} event(s) (keepalive)`,
+                    { payload: mockPayload }
                 );
             });
 
@@ -140,7 +187,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to keepalive=false
 
                 // Should not log the body
                 expect(mockConsoleWarn).not.toHaveBeenCalled();
@@ -159,7 +206,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to keepalive=false
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
@@ -177,7 +224,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to keepalive=false
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
@@ -195,7 +242,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 mockFetch.mockResolvedValue(mockResponse);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to keepalive=false
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
@@ -210,7 +257,7 @@ describe('DotAnalytics HTTP Utils', () => {
                 const networkError = new Error('Network request failed');
                 mockFetch.mockRejectedValue(networkError);
 
-                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+                await sendAnalyticsEvent(mockPayload, mockConfig); // defaults to keepalive=false
 
                 expect(mockConsoleError).toHaveBeenCalledTimes(1);
                 expect(mockConsoleError).toHaveBeenCalledWith(

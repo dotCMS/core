@@ -5,3 +5,4 @@ export * from './lib/page/public';
 export * from './lib/client/public';
 export * from './lib/content/public';
 export * from './lib/nav/public';
+export * from './lib/ai/public';

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "6496517b-8250-414a-9539-600f9f9c007a",
+		"_postman_id": "f8409ecf-ffbd-4fa1-a3f8-03fa3a06ae45",
 		"name": "Content Analytics",
 		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -348,7 +348,8 @@
 											"});"
 										],
 										"type": "text/javascript",
-										"packages": {}
+										"packages": {},
+										"requests": {}
 									}
 								}
 							],
@@ -378,7 +379,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"page_view\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"page_view\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -430,7 +431,8 @@
 											"});"
 										],
 										"type": "text/javascript",
-										"packages": {}
+										"packages": {},
+										"requests": {}
 									}
 								}
 							],
@@ -460,7 +462,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    }\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -512,7 +514,8 @@
 											"});"
 										],
 										"type": "text/javascript",
-										"packages": {}
+										"packages": {},
+										"requests": {}
 									}
 								}
 							],
@@ -542,7 +545,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -594,7 +597,8 @@
 											"});"
 										],
 										"type": "text/javascript",
-										"packages": {}
+										"packages": {},
+										"requests": {}
 									}
 								}
 							],
@@ -624,7 +628,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\"\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"user_agent\": \"useragent=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"user_agent\": \"another_useragent=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -711,7 +715,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n           \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        },\n        {\n            \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n           \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        },\n        {\n            \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -748,12 +752,12 @@
 											"pm.test(\"Response sould be right\", function () {",
 											"    const responseBody = pm.response.json();",
 											"",
-											"    pm.expect(responseBody.failed).to.be.eq(6);",
+											"    pm.expect(responseBody.failed).to.be.eq(3);",
 											"    pm.expect(responseBody.success).to.be.eq(0);",
 											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
 											"",
 											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
-											"    pm.expect(responseBody.errors.length).to.be.eq(8);",
+											"    pm.expect(responseBody.errors.length).to.be.eq(4);",
 											"",
 											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
 											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
@@ -774,30 +778,11 @@
 											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
 											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[2].data.page.title\");",
 											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Required field is missing: data.page.title\");",
-											"",
-											"    pm.expect(responseBody.errors[4].eventIndex).to.be.eq(3);",
-											"    pm.expect(responseBody.errors[4].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[4].field).to.be.eq(\"events[3].data.device.screen_resolution\");",
-											"    pm.expect(responseBody.errors[4].message).to.be.eq(\"Required field is missing: data.device.screen_resolution\");",
-											"",
-											"    pm.expect(responseBody.errors[5].eventIndex).to.be.eq(4);",
-											"    pm.expect(responseBody.errors[5].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[5].field).to.be.eq(\"events[4].data.device.language\");",
-											"    pm.expect(responseBody.errors[5].message).to.be.eq(\"Required field is missing: data.device.language\");",
-											"",
-											"    pm.expect(responseBody.errors[6].eventIndex).to.be.eq(5);",
-											"    pm.expect(responseBody.errors[6].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[6].field).to.be.eq(\"events[5].data.device.viewport_height\");",
-											"    pm.expect(responseBody.errors[6].message).to.be.eq(\"Required field is missing: data.device.viewport_height\");",
-											"",
-											"    pm.expect(responseBody.errors[7].eventIndex).to.be.eq(5);",
-											"    pm.expect(responseBody.errors[7].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[7].field).to.be.eq(\"events[5].data.device.viewport_width\");",
-											"    pm.expect(responseBody.errors[7].message).to.be.eq(\"Required field is missing: data.device.viewport_width\");",
 											"});"
 										],
 										"type": "text/javascript",
-										"packages": {}
+										"packages": {},
+										"requests": {}
 									}
 								}
 							],
@@ -832,7 +817,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"3840\",\n                    \"viewport_height\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"data\": {\n                \"page\": {\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"title\": \"This is my another page\",\n                    \"language_id\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"doc_path\": \"another_page\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -874,7 +859,7 @@
 											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
 											"",
 											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
-											"    pm.expect(responseBody.errors.length).to.be.eq(4);",
+											"    pm.expect(responseBody.errors.length).to.be.eq(3);",
 											"",
 											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
 											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"UNKNOWN_FIELD\");",
@@ -883,22 +868,18 @@
 											"",
 											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
 											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"UNKNOWN_FIELD\");",
-											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.device.extra\");",
-											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Unknown field 'data.device.extra'\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.utm.extra\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Unknown field 'data.utm.extra'\");",
 											"",
 											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(0);",
 											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"UNKNOWN_FIELD\");",
-											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[0].data.utm.extra\");",
-											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Unknown field 'data.utm.extra'\");",
-											"",
-											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(0);",
-											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"UNKNOWN_FIELD\");",
-											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[0].data.extra\");",
-											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Unknown field 'data.extra'\");",
+											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[0].data.extra\");",
+											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Unknown field 'data.extra'\");",
 											"});"
 										],
 										"type": "text/javascript",
-										"packages": {}
+										"packages": {},
+										"requests": {}
 									}
 								}
 							],
@@ -933,7 +914,761 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"extra\": \"extra\"\n                },\n                \"device\": {\n                    \"screen_resolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewport_width\": \"1280\",\n                    \"viewport_height\": \"720\",\n                    \"extra\": \"extra\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\",\n                    \"extra\": \"extra\"\n                },\n                \"extra\": \"extra\"\n            }\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"pageview\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"language_id\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"extra\": \"extra\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\",\n                    \"extra\": \"extra\"\n                },\n                \"extra\": \"extra\"\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "content_impression required fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(8);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(8);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.url\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: data.page.url\");",
+											"",
+											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(1);",
+											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[1].data.page.title\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: data.page.title\");",
+											"",
+											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(2);",
+											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[2].data.content.identifier\");",
+											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Required field is missing: data.content.identifier\");",
+											"",
+											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(3);",
+											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[3].data.content.inode\");",
+											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Required field is missing: data.content.inode\");",
+											"",
+											"    pm.expect(responseBody.errors[4].eventIndex).to.be.eq(4);",
+											"    pm.expect(responseBody.errors[4].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[4].field).to.be.eq(\"events[4].data.content.title\");",
+											"    pm.expect(responseBody.errors[4].message).to.be.eq(\"Required field is missing: data.content.title\");",
+											"",
+											"    pm.expect(responseBody.errors[5].eventIndex).to.be.eq(5);",
+											"    pm.expect(responseBody.errors[5].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[5].field).to.be.eq(\"events[5].data.content.content_type\");",
+											"    pm.expect(responseBody.errors[5].message).to.be.eq(\"Required field is missing: data.content.content_type\");",
+											"",
+											"    pm.expect(responseBody.errors[6].eventIndex).to.be.eq(6);",
+											"    pm.expect(responseBody.errors[6].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[6].field).to.be.eq(\"events[6].data.position.viewport_offset_pct\");",
+											"    pm.expect(responseBody.errors[6].message).to.be.eq(\"Required field is missing: data.position.viewport_offset_pct\");",
+											"",
+											"    pm.expect(responseBody.errors[7].eventIndex).to.be.eq(7);",
+											"    pm.expect(responseBody.errors[7].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[7].field).to.be.eq(\"events[7].data.position.dom_index\");",
+											"    pm.expect(responseBody.errors[7].message).to.be.eq(\"Required field is missing: data.position.dom_index\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									},
+									{
+										"key": "Referer",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": { \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\",     \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"dom_index\": 5 \n                }\n            }\n        },\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18\n                }\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "content_impression extra attributes",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(1);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(4);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.extra\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Unknown field 'data.page.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.content.extra\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Unknown field 'data.content.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[0].data.position.extra\");",
+											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Unknown field 'data.position.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[0].data.extra\");",
+											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Unknown field 'data.extra'\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									},
+									{
+										"key": "Referer",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_impression\",\n            \"local_time\": \"2025-06-09T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\",\n                    \"extra\": \"\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\",\n                    \"extra\": \"\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5,\n                    \"extra\": \"\"\n                },\n                \"extra\": \"\"\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "content-click required fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(13);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(13);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.url\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: data.page.url\");",
+											"",
+											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(1);",
+											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[1].data.page.title\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: data.page.title\");",
+											"",
+											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(2);",
+											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[2].data.content.identifier\");",
+											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Required field is missing: data.content.identifier\");",
+											"",
+											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(3);",
+											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[3].data.content.inode\");",
+											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Required field is missing: data.content.inode\");",
+											"",
+											"    pm.expect(responseBody.errors[4].eventIndex).to.be.eq(4);",
+											"    pm.expect(responseBody.errors[4].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[4].field).to.be.eq(\"events[4].data.content.title\");",
+											"    pm.expect(responseBody.errors[4].message).to.be.eq(\"Required field is missing: data.content.title\");",
+											"",
+											"    pm.expect(responseBody.errors[5].eventIndex).to.be.eq(5);",
+											"    pm.expect(responseBody.errors[5].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[5].field).to.be.eq(\"events[5].data.content.content_type\");",
+											"    pm.expect(responseBody.errors[5].message).to.be.eq(\"Required field is missing: data.content.content_type\");",
+											"",
+											"    pm.expect(responseBody.errors[6].eventIndex).to.be.eq(6);",
+											"    pm.expect(responseBody.errors[6].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[6].field).to.be.eq(\"events[6].data.position.viewport_offset_pct\");",
+											"    pm.expect(responseBody.errors[6].message).to.be.eq(\"Required field is missing: data.position.viewport_offset_pct\");",
+											"",
+											"    pm.expect(responseBody.errors[7].eventIndex).to.be.eq(7);",
+											"    pm.expect(responseBody.errors[7].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[7].field).to.be.eq(\"events[7].data.position.dom_index\");",
+											"    pm.expect(responseBody.errors[7].message).to.be.eq(\"Required field is missing: data.position.dom_index\");",
+											"",
+											"",
+											"    pm.expect(responseBody.errors[8].eventIndex).to.be.eq(8);",
+											"    pm.expect(responseBody.errors[8].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[8].field).to.be.eq(\"events[8].data.element.text\");",
+											"    pm.expect(responseBody.errors[8].message).to.be.eq(\"Required field is missing: data.element.text\");",
+											"",
+											"    pm.expect(responseBody.errors[9].eventIndex).to.be.eq(9);",
+											"    pm.expect(responseBody.errors[9].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[9].field).to.be.eq(\"events[9].data.element.type\");",
+											"    pm.expect(responseBody.errors[9].message).to.be.eq(\"Required field is missing: data.element.type\");",
+											"",
+											"    pm.expect(responseBody.errors[10].eventIndex).to.be.eq(10);",
+											"    pm.expect(responseBody.errors[10].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[10].field).to.be.eq(\"events[10].data.element.id\");",
+											"    pm.expect(responseBody.errors[10].message).to.be.eq(\"Required field is missing: data.element.id\");",
+											"",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"www\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\",     \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        },\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\"\n                }\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "content-click extra fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(1);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(5);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.page.extra\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Unknown field 'data.page.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.content.extra\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Unknown field 'data.content.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[0].data.position.extra\");",
+											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Unknown field 'data.position.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[0].data.element.extra\");",
+											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Unknown field 'data.element.extra'\");",
+											"",
+											"    pm.expect(responseBody.errors[4].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[4].code).to.be.eq(\"UNKNOWN_FIELD\");",
+											"    pm.expect(responseBody.errors[4].field).to.be.eq(\"events[0].data.extra\");",
+											"    pm.expect(responseBody.errors[4].message).to.be.eq(\"Unknown field 'data.extra'\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\":\"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"www\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\",\n                    \"extra\": \"\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\",\n                    \"extra\": \"\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5,\n                    \"extra\": \"\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"],\n                    \"extra\": \"\"\n                },\n\n                \"extra\": \"\"\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "content-click number format error",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(1);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(2);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"INVALID_NUMBER_TYPE\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.position.viewport_offset_pct\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Field value is not a Number: 18\");",
+											"",
+											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"INVALID_NUMBER_TYPE\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.position.dom_index\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Field value is not a Number: aaaa\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"www\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": \"18\", \n                    \"dom_index\": \"aaaa\" \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                }\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "content-click attributes not string array",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(1);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(1);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"INVALID_JSON_ARRAY_TYPE\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.element.attributes\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Field value is not a JSON array: attribute1:value1\");",
+											"",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"www\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"content_click\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"content\": {\n                    \"identifier\": \"1\",    \n                    \"inode\": \"2\", \n                    \"title\": \"this is a title\",      \n                    \"content_type\": \"A\"\n                },\n                \"position\": {\n                    \"viewport_offset_pct\": 18, \n                    \"dom_index\": 5 \n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": \"attribute1:value1\"\n                }\n            }\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/event",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"event"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "conversion required fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Response sould be right\", function () {",
+											"    const responseBody = pm.response.json();",
+											"",
+											"    pm.expect(responseBody.failed).to.be.eq(8);",
+											"    pm.expect(responseBody.success).to.be.eq(0);",
+											"    pm.expect(responseBody.status).to.be.eq(\"ERROR\");",
+											"",
+											"    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+											"    pm.expect(responseBody.errors.length).to.be.eq(9);",
+											"",
+											"    pm.expect(responseBody.errors[0].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"events[0].data.conversion.name\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: data.conversion.name\");",
+											"",
+											"    pm.expect(responseBody.errors[1].eventIndex).to.be.eq(0);",
+											"    pm.expect(responseBody.errors[1].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[1].field).to.be.eq(\"events[0].data.conversion\");",
+											"    pm.expect(responseBody.errors[1].message).to.be.eq(\"Required field is missing: data.conversion\");",
+											"",
+											"    pm.expect(responseBody.errors[2].eventIndex).to.be.eq(1);",
+											"    pm.expect(responseBody.errors[2].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[2].field).to.be.eq(\"events[1].data.page.url\");",
+											"    pm.expect(responseBody.errors[2].message).to.be.eq(\"Required field is missing: data.page.url\");",
+											"",
+											"    pm.expect(responseBody.errors[3].eventIndex).to.be.eq(2);",
+											"    pm.expect(responseBody.errors[3].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[3].field).to.be.eq(\"events[2].data.page.title\");",
+											"    pm.expect(responseBody.errors[3].message).to.be.eq(\"Required field is missing: data.page.title\");",
+											"",
+											"",
+											"    pm.expect(responseBody.errors[4].eventIndex).to.be.eq(3);",
+											"    pm.expect(responseBody.errors[4].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[4].field).to.be.eq(\"events[3].data.element.text\");",
+											"    pm.expect(responseBody.errors[4].message).to.be.eq(\"Required field is missing: data.element.text\");",
+											"",
+											"    pm.expect(responseBody.errors[5].eventIndex).to.be.eq(4);",
+											"    pm.expect(responseBody.errors[5].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[5].field).to.be.eq(\"events[4].data.element.type\");",
+											"    pm.expect(responseBody.errors[5].message).to.be.eq(\"Required field is missing: data.element.type\");",
+											"",
+											"    pm.expect(responseBody.errors[6].eventIndex).to.be.eq(5);",
+											"    pm.expect(responseBody.errors[6].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[6].field).to.be.eq(\"events[5].data.element.id\");",
+											"    pm.expect(responseBody.errors[6].message).to.be.eq(\"Required field is missing: data.element.id\");",
+											"",
+											"    pm.expect(responseBody.errors[7].eventIndex).to.be.eq(6);",
+											"    pm.expect(responseBody.errors[7].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[7].field).to.be.eq(\"events[6].data.element.class\");",
+											"    pm.expect(responseBody.errors[7].message).to.be.eq(\"Required field is missing: data.element.class\");",
+											"",
+											"    pm.expect(responseBody.errors[8].eventIndex).to.be.eq(7);",
+											"    pm.expect(responseBody.errors[8].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
+											"    pm.expect(responseBody.errors[8].field).to.be.eq(\"events[7].data.element.attributes\");",
+											"    pm.expect(responseBody.errors[8].message).to.be.eq(\"Required field is missing: data.element.attributes\");",
+											"",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "http://{{testSiteName}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"www\",\n        \"device\": {\n            \"screen_resolution\": \"1280x720\",\n            \"language\": \"en\",\n            \"viewport_width\": \"1280\",\n            \"viewport_height\": \"720\"\n        }\n    },\n    \"events\": [\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"id\": \"id\",\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"class\": \"class\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"attributes\": [\"attribute1:value1\", \"attribute2:value2\"]\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                        \"name\": \"purchase\",\n                        \"value\": 99.99,\n                        \"currency\": \"USD\",\n                        \"category\": \"ecommerce\"\n                }\n            }\n        },\n        {\n            \"event_type\": \"conversion\",\n            \"local_time\": \"2025-07-28T14:30:00+02:00\",\n            \"data\": {\n                \"conversion\": {\n                    \"name\": \"purchase\"\n                },\n                \"page\": {\n                    \"url\": \"http://localhost/aaaaa\",\n                    \"title\": \"aaaa Page\"\n                },\n                \"element\": { // dom element\n                    \"text\": \"text\",\n                    \"type\": \"anchor\", //anchor, button, input, etc.\n                    \"id\": \"id\",\n                    \"class\": \"class\"\n                },\n                \"custom\": { //optional, any data that the customer want to add to rich the event data\n                    \"name\": \"purchase\",\n                    \"value\": 99.99,\n                    \"currency\": \"USD\",\n                    \"category\": \"ecommerce\"\n                }\n            }\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1381,6 +2116,18 @@
 		},
 		{
 			"key": "testSiteId",
+			"value": ""
+		},
+		{
+			"key": "siteName",
+			"value": ""
+		},
+		{
+			"key": "siteId",
+			"value": ""
+		},
+		{
+			"key": "customKeyValue",
 			"value": ""
 		}
 	]
