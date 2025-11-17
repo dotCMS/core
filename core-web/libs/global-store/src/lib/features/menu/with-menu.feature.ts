@@ -115,7 +115,7 @@ export function withMenu() {
              */
             setMenuOpen: (id: string) => {
                 const updatedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
-                    menu.isOpen = menu.isOpen ? false : id === menu.id;
+                    menu.isOpen = menu.id === id ? !menu.isOpen : false;
                     return menu;
                 });
                 patchState(store, {

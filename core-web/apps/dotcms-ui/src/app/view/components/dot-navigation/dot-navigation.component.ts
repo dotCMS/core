@@ -76,7 +76,10 @@ export class DotNavigationComponent {
         if (!$event.originalEvent.ctrlKey && !$event.originalEvent.metaKey) {
             if (this.#dotRouterService.currentPortlet.id === $event.data.id) {
                 this.#dotRouterService.reloadCurrentPortlet($event.data.id);
+            } else {
+                this.#dotRouterService.gotoPortlet($event.data.menuLink);
             }
+
             this.#iframeOverlayService.hide();
         }
     }
