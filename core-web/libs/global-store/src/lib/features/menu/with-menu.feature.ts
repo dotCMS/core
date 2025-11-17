@@ -15,12 +15,14 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 import { initialMenuSlice } from './menu.slice';
 import {
     addMenuLinks,
+    findAndActivateMenuItem,
     getActiveMenuFromMenuId,
     getTheUrlId,
     isDetailPage,
     isEditPageFromSiteBrowser,
     isMenuActive,
     replaceIdForNonMenuSection,
+    resetAllMenus,
     type DotActiveItemsProps
 } from './menu.utils';
 
@@ -247,13 +249,12 @@ export function withMenu() {
                     return currentMenus; // nothing changes
                 }
 
-                const menus: DotMenu[] = [...currentMenus];
                 let urlId = getTheUrlId(url);
 
                 // Check if we should skip updating the menu
                 if (
                     (menuId && isEditPageFromSiteBrowser(menuId, previousUrl)) ||
-                    (isDetailPage(urlId, url) && isMenuActive(menus))
+                    (isDetailPage(urlId, url) && isMenuActive(currentMenus))
                 ) {
                     return null;
                 }
@@ -261,7 +262,7 @@ export function withMenu() {
                 // When user browse using the navigation (Angular Routing)
                 if (menuId && menuId !== 'edit-page' && previousUrl) {
                     const updatedMenus = getActiveMenuFromMenuId({
-                        menus,
+                        menus: currentMenus,
                         menuId,
                         collapsed: collapsed ?? store.isNavigationCollapsed(),
                         url: urlId,
@@ -275,37 +276,15 @@ export function withMenu() {
                 const replacedId = replaceIdForNonMenuSection(urlId);
                 urlId = replacedId || urlId;
 
-                // Reset Active/IsOpen attributes
-                for (let i = 0; i < menus.length; i++) {
-                    menus[i].active = false;
-                    menus[i].isOpen = false;
+                // Reset Active/IsOpen attributes de forma inmutable
+                const resetMenus = resetAllMenus(currentMenus);
 
-                    for (let k = 0; k < menus[i].menuItems.length; k++) {
-                        menus[i].menuItems[k].active = false;
-                    }
-                }
+                // Find and activate the matching menu item usando función reutilizable
+                const updatedMenus = findAndActivateMenuItem(resetMenus, urlId, menuId, true);
 
-                // Find and activate the matching menu item
-                menuLoop: for (let i = 0; i < menus.length; i++) {
-                    for (let k = 0; k < menus[i].menuItems.length; k++) {
-                        if (menuId) {
-                            if (menus[i].menuItems[k].id === urlId && menus[i].id === menuId) {
-                                menus[i].active = true;
-                                menus[i].isOpen = true;
-                                menus[i].menuItems[k].active = true;
-                                break menuLoop;
-                            }
-                        } else if (menus[i].menuItems[k].id === urlId) {
-                            menus[i].active = true;
-                            menus[i].isOpen = true;
-                            menus[i].menuItems[k].active = true;
-                            break menuLoop;
-                        }
-                    }
-                }
-
-                patchState(store, { menuItems: menus });
-                return menus;
+                const finalMenus = updatedMenus || resetMenus;
+                patchState(store, { menuItems: finalMenus });
+                return finalMenus;
             }
         })),
         withHooks({
