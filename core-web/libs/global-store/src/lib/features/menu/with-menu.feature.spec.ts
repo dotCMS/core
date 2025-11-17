@@ -364,6 +364,130 @@ describe('withMenu Feature (DotMenu)', () => {
         });
     });
 
+    describe('Add Menu Links', () => {
+        it('should add menuLink property to angular menu items', () => {
+            const menuWithoutLinks: DotMenu[] = [
+                {
+                    active: false,
+                    id: '1',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: '1-1',
+                            label: 'Home',
+                            url: '/home'
+                        }
+                    ],
+                    name: 'Home Menu',
+                    tabDescription: 'Home section',
+                    tabIcon: 'pi pi-home',
+                    tabName: 'Home',
+                    url: '/'
+                }
+            ];
+
+            const result = store.addMenuLinks(menuWithoutLinks);
+            expect(result[0].menuItems[0].menuLink).toBe('/home');
+        });
+
+        it('should add menuLink property to legacy menu items with /c/ prefix', () => {
+            const menuWithoutLinks: DotMenu[] = [
+                {
+                    active: false,
+                    id: '1',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: false,
+                            id: 'legacy-portlet-id',
+                            label: 'Legacy Portlet',
+                            url: '/legacy'
+                        }
+                    ],
+                    name: 'Legacy Menu',
+                    tabDescription: 'Legacy section',
+                    tabIcon: 'pi pi-cog',
+                    tabName: 'Legacy',
+                    url: '/legacy'
+                }
+            ];
+
+            const result = store.addMenuLinks(menuWithoutLinks);
+            expect(result[0].menuItems[0].menuLink).toBe('/c/legacy-portlet-id');
+        });
+
+        it('should handle mixed angular and legacy menu items', () => {
+            const menuWithoutLinks: DotMenu[] = [
+                {
+                    active: false,
+                    id: '1',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: '1-1',
+                            label: 'Angular Item',
+                            url: '/angular'
+                        },
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: false,
+                            id: 'legacy-1',
+                            label: 'Legacy Item',
+                            url: '/legacy'
+                        }
+                    ],
+                    name: 'Mixed Menu',
+                    tabDescription: 'Mixed section',
+                    tabIcon: 'pi pi-bars',
+                    tabName: 'Mixed',
+                    url: '/mixed'
+                }
+            ];
+
+            const result = store.addMenuLinks(menuWithoutLinks);
+            expect(result[0].menuItems[0].menuLink).toBe('/angular');
+            expect(result[0].menuItems[1].menuLink).toBe('/c/legacy-1');
+        });
+
+        it('should apply menuLinks when setting menu items', () => {
+            const menuWithoutLinks: DotMenu[] = [
+                {
+                    active: false,
+                    id: '1',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: '1-1',
+                            label: 'Home',
+                            url: '/home'
+                        }
+                    ],
+                    name: 'Home Menu',
+                    tabDescription: 'Home section',
+                    tabIcon: 'pi pi-home',
+                    tabName: 'Home',
+                    url: '/'
+                }
+            ];
+
+            store.setMenuItems(menuWithoutLinks);
+            const items = store.menuItems();
+            expect(items[0].menuItems[0].menuLink).toBe('/home');
+        });
+    });
+
     describe('Complex Scenarios', () => {
         beforeEach(() => {
             store.setMenuItems(mockMenuItems);
