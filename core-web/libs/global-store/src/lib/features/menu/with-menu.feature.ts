@@ -146,10 +146,10 @@ export function withMenu() {
                 });
                 if (!isCollapsed) {
                     // Close all sections when collapsing
-                    const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
-                        menu.isOpen = false;
-                        return menu;
-                    });
+                    const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => ({
+                        ...menu,
+                        isOpen: false
+                    }));
                     patchState(store, {
                         menuItems: closedMenu
                     });

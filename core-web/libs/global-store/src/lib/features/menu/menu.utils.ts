@@ -28,37 +28,50 @@ export function getActiveMenuFromMenuId({
     collapsed,
     url
 }: DotActiveItemsFromParentProps): DotMenu[] {
-    // Normalize the URL into an ID to compare with menu item ids
+    // Extract the ID from the URL for comparison with menu item IDs
     const urlId = getTheUrlId(url);
 
-    // Reset Active/IsOpen attributes immutably and set active menu/menuItem
-    let found = false;
-    const updatedMenus = menus.map((menu) => {
-        // Reset menu and menuItems
-        let menuActive = false;
-        let menuIsOpen = false;
-        const updatedMenuItems = menu.menuItems.map((item) => {
-            let itemActive = false;
-            if (!found) {
-                if (menuId) {
-                    if (item.id === urlId && menu.id === menuId) {
-                        menuActive = true;
-                        menuIsOpen = !collapsed;
-                        itemActive = true;
-                        found = true;
-                    }
-                } else if (item.id === urlId) {
-                    menuActive = true;
-                    menuIsOpen = !collapsed;
-                    itemActive = true;
-                    found = true;
-                }
+    const resetMenus = menus.map((menu) => ({
+        ...menu,
+        active: false,
+        isOpen: false,
+        menuItems: menu.menuItems.map((item) => ({
+            ...item,
+            active: false
+        }))
+    }));
+
+    // Search for matching menu item and activate it
+    for (let i = 0; i < resetMenus.length; i++) {
+        for (let k = 0; k < resetMenus[i].menuItems.length; k++) {
+            const item = resetMenus[i].menuItems[k];
+            const menu = resetMenus[i];
+
+            // Determine if this item should be activated
+            const isMatchingItem =
+                (menuId && item.id === urlId && menu.id === menuId) ||
+                (!menuId && item.id === urlId);
+
+            if (isMatchingItem) {
+                // Create new menu object with active item (immutable update)
+                return resetMenus.map((m, menuIdx) => {
+                    if (menuIdx !== i) return m;
+
+                    return {
+                        ...m,
+                        active: true,
+                        isOpen: !collapsed,
+                        menuItems: m.menuItems.map((menuItem, itemIdx) =>
+                            itemIdx === k ? { ...menuItem, active: true } : menuItem
+                        )
+                    };
+                });
             }
-            return { ...item, active: itemActive };
-        });
-        return { ...menu, active: menuActive, isOpen: menuIsOpen, menuItems: updatedMenuItems };
-    });
-    return updatedMenus;
+        }
+    }
+
+    // No matching item found, return all inactive
+    return resetMenus;
 }
 
 export function isDetailPage(id: string, url: string): boolean {
