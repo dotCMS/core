@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * User permissions response containing permission assignments organized by asset.
@@ -15,13 +14,12 @@ import java.util.Map;
 @Schema(description = "User permissions organized by asset type and scope")
 public class UserPermissions {
 
-    @JsonProperty("userId")
+    @JsonProperty("user")
     @Schema(
-        description = "User identifier (email address or user ID)",
-        example = "admin@dotcms.com",
+        description = "User information",
         required = true
     )
-    private final String userId;
+    private final UserInfo user;
 
     @JsonProperty("roleId")
     @Schema(
@@ -41,24 +39,24 @@ public class UserPermissions {
     /**
      * Constructs user permissions response.
      *
-     * @param userId The user identifier (email or user ID)
+     * @param user The user information (id, name, email)
      * @param roleId The user's individual role identifier
      * @param assets List of assets with their permission assignments
      */
-    public UserPermissions(final String userId, final String roleId,
+    public UserPermissions(final UserInfo user, final String roleId,
                           final List<UserPermissionAsset> assets) {
-        this.userId = userId;
+        this.user = user;
         this.roleId = roleId;
         this.assets = assets;
     }
 
     /**
-     * Gets the user identifier.
+     * Gets the user information.
      *
-     * @return User ID or email address
+     * @return User information
      */
-    public String getUserId() {
-        return userId;
+    public UserInfo getUser() {
+        return user;
     }
 
     /**

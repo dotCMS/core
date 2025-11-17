@@ -22,11 +22,13 @@ import com.dotcms.rest.api.v1.user.UserPermissionHelper;
 import com.dotcms.rest.api.v1.user.UserResourceHelper;
 import com.dotcms.rest.api.v1.user.UserPermissions;
 import com.dotcms.rest.api.v1.user.UserPermissionAsset;
+import com.dotcms.rest.api.v1.user.UserInfo;
 import com.dotcms.rest.api.v1.user.ResponseEntityUserPermissionsView;
 import com.dotcms.rest.api.v1.user.SaveUserPermissionsForm;
 import com.dotcms.rest.api.v1.user.SaveUserPermissionsResponse;
 import com.dotcms.rest.api.v1.user.ResponseEntitySaveUserPermissionsView;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.Pagination;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.Role;
 import javax.inject.Inject;
@@ -339,22 +341,25 @@ public class PermissionResource {
     }
 
     /**
-     * Retrieves permissions for a user's individual role, grouped by assets.
+     * Retrieves permissions for a user's individual role, grouped by assets with pagination support.
      * This endpoint retrieves permissions assigned directly to the user's individual role,
      * not through group memberships. Only the user themselves or admin users can access this endpoint.
      *
      * @param request HTTP servlet request
      * @param response HTTP servlet response
      * @param userId User ID or email address
-     * @return ResponseEntityUserPermissionsView containing the user's permissions
+     * @param page Page number (0-based)
+     * @param perPage Number of items per page
+     * @return ResponseEntityUserPermissionsView containing paginated user permissions
      * @throws DotDataException if data access fails
      * @throws DotSecurityException if security check fails
      */
     @Operation(
         summary = "Get user permissions",
-        description = "Returns all permission assets (hosts and folders) that the specified user's individual role has access to. " +
-                      "This endpoint retrieves permissions assigned directly to the user's individual role, not through group memberships. " +
-                      "Only the user themselves or admin users can access this endpoint."
+        description = "Returns paginated list of permission assets (hosts and folders) that the specified user's " +
+                      "individual role has access to. This endpoint retrieves permissions assigned directly to the " +
+                      "user's individual role, not through group memberships. Only the user themselves or admin users " +
+                      "can access this endpoint."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
@@ -362,7 +367,7 @@ public class PermissionResource {
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(implementation = ResponseEntityUserPermissionsView.class))),
         @ApiResponse(responseCode = "400",
-                    description = "Bad request - invalid user ID format",
+                    description = "Bad request - invalid user ID or pagination parameters",
                     content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
@@ -383,10 +388,15 @@ public class PermissionResource {
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response,
             @Parameter(description = "User ID or email address", required = true, example = "dotcms.org.1")
-            @PathParam("userId") final String userId
+            @PathParam("userId") final String userId,
+            @Parameter(description = "Page number (0-based)", required = false, example = "0")
+            @DefaultValue("0") @QueryParam("page") final int page,
+            @Parameter(description = "Number of items per page", required = false, example = "20")
+            @DefaultValue("20") @QueryParam("per_page") final int perPage
     ) throws DotDataException, DotSecurityException {
 
-        Logger.debug(this, () -> "Retrieving permissions for user: " + userId);
+        Logger.debug(this, () -> String.format("Retrieving permissions for user: %s (page=%d, perPage=%d)",
+            userId, page, perPage));
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -403,37 +413,57 @@ public class PermissionResource {
         }
 
         final User systemUser = APILocator.systemUser();
-        final User finalTargetUser = userResourceHelper.loadUserByIdOrEmail(userId, systemUser, requestingUser);
+        final User targetUser = userResourceHelper.loadUserByIdOrEmail(userId, systemUser, requestingUser);
 
         // Security validation - user can view own permissions or admin can view any
-        if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(finalTargetUser.getUserId())) {
+        if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(targetUser.getUserId())) {
             Logger.warn(this, () -> String.format("Non-admin user %s attempted to access permissions for user %s",
-                                  requestingUser.getUserId(), finalTargetUser.getUserId()));
+                                  requestingUser.getUserId(), targetUser.getUserId()));
             throw new DotSecurityException("User can only access their own permissions unless admin");
         }
 
         Logger.debug(this, () -> String.format("Loading permissions for user %s requested by %s",
-            finalTargetUser.getUserId(), requestingUser.getUserId()));
+            targetUser.getUserId(), requestingUser.getUserId()));
 
-        final Role userRole = APILocator.getRoleAPI().getUserRole(finalTargetUser);
+        final Role userRole = APILocator.getRoleAPI().getUserRole(targetUser);
         if (userRole == null) {
             Logger.warn(this, String.format("User role not found for user: %s", userId));
             throw new DotDataException("User role not found for: " + userId);
         }
 
-        final List<UserPermissionAsset> permissions = userPermissionHelper
-            .buildUserPermissionResponse(userRole, requestingUser);
+        // Get total count for pagination
+        final int totalEntries = userPermissionHelper.getTotalPermissionAssetCount(userRole, requestingUser);
 
-        final UserPermissions userPermissions = new UserPermissions(
-            finalTargetUser.getUserId(),
-            userRole.getId(),
-            permissions
+        // Get paginated assets
+        final List<UserPermissionAsset> paginatedAssets = userPermissionHelper
+            .buildUserPermissionResponsePaginated(userRole, requestingUser, page, perPage);
+
+        // Build user info object
+        final UserInfo userInfo = new UserInfo(
+            targetUser.getUserId(),
+            targetUser.getFullName(),
+            targetUser.getEmailAddress()
         );
 
-        Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)",
-            finalTargetUser.getUserId(), requestingUser.getUserId()));
+        // Build response entity
+        final UserPermissions userPermissions = new UserPermissions(
+            userInfo,
+            userRole.getId(),
+            paginatedAssets
+        );
 
-        return new ResponseEntityUserPermissionsView(userPermissions);
+        // Create pagination object
+        final Pagination pagination = new Pagination.Builder()
+            .currentPage(page)
+            .perPage(perPage)
+            .totalEntries(totalEntries)
+            .build();
+
+        Logger.info(this, () -> String.format(
+            "Successfully retrieved %d/%d permissions for user %s (page %d)",
+            paginatedAssets.size(), totalEntries, targetUser.getUserId(), page));
+
+        return new ResponseEntityUserPermissionsView(userPermissions, pagination);
     }
 
     /**

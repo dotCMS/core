@@ -125,6 +125,56 @@ public class UserPermissionHelper {
     }
 
     /**
+     * Builds paginated permission response data for the given role.
+     * Applies in-memory pagination to the full asset list.
+     *
+     * @param role The role to get permissions for
+     * @param requestingUser The user making the request
+     * @param page Page number (0-based)
+     * @param perPage Number of items per page
+     * @return Paginated list of permission assets
+     * @throws DotDataException if data access fails
+     * @throws DotSecurityException if security check fails
+     */
+    public List<UserPermissionAsset> buildUserPermissionResponsePaginated(
+            final Role role,
+            final User requestingUser,
+            final int page,
+            final int perPage) throws DotDataException, DotSecurityException {
+
+        // Build full list using existing logic
+        final List<UserPermissionAsset> allAssets = buildUserPermissionResponse(role, requestingUser);
+
+        // Apply pagination
+        final int totalEntries = allAssets.size();
+        final int offset = page * perPage;
+
+        // Handle out-of-bounds page
+        if (offset >= totalEntries) {
+            return new ArrayList<>();
+        }
+
+        final int endIndex = Math.min(offset + perPage, totalEntries);
+
+        return allAssets.subList(offset, endIndex);
+    }
+
+    /**
+     * Gets total count of permission assets for a role.
+     * Used for pagination metadata.
+     *
+     * @param role The role to count assets for
+     * @param requestingUser The user making the request
+     * @return Total number of assets
+     * @throws DotDataException if data access fails
+     * @throws DotSecurityException if security check fails
+     */
+    public int getTotalPermissionAssetCount(final Role role, final User requestingUser)
+            throws DotDataException, DotSecurityException {
+        return buildUserPermissionResponse(role, requestingUser).size();
+    }
+
+    /**
      * Collects assets from permissions and groups by asset ID.
      * Mutates the provided collections.
      */

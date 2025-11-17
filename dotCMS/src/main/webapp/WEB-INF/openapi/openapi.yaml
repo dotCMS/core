@@ -10625,10 +10625,11 @@ paths:
       - Permissions
   /v1/permissions/user/{userId}:
     get:
-      description: "Returns all permission assets (hosts and folders) that the specified\
-        \ user's individual role has access to. This endpoint retrieves permissions\
-        \ assigned directly to the user's individual role, not through group memberships.\
-        \ Only the user themselves or admin users can access this endpoint."
+      description: "Returns paginated list of permission assets (hosts and folders)\
+        \ that the specified user's individual role has access to. This endpoint retrieves\
+        \ permissions assigned directly to the user's individual role, not through\
+        \ group memberships. Only the user themselves or admin users can access this\
+        \ endpoint."
       operationId: getUserPermissions
       parameters:
       - description: User ID or email address
@@ -10638,6 +10639,22 @@ paths:
         required: true
         schema:
           type: string
+      - description: Page number (0-based)
+        example: 0
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Number of items per page
+        example: 20
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 20
       responses:
         "200":
           content:
@@ -10648,7 +10665,7 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad request - invalid user ID format
+          description: Bad request - invalid user ID or pagination parameters
         "401":
           content:
             application/json: {}
@@ -27353,6 +27370,26 @@ components:
       - email
       - firstName
       - lastName
+    UserInfo:
+      type: object
+      description: User information
+      properties:
+        email:
+          type: string
+          description: User's email address
+          example: admin@dotcms.com
+        id:
+          type: string
+          description: User identifier
+          example: admin@dotcms.com
+        name:
+          type: string
+          description: User's full name
+          example: Admin User
+      required:
+      - email
+      - id
+      - name
     UserPermissionAsset:
       type: object
       description: Permission asset with associated permission assignments
@@ -27444,14 +27481,12 @@ components:
           type: string
           description: The user's individual role identifier
           example: abc-123-def-456
-        userId:
-          type: string
-          description: User identifier (email address or user ID)
-          example: admin@dotcms.com
+        user:
+          $ref: "#/components/schemas/UserInfo"
       required:
       - assets
       - roleId
-      - userId
+      - user
     VanityUrlContentType:
       type: object
       allOf:
