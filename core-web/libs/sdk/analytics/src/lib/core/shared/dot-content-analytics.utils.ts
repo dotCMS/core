@@ -4,6 +4,7 @@ import {
     ANALYTICS_JS_DEFAULT_PROPERTIES,
     ANALYTICS_MINIFIED_SCRIPT_NAME,
     DEFAULT_SESSION_TIMEOUT_MINUTES,
+    DotCMSPredefinedEventType,
     EXPECTED_UTM_KEYS,
     SESSION_STORAGE_KEY,
     USER_ID_KEY
@@ -17,7 +18,8 @@ import {
     DotCMSEventPageData,
     DotCMSEventUtmData,
     EnrichedAnalyticsPayload,
-    JsonObject
+    JsonObject,
+    JsonValue
 } from './models';
 
 // Export activity tracking functions from separate module
@@ -29,6 +31,28 @@ export {
     isUserInactive,
     updateSessionActivity
 } from './dot-content-analytics.activity-tracker';
+
+/**
+ * Type guard to check if an event is a predefined event type.
+ * Enables TypeScript type narrowing for better type safety.
+ *
+ * @param event - Event name to check
+ * @returns True if event is a predefined type, false for custom events
+ *
+ * @example
+ * ```typescript
+ * if (isPredefinedEventType(eventName)) {
+ *   // TypeScript knows eventName is DotCMSPredefinedEventType here
+ *   console.log('Predefined event:', eventName);
+ * } else {
+ *   // TypeScript knows eventName is string (custom) here
+ *   console.log('Custom event:', eventName);
+ * }
+ * ```
+ */
+export function isPredefinedEventType(event: string): event is DotCMSPredefinedEventType {
+    return Object.values(DotCMSPredefinedEventType).includes(event as DotCMSPredefinedEventType);
+}
 
 /**
  * Validates required configuration fields for Analytics initialization.
@@ -533,7 +557,7 @@ export const enrichPagePayloadOptimized = (
     const userProvidedProperties: JsonObject = {};
     Object.keys(properties).forEach((key) => {
         if (!(ANALYTICS_JS_DEFAULT_PROPERTIES as readonly string[]).includes(key)) {
-            userProvidedProperties[key] = properties[key as keyof typeof properties];
+            userProvidedProperties[key] = properties[key as keyof typeof properties] as JsonValue;
         }
     });
 
