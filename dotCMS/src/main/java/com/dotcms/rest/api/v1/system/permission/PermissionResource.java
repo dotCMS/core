@@ -8,6 +8,7 @@ import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -18,6 +19,16 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.dotcms.rest.api.v1.user.UserPermissionHelper;
+import com.dotcms.rest.api.v1.user.UserResourceHelper;
+import com.dotcms.rest.api.v1.user.UserPermissions;
+import com.dotcms.rest.api.v1.user.UserPermissionAsset;
+import com.dotcms.rest.api.v1.user.ResponseEntityUserPermissionsView;
+import com.dotcms.rest.api.v1.user.SaveUserPermissionsForm;
+import com.dotcms.rest.api.v1.user.SaveUserPermissionsResponse;
+import com.dotcms.rest.api.v1.user.ResponseEntitySaveUserPermissionsView;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.business.Role;
 import javax.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,9 +41,12 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -59,24 +73,29 @@ public class PermissionResource {
     private final PermissionHelper permissionHelper;
     private final UserAPI          userAPI;
     private final UserPermissionHelper userPermissionHelper;
+    private final UserResourceHelper userResourceHelper;
 
     @Inject
-    public PermissionResource(final UserPermissionHelper userPermissionHelper) {
-        this(new WebResource(), 
-             PermissionHelper.getInstance(), 
+    public PermissionResource(final UserPermissionHelper userPermissionHelper,
+                             final UserResourceHelper userResourceHelper) {
+        this(new WebResource(),
+             PermissionHelper.getInstance(),
              APILocator.getUserAPI(),
-             userPermissionHelper);
+             userPermissionHelper,
+             userResourceHelper);
     }
     @VisibleForTesting
     public PermissionResource(final WebResource      webResource,
                               final PermissionHelper permissionHelper,
                               final UserAPI          userAPI,
-                              final UserPermissionHelper userPermissionHelper) {
+                              final UserPermissionHelper userPermissionHelper,
+                              final UserResourceHelper userResourceHelper) {
 
         this.webResource      = webResource;
         this.permissionHelper = permissionHelper;
         this.userAPI          = userAPI;
         this.userPermissionHelper = userPermissionHelper;
+        this.userResourceHelper = userResourceHelper;
     }
 
     /**
@@ -317,6 +336,221 @@ public class PermissionResource {
         Logger.info(this, "Permission metadata retrieved successfully");
 
         return new ResponseEntityPermissionMetadataView(permissionMetadata);
+    }
+
+    /**
+     * Retrieves permissions for a user's individual role, grouped by assets.
+     * This endpoint retrieves permissions assigned directly to the user's individual role,
+     * not through group memberships. Only the user themselves or admin users can access this endpoint.
+     *
+     * @param request HTTP servlet request
+     * @param response HTTP servlet response
+     * @param userId User ID or email address
+     * @return ResponseEntityUserPermissionsView containing the user's permissions
+     * @throws DotDataException if data access fails
+     * @throws DotSecurityException if security check fails
+     */
+    @Operation(
+        summary = "Get user permissions",
+        description = "Returns all permission assets (hosts and folders) that the specified user's individual role has access to. " +
+                      "This endpoint retrieves permissions assigned directly to the user's individual role, not through group memberships. " +
+                      "Only the user themselves or admin users can access this endpoint."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "User permissions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityUserPermissionsView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid user ID format",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user can only access their own permissions unless admin",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "User not found",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/user/{userId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityUserPermissionsView getUserPermissions(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "User ID or email address", required = true, example = "dotcms.org.1")
+            @PathParam("userId") final String userId
+    ) throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> "Retrieving permissions for user: " + userId);
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final User requestingUser = initData.getUser();
+
+        if (!UtilMethods.isSet(userId)) {
+            Logger.debug(this, () -> String.format("Invalid user ID request from %s",
+                requestingUser.getUserId()));
+            throw new BadRequestException("User ID is required");
+        }
+
+        final User systemUser = APILocator.systemUser();
+        final User finalTargetUser = userResourceHelper.loadUserByIdOrEmail(userId, systemUser, requestingUser);
+
+        // Security validation - user can view own permissions or admin can view any
+        if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(finalTargetUser.getUserId())) {
+            Logger.warn(this, () -> String.format("Non-admin user %s attempted to access permissions for user %s",
+                                  requestingUser.getUserId(), finalTargetUser.getUserId()));
+            throw new DotSecurityException("User can only access their own permissions unless admin");
+        }
+
+        Logger.debug(this, () -> String.format("Loading permissions for user %s requested by %s",
+            finalTargetUser.getUserId(), requestingUser.getUserId()));
+
+        final Role userRole = APILocator.getRoleAPI().getUserRole(finalTargetUser);
+        if (userRole == null) {
+            Logger.warn(this, String.format("User role not found for user: %s", userId));
+            throw new DotDataException("User role not found for: " + userId);
+        }
+
+        final List<UserPermissionAsset> permissions = userPermissionHelper
+            .buildUserPermissionResponse(userRole, requestingUser);
+
+        final UserPermissions userPermissions = new UserPermissions(
+            finalTargetUser.getUserId(),
+            userRole.getId(),
+            permissions
+        );
+
+        Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)",
+            finalTargetUser.getUserId(), requestingUser.getUserId()));
+
+        return new ResponseEntityUserPermissionsView(userPermissions);
+    }
+
+    /**
+     * Updates permissions for a user's individual role on a specific asset.
+     * This endpoint assigns permissions directly to the user's individual role.
+     * If the asset inherits permissions, inheritance will be broken automatically before saving.
+     * Optionally cascade permissions to descendants (removes their individual permissions).
+     *
+     * @param request HTTP servlet request
+     * @param response HTTP servlet response
+     * @param userId User ID or email address
+     * @param assetId Asset ID (host identifier or folder inode)
+     * @param form Permission assignments to save
+     * @return ResponseEntitySaveUserPermissionsView containing the result
+     * @throws DotDataException if data access fails
+     * @throws DotSecurityException if security check fails
+     */
+    @Operation(
+        summary = "Update user permissions on asset",
+        description = "Saves permissions for a user's individual role on a specific asset (host or folder). " +
+                      "This endpoint assigns permissions directly to the user's individual role. " +
+                      "If the asset inherits permissions, inheritance will be broken automatically before saving. " +
+                      "Optionally cascade permissions to descendants (removes their individual permissions). " +
+                      "Only admin users can update permissions."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "User permissions updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySaveUserPermissionsView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid input (see error message for details)",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - admin access required or user lacks EDIT_PERMISSIONS on asset",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "User or asset not found",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @PUT
+    @Path("/user/{userId}/asset/{assetId}")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntitySaveUserPermissionsView updateUserPermissions(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "User ID or email address", required = true, example = "dotcms.org.1")
+            @PathParam("userId") final String userId,
+            @Parameter(description = "Asset identifier (host ID or folder inode)", required = true, example = "48190c8c-42c4-46af-8d1a-0cd5db894797")
+            @PathParam("assetId") final String assetId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Permission updates to apply. Use empty arrays to remove all permissions for a scope.",
+                required = true,
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = SaveUserPermissionsForm.class)
+                )
+            )
+            final SaveUserPermissionsForm form
+    ) throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> "Updating permissions for user: " + userId + " on asset: " + assetId);
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final User requestingUser = initData.getUser();
+
+        if (!requestingUser.isAdmin()) {
+            Logger.warn(this, () -> "Non-admin user " + requestingUser.getUserId() +
+                                  " attempted to update permissions");
+            throw new DotSecurityException("Only admin users can update permissions");
+        }
+
+        if (!UtilMethods.isSet(userId)) {
+            throw new BadRequestException("User ID is required");
+        }
+        if (!UtilMethods.isSet(assetId)) {
+            throw new BadRequestException("Asset ID is required");
+        }
+
+        form.checkValid();
+
+        Logger.debug(this, () -> String.format("PUT /permissions/user/%s/asset/%s requested by %s",
+            userId, assetId, requestingUser.getUserId()));
+
+        final User systemUser = APILocator.systemUser();
+        final User targetUser = userResourceHelper.loadUserByIdOrEmail(userId, systemUser, requestingUser);
+        final Permissionable asset = userPermissionHelper.resolveAsset(assetId, systemUser);
+
+        // Security check: User must have EDIT_PERMISSIONS on the asset
+        if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, requestingUser)) {
+            Logger.warn(this, () -> String.format("User %s does not have EDIT_PERMISSIONS on asset %s",
+                requestingUser.getUserId(), assetId));
+            throw new DotSecurityException("User does not have permission to edit permissions on this asset");
+        }
+
+        final SaveUserPermissionsResponse saveResponse = userPermissionHelper.saveUserPermissions(
+            targetUser.getUserId(),
+            assetId,
+            form,
+            requestingUser
+        );
+
+        Logger.info(this, () -> String.format("Successfully updated permissions for user %s on asset %s (requested by %s)",
+            targetUser.getUserId(), assetId, requestingUser.getUserId()));
+
+        return new ResponseEntitySaveUserPermissionsView(saveResponse);
     }
 
     private boolean filter(final PermissionAPI.Type permissionType, final Permission permission) {

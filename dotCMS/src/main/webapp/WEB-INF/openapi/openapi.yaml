@@ -10623,6 +10623,106 @@ paths:
       summary: Get permissions by permission type
       tags:
       - Permissions
+  /v1/permissions/user/{userId}:
+    get:
+      description: "Returns all permission assets (hosts and folders) that the specified\
+        \ user's individual role has access to. This endpoint retrieves permissions\
+        \ assigned directly to the user's individual role, not through group memberships.\
+        \ Only the user themselves or admin users can access this endpoint."
+      operationId: getUserPermissions
+      parameters:
+      - description: User ID or email address
+        example: dotcms.org.1
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUserPermissionsView"
+          description: User permissions retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid user ID format
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user can only access their own permissions unless
+            admin
+        "404":
+          content:
+            application/json: {}
+          description: User not found
+      summary: Get user permissions
+      tags:
+      - Permissions
+  /v1/permissions/user/{userId}/asset/{assetId}:
+    put:
+      description: "Saves permissions for a user's individual role on a specific asset\
+        \ (host or folder). This endpoint assigns permissions directly to the user's\
+        \ individual role. If the asset inherits permissions, inheritance will be\
+        \ broken automatically before saving. Optionally cascade permissions to descendants\
+        \ (removes their individual permissions). Only admin users can update permissions."
+      operationId: updateUserPermissions
+      parameters:
+      - description: User ID or email address
+        example: dotcms.org.1
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      - description: Asset identifier (host ID or folder inode)
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveUserPermissionsForm"
+        description: Permission updates to apply. Use empty arrays to remove all permissions
+          for a scope.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySaveUserPermissionsView"
+          description: User permissions updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid input (see error message for details)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin access required or user lacks EDIT_PERMISSIONS
+            on asset
+        "404":
+          content:
+            application/json: {}
+          description: User or asset not found
+      summary: Update user permissions on asset
+      tags:
+      - Permissions
   /v1/personalization/pagepersonas:
     post:
       description: Copies the current content associated to page containers with default
@@ -13912,86 +14012,6 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Find an user
-      tags:
-      - Users
-  /v1/users/{userId}/permissions:
-    get:
-      description: "Retrieves permissions for a user's individual role, organized\
-        \ by asset type and permission scope"
-      operationId: getUserPermissions
-      parameters:
-      - description: User ID or email address
-        in: path
-        name: userId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityUserPermissionsView"
-          description: User permissions retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid user id
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-      summary: Get user permissions
-      tags:
-      - Users
-  /v1/users/{userId}/permissions/{assetId}:
-    put:
-      description: Updates permissions for a user's individual role on a specific
-        asset (host or folder). Automatically breaks permission inheritance if the
-        asset inherits from parent. Supports cascading permissions to all children
-        assets.
-      operationId: updateUserPermissions
-      parameters:
-      - description: User ID or email address
-        in: path
-        name: userId
-        required: true
-        schema:
-          type: string
-      - description: Asset ID (host identifier or folder inode)
-        in: path
-        name: assetId
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SaveUserPermissionsForm"
-        description: Permission assignments to save. Replaces existing permissions
-          for this user's role on the asset.
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySaveUserPermissionsView"
-          description: Permissions updated successfully
-        "400":
-          content:
-            application/json: {}
-          description: "Bad request - invalid user ID, asset ID, or permission data"
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - user lacks EDIT_PERMISSIONS on asset
-        "404":
-          content:
-            application/json: {}
-          description: Not found - user or asset not found
-      summary: Update user permissions on asset
       tags:
       - Users
   /v1/variants:

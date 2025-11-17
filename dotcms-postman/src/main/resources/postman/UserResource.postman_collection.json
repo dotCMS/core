@@ -2026,7 +2026,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1/permissions",
+							"raw": "{{serverURL}}/api/v1/permissions/user/dotcms.org.1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2100,7 +2100,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/admin@dotcms.com/permissions",
+							"raw": "{{serverURL}}/api/v1/permissions/user/admin@dotcms.com",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2178,7 +2178,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1/permissions",
+							"raw": "{{serverURL}}/api/v1/permissions/user/dotcms.org.1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2305,7 +2305,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1/permissions",
+							"raw": "{{serverURL}}/api/v1/permissions/user/dotcms.org.1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2504,7 +2504,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1/permissions",
+							"raw": "{{serverURL}}/api/v1/permissions/user/dotcms.org.1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2578,7 +2578,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/admin@dotcms.com/permissions",
+							"raw": "{{serverURL}}/api/v1/permissions/user/admin@dotcms.com",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2656,7 +2656,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1/permissions",
+							"raw": "{{serverURL}}/api/v1/permissions/user/dotcms.org.1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2783,7 +2783,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1/permissions",
+							"raw": "{{serverURL}}/api/v1/permissions/user/dotcms.org.1",
 							"host": [
 								"{{serverURL}}"
 							],
