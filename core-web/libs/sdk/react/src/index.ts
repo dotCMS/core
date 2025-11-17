@@ -16,3 +16,22 @@ export {
 } from './lib/next/components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
 
 export { DotCMSLayoutBodyProps } from './lib/next/components/DotCMSLayoutBody/DotCMSLayoutBody';
+
+// AI Search exports
+export {
+    DotCMSAISearchProvider,
+    useDotCMSAISearchContext
+} from './lib/next/contexts/DotCMSAISearchContext';
+
+export { DotCMSAISearchInput } from './lib/next/components/DotCMSAISearchInput/DotCMSAISearchInput';
+
+export { useAISearch } from './lib/next/hooks/useAISearch';
+
+//Export AI types from shared types
+export type {
+    DotCMSAISearchValue,
+    DotCMSAISearchProviderProps,
+    DotCMSAISearchProps,
+    DotCMSAISearchInputProps,
+    DotCMSAISearchInputRenderProps
+} from './lib/next/shared/types';
