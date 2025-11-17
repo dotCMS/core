@@ -208,6 +208,7 @@ export class DotNavigationService {
             )
             .subscribe((menus: DotMenu[]) => {
                 this.setMenu(menus);
+                this.#globalStore.setMenuItems(menus);
             });
 
         this.dotcmsEventsService
@@ -227,6 +228,7 @@ export class DotNavigationService {
                     )
                     .subscribe((menus: DotMenu[]) => {
                         this.setMenu(menus);
+                        this.#globalStore.setMenuItems(menus);
                     });
             });
 
@@ -237,6 +239,7 @@ export class DotNavigationService {
             )
             .subscribe((menus: DotMenu[]) => {
                 this.setMenu(menus);
+                this.#globalStore.setMenuItems(menus);
                 this.goToFirstPortlet();
             });
 
