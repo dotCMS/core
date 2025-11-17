@@ -17,7 +17,12 @@ import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/
 
 import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
-import { DotFolderTreeNodeData, DotContentDriveUploadFiles } from '../shared/models';
+import { ALL_FOLDER } from '../shared/constants';
+import {
+    DotFolderTreeNodeData,
+    DotContentDriveUploadFiles,
+    DotContentDriveMoveItems
+} from '../shared/models';
 
 @Component({
     selector: 'dot-tree-folder',
@@ -101,6 +106,14 @@ export class DotTreeFolderComponent {
      */
     uploadFiles = output<DotContentDriveUploadFiles>();
 
+    /**
+     * Event emitter for when items are moved.
+     *
+     * @event moveItems
+     * @type {DotContentDriveMoveItems}
+     */
+    moveItems = output<DotContentDriveMoveItems>();
+
     readonly elementRef = inject(ElementRef);
 
     readonly $activeDropNode = signal<DotFolderTreeNodeData | null>(null);
@@ -111,6 +124,8 @@ export class DotTreeFolderComponent {
     readonly treeStyleClasses = computed(
         () => `w-full h-full ${this.$showFolderIconOnFirstOnly() ? 'first-only' : 'folder-all'}`
     );
+
+    protected readonly ALL_FOLDER_KEY = ALL_FOLDER.key;
 
     /**
      * @description Set the dropzone as active when the drag enters the dropzone
@@ -185,14 +200,16 @@ export class DotTreeFolderComponent {
         event.stopPropagation();
         event.preventDefault();
 
-        const targetFolderId = this.$activeDropNode().id;
+        const targetFolder = this.$activeDropNode();
 
         this.$activeDropNode.set(null);
 
         const files = event.dataTransfer?.files ?? undefined;
 
         if (files?.length) {
-            this.uploadFiles.emit({ files, targetFolderId });
+            this.uploadFiles.emit({ files, targetFolder });
+        } else {
+            this.moveItems.emit({ targetFolder });
         }
     }
 }

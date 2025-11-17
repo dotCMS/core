@@ -92,6 +92,9 @@ export const MAP_NUMBERS_TO_BASE_TYPES = {
 // Debounce time for requests
 export const DEBOUNCE_TIME = 500;
 
+// Minimum loading time in milliseconds
+export const MINIMUM_LOADING_TIME = 1200;
+
 export const PANEL_SCROLL_HEIGHT = '25rem';
 
 // Dialog type
@@ -123,6 +126,7 @@ export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
 export const SUCCESS_MESSAGE_LIFE = 4500;
 export const WARNING_MESSAGE_LIFE = 4200;
 export const ERROR_MESSAGE_LIFE = 4500;
+export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
 
 // Dropzone state
 export const DROPZONE_STATE = {

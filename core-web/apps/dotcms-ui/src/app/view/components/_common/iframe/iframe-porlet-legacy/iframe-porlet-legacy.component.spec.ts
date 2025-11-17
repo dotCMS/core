@@ -56,7 +56,7 @@ import { DotCustomEventHandlerService } from '../../../../../api/services/dot-cu
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotDownloadBundleDialogModule } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotDownloadBundleDialogComponent } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { IFrameModule } from '../index';
 
 const routeDatamock = {
@@ -95,7 +95,7 @@ xdescribe('IframePortletLegacyComponent', () => {
             imports: [
                 IFrameModule,
                 RouterTestingModule,
-                DotDownloadBundleDialogModule,
+                DotDownloadBundleDialogComponent,
                 HttpClientTestingModule
             ],
             providers: [

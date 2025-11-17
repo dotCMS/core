@@ -92,9 +92,10 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                 BrowserAnimationsModule,
                 MenuModule,
                 HttpClientTestingModule,
-                ButtonModule
+                ButtonModule,
+                DotEditPageWorkflowsActionsComponent
             ],
-            declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotWorkflowService,

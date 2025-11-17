@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -6,15 +8,19 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotSystemConfigService } from '@dotcms/data-access';
 import { DotMenu } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { GlobalStore } from '@dotcms/store';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { DotNavItemComponent } from './dot-nav-item.component';
 
-import { LABEL_IMPORTANT_ICON } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
-import { DotRandomIconPipeModule } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe.module';
+import {
+    LABEL_IMPORTANT_ICON,
+    DotRandomIconPipe
+} from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
 import { dotMenuMock } from '../../services/dot-navigation.service.spec';
-import { DotNavIconModule } from '../dot-nav-icon/dot-nav-icon.module';
+import { DotNavIconComponent } from '../dot-nav-icon/dot-nav-icon.component';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
 @Component({
@@ -70,14 +76,26 @@ describe('DotNavItemComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
+            declarations: [TestHostComponent],
             imports: [
-                DotNavIconModule,
-                DotIconModule,
+                DotNavItemComponent,
+                DotSubNavComponent,
+                DotNavIconComponent,
+                DotIconComponent,
                 RouterTestingModule,
                 BrowserAnimationsModule,
                 TooltipModule,
-                DotRandomIconPipeModule
+                DotRandomIconPipe
+            ],
+            providers: [
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                DotRandomIconPipe
             ]
         }).compileComponents();
     }));
@@ -89,7 +107,7 @@ describe('DotNavItemComponent', () => {
         de = deHost.query(By.css('dot-nav-item'));
         component = de.componentInstance;
         fixtureHost.detectChanges();
-        navItem = de.query(By.css('.dot-nav__item'));
+        navItem = de.query(By.css('[data-testid="nav-item"]'));
         subNav = de.query(By.css('dot-sub-nav'));
     });
 
@@ -120,13 +138,77 @@ describe('DotNavItemComponent', () => {
     });
 
     it('should emit menuClick when nav__item is clicked', () => {
+        const mainArea = de.query(By.css('[data-testid="nav-item-main"]'));
         jest.spyOn(component.menuClick, 'emit');
-        navItem.nativeElement.dispatchEvent(new MouseEvent('click', {}));
+        mainArea.nativeElement.click();
         expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
     });
 
+    describe('Toggle functionality', () => {
+        let mainArea: DebugElement;
+        let toggleArea: DebugElement;
+
+        beforeEach(() => {
+            mainArea = de.query(By.css('[data-testid="nav-item-main"]'));
+            toggleArea = de.query(By.css('[data-testid="nav-item-toggle"]'));
+        });
+
+        it('should have two clickable areas (main and toggle)', () => {
+            expect(mainArea).toBeDefined();
+            expect(toggleArea).toBeDefined();
+        });
+
+        it('should emit menuClick when clicking on the main area (first 2/3)', () => {
+            jest.spyOn(component.menuClick, 'emit');
+            mainArea.nativeElement.click();
+            fixtureHost.detectChanges();
+
+            expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
+            expect(component.menuClick.emit).toHaveBeenCalledWith({
+                originalEvent: expect.any(MouseEvent),
+                data: componentHost.menu
+            });
+        });
+
+        it('should emit menuClick with toggleOnly flag when clicking on toggle area (last 1/3)', () => {
+            jest.spyOn(component.menuClick, 'emit');
+            toggleArea.nativeElement.click();
+            fixtureHost.detectChanges();
+
+            expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
+            expect(component.menuClick.emit).toHaveBeenCalledWith({
+                originalEvent: expect.any(MouseEvent),
+                data: componentHost.menu,
+                toggleOnly: true
+            });
+        });
+
+        it('should emit menuClick without toggleOnly flag when clicking on main area', () => {
+            jest.spyOn(component.menuClick, 'emit');
+            mainArea.nativeElement.click();
+            fixtureHost.detectChanges();
+
+            expect(component.menuClick.emit).toHaveBeenCalledWith({
+                originalEvent: expect.any(MouseEvent),
+                data: componentHost.menu
+            });
+            expect(component.menuClick.emit).toHaveBeenCalledWith(
+                expect.not.objectContaining({ toggleOnly: true })
+            );
+        });
+
+        it('should stop propagation when clicking toggle area', () => {
+            const event = new MouseEvent('click', { bubbles: true });
+            jest.spyOn(event, 'stopPropagation');
+
+            toggleArea.nativeElement.dispatchEvent(event);
+
+            expect(event.stopPropagation).toHaveBeenCalled();
+        });
+    });
+
     it('should set label correctly', () => {
-        const label: DebugElement = de.query(By.css('.dot-nav__item-label'));
+        const label: DebugElement = de.query(By.css('[data-testid="nav-item-label"]'));
         expect(label.nativeElement.textContent.trim()).toBe('Name');
     });
 
@@ -149,7 +231,7 @@ describe('DotNavItemComponent', () => {
 
             fixtureHost.detectChanges();
 
-            navItem.triggerEventHandler('mouseenter', {});
+            navItem.nativeElement.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
             fixtureHost.detectChanges();
 
             await fixtureHost.whenStable();
@@ -180,7 +262,7 @@ describe('DotNavItemComponent', () => {
 
             fixtureHost.detectChanges();
 
-            navItem.triggerEventHandler('mouseenter', {});
+            navItem.nativeElement.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
             fixtureHost.detectChanges();
 
             expect(subNav.styles.cssText).toEqual(
@@ -190,7 +272,7 @@ describe('DotNavItemComponent', () => {
 
         it('should reset menu position when mouseleave', () => {
             component.collapsed = true;
-            de.triggerEventHandler('mouseleave', {});
+            de.nativeElement.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
             fixtureHost.detectChanges();
             expect(subNav.styles.cssText).toEqual('height: 0px; overflow: hidden;');
         });

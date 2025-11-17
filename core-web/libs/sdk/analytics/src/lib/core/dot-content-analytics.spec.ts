@@ -13,7 +13,12 @@ jest.mock('analytics');
 jest.mock('./plugin/dot-analytics.plugin');
 jest.mock('./plugin/enricher/dot-analytics.enricher.plugin');
 jest.mock('./plugin/identity/dot-analytics.identity.plugin');
-jest.mock('./shared/dot-content-analytics.utils');
+
+// Partially mock utils - keep validateAnalyticsConfig but mock cleanupActivityTracking
+jest.mock('./shared/dot-content-analytics.utils', () => ({
+    ...jest.requireActual('./shared/dot-content-analytics.utils'),
+    cleanupActivityTracking: jest.fn()
+}));
 
 const mockAnalytics = Analytics as jest.MockedFunction<typeof Analytics>;
 const mockDotAnalytics = dotAnalytics as jest.MockedFunction<typeof dotAnalytics>;
@@ -50,6 +55,7 @@ describe('initializeContentAnalytics', () => {
         Object.defineProperty(global, 'window', {
             value: {
                 addEventListener: jest.fn(),
+                dispatchEvent: jest.fn(),
                 __dotAnalyticsCleanup: null
             },
             writable: true
@@ -82,9 +88,11 @@ describe('initializeContentAnalytics', () => {
 
     it('should setup window event listeners for cleanup', () => {
         const mockAddEventListener = jest.fn();
+        const mockDispatchEvent = jest.fn();
         Object.defineProperty(global, 'window', {
             value: {
-                addEventListener: mockAddEventListener
+                addEventListener: mockAddEventListener,
+                dispatchEvent: mockDispatchEvent
             },
             writable: true
         });
@@ -92,6 +100,7 @@ describe('initializeContentAnalytics', () => {
         initializeContentAnalytics(mockConfig);
 
         expect(mockAddEventListener).toHaveBeenCalledWith('beforeunload', expect.any(Function));
+        expect(mockDispatchEvent).toHaveBeenCalledWith(expect.any(CustomEvent));
     });
 
     it('should return null when siteAuth is missing', () => {

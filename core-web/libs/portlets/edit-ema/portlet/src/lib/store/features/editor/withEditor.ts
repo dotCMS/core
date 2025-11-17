@@ -27,7 +27,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { DEFAULT_PERSONA, UVE_FEATURE_FLAGS } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -45,6 +45,7 @@ import {
     getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
+import { withFlags } from '../flags/withFlags';
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
     const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
@@ -76,6 +77,7 @@ export function withEditor() {
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
+        withFlags(UVE_FEATURE_FLAGS),
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
@@ -139,12 +141,18 @@ export function withEditor() {
                     const showDialogs = canEditPage && isEditState;
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
+                    const isLockFeatureEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
+                    const isPageLockedByUser =
+                        pageAPIResponse?.page.lockedBy === store.currentUser()?.userId;
+                    const canEditDueToLock = !isLockFeatureEnabled || isPageLockedByUser;
+
                     const canUserHaveContentletTools =
                         !!contentletArea &&
                         canEditPage &&
                         isEditState &&
                         !isScrolling &&
-                        isEditMode;
+                        isEditMode &&
+                        canEditDueToLock;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
                     const showPalette = isEnterprise && canEditPage && isEditState && isEditMode;
@@ -189,9 +197,9 @@ export function withEditor() {
                             : null,
                         palette: showPalette
                             ? {
-                                  variantId: params?.variantName,
-                                  containers: pageAPIResponse?.containers,
                                   languageId: pageAPIResponse?.viewAs.language.id,
+                                  pagePath: pageAPIResponse?.page.pageURI,
+                                  variantId: params?.variantName,
                                   paletteClass: paletteOpen
                                       ? PALETTE_CLASSES.OPEN
                                       : PALETTE_CLASSES.CLOSED

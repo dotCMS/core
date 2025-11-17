@@ -30,6 +30,29 @@ export {
     updateSessionActivity
 } from './dot-content-analytics.activity-tracker';
 
+/**
+ * Validates required configuration fields for Analytics initialization.
+ *
+ * @param config - The analytics configuration to validate
+ * @returns Array of missing field names, or null if all required fields are present
+ *
+ * @example
+ * ```ts
+ * const missing = validateAnalyticsConfig(config);
+ * if (missing) {
+ *   console.error(`Missing: ${missing.join(' and ')}`);
+ * }
+ * ```
+ */
+export function validateAnalyticsConfig(config: DotCMSAnalyticsConfig): string[] | null {
+    const missing: string[] = [];
+
+    if (!config.siteAuth?.trim()) missing.push('"siteAuth"');
+    if (!config.server?.trim()) missing.push('"server"');
+
+    return missing.length > 0 ? missing : null;
+}
+
 // Performance cache for static browser data that rarely changes
 let staticBrowserData: Pick<
     DotCMSBrowserData,
@@ -199,6 +222,7 @@ export const getSessionId = (): string => {
 export const getAnalyticsContext = (config: DotCMSAnalyticsConfig): DotCMSAnalyticsEventContext => {
     const sessionId = getSessionId();
     const userId = getUserId();
+    const device = getDeviceDataForContext();
 
     if (config.debug) {
         console.warn('DotCMS Analytics Identity Context:', {
@@ -210,7 +234,8 @@ export const getAnalyticsContext = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
     return {
         site_auth: config.siteAuth,
         session_id: sessionId,
-        user_id: userId
+        user_id: userId,
+        device
     };
 };
 
@@ -275,6 +300,26 @@ const getStaticBrowserData = () => {
     };
 
     return staticBrowserData;
+};
+
+/**
+ * Gets current device data for analytics.
+ * Combines static browser data with dynamic viewport information.
+ * Used by the identity plugin to inject device data into context.
+ *
+ * @returns Device data with screen resolution, language, and viewport dimensions
+ */
+export const getDeviceDataForContext = (): DotCMSEventDeviceData => {
+    const staticData = getStaticBrowserData();
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
+    return {
+        screen_resolution: staticData.screen_resolution ?? '',
+        language: staticData.user_language ?? '',
+        viewport_width: String(viewportWidth),
+        viewport_height: String(viewportHeight)
+    };
 };
 
 /**
@@ -472,7 +517,7 @@ export const enrichWithUtmData = <T extends Record<string, unknown>>(payload: T)
  *
  * @param payload - The Analytics.js payload with context already injected by identity plugin
  * @param location - The Location object to extract page data from (defaults to window.location)
- * @returns Enriched payload with page, device, UTM, custom data, and local_time
+ * @returns Enriched payload with page, UTM, custom data, and local_time (device is in context)
  */
 export const enrichPagePayloadOptimized = (
     payload: AnalyticsBasePayloadWithContext,
@@ -503,20 +548,12 @@ export const enrichPagePayloadOptimized = (
         title: (properties.title as string) ?? document?.title
     };
 
-    const deviceData: DotCMSEventDeviceData = {
-        screen_resolution: staticData.screen_resolution ?? '',
-        language: staticData.user_language ?? '',
-        viewport_width: String(properties.width),
-        viewport_height: String(properties.height)
-    };
-
     // Extract UTM parameters from the current URL (already transformed to DotCMS format)
     const utmData = extractUTMParameters(location);
 
     return {
         ...payload,
         page: pageData,
-        device: deviceData,
         ...(Object.keys(utmData).length > 0 && { utm: utmData }),
         // Only include custom if there are user-provided properties
         ...(Object.keys(userProvidedProperties).length > 0 && { custom: userProvidedProperties }),

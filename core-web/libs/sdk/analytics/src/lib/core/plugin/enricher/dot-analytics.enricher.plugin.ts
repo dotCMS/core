@@ -9,8 +9,8 @@ import {
 /**
  * Plugin that enriches the analytics payload data based on the event type.
  * Uses Analytics.js lifecycle events to inject context before processing.
- * The identity plugin runs FIRST to inject context: { session_id, site_auth, user_id }
- * This enricher plugin runs SECOND to add page/device/utm data.
+ * The identity plugin runs FIRST to inject context: { session_id, site_auth, user_id, device }
+ * This enricher plugin runs SECOND to add page/utm/custom data.
  *
  * Returns the final request body structure ready to send to the server.
  */
@@ -28,11 +28,10 @@ export const dotAnalyticsEnricherPlugin = () => {
         }: {
             payload: AnalyticsBasePayloadWithContext;
         }): DotCMSAnalyticsRequestBody => {
-            const { context, page, device, utm, custom, local_time } =
-                enrichPagePayloadOptimized(payload);
+            const { context, page, utm, custom, local_time } = enrichPagePayloadOptimized(payload);
 
-            if (!page || !device) {
-                throw new Error('DotCMS Analytics: Missing required page or device data');
+            if (!page) {
+                throw new Error('DotCMS Analytics: Missing required page data');
             }
 
             return {
@@ -43,7 +42,6 @@ export const dotAnalyticsEnricherPlugin = () => {
                         local_time,
                         data: {
                             page,
-                            device,
                             ...(utm && { utm }),
                             ...(custom && { custom })
                         }

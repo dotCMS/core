@@ -4,6 +4,8 @@ import {
     DotPageToolUrlParams
 } from '@dotcms/dotcms-models';
 
+import { CD_PARAM_PREFIX } from './shared/const';
+
 /**
  * Generate an anchor element with a Blob file to eventually be click to force a download
  * This approach is needed because FF do not hear WS events while waiting for a request.
@@ -124,4 +126,61 @@ export function ellipsizeText(text: string, limit: number): string {
     const truncated = text.slice(0, limit);
 
     return truncated.slice(0, truncated.lastIndexOf(' ')) + '...';
+}
+
+/**
+ * Checks if a provided value is meaningful (not empty string, null, or undefined)
+ * @param value The value to check
+ * @returns {boolean} True if the value is meaningful, false otherwise
+ */
+export function hasValidValue<T>(value: T | undefined | null): value is T {
+    if (value === undefined || value === null) {
+        return false;
+    }
+
+    if (typeof value === 'string') {
+        return value.trim() !== '';
+    }
+
+    if (Array.isArray(value)) {
+        return value.length > 0;
+    }
+
+    if (typeof value === 'object') {
+        return Object.keys(value).length > 0;
+    }
+
+    return true;
+}
+
+/**
+ * Maps the query params to the CD params
+ * @param queryParams - The query params to map
+ * @returns The CD params
+ */
+export function mapQueryParamsToCDParams(queryParams: URLSearchParams): Record<string, string> {
+    return Array.from(queryParams.entries()).reduce(
+        (acc, [key, value]) => {
+            acc[`${CD_PARAM_PREFIX}${key}`] = value;
+            return acc;
+        },
+        {} as Record<string, string>
+    );
+}
+
+/**
+ * Maps the CD params to the query params
+ * @param cdParams - The CD params to map
+ * @returns The query params
+ */
+export function mapParamsFromEditContentlet(cdParams: URLSearchParams): Record<string, string> {
+    return Array.from(cdParams.entries())
+        .filter(([key]) => key.startsWith('CD_'))
+        .reduce(
+            (acc, [key, value]) => {
+                acc[key.replace(CD_PARAM_PREFIX, '')] = value;
+                return acc;
+            },
+            {} as Record<string, string>
+        );
 }

@@ -5,6 +5,7 @@ import { enableBlockEditorInline } from "@dotcms/uve";
 import {
     DotCMSBlockEditorRenderer,
     useEditableDotCMSPage,
+    type CustomRendererProps,
 } from "@dotcms/react";
 
 import type { DotCMSCustomDetailPageResponse } from "@/types/page.model";
@@ -52,9 +53,9 @@ export function DetailPage({ pageResponse }: { pageResponse: DotCMSCustomDetailP
 
                 <div onClick={handleClick}>
                     <DotCMSBlockEditorRenderer
-                        blocks={JSON.parse(blogContent || "[]")}
+                        blocks={blogContent!}
                         className={blockEditorClasses}
-                        customRenderers={customeRenderers}
+                        customRenderers={customRenderers}
                     />
                 </div>
             </main>
@@ -64,9 +65,10 @@ export function DetailPage({ pageResponse }: { pageResponse: DotCMSCustomDetailP
     );
 }
 
-const customeRenderers = {
-    Activity: (props: BlockEditorNode) => {
-        const { title, description } = props.attrs?.data || {};
+const customRenderers = {
+    Activity: (props: CustomRendererProps) => {
+        const { node } = props;
+        const { title, description } = node.attrs?.data || {};
 
         return (
             <div>
@@ -75,8 +77,8 @@ const customeRenderers = {
             </div>
         );
     },
-    Product: (props: BlockEditorNode) => {
-        const { title, description } = props.attrs?.data || {};
+    Product: (props: CustomRendererProps) => {
+        const { title, description } = props.node.attrs?.data || {};
 
         return (
             <div>
@@ -84,5 +86,5 @@ const customeRenderers = {
                 <div dangerouslySetInnerHTML={{ __html: description }} />
             </div>
         );
-    },
+    }
 };

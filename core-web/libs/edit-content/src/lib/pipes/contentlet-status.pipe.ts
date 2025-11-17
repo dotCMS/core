@@ -6,8 +6,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotEditContentStatus } from '../models/dot-edit-content-status.enum';
 
 @Pipe({
-    name: 'contentletStatus',
-    standalone: true
+    name: 'contentletStatus'
 })
 export class ContentletStatusPipe implements PipeTransform {
     private readonly dotMessage = inject(DotMessageService);

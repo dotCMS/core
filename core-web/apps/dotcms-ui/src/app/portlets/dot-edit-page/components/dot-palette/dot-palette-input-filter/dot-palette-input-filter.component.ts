@@ -1,5 +1,6 @@
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -10,14 +11,19 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
+
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-palette-input-filter',
     templateUrl: './dot-palette-input-filter.component.html',
     styleUrls: ['./dot-palette-input-filter.component.scss'],
-    standalone: false
+    imports: [CommonModule, FormsModule, InputTextModule, DotIconComponent, DotMessagePipe]
 })
 export class DotPaletteInputFilterComponent implements OnInit, OnDestroy {
     @Input() goBackBtn: boolean;

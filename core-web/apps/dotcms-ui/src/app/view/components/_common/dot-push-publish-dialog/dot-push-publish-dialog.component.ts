@@ -1,10 +1,20 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, OnDestroy, OnInit, Output, inject } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+import { CalendarModule } from 'primeng/calendar';
+import { DropdownModule } from 'primeng/dropdown';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotMessageService, PushPublishService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotPushPublishFiltersService,
+    PushPublishService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
@@ -12,12 +22,25 @@ import {
     DotPushPublishData,
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
+import { DotDialogComponent } from '@dotcms/ui';
+
+import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
 @Component({
     selector: 'dot-push-publish-dialog',
     styleUrls: ['./dot-push-publish-dialog.component.scss'],
     templateUrl: 'dot-push-publish-dialog.component.html',
-    standalone: false
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        CalendarModule,
+        DropdownModule,
+        SelectButtonModule,
+        DotDialogComponent,
+        DotPushPublishFormComponent
+    ],
+    providers: [DotPushPublishFiltersService]
 })
 export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     private pushPublishService = inject(PushPublishService);

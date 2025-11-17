@@ -1,14 +1,29 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { AfterViewChecked, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
+import { RouterModule, ActivatedRoute } from '@angular/router';
+
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { take, tap } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent
+} from '@dotcms/ui';
 
 import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
@@ -17,7 +32,17 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
     selector: 'dot-reset-password-component',
     styleUrls: ['./reset-password.component.scss'],
     templateUrl: 'reset-password.component.html',
-    standalone: false
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        RouterModule,
+        ButtonModule,
+        InputTextModule,
+        DotFieldValidationMessageComponent,
+        DotAutofocusDirective,
+        DotFieldRequiredDirective
+    ]
 })
 export class ResetPasswordComponent implements OnInit, AfterViewChecked {
     private fb = inject(UntypedFormBuilder);

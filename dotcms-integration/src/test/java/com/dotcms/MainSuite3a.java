@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
@@ -12,7 +13,6 @@ import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllDraftExperim
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllRunningExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllScheduledExperimentsMetricTypeTest;
-import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricTypeTest;
 import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricTypeTest;
 import com.dotcms.util.TimeMachineUtilTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
@@ -28,7 +28,6 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     RuleAPITest.class,
         DeterministicIdentifierAPITest.class,
-        ExperimentFeatureFlagMetricTypeTest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,
         CountPagesWithDraftExperimentsMetricTypeTest.class,
@@ -45,7 +44,8 @@ import org.junit.runners.Suite;
         Task250604UpdateFolderInodesTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
-        SecondaryCategoryPermissionTest.class
+        SecondaryCategoryPermissionTest.class,
+        OpenAIVisionAPIImplTest.class
 })
 
 public class MainSuite3a {
