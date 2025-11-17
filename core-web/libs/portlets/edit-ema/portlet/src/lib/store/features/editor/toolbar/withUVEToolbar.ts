@@ -18,7 +18,6 @@ import { InfoOptions, ToggleLockOptions, UnlockOptions } from '../../../../share
 import {
     computePageIsLocked,
     createFavoritePagesURL,
-    createFullURL,
     getFullPageURL,
     getIsDefaultVariant,
     getOrientation
@@ -84,7 +83,6 @@ export function withUVEToolbar() {
                     loading: store.status() === UVE_STATUS.LOADING
                 };
 
-                const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
                 const isPreview = params?.mode === UVE_MODE.PREVIEW;
@@ -100,7 +98,6 @@ export function withUVEToolbar() {
                 return {
                     editor: {
                         bookmarksUrl,
-                        copyUrl: createFullURL(params, siteId),
                         apiUrl: pageAPI
                     },
                     preview: prevewItem,
