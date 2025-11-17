@@ -3,7 +3,11 @@
  * Contains interfaces for different types of analytics events
  */
 
-import { DotCMSEventPageData, DotCMSEventUtmData } from './data.model';
+import {
+    DotCMSContentImpressionPageData,
+    DotCMSEventPageData,
+    DotCMSEventUtmData
+} from './data.model';
 
 import {
     DotCMSCustomEventType,
@@ -66,11 +70,54 @@ export type DotCMSCustomEventData = {
 };
 
 /**
+ * Partial content impression data sent by producer plugins.
+ * Contains only impression-specific data (content and position).
+ * The enricher plugin will add page data automatically.
+ */
+export type DotCMSContentImpressionPayload = {
+    /** Content information */
+    content: {
+        /** Content identifier */
+        identifier: string;
+        /** Content inode */
+        inode: string;
+        /** Content title */
+        title: string;
+        /** Content type name */
+        content_type: string;
+    };
+    /** Position information in the viewport and DOM */
+    position: {
+        /** Viewport offset percentage from top */
+        viewport_offset_pct: number;
+        /** DOM index position */
+        dom_index: number;
+    };
+};
+
+/**
+ * Complete data structure for content impression events after enrichment.
+ * Includes minimal page data (title and url) added by the enricher plugin.
+ */
+export type DotCMSContentImpressionEventData = DotCMSContentImpressionPayload & {
+    /** Minimal page data where the impression occurred (added by enricher) */
+    page: DotCMSContentImpressionPageData;
+};
+
+/**
  * Pageview event structure.
  */
 export type DotCMSPageViewEvent = DotCMSEventBase<
     typeof DotCMSPredefinedEventType.PAGEVIEW,
     DotCMSPageViewEventData
+>;
+
+/**
+ * Content impression event structure.
+ */
+export type DotCMSContentImpressionEvent = DotCMSEventBase<
+    typeof DotCMSPredefinedEventType.CONTENT_IMPRESSION,
+    DotCMSContentImpressionEventData
 >;
 
 /**
@@ -80,5 +127,6 @@ export type DotCMSCustomEvent = DotCMSEventBase<DotCMSCustomEventType, DotCMSCus
 
 /**
  * Union type for all possible analytics events.
+ * Used primarily for type documentation and validation.
  */
-export type DotCMSEvent = DotCMSPageViewEvent | DotCMSCustomEvent;
+export type DotCMSEvent = DotCMSPageViewEvent | DotCMSContentImpressionEvent | DotCMSCustomEvent;

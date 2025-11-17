@@ -1,5 +1,5 @@
 import { ANALYTICS_ENDPOINT } from './constants';
-import { DotCMSAnalyticsConfig, DotCMSEvent, DotCMSRequestBody } from './models';
+import { DotCMSAnalyticsConfig, DotCMSAnalyticsRequestBody } from './models';
 
 /**
  * Send analytics events to the server using fetch API
@@ -9,7 +9,7 @@ import { DotCMSAnalyticsConfig, DotCMSEvent, DotCMSRequestBody } from './models'
  * @returns A promise that resolves when the request is complete
  */
 export const sendAnalyticsEvent = async (
-    payload: DotCMSRequestBody<DotCMSEvent>,
+    payload: DotCMSAnalyticsRequestBody,
     config: DotCMSAnalyticsConfig,
     keepalive = false
 ): Promise<void> => {

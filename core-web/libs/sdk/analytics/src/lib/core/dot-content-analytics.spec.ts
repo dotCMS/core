@@ -6,6 +6,7 @@ import { initializeContentAnalytics } from './dot-content-analytics';
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
+import { dotAnalyticsImpressionPlugin } from './plugin/impression/dot-analytics.impression.plugin';
 import { DotCMSAnalyticsConfig } from './shared/models';
 
 // Mock dependencies
@@ -13,6 +14,7 @@ jest.mock('analytics');
 jest.mock('./plugin/dot-analytics.plugin');
 jest.mock('./plugin/enricher/dot-analytics.enricher.plugin');
 jest.mock('./plugin/identity/dot-analytics.identity.plugin');
+jest.mock('./plugin/impression/dot-analytics.impression.plugin');
 
 // Partially mock utils - keep validateAnalyticsConfig but mock cleanupActivityTracking
 jest.mock('./shared/dot-content-analytics.utils', () => ({
@@ -28,6 +30,9 @@ const mockDotAnalyticsEnricherPlugin = dotAnalyticsEnricherPlugin as jest.Mocked
 const mockDotAnalyticsIdentityPlugin = dotAnalyticsIdentityPlugin as jest.MockedFunction<
     typeof dotAnalyticsIdentityPlugin
 >;
+const mockDotAnalyticsImpressionPlugin = dotAnalyticsImpressionPlugin as jest.MockedFunction<
+    typeof dotAnalyticsImpressionPlugin
+>;
 
 describe('initializeContentAnalytics', () => {
     const mockConfig: DotCMSAnalyticsConfig = {
@@ -42,29 +47,46 @@ describe('initializeContentAnalytics', () => {
         track: jest.fn()
     };
 
+    let originalWindow: any;
+
     beforeEach(() => {
         jest.clearAllMocks();
+
+        // Save original window
+        originalWindow = global.window;
 
         // Setup mocks
         mockAnalytics.mockReturnValue(mockAnalyticsInstance as any);
         mockDotAnalytics.mockReturnValue({} as any);
         mockDotAnalyticsEnricherPlugin.mockReturnValue({} as any);
         mockDotAnalyticsIdentityPlugin.mockReturnValue({} as any);
+        mockDotAnalyticsImpressionPlugin.mockReturnValue({} as any);
 
         // Mock global window
         Object.defineProperty(global, 'window', {
             value: {
                 addEventListener: jest.fn(),
                 dispatchEvent: jest.fn(),
-                __dotAnalyticsCleanup: null
+                __dotAnalyticsCleanup: null,
+                document: {
+                    addEventListener: jest.fn(),
+                    removeEventListener: jest.fn()
+                }
             },
-            writable: true
+            writable: true,
+            configurable: true
         });
     });
 
     afterEach(() => {
-        // Clean up global mocks
-        delete (global as any).window;
+        // Restore original window
+        if (originalWindow) {
+            Object.defineProperty(global, 'window', {
+                value: originalWindow,
+                writable: true,
+                configurable: true
+            });
+        }
     });
 
     it('should create analytics instance with correct config and plugins', () => {
@@ -76,12 +98,14 @@ describe('initializeContentAnalytics', () => {
             debug: false,
             plugins: [
                 expect.any(Object), // dotAnalyticsIdentityPlugin result
+                expect.any(Object), // dotAnalyticsImpressionPlugin result
                 expect.any(Object), // dotAnalyticsEnricherPlugin result
                 expect.any(Object) // dotAnalytics result
             ]
         });
 
         expect(mockDotAnalyticsIdentityPlugin).toHaveBeenCalledWith(mockConfig);
+        expect(mockDotAnalyticsImpressionPlugin).toHaveBeenCalledWith(mockConfig);
         expect(mockDotAnalyticsEnricherPlugin).toHaveBeenCalled();
         expect(mockDotAnalytics).toHaveBeenCalledWith(mockConfig);
     });
@@ -152,12 +176,18 @@ describe('initializeContentAnalytics', () => {
         });
 
         it('should handle case when analytics instance is null', () => {
+            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
             mockAnalytics.mockReturnValue(null as any);
             const analytics = initializeContentAnalytics(mockConfig);
 
             expect(analytics).not.toBeNull();
             // Should not throw error even if internal analytics is null
             expect(() => analytics!.pageView({ path: '/test' })).not.toThrow();
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                'DotCMS Analytics: Analytics instance not initialized'
+            );
+
+            consoleWarnSpy.mockRestore();
         });
     });
 
@@ -184,12 +214,18 @@ describe('initializeContentAnalytics', () => {
         });
 
         it('should handle case when analytics instance is null', () => {
+            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
             mockAnalytics.mockReturnValue(null as any);
             const analytics = initializeContentAnalytics(mockConfig);
 
             expect(analytics).not.toBeNull();
             // Should not throw error even if internal analytics is null
             expect(() => analytics!.track('test_event', { value: 123 })).not.toThrow();
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                'DotCMS Analytics: Analytics instance not initialized'
+            );
+
+            consoleWarnSpy.mockRestore();
         });
     });
 
