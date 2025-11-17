@@ -178,10 +178,10 @@ export function withMenu() {
                 patchState(store, {
                     isNavigationCollapsed: true
                 });
-                const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => {
-                    menu.isOpen = false;
-                    return menu;
-                });
+                const closedMenu: DotMenu[] = store.menuItems().map((menu: DotMenu) => ({
+                    ...menu,
+                    isOpen: false
+                }));
                 patchState(store, {
                     menuItems: closedMenu
                 });
@@ -201,9 +201,9 @@ export function withMenu() {
                             isActive = true;
                         }
                     });
-                    menu.isOpen = isActive;
-                    return menu;
+                    return { ...menu, isOpen: isActive };
                 });
+
                 patchState(store, {
                     menuItems: expandedMenu
                 });
