@@ -655,6 +655,40 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
+        it('should show error message on upload failure with errors', () => {
+            const error = {
+                error: {
+                    errors: [{ message: 'Upload failed' }]
+                }
+            };
+            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
+            store.selectedNode.mockReturnValue({
+                ...ALL_FOLDER,
+                data: {
+                    hostname: MOCK_SITES[0].hostname,
+                    path: '',
+                    type: 'folder',
+                    id: MOCK_SITES[0].identifier
+                }
+            });
+            const addSpy = jest.spyOn(messageService, 'add');
+
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            Object.defineProperty(fileInput, 'files', {
+                value: [mockFile],
+                writable: false
+            });
+
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(addSpy).toHaveBeenCalledWith({
+                severity: 'error',
+                summary: expect.any(String),
+                detail: 'Upload failed',
+                life: ERROR_MESSAGE_LIFE
+            });
+        });
+
         it('should not upload when no files are selected', () => {
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
             Object.defineProperty(fileInput, 'files', {
