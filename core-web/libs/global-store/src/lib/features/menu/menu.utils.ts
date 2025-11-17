@@ -93,3 +93,21 @@ export function getTheUrlId(url: string): string {
 
     return urlSegments[0] || '';
 }
+
+/**
+ * Adds menu links to each menu item based on whether it's angular or legacy.
+ * For angular items, uses the url property directly.
+ * For legacy items, constructs a URL in the format /c/{itemId}.
+ *
+ * @param menu - Array of DotMenu objects
+ * @returns Array of DotMenu objects with menuLink properties added
+ */
+export function addMenuLinks(menu: DotMenu[]): DotMenu[] {
+    return menu.map((menuGroup: DotMenu) => {
+        menuGroup.menuItems.forEach((menuItem: DotMenuItem) => {
+            menuItem.menuLink = menuItem.angular ? menuItem.url : `/c/${menuItem.id}`;
+        });
+
+        return menuGroup;
+    });
+}
