@@ -72,6 +72,10 @@ export const initializeContentAnalytics = (
          * @param payload - Optional custom data to include with the page view (any valid JSON object)
          */
         pageView: (payload: JsonObject = {}) => {
+            if (!analyticsInstance) {
+                console.warn('DotCMS Analytics: Analytics instance not initialized');
+                return;
+            }
             analyticsInstance.page(payload);
         },
 
@@ -81,6 +85,10 @@ export const initializeContentAnalytics = (
          * @param payload - Custom data to include with the event (any valid JSON object)
          */
         track: (eventName: string, payload: JsonObject = {}) => {
+            if (!analyticsInstance) {
+                console.warn('DotCMS Analytics: Analytics instance not initialized');
+                return;
+            }
             analyticsInstance.track(eventName, payload);
         }
     };
