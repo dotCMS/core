@@ -18,12 +18,6 @@ describe('DotCMS Activity Tracker', () => {
     const BASE_TIME = new Date('2024-01-01T00:00:00.000Z').getTime();
     let currentTime: number;
 
-    // Helper to advance timers and mock time
-    const advanceTime = (ms: number) => {
-        currentTime += ms;
-        jest.advanceTimersByTime(ms);
-    };
-
     beforeEach(() => {
         jest.clearAllMocks();
         currentTime = BASE_TIME;
@@ -78,7 +72,6 @@ describe('DotCMS Activity Tracker', () => {
             const originalWindow = global.window;
             delete (global as any).window;
 
-            const addEventListenerSpy = jest.fn();
             // No error should be thrown
             expect(() => initializeActivityTracking(mockConfig)).not.toThrow();
 

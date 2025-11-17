@@ -119,6 +119,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
     describe('Track Event Enrichment', () => {
         let originalTitle: string;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         let originalHref: string;
 
         beforeEach(() => {

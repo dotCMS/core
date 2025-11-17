@@ -4,11 +4,11 @@ import { AnalyticsInstance } from 'analytics';
 
 import { dotAnalyticsImpressionPlugin } from './dot-analytics.impression.plugin';
 
+import { IMPRESSION_EVENT_TYPE } from '../../shared/constants';
 import {
     DotCMSImpressionTracker,
     ImpressionSubscription
 } from '../../shared/dot-content-analytics.impression-tracker';
-import { IMPRESSION_EVENT_TYPE } from '../../shared/constants';
 import { DotCMSAnalyticsConfig } from '../../shared/models';
 
 // Mock the tracker
@@ -263,6 +263,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
 
             // Simulate page unload
             expect(unloadCallback).toBeDefined();
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             unloadCallback!();
 
             // Verify cleanup
@@ -317,6 +318,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
             plugin.loaded();
 
             // Simulate page unload
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             unloadCallback!();
 
             expect(consoleWarnSpy).toHaveBeenCalledWith(
@@ -402,6 +404,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
             expect(mockAnalyticsInstance.track).toHaveBeenCalled();
 
             // Step 4: Cleanup
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             unloadCallback!();
             expect(mockSubscription.unsubscribe).toHaveBeenCalled();
             expect(mockTracker.cleanup).toHaveBeenCalled();
