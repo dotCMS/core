@@ -4,8 +4,9 @@
 @let showTimezoneInfo = $showTimezoneInfo();
 @let hasTimezone = showTimezoneInfo && systemTimezone;
 @let hasHint = field.hint;
+@let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="hasError">
+<dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
         <dot-card-field-label
             [variableName]="field.variable"
@@ -17,7 +18,7 @@
     <dot-card-field-content>
         <dot-calendar-field
             [field]="field"
-            [hasError]="hasError"
+            [hasError]="fieldHasError"
             [formControlName]="field.variable"
             [utcTimezone]="systemTimezone"
             [contentType]="$contentType()" />
@@ -25,7 +26,7 @@
     <dot-card-field-footer>
         <div class="flex justify-content-between align-items-center">
             <div class="flex-grow-1">
-                @if (hasError) {
+                @if (fieldHasError) {
                     <div class="error-message">
                         @if (isRequired) {
                             <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
@@ -33,7 +34,7 @@
                     </div>
                 }
 
-                @if (!hasError && !hasTimezone && hasHint) {
+                @if (!fieldHasError && !hasTimezone && hasHint) {
                     <div class="hint-message" data-testid="calendar-field-hints">
                         <small
                             [attr.data-testId]="'hint-' + field.variable"
@@ -42,7 +43,7 @@
                         </small>
                     </div>
                 }
-                @if (!hasError && hasTimezone && hasHint) {
+                @if (!fieldHasError && hasTimezone && hasHint) {
                     <div class="hint-message">
                         <small
                             data-testid="calendar-field-timezone"

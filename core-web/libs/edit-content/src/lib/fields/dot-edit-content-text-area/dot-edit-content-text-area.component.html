@@ -1,7 +1,8 @@
 @let field = $field();
 @let showLabel = $showLabel();
+@let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="hasError">
+<dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
         <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}
@@ -11,8 +12,8 @@
         <div class="dot-textarea__container flex flex-column gap-2">
             <div class="dot-textarea__controls flex flex-wrap gap-2 justify-content-between">
                 <p-dropdown
-                    [class.ng-invalid]="hasError"
-                    [class.ng-dirty]="hasError"
+                    [class.ng-invalid]="fieldHasError"
+                    [class.ng-dirty]="fieldHasError"
                     [options]="textAreaEditorOptions"
                     [(ngModel)]="$selectedEditorDropdown"
                     [ngModelOptions]="{ standalone: true }"
@@ -28,8 +29,8 @@
                         #textarea
                         [id]="field.variable"
                         [formControlName]="field.variable"
-                        [class.ng-invalid]="hasError"
-                        [class.ng-dirty]="hasError"
+                        [class.ng-invalid]="fieldHasError"
+                        [class.ng-dirty]="fieldHasError"
                         [attr.data-testId]="field.variable"
                         [style]="{
                             'min-height': '9.375rem',
@@ -39,21 +40,21 @@
                 } @else {
                     <dot-edit-content-monaco-editor-control
                         #monaco
-                        [hasError]="hasError"
+                        [hasError]="fieldHasError"
                         [field]="field" />
                 }
             </div>
         </div>
     </dot-card-field-content>
     <dot-card-field-footer>
-        @if (hasError) {
+        @if (fieldHasError) {
             <div class="error-message">
                 @if (isRequired) {
                     <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
                 }
             </div>
         }
-        @if (!hasError && field.hint) {
+        @if (!fieldHasError && field.hint) {
             <div class="hint-message">
                 <small [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}

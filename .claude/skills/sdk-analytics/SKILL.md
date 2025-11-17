@@ -1,3 +1,10 @@
+---
+name: SDK Analytics Installer
+description: Use this skill when the user asks to install, configure, or set up @dotcms/analytics, sdk-analytics, analytics SDK, add analytics tracking, or mentions installing analytics in Next.js or React projects
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+version: 1.0.0
+---
+
 # DotCMS SDK Analytics Installation Guide
 
 This skill provides step-by-step instructions for installing and configuring the `@dotcms/analytics` SDK in the Next.js example project at `/core/examples/nextjs`.

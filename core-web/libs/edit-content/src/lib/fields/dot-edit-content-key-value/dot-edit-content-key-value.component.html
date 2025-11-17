@@ -1,17 +1,18 @@
 @let field = $field();
 @let showLabel = $showLabel();
+@let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="hasError">
+<dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
         <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}
         </dot-card-field-label>
     }
     <dot-card-field-content>
-        <dot-key-value-field [hasError]="hasError" [formControlName]="field.variable" />
+        <dot-key-value-field [hasError]="fieldHasError" [formControlName]="field.variable" />
     </dot-card-field-content>
     <dot-card-field-footer>
-        @if (hasError) {
+        @if (fieldHasError) {
             <div class="error-message">
                 @if (isRequired) {
                     <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
@@ -19,7 +20,7 @@
             </div>
         }
 
-        @if (!hasError && field.hint) {
+        @if (!fieldHasError && field.hint) {
             <div class="hint-message">
                 <small [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}
