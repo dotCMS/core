@@ -6,11 +6,9 @@ import { ActivatedRoute, Data, NavigationEnd, Router } from '@angular/router';
 import { filter, map, switchMap, take } from 'rxjs/operators';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { replaceSectionsMap } from '@dotcms/store';
 
-import {
-    DotNavigationService,
-    replaceSectionsMap
-} from '../../dot-navigation/services/dot-navigation.service';
+import { DotNavigationService } from '../../dot-navigation/services/dot-navigation.service';
 
 @Injectable()
 export class DotCrumbtrailService {

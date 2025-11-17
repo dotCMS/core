@@ -18,15 +18,6 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
 
-export const replaceSectionsMap = {
-    'edit-page': 'site-browser',
-    analytics: 'analytics-dashboard'
-};
-
-const replaceIdForNonMenuSection = (id) => {
-    return replaceSectionsMap[id];
-};
-
 interface DotUpdatePortletLayoutPayload {
     menuItems: string[];
     toolgroup: {
@@ -38,125 +29,7 @@ interface DotUpdatePortletLayoutPayload {
     };
 }
 
-interface DotActiveItemsProps {
-    url: string;
-    collapsed: boolean;
-    menuId?: string;
-    previousUrl: string;
-}
-
-interface DotActiveItemsFromParentProps extends DotActiveItemsProps {
-    menus: DotMenu[];
-}
-
-function getActiveMenuFromMenuId({ menus, menuId, collapsed, url }: DotActiveItemsFromParentProps) {
-    return menus.map((menu) => {
-        menu.active = false;
-
-        menu.menuItems = menu.menuItems.map((item) => ({
-            ...item,
-            active: false
-        }));
-
-        if (menu.id === menuId) {
-            menu.active = true;
-            menu.isOpen = !collapsed && menu.active; // TODO: this menu.active what?
-            menu.menuItems = menu.menuItems.map((item) => ({
-                ...item,
-                active: item.id === url
-            }));
-        }
-
-        return menu;
-    });
-}
-
-function isDetailPage(id: string, url: string): boolean {
-    return url.split('/').includes('edit') && url.includes(id);
-}
-
-function isMenuActive(menus: DotMenu[]): boolean {
-    return !!menus.find((item) => item.active);
-}
-
-function isEditPageFromSiteBrowser(menuId: string, previousUrl: string): boolean {
-    return menuId === 'edit-page' && previousUrl === '/c/site-browser';
-}
-
-const setActiveItems =
-    ({ url, collapsed, menuId, previousUrl }: DotActiveItemsProps) =>
-    (source: Observable<DotMenu[]>) => {
-        let urlId = getTheUrlId(url);
-
-        return source.pipe(
-            map((m: DotMenu[]) => {
-                if (!url) {
-                    return m; // nothing changes.
-                }
-
-                const menus: DotMenu[] = [...m];
-
-                if (
-                    isEditPageFromSiteBrowser(menuId, previousUrl) ||
-                    (isDetailPage(urlId, url) && isMenuActive(menus))
-                ) {
-                    return null;
-                }
-
-                // When user browse using the navigation (Angular Routing)
-                if (menuId && menuId !== 'edit-page' && previousUrl) {
-                    return getActiveMenuFromMenuId({
-                        menus,
-                        menuId,
-                        collapsed,
-                        url: urlId,
-                        previousUrl
-                    });
-                }
-
-                // When user browse using the browser url bar, direct links or reload page
-                urlId = replaceIdForNonMenuSection(urlId) || urlId;
-
-                // Reset Active/IsOpen attributes
-                for (let i = 0; i < menus.length; i++) {
-                    menus[i].active = false;
-                    menus[i].isOpen = false;
-
-                    for (let k = 0; k < menus[i].menuItems.length; k++) {
-                        menus[i].menuItems[k].active = false;
-                    }
-                }
-
-                menuLoop: for (let i = 0; i < menus.length; i++) {
-                    for (let k = 0; k < menus[i].menuItems.length; k++) {
-                        if (menuId) {
-                            if (menus[i].menuItems[k].id === urlId && menus[i].id === menuId) {
-                                menus[i].active = true;
-                                menus[i].isOpen = true;
-                                menus[i].menuItems[k].active = true;
-                                break menuLoop;
-                            }
-                        } else if (menus[i].menuItems[k].id === urlId) {
-                            menus[i].active = true;
-                            menus[i].isOpen = true;
-                            menus[i].menuItems[k].active = true;
-                            break menuLoop;
-                        }
-                    }
-                }
-
-                return menus;
-            })
-        );
-    };
-
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
-
-function getTheUrlId(url: string): string {
-    const urlSegments: string[] = url.split('/').filter(Boolean);
-
-    return urlSegments[0] === 'c' ? urlSegments.pop() : urlSegments[0];
-}
 
 @Injectable()
 export class DotNavigationService {
@@ -196,39 +69,52 @@ export class DotNavigationService {
 
                             return menu;
                         }),
-                        setActiveItems({
-                            url: event.url,
-                            collapsed: this._collapsed$.getValue(),
-                            menuId: this.router.getCurrentNavigation().extras.state?.menuId,
-                            previousUrl: this.dotRouterService.previousUrl
+                        map((menu: DotMenu[]) => {
+                            // Set menu items first
+                            this.#globalStore.setMenuItems(menu);
+
+                            // Then set active items using the store method
+                            const updatedMenus = this.#globalStore.setActiveMenuItems({
+                                url: event.url,
+                                collapsed: this._collapsed$.getValue(),
+                                menuId: this.router.getCurrentNavigation().extras.state?.menuId,
+                                previousUrl: this.dotRouterService.previousUrl
+                            });
+
+                            return updatedMenus;
                         })
                     );
                 }),
                 filter((menu) => !!menu)
             )
             .subscribe((menus: DotMenu[]) => {
-                this.setMenu(menus);
-                this.#globalStore.setMenuItems(menus);
+                if (menus) {
+                    this.setMenu(menus);
+                }
             });
 
         this.dotcmsEventsService
             .subscribeTo('UPDATE_PORTLET_LAYOUTS')
             .subscribe((payload: DotUpdatePortletLayoutPayload) => {
                 this.reloadNavigation()
-                    .pipe(
-                        take(1),
-                        setActiveItems({
+                    .pipe(take(1))
+                    .subscribe((menus: DotMenu[]) => {
+                        // Set menu items first
+                        this.#globalStore.setMenuItems(menus);
+
+                        // Then set active items using the store method
+                        const updatedMenus = this.#globalStore.setActiveMenuItems({
                             url: payload.menuItems?.length
                                 ? payload.menuItems[payload.menuItems.length - 1]
                                 : '',
                             collapsed: null,
                             menuId: payload.toolgroup?.id || '',
                             previousUrl: ''
-                        })
-                    )
-                    .subscribe((menus: DotMenu[]) => {
-                        this.setMenu(menus);
-                        this.#globalStore.setMenuItems(menus);
+                        });
+
+                        if (updatedMenus) {
+                            this.setMenu(updatedMenus);
+                        }
                     });
             });
 
@@ -421,13 +307,20 @@ export class DotNavigationService {
 
     private reloadNavigation(): Observable<DotMenu[]> {
         return this.dotMenuService.reloadMenu().pipe(
-            setActiveItems({
-                url: this.dotRouterService.currentPortlet.id,
-                collapsed: this._collapsed$.getValue(),
-                previousUrl: this.dotRouterService.previousUrl
-            }),
             tap((menus: DotMenu[]) => {
-                this.setMenu(menus);
+                // Set menu items first
+                this.#globalStore.setMenuItems(menus);
+
+                // Then set active items using the store method
+                const updatedMenus = this.#globalStore.setActiveMenuItems({
+                    url: this.dotRouterService.currentPortlet.id,
+                    collapsed: this._collapsed$.getValue(),
+                    previousUrl: this.dotRouterService.previousUrl
+                });
+
+                if (updatedMenus) {
+                    this.setMenu(updatedMenus);
+                }
             })
         );
     }

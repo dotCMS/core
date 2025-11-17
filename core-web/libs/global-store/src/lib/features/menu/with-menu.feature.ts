@@ -13,6 +13,15 @@ import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import { initialMenuSlice } from './menu.slice';
+import {
+    getActiveMenuFromMenuId,
+    getTheUrlId,
+    isDetailPage,
+    isEditPageFromSiteBrowser,
+    isMenuActive,
+    replaceIdForNonMenuSection,
+    type DotActiveItemsProps
+} from './menu.utils';
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
 
@@ -205,6 +214,83 @@ export function withMenu() {
              */
             resetMenuState: () => {
                 patchState(store, initialMenuSlice);
+            },
+
+            /**
+             * Sets active menu items based on navigation context.
+             * This method handles the logic for determining which menu items should be active
+             * based on the current URL, menu ID, and navigation state.
+             *
+             * @param props - Configuration object containing URL, collapsed state, menuId, and previousUrl
+             * @returns The updated menu items array, or null if the menu should not be updated
+             */
+            setActiveMenuItems: (props: DotActiveItemsProps): DotMenu[] | null => {
+                const { url, collapsed, menuId, previousUrl } = props;
+                const currentMenus = store.menuItems();
+
+                if (!url) {
+                    return currentMenus; // nothing changes
+                }
+
+                const menus: DotMenu[] = [...currentMenus];
+                let urlId = getTheUrlId(url);
+
+                // Check if we should skip updating the menu
+                if (
+                    (menuId && isEditPageFromSiteBrowser(menuId, previousUrl)) ||
+                    (isDetailPage(urlId, url) && isMenuActive(menus))
+                ) {
+                    return null;
+                }
+
+                // When user browse using the navigation (Angular Routing)
+                if (menuId && menuId !== 'edit-page' && previousUrl) {
+                    const updatedMenus = getActiveMenuFromMenuId({
+                        menus,
+                        menuId,
+                        collapsed: collapsed ?? store.isNavigationCollapsed(),
+                        url: urlId,
+                        previousUrl
+                    });
+                    patchState(store, { menuItems: updatedMenus });
+                    return updatedMenus;
+                }
+
+                // When user browse using the browser url bar, direct links or reload page
+                const replacedId = replaceIdForNonMenuSection(urlId);
+                urlId = replacedId || urlId;
+
+                // Reset Active/IsOpen attributes
+                for (let i = 0; i < menus.length; i++) {
+                    menus[i].active = false;
+                    menus[i].isOpen = false;
+
+                    for (let k = 0; k < menus[i].menuItems.length; k++) {
+                        menus[i].menuItems[k].active = false;
+                    }
+                }
+
+                // Find and activate the matching menu item
+                menuLoop: for (let i = 0; i < menus.length; i++) {
+                    for (let k = 0; k < menus[i].menuItems.length; k++) {
+                        if (menuId) {
+                            if (menus[i].menuItems[k].id === urlId && menus[i].id === menuId) {
+                                menus[i].active = true;
+                                menus[i].isOpen = true;
+                                menus[i].menuItems[k].active = true;
+                                break menuLoop;
+                            }
+                        } else if (menus[i].menuItems[k].id === urlId) {
+                            menus[i].active = true;
+                            menus[i].isOpen = true;
+                            menus[i].menuItems[k].active = true;
+                            break menuLoop;
+                        }
+                    }
+                }
+
+                patchState(store, { menuItems: menus });
+                return menus;
             }
         })),
         withHooks({
