@@ -7,12 +7,14 @@ import {
     AfterViewInit,
     viewChild,
     forwardRef,
-    computed
+    computed,
+    NgZone, OnInit
 } from '@angular/core';
 import {
     ControlContainer,
     NG_VALUE_ACCESSOR,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    FormGroupDirective
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -20,6 +22,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { DotIconModule } from '@dotcms/ui';
 
 
@@ -42,7 +45,7 @@ import { DotIconModule } from '@dotcms/ui';
     ],
     imports: [DotIconModule, ButtonModule, InputTextModule, DialogModule, ReactiveFormsModule]
 })
-export class DotWCCompoment implements AfterViewInit {
+export class DotWCCompoment implements AfterViewInit, OnInit {
     /**
      * The field to render.
      */
@@ -53,6 +56,13 @@ export class DotWCCompoment implements AfterViewInit {
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
     $variableId = computed(() => this.$field().variable);
+
+    #formBridge: FormBridge;
+
+     /**
+     * The zone to run the code in.
+     */
+     #zone = inject(NgZone);
 
     /**
      * The control container to get the form.
@@ -65,12 +75,59 @@ export class DotWCCompoment implements AfterViewInit {
 
     #webComponentInstance: HTMLElement | null = null;
 
-    async ngAfterViewInit() {
-        await this.loadAndCreateComponent();
-        this.#controlContainer.valueChanges.subscribe((value) => {
-            this.#updateComponentContext(value);
-        });
+    ngOnInit() {
+        console.log('ngOnInit');
+        this.initializeFormBridge();
     }
+
+    async ngAfterViewInit() {
+        await this.loadCode();
+    }
+
+    async loadCode() {
+        const jsCode = this.$context();
+        console.log('jsCode', jsCode);
+        this.updateContent(jsCode);
+    }
+
+    private updateContent(htmlString: string): void {
+        const hostElement = this.$container().nativeElement;
+
+        // 1. Limpiamos el contenido anterior
+        hostElement.innerHTML = '';
+
+        if (!htmlString) {
+          return;
+        }
+
+        // 2. Regex para encontrar todas las etiquetas <script>
+        // g = global, m = multilínea, i = insensible a mayúsculas
+        const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gmi;
+
+        let scriptContents = '';
+        let match;
+
+        // 3. Extraemos el contenido de TODOS los scripts y los concatenamos
+        while ((match = scriptRegex.exec(htmlString))) {
+          scriptContents += match[1] + '\n'; // Agregamos el contenido del script
+        }
+
+        // 4. Obtenemos el HTML "limpio" (sin las etiquetas <script>)
+        const htmlPart = htmlString.replace(scriptRegex, '');
+
+        // 5. Insertamos el HTML en el elemento
+        // Esto SÍ renderizará el HTML, pero no ejecutará los scripts
+        hostElement.innerHTML = htmlPart;
+
+        // 6. Creamos una nueva etiqueta <script> y la ejecutamos
+        // Esta es la única forma de que el navegador ejecute JS insertado dinámicamente
+        if (scriptContents) {
+          const scriptElement = document.createElement('script');
+          scriptElement.textContent = scriptContents;
+          scriptElement.type = 'module';
+          hostElement.appendChild(scriptElement);
+        }
+      }
 
     async loadAndCreateComponent() {
         const jsCode = this.$context();
@@ -113,6 +170,19 @@ export class DotWCCompoment implements AfterViewInit {
 
     get form() {
         return this.#controlContainer.value;
+    }
+
+    private initializeFormBridge(): void {
+        const form = (this.#controlContainer as FormGroupDirective).form;
+
+        this.#formBridge = createFormBridge({
+            type: 'angular',
+            form,
+            zone: this.#zone
+        });
+
+
+        window['DotCustomFieldApi'] = this.#formBridge;
     }
 
 }

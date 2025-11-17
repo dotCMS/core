@@ -57,6 +57,8 @@ export class DotEditContentCustomFieldComponent extends BaseWrapperField {
         const field = this.$field();
         if (!field) return false;
 
-        return field.variable === 'mywc';
+        console.log('field.variable', field.variable);
+
+        return field.variable === 'pageTitleCount' || field.variable === 'metaDescriptionCount';
     });
 }
