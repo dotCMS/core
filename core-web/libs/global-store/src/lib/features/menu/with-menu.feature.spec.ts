@@ -378,7 +378,8 @@ describe('withMenu Feature (DotMenu)', () => {
                             angular: true,
                             id: '1-1',
                             label: 'Home',
-                            url: '/home'
+                            url: '/home',
+                            menuLink: ''
                         }
                     ],
                     name: 'Home Menu',
@@ -406,7 +407,8 @@ describe('withMenu Feature (DotMenu)', () => {
                             angular: false,
                             id: 'legacy-portlet-id',
                             label: 'Legacy Portlet',
-                            url: '/legacy'
+                            url: '/legacy',
+                            menuLink: ''
                         }
                     ],
                     name: 'Legacy Menu',
@@ -434,7 +436,8 @@ describe('withMenu Feature (DotMenu)', () => {
                             angular: true,
                             id: '1-1',
                             label: 'Angular Item',
-                            url: '/angular'
+                            url: '/angular',
+                            menuLink: ''
                         },
                         {
                             active: false,
@@ -442,7 +445,8 @@ describe('withMenu Feature (DotMenu)', () => {
                             angular: false,
                             id: 'legacy-1',
                             label: 'Legacy Item',
-                            url: '/legacy'
+                            url: '/legacy',
+                            menuLink: ''
                         }
                     ],
                     name: 'Mixed Menu',
@@ -471,7 +475,8 @@ describe('withMenu Feature (DotMenu)', () => {
                             angular: true,
                             id: '1-1',
                             label: 'Home',
-                            url: '/home'
+                            url: '/home',
+                            menuLink: ''
                         }
                     ],
                     name: 'Home Menu',

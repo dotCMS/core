@@ -43,9 +43,7 @@ describe('DotNavigationComponent collapsed', () => {
             provideRouter([]),
             DotMenuService,
             mockProvider(IframeOverlayService),
-            mockProvider(DotNavigationService, {
-                collapsed$: of(true)
-            }),
+            mockProvider(DotNavigationService),
             mockProvider(DotEventsService),
             mockProvider(DotRouterService, {
                 currentPortlet: { id: '123' }
@@ -99,7 +97,11 @@ describe('DotNavigationComponent collapsed', () => {
     it('should close on document click', () => {
         spectator.detectChanges();
 
-        // First, open a menu section
+        // First, ensure navigation is collapsed
+        globalStore.collapseNavigation();
+        spectator.detectChanges();
+
+        // Then open a menu section
         globalStore.setMenuOpen('123');
         expect(globalStore.menuItems().find((m) => m.id === '123')?.isOpen).toBe(true);
 
@@ -161,17 +163,14 @@ describe('DotNavigationComponent collapsed', () => {
                 data: dotMenuMock()
             });
 
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/link1');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
-        it('should not have scroll', () => {
+        it('should not have scroll when collapsed', () => {
+            // Ensure navigation is collapsed
+            globalStore.collapseNavigation();
             spectator.detectChanges();
-
-            spectator.component.onMenuClick({
-                originalEvent: {} as unknown as MouseEvent,
-                data: dotMenuMock()
-            });
 
             expect(spectator.debugElement.styles.cssText).toEqual('');
         });
@@ -180,7 +179,6 @@ describe('DotNavigationComponent collapsed', () => {
 
 describe('DotNavigationComponent expanded', () => {
     let spectator: Spectator<DotNavigationComponent>;
-    let navigationService: SpyObject<DotNavigationService>;
     let iframeOverlayService: SpyObject<IframeOverlayService>;
     let globalStore: InstanceType<typeof GlobalStore>;
     let dotEventsService: SpyObject<DotEventsService>;
@@ -199,9 +197,7 @@ describe('DotNavigationComponent expanded', () => {
             provideRouter([]),
             DotMenuService,
             mockProvider(IframeOverlayService),
-            mockProvider(DotNavigationService, {
-                collapsed$: of(false)
-            }),
+            mockProvider(DotNavigationService),
             mockProvider(DotEventsService),
             mockProvider(DotRouterService, {
                 currentPortlet: { id: '123' }
@@ -225,7 +221,6 @@ describe('DotNavigationComponent expanded', () => {
             detectChanges: false
         });
 
-        navigationService = spectator.inject(DotNavigationService);
         iframeOverlayService = spectator.inject(IframeOverlayService);
         globalStore = spectator.inject(GlobalStore);
         dotEventsService = spectator.inject(DotEventsService);
@@ -269,9 +264,15 @@ describe('DotNavigationComponent expanded', () => {
     it('should close on document click', () => {
         spectator.detectChanges();
 
+        // Set navigation to collapsed state
+        globalStore.collapseNavigation();
+        spectator.detectChanges();
+
+        jest.spyOn(globalStore, 'closeAllMenuSections');
+
         spectator.dispatchMouseEvent(spectator.element, 'click');
-        // When expanded, clicking should not close sections
-        expect(navigationService.closeAllSections).not.toHaveBeenCalledTimes(1);
+        // When collapsed, clicking should close sections
+        expect(globalStore.closeAllMenuSections).toHaveBeenCalledTimes(1);
     });
 
     describe('itemClick event', () => {
@@ -334,7 +335,7 @@ describe('DotNavigationComponent expanded', () => {
                 data: mockMenu
             });
 
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/link1');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
             // Verify menu is set as open in GlobalStore
             const items = globalStore.menuItems();

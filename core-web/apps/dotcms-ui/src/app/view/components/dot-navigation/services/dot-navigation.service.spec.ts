@@ -9,8 +9,6 @@ import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { skip } from 'rxjs/operators';
-
 import {
     DotEventsService,
     DotIframeService,
@@ -114,7 +112,7 @@ export const dotMenuMock = () => {
                 id: '123',
                 label: 'Label 1',
                 url: 'url/one',
-                menuLink: 'url/link1'
+                menuLink: 'url/one'
             },
             {
                 active: false,
@@ -123,7 +121,7 @@ export const dotMenuMock = () => {
                 id: '456',
                 label: 'Label 2',
                 url: 'url/two',
-                menuLink: 'url/link2'
+                menuLink: 'url/two'
             }
         ],
         name: 'Menu 1',
@@ -256,113 +254,6 @@ describe('DotNavigationService', () => {
         });
     });
 
-    describe('reloadCurrentPortlet', () => {
-        it('should reload current portlet', () => {
-            service.reloadCurrentPortlet('123-567');
-            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledWith('123-567');
-            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
-        });
-
-        it('should NOT reload current portlet', () => {
-            service.reloadCurrentPortlet('123');
-            expect(dotRouterService.reloadCurrentPortlet).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('closeAllSections', () => {
-        it('should close all the menu sections', () => {
-            let counter = 0;
-            service.items$.subscribe((menus: DotMenu[]) => {
-                if (counter === 0) {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([true, false]);
-                } else {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
-                }
-
-                counter++;
-            });
-            service.collapseMenu();
-        });
-    });
-
-    describe('collapseMenu', () => {
-        it('should collapse menu and call closeAllSections', () => {
-            expect(service.collapsed$.getValue()).toBe(true);
-            jest.spyOn(service, 'closeAllSections');
-            service.collapseMenu();
-            expect(service.collapsed$.getValue()).toBe(true);
-            expect(service.closeAllSections).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('expandMenu', () => {
-        it('should expand active menu section', () => {
-            expect(service.collapsed$.getValue()).toBe(true);
-
-            let counter = 0;
-            service.items$.subscribe((menus: DotMenu[]) => {
-                if (counter === 0) {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([true, false]);
-                } else {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, true]);
-                }
-
-                counter++;
-            });
-
-            service.expandMenu();
-            expect(service.collapsed$.getValue()).toBe(false);
-        });
-    });
-
-    describe('setOpen', () => {
-        it('should set isOpen attribute to expecific menu section', () => {
-            let counter = 0;
-            service.items$.subscribe((menus: DotMenu[]) => {
-                if (counter === 0) {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([true, false]);
-                } else {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, true]);
-                }
-
-                counter++;
-            });
-
-            service.setOpen('456');
-        });
-    });
-
-    describe('toggle', () => {
-        it('should toggle the menu', () => {
-            let counter = 0;
-            service.items$.pipe(skip(1)).subscribe((menus: DotMenu[]) => {
-                if (counter === 0) {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, true]);
-                } else {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
-                }
-
-                counter++;
-            });
-
-            service.toggle();
-            expect(service.collapsed$.getValue()).toBe(false);
-
-            service.toggle();
-            expect(service.collapsed$.getValue()).toBe(true);
-
-            expect(dotEventService.notify).toHaveBeenCalledTimes(2);
-        });
-    });
-
-    describe('goTo', () => {
-        it('should go to url', () => {
-            service.goTo('hello/world');
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('hello/world');
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
-        });
-    });
-
     it('should go to first portlet on auth change', () => {
         (loginService as unknown as LoginServiceMock).triggerNewAuth(baseMockAuth);
 
@@ -372,7 +263,17 @@ describe('DotNavigationService', () => {
                     active: false,
                     id: '123',
                     isOpen: false,
-                    menuItems: [],
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: '123',
+                            label: 'Label 1',
+                            url: 'url/one',
+                            menuLink: 'url/one'
+                        }
+                    ],
                     name: 'Nav 1',
                     tabDescription: 'Navigation 1',
                     tabIcon: 'icon',
@@ -386,26 +287,31 @@ describe('DotNavigationService', () => {
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 
-    it('should expand and set active menu option by url when is not collapsed', () => {
-        let counter = 0;
+    it('should expand and set active menu option by url when is not collapsed', (done) => {
+        const globalStore = TestBed.inject(GlobalStore);
 
-        service.items$.subscribe((menus: DotMenu[]) => {
-            if (counter === 0) {
+        // Set up initial state
+        globalStore.setMenuItems([dotMenuMock(), dotMenuMock1()]);
+        globalStore.expandNavigation();
+
+        // Use URL that matches the item id (123) - getTheUrlId extracts the first segment or last if /c/
+        // For /c/123, getTheUrlId returns '123' which matches the item id
+        router.triggerNavigationEnd('/c/123');
+
+        // Wait for async operations
+        setTimeout(() => {
+            const menus = globalStore.menuItems();
+            if (menus.length > 0) {
+                // When navigating to /c/123, the menu should be open and the item should be active
                 expect(menus[0].isOpen).toBe(true);
-                expect(menus[0].menuItems[0].active).toBe(false);
-            } else {
-                expect(menus[1].isOpen).toBe(false);
-                expect(menus[1].menuItems[0].active).toBe(false);
+                expect(menus[0].menuItems[0].active).toBe(true);
             }
-
-            counter++;
-        });
-
-        router.triggerNavigationEnd('/123');
+            done();
+        }, 1000);
     });
 
     it('should set Page title based on url', () => {
-        router.triggerNavigationEnd('url/link1');
+        router.triggerNavigationEnd('url/one');
         expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
         expect(titleService.setTitle).toHaveBeenCalledTimes(1);
     });

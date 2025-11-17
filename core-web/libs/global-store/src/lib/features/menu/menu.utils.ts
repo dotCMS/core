@@ -1,4 +1,4 @@
-import { DotMenu } from '@dotcms/dotcms-models';
+import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 // Pure utility functions for menu navigation logic
 
@@ -42,32 +42,30 @@ export function getActiveMenuFromMenuId({
     }));
 
     // Search for matching menu item and activate it
-    for (let i = 0; i < resetMenus.length; i++) {
-        for (let k = 0; k < resetMenus[i].menuItems.length; k++) {
-            const item = resetMenus[i].menuItems[k];
-            const menu = resetMenus[i];
+    const isMatchingItem = (item: DotMenuItem, menu: DotMenu) =>
+        (menuId && item.id === urlId && menu.id === menuId) || (!menuId && item.id === urlId);
 
-            // Determine if this item should be activated
-            const isMatchingItem =
-                (menuId && item.id === urlId && menu.id === menuId) ||
-                (!menuId && item.id === urlId);
+    const menuIndex = resetMenus.findIndex((menu) =>
+        menu.menuItems.some((item) => isMatchingItem(item, menu))
+    );
 
-            if (isMatchingItem) {
-                // Create new menu object with active item (immutable update)
-                return resetMenus.map((m, menuIdx) => {
-                    if (menuIdx !== i) return m;
+    if (menuIndex !== -1) {
+        const menu = resetMenus[menuIndex];
+        const itemIndex = menu.menuItems.findIndex((item) => isMatchingItem(item, menu));
 
-                    return {
-                        ...m,
-                        active: true,
-                        isOpen: !collapsed,
-                        menuItems: m.menuItems.map((menuItem, itemIdx) =>
-                            itemIdx === k ? { ...menuItem, active: true } : menuItem
-                        )
-                    };
-                });
-            }
-        }
+        // Create new menu object with active item (immutable update)
+        return resetMenus.map((m, menuIdx) => {
+            if (menuIdx !== menuIndex) return m;
+
+            return {
+                ...m,
+                active: true,
+                isOpen: !collapsed,
+                menuItems: m.menuItems.map((menuItem, itemIdx) =>
+                    itemIdx === itemIndex ? { ...menuItem, active: true } : menuItem
+                )
+            };
+        });
     }
 
     // No matching item found, return all inactive
