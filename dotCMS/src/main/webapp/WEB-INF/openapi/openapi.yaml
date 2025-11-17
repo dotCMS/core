@@ -10503,6 +10503,29 @@ paths:
           description: default response
       tags:
       - Page
+  /v1/permissions:
+    get:
+      description: Returns available permission levels and scopes that can be assigned
+        to users and roles
+      operationId: getPermissionMetadata
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPermissionMetadataView"
+          description: Permission metadata retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - frontend user attempted access (backend user required)
+      summary: Get permission metadata
+      tags:
+      - Permissions
   /v1/permissions/_bycontent:
     get:
       description: "Retrieves permissions for a specific contentlet by its identifier.\
@@ -10598,25 +10621,6 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Get permissions by permission type
-      tags:
-      - Permissions
-  /v1/permissions/metadata:
-    get:
-      description: Returns available permission levels and scopes that can be assigned
-        to users and roles
-      operationId: getPermissionMetadata
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityPermissionMetadataView"
-          description: Permission metadata retrieved successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-      summary: Get permission metadata
       tags:
       - Permissions
   /v1/personalization/pagepersonas:
