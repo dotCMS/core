@@ -224,7 +224,7 @@ public class UserPermissionHelper {
         Map.entry(Link.class.getCanonicalName().toUpperCase(), "LINK"),
         Map.entry(Template.class.getCanonicalName().toUpperCase(), "TEMPLATE"),
         Map.entry(TemplateLayout.class.getCanonicalName().toUpperCase(), "TEMPLATE_LAYOUT"),
-        Map.entry(Structure.class.getCanonicalName().toUpperCase(), "STRUCTURE"),
+        Map.entry(Structure.class.getCanonicalName().toUpperCase(), "CONTENT_TYPE"),
         Map.entry(Contentlet.class.getCanonicalName().toUpperCase(), "CONTENT"),
         Map.entry(Category.class.getCanonicalName().toUpperCase(), "CATEGORY"),
         Map.entry(Rule.class.getCanonicalName().toUpperCase(), "RULE"),

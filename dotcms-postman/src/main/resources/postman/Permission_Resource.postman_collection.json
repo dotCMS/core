@@ -1115,7 +1115,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/permissions/metadata",
+					"raw": "{{serverURL}}/api/v1/permissions/",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1123,7 +1123,7 @@
 						"api",
 						"v1",
 						"permissions",
-						"metadata"
+						""
 					]
 				},
 				"description": "Get available permission levels and scopes that can be assigned to users and roles"

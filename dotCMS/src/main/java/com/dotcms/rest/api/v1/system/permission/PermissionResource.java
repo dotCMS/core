@@ -287,10 +287,13 @@ public class PermissionResource {
                                      schema = @Schema(implementation = ResponseEntityPermissionMetadataView.class))),
         @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - frontend user attempted access (backend user required)",
                     content = @Content(mediaType = "application/json"))
     })
     @GET
-    @Path("/metadata")
+    @Path("/")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
