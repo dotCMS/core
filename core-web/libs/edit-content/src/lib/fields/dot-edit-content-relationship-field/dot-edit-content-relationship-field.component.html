@@ -1,8 +1,9 @@
 @let field = $field();
 @let contentlet = $contentlet();
 @let showLabel = $showLabel();
+@let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="hasError">
+<dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
         <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}
@@ -13,7 +14,7 @@
             [field]="field"
             [formControlName]="field.variable"
             [contentlet]="contentlet"
-            [hasError]="hasError"
+            [hasError]="fieldHasError"
             [isRequired]="isRequired" />
     </dot-card-field-content>
 </dot-card-field>
