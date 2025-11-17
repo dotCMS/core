@@ -18,17 +18,13 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { ChipModule } from 'primeng/chip';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { map } from 'rxjs/operators';
 
-import {
-    DotContentletLockerService,
-    DotDevicesService,
-    DotMessageService,
-    DotPersonalizeService
-} from '@dotcms/data-access';
+import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -45,31 +41,32 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { convertLocalTimeToUTC } from '../../../utils';
+import { convertLocalTimeToUTC, createFullURL } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
     imports: [
         NgClass,
+        FormsModule,
+        ReactiveFormsModule,
         ButtonModule,
+        CalendarModule,
+        ChipModule,
+        ClipboardModule,
+        ClipboardModule,
+        OverlayPanelModule,
         ToolbarModule,
+        SplitButtonModule,
+        DotMessagePipe,
+        DotEditorModeSelectorComponent,
         DotEmaBookmarksComponent,
         DotEmaInfoDisplayComponent,
         DotEmaRunningExperimentComponent,
-        ClipboardModule,
-        CalendarModule,
-        SplitButtonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        EditEmaPersonaSelectorComponent,
-        EditEmaLanguageSelectorComponent,
-        ClipboardModule,
+        DotToggleLockButtonComponent,
         DotUveDeviceSelectorComponent,
-        DotMessagePipe,
         DotUveWorkflowActionsComponent,
-        ChipModule,
-        DotEditorModeSelectorComponent,
-        DotToggleLockButtonComponent
+        EditEmaLanguageSelectorComponent,
+        EditEmaPersonaSelectorComponent
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -89,7 +86,6 @@ export class DotUveToolbarComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
-    readonly #dotContentletLockerService = inject(DotContentletLockerService);
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
@@ -120,6 +116,24 @@ export class DotUveToolbarComponent {
         return previewDate;
     });
 
+    readonly $pageURLS: Signal<{ label: string; value: string }[]> = computed(() => {
+        const params = this.$pageParams();
+        const siteId = this.#store.pageAPIResponse()?.site?.identifier;
+        const host = params.clientHost || window.location.origin;
+        const path = params.url?.replace(/\/index(\.html)?$/, '') || '/';
+
+        return [
+            {
+                label: 'uve.toolbar.page.live.url',
+                value: new URL(path, host).toString()
+            },
+            {
+                label: 'uve.toolbar.page.version.url',
+                value: createFullURL(params, siteId)
+            }
+        ];
+    });
+
     readonly $pageInode = computed(() => {
         return this.#store.pageAPIResponse()?.page.inode;
     });
@@ -127,8 +141,8 @@ export class DotUveToolbarComponent {
     readonly $actions = this.#store.workflowLoading;
     readonly $workflowLoding = this.#store.workflowLoading;
 
-    defaultDevices = DEFAULT_DEVICES;
-    $MIN_DATE = signal(this.#getMinDate());
+    protected defaultDevices = DEFAULT_DEVICES;
+    protected $MIN_DATE = signal(this.#getMinDate());
 
     /**
      * Fetch the page on a given date
