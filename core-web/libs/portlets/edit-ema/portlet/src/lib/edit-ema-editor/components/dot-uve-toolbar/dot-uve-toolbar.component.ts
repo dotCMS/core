@@ -128,7 +128,7 @@ export class DotUveToolbarComponent {
                 value: new URL(path, host).toString()
             },
             {
-                label: 'uve.toolbar.page.version.url',
+                label: 'uve.toolbar.page.current.view.url',
                 value: createFullURL(params, siteId)
             }
         ];
