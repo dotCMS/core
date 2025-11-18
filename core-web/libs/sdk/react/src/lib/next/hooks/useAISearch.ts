@@ -35,6 +35,33 @@ function reducer<T extends DotCMSBasicContentlet>(state: State<T>, action: Actio
     }
 }
 
+/**
+ * Hook to search for contentlets using AI.
+ * @template T - The type of the contentlet.
+ * @param client - The client to use for the search.
+ * @param indexName - The name of the index to search in.
+ * @param params - The parameters for the search.
+ * @returns The search results.
+ *
+ * @example
+ * ```typescript
+ * const { results, status, search, reset } = useAISearch<BlogPost>({
+ *   client: dotCMSClient,
+ *   indexName: 'blog-search-index',
+ *   params: {
+ *     query: {
+ *       limit: 10,
+ *       offset: 0,
+ *       contentType: 'Blog'
+ *     },
+ *     config: {
+ *       threshold: 0.5,
+ *       responseLength: 1024
+ *     }
+ *   }
+ * });
+ * ```
+ */
 export const useAISearch = <T extends DotCMSBasicContentlet>({
     client,
     indexName,
