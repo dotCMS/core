@@ -17,13 +17,7 @@ export {
 
 export { DotCMSLayoutBodyProps } from './lib/next/components/DotCMSLayoutBody/DotCMSLayoutBody';
 
-export { DotCMSAISearch as DotCMSAISearchInput } from './lib/next/components/DotCMSAISearch/DotCMSAISearch';
-
 export { useAISearch } from './lib/next/hooks/useAISearch';
 
 //Export AI types from shared types
-export type {
-    DotCMSAISearchValue,
-    DotCMSAISearchProps,
-    DotCMSAISearchInputRenderProps
-} from './lib/next/shared/types';
+export type { DotCMSAISearchValue, DotCMSAISearchProps } from './lib/next/shared/types';

@@ -5,7 +5,7 @@ export const DotCMSEntityState = {
     ERROR: 'ERROR'
 } as const;
 
-export type DotCMSEntityState =
+export type DotCMSEntityStatus =
     | { state: typeof DotCMSEntityState.IDLE }
     | { state: typeof DotCMSEntityState.LOADING }
     | { state: typeof DotCMSEntityState.SUCCESS }
