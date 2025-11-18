@@ -1,6 +1,11 @@
 import { useCallback, useReducer } from 'react';
 
-import { DotCMSAISearchResponse, DotCMSBasicContentlet, DotCMSEntityStatus } from '@dotcms/types';
+import {
+    DotCMSAISearchResponse,
+    DotCMSBasicContentlet,
+    DotCMSEntityState,
+    DotCMSEntityStatus
+} from '@dotcms/types';
 
 import { DotCMSAISearchProps, DotCMSAISearchValue } from '../shared/types';
 
@@ -10,21 +15,21 @@ type State<T extends DotCMSBasicContentlet> = {
 };
 
 type Action<T extends DotCMSBasicContentlet> =
-    | { type: 'LOADING' }
-    | { type: 'SUCCESS'; payload: DotCMSAISearchResponse<T> }
-    | { type: 'ERROR'; payload: Error }
-    | { type: 'RESET' };
+    | { type: typeof DotCMSEntityState.LOADING }
+    | { type: typeof DotCMSEntityState.SUCCESS; payload: DotCMSAISearchResponse<T> }
+    | { type: typeof DotCMSEntityState.ERROR; payload: Error }
+    | { type: typeof DotCMSEntityState.IDLE };
 
 function reducer<T extends DotCMSBasicContentlet>(state: State<T>, action: Action<T>): State<T> {
     switch (action.type) {
-        case 'LOADING':
-            return { ...state, status: { state: 'loading' } };
-        case 'SUCCESS':
-            return { response: action.payload, status: { state: 'success' } };
-        case 'ERROR':
-            return { ...state, status: { state: 'error', error: action.payload } };
-        case 'RESET':
-            return { response: null, status: { state: 'idle' } };
+        case DotCMSEntityState.LOADING:
+            return { ...state, status: { state: DotCMSEntityState.LOADING } };
+        case DotCMSEntityState.SUCCESS:
+            return { response: action.payload, status: { state: DotCMSEntityState.SUCCESS } };
+        case DotCMSEntityState.ERROR:
+            return { ...state, status: { state: DotCMSEntityState.ERROR, error: action.payload } };
+        case DotCMSEntityState.IDLE:
+            return { response: null, status: { state: DotCMSEntityState.IDLE } };
         default:
             return state;
     }
@@ -37,31 +42,32 @@ export const useAISearch = <T extends DotCMSBasicContentlet>({
 }: DotCMSAISearchProps): DotCMSAISearchValue<T> => {
     const [state, dispatch] = useReducer(reducer<T>, {
         response: null,
-        status: { state: 'idle' }
+        status: { state: DotCMSEntityState.IDLE }
     });
+
+    const reset = useCallback(() => {
+        dispatch({ type: DotCMSEntityState.IDLE });
+    }, []);
 
     const search = useCallback(
         async (prompt: string) => {
             if (!prompt.trim()) {
+                dispatch({ type: DotCMSEntityState.IDLE });
                 return;
             }
 
-            dispatch({ type: 'LOADING' });
+            dispatch({ type: DotCMSEntityState.LOADING });
             try {
                 const response = await client.ai.search<T>(prompt, indexName, {
                     ...params
                 });
-                dispatch({ type: 'SUCCESS', payload: response });
+                dispatch({ type: DotCMSEntityState.SUCCESS, payload: response });
             } catch (error) {
-                dispatch({ type: 'ERROR', payload: error as Error });
+                dispatch({ type: DotCMSEntityState.ERROR, payload: error as Error });
             }
         },
         [client, indexName, params]
     );
-
-    const reset = useCallback(() => {
-        dispatch({ type: 'RESET' });
-    }, []);
 
     return {
         response: state.response,

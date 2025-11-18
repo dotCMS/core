@@ -38,7 +38,7 @@ describe('AISearch', () => {
         ...requestOptions
     };
 
-    const mockResponseData: DotCMSAISearchRawResponse<DotCMSBasicContentlet> = {
+    const mockResponseDataRaw: DotCMSAISearchRawResponse<DotCMSBasicContentlet> = {
         timeToEmbeddings: 1000,
         total: 1,
         query: 'test query',
@@ -82,6 +82,11 @@ describe('AISearch', () => {
         ]
     };
 
+    const mockResponseData: DotCMSAISearchResponse<DotCMSBasicContentlet> = {
+        ...mockResponseDataRaw,
+        results: mockResponseDataRaw.dotCMSResults
+    };
+
     beforeEach(() => {
         mockRequest.mockReset();
         MockedFetchHttpClient.mockImplementation(
@@ -91,7 +96,7 @@ describe('AISearch', () => {
                 }) as Partial<FetchHttpClient> as FetchHttpClient
         );
 
-        mockRequest.mockResolvedValue(mockResponseData);
+        mockRequest.mockResolvedValue(mockResponseDataRaw);
     });
 
     it('should initialize with valid configuration', () => {
