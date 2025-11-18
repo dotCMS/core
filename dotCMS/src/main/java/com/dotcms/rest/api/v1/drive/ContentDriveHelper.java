@@ -122,7 +122,7 @@ public class ContentDriveHelper {
         .excludedContentTypes(
             excludedContentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
         )
-        .withBaseTypes(new ArrayList<>(types))
+        .withBaseTypes(List.copyOf(types))
         .showDotAssets(showDotAssets)
         .showFiles(showFiles)
         .showImages(showFiles)
@@ -134,7 +134,7 @@ public class ContentDriveHelper {
         .withLanguageIds(langIds)
         .offset(requestForm.offset())
         .maxResults(requestForm.maxResults())
-        .overrideMaxResults(true)
+        //.overrideMaxResults(true)
         .sortBy(sortBy)
         .sortByDesc(sortDesc);
 
