@@ -10,6 +10,7 @@ import {
     DISTANCE_FUNCTIONS,
     DotCMSAISearchResponse
 } from '@dotcms/types';
+import { DotCMSAISearchRawResponse } from '@dotcms/types/internal';
 
 import { AISearch } from './search';
 
@@ -37,7 +38,15 @@ describe('AISearch', () => {
         ...requestOptions
     };
 
-    const mockResponseData: DotCMSAISearchResponse<DotCMSBasicContentlet> = {
+    const mockResponseData: DotCMSAISearchRawResponse<DotCMSBasicContentlet> = {
+        timeToEmbeddings: 1000,
+        total: 1,
+        query: 'test query',
+        threshold: 0.5,
+        operator: DISTANCE_FUNCTIONS.cosine,
+        offset: 0,
+        limit: 1000,
+        count: 1,
         dotCMSResults: [
             {
                 identifier: '123',
@@ -151,8 +160,8 @@ describe('AISearch', () => {
             const response = await aiSearch;
 
             expect(response).toEqual(mockResponseData);
-            expect(response.dotCMSResults).toHaveLength(1);
-            expect(response.dotCMSResults[0].title).toBe('Test Content');
+            expect(response.results).toHaveLength(1);
+            expect(response.results[0].title).toBe('Test Content');
         });
 
         it('should build a query with custom query parameters', async () => {
