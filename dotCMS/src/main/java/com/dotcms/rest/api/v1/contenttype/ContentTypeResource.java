@@ -10,7 +10,6 @@ import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
@@ -59,7 +58,6 @@ import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.Explode;
 import io.swagger.v3.oas.annotations.enums.ParameterStyle;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -71,8 +69,6 @@ import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.util.LinkedHashSet;
-import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -100,6 +96,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1047,11 +1044,11 @@ public class ContentTypeResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	@Operation(
 			operationId = "getContentTypeIdVar",
-			summary = "Retrieves a single content type",
-			description = "Returns one content type based on the provided ID or Velocity variable name.",
+			summary = "Retrieves a single Content Type",
+			description = "Returns a Content Type based on the provided ID or Velocity variable name.",
 			tags = {"Content Type"},
 			responses = {
-					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
+					@ApiResponse(responseCode = "200", description = "Content Type retrieved successfully",
 							content = @Content(mediaType = "application/json",
 									examples = {
 											@ExampleObject(
@@ -1107,70 +1104,168 @@ public class ContentTypeResource implements Serializable {
 	public Response getType(
 			@PathParam("idOrVar") @Parameter(
 					required = true,
-					description = "The ID or Velocity variable name of the content type to retrieve.\n\n" +
-									"Example: `htmlpageasset` (Default page content type)",
-					schema = @Schema(type = "string")
-			) final String idOrVar,
+					description = "The ID or Velocity variable name of the Content Type to retrieve.\n\n" +
+								  "Variable name example: `htmlpageasset` (Default page Content Type)",
+					schema = @Schema(type = "string")) final String idOrVar,
 			@Context final HttpServletRequest req,
 			@Context final HttpServletResponse res,
 			@QueryParam("languageId") @Parameter(
 					description = "The language ID for localization.",
-					schema = @Schema(type = "integer")
-			) final Long languageId,
+					schema = @Schema(type = "integer")) final Long languageId,
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
-					schema = @Schema(type = "boolean")
-			) final Boolean paramLive)
-			throws DotDataException {
+					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false);
+	}
 
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+	@GET
+	@Path("/render/id/{idOrVar}")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "getContentTypeIdVar",
+			summary = "Retrieves a single Content Type with their rendered Custom Fields",
+			description = "Returns a Content Type based on the provided ID or Velocity variable " +
+					"name. Additionally, the Velocity code in all of its Custom Fields will be parsed.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content Type retrieved successfully",
+							content = @Content(mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": [\n" +
+															"    {\n" +
+															"      \"baseType\": \"string\",\n" +
+															"      \"clazz\": \"string\",\n" +
+															"      \"defaultType\": true,\n" +
+															"      \"description\": \"string\",\n" +
+															"      \"fields\": [],\n" +
+															"      \"fixed\": false,\n" +
+															"      \"folder\": \"string\",\n" +
+															"      \"folderPath\": \"string\",\n" +
+															"      \"host\": \"string\",\n" +
+															"      \"iDate\": 0,\n" +
+															"      \"icon\": \"string\",\n" +
+															"      \"id\": \"string\",\n" +
+															"      \"layout\": [],\n" +
+															"      \"metadata\": {},\n" +
+															"      \"modDate\": 0,\n" +
+															"      \"multilingualable\": true,\n" +
+															"      \"name\": \"string\",\n" +
+															"      \"siteName\": \"string\",\n" +
+															"      \"sortOrder\": 0,\n" +
+															"      \"system\": true,\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"systemActionMappings\": {},\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"versionable\": true,\n" +
+															"      \"workflows\": []\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": {\n" +
+															"    \"currentPage\": 0,\n" +
+															"    \"perPage\": 0,\n" +
+															"    \"totalEntries\": 0\n" +
+															"  },\n" +
+															"  \"permissions\": []\n" +
+															"}\n"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "404", description = "Not Found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response getTypeWithRenderedCustomFields(
+			@PathParam("idOrVar") @Parameter(
+					required = true,
+					description = "The ID or Velocity variable name of the Content Type to retrieve.\n\n" +
+								  "Variable name example: `htmlpageasset` (Default page Content Type)",
+					schema = @Schema(type = "string")) final String idOrVar,
+			@Context final HttpServletRequest req,
+			@Context final HttpServletResponse res,
+			@QueryParam("languageId") @Parameter(
+					description = "The language ID for localization.",
+					schema = @Schema(type = "integer")) final Long languageId,
+			@QueryParam("live") @Parameter(
+					description = "Determines whether live versions of language variables are used in the returned object.",
+					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true);
+	}
+
+	/**
+	 * Retrieves a content type based on the provided ID or Velocity variable name.
+	 *
+	 * @param idOrVar            The ID or Velocity variable name of the {@link ContentType} to
+	 *                           retrieve.
+	 * @param httpRequest                The current instance of the {@link HttpServletRequest}.
+	 * @param httpResponse                The current instance of the {@link HttpServletResponse}.
+	 * @param languageId         The Language ID, used for internationalization purposes.
+	 * @param paramLive          Determines whether live versions of language variables are used in
+	 *                           the returned object.
+	 * @param renderCustomFields If the Velocity code in all Custom Fields must be parsed, set this
+	 *                           to {@code true}.
+	 *
+	 * @return The specified {@link ContentType} in its JSON format.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the database.
+	 */
+	private Response retrieveContentType(final HttpServletRequest httpRequest,
+										 final HttpServletResponse httpResponse, final String idOrVar,
+										 final Long languageId, final Boolean paramLive,
+										 final boolean renderCustomFields) throws DotDataException {
+		final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, false, null);
 		final User user = initData.getUser();
-		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
-        final HttpSession session = req.getSession(false);
+		final HttpSession session = httpRequest.getSession(false);
 		try {
-
-			Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
-
+			Logger.debug(this, () -> "Getting the Type: " + idOrVar);
 			final ContentType type = tapi.find(idOrVar);
 			if (null == type) {
 				// Humoring sonarlint, this block should never be reached as the find method will
 				// throw an exception if the type is not found.
 				throw new NotFoundInDbException(
-						String.format("Content Type with ID or var name '%s' was not found", idOrVar
-						));
+						String.format("Content Type with ID or var name '%s' was not found", idOrVar));
 			}
-
 			if (null != session) {
 				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
 			}
-
 			final boolean live = paramLive == null ?
 					(PageMode.get(Try.of(HttpServletRequestThreadLocal.INSTANCE::getRequest).getOrNull())).showLive
 					: paramLive;
 
-			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
+			final ContentTypeInternationalization contentTypeInternationalization =
+					languageId != null ?
 					new ContentTypeInternationalization(languageId, live, user) : null;
 			final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
 					.putAll(contentTypeHelper.contentTypeToMap(type,
-							contentTypeInternationalization, user))
+							contentTypeInternationalization, renderCustomFields, user))
 					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
 							type.id(), initData.getUser()))
 					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
 							this.workflowHelper.findSystemActionsByContentType(
-									type, initData.getUser()).stream()
-							.collect(Collectors.toMap(mapping -> mapping.getSystemAction(),
-									mapping -> mapping))).build();
+											type, initData.getUser()).stream()
+									.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction,
+											mapping -> mapping))).build();
 
-			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
-					Response.ok(new ResponseEntityView<>(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
+			response = ("true".equalsIgnoreCase(httpRequest.getParameter("include_permissions"))) ?
+					Response.ok(new ResponseEntityView<>(resultMap,
+							PermissionsUtil.getInstance().getPermissionsArray(type,
+									initData.getUser()))).build() :
 					Response.ok(new ResponseEntityView<>(resultMap)).build();
 		} catch (final DotSecurityException e) {
 			throw new ForbiddenException(e);
-		} catch (final NotFoundInDbException nfdb2) {
+		} catch (final NotFoundInDbException e) {
 			// nothing to do here, will throw a 404
 		}
-
 		return response;
 	}
 
