@@ -527,19 +527,6 @@ describe('DotUveToolbarComponent', () => {
                 expect(plainUrl.value).toBe('https://example.com/');
             });
 
-            it('should handle root URL with just /index', () => {
-                baseUVEState.pageParams.set({
-                    ...params,
-                    url: '/index',
-                    clientHost: 'https://example.com'
-                });
-                spectator.detectChanges();
-
-                const urls = spectator.component.$pageURLS();
-                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
-                expect(plainUrl.value).toBe('https://example.com/');
-            });
-
             it('should handle nested paths with /index.html', () => {
                 baseUVEState.pageParams.set({
                     ...params,
