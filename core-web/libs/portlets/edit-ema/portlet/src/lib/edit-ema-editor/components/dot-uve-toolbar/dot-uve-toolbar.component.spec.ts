@@ -446,7 +446,9 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const urls = spectator.component.$pageURLS();
-                const versionUrl = urls.find((u) => u.label === 'uve.toolbar.page.version.url');
+                const versionUrl = urls.find(
+                    (u) => u.label === 'uve.toolbar.page.current.view.url'
+                );
 
                 expect(mockCreateFullURL).toHaveBeenCalledWith(
                     expect.any(Object),
