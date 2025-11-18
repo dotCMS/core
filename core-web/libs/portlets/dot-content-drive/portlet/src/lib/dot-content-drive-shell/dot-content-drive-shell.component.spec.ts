@@ -681,10 +681,16 @@ describe('DotContentDriveShellComponent', () => {
 
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            expect(addSpy).toHaveBeenCalledWith({
+            expect(addSpy).toHaveBeenCalledTimes(2);
+            expect(addSpy).toHaveBeenNthCalledWith(1, {
+                severity: 'info',
+                summary: 'content-drive.file-upload-in-progress',
+                detail: 'content-drive.file-upload-in-progress-detail'
+            });
+            expect(addSpy).toHaveBeenNthCalledWith(2, {
                 severity: 'error',
-                summary: expect.any(String),
-                detail: 'Upload failed',
+                summary: 'content-drive.add-dotasset-error',
+                detail: 'content-drive.add-dotasset-error-detail',
                 life: ERROR_MESSAGE_LIFE
             });
         });
