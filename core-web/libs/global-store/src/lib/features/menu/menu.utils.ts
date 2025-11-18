@@ -36,6 +36,8 @@ export interface DotActiveItemsProps {
     menuId?: string;
     /** The previous URL path for navigation context */
     previousUrl: string;
+    /** Optional menu items to set before applying active logic. If provided, these will be set in the store first */
+    menuItems?: DotMenu[];
 }
 
 /**

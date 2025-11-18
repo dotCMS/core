@@ -78,14 +78,14 @@ export class DotNavigationService {
                     .reloadMenu()
                     .pipe(take(1))
                     .subscribe((menus: DotMenu[]) => {
-                        this.#globalStore.setMenuItems(menus);
                         this.#globalStore.setActiveMenuItems({
                             url: payload.menuItems?.length
                                 ? payload.menuItems[payload.menuItems.length - 1]
                                 : '',
-                            collapsed: null,
+                            collapsed: this.#globalStore.isNavigationCollapsed(),
                             menuId: payload.toolgroup?.id || '',
-                            previousUrl: ''
+                            previousUrl: this.dotRouterService.previousUrl,
+                            menuItems: menus
                         });
                     });
             });

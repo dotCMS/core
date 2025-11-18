@@ -237,12 +237,20 @@ export function withMenu() {
              * Sets active menu items based on navigation context.
              * This method handles the logic for determining which menu items should be active
              * based on the current URL, menu ID, and navigation state.
+             * If menuItems are provided in props, they will be set in the store first before applying active logic.
              *
-             * @param props - Configuration object containing URL, collapsed state, menuId, and previousUrl
+             * @param props - Configuration object containing URL, collapsed state, menuId, previousUrl, and optionally menuItems
              * @returns The updated menu items array, or null if the menu should not be updated
              */
             setActiveMenuItems: (props: DotActiveItemsProps): DotMenu[] | null => {
-                const { url, collapsed, menuId, previousUrl } = props;
+                const { url, collapsed, menuId, previousUrl, menuItems } = props;
+
+                // If menuItems are provided, set them first (useful when reloading menus)
+                if (menuItems) {
+                    const processedMenuItems = addMenuLinks(menuItems);
+                    patchState(store, { menuItems: processedMenuItems });
+                }
+
                 const currentMenus = store.menuItems();
 
                 if (!url) {
