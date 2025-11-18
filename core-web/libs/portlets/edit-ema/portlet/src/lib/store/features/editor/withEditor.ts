@@ -376,6 +376,16 @@ export function withEditor() {
                         }
                     });
                 },
+                removeStyleEditor() {
+                    patchState(store, {
+                        activeContentletIdentifier: null,
+                        palette: {
+                            isOpen: true,
+                            currentTab: PALETTE_TABS.STYLE_EDITOR,
+                            styleConfig: {}
+                        }
+                    })
+                },
                 setPaletteCurrentTab(currentTab: PALETTE_TABS) {
                     patchState(store, { palette: { ...store.palette(), currentTab: currentTab } });
                 },

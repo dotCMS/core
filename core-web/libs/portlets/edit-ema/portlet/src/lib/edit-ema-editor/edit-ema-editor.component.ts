@@ -19,7 +19,7 @@ import {
     untracked
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -227,7 +227,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $handleActiveContentletEffect = effect(() => {
         const identifier = this.uveStore.activeContentletIdentifier() ?? null;
         const name = __DOTCMS_UVE_EVENT__.UVE_ACTIVE_CONTENTLET;
-
+        
+        console.log("called active contentlet effect => ", { name, identifier } )
         this.contentWindow?.postMessage({ name, identifier }, this.host);
     });
 
@@ -916,13 +917,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [DotCMSUVEAction.SET_CONTENTLET]: (contentletArea: ClientContentletArea) => {
                 const payload = this.uveStore.getPageSavePayload(contentletArea.payload);
 
-                const identifier = contentletArea.payload.contentlet.identifier;
-                const activeContentletIdentifier = this.uveStore.activeContentletIdentifier();
+                // const identifier = contentletArea.payload.contentlet.identifier;
+                // const activeContentletIdentifier = this.uveStore.activeContentletIdentifier();
 
                 // Avoid showing tools on an active contentlet
-                if (activeContentletIdentifier === identifier) {
-                    return;
-                }
+                // if (activeContentletIdentifier === identifier) {
+                //     return;
+                // }
 
                 this.uveStore.setEditorContentletArea({
                     ...contentletArea,
@@ -1543,5 +1544,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         identifier: string;
     }) {
         this.uveStore.openPalette({ tab, variableName, identifier });
+    }
+
+    removeStyleEditor() {
+        console.log("called remove style editor")
+        //TODO: Unify both functions, maybe with a effect listen the activeContentlet identifier
+        this.uveStore.removeStyleEditor();
+
+        // this.uveStore.closePalette();
     }
 }
