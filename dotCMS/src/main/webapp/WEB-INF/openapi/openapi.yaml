@@ -6721,14 +6721,14 @@ paths:
       tags:
       - Content Type
     get:
-      description: Returns one content type based on the provided ID or Velocity variable
+      description: Returns a Content Type based on the provided ID or Velocity variable
         name.
       operationId: getContentTypeIdVar
       parameters:
       - description: |-
-          The ID or Velocity variable name of the content type to retrieve.
+          The ID or Velocity variable name of the Content Type to retrieve.
 
-          Example: `htmlpageasset` (Default page content type)
+          Variable name example: `htmlpageasset` (Default page Content Type)
         in: path
         name: idOrVar
         required: true
@@ -6784,14 +6784,14 @@ paths:
                   perPage: 0
                   totalEntries: 0
                 permissions: []
-          description: Content type retrieved successfully
+          description: Content Type retrieved successfully
         "403":
           description: Forbidden
         "404":
           description: Not Found
         "500":
           description: Internal Server Error
-      summary: Retrieves a single content type
+      summary: Retrieves a single Content Type
       tags:
       - Content Type
     put:
@@ -7034,6 +7034,82 @@ paths:
       summary: Retrieves a list of content types for a page
       tags:
       - getPagesContentTypes
+      - Content Type
+  /v1/contenttype/render/id/{idOrVar}:
+    get:
+      description: "Returns a Content Type based on the provided ID or Velocity variable\
+        \ name. Additionally, the Velocity code in all of its Custom Fields will be\
+        \ parsed."
+      operationId: getContentTypeIdVar_1
+      parameters:
+      - description: |-
+          The ID or Velocity variable name of the Content Type to retrieve.
+
+          Variable name example: `htmlpageasset` (Default page Content Type)
+        in: path
+        name: idOrVar
+        required: true
+        schema:
+          type: string
+      - description: The language ID for localization.
+        in: query
+        name: languageId
+        schema:
+          type: integer
+          format: int64
+      - description: Determines whether live versions of language variables are used
+          in the returned object.
+        in: query
+        name: live
+        schema:
+          type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                - baseType: string
+                  clazz: string
+                  defaultType: true
+                  description: string
+                  fields: []
+                  fixed: false
+                  folder: string
+                  folderPath: string
+                  host: string
+                  iDate: 0
+                  icon: string
+                  id: string
+                  layout: []
+                  metadata: {}
+                  modDate: 0
+                  multilingualable: true
+                  name: string
+                  siteName: string
+                  sortOrder: 0
+                  system: true
+                  variable: string
+                  systemActionMappings: {}
+                  versionable: true
+                  workflows: []
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination:
+                  currentPage: 0
+                  perPage: 0
+                  totalEntries: 0
+                permissions: []
+          description: Content Type retrieved successfully
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieves a single Content Type with their rendered Custom Fields
+      tags:
       - Content Type
   /v1/contenttype/{baseVariableName}/_copy:
     post:
