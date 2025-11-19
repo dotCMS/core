@@ -113,7 +113,25 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $isEmpty = this.#paletteListStore.$isEmpty;
     protected readonly $layoutMode = this.#paletteListStore.layoutMode;
     protected readonly $showListLayout = this.#paletteListStore.$showListLayout;
-    protected readonly $emptyStateMessage = this.#paletteListStore.$emptyStateMessage;
+    protected readonly $hideControls = computed(() => {
+        return this.$isEmpty() && !(this.searchControl.value.trim().length > 0);
+    });
+    protected readonly $emptyState = computed(() => {
+        const searchTerm = this.searchControl.value.trim();
+        if (searchTerm.length > 0) {
+            return {
+                icon: 'pi pi-search',
+                title: this.#dotMessageService.get('uve.palette.empty.search.state.title'),
+                message: this.#dotMessageService.get('uve.palette.empty.search.state.message')
+            };
+        }
+
+        return {
+            icon: 'pi pi-plus',
+            title: this.#dotMessageService.get('uve.palette.empty.state.title'),
+            message: this.#dotMessageService.get('uve.palette.empty.state.message')
+        };
+    });
 
     protected readonly $contextMenuItems = signal<MenuItem[]>([]);
 
