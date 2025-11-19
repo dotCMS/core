@@ -58,6 +58,9 @@
             --add-opens java.base/sun.nio.cs=ALL-UNNAMED
             --add-opens java.base/sun.util.calendar=ALL-UNNAMED
             --add-opens java.base/sun.util.locale=ALL-UNNAMED
+            --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
+            --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
+            --add-opens java.base/jdk.internal.module=ALL-UNNAMED
         </java.module.args>
 
         <maven.deploy.skip>false</maven.deploy.skip>
