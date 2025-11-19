@@ -20,6 +20,7 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
     -   [DotCMSEditableText](#dotcmseditabletext)
     -   [useEditableDotCMSPage](#useeditabledotcmspage)
     -   [useDotCMSShowWhen](#usedotcmsshowwhen)
+    -   [useAISearch](#useaisearch)
 -   [Troubleshooting](#troubleshooting)
     -   [Common Issues & Solutions](#common-issues--solutions)
     -   [Debugging Tips](#debugging-tips)
@@ -442,6 +443,141 @@ const MyEditButton = () => {
     return null;
 };
 ```
+
+### useAISearch
+
+`useAISearch` is a hook that enables AI-powered semantic search capabilities for your dotCMS content. It manages search state, handles API calls, and provides real-time status updates.
+
+| Param       | Type                    | Required | Description                                                                    |
+| ----------- | ----------------------- | -------- | ------------------------------------------------------------------------------ |
+| `client`    | `DotCMSClient`          | ✅       | The dotCMS client instance created with `createDotCMSClient()`                |
+| `indexName` | `string`                | ✅       | Name of the AI search index to query                                           |
+| `params`    | `DotCMSAISearchParams`  | ✅       | Search configuration including query params (limit, offset) and AI config      |
+
+#### Return Value
+
+The hook returns an object with the following properties:
+
+| Property   | Type                                     | Description                                                    |
+| ---------- | ---------------------------------------- | -------------------------------------------------------------- |
+| `response` | `DotCMSAISearchResponse<T> \| null`      | Full search response including metadata and results            |
+| `results`  | `DotCMSAISearchContentletData<T>[] \| undefined` | Array of search results with match scores          |
+| `status`   | `DotCMSEntityStatus`                      | Current state: `IDLE`, `LOADING`, `SUCCESS`, or `ERROR`        |
+| `search`   | `(prompt: string) => Promise<void>`      | Function to execute a search with a text prompt                |
+| `reset`    | `() => void`                             | Function to reset search state to idle                         |
+
+#### Usage
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+import { useAISearch } from '@dotcms/react';
+import type { DotCMSBasicContentlet } from '@dotcms/types';
+import { dotCMSClient } from '@/lib/dotCMSClient';
+
+interface BlogPost extends DotCMSBasicContentlet {
+    body: string;
+    author: string;
+}
+
+const AISearchComponent = () => {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const { results, status, search, reset } = useAISearch<BlogPost>({
+        client: dotCMSClient,
+        indexName: 'blog-search-index',
+        params: {
+            query: {
+                limit: 10,
+                offset: 0,
+                contentType: 'Blog'
+            },
+            config: {
+                threshold: 0.5,
+                responseLength: 1024
+            }
+        }
+    });
+
+    const handleSearch = async () => {
+        if (searchQuery.trim()) {
+            await search(searchQuery);
+        }
+    };
+
+    const handleReset = () => {
+        setSearchQuery('');
+        reset();
+    };
+
+    return (
+        <div className="search-container">
+            <div className="search-bar">
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search with AI..."
+                />
+                <button onClick={handleSearch} disabled={status.state === 'LOADING'}>
+                    {status.state === 'LOADING' ? 'Searching...' : 'Search'}
+                </button>
+                <button onClick={handleReset}>Reset</button>
+            </div>
+
+            {status.state === 'ERROR' && (
+                <div className="error">
+                    Error: {status.error.message}
+                </div>
+            )}
+
+            {status.state === 'SUCCESS' && results && (
+                <div className="results">
+                    <h2>Found {results.length} results</h2>
+                    {results.map((result) => (
+                        <article key={result.identifier}>
+                            <h3>{result.title}</h3>
+                            <p>Author: {result.author}</p>
+                            {result.matches?.map((match, idx) => (
+                                <div key={idx} className="match">
+                                    <span>Relevance: {match.distance.toFixed(2)}</span>
+                                    <p>{match.extractedText}</p>
+                                </div>
+                            ))}
+                        </article>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default AISearchComponent;
+```
+
+#### Features
+
+- **Automatic State Management**: Handles loading, success, error, and idle states
+- **Type-Safe Results**: Generic typing ensures type safety for your content types
+- **Search Validation**: Automatically validates and trims search prompts
+- **Configurable Parameters**: Support for pagination, thresholds, and AI configuration
+- **Error Handling**: Provides detailed error information through status state
+- **Reset Capability**: Easy state reset for clearing search results
+
+#### Configuration Options
+
+**Query Parameters (`params.query`):**
+- `limit`: Maximum number of results (default: 1000)
+- `offset`: Number of results to skip (default: 0)
+- `siteId`: Filter by specific site
+- `contentType`: Filter by content type
+- `languageId`: Filter by language
+
+**AI Configuration (`params.config`):**
+- `threshold`: Minimum similarity score (default: 0.5)
+- `distanceFunction`: Vector distance algorithm (default: cosine)
+- `responseLength`: Maximum response text length (default: 1024)
 
 ## Troubleshooting
 

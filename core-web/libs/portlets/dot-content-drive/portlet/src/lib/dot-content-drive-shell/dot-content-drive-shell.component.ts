@@ -371,9 +371,9 @@ export class DotContentDriveShellComponent {
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.add-dotasset-error-detail'
-                        ),
+                        detail:
+                            error.error?.errors?.[0]?.message ??
+                            this.#dotMessageService.get('content-drive.add-dotasset-error-detail'),
                         life: ERROR_MESSAGE_LIFE
                     });
                 }

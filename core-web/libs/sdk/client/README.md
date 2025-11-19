@@ -241,17 +241,17 @@ Before using AI-powered search, ensure your dotCMS instance is properly configur
 #### Basic AI Search
 ```typescript
 // Search for content semantically related to your query
-const results = await client.ai.search(
+const response = await client.ai.search(
     'articles about machine learning',
     'content_index'
 );
-console.log(results.dotCMSResults);
+console.log(response.results);
 ```
 
 #### Customizing Search Parameters
 ```typescript
 // Fine-tune search with query parameters
-const results = await client.ai.search(
+const response = await client.ai.search(
     'artificial intelligence tutorials',
     'content_index',
     {
@@ -270,7 +270,7 @@ const results = await client.ai.search(
 import { DISTANCE_FUNCTIONS } from '@dotcms/types';
 
 // Customize AI search behavior with threshold and distance function
-const results = await client.ai.search(
+const response = await client.ai.search(
     'deep learning concepts',
     'content_index',
     {
@@ -286,7 +286,7 @@ const results = await client.ai.search(
 #### Complete Example with All Options
 ```typescript
 // Combine query and AI parameters for precise control
-const results = await client.ai.search(
+const response = await client.ai.search(
     'best practices for content management',
     'articles_index',
     {
@@ -306,7 +306,7 @@ const results = await client.ai.search(
 );
 
 // Access results with match scores
-results.dotCMSResults.forEach(result => {
+resp[onse].results.forEach(result => {
     console.log(result.title);
     console.log('Matches:', result.matches); // Distance and extracted text
 });
@@ -416,7 +416,7 @@ interface Article extends DotCMSBasicContentlet {
 }
 
 // Type-safe AI search
-const results: DotCMSAISearchResponse<Article> = await client.ai.search<Article>(
+const response: DotCMSAISearchResponse<Article> = await client.ai.search<Article>(
     'machine learning tutorials',
     'content_index',
     {
@@ -432,7 +432,7 @@ const results: DotCMSAISearchResponse<Article> = await client.ai.search<Article>
 );
 
 // Access typed results with match information
-results.dotCMSResults.forEach(article => {
+response.results.forEach(article => {
     console.log(article.title);           // ✅ Type-safe: string
     console.log(article.category);        // ✅ Type-safe: string
 
@@ -818,7 +818,7 @@ search<T extends DotCMSBasicContentlet>(
 
 ```typescript
 interface DotCMSAISearchResponse<T> {
-    dotCMSResults: Array<T & {
+    results: Array<T & {
         matches?: Array<{
             distance: number;      // Similarity score
             extractedText: string; // Matched text excerpt
@@ -867,9 +867,9 @@ client.ai.search(
         query: { limit: 10 },
         config: { threshold: 0.8 }
     }
-).then((results) => {
-    console.log('Found:', results.dotCMSResults.length);
-    return results;
+).then((response) => {
+    console.log('Found:', response.results.length);
+    return response;
 }).catch((error) => {
     console.error('Search failed:', error.message);
 });

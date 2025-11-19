@@ -59,8 +59,7 @@
     width: 100%;
     grid-area: toolbar-group-top;
 
-    grid-template-columns: repeat(3, minmax(4.5rem, 14rem));
-
+    grid-template-columns: repeat(2, minmax(4.5rem, 14rem)) 1fr;
     .search-input {
         grid-column: 1 / 3;
     }
