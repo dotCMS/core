@@ -29,7 +29,7 @@ import { I18nService } from './services/system/locale/I18n';
                 </div>
                 <cw-input-dropdown
                     (onDropDownChange)="onTypeChange($event)"
-                    [options]="typeDropdown.options"
+                    [options]="typeDropdown?.options"
                     [value]="condition.type?.key"
                     flex="25"
                     class="cw-type-dropdown"
@@ -95,7 +95,7 @@ export class ConditionComponent implements OnInit {
         payload: { condition: ConditionModel };
     }> = new EventEmitter(false);
 
-    typeDropdown: any;
+    typeDropdown: any = null;
 
     ngOnInit(): void {
         setTimeout(() => {

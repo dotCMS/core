@@ -20,7 +20,7 @@ import { ServerSideTypeModel } from './services/ServerSideFieldModel';
                     <cw-input-dropdown
                         (onDropDownChange)="onTypeChange($event)"
                         [value]="action.type?.key"
-                        [options]="typeDropdown.options"
+                        [options]="typeDropdown?.options"
                         flex
                         class="cw-type-dropdown"
                         placeholder="{{ actionTypePlaceholder }}"></cw-input-dropdown>
@@ -59,7 +59,7 @@ export class RuleActionComponent implements OnInit {
     updateRuleActionParameter: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
     @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
 
-    typeDropdown: any;
+    typeDropdown: any = null;
 
     ngOnChanges(change): void {
         if (change.action) {
