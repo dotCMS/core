@@ -11,8 +11,7 @@ import {
     inject
 } from '@angular/core';
 
-import { DotMenuItem } from '@dotcms/dotcms-models';
-import { MenuGroup } from '@dotcms/store';
+import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
 import { DotIconComponent } from '@dotcms/ui';
 
 import {

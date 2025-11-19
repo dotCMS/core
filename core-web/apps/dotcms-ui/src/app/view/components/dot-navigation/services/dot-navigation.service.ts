@@ -31,9 +31,11 @@ export class DotNavigationService {
         // Load initial menu - store handles menu link processing and entity transformation
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
             this.#globalStore.loadMenu(menus);
+
             this.#globalStore.setActiveMenu(
                 this.dotRouterService.currentPortlet.id,
-                this.router.getCurrentNavigation()?.extras.state?.menuId
+                this.router.getCurrentNavigation()?.extras?.state?.menuId ||
+                    window.history?.state?.menuId
             );
         });
 

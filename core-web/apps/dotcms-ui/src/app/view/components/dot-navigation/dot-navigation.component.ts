@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, HostBinding, HostListener, inject } from '@angular/core';
 
 import { DotEventsService, DotRouterService } from '@dotcms/data-access';
-import { DotMenuItem } from '@dotcms/dotcms-models';
-import { GlobalStore, MenuGroup } from '@dotcms/store';
+import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotNavHeaderComponent } from './components/dot-nav-header/dot-nav-header.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';

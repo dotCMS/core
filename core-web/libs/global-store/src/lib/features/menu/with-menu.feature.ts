@@ -247,9 +247,9 @@ export function withMenu() {
              * Loads menu and sets active item based on current URL.
              * Transforms DotMenu array to entities and activates the item matching the URL.
              *
-             * @param menuItems - DotMenu array from the API
-             * @param portletId - The current URL to find and activate the matching item
-             * @param menuItems - DotMenu array from the API
+             * @param portletId - The ID of the menu item (portlet) to activate
+             * @param parentMenuId - The ID of the parent menu group
+             * @param menuItems - Optional DotMenu array from the API to load
              */
             setActiveMenu: (portletId: string, parentMenuId: string, menuItems?: DotMenu[]) => {
                 // menuItems is used to handle the event service UPDATE_PORTLET_LAYOUTS,
@@ -266,9 +266,7 @@ export function withMenu() {
                 if (portletId && parentMenuId) {
                     const collapsed = store.isNavigationCollapsed();
 
-                    // Use the composite key for activation
                     const compositeKey = `${portletId}__${parentMenuId}`;
-
                     store.activateMenuItemWithParent(compositeKey, collapsed ? null : parentMenuId);
                 }
             }

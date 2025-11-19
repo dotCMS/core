@@ -2,7 +2,7 @@ import { signalStore, withState } from '@ngrx/signals';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotMenu, MenuItemEntity } from '@dotcms/dotcms-models';
+import { DotMenu } from '@dotcms/dotcms-models';
 
 import { withMenu } from './with-menu.feature';
 
@@ -392,9 +392,12 @@ describe('withMenu Feature', () => {
         });
 
         it('should set active menu item by portletId and parentMenuId', () => {
+            // Expand navigation first so parent menu can be opened
+            store.expandNavigation();
             store.setActiveMenu('1-1', '1');
             const activeItem = store.activeMenuItem();
             expect(activeItem?.id).toBe('1-1');
+            expect(activeItem?.parentMenuId).toBe('1');
             expect(store.openParentMenuId()).toBe('1');
         });
 
