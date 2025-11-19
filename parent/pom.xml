@@ -728,6 +728,7 @@
                         -->
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
+                            -Dnet.bytebuddy.experimental=true
                         </argLine>
 
                         <trimStackTrace>false</trimStackTrace>
