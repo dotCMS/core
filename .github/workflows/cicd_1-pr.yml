@@ -14,10 +14,11 @@
 #
 # Security Note:
 #  As PR checks are run on code that
-#  is not yet merged into the main branch, we should not add anything that requires secrets
-#  post-workflow-reporting is triggered to run after this workflow unlike the other workflow and can handle any notifications like slack
-#  that require secrets. That workflow cannot be modified by PRs until they are merged.
-
+#  is not yet merged into the main branch, we should not add anything that
+#  requires secrets post-workflow-reporting is triggered to run after this
+#  workflow unlike the other workflow and can handle any notifications like slack
+#  that require secrets. That workflow cannot be modified by PRs until they
+#  are merged.
 
 name: '-1 PR Check'
 
@@ -44,10 +45,50 @@ jobs:
     with:
       validation-level: 'full'
 
+  # Workflow linting - validates GitHub Actions workflows for syntax errors
+  workflow-lint:
+    name: Workflow Lint
+    needs: [initialize]
+    if: needs.initialize.outputs.workflows == 'true'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint on workflows
+        run: |
+          echo "Running yamllint on GitHub Actions workflows..."
+          yamllint .github/workflows/ || exit_code=$?
+          if [ ${exit_code:-0} -ne 0 ]; then
+            echo "❌ yamllint found issues in workflow files"
+            exit ${exit_code}
+          fi
+          echo "✅ yamllint passed"
+
+      - name: Install actionlint
+        run: |
+          echo "Installing actionlint v1.7.8..."
+          curl -sSL https://github.com/rhysd/actionlint/releases/download/v1.7.8/actionlint_1.7.8_linux_amd64.tar.gz | \
+          sudo tar xz -C /usr/local/bin
+          actionlint --version
+
+      - name: Run actionlint on workflows
+        run: |
+          echo "Running actionlint on GitHub Actions workflows..."
+          actionlint -color || exit_code=$?
+          if [ ${exit_code:-0} -ne 0 ]; then
+            echo "❌ actionlint found issues in workflow files"
+            exit ${exit_code}
+          fi
+          echo "✅ actionlint passed"
+
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: PR Build
-    needs: [ initialize ]
+    needs: [initialize]
     if: needs.initialize.outputs.build == 'true' && needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
@@ -60,7 +101,7 @@ jobs:
   # Test job - runs various tests based on initialization outputs
   test:
     name: PR Test
-    needs: [ initialize,build ]
+    needs: [initialize, build]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
@@ -76,12 +117,8 @@ jobs:
 
   semgrep:
     name: PR Semgrep
-    needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
-      (
-      (github.event_name == 'workflow_dispatch' && !inputs.disable-semgrep) ||
-      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SEMGREP != 'true')
-      )
+    needs: [initialize, build]
+    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' && vars.DISABLE_SEMGREP != 'true'
     uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
@@ -90,7 +127,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ semgrep,test ]
+    needs: [semgrep, test]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}
@@ -99,7 +136,7 @@ jobs:
   # Note this functionality should be in cicd_post-workflow-reporting.yml
   pr-notifier:
     name: PR Notifier
-    needs: [ finalize ]
+    needs: [finalize]
     if: always()
     uses: ./.github/workflows/cicd_comp_pr-notifier.yml
     with:

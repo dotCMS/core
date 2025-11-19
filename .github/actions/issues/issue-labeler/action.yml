@@ -29,5 +29,5 @@ outputs:
   ignored_issues:
     description: 'Ignored issues json'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'

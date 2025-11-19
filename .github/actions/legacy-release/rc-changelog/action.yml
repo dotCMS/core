@@ -28,5 +28,5 @@ outputs:
   issues_json:
     description: 'Issues json'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'

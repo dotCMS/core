@@ -73,7 +73,6 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-
       - name: Get SDKMan Version
         id: get-sdkman-version
         shell: bash
@@ -102,7 +101,7 @@ jobs:
           if [[ -z "${{ inputs.docker_context_cache_key }}" || ! -d ${DOCKER_BUILD_CONTEXT}/context ]]; then
             rebuild=true
           fi
-          
+
           echo "rebuild=${rebuild}" >> $GITHUB_OUTPUT
 
       - name: Prepare Runner
@@ -148,34 +147,34 @@ jobs:
           else
             build_properties=$(eval find "$build_properties_path" -print)
           fi
-          
+
           echo 'Build properties:'
           cat ${build_properties}
-          
+
           version=$(cat ${build_properties} | grep version | cut -d'=' -f2)
           build_hash=$(cat ${build_properties} | grep revision | cut -d'=' -f2)
           if [[ ! ${build_hash} =~ ^[0-9a-f]{7}$ ]]; then
             build_hash=$(git log -1 --pretty=%h)
             build_hash=${build_hash::7}
           fi
-          
+
           build_id=${{ inputs.ref }}
           is_trunk=false
           if [[ "${build_id}" == 'main' || ${build_id} =~ ^v[0-9]{2}.[0-9]{2}.[0-9]{2}_lts$ ]]; then
             is_trunk=true
           fi
-          
+
           is_lts=false
           if [[ ${version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts(_v[0-9]{2})?$ ]]; then
             is_lts=true
           fi
-          
+
           is_snapshot=false
           is_release=false
           is_latest=false
           is_custom=false
           is_trunk_snapshot=false
-          
+
           if [[ ${version} =~ ^[0-9]{1}.[0-9]{1}.[0-9]{1}-SNAPSHOT$ ]]; then
             version=${build_id}
             is_snapshot=true
@@ -194,13 +193,13 @@ jobs:
             is_custom=true
             version=${build_id}
           fi
-          
+
           if [[ "${{ inputs.force_snapshot }}" == 'true' ]]; then
             is_snapshot=true
             is_release=false
             is_latest=false
           fi
-          
+
           echo "version=${version}"
           echo "build_hash=${build_hash}"
           echo "build_id=${build_id}"
@@ -211,7 +210,7 @@ jobs:
           echo "is_release=${is_release}"
           echo "is_latest=${is_latest}"
           echo "is_custom=${is_custom}"
-          
+
           echo "version=${version}" >> $GITHUB_OUTPUT
           echo "build_hash=${build_hash}" >> $GITHUB_OUTPUT
           echo "build_id=${build_id}" >> $GITHUB_OUTPUT

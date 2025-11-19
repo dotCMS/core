@@ -1,0 +1,50 @@
+---
+# yamllint configuration for GitHub Actions workflows
+# See https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+rules:
+  # Line length - GitHub Actions workflows can be verbose
+  line-length:
+    max: 120
+    level: warning
+
+  # Indentation - GitHub Actions uses 2 spaces
+  indentation:
+    spaces: 2
+    indent-sequences: true
+
+  # Comments - Allow comments without space for action comments
+  comments:
+    min-spaces-from-content: 1
+
+  # Truthy values - Allow yes/no/on/off in GitHub Actions
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
+    check-keys: false
+
+  # Document start - Don't require --- at start of file
+  document-start: disable
+
+  # Allow empty values for GitHub Actions syntax
+  empty-values:
+    forbid-in-block-mappings: false
+    forbid-in-flow-mappings: false
+
+  # Brackets - Be flexible with bracket spacing
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Braces - Be flexible with brace spacing
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+ignore: |
+  # Ignore generated or external files
+  node_modules/
+  .venv/
+  .cache/
+  target/

@@ -16,7 +16,7 @@ jobs:
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
-          node-version: "16.13.2"
+          node-version: '16.13.2'
       - name: Installing dependencies
         run: |
           cd core-web

@@ -69,28 +69,28 @@ jobs:
           result-encoding: string
           script: |
             const evaluatingLabels = '${{ inputs.evaluating_labels }}'.split(',').map(lbl => lbl.trim());
-            
+
             let issueNumber;
             const issue = context.payload.issue;
             if (!issue && '${{ inputs.issue_number }}'.trim() === '') {
               core.warning('Issue number is not provided');
               process.exit(0);
             }
-            
+
             if ('${{ inputs.evaluated_labels }}'.trim() === '') {
               core.warning('New labels are missing, exiting');
               process.exit(0);
             }
-            
+
             const evaluatedLabels = '${{ inputs.evaluated_labels }}'.split(',').map(lbl => lbl.trim());
             console.log(`Received these labels to be evaluated: [${evaluatedLabels.join(', ')}]`);
-            
+
             const filteredLabels = evaluatedLabels.filter(lbl => evaluatingLabels.includes(lbl));
             if (filteredLabels.length === 0) {
               core.warning(`Evaluated labels are not in [${evaluatingLabels.join(', ')}] label group, exiting`);
               process.exit(0);
             }
-            
+
             core.setOutput('labels', JSON.stringify(filteredLabels));
       - name: Add Labels
         uses: actions/github-script@v7
@@ -101,7 +101,7 @@ jobs:
           retry-exempt-status-codes: 400,401
           script: |
             const ignoreIssueLabels = '${{ inputs.ignore_issue_labels }}'.split(',').map(lbl => lbl.trim());
-            
+
             async function getIssue(issueNumber) {
               const response = await github.rest.issues.get({
                 issue_number: issueNumber,
@@ -110,18 +110,18 @@ jobs:
               });
               return response.data;
             }
-            
+
             if ('${{ inputs.issue_number }}'.trim() === '') {
               core.warning('Issue number is missing, exiting');
               process.exit(0);
             }
-            
+
             const issue = await getIssue(${{ inputs.issue_number }});
             if (!issue) {
               core.warning('Issue [${{ inputs.issue_number }}] not found');
               process.exit(0);
             }
-            
+
             console.log(`Issue: ${JSON.stringify(issue, null, 2)}`);
             const issueNumber = issue.number;
             const foundLabel = ignoreIssueLabels.find(lbl => issue.labels.includes(lbl));

@@ -30,7 +30,7 @@ jobs:
   security-check:
     runs-on: ubuntu-latest
     permissions:
-      contents: read           # Allow repository checkout
+      contents: read # Allow repository checkout
       # Note: Organization membership checking uses fine-grained token
       # so no additional GITHUB_TOKEN permissions needed for that API
     outputs:
@@ -72,7 +72,7 @@ jobs:
         Bash(git diff)
       timeout_minutes: 15
       runner: ubuntu-latest
-      enable_mention_detection: true  # Uses built-in @claude mention detection
+      enable_mention_detection: true # Uses built-in @claude mention detection
       # custom_trigger_condition: |    # Optional: Override default mention detection
       #   your custom condition here
     secrets:

@@ -6,14 +6,13 @@ on:
 
 jobs:
   stale:
-  
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       actions: write
       contents: write # only for delete-branch option
       issues: write
       pull-requests: write
-      
+
     steps:
       - uses: actions/stale@v9
         with:

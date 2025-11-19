@@ -36,7 +36,7 @@ inputs:
     description: 'The run id of the core artifacts'
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - uses: actions/checkout@v4
 
@@ -48,8 +48,8 @@ runs:
     - uses: ./.github/actions/core-cicd/maven-job
       with:
         github-token: ${{ inputs.github-token }}
-        stage-name: "Deploy Artifacts Validate"
-        maven-args: "validate" # We don't need to build just get the repo and use validate to check everything exists
+        stage-name: 'Deploy Artifacts Validate'
+        maven-args: 'validate' # We don't need to build just get the repo and use validate to check everything exists
         artifacts-from: ${{ inputs.artifact-run-id }}
 
     - uses: jfrog/setup-jfrog-cli@v4
@@ -74,13 +74,13 @@ runs:
 
         # Function to process each module and its submodules
         process_module() {
-        
+
           local module_path="$1"
           local module_pom="$module_path/pom.xml"
-        
+
           if [ -f "$module_pom" ]; then
             artifactId=$(extract_artifact_id "$module_pom")
-        
+
             if [[ -z "$artifactId" || "$artifactId" == *"[ERROR]"* ]]; then
               artifact_ids+="$module_path,"
             else
@@ -135,9 +135,9 @@ runs:
       run: |
         echo "::group::Extract artifact repository"
         echo ""
-        
+
         POM_FILE="pom.xml"
-        
+
         if [[ ! -f "$POM_FILE" ]]; then
           echo "$POM_FILE file is missing."
           exit 1
@@ -146,7 +146,7 @@ runs:
         # Determine the node type based on the version
         if [[ "$VERSION" =~ [Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt] ]]; then
           NODE_TYPE="snapshotRepository"
-        else 
+        else
           NODE_TYPE="repository"
         fi
 
@@ -154,11 +154,11 @@ runs:
 
         # Extract the repository URL from the POM file
         REPO=$(xmllint --xpath "//*[local-name()='distributionManagement']/*[local-name()='$NODE_TYPE']/*[local-name()='url']/text()" "$POM_FILE" 2>/dev/null)
-        
+
         if [[ "$REPO" =~ ^(https://[^/]+/[^/]+)/(.+)$ ]]; then
           SERVER_URL="${BASH_REMATCH[1]}"
           REPO_NAME="${BASH_REMATCH[2]}"
-        
+
           echo "url=$SERVER_URL" >> $GITHUB_OUTPUT
           echo "repo=$REPO_NAME" >> $GITHUB_OUTPUT
         else
@@ -168,7 +168,7 @@ runs:
 
         echo "::notice::ARTIFACTORY_URL=$SERVER_URL"
         echo "::notice::ARTIFACTORY_REPO=$REPO_NAME"
-        
+
         echo "::endgroup::"
       shell: bash
 
@@ -195,7 +195,7 @@ runs:
         DRY_RUN_MODE: ${{ inputs.dry-run }}
       run: |
         echo "::group::Deploy Artifacts"
-        
+
         MAVEN_DIR=${HOME}/.m2/repository
         cd $MAVEN_DIR
 
@@ -217,7 +217,7 @@ runs:
           jf rt u "com/dotcms/(${MODULES})/${ESCAPED_VERSION}" $ARTIFACTORY_REPO --url=$ARTIFACTORY_URL --user=$ARTIFACTORY_USERNAME --password=$ARTIFACTORY_PASSWORD --flat=false --exclusions ".*\.(${EXCLUDE})$" --recursive --regexp $DRY_RUN
         else
           echo "Credentials not provided."
-          exit 1          
+          exit 1
         fi
         echo "::endgroup::"
       shell: bash

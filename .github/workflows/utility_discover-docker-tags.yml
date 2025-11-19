@@ -24,7 +24,7 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
         if: env.DEBUG == 'true'
       - name: Checkout core
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set Common Vars
         run: |
           pwd && ls -las

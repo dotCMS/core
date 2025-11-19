@@ -56,7 +56,7 @@ jobs:
           github_users="${{ inputs.github_users }}"
           default_channel=${{ inputs.default_channel }}
           [[ -z "${github_users}" && -n "${default_channel}" ]] && github_users=${default_channel}
-          
+
           echo "github_users: [${github_users}]"
           echo "github_users=${github_users}" >> $GITHUB_OUTPUT
 
@@ -68,14 +68,14 @@ jobs:
           github_users="${{ steps.resolve-users.outputs.github_users }}"
           echo "Found github users: [${github_users}]"
           github_users_array=(${github_users})
-          
+
           githack_host=raw.githack.com
           githack_core_repo_url=https://${githack_host}/${{ github.repository }}
           slack_mappings_file=slack-mappings.json
           slack_mapping_url=${githack_core_repo_url}/${{ inputs.branch }}/.github/data/${slack_mappings_file}
           json=$(curl -s ${slack_mapping_url} | jq -c .)
           echo "json: ${json}"
-          
+
           echo "Looking for [${github_user}]"
           channel_ids=
           for github_user in "${github_users_array[@]}"; do
@@ -84,7 +84,7 @@ jobs:
               jq -r '.slack_id' \
             )
             echo "Resolved channel id [${channel_id}] from [${slack_mappings_file}]"
-          
+
             if [[ -z "${channel_id}" ]]; then
               echo "Channel id could not be resolved from [${slack_mappings_file}]. Attempting to resolve from Github user email."
               user_email=$( \
@@ -98,7 +98,7 @@ jobs:
                 tr -d '",[:space:]' \
               )
               echo "Resolved user email: [${user_email}]"
-            
+
               if [[ -n "${user_email}" && "${user_email}" != 'null' ]]; then
                 channel_id=$( \
                   curl \
@@ -112,7 +112,7 @@ jobs:
                   sed "s/\"id\"://g" | \
                   tr -d '",[:space:]' \
                 )
-          
+
                 echo "Resolved channel id [${channel_id}] from email [${user_email}]"
               else
                 echo "Could not resolve email for [${github_user}], skipping it"
@@ -123,12 +123,12 @@ jobs:
               channel_ids="${channel_ids} ${channel_id}"
             fi
           done
-          
+
           default_channel_id=${{ inputs.default_channel_id }}
           [[ -z "${channel_ids}" && -n "${default_channel_id}" ]] \
             && echo "Channel id could not be resolved, defaulting to channel id: [${default_channel_id}]" \
             && channel_ids=${default_channel_id}
-          
+
           channel_ids=$(echo "${channel_ids}" | tr '\n' ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           if [[ -n "${channel_ids}" ]]; then
             channel_ids_array=(${channel_ids})
@@ -136,11 +136,11 @@ jobs:
             for element in "${channel_ids_array[@]}"; do
               deduped_array["$element"]=1
             done
-            
+
             deduped_channel_ids=("${!deduped_array[@]}")
             channel_ids=$(printf '%s\n' "${deduped_channel_ids[@]}" | jq -R . | jq -s . | tr -d '\n' | tr -d ' ')
           fi
-          
+
           echo "mappings_json=${json}" >> $GITHUB_OUTPUT
           echo "channel_ids: [${channel_ids}]"
           echo "channel_ids=${channel_ids}" >> $GITHUB_OUTPUT

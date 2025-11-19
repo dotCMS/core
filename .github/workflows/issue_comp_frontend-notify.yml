@@ -31,33 +31,33 @@ jobs:
             const words = ['frontend', 'front-end'];
             const issue = context.payload.issue;
             const changes = context.payload.changes;
-            
+
             function extractTechnologyField(body) {
               const technologyLabel = 'Technology:';
               const lines = body.split('\\n');
-            
+
               for (const line of lines) {
                 if (line.toLowerCase().startsWith(technologyLabel.toLowerCase())) {
                   return line.replace(technologyLabel, '').trim();
                 }
               }
-            
+
               return null;
             }
-            
+
             const actions = [];
             if (changes && changes.body && issue.body) {
               const oldBody = changes.body.from;
               const newBody = issue.body;
               console.log(`Old Body: [${oldBody}]`);
               console.log(`New Body: [${newBody}]`);
-            
+
               const oldTechnology = extractTechnologyField(oldBody);
               const newTechnology = extractTechnologyField(newBody);
-            
+
               console.log(`Old Technology: [${oldTechnology}]`);
               console.log(`New Technology: [${newTechnology}]`);
-            
+
               if (oldTechnology !== newTechnology
                   && words.some(word => word.toLowerCase() === newTechnology.toLowerCase())) {
                 actions.push({
@@ -71,7 +71,7 @@ jobs:
             } else {
               console.log('No changes detected in the Technology field');
             }
-            
+
             core.setOutput('actions', JSON.stringify(actions));
 
       - name: Check if Technology label changed
@@ -83,7 +83,7 @@ jobs:
             const issue = context.payload.issue;
             const label = context.payload.label;
             const technologyLabels = ['frontend', 'front-end'];
-            
+
             const actions = [];
             if (label && issue.labels.some(l => l.name === label.name) && technologyLabels.includes(label.name.toLowerCase())) {
               actions.push({
@@ -94,7 +94,7 @@ jobs:
             } else {
               console.log('Technology label did not changed');
             }
-            
+
             core.setOutput('actions', JSON.stringify(actions));
 
       - name: Resolve detected actions
@@ -107,7 +107,7 @@ jobs:
           else
             actions='[]'
           fi
-          
+
           [[ "${actions}" == 'null' ]] && actions='[]'
 
           echo "actions: ${actions}"
@@ -122,11 +122,11 @@ jobs:
           action_found=$(jq -r '.[] | select(.action == "FRONTEND_TECHNOLOGY_NOTIFY")' <<< ${actions_json})
           echo "action_found=[${action_found}]"
           [[ -z "${action_found}" || ${action_found} == 'null' ]] && echo 'Action not found'
-          
+
           issue_number=$(jq -r '.issue_number' <<< ${action_found})
           echo "issue_number=[${issue_number}]"
           [[ -z "${issue_number}" || "${issue_number}" == 'null' ]] && echo 'Issue number not found'
-          
+
           echo "issue_number=${issue_number}" >> $GITHUB_OUTPUT
 
   member-resolver:
@@ -166,7 +166,7 @@ jobs:
         run: |
           channel=${{ matrix.member }}
           message="The following github issue has been marked as a Front-end issue: ${{ env.ISSUE_URL }}"
-          
+
           curl -X POST \
             -H "Content-type: application/json" \
             -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \

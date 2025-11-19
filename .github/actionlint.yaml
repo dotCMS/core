@@ -1,0 +1,7 @@
+# actionlint configuration
+# See https://github.com/rhysd/actionlint/blob/main/docs/config.md
+
+# Custom self-hosted runner labels
+self-hosted-runner:
+  labels:
+    - ubuntu-server  # Custom label used in security_scheduled_pentest.yml

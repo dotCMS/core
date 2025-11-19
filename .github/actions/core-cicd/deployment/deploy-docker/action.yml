@@ -59,10 +59,10 @@ inputs:
     default: ''
 outputs:
   tags:
-    description: "The tags that were used to build the image"
+    description: 'The tags that were used to build the image'
     value: ${{ steps.convert_tags.outputs.space_separated_tags }}
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Download Docker Build Context
       uses: actions/download-artifact@v4
@@ -97,17 +97,17 @@ runs:
         USE_REF: ${{ inputs.docker-use-ref }}
         VERSION: ${{ inputs.version }}
       run: |
-        
+
         # Set defaults for flags
         enable_latest=false
         RESULT=""
-        
+
         # Determine REF_TO_USE based on USE_REF
         REF_TO_USE=""
         if [[ "$USE_REF" == "true" && -n "$REF" ]]; then
           REF_TO_USE="$REF"
         fi
-        
+
         # Determine RESULT based on REF_TO_USE and VERSION
         if [[ -n "$REF_TO_USE" && -n "$VERSION" ]]; then
           RESULT="${REF_TO_USE}_${VERSION}"
@@ -119,12 +119,12 @@ runs:
           echo "ERROR: No version or ref provided"
           exit 1
         fi
-        
+
         # Conditional for setting latest version flag
         if [[ -n "$VERSION" && "$USE_REF" != "true" && "$LATEST" == "true" ]]; then
           enable_latest=true
         fi
-        
+
         echo "FULL_TAGS_OUTPUT<<EOF" >> $GITHUB_ENV
           echo "type=raw,value=${RESULT}_{{sha}},enable=true" >> $GITHUB_ENV
           echo "type=raw,value=${RESULT},enable=true" >> $GITHUB_ENV

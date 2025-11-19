@@ -49,7 +49,7 @@ jobs:
           echo "::group::Github context"
           echo "${{ toJSON(github.event.inputs) }}"
           echo "::endgroup::"
-       
+
       - name: 'Get zip file'
         id: get-zip-file
         run: |
@@ -69,13 +69,13 @@ jobs:
           if [[ "$STARTER_TYPE" == "empty" ]]; then
             echo "::debug::Empty Starter: downloading from [${{ env.EMPTY_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
             FILENAME="empty_${DATE}.zip"
-            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} $FILENAME)            
+            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} $FILENAME)
           else
             echo "::debut::Full Starter: downloading from [${{ env.FULL_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
             FILENAME="${DATE}.zip"
-            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $FILENAME)             
-          fi                    
-          echo "::notice::Status Code: $RESPONSE" 
+            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $FILENAME)
+          fi
+          echo "::notice::Status Code: $RESPONSE"
           if [[ "$RESPONSE" != "200" ]]; then
             echo "::error::Failed with status code: $RESPONSE"
             exit 1
@@ -91,16 +91,16 @@ jobs:
           path: |
             ${{ github.workspace }}/starter/*.zip
           retention-days: 2
-          if-no-files-found: ignore   
-          
+          if-no-files-found: ignore
+
   deploy-artifacts:
-    needs: [ get-starter ]
+    needs: [get-starter]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     environment: starter
     outputs:
       filename: ${{ steps.deploy-artifacts.outputs.filename }}
       url: ${{ steps.deploy-artifacts.outputs.url }}
-      pr_created: ${{ steps.create-pull-request.outcome == 'success' }}      
+      pr_created: ${{ steps.create-pull-request.outcome == 'success' }}
     steps:
       - name: 'Checkout repository'
         if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
@@ -110,14 +110,14 @@ jobs:
         env:
           JF_URL: ${{ vars.ARTIFACTORY_URL }}
           JF_USER: ${{ secrets.EE_REPO_USERNAME }}
-          JF_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}          
-                    
+          JF_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+
       - name: 'JFrog CLI context'
         run: |
           echo "::group::JFrog CLI context"
           jf rt ping
           echo "::endgroup::"
-          
+
       - name: 'Download artifacts'
         uses: actions/download-artifact@v4
         with:
@@ -127,7 +127,7 @@ jobs:
 
       - name: 'Listing artifacts'
         run: ls -R
-  
+
       - name: 'Deploy artifacts'
         id: deploy-artifacts
         working-directory: ${{ github.workspace }}/starter
@@ -140,18 +140,18 @@ jobs:
           DRY_RUN_MODE: ${{ github.event.inputs.dry-run }}
         run: |
           echo "::group::Deploy Artifacts"
-          
+
           if [[ $DRY_RUN_MODE == true ]]; then
             DRY_RUN='--dry-run'
           fi
-          
+
           FILENAME=$(ls -ltr | awk 'END {print $NF}')
           VERSION="${FILENAME%.*}"
           SOURCE="./${FILENAME}"
           TARGET="${ARTIFACTORY_REPO}/com/dotcms/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${FILENAME}"
           PROPS="groupId=${GROUP_ID};artifactId=${ARTIFACT_ID};version=${VERSION};packaging=${PACKAGING}"
           URL="${ARTIFACTORY_URL}/artifactory/${TARGET}"
-          
+
           echo "FILENAME=${FILENAME}"
           echo "VERSION=${VERSION}"
           echo "::notice::Uploading ${SOURCE} to ${TARGET} with props ${PROPS}"
@@ -160,7 +160,7 @@ jobs:
             --flat=false \
             $DRY_RUN
           echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
-          echo "url=${URL}" >> $GITHUB_OUTPUT  
+          echo "url=${URL}" >> $GITHUB_OUTPUT
           echo "::notice::Artifact URL ${URL}"
           echo "::notice::Changelog: ${{ github.event.inputs.changelog }}"
           echo "::endgroup::"
@@ -191,20 +191,19 @@ jobs:
         with:
           token: ${{ secrets.CI_MACHINE_TOKEN }}
           branch: ${{ steps.update-pom.outputs.auxiliary-branch }}
-          commit-message: "📦 Publishing an Empty Starter version [${{ steps.update-pom.outputs.starter-version }}]"
+          commit-message: '📦 Publishing an Empty Starter version [${{ steps.update-pom.outputs.starter-version }}]'
           title: 'Update starter.deploy.version to [${{ steps.update-pom.outputs.starter-version }}]'
           body: >
             This PR was created automatically to update the **starter.deploy.version** in pom.xml to [**${{ steps.update-pom.outputs.starter-version }}**].
           labels: |
             empty-starter
-            automated pr            
-       
+            automated pr
+
   send-notification:
-    needs: [ deploy-artifacts ]
+    needs: [deploy-artifacts]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     if: always() && github.event.inputs.dry-run == 'false'
     steps:
-
       - uses: actions/checkout@v4
 
       - name: Compose Message
@@ -215,11 +214,11 @@ jobs:
           ARTIFACT_URL="${{ needs.deploy-artifacts.outputs.url }}"
           OLD_ASSETS="${{ github.event.inputs.old-assets }}"
           CHANGELOG="${{ github.event.inputs.changelog }}"
-          PULL_REQUEST_URL="${{ needs.update-pom.outputs.pull-request-url }}"
+          # TODO: Add PULL_REQUEST_URL when update-pom job is implemented
           if [ "$STARTER_TYPE" == "empty" ]; then
             PR_ALERT="> :exclamation:*Approvals required*:exclamation: *PR* ${PULL_REQUEST_URL}"
-          fi          
-          
+          fi
+
           BASE_MESSAGE=$(cat <<-EOF
           > :large_green_circle: *Attention dotters:* a new Starter published!
           > This automated script is happy to announce that a new *_${STARTER_TYPE} starter_* :package: \`${ARTIFACT_FILENAME}\` is now available on \`ARTIFACTORY\` :frog:!
@@ -232,19 +231,18 @@ jobs:
           ${PR_ALERT}
           EOF
           )
-          
+
           MESSAGE="${BASE_MESSAGE}"
-          
+
           echo "Message: ${MESSAGE}"
           echo "message<<EOF" >> $GITHUB_OUTPUT
           echo "${MESSAGE}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           echo "::endgroup::"
-          
+
       - name: Slack Notification
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
-          channel-id: "log-starter"
+          channel-id: 'log-starter'
           payload: ${{ steps.compose-message.outputs.message }}
-          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}       
-
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}

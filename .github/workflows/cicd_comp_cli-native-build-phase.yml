@@ -92,8 +92,8 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           cleanup-runner: true
-          stage-name: "Build Native Image ${{ matrix.label }}"
-          maven-args: "package -Pnative -Pdist -DskipTests=$SKIP_TESTS -pl :dotcms-cli"
+          stage-name: 'Build Native Image ${{ matrix.label }}'
+          maven-args: 'package -Pnative -Pdist -DskipTests=$SKIP_TESTS -pl :dotcms-cli'
           native: true
           generates-test-results: false
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}

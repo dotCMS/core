@@ -3,6 +3,12 @@ full_build_test: &full_build_test
   - 'core-web/.nvmrc'
   - '.nvmrc'
 
+workflows: &workflows
+  - '.github/workflows/**'
+  - '.github/actions/**'
+  - '.yamllint'
+  - '.github/actionlint.yaml'
+
 backend: &backend
   - '.github/workflows/cicd_comp_*.yml'
   - '.github/workflows/cicd_1-pr.yml'

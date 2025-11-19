@@ -47,6 +47,7 @@ Manual Trigger: cicd_5-lts.yml (LTS releases)
 **Key Features**:
 - Conditional execution based on file changes
 - No secrets in PR context (security isolation)
+- Workflow linting with yamllint and actionlint
 - Calls reusable components for build, test, and security analysis
 
 **Example trigger and security**:
@@ -54,7 +55,7 @@ Manual Trigger: cicd_5-lts.yml (LTS releases)
 on:
   pull_request:
     branches: [main, master]
-    
+
 permissions:
   contents: read
   checks: write
@@ -153,6 +154,134 @@ run: |
 
 # Never use master/main references
 - uses: some-action@master               # ❌ Security risk
+```
+
+## Workflow Linting
+
+### Overview
+All GitHub Actions workflows are automatically validated on every PR to prevent syntax errors and workflow issues from being merged into the main branch.
+
+### Linting Tools
+
+#### yamllint
+Validates YAML syntax and formatting:
+- Line length (max 120 characters)
+- Indentation (2 spaces)
+- Trailing whitespace
+- Document structure
+
+Configuration file: `.yamllint`
+
+#### actionlint
+Validates GitHub Actions-specific syntax:
+- Workflow syntax errors
+- Undefined variables and contexts
+- Invalid action references
+- Deprecated features
+- Type mismatches in expressions
+
+### Running Linting Locally
+
+#### Using mise (Recommended)
+```bash
+# Install tools automatically via mise
+mise install
+
+# Verify installation
+yamllint --version
+actionlint --version
+
+# Run yamllint
+yamllint .github/workflows/
+
+# Run actionlint
+actionlint
+```
+
+#### Manual Installation
+```bash
+# Install yamllint via pip
+pip install yamllint
+
+# Install actionlint (Linux)
+curl -sSL https://github.com/rhysd/actionlint/releases/download/v1.7.8/actionlint_1.7.8_linux_amd64.tar.gz | \
+  sudo tar xz -C /usr/local/bin
+
+# Install actionlint (macOS)
+brew install actionlint
+
+# Run yamllint
+yamllint .github/workflows/
+
+# Run actionlint
+actionlint
+```
+
+### Git Pre-Commit Hook Integration
+
+Workflow linting runs automatically via the Husky pre-commit hook when `.github/workflows/` or `.github/actions/` files are staged:
+
+```bash
+# The pre-commit hook will automatically:
+# 1. Detect staged workflow files
+# 2. Run yamllint on changed files
+# 3. Run actionlint on all workflows
+# 4. Block commit if issues are found
+
+# To bypass pre-commit checks (not recommended):
+git commit --no-verify
+```
+
+**Setup Requirements:**
+1. Run `mise install` to ensure linting tools are available
+2. Pre-commit hook is automatically configured by Husky
+3. Tools are installed in `.mise.toml` configuration
+
+### CI Integration
+The `workflow-lint` job runs automatically in PRs when workflow files are modified:
+- Only triggered when `.github/workflows/**`, `.github/actions/**`, or `.yamllint` files change
+- Runs in parallel with other PR checks
+- Fails the PR if syntax errors are found
+- Takes ~30-60 seconds to complete
+
+### Common Linting Issues
+
+**yamllint errors:**
+```yaml
+# ❌ Wrong: line too long
+- name: This is a very long step name that exceeds the maximum line length and should be split
+
+# ✅ Correct: split long lines
+- name: >
+    This is a very long step name that has been properly
+    split across multiple lines
+
+# ❌ Wrong: inconsistent indentation
+jobs:
+  build:
+      runs-on: ubuntu-latest
+
+# ✅ Correct: consistent 2-space indentation
+jobs:
+  build:
+    runs-on: ubuntu-latest
+```
+
+**actionlint errors:**
+```yaml
+# ❌ Wrong: undefined output reference
+needs: initialize
+if: needs.initialize.outputs.nonexistent_output == 'true'
+
+# ✅ Correct: defined output reference
+needs: initialize
+if: needs.initialize.outputs.build == 'true'
+
+# ❌ Wrong: action version not pinned
+- uses: actions/checkout@main
+
+# ✅ Correct: action version pinned
+- uses: actions/checkout@v4
 ```
 
 ## Change Detection System

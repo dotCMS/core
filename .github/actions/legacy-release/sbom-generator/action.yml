@@ -13,7 +13,7 @@ outputs:
     value: ${{ steps.sbom-artifact.outputs.artifact }}
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Checkout core repository
       uses: actions/checkout@v4

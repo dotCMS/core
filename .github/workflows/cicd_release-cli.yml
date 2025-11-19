@@ -100,16 +100,16 @@ jobs:
         run: |
           RELEASE_VERSION=$RELEASE_VERSION
           HEAD=${{ github.ref_name }}
-          
+
           # Create a release branch for versioning updates
           AUXILIARY_BRANCH=version-update-${RELEASE_VERSION}-${{ github.run_id }}
           git checkout -b $AUXILIARY_BRANCH
-          
+
           # set version in .mvn/maven.config
           echo "-Dprod=true" > .mvn/maven.config
           echo "-Drevision=${RELEASE_VERSION}" >> .mvn/maven.config
           echo "-Dchangelist=" >> .mvn/maven.config
-          
+
           # Commit version changes
           git add .mvn/maven.config
           git status
@@ -123,7 +123,7 @@ jobs:
   # Build the release
   build:
     name: Release Build
-    needs: [ initialize, precheck ]
+    needs: [initialize, precheck]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
@@ -139,7 +139,7 @@ jobs:
   # Build CLI artifacts
   build-cli:
     name: Release CLI Build
-    needs: [ initialize, precheck, build ]
+    needs: [initialize, precheck, build]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
@@ -150,7 +150,7 @@ jobs:
 
   # Perform the release
   release:
-    needs: [ precheck, build-cli ]
+    needs: [precheck, build-cli]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: 'Check out repository'
@@ -177,16 +177,16 @@ jobs:
         with:
           cleanup-runner: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          stage-name: "JReleaser"
-          maven-args: "-Prelease validate -DartifactsDir=artifacts -Dm2Dir=$HOME/.m2/repository -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE"
+          stage-name: 'JReleaser'
+          maven-args: '-Prelease validate -DartifactsDir=artifacts -Dm2Dir=$HOME/.m2/repository -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE'
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
           version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
 
   # Publish NPM package
   publish-npm-package:
-    name: "Publish NPM Package"
-    if: success()  # Run only if explicitly indicated and successful
-    needs: [ precheck, build, build-cli, release ]
+    name: 'Publish NPM Package'
+    if: success() # Run only if explicitly indicated and successful
+    needs: [precheck, build, build-cli, release]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: 'Checkout code'
@@ -256,7 +256,7 @@ jobs:
             # Extract max RC version
             MAX_RC_VERSION=$(echo $LATEST_RC_VERSIONS | jq -r --arg filter $VERSION_NPM_FORMAT-rc 'map(.| select(. | contains($filter)) | sub($filter; "") | tonumber ) | max')
             echo "MAX_RC_VERSION: ${MAX_RC_VERSION}"
-          
+
             if [[ $MAX_RC_VERSION != null ]]; then
               RC_SUFFIX="-rc$(( $MAX_RC_VERSION + 1 ))"
             else
@@ -270,7 +270,7 @@ jobs:
             # Split the version into main version and pre-release parts (if any)
             MAIN_VERSION=$(echo "$MVN_PACKAGE_VERSION" | cut -d '-' -f 1)
             PRE_RELEASE=$(echo "$MVN_PACKAGE_VERSION" | cut -s -d '-' -f 2)
-          
+
             IFS='.' read -r MAJOR MINOR PATCH <<< "$MAIN_VERSION"
             MAJOR=$(echo "$MAJOR" | sed 's/^0*//')
             MINOR=$(echo "$MINOR" | sed 's/^0*//')
@@ -339,19 +339,19 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          SLACK_TITLE: "Important news!"
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of *dotCLI* `${{ needs.precheck.outputs.RELEASE_VERSION }}` :package: is available on the `NPM` registry!"
+          SLACK_TITLE: 'Important news!'
+          SLACK_MESSAGE: '<!channel> This automated script is excited to announce the release of a new version of *dotCLI* `${{ needs.precheck.outputs.RELEASE_VERSION }}` :package: is available on the `NPM` registry!'
           SLACK_USERNAME: dotBot
-          SLACK_MSG_AUTHOR: " "
+          SLACK_MSG_AUTHOR: ' '
           MSG_MINIMAL: true
-          SLACK_FOOTER: ""
+          SLACK_FOOTER: ''
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
 
   # Clean up temporary branches
   clean-up:
-    name: "Clean Up"
+    name: 'Clean Up'
     if: ${{ needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
-    needs: [ precheck, build, build-cli, release, publish-npm-package ]
+    needs: [precheck, build, build-cli, release, publish-npm-package]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Checkout Repository

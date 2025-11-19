@@ -38,7 +38,7 @@ runs:
       shell: bash
       run: |
         DEFAULT_GRAALVM="21.0.2-graalce"
-        
+
         if [ -z "${{ inputs.java-version }}" ] && [ -f .sdkmanrc ]; then
           REQUESTED_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
           echo "using default Java version from .sdkmanrc: REQUESTED_VERSION"
@@ -97,14 +97,14 @@ runs:
       id: sdkman-java
       shell: bash
       run: |
-        
+
         source "$HOME/.sdkman/bin/sdkman-init.sh"
 
         REQUESTED_VERSION="${{ steps.get-requested-version.outputs.requested_version }}"
         REQUIRE_GRAALVM="${{ inputs.require-graalvm }}"
         GRAALVM_VERSION="${{ steps.get-requested-version.outputs.graalvm_version }}"
-        
-        
+
+
         TEST_HOME=$(sdk home java "$REQUESTED_VERSION" 2>/dev/null) || true
         if [ -z "$TEST_HOME" ]; then
           echo "Java version $REQUESTED_VERSION is not installed. Installing now..."
@@ -138,7 +138,7 @@ runs:
             echo "GRAALVM_HOME is already set to $GRAALVM_HOME, skipping installation of GraalVM."
           fi
         fi
-        
+
         CURRENT_JAVA_HOME=$(readlink -f "$HOME/.sdkman/candidates/java/current")
         if [ "$CURRENT_JAVA_HOME" != "$TEST_HOME" ]; then
           echo "Updating default Java version to $REQUESTED_VERSION"
@@ -146,7 +146,7 @@ runs:
         else
           echo "Default Java version is already set to $REQUESTED_VERSION"
         fi
-        
+
         echo "JAVA_HOME is set to: $JAVA_HOME"
         echo "Path to java command: $(which java)"
         echo "Java version:"
