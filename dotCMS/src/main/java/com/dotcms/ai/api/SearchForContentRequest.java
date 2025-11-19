@@ -5,7 +5,7 @@ import com.dotcms.ai.db.EmbeddingsDTO;
 
 public class SearchForContentRequest {
 
-    private final AiModelConfig chatModelConfig;
+    private final AiModelConfig embeddingModelConfig;
     private final String vendorModelPath;
     private final float temperature;
     private final String prompt;
@@ -13,7 +13,7 @@ public class SearchForContentRequest {
 
     private SearchForContentRequest(final SearchForContentRequest.Builder builder) {
 
-        this.chatModelConfig = builder.chatModelConfig;
+        this.embeddingModelConfig = builder.embeddingModelConfig;
         this.vendorModelPath = builder.vendorModelPath;
         this.temperature = builder.temperature;
         this.prompt = builder.prompt;
@@ -32,8 +32,8 @@ public class SearchForContentRequest {
         return temperature;
     }
 
-    public AiModelConfig getChatModelConfig() {
-        return this.chatModelConfig;
+    public AiModelConfig getEmbeddingModelConfig() {
+        return this.embeddingModelConfig;
     }
 
     public String getPrompt() {
@@ -43,7 +43,7 @@ public class SearchForContentRequest {
     @Override
     public String toString() {
         return "SearchForContentRequest{" +
-                "chatModelConfig=" + chatModelConfig +
+                "chatModelConfig=" + embeddingModelConfig +
                 ", vendorModelPath='" + vendorModelPath + '\'' +
                 ", temperature=" + temperature +
                 ", prompt='" + prompt + '\'' +
@@ -60,7 +60,7 @@ public class SearchForContentRequest {
     }
 
     public static final class Builder {
-        private AiModelConfig chatModelConfig;
+        private AiModelConfig embeddingModelConfig;
         private String vendorModelPath;
         private Float temperature;
         private String prompt;
@@ -71,8 +71,8 @@ public class SearchForContentRequest {
             return this;
         }
 
-        public SearchForContentRequest.Builder chatModelConfig(AiModelConfig modelConfig) {
-            this.chatModelConfig = modelConfig;
+        public SearchForContentRequest.Builder embeddingModelConfig(AiModelConfig modelConfig) {
+            this.embeddingModelConfig = modelConfig;
             return this;
         }
 

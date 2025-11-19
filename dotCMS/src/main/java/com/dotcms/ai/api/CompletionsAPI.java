@@ -18,9 +18,27 @@ public interface CompletionsAPI {
      * summary based on the matching content in dotCMS
      *
      * @param searcher
-     * @return
+     * @return JSONObject
      */
     JSONObject summarize(CompletionsForm searcher);
+
+    /**
+     * this method takes the query/prompt, searches dotCMS content for matching embeddings and then returns an AI
+     * summary based on the matching content in dotCMS
+     *
+     * @param summarizeRequest
+     * @return JSONObject
+     */
+    JSONObject summarize(SummarizeRequest summarizeRequest);
+
+    /**
+     * this method takes the query/prompt, searches dotCMS content for matching embeddings and returns the summary
+     * based on the matching content in dotCMS, the response is served in streaming.
+     *
+     * @param summarizeRequest
+     * @param out
+     */
+    void summarize(SummarizeRequest summarizeRequest, OutputStream out);
 
     /**
      * this method takes the query/prompt, searches dotCMS content for matching embeddings and then streams the AI

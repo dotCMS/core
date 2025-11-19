@@ -635,7 +635,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     public SearchContentResponse searchForContentRaw(final SearchForContentRequest searchForContentRequest) {
 
         Logger.debug(this, ()-> "Doing search for content request: " + searchForContentRequest);
-        final AiModelConfig modelConfig = searchForContentRequest.getChatModelConfig();
+        final AiModelConfig modelConfig = searchForContentRequest.getEmbeddingModelConfig();
         final String vendorName = AIUtil.getVendorFromPath(searchForContentRequest.getVendorModelPath());
         final EmbeddingModel embeddingModel = this.modelProviderFactory.getEmbedding(vendorName, modelConfig);
         final EmbeddingStore<TextSegment> store = DotPgVectorEmbeddingStore.builder()
