@@ -1412,6 +1412,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(selectQuery);
             appendExcludeArchivedQuery(countQuery);
         }
+
         if (null != browserQuery.sortBy) {
             appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
         }
