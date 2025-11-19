@@ -1,6 +1,8 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.api.embeddings.DotPgVectorEmbeddingStore;
+import com.dotcms.ai.api.embeddings.SearchMatch;
 import com.dotcms.ai.api.provider.VendorModelProviderFactory;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AIModelType;
@@ -22,6 +24,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -31,11 +34,20 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.util.StringPool;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.CompleteToolCall;
+import dev.langchain4j.model.chat.response.PartialThinking;
+import dev.langchain4j.model.chat.response.PartialToolCall;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -44,7 +56,9 @@ import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -127,6 +141,278 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         dotCMSResponse.put(AiKeys.OPEN_AI_RESPONSE, new JSONObject(openAiResponse));
 
         return dotCMSResponse;
+    }
+
+    @Override
+    public void summarize(final SummarizeRequest summaryRequest, final OutputStream out) {
+
+        try {
+            Logger.debug(this, () -> "Doing streaming summarize request: " + summaryRequest);
+            final AiModelConfig modelConfig = summaryRequest.getCompletionRequest().getChatModelConfig();
+            final AiModelConfig embeddingModelConfig = summaryRequest.getSearchForContentRequest().getEmbeddingModelConfig();
+            final String vendorName = AIUtil.getVendorFromPath(summaryRequest.getCompletionRequest().getVendorModelPath());
+            final String embeddingVendorName = AIUtil.getVendorFromPath(summaryRequest.getSearchForContentRequest().getVendorModelPath());
+            final Float temperature = summaryRequest.getCompletionRequest().getTemperature();
+
+            // --- 1. Get Streaming Chat Model ---
+            final StreamingChatModel chatModel = this.modelProviderFactory.getStreaming(vendorName,
+                    Objects.nonNull(temperature) ? AiModelConfig.withTemperature(modelConfig, temperature).build() :
+                            summaryRequest.getCompletionRequest().getChatModelConfig());
+
+            final EmbeddingModel embeddingModel = this.modelProviderFactory.getEmbedding(embeddingVendorName, embeddingModelConfig);
+            final EmbeddingStore<TextSegment> embeddingStore = DotPgVectorEmbeddingStore.builder()
+                    .indexName(summaryRequest.getSearchForContentRequest().getSearcher().indexName != null ? summaryRequest.getSearchForContentRequest().getSearcher().indexName : "default")
+                    .dimension(embeddingModel.dimension())
+                    .operator(SimilarityOperator.fromString(summaryRequest.getSearchForContentRequest().getSearcher().operator))
+                    .build();
+
+            final String userPrompt = summaryRequest.getCompletionRequest().getPrompt();
+            final String systemPrompt = summaryRequest.getCompletionRequest().getSystemPrompt();
+
+            // ----------------------------------------------------
+            // RAG Manual Flow (Retrieval and Prompt Augmentation)
+            // ----------------------------------------------------
+
+            final SearchForContentRequest searchForContentRequest = summaryRequest.getSearchForContentRequest();
+            final SearchContentResponse searchContentResponse = APILocator.getDotAIAPI().getEmbeddingsAPI().searchForContentRaw(searchForContentRequest);
+            final List<EmbeddingsDTO> searchResults = searchContentResponse.getMatches().stream()
+                    .map(searchMatch -> toEmbeddingsDTO(searchForContentRequest, searchMatch))
+                    .collect(Collectors.toList());
+            final JSONObject ragContentJson = APILocator.getDotAIAPI().getEmbeddingsAPI().reduceChunksToContent(searchForContentRequest.getSearcher(), searchResults);
+
+            final String context = searchContentResponse.getMatches().stream()
+                    .map(match -> String.format("Source: %s\nText: %s", match.getTitle(), match.getSnippet()))
+                    .collect(Collectors.joining("\n---\n"));
+
+            final String augmentedSystemPrompt = StringUtils.isSet(systemPrompt) ? systemPrompt : "";
+            final String instructionTemplate = "You are a helpful AI assistant. Use the provided context enclosed within the 'CONTEXT' tags below to answer the user's question. If the information is not present in the context, strictly state that you cannot answer based on the provided sources and do not make up answers.";
+
+            final String finalSystemPrompt = String.format(
+                    "%s\n\n%s\n\nCONTEXT:\n---\n%s\n---",
+                    augmentedSystemPrompt,
+                    instructionTemplate,
+                    context
+            );
+
+            final List<ChatMessage> messages = List.of(
+                    new SystemMessage(finalSystemPrompt),
+                    new UserMessage(userPrompt)
+            );
+
+            // ----------------------------------------------------
+            // Streaming Implementation
+            // ----------------------------------------------------
+
+            try {
+                out.write("{\"dotCMSResponse\": {".getBytes(StandardCharsets.UTF_8));
+
+                // Merge RAG results fields into the output JSON structure
+                boolean firstKey = true;
+                for (final Object key : ragContentJson.keySet()) {
+                    if (!firstKey) {
+                        out.write(",".getBytes(StandardCharsets.UTF_8));
+                    }
+                    out.write(String.format("\"%s\":%s", key, ragContentJson.get(key).toString()).getBytes(StandardCharsets.UTF_8));
+                    firstKey = false;
+                }
+
+                out.write(String.format(",\"%s\": false", AiKeys.STREAM).getBytes(StandardCharsets.UTF_8));
+                out.write(String.format(",\"%s\": %s", AiKeys.TEMPERATURE, summaryRequest.getCompletionRequest().getTemperature()).getBytes(StandardCharsets.UTF_8));
+                out.write(String.format(",\"%s\": \"%s\"", AiKeys.MODEL, summaryRequest.getCompletionRequest().getChatModelConfig().get("model")).getBytes(StandardCharsets.UTF_8));
+                out.write(String.format(",\"%s\": [{\"%s\": \"%s\", \"%s\": \"%s\"}]", AiKeys.MESSAGES, AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, userPrompt).getBytes(StandardCharsets.UTF_8));
+
+                // Marcamos donde debe insertarse la respuesta del LLM y cerramos la estructura inicial
+                out.write("}, \"summaryStream\": \"".getBytes(StandardCharsets.UTF_8));
+                out.flush();
+            } catch (IOException e) {
+                Logger.error(this, "Error writing RAG metadata to output stream.", e);
+                throw new DotRuntimeException("Error in RAG data streaming setup.", e);
+            }
+
+            final StreamingChatResponseHandler handler = new StreamingChatResponseHandler() {
+                @Override
+                public void onPartialResponse(final String partialResponse) {
+                    try {
+
+                        final String escapedToken = partialResponse.replace("\\", "\\\\").replace("\"", "\\\"");
+                        out.write(escapedToken.getBytes(StandardCharsets.UTF_8));
+                        out.flush();
+                    } catch (IOException e) {
+                        Logger.warn(this, "IOException during streaming token write: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onPartialThinking(PartialThinking partialThinking) {
+                    // Ignore partial thinking messages
+                }
+
+                @Override
+                public void onCompleteResponse(ChatResponse completeResponse) {
+                    Logger.debug(this, () -> "Streaming response completed.");
+                    try {
+                        out.write("\"}".getBytes(StandardCharsets.UTF_8));
+                    } catch (IOException e) {
+                        Logger.warn(this, "IOException writing stream end marker: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onPartialToolCall(PartialToolCall partialToolCall) {
+                    // Ignore tool calls
+                }
+
+                @Override
+                public void onCompleteToolCall(CompleteToolCall completeToolCall) {
+                    // Ignore tool calls
+                }
+
+
+                @Override
+                public void onError(Throwable error) {
+                    Logger.error(this, "Streaming error occurred.", error);
+                    try {
+
+                        final String escapedError = error.getMessage() != null ? error.getMessage().replace("\\", "\\\\").replace("\"", "\\\"") : "Unknown streaming error.";
+                        out.write(String.format("\", \"error\": \"%s\"}", escapedError).getBytes(StandardCharsets.UTF_8));
+                        out.flush();
+                    } catch (IOException e) {
+                        Logger.error(this, "Secondary IO error during streaming error handling.", e);
+                    }
+
+                    throw new DotRuntimeException("Error during LLM streaming.", error); // Re-throw to signal transaction failure
+                }
+            };
+
+            // Execute the streaming call.
+            chatModel.chat(messages, handler);
+        } catch (Exception ex) {
+            Logger.error(this, "Fatal error in streaming summarize request: " + ex.getMessage(), ex);
+            throw new DotRuntimeException(ex);
+        }
+    }
+
+    @Override
+    public JSONObject summarize(final SummarizeRequest summaryRequest) {
+
+        try {
+            Logger.debug(this, () -> "Doing summarize request: " + summaryRequest);
+            final AiModelConfig modelConfig = summaryRequest.getCompletionRequest().getChatModelConfig();
+            final AiModelConfig embeddingModelConfig = summaryRequest.getSearchForContentRequest().getEmbeddingModelConfig();
+            final String vendorName = AIUtil.getVendorFromPath(summaryRequest.getCompletionRequest().getVendorModelPath());
+            final String embeddingVendorName = AIUtil.getVendorFromPath(summaryRequest.getSearchForContentRequest().getVendorModelPath());
+            final Float temperature = summaryRequest.getCompletionRequest().getTemperature();
+            final ChatModel chatModel = this.modelProviderFactory.get(vendorName,
+                    Objects.nonNull(temperature) ? AiModelConfig.withTemperature(modelConfig, temperature).build() : // if the temperature is set, lets override the config
+                            summaryRequest.getCompletionRequest().getChatModelConfig());
+            final EmbeddingModel embeddingModel = this.modelProviderFactory.getEmbedding(embeddingVendorName, embeddingModelConfig);
+            final EmbeddingStore<TextSegment> embeddingStore = DotPgVectorEmbeddingStore.builder()
+                    .indexName(summaryRequest.getSearchForContentRequest().getSearcher().indexName!=null?summaryRequest.getSearchForContentRequest().getSearcher().indexName:"default")
+                    .dimension(embeddingModel.dimension())
+                    .operator(SimilarityOperator.fromString(summaryRequest.getSearchForContentRequest().getSearcher().operator))
+                    .build();
+
+            final String userPrompt = summaryRequest.getCompletionRequest().getPrompt();
+            final String systemPrompt = summaryRequest.getCompletionRequest().getSystemPrompt();
+
+            // RAG
+            final SearchForContentRequest searchForContentRequest = summaryRequest.getSearchForContentRequest();
+            final SearchContentResponse searchContentResponse = APILocator.getDotAIAPI().getEmbeddingsAPI().searchForContentRaw(searchForContentRequest);
+
+            final List<EmbeddingsDTO> searchResults = searchContentResponse.getMatches().stream()
+                    .map( searchMatch -> toEmbeddingsDTO(searchForContentRequest, searchMatch))
+                    .collect(Collectors.toList());
+            final JSONObject ragContentJson = APILocator.getDotAIAPI().getEmbeddingsAPI().reduceChunksToContent(
+                    searchForContentRequest.getSearcher(), searchResults);
+
+            final String context = searchContentResponse.getMatches().stream()
+                    .map(match -> String.format("Source: %s\nText: %s", match.getTitle(), match.getSnippet()))
+                    .collect(Collectors.joining("\n---\n"));
+
+            // 4. Crear el Prompt del Sistema Aumentado con el contexto RAG (in ENGLISH)
+            final String augmentedSystemPrompt = StringUtils.isSet(systemPrompt) ? systemPrompt : StringPool.BLANK;
+            // build the rag context
+            final String instructionTemplate = "You are a helpful AI assistant. Use the provided context enclosed within the 'CONTEXT' tags below to answer the user's question. If the information is not present in the context, strictly state that you cannot answer based on the provided sources and do not make up answers.";
+
+            final String finalSystemPrompt = String.format(
+                    "%s\n\n%s\n\nCONTEXT:\n---\n%s\n---",
+                    augmentedSystemPrompt,
+                    instructionTemplate,
+                    context
+            );
+
+            final List<ChatMessage> messages = List.of(
+                    new SystemMessage(finalSystemPrompt),
+                    new UserMessage(userPrompt)
+            );
+
+            final ChatResponse chatResponse = chatModel.chat(messages);
+            final String summaryText = chatResponse.aiMessage().text();
+
+            final JSONObject dotCMSResponse = new JSONObject();
+
+            //  Merge RAG results at the root level ---
+            // This brings in timeToEmbeddings, total, query, dotCMSResults, etc.
+            for (final Object key : ragContentJson.keySet()) {
+                dotCMSResponse.put(key, ragContentJson.get(key));
+            }
+
+            // Build the simulated OpenAI response structure ---
+            final JSONObject openAiResponse = new JSONObject();
+            final JSONObject openAiResponseChoice = new JSONObject();
+            openAiResponseChoice.put("index", 0);
+            final JSONObject openAiResponseChoiceMessage = new JSONObject();
+            openAiResponseChoiceMessage.put("content",  summaryText);
+            openAiResponseChoiceMessage.put(AiKeys.ROLE, AiKeys.ASSISTANT);
+            openAiResponseChoice.put("message", openAiResponseChoiceMessage);
+            openAiResponse.put("choices", List.of(openAiResponseChoice));
+
+            // Final Assembly ---
+            dotCMSResponse.put(AiKeys.OPEN_AI_RESPONSE, openAiResponse);
+
+            // Re-adding the root fields for compatibility with expected output
+            dotCMSResponse.put(AiKeys.STREAM, false);
+            dotCMSResponse.put(AiKeys.TEMPERATURE, summaryRequest.getCompletionRequest().getTemperature());
+            dotCMSResponse.put(AiKeys.MESSAGES, List.of(Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, userPrompt)));
+            dotCMSResponse.put(AiKeys.MODEL, summaryRequest.getCompletionRequest().getChatModelConfig().get("model"));
+
+            // Asumo que tu sistema espera el texto plano en este campo "summaryText" para compatibilidad
+            dotCMSResponse.put("summaryText", summaryText);
+
+            return dotCMSResponse;
+        } catch (Exception ex) {
+            Logger.error(this, "Error on completions raw request" + ex.getMessage(), ex);
+            throw new DotRuntimeException(ex);
+        }
+    }
+
+    private EmbeddingsDTO toEmbeddingsDTO(final SearchForContentRequest searchForContentRequest,
+                                          final SearchMatch searchMatch) {
+
+        final EmbeddingsDTO.Builder builder = new EmbeddingsDTO.Builder();
+        if (searchMatch.getContentType().isPresent()) {
+
+            builder.withContentType(searchMatch.getContentType().get());
+        }
+
+        if (searchMatch.getLanguage().isPresent()) {
+
+            builder.withLanguage(ConversionUtils.toLong(searchMatch.getLanguage().get(), 0l));
+        }
+
+        if(searchMatch.getHost().isPresent()) {
+
+            builder.withHost(searchMatch.getHost().get());
+        }
+
+        builder.withIdentifier(searchMatch.getId())
+                .withInode(searchMatch.getInode())
+                .withTitle(searchMatch.getTitle())
+                .withIndexName(searchForContentRequest.getSearcher().indexName)
+                .withOperator(searchForContentRequest.getSearcher().operator)
+                .withThreshold(searchForContentRequest.getSearcher().threshold)
+                .withExtractedText(searchMatch.getSnippet());
+        return builder.build();
     }
 
     @Override

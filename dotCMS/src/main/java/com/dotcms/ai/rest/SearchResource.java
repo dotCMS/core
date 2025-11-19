@@ -171,7 +171,7 @@ public class SearchResource {
         final SearchForContentRequest.Builder builder = SearchForContentRequest.builder()
                 .vendorModelPath(form.embeddingModel)
                 .prompt(form.prompt)
-                .chatModelConfig(aiModelConfig)
+                .embeddingModelConfig(aiModelConfig)
                 .temperature(form.temperature)
                 .searcher(searcher);
 
