@@ -47,7 +47,6 @@ const mockStore = {
     $isLoading: signal(false),
     $isEmpty: signal(false),
     $showListLayout: signal(false),
-    $emptyStateMessage: signal('empty'),
     $currentSort: signal({
         orderby: 'name' as 'name' | 'usage',
         direction: 'ASC' as 'ASC' | 'DESC'
@@ -414,7 +413,6 @@ describe('DotUvePaletteListComponent', () => {
             mockStore.status.set(DotPaletteListStatus.EMPTY);
             mockStore.$isEmpty.set(true); // Set isEmpty to true for empty state to render
             mockStore.contenttypes.set([]);
-            mockStore.$emptyStateMessage.set('uve.palette.empty.content-types.message');
 
             spectator.detectChanges();
 
@@ -422,9 +420,10 @@ describe('DotUvePaletteListComponent', () => {
             const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
             expect(emptyStateMessage).toBeTruthy();
 
-            // Verify the message displayed matches the store's $emptyStateMessage
-            // Note: DotMessageService mock returns the key itself (line 111: get: (key: string) => key)
-            expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.content-types.message');
+            // Verify the message displayed matches the component's $emptyState computed value
+            // Note: DotMessageService mock returns the key itself (line 118: get: (key: string) => key)
+            // Component now uses generic 'uve.palette.empty.state.message' for non-search empty states
+            expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.state.message');
         });
 
         it('should call menu.toggle when sort menu button is clicked in content types view', () => {
@@ -433,6 +432,7 @@ describe('DotUvePaletteListComponent', () => {
             mockStore.searchParams.listType.set(DotUVEPaletteListTypes.CONTENT);
             mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
             mockStore.status.set(DotPaletteListStatus.LOADED);
+            mockStore.$isEmpty.set(false); // Set isEmpty to false so controls are visible
             mockStore.contenttypes.set([
                 {
                     id: '1',
