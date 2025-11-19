@@ -112,7 +112,8 @@ export const dotMenuMock = () => {
                 id: '123',
                 label: 'Label 1',
                 url: 'url/one',
-                menuLink: 'url/one'
+                menuLink: 'url/one',
+                parentMenuId: '123'
             },
             {
                 active: false,
@@ -121,7 +122,8 @@ export const dotMenuMock = () => {
                 id: '456',
                 label: 'Label 2',
                 url: 'url/two',
-                menuLink: 'url/two'
+                menuLink: 'url/two',
+                parentMenuId: '123'
             }
         ],
         name: 'Menu 1',
@@ -271,7 +273,8 @@ describe('DotNavigationService', () => {
                             id: '123',
                             label: 'Label 1',
                             url: 'url/one',
-                            menuLink: 'url/one'
+                            menuLink: 'url/one',
+                            parentMenuId: '123'
                         }
                     ],
                     name: 'Nav 1',
@@ -291,7 +294,7 @@ describe('DotNavigationService', () => {
         const globalStore = TestBed.inject(GlobalStore);
 
         // Set up initial state
-        globalStore.setMenuItems([dotMenuMock(), dotMenuMock1()]);
+        globalStore.loadMenu([dotMenuMock(), dotMenuMock1()]);
         globalStore.expandNavigation();
 
         // Use URL that matches the item id (123) - getTheUrlId extracts the first segment or last if /c/
@@ -300,11 +303,13 @@ describe('DotNavigationService', () => {
 
         // Wait for async operations
         setTimeout(() => {
-            const menus = globalStore.menuItems();
-            if (menus.length > 0) {
-                // When navigating to /c/123, the menu should be open and the item should be active
-                expect(menus[0].isOpen).toBe(true);
-                expect(menus[0].menuItems[0].active).toBe(true);
+            const menuGroups = globalStore.menuGroup();
+            const activeItem = globalStore.activeMenuItem();
+            if (menuGroups.length > 0) {
+                // When navigating to /c/123, the menu group should be open and the item should be active
+                expect(menuGroups[0].isOpen).toBe(true);
+                expect(activeItem?.id).toBe('123');
+                expect(activeItem?.active).toBe(true);
             }
             done();
         }, 1000);

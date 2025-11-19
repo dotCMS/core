@@ -78,7 +78,11 @@ export class DotNavigationComponent {
             if (this.#dotRouterService.currentPortlet.id === $event.data.id) {
                 this.#dotRouterService.reloadCurrentPortlet($event.data.id);
             } else {
-                this.#dotRouterService.gotoPortlet($event.data.menuLink);
+                this.#dotRouterService.gotoPortlet(
+                    $event.data.menuLink,
+                    {},
+                    $event.data.parentMenuId
+                );
             }
 
             this.#iframeOverlayService.hide();
@@ -94,11 +98,15 @@ export class DotNavigationComponent {
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: MenuGroup; toggleOnly?: boolean }): void {
         if (this.$isCollapsed()) {
-            this.#dotRouterService.gotoPortlet(event.data.menuItems[0].menuLink);
+            this.#dotRouterService.gotoPortlet(event.data.menuItems[0].menuLink, {}, event.data.id);
         } else {
             // Check if the menu is not already open to prevent redundant navigation actions.
             if (!event.data.isOpen && !event.toggleOnly) {
-                this.#dotRouterService.gotoPortlet(event.data.menuItems[0].menuLink);
+                this.#dotRouterService.gotoPortlet(
+                    event.data.menuItems[0].menuLink,
+                    {},
+                    event.data.id
+                );
             }
 
             this.#globalStore.toggleParent(event.data.id);

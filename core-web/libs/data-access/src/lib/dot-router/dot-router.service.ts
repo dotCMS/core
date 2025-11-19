@@ -339,7 +339,11 @@ export class DotRouterService {
      * @return {*}  {Promise<boolean>}
      * @memberof DotRouterService
      */
-    gotoPortlet(link: string, navigateToPorletOptions?: DotNavigateToOptions): Promise<boolean> {
+    gotoPortlet(
+        link: string,
+        navigateToPorletOptions?: DotNavigateToOptions,
+        parentMenuId?: string
+    ): Promise<boolean> {
         const {
             replaceUrl = false,
             queryParamsHandling = '',
@@ -350,7 +354,10 @@ export class DotRouterService {
             queryParams
         });
 
-        return this.router.navigateByUrl(url, { replaceUrl });
+        return this.router.navigateByUrl(url, {
+            replaceUrl,
+            state: { menuId: parentMenuId }
+        });
     }
 
     goToForgotPassword(): void {

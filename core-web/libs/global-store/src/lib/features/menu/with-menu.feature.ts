@@ -17,22 +17,11 @@ import {
 import { computed, effect, inject } from '@angular/core';
 
 import { DotLocalstorageService } from '@dotcms/data-access';
-import { DotMenu } from '@dotcms/dotcms-models';
+import { DotMenu, MenuGroup, MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { initialMenuSlice, menuConfig, type MenuItemEntity } from './menu.slice';
+import { initialMenuSlice, menuConfig } from './menu.slice';
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
-
-/**
- * Interface for grouped menu items by parent.
- */
-export interface MenuGroup {
-    id: string;
-    label: string;
-    icon: string;
-    menuItems: MenuItemEntity[];
-    isOpen: boolean;
-}
 
 /**
  * Custom Store Feature for managing menu state using Entity Management.
@@ -60,7 +49,7 @@ export function withMenu() {
     return signalStoreFeature(
         withState(initialMenuSlice),
         withEntities(menuConfig),
-        withComputed(({ menuItemsEntityMap, menuItemsEntities, openParentId }) => ({
+        withComputed(({ menuItemsEntityMap, menuItemsEntities, openParentMenuId }) => ({
             /**
              * Computed signal that returns menu items grouped by parent.
              *
@@ -68,25 +57,25 @@ export function withMenu() {
              */
             menuGroup: computed((): MenuGroup[] => {
                 const items = menuItemsEntities();
-                const currentOpenParentId = openParentId();
+                const currentOpenParentMenuId = openParentMenuId();
 
-                // Group items by parentId
+                // Group items by parentMenuId
                 const grouped = items.reduce<Record<string, MenuItemEntity[]>>((acc, item) => {
-                    const parentId = item.parentId;
-                    acc[parentId] = acc[parentId] || [];
-                    acc[parentId].push(item);
+                    const parentMenuId = item.parentMenuId;
+                    acc[parentMenuId] = acc[parentMenuId] || [];
+                    acc[parentMenuId].push(item);
                     return acc;
                 }, {});
 
                 // Transform grouped object into array of MenuGroup
-                return Object.entries(grouped).map(([parentId, menuItems]) => {
+                return Object.entries(grouped).map(([parentMenuId, menuItems]) => {
                     const firstItem = menuItems[0];
                     return {
-                        id: parentId,
-                        label: firstItem.parentLabel,
-                        icon: firstItem.parentIcon,
+                        id: parentMenuId,
+                        label: firstItem.parentMenuLabel,
+                        icon: firstItem.parentMenuIcon,
                         menuItems: menuItems,
-                        isOpen: parentId === currentOpenParentId
+                        isOpen: parentMenuId === currentOpenParentMenuId
                     };
                 });
             }),
@@ -125,9 +114,9 @@ export function withMenu() {
                 return menu.flatMap((parent) =>
                     parent.menuItems.map((item) => ({
                         ...item,
-                        parentId: parent.id,
-                        parentLabel: parent.tabName,
-                        parentIcon: parent.tabIcon,
+                        parentMenuId: parent.id,
+                        parentMenuLabel: parent.tabName,
+                        parentMenuIcon: parent.tabIcon,
                         menuLink: item.angular ? item.url : `/c/${item.id}`
                     }))
                 );
@@ -143,7 +132,6 @@ export function withMenu() {
                  */
                 loadMenu: (menu: DotMenu[]) => {
                     const entities = transformMenuToEntities(menu);
-                    console.log(entities, 'entities');
 
                     // Clear all entities first, then add new ones
                     // This ensures all property changes are detected by signals
@@ -160,51 +148,49 @@ export function withMenu() {
                  */
                 activateMenuItem: (id: string) => {
                     // First, deactivate all items
-                    patchState(store, updateAllEntities({ active: false }, menuConfig));
-
-                    // Then activate the target item
-                    patchState(store, updateEntity({ id, changes: { active: true } }, menuConfig));
+                    patchState(
+                        store,
+                        updateAllEntities({ active: false }, menuConfig),
+                        updateEntity({ id, changes: { active: true } }, menuConfig)
+                    );
                 },
 
                 /**
-                 * Activates a menu item and opens its parent group.
-                 * Ensures only one item is active and one parent is open.
+                 * Activates a menu item and opens its parent menu group.
+                 * Ensures only one item is active and one parent menu group is open.
                  *
                  * @param menuItemId - The ID of the menu item to activate
-                 * @param parentId - The ID of the parent group to open
+                 * @param parentMenuId - The ID of the parent menu group to open
                  */
-                activateMenuItemWithParent: (menuItemId: string, parentId: string | null) => {
-                    // Deactivate all items
-                    patchState(store, updateAllEntities({ active: false }, menuConfig));
-
-                    // Activate the target item
+                activateMenuItemWithParent: (menuItemId: string, parentMenuId: string | null) => {
                     patchState(
                         store,
+                        updateAllEntities({ active: false }, menuConfig),
                         updateEntity({ id: menuItemId, changes: { active: true } }, menuConfig)
                     );
 
-                    // Set the open parent (this automatically closes other parents via computed)
-                    patchState(store, { openParentId: parentId });
+                    // Set the open parent menu group (this automatically closes other parent menu groups via computed)
+                    patchState(store, { openParentMenuId: parentMenuId });
                 },
 
                 /**
                  * Toggles the open state of a parent menu group.
-                 * If the specified parent is already open, it closes.
-                 * If another parent is open, it closes and opens the specified one.
+                 * If the specified parent menu group is already open, it closes.
+                 * If another parent menu group is open, it closes and opens the specified one.
                  *
-                 * @param parentId - The ID of the parent group to toggle
+                 * @param parentMenuId - The ID of the parent menu group to toggle
                  */
-                toggleParent: (parentId: string) => {
-                    const currentOpenId = store.openParentId();
-                    const newOpenId = currentOpenId === parentId ? null : parentId;
-                    patchState(store, { openParentId: newOpenId });
+                toggleParent: (parentMenuId: string) => {
+                    const currentOpenId = store.openParentMenuId();
+                    const newOpenId = currentOpenId === parentMenuId ? null : parentMenuId;
+                    patchState(store, { openParentMenuId: newOpenId });
                 },
 
                 /**
-                 * Closes all menu parent groups.
+                 * Closes all parent menu groups.
                  */
                 closeAllParents: () => {
-                    patchState(store, { openParentId: null });
+                    patchState(store, { openParentMenuId: null });
                 },
 
                 /**
@@ -216,42 +202,42 @@ export function withMenu() {
                         isNavigationCollapsed: !isCollapsed
                     });
 
-                    // When collapsing, close all parent groups
+                    // When collapsing, close all parent menu groups
                     if (!isCollapsed) {
-                        patchState(store, { openParentId: null });
+                        patchState(store, { openParentMenuId: null });
                     } else {
-                        // When expanding, open the parent of the active item if there is one
+                        // When expanding, open the parent menu group of the active item if there is one
                         const activeItem = store.activeMenuItem();
                         if (activeItem) {
-                            patchState(store, { openParentId: activeItem.parentId });
+                            patchState(store, { openParentMenuId: activeItem.parentMenuId });
                         }
                     }
                 },
 
                 /**
                  * Collapses the navigation menu.
-                 * Closes all parent groups when collapsing.
+                 * Closes all parent menu groups when collapsing.
                  */
                 collapseNavigation: () => {
                     patchState(store, {
                         isNavigationCollapsed: true,
-                        openParentId: null
+                        openParentMenuId: null
                     });
                 },
 
                 /**
                  * Expands the navigation menu.
-                 * Opens the parent of the active item if there is one.
+                 * Opens the parent menu group of the active item if there is one.
                  */
                 expandNavigation: () => {
                     patchState(store, {
                         isNavigationCollapsed: false
                     });
 
-                    // Open the parent of the active item if there is one
+                    // Open the parent menu group of the active item if there is one
                     const activeItem = store.activeMenuItem();
                     if (activeItem) {
-                        patchState(store, { openParentId: activeItem.parentId });
+                        patchState(store, { openParentMenuId: activeItem.parentMenuId });
                     }
                 }
             };
@@ -263,33 +249,27 @@ export function withMenu() {
              *
              * @param menuItems - DotMenu array from the API
              * @param portletId - The current URL to find and activate the matching item
+             * @param menuItems - DotMenu array from the API
              */
-            setActiveMenu: (menuItems: DotMenu[], portletId: string) => {
-                // Transform and load menu as entities
-                store.loadMenu(menuItems);
+            setActiveMenu: (portletId: string, parentMenuId: string, menuItems?: DotMenu[]) => {
+                // menuItems is used to handle the event service UPDATE_PORTLET_LAYOUTS,
+                // this is used to load the menu items from the API
+                if (menuItems) {
+                    store.loadMenu(menuItems);
+                }
 
                 if (!portletId) {
                     return;
                 }
 
-                // Find the menu item by portletId in all entities
-
-                const allEntities = store.menuItemsEntities();
-                console.log(allEntities, 'all');
-
-                const targetItem = allEntities.find((entity) => entity.id === portletId);
-
-                // If found, activate it with its parent
-                if (targetItem) {
+                // If found, activate it with its parent menu group
+                if (portletId && parentMenuId) {
                     const collapsed = store.isNavigationCollapsed();
 
                     // Use the composite key for activation
-                    const compositeKey = `${targetItem.id}__${targetItem.parentId}`;
+                    const compositeKey = `${portletId}__${parentMenuId}`;
 
-                    store.activateMenuItemWithParent(
-                        compositeKey,
-                        collapsed ? null : targetItem.parentId
-                    );
+                    store.activateMenuItemWithParent(compositeKey, collapsed ? null : parentMenuId);
                 }
             }
         })),

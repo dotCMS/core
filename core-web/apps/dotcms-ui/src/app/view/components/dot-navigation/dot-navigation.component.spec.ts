@@ -101,14 +101,14 @@ describe('DotNavigationComponent collapsed', () => {
         globalStore.collapseNavigation();
         spectator.detectChanges();
 
-        // Then open a parent menu
-        globalStore.setOpenParent('123');
-        expect(globalStore.openParentId()).toBe('123');
+        // Then open a parent menu group
+        globalStore.toggleParent('123');
+        expect(globalStore.openParentMenuId()).toBe('123');
 
         // Then click on document (when collapsed)
         spectator.dispatchMouseEvent(spectator.element, 'click');
-        // When collapsed, clicking should close all parent menus via GlobalStore
-        expect(globalStore.openParentId()).toBe(null);
+        // When collapsed, clicking should close all parent menu groups via GlobalStore
+        expect(globalStore.openParentMenuId()).toBe(null);
     });
 
     describe('itemClick event', () => {
@@ -155,10 +155,13 @@ describe('DotNavigationComponent collapsed', () => {
         it('should navigate to portlet when menu is collapsed', () => {
             spectator.detectChanges();
 
-            spectator.component.onMenuClick({
-                originalEvent: {} as unknown as MouseEvent,
-                data: dotMenuMock()
-            });
+            const mockMenu = globalStore.menuGroup().find((m) => m.id === '123');
+            if (mockMenu) {
+                spectator.component.onMenuClick({
+                    originalEvent: {} as unknown as MouseEvent,
+                    data: mockMenu
+                });
+            }
 
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
@@ -322,30 +325,32 @@ describe('DotNavigationComponent expanded', () => {
         it('should navigate and set open when menu is closed', () => {
             spectator.detectChanges();
 
-            const mockMenu = {
-                ...dotMenuMock(),
-                isOpen: false
-            };
+            const mockMenu = globalStore.menuGroup().find((m) => m.id === '123');
+            if (mockMenu) {
+                mockMenu.isOpen = false;
+            }
 
-            spectator.component.onMenuClick({
-                originalEvent: {} as unknown as MouseEvent,
-                data: mockMenu
-            });
+            if (mockMenu) {
+                spectator.component.onMenuClick({
+                    originalEvent: {} as unknown as MouseEvent,
+                    data: mockMenu
+                });
+            }
 
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
-            // Verify parent is set as open in GlobalStore
-            expect(globalStore.openParentId()).toBe('123');
+            // Verify parent menu group is set as open in GlobalStore
+            expect(globalStore.openParentMenuId()).toBe('123');
         });
 
         it('should only set open when menu is already open', () => {
             spectator.detectChanges();
 
-            // First, open the parent
-            globalStore.setOpenParent('123');
-            expect(globalStore.openParentId()).toBe('123');
+            // First, open the parent menu group
+            globalStore.toggleParent('123');
+            expect(globalStore.openParentMenuId()).toBe('123');
 
-            const mockMenu = globalStore.MenuGroup().find((m) => m.id === '123');
+            const mockMenu = globalStore.menuGroup().find((m) => m.id === '123');
 
             spectator.component.onMenuClick({
                 originalEvent: {} as unknown as MouseEvent,
@@ -353,8 +358,8 @@ describe('DotNavigationComponent expanded', () => {
             });
 
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
-            // Verify parent is toggled (closed) in GlobalStore
-            expect(globalStore.openParentId()).toBe(null);
+            // Verify parent menu group is toggled (closed) in GlobalStore
+            expect(globalStore.openParentMenuId()).toBe(null);
         });
     });
 

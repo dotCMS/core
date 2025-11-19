@@ -31,7 +31,10 @@ export class DotNavigationService {
         // Load initial menu - store handles menu link processing and entity transformation
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
             this.#globalStore.loadMenu(menus);
-            this.#globalStore.setActiveMenu(menus, this.dotRouterService.currentPortlet.id);
+            this.#globalStore.setActiveMenu(
+                this.dotRouterService.currentPortlet.id,
+                this.router.getCurrentNavigation()?.extras.state?.menuId
+            );
         });
 
         // Handle navigation end events
@@ -47,8 +50,8 @@ export class DotNavigationService {
 
                             // Load menu and set active item based on current portlet and parent context
                             this.#globalStore.setActiveMenu(
-                                menu,
-                                this.dotRouterService.currentPortlet.id
+                                this.dotRouterService.currentPortlet.id,
+                                this.router.getCurrentNavigation().extras?.state?.menuId
                             );
                         }),
                         map(() => true)
@@ -64,7 +67,11 @@ export class DotNavigationService {
                 .reloadMenu()
                 .pipe(take(1))
                 .subscribe((menus: DotMenu[]) => {
-                    this.#globalStore.setActiveMenu(menus, this.dotRouterService.currentPortlet.id);
+                    this.#globalStore.setActiveMenu(
+                        this.dotRouterService.currentPortlet.id,
+                        this.router.getCurrentNavigation()?.extras?.state?.menuId,
+                        menus
+                    );
                 });
         });
 
@@ -93,7 +100,11 @@ export class DotNavigationService {
         return this.getFirstMenuLink()
             .pipe(
                 map((link: string) => {
-                    return this.dotRouterService.gotoPortlet(link);
+                    return this.dotRouterService.gotoPortlet(
+                        link,
+                        {},
+                        this.router.getCurrentNavigation()?.extras.state?.menuId
+                    );
                 })
             )
             .toPromise()

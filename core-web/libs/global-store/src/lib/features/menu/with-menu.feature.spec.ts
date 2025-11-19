@@ -2,11 +2,11 @@ import { signalStore, withState } from '@ngrx/signals';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotMenu } from '@dotcms/dotcms-models';
+import { DotMenu, MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { withMenu } from './with-menu.feature';
 
-describe('withMenu Feature (DotMenu)', () => {
+describe('withMenu Feature', () => {
     // Create a test store that uses the withMenu feature
     const TestStore = signalStore(withState({}), withMenu());
 
@@ -25,7 +25,8 @@ describe('withMenu Feature (DotMenu)', () => {
                     id: '1-1',
                     label: 'Home',
                     url: '/',
-                    menuLink: '/'
+                    menuLink: '/',
+                    parentMenuId: '1'
                 }
             ],
             name: 'Home Menu',
@@ -46,7 +47,8 @@ describe('withMenu Feature (DotMenu)', () => {
                     id: '2-1',
                     label: 'About',
                     url: '/about',
-                    menuLink: '/about'
+                    menuLink: '/about',
+                    parentMenuId: '2'
                 }
             ],
             name: 'About Menu',
@@ -67,7 +69,8 @@ describe('withMenu Feature (DotMenu)', () => {
                     id: '4',
                     label: 'Service 1',
                     url: '/services/1',
-                    menuLink: '/services/1'
+                    menuLink: '/services/1',
+                    parentMenuId: '3'
                 },
                 {
                     active: false,
@@ -76,7 +79,8 @@ describe('withMenu Feature (DotMenu)', () => {
                     id: '5',
                     label: 'Service 2',
                     url: '/services/2',
-                    menuLink: '/services/2'
+                    menuLink: '/services/2',
+                    parentMenuId: '3'
                 }
             ],
             name: 'Services Menu',
@@ -96,37 +100,61 @@ describe('withMenu Feature (DotMenu)', () => {
     });
 
     describe('Initial State', () => {
-        it('should initialize with menu items from initial slice', () => {
-            const items = store.menuItems();
+        it('should initialize with empty menu items', () => {
+            const items = store.flattenMenuItems();
             expect(items).toBeDefined();
             expect(Array.isArray(items)).toBe(true);
             expect(items.length).toBe(0);
         });
 
         it('should initialize with no active menu item', () => {
-            expect(store.activeMenuItemId()).toBeNull();
+            expect(store.activeMenuItem()).toBeNull();
         });
 
         it('should initialize with navigation collapsed', () => {
             expect(store.isNavigationCollapsed()).toBe(true);
         });
+
+        it('should initialize with no open parent menu', () => {
+            expect(store.openParentMenuId()).toBeNull();
+        });
     });
 
-    describe('Set Menu Items', () => {
-        it('should set menu items', () => {
-            store.setMenuItems(mockMenuItems);
-            const items = store.menuItems();
-            expect(items).toEqual(mockMenuItems);
+    describe('Load Menu', () => {
+        it('should load menu items and transform them to entities', () => {
+            store.loadMenu(mockMenuItems);
+            const items = store.flattenMenuItems();
+            expect(items.length).toBe(4); // 1 + 1 + 2 menu items
         });
 
-        it('should replace existing menu items', () => {
-            store.setMenuItems(mockMenuItems);
+        it('should add parentMenuId, parentMenuLabel, and parentMenuIcon to entities', () => {
+            store.loadMenu(mockMenuItems);
+            const items = store.flattenMenuItems();
+            const firstItem = items[0];
+            expect(firstItem.parentMenuId).toBe('1');
+            expect(firstItem.parentMenuLabel).toBe('Home');
+            expect(firstItem.parentMenuIcon).toBe('pi pi-home');
+        });
+
+        it('should replace existing menu items when loading new menu', () => {
+            store.loadMenu(mockMenuItems);
             const newItems: DotMenu[] = [
                 {
                     active: false,
                     id: '100',
                     isOpen: false,
-                    menuItems: [],
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: '100-1',
+                            label: 'New Item',
+                            url: '/new',
+                            menuLink: '/new',
+                            parentMenuId: '100'
+                        }
+                    ],
                     name: 'New Menu',
                     tabDescription: 'New section',
                     tabIcon: 'pi pi-star',
@@ -134,104 +162,162 @@ describe('withMenu Feature (DotMenu)', () => {
                     url: '/new'
                 }
             ];
-            store.setMenuItems(newItems);
-            expect(store.menuItems()).toEqual(newItems);
+            store.loadMenu(newItems);
+            const items = store.flattenMenuItems();
+            expect(items.length).toBe(1);
+            expect(items[0].id).toBe('100-1');
+        });
+
+        it('should generate menuLink for angular items', () => {
+            store.loadMenu(mockMenuItems);
+            const items = store.flattenMenuItems();
+            const angularItem = items.find((item) => item.angular);
+            expect(angularItem?.menuLink).toBe('/');
+        });
+
+        it('should generate menuLink for legacy items with /c/ prefix', () => {
+            const legacyMenu: DotMenu[] = [
+                {
+                    active: false,
+                    id: 'legacy',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: false,
+                            id: 'legacy-portlet',
+                            label: 'Legacy',
+                            url: '/legacy',
+                            menuLink: '',
+                            parentMenuId: 'legacy'
+                        }
+                    ],
+                    name: 'Legacy Menu',
+                    tabDescription: 'Legacy section',
+                    tabIcon: 'pi pi-cog',
+                    tabName: 'Legacy',
+                    url: '/legacy'
+                }
+            ];
+            store.loadMenu(legacyMenu);
+            const items = store.flattenMenuItems();
+            expect(items[0].menuLink).toBe('/c/legacy-portlet');
+        });
+    });
+
+    describe('Menu Group', () => {
+        beforeEach(() => {
+            store.loadMenu(mockMenuItems);
+        });
+
+        it('should group menu items by parentMenuId', () => {
+            const groups = store.menuGroup();
+            expect(groups.length).toBe(3);
+            expect(groups[0].id).toBe('1');
+            expect(groups[0].menuItems.length).toBe(1);
+            expect(groups[2].id).toBe('3');
+            expect(groups[2].menuItems.length).toBe(2);
+        });
+
+        it('should include parent menu label and icon in groups', () => {
+            const groups = store.menuGroup();
+            expect(groups[0].label).toBe('Home');
+            expect(groups[0].icon).toBe('pi pi-home');
+            expect(groups[1].label).toBe('About');
+            expect(groups[1].icon).toBe('pi pi-info-circle');
+        });
+
+        it('should set isOpen based on openParentMenuId', () => {
+            store.toggleParent('1');
+            const groups = store.menuGroup();
+            expect(groups.find((g) => g.id === '1')?.isOpen).toBe(true);
+            expect(groups.find((g) => g.id === '2')?.isOpen).toBe(false);
         });
     });
 
     describe('Active Menu Item', () => {
         beforeEach(() => {
-            store.setMenuItems(mockMenuItems);
+            store.loadMenu(mockMenuItems);
         });
 
-        it('should set active menu item ID', () => {
-            store.setActiveMenuItemId('1');
-            expect(store.activeMenuItemId()).toBe('1');
-        });
-
-        it('should change active menu item ID', () => {
-            store.setActiveMenuItemId('1');
-            store.setActiveMenuItemId('2');
-            expect(store.activeMenuItemId()).toBe('2');
-        });
-
-        it('should clear active menu item when set to null', () => {
-            store.setActiveMenuItemId('1');
-            store.setActiveMenuItemId(null);
-            expect(store.activeMenuItemId()).toBeNull();
-        });
-
-        it('should return active menu item object', () => {
-            store.setActiveMenuItemId('2');
+        it('should activate a menu item by composite key', () => {
+            store.activateMenuItem('1-1__1');
             const activeItem = store.activeMenuItem();
             expect(activeItem).toBeDefined();
-            expect(activeItem?.id).toBe('2');
-            expect(activeItem?.name).toBe('About Menu');
+            expect(activeItem?.id).toBe('1-1');
+            expect(activeItem?.active).toBe(true);
+        });
+
+        it('should deactivate previous item when activating new one', () => {
+            store.activateMenuItem('1-1__1');
+            store.activateMenuItem('2-1__2');
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('2-1');
+            const allItems = store.flattenMenuItems();
+            const firstItem = allItems.find((item) => item.id === '1-1');
+            expect(firstItem?.active).toBe(false);
+        });
+
+        it('should activate item and open parent menu group', () => {
+            store.activateMenuItemWithParent('1-1__1', '1');
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('1-1');
+            expect(store.openParentMenuId()).toBe('1');
+        });
+
+        it('should activate item without opening parent when collapsed', () => {
+            store.collapseNavigation();
+            store.activateMenuItemWithParent('1-1__1', null);
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('1-1');
+            expect(store.openParentMenuId()).toBeNull();
         });
 
         it('should return null for activeMenuItem when no item is active', () => {
             expect(store.activeMenuItem()).toBeNull();
         });
+    });
 
-        it('should check if a menu item is active using isMenuItemActive', () => {
-            store.setActiveMenuItemId('1');
-            expect(store.isMenuItemActive()('1')).toBe(true);
-            expect(store.isMenuItemActive()('2')).toBe(false);
+    describe('Toggle Parent Menu', () => {
+        beforeEach(() => {
+            store.loadMenu(mockMenuItems);
         });
 
-        it('should return false for isMenuItemActive when no item is active', () => {
-            expect(store.isMenuItemActive()('1')).toBe(false);
+        it('should open a parent menu group', () => {
+            store.toggleParent('1');
+            expect(store.openParentMenuId()).toBe('1');
+        });
+
+        it('should close parent menu group if already open', () => {
+            store.toggleParent('1');
+            store.toggleParent('1');
+            expect(store.openParentMenuId()).toBeNull();
+        });
+
+        it('should close other parent menu groups when opening a new one', () => {
+            store.toggleParent('1');
+            store.toggleParent('2');
+            expect(store.openParentMenuId()).toBe('2');
         });
     });
 
-    describe('Set Menu Open', () => {
+    describe('Close All Parents', () => {
         beforeEach(() => {
-            store.setMenuItems(mockMenuItems);
+            store.loadMenu(mockMenuItems);
+            store.toggleParent('1');
         });
 
-        it('should set menu as open by ID', () => {
-            store.setMenuOpen('3');
-            const items = store.menuItems();
-            const servicesMenu = items.find((menu) => menu.id === '3');
-            expect(servicesMenu?.isOpen).toBe(true);
-        });
-
-        it('should close other menus when opening a new one', () => {
-            store.setMenuOpen('1');
-            store.setMenuOpen('2');
-            const items = store.menuItems();
-            expect(items.find((m) => m.id === '1')?.isOpen).toBe(false);
-            expect(items.find((m) => m.id === '2')?.isOpen).toBe(true);
-        });
-
-        it('should toggle menu closed if already open', () => {
-            store.setMenuOpen('3');
-            store.setMenuOpen('3');
-            const items = store.menuItems();
-            const servicesMenu = items.find((menu) => menu.id === '3');
-            expect(servicesMenu?.isOpen).toBe(false);
-        });
-    });
-
-    describe('Close All Menu Sections', () => {
-        beforeEach(() => {
-            store.setMenuItems(mockMenuItems);
-            store.setMenuOpen('1');
-            store.setMenuOpen('2');
-        });
-
-        it('should close all menu sections', () => {
-            store.closeAllMenuSections();
-            const items = store.menuItems();
-            items.forEach((menu) => {
-                expect(menu.isOpen).toBe(false);
-            });
+        it('should close all parent menu groups', () => {
+            expect(store.openParentMenuId()).toBe('1');
+            store.closeAllParents();
+            expect(store.openParentMenuId()).toBeNull();
         });
     });
 
     describe('Toggle Navigation', () => {
         beforeEach(() => {
-            store.setMenuItems(mockMenuItems);
+            store.loadMenu(mockMenuItems);
         });
 
         it('should toggle navigation from collapsed to expanded', () => {
@@ -246,20 +332,23 @@ describe('withMenu Feature (DotMenu)', () => {
             expect(store.isNavigationCollapsed()).toBe(true);
         });
 
-        it('should close all sections when collapsing', () => {
-            store.setMenuOpen('1');
-            store.toggleNavigation(); // Expand (should open active sections)
+        it('should close all parent menus when collapsing', () => {
+            store.toggleParent('1');
+            store.toggleNavigation(); // Expand (should open active item's parent)
             store.toggleNavigation(); // Collapse (should close all)
-            const items = store.menuItems();
-            items.forEach((menu) => {
-                expect(menu.isOpen).toBe(false);
-            });
+            expect(store.openParentMenuId()).toBeNull();
+        });
+
+        it('should open active item parent menu when expanding', () => {
+            store.activateMenuItem('1-1__1');
+            store.toggleNavigation(); // Expand
+            expect(store.openParentMenuId()).toBe('1');
         });
     });
 
     describe('Collapse Navigation', () => {
         beforeEach(() => {
-            store.setMenuItems(mockMenuItems);
+            store.loadMenu(mockMenuItems);
             store.toggleNavigation(); // Expand first
         });
 
@@ -268,19 +357,16 @@ describe('withMenu Feature (DotMenu)', () => {
             expect(store.isNavigationCollapsed()).toBe(true);
         });
 
-        it('should close all menu sections when collapsing', () => {
-            store.setMenuOpen('1');
+        it('should close all parent menu groups when collapsing', () => {
+            store.toggleParent('1');
             store.collapseNavigation();
-            const items = store.menuItems();
-            items.forEach((menu) => {
-                expect(menu.isOpen).toBe(false);
-            });
+            expect(store.openParentMenuId()).toBeNull();
         });
     });
 
     describe('Expand Navigation', () => {
         beforeEach(() => {
-            store.setMenuItems(mockMenuItems);
+            store.loadMenu(mockMenuItems);
         });
 
         it('should expand navigation', () => {
@@ -288,254 +374,169 @@ describe('withMenu Feature (DotMenu)', () => {
             expect(store.isNavigationCollapsed()).toBe(false);
         });
 
-        it('should open active sections when expanding', () => {
-            // Set an item as active
-            const items = store.menuItems();
-            const menuWithActiveItem = {
-                ...items[2],
-                menuItems: items[2].menuItems.map((item, idx) => ({
-                    ...item,
-                    active: idx === 0
-                }))
-            };
-            store.setMenuItems([...items.slice(0, 2), menuWithActiveItem]);
-
+        it('should open active item parent menu when expanding', () => {
+            store.activateMenuItem('1-1__1');
             store.expandNavigation();
-            const updatedItems = store.menuItems();
-            const servicesMenu = updatedItems.find((m) => m.id === '3');
-            expect(servicesMenu?.isOpen).toBe(true);
+            expect(store.openParentMenuId()).toBe('1');
+        });
+
+        it('should not open any parent menu if no item is active', () => {
+            store.expandNavigation();
+            expect(store.openParentMenuId()).toBeNull();
         });
     });
 
-    describe('Computed: findMenuItemById', () => {
+    describe('Set Active Menu', () => {
         beforeEach(() => {
-            store.setMenuItems(mockMenuItems);
+            store.loadMenu(mockMenuItems);
         });
 
-        it('should find menu item by ID', () => {
-            const item = store.findMenuItemById()('2');
+        it('should set active menu item by portletId and parentMenuId', () => {
+            store.setActiveMenu('1-1', '1');
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('1-1');
+            expect(store.openParentMenuId()).toBe('1');
+        });
+
+        it('should not open parent menu when navigation is collapsed', () => {
+            store.collapseNavigation();
+            store.setActiveMenu('1-1', '1');
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('1-1');
+            expect(store.openParentMenuId()).toBeNull();
+        });
+
+        it('should load menu items if provided', () => {
+            const newMenu: DotMenu[] = [
+                {
+                    active: false,
+                    id: 'new',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: 'new-1',
+                            label: 'New',
+                            url: '/new',
+                            menuLink: '/new',
+                            parentMenuId: 'new'
+                        }
+                    ],
+                    name: 'New Menu',
+                    tabDescription: 'New section',
+                    tabIcon: 'pi pi-star',
+                    tabName: 'New',
+                    url: '/new'
+                }
+            ];
+            store.setActiveMenu('new-1', 'new', newMenu);
+            const items = store.flattenMenuItems();
+            expect(items.length).toBe(1);
+            expect(items[0].id).toBe('new-1');
+        });
+
+        it('should not activate if portletId is empty', () => {
+            const initialActive = store.activeMenuItem();
+            store.setActiveMenu('', '1');
+            const finalActive = store.activeMenuItem();
+            expect(finalActive).toEqual(initialActive);
+        });
+    });
+
+    describe('Entity Map', () => {
+        beforeEach(() => {
+            store.loadMenu(mockMenuItems);
+        });
+
+        it('should provide entity map for direct lookups', () => {
+            const entityMap = store.entityMap();
+            expect(entityMap).toBeDefined();
+            expect(typeof entityMap).toBe('object');
+        });
+
+        it('should allow lookup by composite key', () => {
+            const entityMap = store.entityMap();
+            const key = '1-1__1';
+            const item = entityMap[key];
             expect(item).toBeDefined();
-            expect(item?.name).toBe('About Menu');
-        });
-
-        it('should return null for non-existent ID', () => {
-            const item = store.findMenuItemById()('999');
-            expect(item).toBeNull();
+            expect(item.id).toBe('1-1');
         });
     });
 
-    describe('Computed: flattenMenuItems', () => {
+    describe('Flatten Menu Items', () => {
         beforeEach(() => {
-            store.setMenuItems(mockMenuItems);
+            store.loadMenu(mockMenuItems);
         });
 
-        it('should flatten menu items with labelParent', () => {
+        it('should return all menu items as flat array', () => {
             const flattened = store.flattenMenuItems();
-            expect(flattened.length).toBe(4); // 1 + 1 + 2 menu items
-            expect(flattened[0].labelParent).toBe('Home');
-            expect(flattened[1].labelParent).toBe('About');
-            expect(flattened[2].labelParent).toBe('Services');
-            expect(flattened[3].labelParent).toBe('Services');
+            expect(flattened.length).toBe(4);
+            expect(flattened.every((item) => item instanceof Object)).toBe(true);
         });
 
-        it('should preserve menu item properties', () => {
+        it('should preserve all menu item properties', () => {
             const flattened = store.flattenMenuItems();
-            expect(flattened[0].id).toBe('1-1');
-            expect(flattened[0].label).toBe('Home');
-        });
-    });
-
-    describe('Reset Menu State', () => {
-        it('should reset all menu state to initial values', () => {
-            // Modify state
-            store.setMenuItems(mockMenuItems);
-            store.setActiveMenuItemId('1');
-            store.setMenuOpen('2');
-            store.toggleNavigation();
-
-            // Reset state
-            store.resetMenuState();
-
-            // Verify state is back to initial
-            expect(store.activeMenuItemId()).toBeNull();
-            expect(store.isNavigationCollapsed()).toBe(true);
-            const items = store.menuItems();
-            expect(items.length).toBe(0);
-        });
-    });
-
-    describe('Add Menu Links', () => {
-        it('should add menuLink property to angular menu items', () => {
-            const menuWithoutLinks: DotMenu[] = [
-                {
-                    active: false,
-                    id: '1',
-                    isOpen: false,
-                    menuItems: [
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: true,
-                            id: '1-1',
-                            label: 'Home',
-                            url: '/home',
-                            menuLink: ''
-                        }
-                    ],
-                    name: 'Home Menu',
-                    tabDescription: 'Home section',
-                    tabIcon: 'pi pi-home',
-                    tabName: 'Home',
-                    url: '/'
-                }
-            ];
-
-            const result = store.addMenuLinks(menuWithoutLinks);
-            expect(result[0].menuItems[0].menuLink).toBe('/home');
-        });
-
-        it('should add menuLink property to legacy menu items with /c/ prefix', () => {
-            const menuWithoutLinks: DotMenu[] = [
-                {
-                    active: false,
-                    id: '1',
-                    isOpen: false,
-                    menuItems: [
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: false,
-                            id: 'legacy-portlet-id',
-                            label: 'Legacy Portlet',
-                            url: '/legacy',
-                            menuLink: ''
-                        }
-                    ],
-                    name: 'Legacy Menu',
-                    tabDescription: 'Legacy section',
-                    tabIcon: 'pi pi-cog',
-                    tabName: 'Legacy',
-                    url: '/legacy'
-                }
-            ];
-
-            const result = store.addMenuLinks(menuWithoutLinks);
-            expect(result[0].menuItems[0].menuLink).toBe('/c/legacy-portlet-id');
-        });
-
-        it('should handle mixed angular and legacy menu items', () => {
-            const menuWithoutLinks: DotMenu[] = [
-                {
-                    active: false,
-                    id: '1',
-                    isOpen: false,
-                    menuItems: [
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: true,
-                            id: '1-1',
-                            label: 'Angular Item',
-                            url: '/angular',
-                            menuLink: ''
-                        },
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: false,
-                            id: 'legacy-1',
-                            label: 'Legacy Item',
-                            url: '/legacy',
-                            menuLink: ''
-                        }
-                    ],
-                    name: 'Mixed Menu',
-                    tabDescription: 'Mixed section',
-                    tabIcon: 'pi pi-bars',
-                    tabName: 'Mixed',
-                    url: '/mixed'
-                }
-            ];
-
-            const result = store.addMenuLinks(menuWithoutLinks);
-            expect(result[0].menuItems[0].menuLink).toBe('/angular');
-            expect(result[0].menuItems[1].menuLink).toBe('/c/legacy-1');
-        });
-
-        it('should apply menuLinks when setting menu items', () => {
-            const menuWithoutLinks: DotMenu[] = [
-                {
-                    active: false,
-                    id: '1',
-                    isOpen: false,
-                    menuItems: [
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: true,
-                            id: '1-1',
-                            label: 'Home',
-                            url: '/home',
-                            menuLink: ''
-                        }
-                    ],
-                    name: 'Home Menu',
-                    tabDescription: 'Home section',
-                    tabIcon: 'pi pi-home',
-                    tabName: 'Home',
-                    url: '/'
-                }
-            ];
-
-            store.setMenuItems(menuWithoutLinks);
-            const items = store.menuItems();
-            expect(items[0].menuItems[0].menuLink).toBe('/home');
+            const firstItem = flattened[0];
+            expect(firstItem.id).toBe('1-1');
+            expect(firstItem.label).toBe('Home');
+            expect(firstItem.parentMenuId).toBe('1');
+            expect(firstItem.parentMenuLabel).toBe('Home');
         });
     });
 
     describe('Complex Scenarios', () => {
         beforeEach(() => {
-            store.setMenuItems(mockMenuItems);
+            store.loadMenu(mockMenuItems);
         });
 
         it('should handle full menu workflow', () => {
-            // Set active item
-            store.setActiveMenuItemId('1');
-            expect(store.activeMenuItem()?.name).toBe('Home Menu');
+            // Activate item
+            store.activateMenuItem('1-1__1');
+            expect(store.activeMenuItem()?.id).toBe('1-1');
 
-            // Open menu
-            store.setMenuOpen('3');
-            const items = store.menuItems();
-            expect(items.find((m) => m.id === '3')?.isOpen).toBe(true);
+            // Open parent menu
+            store.toggleParent('3');
+            expect(store.openParentMenuId()).toBe('3');
 
             // Change active item
-            store.setActiveMenuItemId('2');
-            expect(store.activeMenuItem()?.name).toBe('About Menu');
+            store.activateMenuItem('2-1__2');
+            expect(store.activeMenuItem()?.id).toBe('2-1');
         });
 
-        it('should handle navigation toggle with menu state', () => {
-            // Set an active item in a menu
-            const items = store.menuItems();
-            const menuWithActiveItem = {
-                ...items[2],
-                menuItems: items[2].menuItems.map((item, idx) => ({
-                    ...item,
-                    active: idx === 0
-                }))
-            };
-            store.setMenuItems([...items.slice(0, 2), menuWithActiveItem]);
+        it('should handle navigation toggle with active item', () => {
+            // Activate an item
+            store.activateMenuItem('1-1__1');
 
-            // Expand navigation (should open active sections)
+            // Expand navigation (should open active item's parent)
             store.expandNavigation();
-            const updatedItems = store.menuItems();
-            expect(updatedItems.find((m) => m.id === '3')?.isOpen).toBe(true);
+            expect(store.openParentMenuId()).toBe('1');
 
             // Collapse navigation (should close all)
             store.collapseNavigation();
-            const collapsedItems = store.menuItems();
-            collapsedItems.forEach((menu) => {
-                expect(menu.isOpen).toBe(false);
-            });
+            expect(store.openParentMenuId()).toBeNull();
+        });
+
+        it('should maintain single active item constraint', () => {
+            store.activateMenuItem('1-1__1');
+            store.activateMenuItem('2-1__2');
+            store.activateMenuItem('4__3');
+
+            const activeItems = store.flattenMenuItems().filter((item) => item.active);
+            expect(activeItems.length).toBe(1);
+            expect(activeItems[0].id).toBe('4');
+        });
+
+        it('should maintain single open parent constraint', () => {
+            store.toggleParent('1');
+            store.toggleParent('2');
+            store.toggleParent('3');
+
+            const groups = store.menuGroup();
+            const openGroups = groups.filter((g) => g.isOpen);
+            expect(openGroups.length).toBe(1);
+            expect(openGroups[0].id).toBe('3');
         });
     });
 });
