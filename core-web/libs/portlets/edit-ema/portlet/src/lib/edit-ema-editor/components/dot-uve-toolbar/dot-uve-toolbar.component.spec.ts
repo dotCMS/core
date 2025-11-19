@@ -8,7 +8,6 @@ import { DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { Tooltip } from 'primeng/tooltip';
 
 import {
     DotAnalyticsTrackerService,
@@ -50,10 +49,19 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import {
     getFullPageURL,
     createFavoritePagesURL,
-    createFullURL,
     sanitizeURL,
-    convertLocalTimeToUTC
+    convertLocalTimeToUTC,
+    createFullURL
 } from '../../../utils';
+
+// Mock createFullURL to avoid issues with invalid URLs in tests
+jest.mock('../../../utils', () => ({
+    ...jest.requireActual('../../../utils'),
+    createFullURL: jest.fn((params, siteId) => {
+        const { url = '/', clientHost = 'http://localhost:3000' } = params;
+        return `${clientHost}${url}?siteId=${siteId}&version=true`;
+    })
+}));
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -73,7 +81,6 @@ const bookmarksUrl = createFavoritePagesURL({
 const baseUVEToolbarState = {
     editor: {
         bookmarksUrl,
-        copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
         apiUrl: `${'http://localhost'}${pageAPI}`
     },
     preview: null,
@@ -409,34 +416,161 @@ describe('DotUveToolbarComponent', () => {
                 );
             });
 
-            it('should have attrs', () => {
-                // In Angular 20, ng-reflect-* attributes are not available
-                // Verify properties directly on the p-button component instance
-                const buttonComponent = button?.componentInstance;
-                expect(buttonComponent?.icon).toBe('pi pi-copy');
-                expect(buttonComponent?.styleClass).toBe(
-                    'p-button-text p-button-sm p-button-rounded'
-                );
-                // Verify tooltipPosition on the Tooltip directive instance
-                const tooltipDirective = button?.injector.get(Tooltip);
-                expect(tooltipDirective?.tooltipPosition).toBe('bottom');
-                // Verify data-testId attribute on the native element
-                expect(button?.nativeElement.getAttribute('data-testId')).toBe(
-                    'uve-toolbar-copy-url'
-                );
-                // Verify that the copyUrl is set (it includes query params in the actual implementation)
-                const copyUrl = spectator.component.$toolbar().editor.copyUrl;
-                expect(copyUrl).toContain('http://localhost:3000/test-url');
+            it('should have button to open overlay', () => {
+                expect(button).toBeTruthy();
+                expect(button.attributes['icon']).toBe('pi pi-copy');
+                expect(button.attributes['data-testId']).toBe('uve-toolbar-copy-url');
             });
 
-            it('should call messageService.add', () => {
-                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
+            it('should call messageService.add when copy button in overlay is clicked', () => {
+                const copyButton = spectator.debugElement.query(
+                    By.css('[data-testId="copy-url-button"]')
+                );
+
+                spectator.triggerEventHandler(copyButton, 'cdkCopyToClipboardCopied', {});
 
                 expect(messageService.add).toHaveBeenCalledWith({
                     severity: 'success',
                     summary: 'Copied',
                     life: 3000
                 });
+            });
+        });
+
+        describe('$pageURLS computed signal', () => {
+            it('should call createFullURL to generate version URL', () => {
+                const mockCreateFullURL = createFullURL as jest.Mock;
+                mockCreateFullURL.mockClear();
+
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const versionUrl = urls.find(
+                    (u) => u.label === 'uve.toolbar.page.current.view.url'
+                );
+
+                expect(mockCreateFullURL).toHaveBeenCalledWith(
+                    expect.any(Object),
+                    expect.any(String)
+                );
+                expect(versionUrl).toBeTruthy();
+            });
+
+            it('should construct URL with clientHost and url from pageParams', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/my-page');
+            });
+
+            it('should strip /index suffix from URL', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page/index',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/my-page');
+            });
+
+            it('should strip /index.html suffix from URL', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page/index.html',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/my-page');
+            });
+
+            it('should fallback to window.location.origin when clientHost is not provided', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page',
+                    clientHost: undefined
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe(`${window.location.origin}/my-page`);
+            });
+
+            it('should handle root URL with index.html', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/index.html',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/');
+            });
+
+            it('should handle nested paths with /index.html', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/docs/api/index.html',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/docs/api');
+            });
+
+            it('should default to root path when url is undefined', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: undefined,
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/');
+            });
+
+            it('should handle empty clientHost with fallback to window.location.origin', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/test',
+                    clientHost: ''
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe(`${window.location.origin}/test`);
             });
         });
 
