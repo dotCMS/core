@@ -10,7 +10,7 @@ import { Observable, of } from 'rxjs';
 
 import { inject } from '@angular/core';
 
-import { catchError, take, tap } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
@@ -98,9 +98,7 @@ export function withSidebar() {
                 const host = hostname || store.currentSite()?.hostname;
                 const fullPath = `${host}${path}`;
 
-                return getFolderNodesByPath(fullPath, dotFolderService).pipe(
-                    tap(() => patchState(store, { path }))
-                );
+                return getFolderNodesByPath(fullPath, dotFolderService);
             },
             /**
              * Sets the selected node
