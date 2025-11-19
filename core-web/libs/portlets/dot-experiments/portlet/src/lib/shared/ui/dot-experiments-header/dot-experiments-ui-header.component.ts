@@ -19,7 +19,7 @@ import {
     ExperimentsStatusIcons,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-header',
@@ -30,7 +30,6 @@ import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
         LowerCasePipe,
         DatePipe,
         TitleCasePipe,
-        DotIconModule,
         DotMessagePipe,
         SkeletonModule,
         ButtonModule,

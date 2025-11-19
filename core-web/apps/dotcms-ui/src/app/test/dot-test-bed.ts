@@ -74,13 +74,14 @@ export class MockDotSystemConfigService {
 
 export class MockGlobalStore {
     // Mock implementation of GlobalStore methods that might be used in tests
-    select = () => of({}); // Mock select method
+    select = () => of({});
     dispatch = () => {
-        // Mock dispatch method - no operation needed for tests
+        /* no-op */
     };
 
-    // Add any other methods from GlobalStore that tests might use
-    // For now, we keep it minimal to avoid breaking existing tests
+    addNewBreadcrumb = () => {
+        /* no-op */
+    };
 }
 
 export const dotEventSocketURLFactory = () => {

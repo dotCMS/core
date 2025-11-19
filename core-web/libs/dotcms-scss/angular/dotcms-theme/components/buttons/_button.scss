@@ -177,6 +177,10 @@ a.p-button.p-button-text {
     }
 }
 
+.p-button-icon-only.p-button-icon-outline {
+    border: 1.5px solid $color-palette-primary;
+}
+
 // Misc
 .p-button.p-button-vertical {
     height: 100%;

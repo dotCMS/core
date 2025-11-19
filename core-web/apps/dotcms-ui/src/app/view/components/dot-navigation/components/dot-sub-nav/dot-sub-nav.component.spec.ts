@@ -1,10 +1,14 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { DotSystemConfigService } from '@dotcms/data-access';
 import { DotMenu } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
 
@@ -30,8 +34,16 @@ describe('DotSubNavComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotSubNavComponent],
-            imports: [RouterTestingModule, BrowserAnimationsModule]
+            imports: [RouterTestingModule, BrowserAnimationsModule, DotSubNavComponent],
+            providers: [
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
+            ]
         }).compileComponents();
     }));
 
@@ -43,16 +55,61 @@ describe('DotSubNavComponent', () => {
         fixture.detectChanges();
     });
 
-    it('should have two menu links', () => {
+    it('should have two menu links when expanded', () => {
+        component.collapsed = false;
+        fixture.detectChanges();
         expect(de.queryAll(By.css('.dot-nav-sub li')).length).toBe(2);
     });
 
-    it('should set <li> correctly', () => {
+    it('should have three list items when collapsed (group header + 2 menu items)', () => {
+        component.collapsed = true;
+        fixture.detectChanges();
+        expect(de.queryAll(By.css('.dot-nav-sub li')).length).toBe(3);
+    });
+
+    it('should NOT show group name when expanded', () => {
+        component.collapsed = false;
+        fixture.detectChanges();
+        const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
+        expect(groupName).toBeNull();
+    });
+
+    it('should show group name when collapsed', () => {
+        component.collapsed = true;
+        fixture.detectChanges();
+        const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
+        expect(groupName).not.toBeNull();
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+    });
+
+    it('should have group name element with proper styling when collapsed', () => {
+        component.collapsed = true;
+        fixture.detectChanges();
+        const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
+        expect(groupName).not.toBeNull();
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+        // Verify it's a span element (not a link) so it won't navigate
+        expect(groupName.nativeElement.tagName.toLowerCase()).toBe('span');
+    });
+
+    it('should set <li> correctly when expanded', () => {
+        component.collapsed = false;
+        fixture.detectChanges();
         const items: DebugElement[] = de.queryAll(By.css('.dot-nav-sub li'));
 
         items.forEach((item: DebugElement) => {
             expect(item.nativeElement.classList.contains('dot-nav-sub__item')).toBe(true);
         });
+    });
+
+    it('should have group header when collapsed', () => {
+        component.collapsed = true;
+        fixture.detectChanges();
+        const items: DebugElement[] = de.queryAll(By.css('.dot-nav-sub li'));
+        const groupHeader = items.find((item) =>
+            item.nativeElement.classList.contains('dot-nav-sub__group-header')
+        );
+        expect(groupHeader).not.toBeNull();
     });
 
     it('should set <a> correctly', () => {
@@ -106,6 +163,12 @@ describe('DotSubNavComponent', () => {
 
                 it('should have collapsed class', () => {
                     expect(de.query(By.css('.dot-nav-sub__collapsed'))).not.toBeNull();
+                });
+
+                it('should show group name when collapsed', () => {
+                    const groupName = de.query(By.css('.dot-nav-sub__group-name'));
+                    expect(groupName).not.toBeNull();
+                    expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
                 });
             });
 

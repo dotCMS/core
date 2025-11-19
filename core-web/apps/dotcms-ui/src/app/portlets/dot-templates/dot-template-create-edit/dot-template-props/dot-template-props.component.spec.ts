@@ -21,12 +21,14 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
+import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field/dot-template-thumbnail-field.component';
+
+import { DotThemeSelectorDropdownComponent } from '../../../../view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
 
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',
-    styleUrls: [],
-    standalone: false
+    styleUrls: []
 })
 export class DotFormDialogMockComponent {
     @Input() saveButtonDisabled: boolean;
@@ -45,8 +47,7 @@ export class DotFormDialogMockComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTemplateThumbnailFieldMockComponent)
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotTemplateThumbnailFieldMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {
@@ -75,8 +76,7 @@ export class DotTemplateThumbnailFieldMockComponent implements ControlValueAcces
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotThemeSelectorDropdownMockComponent)
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotThemeSelectorDropdownMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {
@@ -112,19 +112,16 @@ describe('DotTemplatePropsComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                DotTemplatePropsComponent,
-
-                DotFormDialogMockComponent,
-                DotTemplateThumbnailFieldMockComponent,
-                DotThemeSelectorDropdownMockComponent
-            ],
             imports: [
                 DotMessagePipe,
+                DotFormDialogMockComponent,
+                DotTemplatePropsComponent,
                 FormsModule,
                 ReactiveFormsModule,
                 DotFieldValidationMessageComponent,
-                DotFieldRequiredDirective
+                DotFieldRequiredDirective,
+                DotTemplateThumbnailFieldMockComponent,
+                DotThemeSelectorDropdownMockComponent
             ],
             providers: [
                 {
@@ -153,7 +150,19 @@ describe('DotTemplatePropsComponent', () => {
                     }
                 }
             ]
-        }).compileComponents();
+        })
+            .overrideComponent(DotTemplatePropsComponent, {
+                remove: {
+                    imports: [DotTemplateThumbnailFieldComponent, DotThemeSelectorDropdownComponent]
+                },
+                add: {
+                    imports: [
+                        DotTemplateThumbnailFieldMockComponent,
+                        DotThemeSelectorDropdownMockComponent
+                    ]
+                }
+            })
+            .compileComponents();
     });
 
     beforeEach(() => {

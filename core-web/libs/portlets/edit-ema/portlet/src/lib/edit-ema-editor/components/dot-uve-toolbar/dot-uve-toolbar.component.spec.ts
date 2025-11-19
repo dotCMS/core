@@ -49,10 +49,19 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import {
     getFullPageURL,
     createFavoritePagesURL,
-    createFullURL,
     sanitizeURL,
-    convertLocalTimeToUTC
+    convertLocalTimeToUTC,
+    createFullURL
 } from '../../../utils';
+
+// Mock createFullURL to avoid issues with invalid URLs in tests
+jest.mock('../../../utils', () => ({
+    ...jest.requireActual('../../../utils'),
+    createFullURL: jest.fn((params, siteId) => {
+        const { url = '/', clientHost = 'http://localhost:3000' } = params;
+        return `${clientHost}${url}?siteId=${siteId}&version=true`;
+    })
+}));
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -72,7 +81,6 @@ const bookmarksUrl = createFavoritePagesURL({
 const baseUVEToolbarState = {
     editor: {
         bookmarksUrl,
-        copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
         apiUrl: `${'http://localhost'}${pageAPI}`
     },
     preview: null,
@@ -94,6 +102,7 @@ const baseUVEState = {
     loadPageAsset: jest.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
+    $isEditMode: signal(false),
     $personaSelector: signal({
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
@@ -120,7 +129,9 @@ const baseUVEState = {
     lockLoading: signal(false),
     toggleLock: jest.fn(),
     socialMedia: signal(null),
-    trackUVECalendarChange: jest.fn()
+    trackUVECalendarChange: jest.fn(),
+    paletteOpen: signal(false),
+    setPaletteOpen: jest.fn()
 };
 
 const personaEventMock = {
@@ -401,27 +412,161 @@ describe('DotUveToolbarComponent', () => {
                 );
             });
 
-            it('should have attrs', () => {
-                expect(button.attributes).toEqual({
-                    icon: 'pi pi-copy',
-                    'data-testId': 'uve-toolbar-copy-url',
-                    'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
-                    'ng-reflect-icon': 'pi pi-copy',
-                    'ng-reflect-text': 'http://localhost:3000/test-url',
-                    'ng-reflect-tooltip-position': 'bottom',
-                    tooltipPosition: 'bottom',
-                    styleClass: 'p-button-text p-button-sm p-button-rounded'
-                });
+            it('should have button to open overlay', () => {
+                expect(button).toBeTruthy();
+                expect(button.attributes['icon']).toBe('pi pi-copy');
+                expect(button.attributes['data-testId']).toBe('uve-toolbar-copy-url');
             });
 
-            it('should call messageService.add', () => {
-                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
+            it('should call messageService.add when copy button in overlay is clicked', () => {
+                const copyButton = spectator.debugElement.query(
+                    By.css('[data-testId="copy-url-button"]')
+                );
+
+                spectator.triggerEventHandler(copyButton, 'cdkCopyToClipboardCopied', {});
 
                 expect(messageService.add).toHaveBeenCalledWith({
                     severity: 'success',
                     summary: 'Copied',
                     life: 3000
                 });
+            });
+        });
+
+        describe('$pageURLS computed signal', () => {
+            it('should call createFullURL to generate version URL', () => {
+                const mockCreateFullURL = createFullURL as jest.Mock;
+                mockCreateFullURL.mockClear();
+
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const versionUrl = urls.find(
+                    (u) => u.label === 'uve.toolbar.page.current.view.url'
+                );
+
+                expect(mockCreateFullURL).toHaveBeenCalledWith(
+                    expect.any(Object),
+                    expect.any(String)
+                );
+                expect(versionUrl).toBeTruthy();
+            });
+
+            it('should construct URL with clientHost and url from pageParams', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/my-page');
+            });
+
+            it('should strip /index suffix from URL', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page/index',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/my-page');
+            });
+
+            it('should strip /index.html suffix from URL', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page/index.html',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/my-page');
+            });
+
+            it('should fallback to window.location.origin when clientHost is not provided', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/my-page',
+                    clientHost: undefined
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe(`${window.location.origin}/my-page`);
+            });
+
+            it('should handle root URL with index.html', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/index.html',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/');
+            });
+
+            it('should handle nested paths with /index.html', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/docs/api/index.html',
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/docs/api');
+            });
+
+            it('should default to root path when url is undefined', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: undefined,
+                    clientHost: 'https://example.com'
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe('https://example.com/');
+            });
+
+            it('should handle empty clientHost with fallback to window.location.origin', () => {
+                baseUVEState.pageParams.set({
+                    ...params,
+                    url: '/test',
+                    clientHost: ''
+                });
+                spectator.detectChanges();
+
+                const urls = spectator.component.$pageURLS();
+                const plainUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                expect(plainUrl.value).toBe(`${window.location.origin}/test`);
             });
         });
 
@@ -724,6 +869,74 @@ describe('DotUveToolbarComponent', () => {
                 spectator.click(button);
 
                 expect(spy).toHaveBeenCalledWith('test-inode-other', true, false);
+            });
+        });
+
+        describe('palette toggle button', () => {
+            it('should not display palette toggle button when not in edit mode', () => {
+                baseUVEState.$isEditMode.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
+            });
+
+            it('should display palette toggle button when in edit mode', () => {
+                baseUVEState.$isEditMode.set(true);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeTruthy();
+            });
+
+            it('should call setPaletteOpen with true when palette is closed', () => {
+                const spy = jest.spyOn(store, 'setPaletteOpen');
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(false);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('uve-toolbar-palette-toggle'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(true);
+            });
+
+            it('should call setPaletteOpen with false when palette is open', () => {
+                const spy = jest.spyOn(store, 'setPaletteOpen');
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(true);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('uve-toolbar-palette-toggle'));
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(false);
+            });
+
+            it('should show close icon and hide open icon when palette is closed', () => {
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(false);
+                spectator.detectChanges();
+
+                const openIcon = spectator.query(byTestId('palette-open-icon'));
+                const closeIcon = spectator.query(byTestId('palette-close-icon'));
+
+                // When palette is closed, we show the "close" icon (to open it)
+                // The open icon should be hidden
+                expect(openIcon.classList.contains('hidden')).toBe(true);
+                expect(closeIcon.classList.contains('hidden')).toBe(false);
+            });
+
+            it('should show open icon and hide close icon when palette is open', () => {
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.paletteOpen.set(true);
+                spectator.detectChanges();
+
+                const openIcon = spectator.query(byTestId('palette-open-icon'));
+                const closeIcon = spectator.query(byTestId('palette-close-icon'));
+
+                // When palette is open, we show the "open" icon (to close it)
+                // The close icon should be hidden
+                expect(openIcon.classList.contains('hidden')).toBe(false);
+                expect(closeIcon.classList.contains('hidden')).toBe(true);
             });
         });
     });

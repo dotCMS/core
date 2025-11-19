@@ -6,7 +6,6 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 @Component({
     selector: 'dot-p-confirm-dialog',
-    standalone: true,
     imports: [ConfirmDialogModule, ButtonModule],
     template: `
         <p-confirmDialog [style]="{ width: '400px' }" [baseZIndex]="10000">
