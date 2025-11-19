@@ -15,7 +15,7 @@ import { MenuItem } from 'primeng/api';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotMenuItem } from '@dotcms/dotcms-models';
+import { MenuItemEntity } from '../menu/menu.slice';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -57,7 +57,7 @@ const BREADCRUMBS_SESSION_KEY = 'breadcrumbs';
  *
  */
 
-export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
+export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
     return signalStoreFeature(
         withState(initialBreadcrumbState),
         withProps(() => ({
@@ -186,7 +186,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                                 disabled: true
                             },
                             {
-                                label: item.labelParent,
+                                label: item.parentLabel,
                                 disabled: true
                             },
                             {
@@ -216,7 +216,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                                             disabled: true
                                         },
                                         {
-                                            label: templatesItem.labelParent,
+                                            label: templatesItem.parentLabel,
                                             disabled: true
                                         },
                                         {

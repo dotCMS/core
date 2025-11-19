@@ -1,33 +1,59 @@
-import { DotMenu } from '@dotcms/dotcms-models';
+import { entityConfig } from '@ngrx/signals/entities';
+
+import { DotMenuItem } from '@dotcms/dotcms-models';
+
+/**
+ * Extended menu item entity with parent information.
+ * This interface extends DotMenuItem to include parent relationships
+ * needed for entity management with NgRx Signals.
+ */
+export interface MenuItemEntity extends DotMenuItem {
+    /**
+     * ID of the parent menu group this item belongs to.
+     */
+    parentId: string;
+
+    /**
+     * Label of the parent menu group.
+     */
+    parentLabel: string;
+
+    /**
+     * Icon of the parent menu group.
+     */
+    parentIcon: string;
+}
 
 /**
  * Menu slice state interface.
- * Contains the menu items, navigation collapsed state, and active menu item ID.
- *
- * @property menuItems - Array of DotMenu objects
- * @property isNavigationCollapsed - Whether the navigation menu is collapsed
- * @property activeMenuItemId - ID of the currently active menu item, or null if none
+ * Contains the menu entity state, navigation collapsed state, and open parent ID.
  */
 export interface MenuSlice {
-    /**
-     * Array of DotMenu objects representing the navigation menu structure.
-     */
-    menuItems: DotMenu[];
-
     /**
      * Whether the navigation menu is collapsed.
      */
     isNavigationCollapsed: boolean;
 
     /**
-     * ID of the currently active menu item.
-     * Set to `null` when no menu item is active.
+     * ID of the currently open parent menu group.
+     * Only one parent can be open at a time.
+     * Set to `null` when no menu group is open.
      */
-    activeMenuItemId: string | null;
+    openParentId: string | null;
 }
 
+/**
+ * Entity configuration for menu items.
+ * Uses a composite key of item ID + parent ID as the unique identifier.
+ * This allows the same menu item to appear in multiple parent groups.
+ */
+export const menuConfig = entityConfig({
+    entity: {} as MenuItemEntity,
+    collection: 'menuItems',
+    selectId: (item: MenuItemEntity) => `${item.id}__${item.parentId}`
+});
+
 export const initialMenuSlice: MenuSlice = {
-    menuItems: [],
     isNavigationCollapsed: true,
-    activeMenuItemId: null
+    openParentId: null
 };

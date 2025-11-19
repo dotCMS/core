@@ -13,17 +13,6 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
 
-interface DotUpdatePortletLayoutPayload {
-    menuItems: string[];
-    toolgroup: {
-        description?: string;
-        id: string;
-        name: string;
-        portletIds?: string[];
-        tabOrder?: number;
-    };
-}
-
 @Injectable()
 export class DotNavigationService {
     private dotIframeService = inject(DotIframeService);
@@ -39,9 +28,10 @@ export class DotNavigationService {
     constructor() {
         this._appMainTitle = this.titleService.getTitle();
 
-        // Load initial menu - store handles menu link processing
+        // Load initial menu - store handles menu link processing and entity transformation
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
-            this.#globalStore.setMenuItems(menus);
+            this.#globalStore.loadMenu(menus);
+            this.#globalStore.setActiveMenu(menus, this.dotRouterService.currentPortlet.id);
         });
 
         // Handle navigation end events
@@ -54,16 +44,14 @@ export class DotNavigationService {
                             if (pageTitle) {
                                 this.titleService.setTitle(`${pageTitle} - ${this._appMainTitle}`);
                             }
+
+                            // Load menu and set active item based on current portlet and parent context
+                            this.#globalStore.setActiveMenu(
+                                menu,
+                                this.dotRouterService.currentPortlet.id
+                            );
                         }),
-                        map(() => {
-                            // Store handles all menu state management
-                            return this.#globalStore.setActiveMenuItems({
-                                url: event.url,
-                                collapsed: this.#globalStore.isNavigationCollapsed(),
-                                menuId: this.router.getCurrentNavigation().extras.state?.menuId,
-                                previousUrl: this.dotRouterService.previousUrl
-                            });
-                        })
+                        map(() => true)
                     );
                 }),
                 filter((menu) => !!menu)
@@ -71,24 +59,14 @@ export class DotNavigationService {
             .subscribe();
 
         // Handle portlet layout updates
-        this.dotcmsEventsService
-            .subscribeTo('UPDATE_PORTLET_LAYOUTS')
-            .subscribe((payload: DotUpdatePortletLayoutPayload) => {
-                this.dotMenuService
-                    .reloadMenu()
-                    .pipe(take(1))
-                    .subscribe((menus: DotMenu[]) => {
-                        this.#globalStore.setActiveMenuItems({
-                            url: payload.menuItems?.length
-                                ? payload.menuItems[payload.menuItems.length - 1]
-                                : '',
-                            collapsed: this.#globalStore.isNavigationCollapsed(),
-                            menuId: payload.toolgroup?.id || '',
-                            previousUrl: this.dotRouterService.previousUrl,
-                            menuItems: menus
-                        });
-                    });
-            });
+        this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
+            this.dotMenuService
+                .reloadMenu()
+                .pipe(take(1))
+                .subscribe((menus: DotMenu[]) => {
+                    this.#globalStore.setActiveMenu(menus, this.dotRouterService.currentPortlet.id);
+                });
+        });
 
         // Handle login/auth changes
         this.loginService.auth$
@@ -97,7 +75,7 @@ export class DotNavigationService {
                 switchMap(() => this.dotMenuService.reloadMenu())
             )
             .subscribe((menus: DotMenu[]) => {
-                this.#globalStore.setMenuItems(menus);
+                this.#globalStore.loadMenu(menus);
                 this.goToFirstPortlet();
             });
     }
@@ -155,8 +133,12 @@ export class DotNavigationService {
 
     private getPageCurrentTitle(url: string, menu: DotMenu[]): string {
         let title = '';
-        const flattedMenu = menu
-            .reduce((a, { menuItems }) => [...a, ...menuItems], [])
+        // Load menu to ensure entities are up to date
+        this.#globalStore.loadMenu(menu);
+
+        // Use flattened menu items from store (already processed)
+        const flattedMenu = this.#globalStore
+            .flattenMenuItems()
             .reduce((a, { label, menuLink }) => ({ ...a, [menuLink]: label }), {});
 
         Object.entries(flattedMenu).forEach(([menuLink, label]: [string, string]) => {

@@ -11,7 +11,8 @@ import {
     inject
 } from '@angular/core';
 
-import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { DotMenuItem } from '@dotcms/dotcms-models';
+import { MenuGroup } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 
 import {
@@ -38,11 +39,14 @@ export class DotNavItemComponent {
 
     @ViewChild('subnav', { static: true }) subnav: DotSubNavComponent;
 
-    @Input() data: DotMenu;
+    @Input() data: MenuGroup;
 
     @Output()
-    menuClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenu; toggleOnly?: boolean }> =
-        new EventEmitter();
+    menuClick: EventEmitter<{
+        originalEvent: MouseEvent;
+        data: MenuGroup;
+        toggleOnly?: boolean;
+    }> = new EventEmitter();
 
     @Output()
     itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
@@ -57,6 +61,13 @@ export class DotNavItemComponent {
     private windowHeight = window.innerHeight;
     labelImportantIcon = LABEL_IMPORTANT_ICON;
 
+    /**
+     * Check if any item in the group is active
+     */
+    get isGroupActive(): boolean {
+        return this.data?.menuItems?.some((item) => item.active) || false;
+    }
+
     @HostListener('mouseleave', ['$event'])
     menuUnhovered() {
         this.resetSubMenuPosition();
@@ -66,10 +77,10 @@ export class DotNavItemComponent {
      * Handle click on menu section title
      *
      * @param MouseEvent $event
-     * @param DotMenu data
+     * @param MenuGroup data
      * @memberof DotNavItemComponent
      */
-    clickHandler($event: MouseEvent, data: DotMenu): void {
+    clickHandler($event: MouseEvent, data: MenuGroup): void {
         this.menuClick.emit({
             originalEvent: $event,
             data: data
@@ -81,10 +92,10 @@ export class DotNavItemComponent {
      * Only toggles the menu open/close state without navigation
      *
      * @param MouseEvent $event
-     * @param DotMenu data
+     * @param MenuGroup data
      * @memberof DotNavItemComponent
      */
-    toggleHandler($event: MouseEvent, data: DotMenu): void {
+    toggleHandler($event: MouseEvent, data: MenuGroup): void {
         $event.stopPropagation();
         this.menuClick.emit({
             originalEvent: $event,

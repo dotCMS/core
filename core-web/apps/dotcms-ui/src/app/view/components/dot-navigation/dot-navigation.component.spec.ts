@@ -71,8 +71,8 @@ describe('DotNavigationComponent collapsed', () => {
         globalStore = spectator.inject(GlobalStore);
         dotRouterService = spectator.inject(DotRouterService);
 
-        // Set menu items in the GlobalStore instead of using service's items$
-        globalStore.setMenuItems([dotMenuMock(), dotMenuMock1()]);
+        // Load menu items in the GlobalStore instead of using service's items$
+        globalStore.loadMenu([dotMenuMock(), dotMenuMock1()]);
     });
 
     it('should have all menus closed', () => {
@@ -101,17 +101,14 @@ describe('DotNavigationComponent collapsed', () => {
         globalStore.collapseNavigation();
         spectator.detectChanges();
 
-        // Then open a menu section
-        globalStore.setMenuOpen('123');
-        expect(globalStore.menuItems().find((m) => m.id === '123')?.isOpen).toBe(true);
+        // Then open a parent menu
+        globalStore.setOpenParent('123');
+        expect(globalStore.openParentId()).toBe('123');
 
         // Then click on document (when collapsed)
         spectator.dispatchMouseEvent(spectator.element, 'click');
-        // When collapsed, clicking should close all menu sections via GlobalStore
-        const items = globalStore.menuItems();
-        items.forEach((menu) => {
-            expect(menu.isOpen).toBe(false);
-        });
+        // When collapsed, clicking should close all parent menus via GlobalStore
+        expect(globalStore.openParentId()).toBe(null);
     });
 
     describe('itemClick event', () => {
@@ -226,7 +223,7 @@ describe('DotNavigationComponent expanded', () => {
         dotEventsService = spectator.inject(DotEventsService);
         dotRouterService = spectator.inject(DotRouterService);
 
-        // Set menu items in the GlobalStore instead of using service's items$
+        // Load menu items in the GlobalStore instead of using service's items$
         // Create menus without active items to avoid auto-opening when expanding
         const menuWithoutActive = {
             ...dotMenuMock(),
@@ -236,7 +233,7 @@ describe('DotNavigationComponent expanded', () => {
             ...dotMenuMock1(),
             menuItems: dotMenuMock1().menuItems.map((item) => ({ ...item, active: false }))
         };
-        globalStore.setMenuItems([menuWithoutActive, menu1WithoutActive]);
+        globalStore.loadMenu([menuWithoutActive, menu1WithoutActive]);
         // Set navigation as expanded
         globalStore.expandNavigation();
     });
@@ -268,11 +265,11 @@ describe('DotNavigationComponent expanded', () => {
         globalStore.collapseNavigation();
         spectator.detectChanges();
 
-        jest.spyOn(globalStore, 'closeAllMenuSections');
+        jest.spyOn(globalStore, 'closeAllParents');
 
         spectator.dispatchMouseEvent(spectator.element, 'click');
         // When collapsed, clicking should close sections
-        expect(globalStore.closeAllMenuSections).toHaveBeenCalledTimes(1);
+        expect(globalStore.closeAllParents).toHaveBeenCalledTimes(1);
     });
 
     describe('itemClick event', () => {
@@ -337,23 +334,18 @@ describe('DotNavigationComponent expanded', () => {
 
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
-            // Verify menu is set as open in GlobalStore
-            const items = globalStore.menuItems();
-            const menu = items.find((m) => m.id === '123');
-            expect(menu?.isOpen).toBe(true);
+            // Verify parent is set as open in GlobalStore
+            expect(globalStore.openParentId()).toBe('123');
         });
 
         it('should only set open when menu is already open', () => {
             spectator.detectChanges();
 
-            // First, open the menu
-            globalStore.setMenuOpen('123');
-            expect(globalStore.menuItems().find((m) => m.id === '123')?.isOpen).toBe(true);
+            // First, open the parent
+            globalStore.setOpenParent('123');
+            expect(globalStore.openParentId()).toBe('123');
 
-            const mockMenu = {
-                ...globalStore.menuItems().find((m) => m.id === '123'),
-                isOpen: true
-            };
+            const mockMenu = globalStore.MenuGroup().find((m) => m.id === '123');
 
             spectator.component.onMenuClick({
                 originalEvent: {} as unknown as MouseEvent,
@@ -361,10 +353,8 @@ describe('DotNavigationComponent expanded', () => {
             });
 
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
-            // Verify menu is toggled (closed) in GlobalStore
-            const items = globalStore.menuItems();
-            const menu = items.find((m) => m.id === '123');
-            expect(menu?.isOpen).toBe(false);
+            // Verify parent is toggled (closed) in GlobalStore
+            expect(globalStore.openParentId()).toBe(null);
         });
     });
 
