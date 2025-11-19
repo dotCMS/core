@@ -879,6 +879,7 @@
                         <reuseForks>true</reuseForks>
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
+                            -Dnet.bytebuddy.experimental=true
                         </argLine>
 
                         <systemPropertyVariables/>
