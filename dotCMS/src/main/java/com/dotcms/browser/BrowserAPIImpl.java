@@ -1412,6 +1412,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(selectQuery);
             appendExcludeArchivedQuery(countQuery);
         }
+        if (null != browserQuery.sortBy) {
+            appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
+        }
 
         Logger.debug(this, "Select Query: " + selectQuery);
         Logger.debug(this, "Count Query: " + countQuery);
@@ -1646,6 +1649,20 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private void appendExcludeArchivedQuery(StringBuilder sqlQuery) {
         sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
+    }
+
+    /**
+     * Appends an order by condition to the main query
+     * @param sqlQuery
+     * @param orderByDesc
+     */
+    private void appendOrderByQuery(StringBuilder sqlQuery, boolean orderByDesc) {
+        sqlQuery.append(" order by ");
+        if (orderByDesc) {
+            sqlQuery.append(" c.mod_date desc");
+        } else  {
+            sqlQuery.append(" c.mod_date asc");
+        }
     }
 
     /**

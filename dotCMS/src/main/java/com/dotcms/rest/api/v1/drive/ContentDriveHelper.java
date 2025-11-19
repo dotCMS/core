@@ -134,7 +134,6 @@ public class ContentDriveHelper {
         .withLanguageIds(langIds)
         .offset(requestForm.offset())
         .maxResults(requestForm.maxResults())
-        //.overrideMaxResults(true)
         .sortBy(sortBy)
         .sortByDesc(sortDesc);
 

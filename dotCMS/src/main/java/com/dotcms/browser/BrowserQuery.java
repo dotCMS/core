@@ -123,7 +123,7 @@ public class BrowserQuery {
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
-        this.maxResults = (builder.overrideMaxResults ? builder.maxResults :  Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST));
+        this.maxResults = Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST);
         this.showWorking = builder.showWorking || builder.showArchived;
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
@@ -233,7 +233,6 @@ public class BrowserQuery {
         private String sortBy = "moddate";
         private int offset = 0;
         private int maxResults = MAX_FETCH_PER_REQUEST;
-        private boolean overrideMaxResults = false;
         private boolean showMenuItemsOnly = false;
         private boolean showWorking = true;
         private boolean showArchived = false;
@@ -305,16 +304,6 @@ public class BrowserQuery {
          */
         public Builder forceSystemHost(boolean forceSystemHost) {
             this.forceSystemHost = forceSystemHost;
-            return this;
-        }
-
-        /**
-         * There's a hard limit configured, this allows me to bypass that limit
-         * @param overrideMaxResults
-         * @return
-         */
-        public Builder overrideMaxResults(boolean overrideMaxResults) {
-            this.overrideMaxResults = overrideMaxResults;
             return this;
         }
 
