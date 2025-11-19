@@ -37,7 +37,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.vavr.control.Try;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -662,11 +662,11 @@ public class ApiTokenResource implements Serializable {
             String password = "";
 
             if (UtilMethods.isSet(formData.password())) {
-                password = Base64.decodeAsString(formData.password());
+                password = new String(Base64.getDecoder().decode(formData.password()), java.nio.charset.StandardCharsets.UTF_8);
             }
 
             final Response response = webTarget.request(MediaType.APPLICATION_JSON)
-                    .header("Authorization", "Basic " + Base64.encodeAsString(formData.login() + ":" + password))
+                    .header("Authorization", "Basic " + Base64.getEncoder().encodeToString((formData.login() + ":" + password).getBytes(java.nio.charset.StandardCharsets.UTF_8)))
                     .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
 
             if (response.getStatus() != HttpStatus.SC_OK) {

@@ -95,7 +95,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.apache.commons.io.FileUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -2362,7 +2362,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request());
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         request.setHeader("Origin", "localhost");
         request.setAttribute(WebKeys.USER,user);
         request.setAttribute(WebKeys.USER_ID,user.getUserId());
