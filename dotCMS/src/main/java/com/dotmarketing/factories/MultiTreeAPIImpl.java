@@ -1128,13 +1128,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         for (final MultiTree multiTree : multiTrees) {
 
-            Container container   = null;
+            Container container;
             final String    containerId     = multiTree.getContainerAsID();
             final String    personalization = multiTree.getPersonalization();
 
             try {
 
-                container = liveMode?
+                container = liveMode ?
                         containerAPI.getLiveContainerById(containerId, systemUser, false):
                         containerAPI.getWorkingContainerById(containerId, systemUser, false);
 
@@ -1164,7 +1164,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 if (container != null) {
 
-                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization, multiTree.getTreeOrder()));
+                    myContents.add(
+                            new PersonalizedContentlet(multiTree.getContentlet(), personalization,
+                                    multiTree.getTreeOrder(), multiTree.getStyleProperties()));
                 }
 
                 pageContents.put(containerId, multiTree.getRelationType(), myContents);
