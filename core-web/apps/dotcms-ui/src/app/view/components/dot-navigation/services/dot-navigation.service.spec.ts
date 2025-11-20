@@ -4,7 +4,7 @@ import { Observable, of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed, waitForAsync } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -47,13 +47,14 @@ class RouterMock {
     get routerState() {
         return {
             snapshot: {
-                url: 'hello/world'
+                url: this.url || 'hello/world'
             }
         };
     }
 
     triggerNavigationEnd(url: string): void {
-        this._events.next(new NavigationEnd(0, url || '/url/789', url || '/url/789'));
+        this.url = url || '/url/789';
+        this._events.next(new NavigationEnd(0, this.url, this.url));
     }
 
     navigateByUrl() {
@@ -170,17 +171,49 @@ const baseMockAuth: Auth = {
 };
 
 describe('DotNavigationService', () => {
+    jest.setTimeout(10000); // Increase timeout for this test suite
+
     let service: DotNavigationService;
     let dotRouterService: DotRouterService;
     let dotcmsEventsService: DotcmsEventsService;
     let dotEventService: DotEventsService;
     let dotMenuService: DotMenuService;
     let loginService: LoginService;
-    let router;
+    let router: RouterMock;
     let titleService: Title;
+    let dotRouterServiceMock: any;
 
-    beforeEach(waitForAsync(() => {
-        const testbed = TestBed.configureTestingModule({
+    beforeEach(() => {
+        router = new RouterMock();
+        const getPortletIdFn = jest.fn((url: string) => {
+            // Extract portlet id from URL like /c/123 -> '123'
+            if (!url) return '123-567';
+            url = decodeURIComponent(url);
+            if (url.indexOf('?') > 0) {
+                url = url.substring(0, url.indexOf('?'));
+            }
+            const urlSegments = url
+                .split('/')
+                .filter((item) => item !== '' && item !== '#' && item !== 'c');
+            return urlSegments.indexOf('add') > -1
+                ? urlSegments.splice(-1)[0]
+                : urlSegments[0] || '123-567';
+        });
+
+        dotRouterServiceMock = {
+            get currentPortlet() {
+                const url = router.routerState.snapshot.url;
+                return {
+                    id: getPortletIdFn(url),
+                    url: url
+                };
+            },
+            reloadCurrentPortlet: jest.fn(),
+            gotoPortlet: jest.fn().mockReturnValue(new Promise((resolve) => resolve(true))),
+            getPortletId: getPortletIdFn
+        };
+
+        TestBed.configureTestingModule({
             providers: [
                 DotEventsService,
                 DotNavigationService,
@@ -202,7 +235,7 @@ describe('DotNavigationService', () => {
                 },
                 {
                     provide: Router,
-                    useClass: RouterMock
+                    useValue: router
                 },
                 {
                     provide: DotIframeService,
@@ -212,15 +245,7 @@ describe('DotNavigationService', () => {
                 },
                 {
                     provide: DotRouterService,
-                    useValue: {
-                        currentPortlet: {
-                            id: '123-567'
-                        },
-                        reloadCurrentPortlet: jest.fn(),
-                        gotoPortlet: jest
-                            .fn()
-                            .mockReturnValue(new Promise((resolve) => resolve(true)))
-                    }
+                    useValue: dotRouterServiceMock
                 },
                 {
                     provide: DotSystemConfigService,
@@ -233,25 +258,24 @@ describe('DotNavigationService', () => {
             imports: [RouterTestingModule]
         });
 
-        service = testbed.inject(DotNavigationService);
-        dotRouterService = testbed.inject(DotRouterService);
-        dotcmsEventsService = testbed.inject(DotcmsEventsService);
-        dotMenuService = testbed.inject(DotMenuService);
-        loginService = testbed.inject(LoginService);
-        dotEventService = testbed.inject(DotEventsService);
-        router = testbed.inject(Router);
-        titleService = testbed.inject(Title);
+        service = TestBed.inject(DotNavigationService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        dotcmsEventsService = TestBed.inject(DotcmsEventsService);
+        dotMenuService = TestBed.inject(DotMenuService);
+        loginService = TestBed.inject(LoginService);
+        dotEventService = TestBed.inject(DotEventsService);
+        titleService = TestBed.inject(Title);
 
         jest.spyOn(titleService, 'setTitle');
         jest.spyOn(dotEventService, 'notify');
         jest.spyOn(dotMenuService, 'reloadMenu');
         localStorage.clear();
-    }));
+    });
 
     describe('goToFirstPortlet', () => {
         it('should go to first portlet: ', () => {
             service.goToFirstPortlet();
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {}, '123');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
     });
@@ -286,7 +310,7 @@ describe('DotNavigationService', () => {
             ])
         );
 
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {}, '123');
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 

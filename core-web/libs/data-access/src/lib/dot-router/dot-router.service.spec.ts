@@ -256,7 +256,10 @@ describe('DotRouterService', () => {
             queryParamsHandling: '',
             queryParams: {}
         });
-        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test'], { replaceUrl: false });
+        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test'], {
+            replaceUrl: false,
+            state: { menuId: undefined }
+        });
     });
 
     it('should go to porlet by URL and keep the queryParams', () => {
@@ -269,7 +272,8 @@ describe('DotRouterService', () => {
             queryParams: {}
         });
         expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test?filter="Blog"'], {
-            replaceUrl: false
+            replaceUrl: false,
+            state: { menuId: undefined }
         });
     });
 
@@ -291,7 +295,8 @@ describe('DotRouterService', () => {
             }
         });
         expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/content-drive'], {
-            replaceUrl: false
+            replaceUrl: false,
+            state: { menuId: undefined }
         });
     });
 

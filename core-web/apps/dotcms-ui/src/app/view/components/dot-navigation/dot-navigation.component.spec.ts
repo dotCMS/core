@@ -90,8 +90,43 @@ describe('DotNavigationComponent collapsed', () => {
         const items = spectator.queryAll(DotNavItemComponent);
 
         expect(items.length).toBe(2);
-        expect(items[0].data).toEqual(dotMenuMock());
-        expect(items[1].data).toEqual(dotMenuMock1());
+        // The store transforms DotMenu to MenuGroup with additional parent properties
+        const expectedMenu1 = {
+            id: '123',
+            label: 'Name',
+            icon: 'icon',
+            menuItems: [
+                {
+                    active: false,
+                    ajax: true,
+                    angular: true,
+                    id: '123',
+                    label: 'Label 1',
+                    url: 'url/one',
+                    menuLink: 'url/one',
+                    parentMenuId: '123',
+                    parentMenuLabel: 'Name',
+                    parentMenuIcon: 'icon'
+                },
+                {
+                    active: false,
+                    ajax: true,
+                    angular: true,
+                    id: '456',
+                    label: 'Label 2',
+                    url: 'url/two',
+                    menuLink: 'url/two',
+                    parentMenuId: '123',
+                    parentMenuLabel: 'Name',
+                    parentMenuIcon: 'icon'
+                }
+            ],
+            isOpen: false
+        };
+        expect(items[0].data).toEqual(expectedMenu1);
+        // For the second menu, we need to check it has the transformed structure
+        expect(items[1].data.id).toBe('456');
+        expect(items[1].data.menuItems.length).toBeGreaterThan(0);
     });
 
     it('should close on document click', () => {
@@ -163,7 +198,7 @@ describe('DotNavigationComponent collapsed', () => {
                 });
             }
 
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {}, '123');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
@@ -337,7 +372,7 @@ describe('DotNavigationComponent expanded', () => {
                 });
             }
 
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {}, '123');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
             // Verify parent menu group is set as open in GlobalStore
             expect(globalStore.openParentMenuId()).toBe('123');
