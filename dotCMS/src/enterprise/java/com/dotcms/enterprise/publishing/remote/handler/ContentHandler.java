@@ -55,6 +55,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -93,6 +94,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
+import io.vavr.Tuple3;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.InputStream;
@@ -100,7 +102,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -138,7 +139,8 @@ public class ContentHandler implements IHandler {
 	private final Lazy<MultiTreeAPI> multiTreeAPI = Lazy.of(APILocator::getMultiTreeAPI);
 	private final Lazy<BundleAPI> bundleAPI = Lazy.of(APILocator::getBundleAPI);
 
-	private final Map<String,Long> infoToRemove = new HashMap<>();
+    // tuple3(identifier, lang, shouldReindex)
+    private final HashSet<Tuple3<String, Long, Boolean>> contentToRefresh = new HashSet<>();
 	private final ExistingContentMapping existingContentMap = new ExistingContentMapping();
 
 	private static final boolean RESPECT_FRONTEND_ROLES = true;
@@ -198,19 +200,28 @@ public class ContentHandler implements IHandler {
 		String identToRemove = null;
 		Contentlet contentlet = null;
 		try{
-            for (final String ident : infoToRemove.keySet()) {
-				identToRemove = ident;
-                APILocator.getVersionableAPI().removeContentletVersionInfoFromCache(ident, infoToRemove.get(ident));
-				contentlet = contentletAPI.findContentletByIdentifier(ident, false, infoToRemove.get(ident), APILocator.getUserAPI().getSystemUser(), true);
-				APILocator.getContentletAPI().refresh(contentlet);
+            // tuple3(identifier, lang, shouldReindex)
+            for (final Tuple3<String, Long, Boolean> cvinfo : contentToRefresh) {
+
+                APILocator.getVersionableAPI()
+                        .removeContentletVersionInfoFromCache(cvinfo._1, cvinfo._2);
+                contentlet = contentletAPI.findContentletByIdentifier(cvinfo._1, false, cvinfo._2,
+                        APILocator.getUserAPI().getSystemUser(), true);
 				invalidateRelationshipsCache(contentlet);
+
+                if (cvinfo._3) {
+                    // reindex background value, after new content but before any full reindexing
+                    APILocator.getReindexQueueAPI().addIdentifierReindex(cvinfo._1, Priority.STRUCTURE.dbValue());
+                }
             }
+
+
         }catch (Exception e) {
 			HandlerUtil.cleanupExistingContentByBundleId(config.getId());
 			throw new DotPublishingException("Unable to update Cache or Reindex Content: identToRemove=[" +
 					identToRemove + "], contentId=[" + (null != contentlet ? contentlet.getIdentifier() : "null id") +
 					"], contentInode=[" + (null != contentlet ? contentlet.getInode() : "null inode") + "], lang=[" +
-					(null != contentlet ? contentlet.getLanguageId() : "null lang") + "]", e);
+                    (null != contentlet ? contentlet.getLanguageId() : "null lang") + "]:" + e.getMessage(), e);
 		}
 	}
 
@@ -472,7 +483,7 @@ public class ContentHandler implements IHandler {
                         }
                     }
 
-					infoToRemove.put(info.getIdentifier(), info.getLang());
+                    contentToRefresh.add(new Tuple3(info.getIdentifier(), info.getLang(), true));
 					addRelatedContentsToInfoToRemove(content, wrapper.getInfo());
 
                     // saving a contentletVersionInfo might do an implicit publish. Need to know in order to clean up properly
@@ -629,9 +640,10 @@ public class ContentHandler implements IHandler {
 			final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 			final ContentType contentType = content.getContentType();
 			final List<Relationship> relationships = relationshipAPI.byContentType(contentType);
-
+            final boolean onlyChildren = Config.getBooleanProperty("PUSH_PUBLISHING_REINDEX_CHILDREN_ONLY", true);
 			if (!relationships.isEmpty()) {
-				for (final Relationship relationship : relationships) {
+
+                for (final Relationship relationship : relationships) {
 					final List<Contentlet> relatedContents = new ArrayList<>();
 
 					if (relationshipAPI.sameParentAndChild(relationship)) {
@@ -651,7 +663,25 @@ public class ContentHandler implements IHandler {
 					}
 
 					for (final Contentlet relatedContent : relatedContents) {
-						infoToRemove.put(relatedContent.getIdentifier(), info.getLang());
+                        boolean shouldReindex = !onlyChildren
+                                ? true
+                                : relationship.getChildStructureInode().equals(content.getContentTypeId())
+                                        ? true
+                                        : false;
+
+                        if (!shouldReindex) {
+                            Logger.info(this,
+                                    () -> "Skipping reindex on related child content: " + relatedContent.getTitle()
+                                            + "/"
+                                            + relatedContent.getIdentifier());
+                        }
+
+                        contentToRefresh.add(
+                                new Tuple3<>(relatedContent.getIdentifier(), info.getLang(), shouldReindex));
+
+
+
+
 					}
 				}
 			}
