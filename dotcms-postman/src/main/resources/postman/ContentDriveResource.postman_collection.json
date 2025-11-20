@@ -734,7 +734,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:asc\",\n    \"maxResults\": 10\n}",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:asc\",\n  \"showFolders\": false,  \"maxResults\": 10\n}",
 							"options": {
 								"raw": {
 									"language": "json"
