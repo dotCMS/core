@@ -78,16 +78,6 @@ public class MultiTree implements Serializable {
         this.styleProperties = styleProperties;
     }
 
-    public MultiTree(final String htmlPage,
-            final String container,
-            final String child,
-            final String instanceId,
-            final int treeOrder,
-            final String personalization,
-            final String variantId) {
-        this(htmlPage, container, child, instanceId, treeOrder, personalization, variantId, null);
-    }
-
     /** full constructor */
     public MultiTree(final String htmlPage,
                      final String container,
@@ -96,7 +86,7 @@ public class MultiTree implements Serializable {
                      final int treeOrder) {
 
         this(htmlPage, container, child, instanceId, treeOrder, DOT_PERSONALIZATION_DEFAULT,
-                VariantAPI.DEFAULT_VARIANT.name());
+                VariantAPI.DEFAULT_VARIANT.name(), null);
     }
 
     public MultiTree(final String htmlPage,
@@ -106,7 +96,7 @@ public class MultiTree implements Serializable {
             final int treeOrder,
             final String personalization) {
 
-        this (htmlPage, container, child, instanceId, treeOrder, personalization, VariantAPI.DEFAULT_VARIANT.name());
+        this (htmlPage, container, child, instanceId, treeOrder, personalization, VariantAPI.DEFAULT_VARIANT.name(), null);
     }
 
     /** default constructor */
