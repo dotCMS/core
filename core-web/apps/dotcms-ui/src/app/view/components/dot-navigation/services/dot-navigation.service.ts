@@ -53,7 +53,8 @@ export class DotNavigationService {
                             // Load menu and set active item based on current portlet and parent context
                             this.#globalStore.setActiveMenu(
                                 this.dotRouterService.currentPortlet.id,
-                                this.router.getCurrentNavigation().extras?.state?.menuId
+                                this.router.getCurrentNavigation()?.extras?.state?.menuId ||
+                                    window.history?.state?.menuId
                             );
                         }),
                         map(() => true)
@@ -69,10 +70,12 @@ export class DotNavigationService {
                 .reloadMenu()
                 .pipe(take(1))
                 .subscribe((menus: DotMenu[]) => {
+                    this.#globalStore.loadMenu(menus);
+
                     this.#globalStore.setActiveMenu(
                         this.dotRouterService.currentPortlet.id,
-                        this.router.getCurrentNavigation()?.extras?.state?.menuId,
-                        menus
+                        this.router.getCurrentNavigation()?.extras?.state?.menuId ||
+                            window.history?.state?.menuId
                     );
                 });
         });

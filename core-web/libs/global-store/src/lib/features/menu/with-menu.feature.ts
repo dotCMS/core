@@ -251,13 +251,7 @@ export function withMenu() {
              * @param parentMenuId - The ID of the parent menu group
              * @param menuItems - Optional DotMenu array from the API to load
              */
-            setActiveMenu: (portletId: string, parentMenuId: string, menuItems?: DotMenu[]) => {
-                // menuItems is used to handle the event service UPDATE_PORTLET_LAYOUTS,
-                // this is used to load the menu items from the API
-                if (menuItems) {
-                    store.loadMenu(menuItems);
-                }
-
+            setActiveMenu: (portletId: string, parentMenuId: string) => {
                 if (!portletId) {
                     return;
                 }
