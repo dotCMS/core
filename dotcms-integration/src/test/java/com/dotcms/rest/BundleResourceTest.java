@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import io.vavr.control.Try;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -157,7 +157,7 @@ public class BundleResourceTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         return request;
     }
