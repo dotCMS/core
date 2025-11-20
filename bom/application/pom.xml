@@ -23,7 +23,7 @@
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <jackson.version>2.17.2</jackson.version>
-        <jersey.version>2.28</jersey.version>
+        <jersey.version>2.47</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
         <micrometer.version>1.13.10</micrometer.version>
     </properties>
