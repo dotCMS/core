@@ -29,7 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import static org.junit.Assert.*;
 import java.util.List;
 import java.util.Map;
@@ -150,7 +150,7 @@ public class UserResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host.getIdentifier());
@@ -219,7 +219,7 @@ public class UserResourceIntegrationTest {
         
         // Authenticate as permissionTestUser
         String auth = permissionTestUser.getEmailAddress() + ":" + "password";
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode(auth.getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(auth.getBytes()));
         request.getSession().setAttribute(WebKeys.USER_ID, permissionTestUser.getUserId());
         
         ResponseEntityUserPermissionsView responseEntity = resource.getUserPermissions(request, this.response, permissionTestUser.getUserId());
