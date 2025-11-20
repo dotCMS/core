@@ -217,16 +217,29 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 0);
             spectator.detectChanges();
 
-            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
-            expect(tableDebugEl.attributes['ng-reflect-style-class']).toContain('empty-table');
+            // Verify the styleClass computed signal contains 'empty-table'
+            // PrimeNG applies styleClass to the p-table component's root element
+            // We need to find the element that has the styleClass applied
+            const tableElement = spectator.query(byTestId('table'));
+            // PrimeNG may apply the class to a parent wrapper, so we check the element or its parent
+            const elementWithClass =
+                tableElement?.closest('.empty-table') ||
+                spectator.query('.empty-table') ||
+                (tableElement?.parentElement?.classList.contains('empty-table')
+                    ? tableElement.parentElement
+                    : null);
+
+            expect(elementWithClass).toBeTruthy();
         });
 
         it('should not show pagination when there are 20 or fewer total items', () => {
             spectator.setInput('totalItems', 20);
             spectator.detectChanges();
 
-            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
-            expect(tableDebugEl.attributes['ng-reflect-paginator']).toBe('false');
+            // Verify pagination is not shown by checking that paginator element doesn't exist
+            // or by verifying the styleClass doesn't indicate pagination
+            const paginator = spectator.query('.p-paginator');
+            expect(paginator).toBeFalsy();
         });
 
         it('should set first value when calling onPage', () => {
@@ -237,8 +250,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.component.onPage(mockEvent);
             spectator.detectChanges();
 
-            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
-            expect(tableDebugEl.attributes['ng-reflect-first']).toBe('20');
+            expect(spectator.component.state.currentPageFirstRowIndex()).toBe(20);
         });
 
         it('should reset first to 0 when showPagination becomes true', () => {
@@ -255,8 +267,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 50);
             spectator.detectChanges();
 
-            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
-            expect(tableDebugEl.attributes['ng-reflect-first']).toBe('0');
+            expect(spectator.component.state.currentPageFirstRowIndex()).toBe(0);
         });
     });
 

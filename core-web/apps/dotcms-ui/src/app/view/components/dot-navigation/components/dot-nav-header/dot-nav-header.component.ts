@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, input, inject, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
@@ -10,7 +9,7 @@ import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-
     selector: 'dot-nav-header',
     styleUrls: ['./dot-nav-header.component.scss'],
     templateUrl: 'dot-nav-header.component.html',
-    imports: [CommonModule, ButtonModule]
+    imports: [ButtonModule]
 })
 export class DotNavHeaderComponent {
     /**
