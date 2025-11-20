@@ -32,7 +32,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.json.JSONException;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1054,7 +1054,7 @@ public class FieldResourceTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         return request;
     }

@@ -1,5 +1,4 @@
-import { CommonModule, DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, inject, DOCUMENT } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -20,7 +19,6 @@ import { DotLinkComponent } from '../../../../view/components/dot-link/dot-link.
     styleUrls: ['./dot-edit-page-info.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
         ButtonModule,
         DotCopyButtonComponent,
         DotApiLinkComponent,

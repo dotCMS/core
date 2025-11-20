@@ -1,5 +1,5 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { LoginService, CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotPageRenderParameters, DotPageMode } from '@dotcms/dotcms-models';
@@ -15,7 +15,6 @@ import { DotPageRenderService } from './dot-page-render.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 describe('DotPageRenderService', () => {
-    let injector: TestBed;
     let dotPageRenderService: DotPageRenderService;
     let httpMock: HttpTestingController;
     const url = 'about-us';
@@ -33,9 +32,8 @@ describe('DotPageRenderService', () => {
                 DotPageRenderService
             ]
         });
-        injector = getTestBed();
-        dotPageRenderService = injector.get(DotPageRenderService);
-        httpMock = injector.get(HttpTestingController);
+        dotPageRenderService = TestBed.inject(DotPageRenderService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should check page permissions based on url', () => {
