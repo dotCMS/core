@@ -1964,6 +1964,8 @@
                         <configuration>
                             <sources>
                                 <source>${basedir}/src/enterprise/java</source>
+                                <!-- Add generated immutable classes to source path -->
+                                <source>${project.build.directory}/generated-sources/annotations</source>
                             </sources>
                         </configuration>
                     </execution>
