@@ -10,7 +10,7 @@ describe('DotEventsService', () => {
             providers: [DotEventsService]
         });
 
-        dotEventsService = TestBed.get(DotEventsService);
+        dotEventsService = TestBed.inject(DotEventsService);
     });
     it('should filter notifications based on event name', () => {
         let timesCalled = 0;

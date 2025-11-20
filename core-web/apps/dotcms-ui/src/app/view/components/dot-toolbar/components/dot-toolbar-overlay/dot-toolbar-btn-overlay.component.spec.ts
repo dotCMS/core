@@ -1,5 +1,7 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { By } from '@angular/platform-browser';
+
 import { ButtonModule } from 'primeng/button';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
@@ -77,7 +79,9 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
             expect(button).toBeTruthy();
             expect(button).toHaveClass('overlay-btn');
-            expect(button?.getAttribute('ng-reflect-icon')).toBe('pi pi-bell');
+
+            // Verify the icon is set by checking the component's input signal
+            expect(component.$icon()).toBe('pi pi-bell');
         });
 
         it('should not show mask initially', () => {
@@ -118,7 +122,12 @@ describe('DotToolbarBtnOverlayComponent', () => {
             const overlayPanel = spectator.query('p-overlaypanel');
 
             expect(overlayPanel).toBeTruthy();
-            expect(overlayPanel?.getAttribute('ng-reflect-append-to')).toBe('body');
+
+            // Access PrimeNG OverlayPanel component instance to verify appendTo property
+            const overlayPanelDebugElement = spectator.debugElement.query(By.css('p-overlaypanel'));
+            const overlayPanelComponent =
+                overlayPanelDebugElement?.componentInstance as OverlayPanel;
+            expect(overlayPanelComponent?.appendTo).toBe('body');
         });
 
         it('should apply custom style class to overlay panel', () => {
@@ -131,7 +140,15 @@ describe('DotToolbarBtnOverlayComponent', () => {
             spectatorWithClass.detectChanges();
 
             const overlayPanel = spectatorWithClass.query('p-overlaypanel');
-            expect(overlayPanel?.getAttribute('ng-reflect-style-class')).toBe(customClass);
+            expect(overlayPanel).toBeTruthy();
+
+            // Access PrimeNG OverlayPanel component instance to verify styleClass property
+            const overlayPanelDebugElement = spectatorWithClass.debugElement.query(
+                By.css('p-overlaypanel')
+            );
+            const overlayPanelComponent =
+                overlayPanelDebugElement?.componentInstance as OverlayPanel;
+            expect(overlayPanelComponent?.styleClass).toBe(customClass);
         });
     });
 
