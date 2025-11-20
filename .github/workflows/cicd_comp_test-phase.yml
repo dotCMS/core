@@ -164,7 +164,7 @@ jobs:
     env:
       MAVEN_OPTS: ${{ matrix.maven_opts }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
 
     steps:          
