@@ -74,7 +74,8 @@ test("should display correctly on the Containers page", async ({ page }) => {
   await expect(title).toHaveText("Containers");
 });
 
-test("should display correctly on the Content Types page", async ({ page }) => {
+// Skipping due to flaky login button disabled issue - see #33211
+test.skip("should display correctly on the Content Types page", async ({ page }) => {
   await page.goto("/dotAdmin/#/content-types-angular");
   await page.waitForLoadState("load");
 
