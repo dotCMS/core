@@ -1379,13 +1379,20 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendLanguageQuery(countQuery, browserQuery.languageIds,
                     browserQuery.showDefaultLangItems);
         }
-        if (browserQuery.site != null) {
-            appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(), browserQuery.forceSystemHost, parameters);
-            appendSiteQuery(countQuery, browserQuery.site.getIdentifier(), browserQuery.forceSystemHost, dump);
-        } else {
-            if (browserQuery.forceSystemHost) {
-                appendSystemHostQuery(selectQuery);
-                appendSystemHostQuery(countQuery);
+        // Handle site filtering based on ignoreSiteForFolders flag
+        final boolean shouldApplySiteFiltering = !browserQuery.ignoreSiteForFolders && browserQuery.folder != null;
+
+        if (shouldApplySiteFiltering) {
+            if (browserQuery.site != null) {
+                appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
+                        browserQuery.forceSystemHost, parameters);
+                appendSiteQuery(countQuery, browserQuery.site.getIdentifier(),
+                        browserQuery.forceSystemHost, dump);
+            } else {
+                if (browserQuery.forceSystemHost) {
+                    appendSystemHostQuery(selectQuery);
+                    appendSystemHostQuery(countQuery);
+                }
             }
         }
         //This property allows the exclusion of the folder in the base query

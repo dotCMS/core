@@ -144,7 +144,10 @@ public class ContentDriveHelper {
              /// Therefore, we should skip setting a folder path
             .skipFolder(true);
         } else {
-            builder.withHostOrFolderId(folder.getInode());
+            builder.withHostOrFolderId(folder.getInode())
+            // When a specific folder is selected, enable ignoreSiteForFolders to allow
+            // folder selection without being limited by site filtering
+            .ignoreSiteForFolders(true);
         }
         //This ensures that despite the site passed systemHost will be included too
         builder.forceSystemHost(requestForm.includeSystemHost());
