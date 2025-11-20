@@ -212,6 +212,13 @@ public class ContentHandler implements IHandler {
                 if (cvinfo._3) {
                     // reindex background value, after new content but before any full reindexing
                     APILocator.getReindexQueueAPI().addIdentifierReindex(cvinfo._1, Priority.STRUCTURE.dbValue());
+                } else {
+
+                    Logger.info(this,
+                            "Skipping reindex on related child content {title:" + (contentlet != null
+                                    ? contentlet.getTitle() : "ukn content")
+                                    + "},{id:"
+                                    + cvinfo._1 + "}");
                 }
             }
 
@@ -668,13 +675,6 @@ public class ContentHandler implements IHandler {
                                 : relationship.getChildStructureInode().equals(content.getContentTypeId())
                                         ? true
                                         : false;
-
-                        if (!shouldReindex) {
-                            Logger.info(this,
-                                    () -> "Skipping reindex on related child content: " + relatedContent.getTitle()
-                                            + "/"
-                                            + relatedContent.getIdentifier());
-                        }
 
                         contentToRefresh.add(
                                 new Tuple3<>(relatedContent.getIdentifier(), info.getLang(), shouldReindex));
