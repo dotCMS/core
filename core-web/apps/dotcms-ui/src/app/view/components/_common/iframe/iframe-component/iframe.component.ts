@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -30,7 +29,7 @@ import { IframeOverlayService } from '../service/iframe-overlay.service';
     selector: 'dot-iframe',
     styleUrls: ['./iframe.component.scss'],
     templateUrl: 'iframe.component.html',
-    imports: [CommonModule, DotLoadingIndicatorComponent, DotOverlayMaskComponent, DotSafeUrlPipe]
+    imports: [DotLoadingIndicatorComponent, DotOverlayMaskComponent, DotSafeUrlPipe]
 })
 export class IframeComponent implements OnInit, OnDestroy {
     private dotIframeService = inject(DotIframeService);
@@ -256,10 +255,8 @@ export class IframeComponent implements OnInit, OnDestroy {
     }
 
     private isIframeHaveContent(): boolean {
-        return (
-            this.iframeElement &&
-            this.iframeElement.nativeElement.contentWindow.document.body.innerHTML.length
-        );
+        return !!this.iframeElement?.nativeElement?.contentWindow?.document?.body?.innerHTML
+            ?.length;
     }
 
     private setArgs(args: unknown[]): unknown[] {

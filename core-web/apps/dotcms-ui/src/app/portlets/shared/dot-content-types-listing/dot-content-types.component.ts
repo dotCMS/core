@@ -1,6 +1,5 @@
 import { forkJoin, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -59,7 +58,6 @@ type DotRowActions = {
     styleUrls: ['./dot-content-types.component.scss'],
     templateUrl: 'dot-content-types.component.html',
     imports: [
-        CommonModule,
         DotListingDataTableComponent,
         DotBaseTypeSelectorComponent,
         DotAddToBundleComponent,

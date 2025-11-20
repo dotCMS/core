@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAvatarDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
@@ -93,7 +93,10 @@ describe('DotAppsCardComponent', () => {
 
             expect(image).toBe(component.app.iconUrl);
             expect(size).toBe('large');
-            expect(avatar.attributes['ng-reflect-text']).toBe(component.app.name);
+
+            // Access DotAvatarDirective to verify text property
+            const dotAvatarDirective = avatar.injector.get(DotAvatarDirective);
+            expect(dotAvatarDirective.text).toBe(component.app.name);
         });
 
         it('should set messages/values in DOM correctly', () => {
@@ -135,11 +138,14 @@ describe('DotAppsCardComponent', () => {
             expect(warningIcon).toBeTruthy();
             expect(warningIcon.attributes['name']).toBe('warning');
             expect(warningIcon.attributes['size']).toBe('18');
-            expect(warningIcon.attributes['ng-reflect-content']).toBe(
-                `${component.app.sitesWithWarnings} ${messageServiceMock.get(
-                    'apps.invalid.configurations'
-                )}`
-            );
+
+            // Access Tooltip directive to verify tooltip content
+            const tooltipDirective = warningIcon.injector.get(Tooltip);
+            const expectedTooltipText = `${component.app.sitesWithWarnings} ${messageServiceMock.get(
+                'apps.invalid.configurations'
+            )}`;
+            // PrimeNG Tooltip directive stores the value when using pTooltip with interpolation
+            expect(tooltipDirective.content).toBe(expectedTooltipText);
         });
 
         it('should have disabled css class', () => {

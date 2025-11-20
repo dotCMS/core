@@ -1,6 +1,5 @@
 import { throwError } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, forwardRef, inject, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -25,7 +24,7 @@ export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
     selector: 'dot-template-thumbnail-field',
     templateUrl: './dot-template-thumbnail-field.component.html',
     styleUrls: ['./dot-template-thumbnail-field.component.scss'],
-    imports: [CommonModule, DotMessagePipe],
+    imports: [DotMessagePipe],
     providers: [
         {
             multi: true,

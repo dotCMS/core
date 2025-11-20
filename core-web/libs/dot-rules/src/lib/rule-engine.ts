@@ -28,117 +28,127 @@ const I8N_BASE = 'api.sites.ruleengine';
 @Component({
     selector: 'cw-rule-engine',
     template: `
-        <div *ngIf="loading" [class.cw-loading]="loading" class="cw-modal-glasspane"></div>
-        <div
-            *ngIf="
-                !loading &&
-                globalError &&
-                globalError.errorKey !== 'dotcms.api.error.license.required'
-            "
-            class="ui negative message cw-message">
-            <div class="header">{{ globalError.message }}</div>
-            <p>{{ rsrc('contact.admin.error') | async }}</p>
-            <i
-                *ngIf="showCloseButton"
-                (click)="globalError.message = ''"
-                class="material-icons"
-                class="close-button">
-                X
-            </i>
-        </div>
-        <dot-not-license
-            *ngIf="
-                !loading &&
-                globalError &&
-                globalError.errorKey === 'dotcms.api.error.license.required'
-            " />
-        <div *ngIf="!loading && showRules" class="cw-rule-engine">
-            <div class="cw-header">
-                <div flex layout="row" style="align-items:center">
-                    <input
-                        (keyup)="filterText = $event.target.value"
-                        [value]="filterText"
-                        pInputText
-                        placeholder="{{ rsrc('inputs.filter.placeholder') | async }}" />
-                    <div flex="2"></div>
-                    <button (click)="addRule()" class="dot-icon-button">
-                        <i class="material-icons">add</i>
-                    </button>
-                </div>
-                <div class="cw-filter-links">
-                    <span>{{ rsrc('inputs.filter.status.show.label') | async }}:</span>
-                    <a
-                        (click)="setFieldFilter('enabled', null)"
-                        [class.active]="!isFilteringField('enabled')"
-                        class="cw-filter-link"
-                        href="javascript:void(0)">
-                        {{ rsrc('inputs.filter.status.all.label') | async }}
-                    </a>
-                    <span>&#124;</span>
-                    <a
-                        (click)="setFieldFilter('enabled', true)"
-                        [class.active]="isFilteringField('enabled', true)"
-                        class="cw-filter-link"
-                        href="javascript:void(0)">
-                        {{ rsrc('inputs.filter.status.active.label') | async }}
-                    </a>
-                    <span>&#124;</span>
-                    <a
-                        (click)="setFieldFilter('enabled', false)"
-                        [class.active]="isFilteringField('enabled', false)"
-                        class="cw-filter-link"
-                        href="javascript:void(0)">
-                        {{ rsrc('inputs.filter.status.inactive.label') | async }}
-                    </a>
-                </div>
+        @if (loading) {
+            <div [class.cw-loading]="loading" class="cw-modal-glasspane"></div>
+        }
+        @if (
+            !loading && globalError && globalError.errorKey !== 'dotcms.api.error.license.required'
+        ) {
+            <div class="ui negative message cw-message">
+                <div class="header">{{ globalError.message }}</div>
+                <p>{{ rsrc('contact.admin.error') | async }}</p>
+                @if (showCloseButton) {
+                    <i
+                        (click)="globalError.message = ''"
+                        class="material-icons"
+                        class="close-button">
+                        X
+                    </i>
+                }
             </div>
-            <div *ngIf="!rules.length" class="cw-rule-engine__empty">
-                <i class="material-icons">tune</i>
-                <h2>
-                    {{ rsrc('inputs.no.rules') | async }}
-                    {{
-                        rsrc(pageId && !isContentletHost ? 'inputs.on.page' : 'inputs.on.site')
-                            | async
-                    }}{{ rsrc('inputs.add.one.now') | async }}
-                </h2>
-                <span *ngIf="pageId && !isContentletHost">
-                    {{ rsrc('inputs.page.rules.fired.every.time') | async }}
-                </span>
-                <button
-                    (click)="addRule()"
-                    pButton
-                    label="{{ rsrc('inputs.addRule.label') | async }}"
-                    icon="fa fa-plus"></button>
+        }
+        @if (
+            !loading && globalError && globalError.errorKey === 'dotcms.api.error.license.required'
+        ) {
+            <dot-not-license />
+        }
+        @if (!loading && showRules) {
+            <div class="cw-rule-engine">
+                <div class="cw-header">
+                    <div flex layout="row" style="align-items:center">
+                        <input
+                            (keyup)="filterText = $event.target.value"
+                            [value]="filterText"
+                            pInputText
+                            placeholder="{{ rsrc('inputs.filter.placeholder') | async }}" />
+                        <div flex="2"></div>
+                        <button (click)="addRule()" class="dot-icon-button">
+                            <i class="material-icons">add</i>
+                        </button>
+                    </div>
+                    <div class="cw-filter-links">
+                        <span>{{ rsrc('inputs.filter.status.show.label') | async }}:</span>
+                        <a
+                            (click)="setFieldFilter('enabled', null)"
+                            [class.active]="!isFilteringField('enabled')"
+                            class="cw-filter-link"
+                            href="javascript:void(0)">
+                            {{ rsrc('inputs.filter.status.all.label') | async }}
+                        </a>
+                        <span>&#124;</span>
+                        <a
+                            (click)="setFieldFilter('enabled', true)"
+                            [class.active]="isFilteringField('enabled', true)"
+                            class="cw-filter-link"
+                            href="javascript:void(0)">
+                            {{ rsrc('inputs.filter.status.active.label') | async }}
+                        </a>
+                        <span>&#124;</span>
+                        <a
+                            (click)="setFieldFilter('enabled', false)"
+                            [class.active]="isFilteringField('enabled', false)"
+                            class="cw-filter-link"
+                            href="javascript:void(0)">
+                            {{ rsrc('inputs.filter.status.inactive.label') | async }}
+                        </a>
+                    </div>
+                </div>
+                @if (!rules.length) {
+                    <div class="cw-rule-engine__empty">
+                        <i class="material-icons">tune</i>
+                        <h2>
+                            {{ rsrc('inputs.no.rules') | async }}
+                            {{
+                                rsrc(
+                                    pageId && !isContentletHost
+                                        ? 'inputs.on.page'
+                                        : 'inputs.on.site'
+                                ) | async
+                            }}{{ rsrc('inputs.add.one.now') | async }}
+                        </h2>
+                        @if (pageId && !isContentletHost) {
+                            <span>
+                                {{ rsrc('inputs.page.rules.fired.every.time') | async }}
+                            </span>
+                        }
+                        <button
+                            (click)="addRule()"
+                            pButton
+                            label="{{ rsrc('inputs.addRule.label') | async }}"
+                            icon="fa fa-plus"></button>
+                    </div>
+                }
+                @for (rule of rules; track rule) {
+                    <rule
+                        (updateName)="updateName.emit($event)"
+                        (updateFireOn)="updateFireOn.emit($event)"
+                        (updateEnabledState)="updateEnabledState.emit($event)"
+                        (updateExpandedState)="updateExpandedState.emit($event)"
+                        (createRuleAction)="createRuleAction.emit($event)"
+                        (updateRuleActionType)="updateRuleActionType.emit($event)"
+                        (updateRuleActionParameter)="updateRuleActionParameter.emit($event)"
+                        (deleteRuleAction)="deleteRuleAction.emit($event)"
+                        (openPushPublishDialog)="showPushPublishDialog($event)"
+                        (createCondition)="createCondition.emit($event)"
+                        (createConditionGroup)="createConditionGroup.emit($event)"
+                        (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
+                        (updateConditionType)="updateConditionType.emit($event)"
+                        (updateConditionParameter)="updateConditionParameter.emit($event)"
+                        (updateConditionOperator)="updateConditionOperator.emit($event)"
+                        (deleteCondition)="deleteCondition.emit($event)"
+                        (deleteRule)="deleteRule.emit($event)"
+                        [rule]="rule"
+                        [hidden]="isFiltered(rule) === true"
+                        [environmentStores]="environmentStores"
+                        [ruleActions]="rule._ruleActions"
+                        [ruleActionTypes]="ruleActionTypes"
+                        [conditionTypes]="conditionTypes"
+                        [saved]="rule._saved"
+                        [saving]="rule._saving"
+                        [errors]="rule._errors"></rule>
+                }
             </div>
-            <rule
-                *ngFor="let rule of rules"
-                (updateName)="updateName.emit($event)"
-                (updateFireOn)="updateFireOn.emit($event)"
-                (updateEnabledState)="updateEnabledState.emit($event)"
-                (updateExpandedState)="updateExpandedState.emit($event)"
-                (createRuleAction)="createRuleAction.emit($event)"
-                (updateRuleActionType)="updateRuleActionType.emit($event)"
-                (updateRuleActionParameter)="updateRuleActionParameter.emit($event)"
-                (deleteRuleAction)="deleteRuleAction.emit($event)"
-                (openPushPublishDialog)="showPushPublishDialog($event)"
-                (createCondition)="createCondition.emit($event)"
-                (createConditionGroup)="createConditionGroup.emit($event)"
-                (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
-                (updateConditionType)="updateConditionType.emit($event)"
-                (updateConditionParameter)="updateConditionParameter.emit($event)"
-                (updateConditionOperator)="updateConditionOperator.emit($event)"
-                (deleteCondition)="deleteCondition.emit($event)"
-                (deleteRule)="deleteRule.emit($event)"
-                [rule]="rule"
-                [hidden]="isFiltered(rule) == true"
-                [environmentStores]="environmentStores"
-                [ruleActions]="rule._ruleActions"
-                [ruleActionTypes]="ruleActionTypes"
-                [conditionTypes]="conditionTypes"
-                [saved]="rule._saved"
-                [saving]="rule._saving"
-                [errors]="rule._errors"></rule>
-        </div>
+        }
     `,
     standalone: false
 })
@@ -277,7 +287,7 @@ export class RuleEngineComponent implements OnDestroy {
         let isFiltering;
         if (value === null) {
             const re = new RegExp(field + ':[\\w]*');
-            isFiltering = this.filterText.match(re) != null;
+            isFiltering = this.filterText.match(re) !== null;
         } else {
             isFiltering = this.filterText.indexOf(field + ':' + value) >= 0;
         }

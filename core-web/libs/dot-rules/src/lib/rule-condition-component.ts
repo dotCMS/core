@@ -15,41 +15,45 @@ import { I18nService } from './services/system/locale/I18n';
 @Component({
     selector: 'rule-condition',
     template: `
-        <div *ngIf="typeDropdown != null" flex layout="row" class="cw-condition cw-entry">
-            <div class="cw-btn-group cw-condition-toggle">
-                <button
-                    *ngIf="index !== 0"
-                    (click)="toggleOperator()"
-                    [label]="condition.operator"
-                    pButton
-                    class="p-button-secondary"
-                    aria-label="Swap And/Or"></button>
+        @if (typeDropdown !== null) {
+            <div flex layout="row" class="cw-condition cw-entry">
+                <div class="cw-btn-group cw-condition-toggle">
+                    @if (index !== 0) {
+                        <button
+                            (click)="toggleOperator()"
+                            [label]="condition.operator"
+                            pButton
+                            class="p-button-secondary"
+                            aria-label="Swap And/Or"></button>
+                    }
+                </div>
+                <cw-input-dropdown
+                    (onDropDownChange)="onTypeChange($event)"
+                    [options]="typeDropdown?.options"
+                    [value]="condition.type?.key"
+                    flex="25"
+                    class="cw-type-dropdown"
+                    placeholder="{{ conditionTypePlaceholder }}"></cw-input-dropdown>
+                <div flex="75" class="cw-condition-row-main">
+                    @switch (condition.type?.key) {
+                        @case ('NoSelection') {
+                            <div class="cw-condition-component"></div>
+                        }
+                        @case ('VisitorsGeolocationConditionlet') {
+                            <cw-visitors-location-container
+                                (parameterValuesChange)="onParameterValuesChange($event)"
+                                [componentInstance]="condition"></cw-visitors-location-container>
+                        }
+                        @default {
+                            <cw-serverside-condition
+                                (parameterValueChange)="onParameterValueChange($event)"
+                                [componentInstance]="condition"
+                                class="cw-condition-component"></cw-serverside-condition>
+                        }
+                    }
+                </div>
             </div>
-
-            <cw-input-dropdown
-                (onDropDownChange)="onTypeChange($event)"
-                [options]="typeDropdown.options"
-                [value]="condition.type?.key"
-                flex="25"
-                class="cw-type-dropdown"
-                placeholder="{{ conditionTypePlaceholder }}"></cw-input-dropdown>
-            <div [ngSwitch]="condition.type?.key" flex="75" class="cw-condition-row-main">
-                <ng-template [ngSwitchCase]="'NoSelection'">
-                    <div class="cw-condition-component"></div>
-                </ng-template>
-                <ng-template [ngSwitchCase]="'VisitorsGeolocationConditionlet'">
-                    <cw-visitors-location-container
-                        (parameterValuesChange)="onParameterValuesChange($event)"
-                        [componentInstance]="condition"></cw-visitors-location-container>
-                </ng-template>
-                <ng-template ngSwitchDefault>
-                    <cw-serverside-condition
-                        (parameterValueChange)="onParameterValueChange($event)"
-                        [componentInstance]="condition"
-                        class="cw-condition-component"></cw-serverside-condition>
-                </ng-template>
-            </div>
-        </div>
+        }
         <div class="cw-btn-group cw-delete-btn">
             <div class="ui basic icon buttons">
                 <button
@@ -91,7 +95,7 @@ export class ConditionComponent implements OnInit {
         payload: { condition: ConditionModel };
     }> = new EventEmitter(false);
 
-    typeDropdown: any;
+    typeDropdown: any = null;
 
     ngOnInit(): void {
         setTimeout(() => {

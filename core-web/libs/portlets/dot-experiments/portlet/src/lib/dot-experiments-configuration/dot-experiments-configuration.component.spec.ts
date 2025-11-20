@@ -101,8 +101,11 @@ describe('DotExperimentsConfigurationComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationComponent,
         componentProviders: [DotExperimentsConfigurationStore],
-        imports: [MockComponent(DotAddToBundleComponent), DotMessagePipe],
-
+        imports: [
+            MockComponent(DotAddToBundleComponent),
+            MockComponent(DotExperimentsConfigurationSchedulingComponent),
+            DotMessagePipe
+        ],
         providers: [
             ConfirmationService,
             {

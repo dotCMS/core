@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
@@ -36,7 +35,7 @@ interface DotCSMSavePageEvent {
     selector: 'dot-contentlet-wrapper',
     templateUrl: './dot-contentlet-wrapper.component.html',
     styleUrls: ['./dot-contentlet-wrapper.component.scss'],
-    imports: [CommonModule, DotIframeDialogComponent]
+    imports: [DotIframeDialogComponent]
 })
 export class DotContentletWrapperComponent {
     private dotContentletEditorService = inject(DotContentletEditorService);

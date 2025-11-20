@@ -1,23 +1,22 @@
 <p-inplace [disabled]="disabled" class="flex w-full">
     <ng-template pTemplate="display">
         <div class="flex flex-wrap align-items-center gap-2">
-            <ng-container *ngIf="text; else noTextDefinedTpl">
+            @if (text) {
                 <span data-testId="text-input">{{ text }}</span>
-            </ng-container>
-            <button
-                *ngIf="!disabled"
-                [class]="inplaceSizes[inputSize].button"
-                class="p-button-rounded p-button-sm p-button-text"
-                data-testId="text-input-button"
-                icon="pi pi-pencil"
-                pButton></button>
+            } @else {
+                <span class="text-muted" data-testId="empty-text-message">
+                    {{ emptyTextMessage | dm }}
+                </span>
+            }
+            @if (!disabled) {
+                <button
+                    [class]="inplaceSizes[inputSize].button"
+                    class="p-button-rounded p-button-sm p-button-text"
+                    data-testId="text-input-button"
+                    icon="pi pi-pencil"
+                    pButton></button>
+            }
         </div>
-
-        <ng-template #noTextDefinedTpl>
-            <span class="text-muted" data-testId="empty-text-message">
-                {{ emptyTextMessage | dm }}
-            </span>
-        </ng-template>
     </ng-template>
 
     <ng-template pTemplate="content">
@@ -50,8 +49,8 @@
                 type="button"></button>
         </form>
 
-        <ng-container *ngIf="form.invalid && showErrorMsg">
+        @if (form.invalid && showErrorMsg) {
             <dot-field-validation-message [field]="textControl"></dot-field-validation-message>
-        </ng-container>
+        }
     </ng-template>
 </p-inplace>

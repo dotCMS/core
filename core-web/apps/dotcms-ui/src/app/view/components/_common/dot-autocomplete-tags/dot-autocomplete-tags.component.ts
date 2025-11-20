@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, forwardRef, Input, OnInit, ViewChild, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
@@ -20,7 +19,7 @@ import { DotTag } from '@dotcms/dotcms-models';
     selector: 'dot-autocomplete-tags',
     templateUrl: './dot-autocomplete-tags.component.html',
     styleUrls: ['./dot-autocomplete-tags.component.scss'],
-    imports: [CommonModule, ChipsModule, AutoCompleteModule, FormsModule],
+    imports: [ChipsModule, AutoCompleteModule, FormsModule],
     providers: [
         {
             multi: true,

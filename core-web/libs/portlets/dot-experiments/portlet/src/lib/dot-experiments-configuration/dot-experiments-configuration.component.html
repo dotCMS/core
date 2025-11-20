@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <dot-experiments-header
         (goBack)="goToExperimentList(vm.experiment.pageId)"
         [experiment]="vm.experiment"
@@ -18,9 +18,8 @@
                 data-testId="experiment-menu"></p-menu>
         </div>
     </dot-experiments-header>
-
     <div class="dot-experiment-config-content">
-        <ng-container *ngIf="!vm.isLoading; else loadingTpl">
+        @if (!vm.isLoading) {
             <p-card data-testId="experiment-description">
                 <dot-experiments-inplace-edit-text
                     (textChanged)="saveDescriptionAction($event, vm.experiment)"
@@ -32,24 +31,22 @@
                     [text]="vm.experiment.description"
                     emptyTextMessage="experiments.configure.description.add" />
             </p-card>
-
             <dot-experiments-configuration-variants />
             <dot-experiments-configuration-goals />
             <!--Hide until is implemented-->
             <!--      <dot-experiments-configuration-targeting />-->
             <dot-experiments-configuration-traffic />
             <dot-experiments-configuration-scheduling />
-        </ng-container>
+        } @else {
+            <dot-experiments-configuration-skeleton />
+        }
     </div>
-
-    <dot-add-to-bundle
-        *ngIf="vm.addToBundleContentId"
-        (cancel)="vm.addToBundleContentId = null"
-        [assetIdentifier]="vm.addToBundleContentId" />
-</ng-container>
-<ng-template #loadingTpl>
-    <dot-experiments-configuration-skeleton />
-</ng-template>
+    @if (vm.addToBundleContentId) {
+        <dot-add-to-bundle
+            (cancel)="vm.addToBundleContentId = null"
+            [assetIdentifier]="vm.addToBundleContentId" />
+    }
+}
 
 <p-confirmDialog [key]="confirmDialogKey" [style]="{ width: '30vw' }" />
 <p-confirmPopup dotRemoveConfirmPopupWithEscape></p-confirmPopup>

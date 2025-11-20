@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -22,7 +21,6 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
     templateUrl: './dot-container-create.component.html',
     styleUrls: ['./dot-container-create.component.scss'],
     imports: [
-        CommonModule,
         DotPortletBaseComponent,
         TabViewModule,
         DotMessagePipe,

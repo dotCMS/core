@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -41,7 +40,7 @@ import { SearchableDropdownComponent } from '../searchable-dropdown/component';
     styleUrls: ['./dot-site-selector.component.scss'],
     templateUrl: 'dot-site-selector.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, FormsModule, SearchableDropdownComponent]
+    imports: [FormsModule, SearchableDropdownComponent]
 })
 export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     #globalStore = inject(GlobalStore);

@@ -343,11 +343,13 @@ describe('DotUveToolbarComponent', () => {
                     inode: '123'
                 });
                 spectator.detectChanges();
-                expect(
-                    spectator
-                        .query(byTestId('uve-toolbar-unlock-button'))
-                        .getAttribute('ng-reflect-disabled')
-                ).toEqual('true');
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the disabled property on the p-button component instance
+                const buttonDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="uve-toolbar-unlock-button"]')
+                );
+                const buttonComponent = buttonDebugElement?.componentInstance;
+                expect(buttonComponent?.disabled).toBe(true);
             });
 
             it('should be loading', () => {
@@ -361,11 +363,13 @@ describe('DotUveToolbarComponent', () => {
                     }
                 });
                 spectator.detectChanges();
-                expect(
-                    spectator
-                        .query(byTestId('uve-toolbar-unlock-button'))
-                        .getAttribute('ng-reflect-loading')
-                ).toEqual('true');
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the loading property on the p-button component instance
+                const buttonDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="uve-toolbar-unlock-button"]')
+                );
+                const buttonComponent = buttonDebugElement?.componentInstance;
+                expect(buttonComponent?.loading).toBe(true);
             });
 
             it('should call store.toggleLock when unlock button is clicked', () => {

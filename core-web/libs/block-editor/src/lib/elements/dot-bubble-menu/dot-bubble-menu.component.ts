@@ -2,7 +2,6 @@ import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
 import { of } from 'rxjs';
 import { Instance, Props } from 'tippy.js';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -69,7 +68,6 @@ const BUBBLE_MENU_VISIBLE_NODES = {
     templateUrl: './dot-bubble-menu.component.html',
     styleUrls: ['./dot-bubble-menu.component.scss'],
     imports: [
-        CommonModule,
         TiptapBubbleMenuDirective,
         FormsModule,
         DropdownModule,

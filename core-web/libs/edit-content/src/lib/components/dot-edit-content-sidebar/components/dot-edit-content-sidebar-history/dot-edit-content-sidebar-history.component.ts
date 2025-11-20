@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -30,7 +30,6 @@ import {
 @Component({
     selector: 'dot-edit-content-sidebar-history',
     imports: [
-        CommonModule,
         ScrollerModule,
         SkeletonModule,
         TooltipModule,

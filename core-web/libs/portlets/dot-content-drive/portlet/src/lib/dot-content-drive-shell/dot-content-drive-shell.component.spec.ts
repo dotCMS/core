@@ -9,6 +9,7 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 
 import {
     DotContentSearchService,
@@ -303,7 +304,14 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
-            expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+            expect(dialog).toBeTruthy();
+
+            // Access the PrimeNG Dialog component instance to verify visible property
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance as Dialog;
+            expect(dialogComponent.visible).toBe(true);
         });
 
         it('should not have a dialog when dialog is not set', () => {
@@ -311,7 +319,14 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
-            expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
+            expect(dialog).toBeTruthy();
+
+            // Access the PrimeNG Dialog component instance to verify visible property
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance as Dialog;
+            expect(dialogComponent.visible).toBe(false);
         });
 
         it('should show dialog-folder component when folder dialog type is set', () => {

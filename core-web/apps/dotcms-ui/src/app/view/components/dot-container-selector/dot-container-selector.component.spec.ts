@@ -105,15 +105,23 @@ describe('ContainerSelectorComponent', () => {
     it('should pass all the right attr', () => {
         fixture.detectChanges();
         const searchable = de.query(By.css('[data-testId="searchableDropdown"]'));
+        const searchableComponent = searchable.componentInstance as SearchableDropdownComponent;
+
+        // Verify component properties directly
+        expect(searchableComponent.labelPropertyName).toEqual([
+            'name',
+            'parentPermissionable.hostname'
+        ]);
+        expect(searchableComponent.multiple).toBe(true);
+        expect(searchableComponent.pageLinkSize).toBe(5);
+        expect(searchableComponent.persistentPlaceholder).toBeTruthy();
+        expect(searchableComponent.placeholder).toBe('editpage.container.add.label');
+        expect(searchableComponent.rows).toBe(5);
+        expect(searchableComponent.width).toBe('fit-content');
+
+        // Verify attributes that are still present
         expect(searchable.attributes).toEqual(
             expect.objectContaining({
-                'ng-reflect-label-property-name': 'name,parentPermissionable.host',
-                'ng-reflect-multiple': 'true',
-                'ng-reflect-page-link-size': '5',
-                'ng-reflect-persistent-placeholder': 'true',
-                'ng-reflect-placeholder': 'editpage.container.add.label',
-                'ng-reflect-rows': '5',
-                'ng-reflect-width': 'fit-content',
                 overlayWidth: '440px',
                 persistentPlaceholder: 'true',
                 width: 'fit-content'

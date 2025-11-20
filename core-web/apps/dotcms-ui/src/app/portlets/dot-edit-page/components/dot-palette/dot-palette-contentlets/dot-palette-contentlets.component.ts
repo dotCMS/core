@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, ViewChild, inject } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
@@ -14,13 +13,7 @@ import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-
     selector: 'dot-palette-contentlets',
     templateUrl: './dot-palette-contentlets.component.html',
     styleUrls: ['./dot-palette-contentlets.component.scss'],
-    imports: [
-        CommonModule,
-        DotPaletteInputFilterComponent,
-        PaginatorModule,
-        DotSpinnerComponent,
-        DotMessagePipe
-    ]
+    imports: [DotPaletteInputFilterComponent, PaginatorModule, DotSpinnerComponent, DotMessagePipe]
 })
 export class DotPaletteContentletsComponent {
     private dotContentletEditorService = inject(DotContentletEditorService);

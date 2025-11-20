@@ -711,10 +711,26 @@ describe('DotTemplateCreateEditComponent', () => {
             describe('edit properties', () => {
                 it('should have edit button', () => {
                     const button = de.query(By.css('.left [data-testId="editTemplateButton"]'));
-                    expect(button.attributes['ng-reflect-label']).toBe('Edit');
-                    expect(button.attributes.icon).toBe('pi pi-pencil');
-                    expect(button.attributes.class).toContain('p-button-text');
-                    expect(button.attributes.pButton).toBeDefined();
+                    // In Angular 20, ng-reflect-* attributes are not available
+                    // Verify the label by checking the button text content
+                    const buttonElement = button.nativeElement;
+                    expect(buttonElement.textContent?.trim()).toBe('Edit');
+                    // Verify icon by checking the PrimeNG Button component instance
+                    // PrimeNG Button component has an 'icon' property
+                    const buttonComponent = button.componentInstance;
+                    if (buttonComponent && buttonComponent.icon) {
+                        expect(buttonComponent.icon).toBe('pi pi-pencil');
+                    } else {
+                        // Fallback: verify icon exists in DOM (PrimeNG may render it differently)
+                        const iconInDom =
+                            buttonElement.querySelector('.pi-pencil') ||
+                            buttonElement.querySelector('[class*="pi-pencil"]');
+                        expect(iconInDom).toBeTruthy();
+                    }
+                    // Verify class
+                    expect(buttonElement.classList.contains('p-button-text')).toBe(true);
+                    // Verify pButton directive is applied (button should have PrimeNG button classes)
+                    expect(buttonElement.classList.contains('p-button')).toBe(true);
                 });
 
                 it('should open edit props form', () => {

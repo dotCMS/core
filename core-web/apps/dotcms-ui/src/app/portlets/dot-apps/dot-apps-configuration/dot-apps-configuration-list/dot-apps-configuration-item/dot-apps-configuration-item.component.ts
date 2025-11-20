@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, Output, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -14,7 +13,7 @@ import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-li
     selector: 'dot-apps-configuration-item',
     templateUrl: './dot-apps-configuration-item.component.html',
     styleUrls: ['./dot-apps-configuration-item.component.scss'],
-    imports: [CommonModule, DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule]
+    imports: [DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule]
 })
 export class DotAppsConfigurationItemComponent {
     private dotMessageService = inject(DotMessageService);

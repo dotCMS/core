@@ -12,6 +12,6 @@ import { DotSpinnerComponent } from '@dotcms/ui';
     imports: [ButtonModule, DotSpinnerComponent]
 })
 export class UploadPlaceholderComponent {
-    @Output() cancel = new EventEmitter<boolean>();
+    @Output() canceled = new EventEmitter<boolean>();
     @Input() type: string;
 }

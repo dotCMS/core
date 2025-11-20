@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -12,7 +11,7 @@ import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workf
     selector: 'dot-workflow-task',
     template:
         '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>',
-    imports: [CommonModule, DotWorkflowTaskDetailComponent]
+    imports: [DotWorkflowTaskDetailComponent]
 })
 export class DotWorkflowTaskComponent implements OnInit {
     private dotWorkflowTaskDetailService = inject(DotWorkflowTaskDetailService);

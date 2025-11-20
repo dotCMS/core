@@ -1,6 +1,5 @@
 import { from, Observable, of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -54,7 +53,6 @@ enum DotConfirmationType {
     templateUrl: './dot-edit-page-state-controller.component.html',
     styleUrls: ['./dot-edit-page-state-controller.component.scss'],
     imports: [
-        CommonModule,
         FormsModule,
         InputSwitchModule,
         SelectButtonModule,

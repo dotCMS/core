@@ -1,6 +1,6 @@
 <div class="dot-experiment-list-table gap-1">
-    <ng-container *ngIf="experimentGroupedByStatus.length; else noExperimentsFilteredTpl">
-        <ng-container *ngFor="let group of experimentGroupedByStatus">
+    @if (experimentGroupedByStatus.length) {
+        @for (group of experimentGroupedByStatus; track group) {
             <p-table [rowHover]="true" [value]="group.experiments" styleClass="experiment-list">
                 <ng-template pTemplate="caption">
                     {{ group.status | lowercase | dm | uppercase }}
@@ -41,12 +41,10 @@
                     </tr>
                 </ng-template>
             </p-table>
-        </ng-container>
-    </ng-container>
+        }
+    } @else {
+        <dot-empty-container [configuration]="emptyConfiguration" [hideContactUsLink]="true" />
+    }
 </div>
-
-<ng-template #noExperimentsFilteredTpl>
-    <dot-empty-container [configuration]="emptyConfiguration" [hideContactUsLink]="true" />
-</ng-template>
 
 <p-confirmPopup />

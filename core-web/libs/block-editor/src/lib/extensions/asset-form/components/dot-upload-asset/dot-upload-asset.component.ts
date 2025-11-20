@@ -10,7 +10,8 @@ import {
     ChangeDetectionStrategy,
     OnDestroy,
     HostListener,
-    ElementRef
+    ElementRef,
+    inject
 } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
@@ -70,12 +71,10 @@ export class DotUploadAssetComponent implements OnDestroy {
         }
     }
 
-    constructor(
-        private readonly sanitizer: DomSanitizer,
-        private readonly dotUploadFileService: DotUploadFileService,
-        private readonly cd: ChangeDetectorRef,
-        private readonly el: ElementRef
-    ) {}
+    private readonly sanitizer = inject(DomSanitizer);
+    private readonly dotUploadFileService = inject(DotUploadFileService);
+    private readonly cd = inject(ChangeDetectorRef);
+    private readonly el = inject(ElementRef);
 
     ngOnDestroy(): void {
         this.preventClose.emit(false);

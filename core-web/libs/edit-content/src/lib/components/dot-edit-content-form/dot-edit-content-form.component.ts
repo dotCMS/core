@@ -1,7 +1,7 @@
 import { Subscription } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -11,7 +11,8 @@ import {
     effect,
     inject,
     OnInit,
-    output
+    output,
+    DOCUMENT
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {

@@ -207,8 +207,12 @@ describe('DotPersonaSelectorComponent', () => {
     it('should set dot-persona-selected-item with right attributes', () => {
         const personaSelectedItem = spectator.query('dot-persona-selected-item');
         expect(personaSelectedItem.getAttribute('appendTo')).toBe('target');
-        expect(personaSelectedItem.getAttribute('ng-reflect-content')).toBe('Default Visitor');
-        expect(personaSelectedItem.getAttribute('ng-reflect-tooltip-position')).toBe('bottom');
+        // In Angular 20, ng-reflect-* attributes are not available
+        // Verify tooltip position attribute (passed as input to the component)
+        expect(personaSelectedItem.getAttribute('tooltipPosition')).toBe('bottom');
+        // Verify the displayed content (persona name or 'Default Visitor')
+        const nameSpan = spectator.query('dot-persona-selected-item .dot-persona-selector__name');
+        expect(nameSpan?.textContent?.trim()).toBe('Default Visitor');
     });
 
     it('should call toggle when selected dot-persona-selected-item', async () => {

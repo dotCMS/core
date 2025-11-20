@@ -1,5 +1,5 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
@@ -7,7 +7,6 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotTagsService } from './dot-tags.service';
 
 describe('DotTagsService', () => {
-    let injector: TestBed;
     let dotTagsService: DotTagsService;
     let httpMock: HttpTestingController;
 
@@ -21,9 +20,8 @@ describe('DotTagsService', () => {
             imports: [HttpClientTestingModule],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, DotTagsService]
         });
-        injector = getTestBed();
-        dotTagsService = injector.get(DotTagsService);
-        httpMock = injector.get(HttpTestingController);
+        dotTagsService = TestBed.inject(DotTagsService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get Tags', () => {

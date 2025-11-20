@@ -1,5 +1,4 @@
-import { DOCUMENT } from '@angular/common';
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, inject, DOCUMENT } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 

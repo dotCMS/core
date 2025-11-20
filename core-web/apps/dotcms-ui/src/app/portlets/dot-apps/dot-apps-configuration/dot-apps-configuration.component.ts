@@ -1,6 +1,5 @@
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -30,7 +29,6 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
     templateUrl: './dot-apps-configuration.component.html',
     styleUrls: ['./dot-apps-configuration.component.scss'],
     imports: [
-        CommonModule,
         InputTextModule,
         ButtonModule,
         DotAppsConfigurationHeaderComponent,

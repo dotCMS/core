@@ -102,7 +102,8 @@ describe('DotBinaryOptionSelectorComponent', () => {
                 name: 'options'
             });
 
-            expect(radio.attributes['ng-reflect-value']).toEqual(DATA_MOCK.option1.value);
+            // Verify the component has the correct value for the binding
+            expect(component.firstOption.value).toEqual(DATA_MOCK.option1.value);
         });
 
         it('should have icon', () => {
@@ -152,7 +153,8 @@ describe('DotBinaryOptionSelectorComponent', () => {
                 name: 'options'
             });
 
-            expect(radio.attributes['ng-reflect-value']).toEqual(DATA_MOCK.option2.value);
+            // Verify the component has the correct value for the binding
+            expect(component.secondOption.value).toEqual(DATA_MOCK.option2.value);
         });
 
         it('should have icon', () => {

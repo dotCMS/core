@@ -1,5 +1,4 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -36,7 +35,7 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
     selector: 'dot-sub-nav',
     templateUrl: './dot-sub-nav.component.html',
     styleUrls: ['./dot-sub-nav.component.scss'],
-    imports: [CommonModule, RouterModule]
+    imports: [RouterModule]
 })
 export class DotSubNavComponent {
     @ViewChild('ul', { static: true }) ul: ElementRef;

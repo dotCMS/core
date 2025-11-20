@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -27,7 +26,6 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
     templateUrl: 'dot-toolbar-notifications.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
         ButtonModule,
         DotMessagePipe,
         DotToolbarBtnOverlayComponent,
