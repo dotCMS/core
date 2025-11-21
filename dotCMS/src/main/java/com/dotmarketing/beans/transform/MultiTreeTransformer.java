@@ -63,7 +63,7 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
                             .readValue(DbConnectionFactory.isPostgres()
                                     ? ((PGobject) map.get(STYLE_PROPERTIES)).getValue()
                                     : (String) map.get(STYLE_PROPERTIES), HashMap.class))
-                    .getOrElse(new HashMap<String, Object>()));
+                    .getOrNull());
         }
         return multiTree;
     }
