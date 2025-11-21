@@ -2,10 +2,8 @@
     "name": "edit-content-bridge",
     "version": "1.0.0",
     "dependencies": {
-        "rxjs": "~6.6.3",
         "@angular/core": "20.3.9",
-        "@angular/forms": "20.3.9",
-        "vite": "6.3.5"
+        "@angular/forms": "20.3.9"
     },
     "type": "module",
     "main": "./index.js",

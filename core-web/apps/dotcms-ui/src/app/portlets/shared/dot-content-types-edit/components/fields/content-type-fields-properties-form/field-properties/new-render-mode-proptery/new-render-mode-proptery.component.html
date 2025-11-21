@@ -9,7 +9,12 @@
                 value="true"
                 [formControlName]="property.name"
                 inputId="ingredient1" />
-            <label for="ingredient1" class="ml-2">Recommended</label>
+            <label
+                for="ingredient1"
+                class="ml-2"
+                pTooltip="Runs on native components for faster, smoother editing and a modern, consistent experience.">
+                Recommended
+            </label>
         </div>
 
         <div class="flex align-items-center">
@@ -18,8 +23,12 @@
                 value="false"
                 [formControlName]="property.name"
                 inputId="ingredient2" />
-            <label for="ingredient2" class="ml-2">Deprecated</label>
+            <label
+                for="ingredient2"
+                class="ml-2"
+                pTooltip="Renders in an iframe, so the UI won't match and interactions may feel rough. Keep it only for older custom fields.">
+                Deprecated
+            </label>
         </div>
     </div>
-    +
 </div>

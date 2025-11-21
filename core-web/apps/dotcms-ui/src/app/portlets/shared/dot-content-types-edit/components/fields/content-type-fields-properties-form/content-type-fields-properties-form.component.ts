@@ -16,7 +16,7 @@ import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { isEqual } from '@dotcms/utils';
 
 import { FieldPropertyService } from '../service';
@@ -72,12 +72,31 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     saveFieldProperties(): void {
         if (this.form.valid) {
-            this.saveField.emit(this.form.value);
+            this.saveField.emit(this.transformFormValue(this.form.value));
         } else {
             this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
 
         this.valid.next(false);
+    }
+
+    transformFormValue(value: any): any {
+        console.log('value', value);
+        console.log('this.formFieldData.clazz', this.formFieldData.clazz);
+        if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
+            console.log('value.newRenderMode', value.newRenderMode);
+            return {
+                ...value,
+                fieldVariables: [
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        key: 'newRenderMode',
+                        value: value.newRenderMode === 'true'
+                    }
+                ]
+            };
+        }
+        return value;
     }
 
     destroy(): void {
