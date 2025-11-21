@@ -653,11 +653,10 @@ describe('DotEditContentComponent', () => {
 
             it('should call dotCustomEventHandlerService on customEvent', () => {
                 jest.spyOn(dotCustomEventHandlerService, 'handle');
-                dotEditContentlet.triggerEventHandler('custom', { data: 'test' });
+                const mockEvent = { detail: { name: 'test-event', data: 'test' } };
+                dotEditContentlet.triggerEventHandler('custom', mockEvent);
 
-                expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
-                    data: 'test'
-                });
+                expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
             });
 
             it('should reload page when triggering save-page', () => {
@@ -684,11 +683,10 @@ describe('DotEditContentComponent', () => {
 
             it('should call dotCustomEventHandlerService on customEvent', () => {
                 jest.spyOn(dotCustomEventHandlerService, 'handle');
-                dotCreateContentlet.triggerEventHandler('custom', { data: 'test' });
+                const mockEvent = { detail: { name: 'test-event', data: 'test' } };
+                dotCreateContentlet.triggerEventHandler('custom', mockEvent);
 
-                expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
-                    data: 'test'
-                });
+                expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
             });
 
             it('should reload page when triggering save-page', () => {

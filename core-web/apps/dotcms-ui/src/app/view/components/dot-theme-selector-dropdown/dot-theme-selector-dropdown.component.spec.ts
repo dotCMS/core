@@ -294,8 +294,12 @@ describe('DotThemeSelectorDropdownComponent', () => {
             });
 
             it('should system to true', () => {
-                const siteSelector = spectator.query('[data-testId="siteSelector"]');
-                expect(siteSelector.getAttribute('ng-reflect-system')).toBe('true');
+                const siteSelectorDebugElement = spectator.debugElement.query(
+                    (el) => el.nativeElement?.getAttribute('data-testId') === 'siteSelector'
+                );
+                const siteSelectorComponent =
+                    siteSelectorDebugElement?.componentInstance as MockDotSiteSelectorComponent;
+                expect(siteSelectorComponent?.system).toBe(true);
             });
 
             it('should update themes, totalRecords and call setExtraParams when site selector change', fakeAsync(() => {
