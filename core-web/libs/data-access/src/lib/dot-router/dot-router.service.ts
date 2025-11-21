@@ -117,9 +117,9 @@ export class DotRouterService {
         const menuId = 'edit-page';
 
         return this.router.navigate([`/${menuId}/content`], {
-            queryParams,
-            state: {
-                menuId
+            queryParams: {
+                ...queryParams,
+                mId: menuId.substring(0, 4)
             }
         });
     }
@@ -349,15 +349,13 @@ export class DotRouterService {
             queryParamsHandling = '',
             queryParams = {}
         } = navigateToPorletOptions || {};
+
         const url = this.router.createUrlTree([link], {
             queryParamsHandling,
-            queryParams
+            queryParams: { ...queryParams, ...(parentMenuId && { menuId: parentMenuId }) }
         });
 
-        return this.router.navigateByUrl(url, {
-            replaceUrl,
-            state: { menuId: parentMenuId }
-        });
+        return this.router.navigateByUrl(url, { replaceUrl });
     }
 
     goToForgotPassword(): void {

@@ -177,7 +177,15 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 if (existingIndex > -1) {
                     truncateBreadcrumbs(existingIndex);
                 } else {
-                    const item = menu.find((item) => item.menuLink === url);
+                    const [urlPath, queryString] = url.split('?');
+                    const shortMenuId = new URLSearchParams(queryString || '').get('mId');
+
+                    const item = menu.find((item) => {
+                        const pathMatches = item.menuLink === urlPath;
+                        const parentMatches =
+                            !shortMenuId || item.parentMenuId.startsWith(shortMenuId);
+                        return pathMatches && parentMatches;
+                    });
 
                     if (item) {
                         setBreadcrumbs([

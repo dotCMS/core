@@ -198,7 +198,9 @@ describe('DotNavigationComponent collapsed', () => {
                 });
             }
 
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {}, '123');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {
+                queryParams: { mId: '123' }
+            });
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
@@ -372,7 +374,9 @@ describe('DotNavigationComponent expanded', () => {
                 });
             }
 
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {}, '123');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {
+                queryParams: { mId: '123' }
+            });
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
             // Verify parent menu group is set as open in GlobalStore
             expect(globalStore.openParentMenuId()).toBe('123');

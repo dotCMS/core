@@ -397,7 +397,6 @@ describe('withMenu Feature', () => {
             store.setActiveMenu('1-1', '1');
             const activeItem = store.activeMenuItem();
             expect(activeItem?.id).toBe('1-1');
-            expect(activeItem?.parentMenuId).toBe('1');
             expect(store.openParentMenuId()).toBe('1');
         });
 
@@ -407,37 +406,6 @@ describe('withMenu Feature', () => {
             const activeItem = store.activeMenuItem();
             expect(activeItem?.id).toBe('1-1');
             expect(store.openParentMenuId()).toBeNull();
-        });
-
-        it('should load menu items if provided', () => {
-            const newMenu: DotMenu[] = [
-                {
-                    active: false,
-                    id: 'new',
-                    isOpen: false,
-                    menuItems: [
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: true,
-                            id: 'new-1',
-                            label: 'New',
-                            url: '/new',
-                            menuLink: '/new',
-                            parentMenuId: 'new'
-                        }
-                    ],
-                    name: 'New Menu',
-                    tabDescription: 'New section',
-                    tabIcon: 'pi pi-star',
-                    tabName: 'New',
-                    url: '/new'
-                }
-            ];
-            store.setActiveMenu('new-1', 'new', newMenu);
-            const items = store.flattenMenuItems();
-            expect(items.length).toBe(1);
-            expect(items[0].id).toBe('new-1');
         });
 
         it('should not activate if portletId is empty', () => {

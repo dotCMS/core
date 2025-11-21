@@ -32,18 +32,12 @@ const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
  *
  * ## Features
  * - Manages menu items as entities with HashMap for O(1) lookups
- * - Single active item constraint (only one item can be active at a time)
- * - Single open parent constraint (only one parent menu can be open at a time)
+ * - Single active item constraint
+ * - Single open parent constraint
  * - Manages navigation collapsed/expanded state
  * - Provides computed selectors for grouped menus and active items
  * - Persists navigation state to localStorage
- * - Full TypeScript support with strict typing
  *
- * ## Constraints
- * - Only one menu item can be active at any given time
- * - Only one parent menu group can be open at any given time
- * - Activating a new item automatically deactivates the previously active item
- * - Opening a parent group automatically closes any other open parent group
  */
 export function withMenu() {
     return signalStoreFeature(
@@ -103,7 +97,15 @@ export function withMenu() {
              *
              * @returns Array of all MenuItemEntity objects
              */
-            flattenMenuItems: computed(() => menuItemsEntities())
+            flattenMenuItems: computed(() => menuItemsEntities()),
+
+            /**
+             * Computed signal that returns entity keys for debugging.
+             * Shows the ID (key) of each menu item entity.
+             *
+             * @returns Array of entity keys (IDs)
+             */
+            entityKeys: computed(() => menuItemsEntities().map((item) => item.id))
         })),
         withMethods((store) => {
             /**
@@ -135,8 +137,11 @@ export function withMenu() {
 
                     // Clear all entities first, then add new ones
                     // This ensures all property changes are detected by signals
-                    patchState(store, removeAllEntities(menuConfig));
-                    patchState(store, addEntities(entities, menuConfig));
+                    patchState(
+                        store,
+                        removeAllEntities(menuConfig),
+                        addEntities(entities, menuConfig)
+                    );
                 },
 
                 /**
@@ -166,11 +171,9 @@ export function withMenu() {
                     patchState(
                         store,
                         updateAllEntities({ active: false }, menuConfig),
-                        updateEntity({ id: menuItemId, changes: { active: true } }, menuConfig)
+                        updateEntity({ id: menuItemId, changes: { active: true } }, menuConfig),
+                        { openParentMenuId: parentMenuId }
                     );
-
-                    // Set the open parent menu group (this automatically closes other parent menu groups via computed)
-                    patchState(store, { openParentMenuId: parentMenuId });
                 },
 
                 /**
@@ -245,23 +248,27 @@ export function withMenu() {
         withMethods((store) => ({
             /**
              * Loads menu and sets active item based on current URL.
-             * Transforms DotMenu array to entities and activates the item matching the URL.
+             * Uses entity map to find the matching menu item without iterating keys.
              *
              * @param portletId - The ID of the menu item (portlet) to activate
-             * @param parentMenuId - The ID of the parent menu group
-             * @param menuItems - Optional DotMenu array from the API to load
+             * @param shortParentMenuId - The first 4 characters of the parent menu ID
              */
-            setActiveMenu: (portletId: string, parentMenuId: string) => {
-                if (!portletId) {
+            setActiveMenu: (portletId: string, shortParentMenuId: string) => {
+                if (!portletId || !shortParentMenuId) {
                     return;
                 }
 
-                // If found, activate it with its parent menu group
-                if (portletId && parentMenuId) {
-                    const collapsed = store.isNavigationCollapsed();
+                // Direct lookup using the composite key
+                const entityMap = store.entityMap();
+                const compositeKey = `${portletId}__${shortParentMenuId}`;
+                const item = entityMap[compositeKey];
 
-                    const compositeKey = `${portletId}__${parentMenuId}`;
-                    store.activateMenuItemWithParent(compositeKey, collapsed ? null : parentMenuId);
+                if (item) {
+                    const collapsed = store.isNavigationCollapsed();
+                    store.activateMenuItemWithParent(
+                        compositeKey,
+                        collapsed ? null : item.parentMenuId
+                    );
                 }
             }
         })),

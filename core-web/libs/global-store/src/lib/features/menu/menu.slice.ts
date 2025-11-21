@@ -10,7 +10,7 @@ import { MenuItemEntity, MenuSlice } from '@dotcms/dotcms-models';
 export const menuConfig = entityConfig({
     entity: {} as MenuItemEntity,
     collection: 'menuItems',
-    selectId: (item: MenuItemEntity) => `${item.id}__${item.parentMenuId}`
+    selectId: (item: MenuItemEntity) => `${item.id}__${item.parentMenuId.substring(0, 4)}`
 });
 
 export const initialMenuSlice: MenuSlice = {

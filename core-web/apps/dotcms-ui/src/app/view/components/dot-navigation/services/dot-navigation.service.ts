@@ -8,7 +8,7 @@ import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotIframeService, DotRouterService } from '@dotcms/data-access';
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
@@ -34,8 +34,7 @@ export class DotNavigationService {
 
             this.#globalStore.setActiveMenu(
                 this.dotRouterService.currentPortlet.id,
-                this.router.getCurrentNavigation()?.extras?.state?.menuId ||
-                    window.history?.state?.menuId
+                this.dotRouterService.queryParams['mId']
             );
         });
 
@@ -53,8 +52,7 @@ export class DotNavigationService {
                             // Load menu and set active item based on current portlet and parent context
                             this.#globalStore.setActiveMenu(
                                 this.dotRouterService.currentPortlet.id,
-                                this.router.getCurrentNavigation()?.extras?.state?.menuId ||
-                                    window.history?.state?.menuId
+                                this.dotRouterService.queryParams['mId']
                             );
                         }),
                         map(() => true)
@@ -74,8 +72,7 @@ export class DotNavigationService {
 
                     this.#globalStore.setActiveMenu(
                         this.dotRouterService.currentPortlet.id,
-                        this.router.getCurrentNavigation()?.extras?.state?.menuId ||
-                            window.history?.state?.menuId
+                        this.dotRouterService.queryParams['mId']
                     );
                 });
         });
@@ -102,43 +99,26 @@ export class DotNavigationService {
      * @memberof DotNavigationService
      */
     goToFirstPortlet(): Promise<boolean> {
-        return this.getFirstMenuLink()
-            .pipe(
-                map((link: string) => {
-                    return this.dotRouterService.gotoPortlet(
-                        link,
-                        {},
-                        this.router.getCurrentNavigation()?.extras.state?.menuId
-                    );
-                })
-            )
-            .toPromise()
-            .then((isRouted: Promise<boolean>) => {
+        const menuGroups = this.#globalStore.menuGroup();
+
+        if (!menuGroups.length) {
+            return Promise.resolve(false);
+        }
+
+        const firstMenuGroup = menuGroups[0];
+        const firstMenuItem = firstMenuGroup.menuItems[0];
+
+        return this.dotRouterService
+            .gotoPortlet(firstMenuItem.menuLink, {
+                queryParams: { menuId: firstMenuGroup.id }
+            })
+            .then((isRouted: boolean) => {
                 if (!isRouted) {
                     this.reloadIframePage();
                 }
 
                 return isRouted;
             });
-    }
-
-    private extractFirtsMenuLink(menus: DotMenu[]): string {
-        const firstMenuItem: DotMenuItem = menus[0].menuItems[0];
-
-        return (
-            firstMenuItem.menuLink ||
-            (firstMenuItem.angular ? firstMenuItem.url : this.getLegacyPortletUrl(firstMenuItem.id))
-        );
-    }
-
-    private getFirstMenuLink(): Observable<string> {
-        return this.dotMenuService
-            .loadMenu()
-            .pipe(map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus)));
-    }
-
-    private getLegacyPortletUrl(menuItemId: string): string {
-        return `/c/${menuItemId}`;
     }
 
     private reloadIframePage(): void {
