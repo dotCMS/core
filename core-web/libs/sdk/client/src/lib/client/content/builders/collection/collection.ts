@@ -193,6 +193,7 @@ export class CollectionBuilder<T = unknown> extends BaseApiClient {
      * @param {string} query A Lucene query string.
      * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
+     * @deprecated Use the query method instead.
      */
     query(query: string): this;
 
@@ -469,7 +470,7 @@ export class CollectionBuilder<T = unknown> extends BaseApiClient {
      *
      * @example
      * // For draft content without site constraint:
-     * // Returns: "+contentType:Blog +languageId:1 +live:false"
+     * // Returns: "+contentType:Blog +languageId:1 +(live:false AND working:true AND deleted:false)"
      *
      * @example
      * // For content with explicit exclusion of current site (site ID 123):
@@ -483,22 +484,25 @@ export class CollectionBuilder<T = unknown> extends BaseApiClient {
      */
     private getFinalQuery(): string {
         // Build base query with language and live/draft constraints
-        const baseQuery = this.currentQuery
-            .field('languageId')
-            .equals(this.#languageId.toString())
-            .field('live')
-            .equals((!this.#draft).toString())
-            .build();
+        let baseQuery = this.currentQuery.field('languageId').equals(this.#languageId.toString());
+
+        if (this.#draft) {
+            baseQuery = baseQuery.raw('+(live:false AND working:true AND deleted:false)');
+        } else {
+            baseQuery = baseQuery.field('live').equals('true');
+        }
+
+        const builtQuery = baseQuery.build();
 
         // Check if site ID constraint should be added using utility function
-        const shouldAddSiteId = shouldAddSiteIdConstraint(baseQuery, this.siteId);
+        const shouldAddSiteId = shouldAddSiteIdConstraint(builtQuery, this.siteId);
 
         // Add site ID constraint if needed
         if (shouldAddSiteId) {
-            const queryWithSiteId = `${baseQuery} +conhost:${this.siteId}`;
+            const queryWithSiteId = `${builtQuery} +conhost:${this.siteId}`;
             return sanitizeQuery(queryWithSiteId);
         }
 
-        return baseQuery;
+        return builtQuery;
     }
 }
