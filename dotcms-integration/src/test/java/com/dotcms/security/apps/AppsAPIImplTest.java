@@ -48,6 +48,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -592,6 +593,7 @@ public class AppsAPIImplTest {
 
     @DataProvider
     public static Object[] getExpectedExceptionTestCases() {
+        Try.run(() -> IntegrationTestInitService.getInstance().init());
         final Map<String, ParamDescriptor> emptyParams = ImmutableMap.of();
         return new Object[]{
                 //The following test that the general required fields are mandatory.
@@ -1275,6 +1277,7 @@ public class AppsAPIImplTest {
 
     @DataProvider
     public static Object[] getTargetSitesTestCases() throws Exception {
+        Try.run(() -> IntegrationTestInitService.getInstance().init());
         return new Object[]{
                 new SiteDataGen().nextPersisted(),
                 APILocator.getHostAPI().findSystemHost()
@@ -1553,9 +1556,9 @@ public class AppsAPIImplTest {
     }
 
     /**
-     * Test maintainHiddenValues method when no existing secrets are present. Given scenario: No existing secrets, new
-     * secrets are provided. Expected Result: The new secrets should be returned as-is without modification.
-     *
+     * Test maintainHiddenValues method when no existing secrets are present.
+     * Given scenario: No existing secrets, new secrets are provided.
+     * Expected Result: The new secrets should be returned as-is without modification.
      * @throws DotDataException
      * @throws DotSecurityException
      */
@@ -1583,9 +1586,9 @@ public class AppsAPIImplTest {
     }
 
     /**
-     * Test maintainHiddenValues method when hidden secret has mask value. Given scenario: Existing hidden secret
-     * exists, new secret has mask value (******). Expected Result: The existing secret value should be maintained.
-     *
+     * Test maintainHiddenValues method when hidden secret has mask value.
+     * Given scenario: Existing hidden secret exists, new secret has mask value (******).
+     * Expected Result: The existing secret value should be maintained.
      * @throws DotDataException
      * @throws DotSecurityException
      */
@@ -1621,9 +1624,9 @@ public class AppsAPIImplTest {
     }
 
     /**
-     * Test maintainHiddenValues method with mixed scenarios. Given scenario: Multiple secrets with different states
-     * (masked, new values, non-hidden). Expected Result: Each secret should be handled according to its state.
-     *
+     * Test maintainHiddenValues method with mixed scenarios.
+     * Given scenario: Multiple secrets with different states (masked, new values, non-hidden).
+     * Expected Result: Each secret should be handled according to its state.
      * @throws DotDataException
      * @throws DotSecurityException
      */
@@ -1672,10 +1675,9 @@ public class AppsAPIImplTest {
     }
 
     /**
-     * Test maintainHiddenValues method when hidden secret has mask but no existing secret. Given scenario: New hidden
-     * secret with mask value but no existing secret with that key. Expected Result: The masked value should be used (no
-     * existing value to fall back to).
-     *
+     * Test maintainHiddenValues method when hidden secret has mask but no existing secret.
+     * Given scenario: New hidden secret with mask value but no existing secret with that key.
+     * Expected Result: The masked value should be used (no existing value to fall back to).
      * @throws DotDataException
      * @throws DotSecurityException
      */
@@ -1706,9 +1708,9 @@ public class AppsAPIImplTest {
     }
 
     /**
-     * Test maintainHiddenValues method with all secrets being maintained. Given scenario: All secrets are hidden and
-     * masked, existing values exist for all. Expected Result: All existing secret values should be maintained.
-     *
+     * Test maintainHiddenValues method with all secrets being maintained.
+     * Given scenario: All secrets are hidden and masked, existing values exist for all.
+     * Expected Result: All existing secret values should be maintained.
      * @throws DotDataException
      * @throws DotSecurityException
      */
