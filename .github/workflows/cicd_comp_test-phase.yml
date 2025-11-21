@@ -164,7 +164,7 @@ jobs:
     env:
       MAVEN_OPTS: ${{ matrix.maven_opts }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
 
     steps:          
@@ -185,5 +185,3 @@ jobs:
           needs-docker-image: ${{ matrix.needs_docker == true }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
-
-
