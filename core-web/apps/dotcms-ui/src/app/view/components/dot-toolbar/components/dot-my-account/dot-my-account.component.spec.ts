@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -82,8 +83,13 @@ describe('DotMyAccountComponent', () => {
         it('should be hidden by default', () => {
             // Check that the dialog has visible=false
             expect(component.visible()).toBe(false);
-            const dialog = spectator.query(byTestId('dot-my-account-dialog'));
-            expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the visible property directly on the PrimeNG Dialog component instance
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dot-my-account-dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance;
+            expect(dialogComponent?.visible).toBe(false);
         });
 
         it('should show dialog when visible is set to true', () => {
@@ -92,8 +98,13 @@ describe('DotMyAccountComponent', () => {
             spectator.detectChanges();
 
             expect(component.visible()).toBe(true);
-            const dialog = spectator.query(byTestId('dot-my-account-dialog'));
-            expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the visible property directly on the PrimeNG Dialog component instance
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dot-my-account-dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance;
+            expect(dialogComponent?.visible).toBe(true);
         });
 
         it('should emit shutdown when dialog is closed', () => {

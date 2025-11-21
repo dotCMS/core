@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -25,7 +24,7 @@ import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-form-selector',
     templateUrl: './dot-form-selector.component.html',
     styleUrls: ['./dot-form-selector.component.scss'],
-    imports: [CommonModule, TableModule, DotDialogComponent, ButtonModule, DotMessagePipe],
+    imports: [TableModule, DotDialogComponent, ButtonModule, DotMessagePipe],
     providers: [PaginatorService]
 })
 export class DotFormSelectorComponent implements OnInit, OnChanges {
