@@ -138,7 +138,7 @@ import com.liferay.portal.util.WebKeys;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
@@ -2674,7 +2674,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         );
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         return request;
     }

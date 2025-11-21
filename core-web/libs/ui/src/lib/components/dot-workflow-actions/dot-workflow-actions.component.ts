@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -31,7 +30,7 @@ interface WorkflowActionsGroup {
 
 @Component({
     selector: 'dot-workflow-actions',
-    imports: [CommonModule, ButtonModule, SplitButtonModule, DotMessagePipe],
+    imports: [ButtonModule, SplitButtonModule, DotMessagePipe],
     templateUrl: './dot-workflow-actions.component.html',
     styleUrl: './dot-workflow-actions.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
