@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -49,7 +48,6 @@ import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service'
     templateUrl: './dot-apps-import-export-dialog.component.html',
     styleUrls: ['./dot-apps-import-export-dialog.component.scss'],
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         InputTextModule,
         PasswordModule,

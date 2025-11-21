@@ -27,15 +27,18 @@ import { DotMenuService } from '../../../../api/services/dot-menu.service';
 class RouterMock {
     _events: Subject<any> = new Subject();
     _routerState: any;
+    _currentNavigation: any = {
+        extras: {
+            state: {
+                menuId: '123'
+            }
+        }
+    };
 
     url = '';
 
-    getCurrentNavigation() {
-        return {
-            extras: {
-                state: {}
-            }
-        };
+    currentNavigation() {
+        return this._currentNavigation;
     }
 
     get events() {
@@ -81,9 +84,7 @@ class TitleServiceMock {
         return 'dotCMS platform';
     }
 
-    setTitle(_title: string): void {
-        /* */
-    }
+    setTitle = jest.fn();
 }
 
 class DotcmsEventsServiceMock {
@@ -351,11 +352,12 @@ describe('DotNavigationService', () => {
         }, 2000); // Increased timeout to allow async operations to complete
     });
 
-    it('should set Page title based on url', () => {
-        router.triggerNavigationEnd('url/one');
+    it('should set Page title based on url', fakeAsync(() => {
+        router.triggerNavigationEnd('url/link1');
+        tick();
         expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
         expect(titleService.setTitle).toHaveBeenCalledTimes(1);
-    });
+    }));
 
     // TODO: needs to fix this, looks like the dotcmsEventsService instance is different here not sure why.
     xit('should subscribe to UPDATE_PORTLET_LAYOUTS websocket event', () => {
