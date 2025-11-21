@@ -1376,18 +1376,19 @@
 
         <!-- Graalvm Js Engine -->
         <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.js</groupId>
+            <groupId>org.graalvm.polyglot</groupId>
+            <!-- Select language: js, ruby, python, java, llvm, wasm, languages -->
             <artifactId>js</artifactId>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js-scriptengine</artifactId>
         </dependency>
-
         <!-- AI -->
         <dependency>
             <groupId>com.knuddels</groupId>

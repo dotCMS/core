@@ -1,4 +1,4 @@
-package com.dotcms.rendering.js;
+import static com.dotmarketing.util.VelocityUtil.getBasicContext;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.JsEngineException;
@@ -22,28 +22,11 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
-import com.oracle.truffle.api.object.JsDynamicObjectUtils;
-import com.oracle.truffle.js.lang.JavaScriptLanguage;
-import com.oracle.truffle.js.runtime.GraalJSException;
-import com.oracle.truffle.js.runtime.builtins.JSErrorObject;
-import com.oracle.truffle.js.runtime.builtins.JSPromise;
-import com.oracle.truffle.js.runtime.builtins.JSPromiseObject;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.velocity.tools.view.context.ChainedContext;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.HostAccess;
-import org.graalvm.polyglot.Source;
-import org.graalvm.polyglot.Value;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -55,10 +38,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.dotmarketing.util.VelocityUtil.getBasicContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.velocity.tools.view.context.ChainedContext;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.Value;
 
 /**
  * Js script engine implementation
@@ -66,15 +54,17 @@ import static com.dotmarketing.util.VelocityUtil.getBasicContext;
  */
 public class JsEngine implements ScriptEngine {
 
-    private static final String ENGINE_JS = JavaScriptLanguage.ID;
+
     public static final String DOT_JSON = "dotJSON";
     public static final String WEB_INF = "WEB-INF";
+    private static final String JS_ENGINE = "js";
     private final JsFileSystem jsFileSystem = new JsFileSystem();
     private final JsDotLogger jsDotLogger = new JsDotLogger();
     private final Map<String, Class<? extends JsViewTool>> jsRequestViewToolMap = new ConcurrentHashMap<>();
     private final Map<String, JsViewTool> jsAplicationViewToolMap = new ConcurrentHashMap<>();
 
-    private final Lazy<Boolean> allowAllHostAccess = Lazy.of(()-> Config.getBooleanProperty("ALLOW_ALL_HOST_ACCESS", false));
+    private final Lazy<Boolean> allowAllHostAccess = Lazy.of(
+            () -> Config.getBooleanProperty("ALLOW_ALL_HOST_ACCESS_JSENGINE", false));
 
     public JsEngine () {
         try {
@@ -133,7 +123,7 @@ public class JsEngine implements ScriptEngine {
     private Context buildContext () {
 
         final Context.Builder builder =
-                 Context.newBuilder(ENGINE_JS)
+                Context.newBuilder(JS_ENGINE)
                 .allowIO(true)
                 .allowExperimentalOptions(true)
                 .option("js.esm-eval-returns-exports", "true")
@@ -160,9 +150,9 @@ public class JsEngine implements ScriptEngine {
         try (Context context = buildContext()) {
 
             final Object fileName   = contextParams.getOrDefault("dot:jsfilename", "sample.js");
-            final Source userSource = Source.newBuilder(ENGINE_JS, scriptReader, fileName.toString()).build();
+            final Source userSource = Source.newBuilder(JS_ENGINE, scriptReader, fileName.toString()).build();
             final List<Source> dotSources = getDotSources();
-            final Value bindings = context.getBindings(ENGINE_JS);
+            final Value bindings = context.getBindings(JS_ENGINE);
             contextParams.entrySet().forEach(entry -> bindings.putMember(entry.getKey(), entry.getValue()));
             this.addTools(request, response, bindings);
 
@@ -220,55 +210,21 @@ public class JsEngine implements ScriptEngine {
 
     private void checkRejected(final Value eval) {
 
-        try {
-            final JSPromiseObject promise = eval.as(JSPromiseObject.class);
-            if (promise.getPromiseState() == JSPromise.REJECTED) {
 
-                final Object[] stackTraceArray = JsDynamicObjectUtils.getObjectArray(promise);
-                final String strackTrace = stackTraceToString(stackTraceArray);
-                throw new DotRuntimeException(Map.of(
-                        "message", "Promise rejected",
-                        "rootCause", eval.toString(),
-                        "stackTrace", strackTrace).toString());
-            }
-        } catch (ClassCastException e) {
-
-            Logger.error(this, e.getMessage());
-        }
     }
 
     private String stackTraceToString (final Object[] stackTraceArray) {
 
-        final List<String> stackTraceList = new ArrayList<>();
-        for (final Object stackTrace: stackTraceArray) {
-
-            if (stackTrace instanceof JSErrorObject) {
-
-                final GraalJSException graalJSException = JSErrorObject.class.cast(stackTrace).getException();
-
-                final List<String> list = Stream.of(graalJSException.getJSStackTrace()).map(this::jsStrackTraceToString).collect(Collectors.toList());
-                stackTraceList.add(Map.of("message", graalJSException.getMessage(),"jsstackTrace",list).toString());
-            } else {
-
-                    stackTraceList.add(stackTrace.toString());
-            }
+        StringBuilder sb = new StringBuilder();
+        for (final Object stackTrace : stackTraceArray) {
+            sb.append(stackTrace + "\n");
         }
-        return stackTraceList.toString();
+
+        return sb.toString();
     }
 
-    private String jsStrackTraceToString(final GraalJSException.JSStackTraceElement element) {
 
-            return null == element.getClassName()?
-                    "UnknownClass":
-                    element.getClassName() + "." + element.getFunctionName().toString() + getJsStrackTraceFileLineNumber(element);
-    }
 
-    private static String getJsStrackTraceFileLineNumber(final GraalJSException.JSStackTraceElement element) {
-
-        return "(" + element.getFileName() != null && element.getLineNumber() >= 0 ?
-                element.getFileName() + ":" + element.getLineNumber() + ")" :
-                (element.getFileName() != null ? "" + element.getFileName() + ")" : "Unknown Source)");
-    }
 
     private List<Source> getDotSources() throws IOException {
 
@@ -380,7 +336,8 @@ public class JsEngine implements ScriptEngine {
 
             final StringReader stringReader  = new StringReader(sourceContent);
             source = Try.of(() ->
-                    Source.newBuilder(ENGINE_JS, stringReader, absolutePath).build()).getOrElseThrow(JsEngineException::new);
+                            Source.newBuilder(JS_ENGINE, stringReader, absolutePath).build())
+                    .getOrElseThrow(JsEngineException::new);
         }
 
         return source;
@@ -401,7 +358,7 @@ public class JsEngine implements ScriptEngine {
 
             final StringReader stringReader  = new StringReader(sourceContent);
             source = Try.of(() ->
-                    Source.newBuilder(ENGINE_JS, stringReader, modulePath)
+                    Source.newBuilder(JS_ENGINE, stringReader, modulePath)
                             .mimeType("application/javascript+module")
                             .build()).getOrElseThrow(JsEngineException::new);
         }
