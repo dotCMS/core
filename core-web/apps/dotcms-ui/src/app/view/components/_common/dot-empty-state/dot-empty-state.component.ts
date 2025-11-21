@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -7,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
     selector: 'dot-empty-state',
     templateUrl: './dot-empty-state.component.html',
     styleUrls: ['./dot-empty-state.component.scss'],
-    imports: [CommonModule, ButtonModule]
+    imports: [ButtonModule]
 })
 export class DotEmptyStateComponent implements OnInit {
     @Input() rows: number;

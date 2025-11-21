@@ -1,6 +1,5 @@
 import { Subscription } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { Component, forwardRef, Input, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -25,7 +24,7 @@ import { DotSiteSelectorComponent } from '../dot-site-selector/dot-site-selector
             useExisting: forwardRef(() => DotSiteSelectorFieldComponent)
         }
     ],
-    imports: [CommonModule, DotSiteSelectorComponent]
+    imports: [DotSiteSelectorComponent]
 })
 export class DotSiteSelectorFieldComponent implements ControlValueAccessor {
     private siteService = inject(SiteService);

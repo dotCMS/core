@@ -2,7 +2,7 @@ import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { switchMap, withLatestFrom } from 'rxjs/operators';
 
@@ -144,7 +144,9 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
         error: ''
     }));
 
-    constructor(private dotAiService: DotAiService) {
+    private readonly dotAiService = inject(DotAiService);
+
+    constructor() {
         super({ ...initialState });
     }
 }
