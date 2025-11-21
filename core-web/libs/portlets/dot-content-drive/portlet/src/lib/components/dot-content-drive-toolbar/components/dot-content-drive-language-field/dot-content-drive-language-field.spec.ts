@@ -136,9 +136,7 @@ describe('DotContentDriveLanguageFieldComponent', () => {
             expect(multiSelectComponent.resetFilterOnHide).toBe(true);
             expect(multiSelectComponent.showToggleAll).toBe(true);
 
-            // For placeholder, we need to check the resolved value from the DOM
-            const multiSelectElement = spectator.query('p-multiselect');
-            expect(multiSelectElement.getAttribute('ng-reflect-placeholder')).toBe('Language');
+            expect(multiSelectComponent.placeholder()).toBe('Language');
         });
     });
 });

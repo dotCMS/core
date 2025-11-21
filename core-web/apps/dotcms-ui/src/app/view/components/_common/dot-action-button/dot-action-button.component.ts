@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -26,7 +25,7 @@ import { Menu, MenuModule } from 'primeng/menu';
     selector: 'dot-action-button',
     styleUrls: ['./dot-action-button.component.scss'],
     templateUrl: 'dot-action-button.component.html',
-    imports: [CommonModule, ButtonModule, MenuModule]
+    imports: [ButtonModule, MenuModule]
 })
 export class DotActionButtonComponent implements OnInit, OnChanges {
     @ViewChild('menu')

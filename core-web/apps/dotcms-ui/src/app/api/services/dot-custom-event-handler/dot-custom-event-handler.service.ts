@@ -96,7 +96,7 @@ export class DotCustomEventHandlerService {
      * @memberof DotCustomEventHandlerService
      */
     handle(event: CustomEvent): void {
-        if (event && this.handlers[event.detail.name]) {
+        if (event?.detail?.name && this.handlers?.[event.detail.name]) {
             this.handlers[event.detail.name](event);
         }
     }

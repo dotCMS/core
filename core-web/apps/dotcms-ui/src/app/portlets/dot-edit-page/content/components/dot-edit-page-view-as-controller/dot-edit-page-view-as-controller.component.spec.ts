@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
@@ -261,8 +261,11 @@ describe('DotEditPageViewAsControllerComponent', () => {
             const deviceSelectorDe = de.query(By.css('dot-device-selector'));
             expect(deviceSelector).not.toBeNull();
             expect(deviceSelectorDe.attributes.appendTo).toBe('body');
-            expect(deviceSelectorDe.attributes['ng-reflect-content']).toBe('Default Device');
-            expect(deviceSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
+
+            // Access PrimeNG Tooltip directive to verify content and position
+            const tooltipDirective = deviceSelectorDe.injector.get(Tooltip);
+            expect(tooltipDirective.content).toBe('Default Device');
+            expect(tooltipDirective.tooltipPosition).toBe('bottom');
         });
 
         it('should emit changes in Device', () => {
@@ -277,7 +280,10 @@ describe('DotEditPageViewAsControllerComponent', () => {
             const languageSelectorDe = de.query(By.css('dot-language-selector'));
             expect(languageSelector).not.toBeNull();
             expect(languageSelectorDe.attributes.appendTo).toBe('body');
-            expect(languageSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
+
+            // Access PrimeNG Tooltip directive to verify position
+            const tooltipDirective = languageSelectorDe.injector.get(Tooltip);
+            expect(tooltipDirective.tooltipPosition).toBe('bottom');
         });
 
         it('should emit changes in Language', () => {

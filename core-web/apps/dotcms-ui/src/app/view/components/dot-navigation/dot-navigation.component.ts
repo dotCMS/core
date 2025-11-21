@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, HostBinding, HostListener, inject } from '@angular/core';
 
 import { DotEventsService, DotRouterService } from '@dotcms/data-access';
@@ -14,7 +13,7 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
     selector: 'dot-main-nav',
     styleUrls: ['./dot-navigation.component.scss'],
     templateUrl: 'dot-navigation.component.html',
-    imports: [CommonModule, DotNavHeaderComponent, DotNavItemComponent]
+    imports: [DotNavHeaderComponent, DotNavItemComponent]
 })
 export class DotNavigationComponent {
     /**
