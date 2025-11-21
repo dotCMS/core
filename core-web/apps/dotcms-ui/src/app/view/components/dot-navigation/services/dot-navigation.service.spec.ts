@@ -278,7 +278,7 @@ describe('DotNavigationService', () => {
         it('should go to first portlet with menuId', () => {
             service.goToFirstPortlet();
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {
-                queryParams: { menuId: '123' }
+                queryParams: { mId: '123' }
             });
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
@@ -315,7 +315,7 @@ describe('DotNavigationService', () => {
         );
 
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {
-            queryParams: { menuId: '123' }
+            queryParams: { mId: '123' }
         });
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
@@ -352,12 +352,14 @@ describe('DotNavigationService', () => {
         }, 2000); // Increased timeout to allow async operations to complete
     });
 
-    it('should set Page title based on url', fakeAsync(() => {
-        router.triggerNavigationEnd('url/link1');
-        tick();
-        expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
-        expect(titleService.setTitle).toHaveBeenCalledTimes(1);
-    }));
+    it('should set Page title based on url', (done) => {
+        router.triggerNavigationEnd('url/one');
+        setTimeout(() => {
+            expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
+            expect(titleService.setTitle).toHaveBeenCalledTimes(1);
+            done();
+        }, 100);
+    });
 
     // TODO: needs to fix this, looks like the dotcmsEventsService instance is different here not sure why.
     xit('should subscribe to UPDATE_PORTLET_LAYOUTS websocket event', () => {
