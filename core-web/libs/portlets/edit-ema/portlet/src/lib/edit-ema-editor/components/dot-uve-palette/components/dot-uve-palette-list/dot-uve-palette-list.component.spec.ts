@@ -407,8 +407,9 @@ describe('DotUvePaletteListComponent', () => {
             expect(toggleSpy).toHaveBeenCalledWith(mockEvent);
         });
 
-        it('should display the empty state message from store', () => {
-            // Setup: Empty state with no content
+        it('should display the empty state message for CONTENT list type', () => {
+            // Setup: Empty state with no content for CONTENT list type
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
             mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
             mockStore.status.set(DotPaletteListStatus.EMPTY);
             mockStore.$isEmpty.set(true); // Set isEmpty to true for empty state to render
@@ -420,10 +421,134 @@ describe('DotUvePaletteListComponent', () => {
             const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
             expect(emptyStateMessage).toBeTruthy();
 
-            // Verify the message displayed matches the component's $emptyState computed value
+            // Verify the message displayed matches the CONTENT list type empty message
             // Note: DotMessageService mock returns the key itself (line 118: get: (key: string) => key)
-            // Component now uses generic 'uve.palette.empty.state.message' for non-search empty states
-            expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.state.message');
+            expect(emptyStateMessage?.textContent).toBe(
+                'uve.palette.empty.state.contenttypes.message'
+            );
+        });
+
+        it('should display the empty state message for FAVORITES list type', () => {
+            // Setup: Empty state with no content for FAVORITES list type
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.FAVORITES);
+            mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            mockStore.$isEmpty.set(true);
+            mockStore.contenttypes.set([]);
+
+            spectator.detectChanges();
+
+            // Query the empty state message element
+            const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
+            expect(emptyStateMessage).toBeTruthy();
+
+            // Verify the message displayed matches the FAVORITES list type empty message
+            expect(emptyStateMessage?.textContent).toBe(
+                'uve.palette.empty.state.favorites.message'
+            );
+        });
+
+        it('should display the empty state message for WIDGET list type', () => {
+            // Setup: Empty state with no content for WIDGET list type
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.WIDGET);
+            mockStore.searchParams.listType.set(DotUVEPaletteListTypes.WIDGET);
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            mockStore.$isEmpty.set(true);
+            mockStore.contenttypes.set([]);
+
+            spectator.detectChanges();
+
+            // Query the empty state message element
+            const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
+            expect(emptyStateMessage).toBeTruthy();
+
+            // Verify the message displayed matches the WIDGET list type empty message
+            expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.state.widgets.message');
+        });
+
+        it('should display the search empty state message when search returns no results', () => {
+            // Setup: Empty state with search term
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            mockStore.$isEmpty.set(true);
+            mockStore.contenttypes.set([]);
+
+            // Set a search term in the form control
+            spectator.component.searchControl.setValue('nonexistent search term');
+
+            // Force the computed signal to re-evaluate by updating a signal dependency
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.WIDGET);
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
+            spectator.detectChanges();
+
+            // Query the empty state message element
+            const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
+            expect(emptyStateMessage).toBeTruthy();
+
+            // Verify the message displayed matches the search empty state message
+            expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.search.state.message');
+        });
+
+        it('should display the correct icon for CONTENT list type empty state', () => {
+            // Setup: Empty state with no content for CONTENT list type
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            mockStore.$isEmpty.set(true);
+            mockStore.contenttypes.set([]);
+
+            spectator.detectChanges();
+
+            // Query the empty state icon element
+            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
+            expect(emptyStateIcon).toBeTruthy();
+
+            // Verify the icon class matches the CONTENT list type icon
+            expect(emptyStateIcon?.className).toContain('pi-folder-open');
+        });
+
+        it('should display the correct icon for FAVORITES list type empty state', () => {
+            // Setup: Empty state for FAVORITES list type
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.FAVORITES);
+            mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            mockStore.$isEmpty.set(true);
+            mockStore.contenttypes.set([]);
+
+            spectator.detectChanges();
+
+            // Query the empty state icon element
+            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
+            expect(emptyStateIcon).toBeTruthy();
+
+            // Verify the icon class matches the FAVORITES list type icon
+            expect(emptyStateIcon?.className).toContain('pi-plus');
+        });
+
+        it('should display the correct icon for search empty state', () => {
+            // Setup: Empty state with search term
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            mockStore.$isEmpty.set(true);
+            mockStore.contenttypes.set([]);
+
+            // Set a search term
+            spectator.component.searchControl.setValue('nonexistent');
+
+            // Force the computed signal to re-evaluate by updating a signal dependency
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.FAVORITES);
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
+            spectator.detectChanges();
+
+            // Query the empty state icon element
+            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
+            expect(emptyStateIcon).toBeTruthy();
+
+            // Verify the icon class matches the search empty state icon
+            expect(emptyStateIcon?.className).toContain('pi-search');
         });
 
         it('should call menu.toggle when sort menu button is clicked in content types view', () => {
