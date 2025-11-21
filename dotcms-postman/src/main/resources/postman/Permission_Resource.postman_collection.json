@@ -1038,6 +1038,786 @@
 				"description": "Get only write and couple types"
 			},
 			"response": []
+		},
+		{
+			"name": "Asset Permissions (GET /permissions/{assetId})",
+			"item": [
+				{
+					"name": "Setup: Create Test Folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Folder created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity).to.be.an('array');",
+									"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
+									"    ",
+									"    var folderId = jsonData.entity[0].identifier;",
+									"    pm.expect(folderId).to.be.a('string').and.not.eql('');",
+									"    pm.collectionVariables.set('testAssetFolderId', folderId);",
+									"    ",
+									"    console.log('Created test folder with ID: ' + folderId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"/test_asset_permissions_folder\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"createfolders",
+								"default"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Setup: Create Test Contentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Contentlet created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"    ",
+									"    var saved = jsonData.entity.results[0];",
+									"    var props = Object.keys(saved);",
+									"    var identifierProp = props[0];",
+									"    var contentlet = saved[identifierProp];",
+									"    var contentletId = contentlet.identifier;",
+									"    ",
+									"    pm.expect(contentletId).to.be.a('string').and.not.eql('');",
+									"    pm.collectionVariables.set('testAssetContentletId', contentletId);",
+									"    ",
+									"    console.log('Created test contentlet with identifier: ' + contentletId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlets\":[\n        {\n            \"contentType\":\"PermissionByContentTest\",\n            \"title\":\"TestAssetPermissions\",\n            \"contentHost\":\"default\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Folder Permissions - Happy Path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has required structure\", function () {",
+									"    var jsonData = pm.response.json().entity;",
+									"    ",
+									"    pm.expect(jsonData).to.have.property('assetId');",
+									"    pm.expect(jsonData).to.have.property('assetType');",
+									"    pm.expect(jsonData).to.have.property('inheritanceMode');",
+									"    pm.expect(jsonData).to.have.property('isParentPermissionable');",
+									"    pm.expect(jsonData).to.have.property('canEditPermissions');",
+									"    pm.expect(jsonData).to.have.property('canEdit');",
+									"    pm.expect(jsonData).to.have.property('permissions');",
+									"});",
+									"",
+									"pm.test(\"Asset type should be FOLDER\", function () {",
+									"    var jsonData = pm.response.json().entity;",
+									"    pm.expect(jsonData.assetType).to.eql('FOLDER');",
+									"});",
+									"",
+									"pm.test(\"Permissions array contains roles\", function () {",
+									"    var permissions = pm.response.json().entity.permissions;",
+									"    pm.expect(permissions).to.be.an('array');",
+									"    pm.expect(permissions.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"pm.test(\"Each permission has expected structure\", function () {",
+									"    var permissions = pm.response.json().entity.permissions;",
+									"    ",
+									"    permissions.forEach(permission => {",
+									"        pm.expect(permission).to.have.property('roleId');",
+									"        pm.expect(permission).to.have.property('roleName');",
+									"        pm.expect(permission).to.have.property('inherited');",
+									"        pm.expect(permission).to.have.property('individual');",
+									"        pm.expect(permission).to.have.property('inheritable');",
+									"        ",
+									"        pm.expect(permission.individual).to.be.an('array');",
+									"        // inheritable is either an object (for parent-permissionables) or null",
+									"        if (permission.inheritable !== null) {",
+									"            pm.expect(permission.inheritable).to.be.an('object');",
+									"        }",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Pagination metadata is valid\", function () {",
+									"    var pagination = pm.response.json().pagination;",
+									"    ",
+									"    pm.expect(pagination).to.have.property('currentPage');",
+									"    pm.expect(pagination).to.have.property('perPage');",
+									"    pm.expect(pagination).to.have.property('totalEntries');",
+									"    ",
+									"    pm.expect(pagination.currentPage).to.be.a('number').and.eql(1);",
+									"    pm.expect(pagination.perPage).to.be.a('number').and.eql(40);",
+									"    pm.expect(pagination.totalEntries).to.be.a('number').and.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{testAssetFolderId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{testAssetFolderId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Contentlet Permissions - Happy Path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has required structure\", function () {",
+									"    var jsonData = pm.response.json().entity;",
+									"    ",
+									"    pm.expect(jsonData).to.have.property('assetId');",
+									"    pm.expect(jsonData).to.have.property('assetType');",
+									"    pm.expect(jsonData).to.have.property('inheritanceMode');",
+									"    pm.expect(jsonData).to.have.property('isParentPermissionable');",
+									"    pm.expect(jsonData).to.have.property('canEditPermissions');",
+									"    pm.expect(jsonData).to.have.property('canEdit');",
+									"    pm.expect(jsonData).to.have.property('permissions');",
+									"});",
+									"",
+									"pm.test(\"Asset type should be CONTENT\", function () {",
+									"    var jsonData = pm.response.json().entity;",
+									"    pm.expect(jsonData.assetType).to.eql('CONTENT');",
+									"});",
+									"",
+									"pm.test(\"Contentlet has no inheritable permissions\", function () {",
+									"    var permissions = pm.response.json().entity.permissions;",
+									"    ",
+									"    permissions.forEach(permission => {",
+									"        pm.expect(permission.inheritable).to.be.null;",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Permissions array contains roles\", function () {",
+									"    var permissions = pm.response.json().entity.permissions;",
+									"    pm.expect(permissions).to.be.an('array');",
+									"    pm.expect(permissions.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{testAssetContentletId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{testAssetContentletId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Permissions with Custom Pagination",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Pagination reflects requested parameters\", function () {",
+									"    var pagination = pm.response.json().pagination;",
+									"    ",
+									"    pm.expect(pagination.currentPage).to.eql(1);",
+									"    pm.expect(pagination.perPage).to.eql(10);",
+									"});",
+									"",
+									"pm.test(\"Permissions array respects per_page limit\", function () {",
+									"    var permissions = pm.response.json().entity.permissions;",
+									"    pm.expect(permissions.length).to.be.at.most(10);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{testAssetFolderId}}?page=1&per_page=10",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{testAssetFolderId}}"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Last Page Beyond Total",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Permissions array should be empty for page beyond total\", function () {",
+									"    var permissions = pm.response.json().entity.permissions;",
+									"    pm.expect(permissions).to.be.an('array');",
+									"    pm.expect(permissions.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Pagination metadata remains consistent\", function () {",
+									"    var pagination = pm.response.json().pagination;",
+									"    ",
+									"    pm.expect(pagination.currentPage).to.eql(999);",
+									"    pm.expect(pagination.totalEntries).to.be.a('number').and.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{testAssetFolderId}}?page=999",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{testAssetFolderId}}"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "999"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Max Per Page (100)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Pagination reflects max per_page\", function () {",
+									"    var pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).to.eql(100);",
+									"});",
+									"",
+									"pm.test(\"Permissions array respects max per_page limit\", function () {",
+									"    var permissions = pm.response.json().entity.permissions;",
+									"    pm.expect(permissions.length).to.be.at.most(100);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{testAssetFolderId}}?per_page=100",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{testAssetFolderId}}"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Asset Not Found - Expect 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Response contains error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/nonexistent-asset-id-12345",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"nonexistent-asset-id-12345"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid Page Parameter - Expect 400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response contains error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.include('page');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{testAssetFolderId}}?page=0",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{testAssetFolderId}}"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid PerPage Parameter - Expect 400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response contains error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.include('per_page');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{testAssetFolderId}}?per_page=101",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{testAssetFolderId}}"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "101"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout Before Unauthorized Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unauthorized Access - Expect 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{testAssetFolderId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{testAssetFolderId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"variable": [
@@ -1079,6 +1859,14 @@
 		},
 		{
 			"key": "loginAsRoles",
+			"value": ""
+		},
+		{
+			"key": "testAssetFolderId",
+			"value": ""
+		},
+		{
+			"key": "testAssetContentletId",
 			"value": ""
 		}
 	]
