@@ -1,6 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
 
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
@@ -32,7 +31,6 @@ import { getProperQueryParamsFromUrl } from './utils/state-from-url';
 @Component({
     selector: 'lib-dot-analytics-dashboard',
     imports: [
-        CommonModule,
         ButtonModule,
         MessagesModule,
         DotAnalyticsDashboardMetricsComponent,

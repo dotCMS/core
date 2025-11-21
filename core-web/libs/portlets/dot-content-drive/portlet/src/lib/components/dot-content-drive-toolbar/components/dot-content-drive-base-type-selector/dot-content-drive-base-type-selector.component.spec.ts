@@ -116,9 +116,9 @@ describe('DotContentDriveBaseTypeSelectorComponent', () => {
             expect(multiSelectComponent.resetFilterOnHide).toBe(true);
             expect(multiSelectComponent.showToggleAll).toBe(true);
 
-            // For placeholder, we need to check the resolved value from the DOM
-            const multiSelectElement = spectator.query('p-multiselect');
-            expect(multiSelectElement.getAttribute('ng-reflect-placeholder')).toBe('Base Type');
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the placeholder property directly on the MultiSelect component instance
+            expect(multiSelectComponent.placeholder()).toBe('Base Type');
         });
     });
 });

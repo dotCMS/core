@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -11,7 +11,7 @@ import { ContentletFilters, DEFAULT_LANG_ID } from '../../../shared';
 
 @Injectable()
 export class SuggestionsService {
-    constructor(private http: HttpClient) {}
+    private readonly http = inject(HttpClient);
 
     get defaultHeaders() {
         const headers = new HttpHeaders();
