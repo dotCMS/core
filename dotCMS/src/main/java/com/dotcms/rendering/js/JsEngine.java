@@ -1,8 +1,11 @@
+package com.dotcms.rendering.js;
+
 import static com.dotmarketing.util.VelocityUtil.getBasicContext;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.JsEngineException;
 import com.dotcms.rendering.engine.ScriptEngine;
+import com.dotcms.rendering.js.JsContext.Builder;
 import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.js.proxy.JsRequest;
 import com.dotcms.rendering.js.proxy.JsResponse;
@@ -371,7 +374,8 @@ public class JsEngine implements ScriptEngine {
                                final Object[] objects) {
 
         final Object [] defaultArgsArray = new Object[]{
-                JsProxyFactory.createProxy(new JsContext.Builder().request(request).response(response).logger(jsDotLogger).build()) };
+                JsProxyFactory.createProxy(
+                        new Builder().request(request).response(response).logger(jsDotLogger).build())};
 
         return null != objects && objects.length > 0?
                 CollectionsUtils.concat(defaultArgsArray, objects): defaultArgsArray;
