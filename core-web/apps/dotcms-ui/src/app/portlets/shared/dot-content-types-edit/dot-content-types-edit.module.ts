@@ -54,6 +54,7 @@ import { DotEditContentTypeCacheService } from './components/fields/content-type
 import { DynamicFieldPropertyDirective } from './components/fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { HintPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/hint-property';
 import { NamePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/name-property';
+import { NewRenderModePropteryComponent } from './components/fields/content-type-fields-properties-form/field-properties/new-render-mode-proptery';
 import { RegexCheckPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/regex-check-property';
 import { ValuesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/values-property';
 import { ContentTypeFieldsRowComponent } from './components/fields/content-type-fields-row';
@@ -111,7 +112,8 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         NamePropertyComponent,
         RegexCheckPropertyComponent,
         ValuesPropertyComponent,
-        DotBlockEditorSettingsComponent
+        DotBlockEditorSettingsComponent,
+        NewRenderModePropteryComponent
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
