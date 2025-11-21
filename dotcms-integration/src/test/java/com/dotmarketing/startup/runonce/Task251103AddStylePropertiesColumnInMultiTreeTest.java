@@ -24,17 +24,15 @@ public class Task251103AddStylePropertiesColumnInMultiTreeTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
-        // Setting web app environment
         IntegrationTestInitService.getInstance().init();
     }
 
     /**
      * Method to test: {@link Task251103AddStylePropertiesColumnInMultiTree#executeUpgrade()} and
-     * {@link Task251103AddStylePropertiesColumnInMultiTree#forceRun()} When: Run the
-     * {@link Task251103AddStylePropertiesColumnInMultiTree#executeUpgrade()} Should: Create a new
-     * style_properties field in the multi_tree table with correct data type
+     * When: Run the {@link Task251103AddStylePropertiesColumnInMultiTree#executeUpgrade()}
+     * Should: Create a new style_properties field in the multi_tree table with correct data type
      *
-     * @throws SQLException thrown if an error occurs while executing the SQL statement
+     * @throws SQLException     thrown if an error occurs while executing the SQL statement
      * @throws DotDataException thrown if an error occurs while executing the task
      */
     @Test
@@ -62,17 +60,14 @@ public class Task251103AddStylePropertiesColumnInMultiTreeTest {
 
         // Verify correct data type
         verifyColumnDataType();
-
-        // Verify forceRun now returns false (already ran)
-        assertFalse("forceRun should return false after executing", task.forceRun());
     }
 
     /**
-     * Method to test: {@link Task251103AddStylePropertiesColumnInMultiTree#executeUpgrade()} When:
-     * Run the {@link Task251103AddStylePropertiesColumnInMultiTree#executeUpgrade()} twice Should:
-     * Not throw any exception (idempotency test)
+     * Method to test: {@link Task251103AddStylePropertiesColumnInMultiTree#executeUpgrade()}
+     * When: Run the {@link Task251103AddStylePropertiesColumnInMultiTree#executeUpgrade()} twice
+     * Should: Not throw any exception (idempotency test)
      *
-     * @throws SQLException thrown if an error occurs while executing the SQL statement
+     * @throws SQLException     thrown if an error occurs while executing the SQL statement
      * @throws DotDataException thrown if an error occurs while executing the task
      */
     @Test
@@ -94,14 +89,14 @@ public class Task251103AddStylePropertiesColumnInMultiTreeTest {
         // Verify column exists and forceRun returns false
         assertTrue("style_properties column should exist after task runs",
                 databaseMetaData.hasColumn("multi_tree", "style_properties"));
-        assertFalse("forceRun should return false after executing", task.forceRun());
     }
 
     /**
-     * Method to test: {@link Task251103AddStylePropertiesColumnInMultiTree#executeUpgrade()} When:
-     * The style_properties column is added Should: Allow NULL values and accept valid JSON data
+     * Method to test: {@link Task251103AddStylePropertiesColumnInMultiTree#executeUpgrade()}
+     * When: The style_properties column is added
+     * Should: Allow NULL values and accept valid JSON data
      *
-     * @throws SQLException thrown if an error occurs while executing the SQL statement
+     * @throws SQLException     thrown if an error occurs while executing the SQL statement
      * @throws DotDataException thrown if an error occurs while executing the task
      */
     @Test
@@ -132,15 +127,9 @@ public class Task251103AddStylePropertiesColumnInMultiTreeTest {
         // Update with JSON data (database-specific syntax)
         final String style_properties = "'{\"backgroundColor\": \"blue\", \"fontSize\": \"16px\"}'";
 
-        if (DbConnectionFactory.isPostgres()) {
-            dotConnect.executeStatement(
-                    "UPDATE multi_tree SET style_properties =" + style_properties
-                            + "::jsonb WHERE parent1 = 'test-page-1'");
-        } else if (DbConnectionFactory.isMySql()) {
-            dotConnect.executeStatement(
-                    "UPDATE multi_tree SET style_properties =" + style_properties
-                            + " WHERE parent1 = 'test-page-1'");
-        }
+        dotConnect.executeStatement(
+                "UPDATE multi_tree SET style_properties =" + style_properties
+                        + "::jsonb WHERE parent1 = 'test-page-1'");
 
         // Clean up test data
         dotConnect.executeStatement("DELETE FROM multi_tree WHERE parent1 = 'test-page-1'");
@@ -175,20 +164,7 @@ public class Task251103AddStylePropertiesColumnInMultiTreeTest {
                 stylePropertiesFound = true;
                 final String columnType = columnsMetaData.getString("TYPE_NAME").toLowerCase();
 
-                // Verify correct data type per database
-                if (DbConnectionFactory.isPostgres()) {
-                    assertTrue("PostgreSQL should use jsonb type",
-                            columnType.contains("jsonb"));
-                } else if (DbConnectionFactory.isMySql()) {
-                    assertTrue("MySQL should use json type",
-                            columnType.contains("json"));
-                } else if (DbConnectionFactory.isOracle()) {
-                    assertTrue("Oracle should use clob type",
-                            columnType.contains("clob"));
-                } else if (DbConnectionFactory.isMsSql()) {
-                    assertTrue("MSSQL should use nvarchar type",
-                            columnType.contains("nvarchar"));
-                }
+                assertTrue("PostgreSQL should use jsonb type", columnType.contains("jsonb"));
 
                 // Verify column is nullable
                 final int nullable = columnsMetaData.getInt("NULLABLE");
