@@ -278,7 +278,7 @@ describe('DotNavigationService', () => {
         it('should go to first portlet with menuId', () => {
             service.goToFirstPortlet();
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {
-                queryParams: { menuId: '123' }
+                queryParams: { mId: '123' }
             });
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });

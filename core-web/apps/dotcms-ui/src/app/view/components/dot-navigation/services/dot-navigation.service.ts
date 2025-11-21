@@ -110,7 +110,7 @@ export class DotNavigationService {
 
         return this.dotRouterService
             .gotoPortlet(firstMenuItem.menuLink, {
-                queryParams: { menuId: firstMenuGroup.id }
+                queryParams: { mId: firstMenuGroup.id.substring(0, 4) }
             })
             .then((isRouted: boolean) => {
                 if (!isRouted) {
