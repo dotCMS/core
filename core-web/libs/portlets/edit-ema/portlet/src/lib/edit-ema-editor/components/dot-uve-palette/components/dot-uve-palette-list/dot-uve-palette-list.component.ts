@@ -22,8 +22,8 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { PopoverModule } from 'primeng/popover';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -76,7 +76,7 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
         MenuModule,
         PaginatorModule,
         SkeletonModule,
-        OverlayPanelModule,
+        PopoverModule,
         DotFavoriteSelectorComponent,
         DotMessagePipe,
         ContextMenuModule

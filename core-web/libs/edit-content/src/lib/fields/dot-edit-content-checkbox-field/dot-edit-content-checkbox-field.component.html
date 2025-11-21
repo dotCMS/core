@@ -11,15 +11,21 @@
     <dot-card-field-content>
         <div class="flex flex-column gap-2">
             @for (option of $options(); track $index) {
-                <p-checkbox
-                    [class.ng-invalid]="fieldHasError"
-                    [class.ng-dirty]="fieldHasError"
-                    [name]="field.variable"
-                    [formControlName]="field.variable"
-                    [value]="option.value"
-                    [label]="option.label || null"
-                    [inputId]="field.variable + '-' + option.value"
-                    data-testid="checkbox-option" />
+                <div class="flex items-center">
+                    <p-checkbox
+                        [class.ng-invalid]="fieldHasError"
+                        [class.ng-dirty]="fieldHasError"
+                        [name]="field.variable"
+                        [formControlName]="field.variable"
+                        [value]="option.value"
+                        [inputId]="field.variable + '-' + option.value"
+                        data-testid="checkbox-option" />
+                    @if (option.label) {
+                        <label [for]="field.variable + '-' + option.value">
+                            {{ option.label }}
+                        </label>
+                    }
+                </div>
             }
         </div>
     </dot-card-field-content>

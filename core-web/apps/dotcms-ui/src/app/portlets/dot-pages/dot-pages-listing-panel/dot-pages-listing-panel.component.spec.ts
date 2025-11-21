@@ -5,10 +5,10 @@ import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DropdownModule } from 'primeng/dropdown';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
+import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
@@ -145,7 +145,7 @@ describe('DotPagesListingPanelComponent', () => {
                     CommonModule,
                     ButtonModule,
                     CheckboxModule,
-                    DropdownModule,
+                    SelectModule,
                     DotAutofocusDirective,
                     DotMessagePipe,
                     DotRelativeDatePipe,
@@ -153,7 +153,7 @@ describe('DotPagesListingPanelComponent', () => {
                     SkeletonModule,
                     TableModule,
                     TooltipModule,
-                    OverlayPanelModule
+                    PopoverModule
                 ],
                 providers: [
                     DialogService,

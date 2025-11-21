@@ -4,7 +4,7 @@ import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@ngnea
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { Calendar } from 'primeng/calendar';
+import { DatePicker } from 'primeng/datepicker';
 import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -258,7 +258,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showClear).toBe(true);
 
             expect(calendar.placeholder).toBe('Never expires');
@@ -285,7 +285,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showClear).toBe(false);
             expect(calendar.placeholder).toBe('');
         });
@@ -318,7 +318,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             control.disable();
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.disabled).toBe(true);
         });
 
@@ -348,7 +348,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             control.enable();
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.disabled).toBe(false);
         });
     });
@@ -376,7 +376,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showTime).toBe(true);
             expect(calendar.timeOnly).toBe(false);
             expect(calendar.icon).toBe('pi pi-calendar');
@@ -404,7 +404,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showTime).toBe(false);
             expect(calendar.timeOnly).toBe(false);
             expect(calendar.icon).toBe('pi pi-calendar');
@@ -432,7 +432,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showTime).toBe(true);
             expect(calendar.timeOnly).toBe(true);
             expect(calendar.icon).toBe('pi pi-clock');
@@ -653,7 +653,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const selectedDate = new Date('2024-01-15T10:30:00');
-            spectator.triggerEventHandler(Calendar, 'onSelect', selectedDate);
+            spectator.triggerEventHandler(DatePicker, 'onSelect', selectedDate);
 
             expect(calendarUtils.extractDateComponents).toHaveBeenCalledWith(selectedDate);
             expect(calendarUtils.createUtcDateAtMidnight).toHaveBeenCalledWith(2024, 0, 15);
@@ -682,7 +682,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const selectedDate = new Date('2024-01-15T10:30:00');
-            spectator.triggerEventHandler(Calendar, 'onSelect', selectedDate);
+            spectator.triggerEventHandler(DatePicker, 'onSelect', selectedDate);
 
             expect(calendarUtils.extractDateComponents).toHaveBeenCalledWith(selectedDate);
             expect(calendarUtils.convertServerTimeToUtc).toHaveBeenCalled();

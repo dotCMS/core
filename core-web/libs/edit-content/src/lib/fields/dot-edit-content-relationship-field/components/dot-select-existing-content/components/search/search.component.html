@@ -23,7 +23,7 @@
             [text]="true" />
     </p-inputGroup>
 
-    <p-overlayPanel #popover styleClass="w-24rem">
+    <p-popover #popover styleClass="w-24rem">
         <div class="flex flex-column gap-4">
             <div class="flex flex-column gap-4" formGroupName="systemSearchableFields">
                 <dot-language-field formControlName="languageId" />
@@ -51,5 +51,5 @@
                     severity="primary" />
             </div>
         </div>
-    </p-overlayPanel>
+    </p-popover>
 </form>

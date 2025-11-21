@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
 
 /**
  * A toolbar button component with overlay functionality.
@@ -29,7 +29,7 @@ import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
  */
 @Component({
     selector: 'dot-toolbar-btn-overlay',
-    imports: [ButtonModule, OverlayPanelModule],
+    imports: [ButtonModule, PopoverModule],
     styleUrls: ['./dot-toolbar-btn-overlay.component.scss'],
     templateUrl: 'dot-toolbar-btn-overlay.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -63,10 +63,10 @@ export class DotToolbarBtnOverlayComponent {
     $icon = input.required<string>({ alias: 'icon' });
 
     /**
-     * ViewChild reference to the PrimeNG OverlayPanel component.
+     * ViewChild reference to the PrimeNG Popover component.
      * Used to programmatically control the overlay panel's behavior.
      */
-    readonly $overlayPanel = viewChild.required<OverlayPanel>('overlayPanel');
+    readonly $overlayPanel = viewChild.required<Popover>('overlayPanel');
 
     /**
      * Output event emitted when the overlay panel is hidden.

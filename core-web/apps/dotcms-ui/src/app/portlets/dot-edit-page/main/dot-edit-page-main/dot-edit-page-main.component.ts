@@ -6,7 +6,7 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 
 import { DialogModule } from 'primeng/dialog';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 
 import { pluck, takeUntil, tap } from 'rxjs/operators';
 
@@ -37,7 +37,7 @@ import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.
         DotEditPageNavDirective,
         DotEditPageNavComponent,
         DotExperimentClassDirective,
-        OverlayPanelModule,
+        PopoverModule,
         DialogModule
     ]
 })

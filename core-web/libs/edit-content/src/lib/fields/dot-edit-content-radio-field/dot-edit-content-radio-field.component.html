@@ -12,14 +12,20 @@
     <dot-card-field-content>
         <div class="flex flex-column gap-2">
             @for (option of options; track $index) {
-                <p-radioButton
-                    [inputId]="field.variable + '_' + option.value"
-                    [name]="field.variable"
-                    [class.ng-invalid]="fieldHasError"
-                    [class.ng-dirty]="fieldHasError"
-                    [value]="option.value"
-                    [label]="option.label"
-                    [formControlName]="field.variable" />
+                <div class="flex items-center">
+                    <p-radioButton
+                        [inputId]="field.variable + '_' + option.value"
+                        [name]="field.variable"
+                        [class.ng-invalid]="fieldHasError"
+                        [class.ng-dirty]="fieldHasError"
+                        [value]="option.value"
+                        [formControlName]="field.variable" />
+                    @if (option.label) {
+                        <label [for]="field.variable + '_' + option.value">
+                            {{ option.label }}
+                        </label>
+                    }
+                </div>
             }
         </div>
     </dot-card-field-content>

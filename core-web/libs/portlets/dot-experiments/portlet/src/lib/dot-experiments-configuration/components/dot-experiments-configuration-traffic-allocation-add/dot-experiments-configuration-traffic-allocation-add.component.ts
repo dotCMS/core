@@ -11,8 +11,8 @@ import {
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
-import { SidebarModule } from 'primeng/sidebar';
 import { SliderModule } from 'primeng/slider';
 
 import { take } from 'rxjs/operators';
@@ -34,7 +34,7 @@ import {
         DotSidebarHeaderComponent,
         DotSidebarDirective,
         //PrimeNg
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         SliderModule,
         InputTextModule,

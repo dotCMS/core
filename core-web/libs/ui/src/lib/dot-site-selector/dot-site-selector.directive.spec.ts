@@ -5,7 +5,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { fakeAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { Dropdown, DropdownFilterEvent, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectFilterEvent } from 'primeng/select';
 
 import { DotEventsService, DotSiteService } from '@dotcms/data-access';
 import { CoreWebService, mockSites, SiteService } from '@dotcms/dotcms-js';
@@ -15,13 +15,13 @@ import { DotSiteSelectorDirective } from './dot-site-selector.directive';
 
 describe('DotSiteSelectorDirective', () => {
     let spectator: SpectatorDirective<DotSiteSelectorDirective>;
-    let dropdown: Dropdown;
+    let dropdown: Select;
     let dotEventsService: DotEventsService;
     let dotSiteService: DotSiteService;
 
     const createDirective = createDirectiveFactory({
         directive: DotSiteSelectorDirective,
-        imports: [HttpClientTestingModule, DropdownModule, BrowserAnimationsModule],
+        imports: [HttpClientTestingModule, SelectModule, BrowserAnimationsModule],
         providers: [
             { provide: SiteService, useClass: SiteServiceMock },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -32,11 +32,11 @@ describe('DotSiteSelectorDirective', () => {
 
     beforeEach(() => {
         spectator = createDirective(
-            '<p-dropdown [dotSiteSelector] [archive]="true" [live]="true" [system]="true" [pageSize]="10"></p-dropdown>'
+            '<p-select [dotSiteSelector] [archive]="true" [live]="true" [system]="true" [pageSize]="10"></p-select>'
         );
         dotSiteService = spectator.inject(DotSiteService);
         dotEventsService = spectator.inject(DotEventsService);
-        dropdown = spectator.directive['control'] as Dropdown;
+        dropdown = spectator.directive['control'] as Select;
     });
 
     it('should create', () => {
@@ -60,7 +60,7 @@ describe('DotSiteSelectorDirective', () => {
         });
 
         it('should get sites list with filter', fakeAsync(() => {
-            const event: DropdownFilterEvent = {
+            const event: SelectFilterEvent = {
                 filter: 'demo',
                 originalEvent: new MouseEvent('click')
             };

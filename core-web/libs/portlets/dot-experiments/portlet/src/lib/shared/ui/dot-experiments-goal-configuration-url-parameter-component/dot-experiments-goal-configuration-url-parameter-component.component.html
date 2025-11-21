@@ -36,7 +36,7 @@
                                 'experiments.goal.url_parameter.form.conditions.operator.label' | dm
                             }}
                         </label>
-                        <p-dropdown
+                        <p-select
                             [dotOptions]="operatorsList"
                             id="operator"
                             data-testId="operator-input"
@@ -45,7 +45,7 @@
                             placeholder="{{
                                 'experiments.goal.url_parameter.form.conditions.operator.placeholder'
                                     | dm
-                            }}"></p-dropdown>
+                            }}"></p-select>
                         <dot-field-validation-message
                             [field]="
                                 getConditionsFormArrayItemByIndex(i).controls['operator']

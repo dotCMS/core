@@ -15,8 +15,8 @@ import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 
 import { take, takeUntil, tap } from 'rxjs/operators';
 
@@ -44,7 +44,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
         ReactiveFormsModule,
         ButtonModule,
         CheckboxModule,
-        DropdownModule,
+        SelectModule,
         InputTextModule,
         SharedModule,
         DotLoadingIndicatorComponent,

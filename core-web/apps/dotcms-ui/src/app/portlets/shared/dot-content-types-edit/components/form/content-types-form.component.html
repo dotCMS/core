@@ -92,7 +92,7 @@
             <label for="content-type-form-publish-date-field">
                 {{ 'contenttypes.form.label.publish.date.field' | dm }}
             </label>
-            <p-dropdown
+            <p-select
                 (onChange)="handleDateVarChange($event, 'publishDateVar')"
                 [options]="dateVarOptions"
                 [tabindex]="7"
@@ -101,13 +101,13 @@
                 id="content-type-form-publish-date-field"
                 appendTo="body"
                 name="publishDateVar"
-                formControlName="publishDateVar"></p-dropdown>
+                formControlName="publishDateVar"></p-select>
         </div>
         <div class="field">
             <label for="content-type-form-expire-date-field">
                 {{ 'contenttypes.form.field.expire.date.field' | dm }}
             </label>
-            <p-dropdown
+            <p-select
                 (onChange)="handleDateVarChange($event, 'expireDateVar')"
                 [showClear]="true"
                 [options]="dateVarOptions"
@@ -116,7 +116,7 @@
                 id="content-type-form-expire-date-field"
                 appendTo="body"
                 name="expireDateVar"
-                formControlName="expireDateVar"></p-dropdown>
+                formControlName="expireDateVar"></p-select>
         </div>
     </div>
 

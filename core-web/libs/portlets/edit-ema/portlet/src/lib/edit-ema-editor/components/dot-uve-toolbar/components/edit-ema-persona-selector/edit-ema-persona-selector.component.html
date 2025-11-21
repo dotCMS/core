@@ -18,7 +18,7 @@
             dotAvatar></p-avatar>
     }
 </button>
-<p-overlayPanel #op styleClass="edit-ema-selector" data-testId="persona-op">
+<p-popover #op styleClass="edit-ema-selector" data-testId="persona-op">
     <p-listbox
         (onChange)="onSelect($event); op.toggle($event)"
         [options]="$personas().items"
@@ -61,4 +61,4 @@
             [pageLinkSize]="0"
             data-testId="persona-paginator" />
     }
-</p-overlayPanel>
+</p-popover>

@@ -4,14 +4,12 @@
             {{ 'message.containers.create.content_type_code' | dm }}
         </label>
     </div>
-    <p-tabView
+    <p-tabs
         (onChange)="handleTabClick($event, $event.index)"
         (onClose)="removeItem($event.index)"
-        [(activeIndex)]="activeTabIndex"
-        [controlClose]="true"
         [scrollable]="true"
         [@contentCodeAnimation]>
-        <p-tabPanel headerStyleClass="tab-panel-btn">
+        <p-tab headerStyleClass="tab-panel-btn">
             <ng-template pTemplate="header">
                 @if (contentTypes.length > 0) {
                     <i
@@ -53,13 +51,13 @@
                     </div>
                 </div>
             </ng-template>
-        </p-tabPanel>
+        </p-tab>
         @for (
             containerContent of getcontainerStructures.controls;
             track containerContent;
             let i = $index
         ) {
-            <p-tabPanel [closable]="true" formArrayName="containerStructures">
+            <p-tab [closable]="true" formArrayName="containerStructures">
                 <ng-template pTemplate="header">
                     {{ contentTypeNamesById[containerContent.value.structureId] }}
                 </ng-template>
@@ -81,7 +79,7 @@
                         formControlName="code"
                         language="html"></dot-textarea-content>
                 </div>
-            </p-tabPanel>
+            </p-tab>
         }
-    </p-tabView>
+    </p-tabs>
 </div>

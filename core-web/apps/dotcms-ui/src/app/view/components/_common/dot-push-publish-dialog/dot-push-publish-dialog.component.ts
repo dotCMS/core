@@ -3,8 +3,8 @@ import { Subject } from 'rxjs';
 import { Component, EventEmitter, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { CalendarModule } from 'primeng/calendar';
-import { DropdownModule } from 'primeng/dropdown';
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { takeUntil } from 'rxjs/operators';
@@ -32,8 +32,8 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     imports: [
         FormsModule,
         ReactiveFormsModule,
-        CalendarModule,
-        DropdownModule,
+        DatePickerModule,
+        SelectModule,
         SelectButtonModule,
         DotDialogComponent,
         DotPushPublishFormComponent

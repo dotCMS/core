@@ -5,7 +5,7 @@ import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular
 import { FormsModule } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { map, take } from 'rxjs/operators';
 
@@ -16,7 +16,7 @@ import { StructureTypeView } from '@dotcms/dotcms-models';
     selector: 'dot-base-type-selector',
     templateUrl: './dot-base-type-selector.component.html',
     styleUrls: ['./dot-base-type-selector.component.scss'],
-    imports: [CommonModule, DropdownModule, FormsModule]
+    imports: [CommonModule, SelectModule, FormsModule]
 })
 export class DotBaseTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);

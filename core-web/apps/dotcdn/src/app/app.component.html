@@ -1,14 +1,14 @@
-<p-tabView>
+<p-tabs>
     @if (vm$ | async; as VM) {
-        <p-tabPanel header="Overview">
+        <p-tab header="Overview">
             <div class="dot-cdn__tab-content">
                 <div class="dot-cdn__tab-content-meta">
-                    <p-dropdown
+                    <p-select
                         (onChange)="changePeriod($event)"
                         [(ngModel)]="selectedPeriod.value"
                         [options]="periodValues"
                         optionLabel="label"
-                        optionValue="value"></p-dropdown>
+                        optionValue="value"></p-select>
                     @if (VM.cdnDomain) {
                         <div class="dot-cdn__tab-domain">
                             <small>Root CDN Domain</small>
@@ -67,10 +67,10 @@
                     }
                 </div>
             </div>
-        </p-tabPanel>
+        </p-tab>
     }
     @if (vmPurgeLoaders$ | async; as VMPurgeLoaders) {
-        <p-tabPanel header="Flush Cache">
+        <p-tab header="Flush Cache">
             <div class="dot-cdn__tab-content--contained">
                 <form [formGroup]="purgeZoneForm">
                     <div class="dot-cdn__tab-content__row">
@@ -108,6 +108,6 @@
                         class="p-button-danger p-button-outlined"></button>
                 </div>
             </div>
-        </p-tabPanel>
+        </p-tab>
     }
-</p-tabView>
+</p-tabs>

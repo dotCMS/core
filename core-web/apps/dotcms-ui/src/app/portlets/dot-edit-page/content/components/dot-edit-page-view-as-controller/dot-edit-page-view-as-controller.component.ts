@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
@@ -36,7 +36,7 @@ import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-
     styleUrls: ['./dot-edit-page-view-as-controller.component.scss'],
     imports: [
         CommonModule,
-        DropdownModule,
+        SelectModule,
         FormsModule,
         TooltipModule,
         DotPersonaSelectorComponent,

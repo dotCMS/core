@@ -40,7 +40,7 @@ const meta: Meta<MultiSelect> = {
             { name: 'Istanbul', code: 'IST' },
             { name: 'Paris', code: 'PRS' }
         ],
-        defaultLabel: 'Select a City',
+        placeholder: 'Select a City',
         optionLabel: 'name',
         value: [{ name: 'Paris', code: 'PRS' }]
     },

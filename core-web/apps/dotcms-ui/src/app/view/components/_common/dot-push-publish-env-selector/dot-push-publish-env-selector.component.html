@@ -1,5 +1,5 @@
 <!--
-TODO: labels for defaultLabel and selectedItemsLabel in p-multiselect need to be changed after refactor of Message Service. https://github.com/primefaces/primeng/issues/2857
+TODO: labels for placeholder and selectedItemsLabel in p-multiselect need to be changed after refactor of Message Service. https://github.com/primefaces/primeng/issues/2857
 
 Also there is a problem here, when the field is invalid this multiselect should have the invalid class
 -->
@@ -7,7 +7,7 @@ Also there is a problem here, when the field is invalid this multiselect should 
     (onChange)="valueChange($event, selectedEnvironments)"
     [(ngModel)]="selectedEnvironments"
     [options]="pushEnvironments"
-    [defaultLabel]="'contenttypes.content.push_publish.select_environment' | dm"
+    [placeholder]="'contenttypes.content.push_publish.select_environment' | dm"
     appendTo="body"
     optionLabel="name"></p-multiSelect>
 

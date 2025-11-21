@@ -13,11 +13,16 @@
                 data-testId="query-input" />
             <div class="container-listing__header-options">
                 <div class="container-listing__filter-controls">
-                    <p-checkbox
-                        (onChange)="handleArchivedFilter($event.checked)"
-                        [label]="'Show-Archived' | dm"
-                        [binary]="true"
-                        data-testId="archiveCheckbox"></p-checkbox>
+                    <div class="flex items-center">
+                        <p-checkbox
+                            (onChange)="handleArchivedFilter($event.checked)"
+                            [inputId]="'show-archived-containers'"
+                            [binary]="true"
+                            data-testId="archiveCheckbox"></p-checkbox>
+                        <label [for]="'show-archived-containers'">
+                            {{ 'Show-Archived' | dm }}
+                        </label>
+                    </div>
                 </div>
                 <div>
                     <button

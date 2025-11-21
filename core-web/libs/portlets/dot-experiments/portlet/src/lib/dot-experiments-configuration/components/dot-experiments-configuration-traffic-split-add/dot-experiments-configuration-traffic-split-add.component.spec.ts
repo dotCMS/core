@@ -12,9 +12,9 @@ import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { Drawer } from 'primeng/drawer';
 import { InputNumber, InputNumberModule } from 'primeng/inputnumber';
 import { RadioButton, RadioButtonModule } from 'primeng/radiobutton';
-import { Sidebar } from 'primeng/sidebar';
 
 import {
     DotExperimentsService,
@@ -49,7 +49,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTrafficSplitAddComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
-    let sidebar: Sidebar;
+    let sidebar: Drawer;
 
     const createComponent = createComponentFactory({
         imports: [ButtonModule, CardModule, RadioButtonModule, InputNumberModule],
@@ -139,7 +139,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
 
     it('should close sidebar ', () => {
         jest.spyOn(store, 'closeSidebar');
-        sidebar = spectator.query(Sidebar);
+        sidebar = spectator.query(Drawer);
         sidebar.hide();
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);

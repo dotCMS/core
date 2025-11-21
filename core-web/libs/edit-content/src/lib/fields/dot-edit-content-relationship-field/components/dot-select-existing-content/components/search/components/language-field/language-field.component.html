@@ -1,7 +1,7 @@
 <label for="language-field" class="mb-2 inline-block">
     {{ 'dot.file.relationship.dialog.search.language.label' | dm }}
 </label>
-<p-dropdown
+<p-select
     inputId="language-field"
     [options]="store.languages()"
     [formControl]="languageControl"
@@ -15,7 +15,7 @@
     <ng-template pTemplate="selectedItem">
         {{ languageControl.value | language }}
     </ng-template>
-</p-dropdown>
+</p-select>
 
 @let error = store.error();
 @if (error) {

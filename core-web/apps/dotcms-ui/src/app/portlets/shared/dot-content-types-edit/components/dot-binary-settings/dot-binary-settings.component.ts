@@ -17,8 +17,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { catchError, take, tap } from 'rxjs/operators';
 
@@ -34,7 +34,7 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
         FormsModule,
         ReactiveFormsModule,
         InputTextModule,
-        InputSwitchModule,
+        ToggleSwitchModule,
         DividerModule,
         DotMessagePipe
     ],

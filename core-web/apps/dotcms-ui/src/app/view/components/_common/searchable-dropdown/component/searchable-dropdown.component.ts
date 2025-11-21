@@ -26,7 +26,7 @@ import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DataView, DataViewLazyLoadEvent, DataViewModule } from 'primeng/dataview';
 import { InputTextModule } from 'primeng/inputtext';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
 
 import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
 
@@ -55,7 +55,7 @@ import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
         ButtonModule,
         DataViewModule,
         InputTextModule,
-        OverlayPanelModule,
+        PopoverModule,
         DotIconComponent,
         DotMessagePipe
     ]
@@ -146,7 +146,7 @@ export class SearchableDropdownComponent
     searchInput: ElementRef;
 
     @ViewChild('searchPanel', { static: true })
-    searchPanelRef: OverlayPanel;
+    searchPanelRef: Popover;
 
     @ViewChild('dataView', { static: true })
     dataViewRef: DataView;

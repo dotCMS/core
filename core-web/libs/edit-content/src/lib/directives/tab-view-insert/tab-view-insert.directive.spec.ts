@@ -3,7 +3,7 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 import { ChangeDetectionStrategy, Component, NO_ERRORS_SCHEMA } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { TabViewInsertDirective } from './tab-view-insert.directive';
 
@@ -20,7 +20,7 @@ import { TabViewInsertDirective } from './tab-view-insert.directive';
             <div data-testid="append-content">Append Content</div>
         </ng-template>
     `,
-    imports: [TabViewModule, TabViewInsertDirective],
+    imports: [TabsModule, TabViewInsertDirective],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 class TestComponent {}
@@ -29,7 +29,7 @@ describe('TabViewInsertDirective', () => {
     let spectator: Spectator<TestComponent>;
     const createComponent = createComponentFactory({
         component: TestComponent,
-        imports: [TabViewModule, TabViewInsertDirective],
+        imports: [TabsModule, TabViewInsertDirective],
         schemas: [NO_ERRORS_SCHEMA]
     });
 

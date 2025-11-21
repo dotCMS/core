@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -39,7 +39,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
                 DotCopyLinkComponent,
                 HttpClientTestingModule,
                 DotMessagePipe,
-                OverlayPanelModule,
+                PopoverModule,
                 ButtonModule,
                 TooltipModule
             ],

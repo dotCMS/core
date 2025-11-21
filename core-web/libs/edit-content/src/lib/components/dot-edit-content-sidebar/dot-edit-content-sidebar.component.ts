@@ -12,8 +12,8 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
-import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
+import { SelectModule } from 'primeng/select';
+import { TabsModule } from 'primeng/tabs';
 
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -45,13 +45,13 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         DotMessagePipe,
         DotEditContentSidebarInformationComponent,
         DotEditContentSidebarWorkflowComponent,
-        TabViewModule,
+        TabsModule,
         TabViewInsertDirective,
         DotEditContentSidebarSectionComponent,
         DotCopyButtonComponent,
         ConfirmDialogModule,
         DialogModule,
-        DropdownModule,
+        SelectModule,
         ButtonModule,
         DotEditContentSidebarLocalesComponent,
         DotEditContentSidebarActivitiesComponent,
@@ -141,7 +141,7 @@ export class DotEditContentSidebarComponent {
      * Handles the active index change event from the sidebar tabs.
      * @param $event - The event object containing the active index.
      */
-    onActiveIndexChange($event: TabViewChangeEvent) {
+    onActiveIndexChange($event: { index: number }) {
         const { index } = $event;
         this.$store.setActiveSidebarTab(index);
     }

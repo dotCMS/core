@@ -16,9 +16,9 @@ import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
-import { DropdownModule } from 'primeng/dropdown';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
+import { Popover, PopoverModule } from 'primeng/popover';
+import { SelectModule } from 'primeng/select';
 
 import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
 
@@ -36,10 +36,10 @@ import { WINDOW } from '@dotcms/utils';
 @Component({
     imports: [
         CommonModule,
-        DropdownModule,
+        SelectModule,
         FormsModule,
         ButtonModule,
-        OverlayPanelModule,
+        PopoverModule,
         PanelModule,
         DividerModule,
         DotMessagePipe,
@@ -69,7 +69,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
     @Output() hideOverlayPanel = new EventEmitter<string>();
-    @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
+    @ViewChild('deviceSelector') overlayPanel: Popover;
     previewUrl: string;
 
     protected linkToAddDevice = '/c/content';

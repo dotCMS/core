@@ -9,13 +9,13 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectModule } from 'primeng/select';
 import { SplitButtonModule } from 'primeng/splitbutton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -148,27 +148,27 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotWorkflowsActionsSelectorFieldComponent,
         DotWorkflowsSelectorFieldComponent,
         DragulaModule,
-        DropdownModule,
+        SelectModule,
         FormsModule,
         IframeComponent,
         DotInlineEditComponent,
         DotLoadingIndicatorComponent,
         InputTextModule,
         MultiSelectModule,
-        OverlayPanelModule,
+        PopoverModule,
         RadioButtonModule,
         ReactiveFormsModule,
         SearchableDropdownComponent,
         DotSiteSelectorFieldComponent,
         SplitButtonModule,
-        TabViewModule,
+        TabsModule,
         DotRelationshipTreeComponent,
         DotPortletBoxComponent,
         DotMdIconSelectorComponent,
         DotAddToMenuComponent,
         DotFieldRequiredDirective,
         DotCopyButtonComponent,
-        OverlayPanelModule,
+        PopoverModule,
         DotMessagePipe
     ],
     providers: [

@@ -15,11 +15,16 @@
     dataKey="inode">
     <div class="template-listing__header-options">
         <div>
-            <p-checkbox
-                (onChange)="handleArchivedFilter($event.checked)"
-                [label]="'Show-Archived' | dm"
-                [binary]="true"
-                data-testid="archiveCheckbox"></p-checkbox>
+            <div class="flex items-center">
+                <p-checkbox
+                    (onChange)="handleArchivedFilter($event.checked)"
+                    [inputId]="'show-archived-templates'"
+                    [binary]="true"
+                    data-testid="archiveCheckbox"></p-checkbox>
+                <label [for]="'show-archived-templates'">
+                    {{ 'Show-Archived' | dm }}
+                </label>
+            </div>
             <button
                 (click)="actionsMenu.toggle($event)"
                 [disabled]="!this.selectedTemplates?.length"

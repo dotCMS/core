@@ -1,7 +1,7 @@
 <div class="analytics-dashboard flex flex-column" data-testid="analytics-dashboard">
     <!-- Development Status Banner -->
     @if ($showMessage()) {
-        <p-messages severity="info" data-testid="analytics-message">
+        <p-message severity="info" data-testid="analytics-message">
             <ng-template pTemplate="content">
                 <div class="flex align-items-center justify-content-between gap-2 w-full">
                     <div class="flex align-items-center gap-2">
@@ -22,7 +22,7 @@
                     </div>
                 </div>
             </ng-template>
-        </p-messages>
+        </p-message>
     }
 
     <!-- Filters Row - Gray Background -->

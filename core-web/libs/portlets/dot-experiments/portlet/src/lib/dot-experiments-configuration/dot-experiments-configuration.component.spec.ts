@@ -86,7 +86,7 @@ const defaultVmMock: ConfigurationViewModel = {
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
-    selector: `p-confirmPopup`,
+    selector: `p-confirmpopup`,
     template: `
         ConfirmPopupMockComponent
     `

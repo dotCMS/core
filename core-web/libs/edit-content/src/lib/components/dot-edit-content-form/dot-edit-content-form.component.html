@@ -22,12 +22,12 @@
         [formGroup]="form"
         data-testId="edit-content-form"
         class="p-fluid dot-edit-content-form h-100">
-        <p-tabView
+        <p-tabs
             [scrollable]="true"
             data-testId="edit-content-multiple-tabs"
             [class.dot-edit-content-tabview--single-tab]="$hasSingleTab()"
             (onChange)="onActiveIndexChange($event)"
-            [activeIndex]="activeIndex"
+            [value]="activeIndex"
             scrollable="false"
             class="dot-edit-content-tabview">
             <!-- Add prepend and append areas to the tabs -->
@@ -35,13 +35,16 @@
 
             <!-- Tabs are lazy -->
             @for (tab of tabs; track tab) {
-                <p-tabPanel [header]="tab.title" [@fadeIn]>
+                <p-tab [@fadeIn]>
+                    <ng-template pTemplate="header">
+                        {{ tab.title }}
+                    </ng-template>
                     <ng-template pTemplate="content">
                         <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />
                     </ng-template>
-                </p-tabPanel>
+                </p-tab>
             }
-        </p-tabView>
+        </p-tabs>
 
         <!-- Template for the tab tabPanel -->
         <ng-template #tabPanelTemplate let-tab="tab">

@@ -6,7 +6,6 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SelectItem } from 'primeng/api';
-import { Dropdown } from 'primeng/dropdown';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -76,7 +75,7 @@ describe('DotBaseTypeSelectorComponent', () => {
 
     it('shoudl set fixed width to dropdown', () => {
         fixture.detectChanges();
-        const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+        const pDropDown: Select = de.query(By.css('p-dropdown')).componentInstance;
         expect(pDropDown.style).toEqual({ width: '155px' });
     });
 });

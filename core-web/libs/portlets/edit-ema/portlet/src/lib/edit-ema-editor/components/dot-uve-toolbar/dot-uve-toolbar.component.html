@@ -32,7 +32,7 @@
             icon="pi pi-copy"
             styleClass="p-button-text p-button-sm p-button-rounded"
             data-testId="uve-toolbar-copy-url">
-            <p-overlayPanel #op>
+            <p-popover #op>
                 <div class="url-list">
                     @for (url of $pageURLS(); track url.value) {
                         <div class="url-item">
@@ -49,7 +49,7 @@
                         </div>
                     }
                 </div>
-            </p-overlayPanel>
+            </p-popover>
         </p-button>
         <a
             title="Page API URL"
@@ -84,7 +84,7 @@
 
     @if (live && !$socialMedia()) {
         <div class="p-toolbar-group-center">
-            <p-calendar
+            <p-datePicker
                 inputStyleClass="p-inputtext-sm"
                 [ngModel]="$previewDate()"
                 (ngModelChange)="fetchPageOnDate($event)"

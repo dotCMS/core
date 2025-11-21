@@ -8,7 +8,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { Sidebar, SidebarModule } from 'primeng/sidebar';
+import { Drawer, DrawerModule } from 'primeng/drawer';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
 import {
@@ -136,7 +136,7 @@ describe('DotBlockEditorSidebarComponent', () => {
                 MockDotBlockEditorComponent,
                 HttpClientTestingModule,
                 BrowserAnimationsModule,
-                SidebarModule,
+                DrawerModule,
                 DotMessagePipe,
                 ButtonModule
             ],
@@ -176,7 +176,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should set sidebar with correct inputs', () => {
-        const sidebar: Sidebar = de.query(By.css('[data-testId="sidebar"]')).componentInstance;
+        const sidebar: Drawer = de.query(By.css('[data-testId="sidebar"]')).componentInstance;
         expect(sidebar.blockScroll).toEqual(true);
         expect(sidebar.position).toEqual('right');
         expect(sidebar.dismissible).toEqual(false);
@@ -241,7 +241,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         fixture.detectChanges();
 
         const cancelBtn = de.query(By.css('[data-testId="cancelBtn"]'));
-        const sidebar: Sidebar = de.query(By.css('[data-testId="sidebar"]')).componentInstance;
+        const sidebar: Drawer = de.query(By.css('[data-testId="sidebar"]')).componentInstance;
 
         cancelBtn.triggerEventHandler('click');
         fixture.detectChanges();

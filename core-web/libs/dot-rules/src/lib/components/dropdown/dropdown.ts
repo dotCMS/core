@@ -14,7 +14,7 @@ import {
 import { ControlValueAccessor, NgControl } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
-import { Dropdown as PDropdown } from 'primeng/dropdown';
+import { Select as PSelect } from 'primeng/select';
 
 import { map, mergeMap, toArray } from 'rxjs/operators';
 
@@ -29,7 +29,7 @@ import { isEmpty } from '@dotcms/utils';
     selector: 'cw-input-dropdown',
     template: `
         @if (maxSelections <= 1) {
-            <p-dropdown
+            <p-select
                 (onChange)="fireChange($event.value)"
                 [(ngModel)]="modelValue"
                 [style]="{ width: '100%' }"
@@ -41,7 +41,7 @@ import { isEmpty } from '@dotcms/utils';
                 #inputDropdown
                 ng-valid
                 class="ui fluid ng-valid"
-                appendTo="body"></p-dropdown>
+                appendTo="body"></p-select>
         }
         @if (maxSelections > 1) {
             <dot-autocomplete-tags
@@ -71,7 +71,7 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     @Output() touch: EventEmitter<any> = new EventEmitter();
     @Output() enter: EventEmitter<boolean> = new EventEmitter(false);
 
-    @ViewChild('inputDropdown') inputDropdown: PDropdown;
+    @ViewChild('inputDropdown') inputDropdown: PSelect;
 
     modelValue: string;
     dropdownOptions: Observable<SelectItem[]>;

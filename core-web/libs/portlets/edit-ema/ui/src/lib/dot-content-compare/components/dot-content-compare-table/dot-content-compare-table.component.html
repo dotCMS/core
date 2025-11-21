@@ -19,7 +19,7 @@
                         </div>
                         @if ($showActions()) {
                             <div class="dot-content-compare-table__controls">
-                                <p-dropdown
+                                <p-select
                                     (onChange)="changeVersion.emit($event.value)"
                                     [options]="data.versions"
                                     data-testid="versions-dropdown"
@@ -40,7 +40,7 @@
                                                 item.modUserName
                                         }}
                                     </ng-template>
-                                </p-dropdown>
+                                </p-select>
                                 <p-selectButton
                                     (onChange)="changeDiff.emit($event.value)"
                                     [(ngModel)]="showDiff"

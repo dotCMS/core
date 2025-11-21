@@ -1,7 +1,8 @@
-<p-tabView [formGroup]="folderForm">
-    <p-tabPanel
-        [header]="'content-drive.dialog.folder.general.header' | dm"
-        class="folder-dialog-tab-content">
+<p-tabs [formGroup]="folderForm">
+    <p-tab class="folder-dialog-tab-content">
+        <ng-template pTemplate="header">
+            {{ 'content-drive.dialog.folder.general.header' | dm }}
+        </ng-template>
         <div class="folder-dialog-field">
             <label [checkIsRequiredControl]="'title'" for="title" dotFieldRequired>
                 {{ 'content-drive.dialog.folder.field.title' | dm }}
@@ -13,10 +14,11 @@
                 formControlName="title"
                 [autofocus]="true" />
         </div>
-    </p-tabPanel>
-    <p-tabPanel
-        [header]="'content-drive.dialog.folder.advanced.header' | dm"
-        class="folder-dialog-tab-content">
+    </p-tab>
+    <p-tab class="folder-dialog-tab-content">
+        <ng-template pTemplate="header">
+            {{ 'content-drive.dialog.folder.advanced.header' | dm }}
+        </ng-template>
         <div class="folder-dialog-field">
             <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
                 {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
@@ -50,7 +52,7 @@
                 dotFieldRequired>
                 {{ 'content-drive.dialog.folder.field.default-file-asset-type' | dm }}
             </label>
-            <p-dropdown
+            <p-select
                 [options]="$fileAssetTypes()"
                 optionLabel="name"
                 optionValue="variable"
@@ -79,13 +81,13 @@
             <label [checkIsRequiredControl]="'showOnMenu'" for="showOnMenu" dotFieldRequired>
                 {{ 'content-drive.dialog.folder.field.show-on-menu' | dm }}
             </label>
-            <p-inputSwitch
+            <p-toggleSwitch
                 id="showOnMenu"
                 aria-describedby="showOnMenu-help"
                 formControlName="showOnMenu" />
         </div>
-    </p-tabPanel>
-</p-tabView>
+    </p-tab>
+</p-tabs>
 
 <div class="folder-dialog-footer">
     <button

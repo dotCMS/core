@@ -13,11 +13,16 @@
         [disabled]="(dotPageStateService.haveContent$ | async) === false"
         [pageState]="pageState" />
     @if (showWhatsChanged && isEnterpriseLicense$ | async) {
-        <p-checkbox
-            (onChange)="whatschange.emit($event.checked)"
-            [binary]="true"
-            [label]="'dot.common.whats.changed' | dm"
-            class="flex dot-edit__what-changed-button" />
+        <div class="flex items-center">
+            <p-checkbox
+                (onChange)="whatschange.emit($event.checked)"
+                [inputId]="'whats-changed-seo'"
+                [binary]="true"
+                class="flex dot-edit__what-changed-button" />
+            <label [for]="'whats-changed-seo'">
+                {{ 'dot.common.whats.changed' | dm }}
+            </label>
+        </div>
     }
 } @else {
     <dot-language-selector

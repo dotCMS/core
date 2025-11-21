@@ -9,7 +9,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { DotPropertiesService, DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -62,7 +62,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         host: MockFormComponent,
         imports: [
             ReactiveFormsModule,
-            DropdownModule,
+            SelectModule,
             NoopAnimationsModule,
             ConfirmDialogModule,
             DotMessagePipe

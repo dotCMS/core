@@ -98,7 +98,7 @@ export class MockPButton {}
 /**
  * Collection of commonly needed mock PrimeNG components
  */
-export const MOCK_PRIMENG_COMPONENTS = [MockPTabView, MockPTabPanel, MockPDropdown, MockPButton];
+export const MOCK_PRIMENG_COMPONENTS = [MockPTabView, MockPTabPanel, MockPSelect, MockPButton];
 
 /**
  * All mock components combined

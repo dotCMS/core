@@ -6,7 +6,7 @@ import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
 import {
@@ -83,7 +83,7 @@ import {
         DotEmaDialogComponent,
         DotInfoPageComponent,
         DotNotLicenseComponent,
-        MessagesModule,
+        MessageModule,
         DotMessagePipe
     ]
 })

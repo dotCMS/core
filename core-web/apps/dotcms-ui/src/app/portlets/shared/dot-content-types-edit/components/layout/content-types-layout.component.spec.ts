@@ -11,7 +11,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { MenuItem } from 'primeng/api';
 import { SplitButtonModule } from 'primeng/splitbutton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import {
     DotAlertConfirmService,
@@ -162,7 +162,7 @@ describe('ContentTypesLayoutComponent', () => {
             ],
             imports: [
                 ContentTypesLayoutComponent,
-                TabViewModule,
+                TabsModule,
                 DotIconComponent,
                 DotSecondaryToolbarComponent,
                 RouterTestingModule,

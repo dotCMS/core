@@ -16,11 +16,11 @@
     class="overlay-btn"
     data-testid="btn-overlay"></button>
 
-<p-overlayPanel
+<p-popover
     #overlayPanel
     [styleClass]="$overlayStyleClass()"
     [appendTo]="'body'"
     (onShow)="handlerShow()"
     (onHide)="handlerHide()">
     <ng-content />
-</p-overlayPanel>
+</p-popover>

@@ -32,8 +32,11 @@
     [hideButtons]="hideButtons"
     [header]="currentFieldType?.label"
     width="45rem">
-    <p-tabView (onChange)="handleTabChange($event.index)" [(activeIndex)]="activeTab">
-        <p-tabPanel [header]="'contenttypes.dropzone.tab.overview' | dm">
+    <p-tabs (onChange)="handleTabChange($event.index)" [(value)]="activeTab">
+        <p-tab>
+            <ng-template pTemplate="header">
+                {{ 'contenttypes.dropzone.tab.overview' | dm }}
+            </ng-template>
             @if (
                 currentFieldType?.clazz ===
                 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
@@ -60,9 +63,12 @@
                         [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
                 }
             </div>
-        </p-tabPanel>
+        </p-tab>
         @if (!!currentField?.id && isFieldWithSettings) {
-            <p-tabPanel [header]="'Settings'" [disabled]="!currentField?.id" #panel>
+            <p-tab [disabled]="!currentField?.id" #panel>
+                <ng-template pTemplate="header">
+                    {{ 'Settings' | dm }}
+                </ng-template>
                 @switch (this.currentFieldType?.clazz) {
                     @case ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
                         <dot-block-editor-settings
@@ -81,18 +87,18 @@
                             [isVisible]="panel.selected"></dot-binary-settings>
                     }
                 }
-            </p-tabPanel>
+            </p-tab>
         }
 
-        <p-tabPanel
-            [header]="'contenttypes.dropzone.tab.variables' | dm"
-            [disabled]="!currentField?.id"
-            #panel>
+        <p-tab [disabled]="!currentField?.id" #panel>
+            <ng-template pTemplate="header">
+                {{ 'contenttypes.dropzone.tab.variables' | dm }}
+            </ng-template>
             <ng-template pTemplate="content">
                 <dot-content-type-fields-variables
                     [showTable]="panel.selected"
                     [field]="currentField"></dot-content-type-fields-variables>
             </ng-template>
-        </p-tabPanel>
-    </p-tabView>
+        </p-tab>
+    </p-tabs>
 </dot-dialog>

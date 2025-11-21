@@ -12,7 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
-import { TabView } from 'primeng/tabview';
+import { TabView } from 'primeng/tabs';
 
 import {
     DotExperimentsService,

@@ -4,11 +4,11 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
+import { SelectModule } from 'primeng/select';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -43,9 +43,9 @@ interface ActiveFilter {
         InputTextModule,
         ButtonModule,
         InputGroupModule,
-        OverlayPanelModule,
+        PopoverModule,
         DotMessagePipe,
-        DropdownModule,
+        SelectModule,
         ReactiveFormsModule,
         LanguageFieldComponent,
         SiteFieldComponent,
@@ -57,9 +57,9 @@ interface ActiveFilter {
 })
 export class SearchComponent {
     /**
-     * Reference to the OverlayPanel component used for advanced search options.
+     * Reference to the Popover component used for advanced search options.
      */
-    $overlayPanel = viewChild.required(OverlayPanel);
+    $overlayPanel = viewChild.required(Popover);
 
     /**
      * Reference to the language field component to access its store.

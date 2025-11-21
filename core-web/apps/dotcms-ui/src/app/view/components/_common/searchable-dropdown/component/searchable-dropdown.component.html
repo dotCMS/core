@@ -42,7 +42,7 @@
     }
 </ng-template>
 
-<p-overlayPanel
+<p-popover
     #searchPanel
     (onHide)="hideOverlayHandler()"
     (onShow)="showOverlayHandler()"
@@ -86,7 +86,7 @@
                 [ngTemplateOutlet]="externalItemListTemplate || defaultListTemplate"></ng-container>
         </ng-template>
     </p-dataView>
-</p-overlayPanel>
+</p-popover>
 
 <ng-container
     [ngTemplateOutletContext]="{ item: value }"

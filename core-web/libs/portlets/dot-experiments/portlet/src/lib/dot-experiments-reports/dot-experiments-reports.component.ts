@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -39,7 +39,7 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         TagModule,
         ButtonModule,
         ConfirmPopupModule,
-        TabViewModule
+        TabsModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],

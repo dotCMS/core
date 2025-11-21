@@ -2,7 +2,7 @@ import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormGroup } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -18,7 +18,7 @@ import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar/dot-lay
     imports: [
         DotLayoutPropertiesItemComponent,
         DotLayoutSidebarComponent,
-        OverlayPanelModule,
+        PopoverModule,
         ButtonModule,
         ReactiveFormsModule,
         DotMessagePipe

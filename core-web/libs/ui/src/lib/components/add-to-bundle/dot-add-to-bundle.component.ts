@@ -19,7 +19,7 @@ import {
     Validators
 } from '@angular/forms';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 
 import { map, take, takeUntil, tap } from 'rxjs/operators';
 
@@ -40,7 +40,7 @@ const LAST_BUNDLE_USED = 'lastSelectedBundle';
         DotDialogComponent,
         DotMessagePipe,
         ReactiveFormsModule,
-        DropdownModule,
+        SelectModule,
         AsyncPipe,
         DotFieldValidationMessageComponent
     ],
@@ -60,7 +60,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
 
     @ViewChild('formEl', { static: true }) formEl: HTMLFormElement;
 
-    @ViewChild('addBundleDropdown', { static: true }) addBundleDropdown: Dropdown;
+    @ViewChild('addBundleDropdown', { static: true }) addBundleDropdown: Select;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     readonly #dotMessageService = inject(DotMessageService);
     readonly #addToBundleService = inject(AddToBundleService);

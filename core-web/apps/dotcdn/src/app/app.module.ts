@@ -7,11 +7,11 @@ import { RouterModule } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
+import { TextareaModule } from 'primeng/textarea';
 
 import {
     CoreWebService,
@@ -41,13 +41,13 @@ const dotEventSocketURLFactory = () => {
     imports: [
         BrowserModule,
         InputTextModule,
-        DropdownModule,
+        SelectModule,
         BrowserAnimationsModule,
         HttpClientModule,
         RouterModule.forRoot([]),
-        TabViewModule,
+        TabsModule,
         ChartModule,
-        InputTextareaModule,
+        TextareaModule,
         ButtonModule,
         DotIconComponent,
         FormsModule,

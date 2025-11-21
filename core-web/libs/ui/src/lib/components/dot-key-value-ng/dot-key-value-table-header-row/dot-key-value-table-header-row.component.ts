@@ -10,8 +10,8 @@ import {
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
@@ -22,7 +22,7 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
     templateUrl: './dot-key-value-table-header-row.component.html',
     imports: [
         ButtonModule,
-        InputSwitchModule,
+        ToggleSwitchModule,
         InputTextModule,
         FormsModule,
         ReactiveFormsModule,

@@ -44,7 +44,7 @@
             <i class="pi pi-pencil"></i>
         </button>
     } @else {
-        <p-dropdown
+        <p-select
             #dropdown
             styleClass="bubble-menu-dropdown"
             [(ngModel)]="dropdownItem"
@@ -62,7 +62,7 @@
                     <span class="dropdown-item-label">{{ item.name }}</span>
                 </div>
             </ng-template>
-        </p-dropdown>
+        </p-select>
         <div class="divider"></div>
         <button
             class="bubble-menu-button bubble-menu-button--char"

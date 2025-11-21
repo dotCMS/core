@@ -19,9 +19,9 @@ import {
     Validators
 } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectModule } from 'primeng/select';
 
 import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
@@ -47,7 +47,7 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
     imports: [
         CommonModule,
         ReactiveFormsModule,
-        DropdownModule,
+        SelectModule,
         InputTextModule,
         RadioButtonModule,
         DotAutofocusDirective,

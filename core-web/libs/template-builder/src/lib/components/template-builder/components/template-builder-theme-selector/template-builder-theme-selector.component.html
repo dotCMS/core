@@ -1,5 +1,5 @@
 <div class="theme__header">
-    <p-dropdown
+    <p-select
         (onChange)="siteChange($event.value)"
         [filter]="true"
         [showClear]="true"
@@ -8,7 +8,7 @@
         #siteSelector
         dotSiteSelector
         optionLabel="name"
-        filterBy="name"></p-dropdown>
+        filterBy="name"></p-select>
 
     <div class="theme-header__search-box">
         <input

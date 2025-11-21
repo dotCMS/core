@@ -21,11 +21,11 @@
             </div>
             <div class="field">
                 <label for="filterKey">{{ 'download.bundle.filter' | dm }}</label>
-                <p-dropdown
+                <p-select
                     [options]="filterOptions"
                     id="filterKey"
                     formControlName="filterKey"
-                    appendTo="body"></p-dropdown>
+                    appendTo="body"></p-select>
             </div>
         </form>
     }

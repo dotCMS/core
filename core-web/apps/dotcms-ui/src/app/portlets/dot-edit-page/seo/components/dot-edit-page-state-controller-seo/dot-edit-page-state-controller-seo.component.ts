@@ -15,9 +15,9 @@ import { FormsModule } from '@angular/forms';
 
 import { MenuItem, SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { Menu, MenuModule } from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { switchMap, take } from 'rxjs/operators';
@@ -57,7 +57,7 @@ enum DotConfirmationType {
     styleUrls: ['./dot-edit-page-state-controller-seo.component.scss'],
     imports: [
         FormsModule,
-        InputSwitchModule,
+        ToggleSwitchModule,
         SelectButtonModule,
         DotMessagePipe,
         TooltipModule,

@@ -17,8 +17,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { InputSwitch, InputSwitchChangeEvent } from 'primeng/inputswitch';
-import { TabPanel, TabView } from 'primeng/tabview';
+import { Tab, Tabs } from 'primeng/tabs';
+import { ToggleSwitch, ToggleSwitchChangeEvent } from 'primeng/toggleswitch';
 
 import {
     DotContentletService,
@@ -319,13 +319,16 @@ describe('DotFormComponent', () => {
 
         describe('UI', () => {
             it('should render two tabs', () => {
-                const tabView = spectator.query(TabView);
+                const tabView = spectator.query(Tabs);
                 expect(tabView).toBeTruthy();
 
-                const tabPanels = spectator.queryAll(TabPanel);
+                const tabPanels = spectator.queryAll(Tab);
                 expect(tabPanels.length).toBe(2);
-                expect(tabPanels[0]._header).toBe('Content');
-                expect(tabPanels[1]._header).toBe('New Tab');
+                // In PrimeNG 20, headers are template-based, so we check the rendered text
+                const tabHeaders = spectator.queryAll('.p-tab-header-text');
+                expect(tabHeaders.length).toBe(2);
+                expect(tabHeaders[0]?.textContent?.trim()).toBe('Content');
+                expect(tabHeaders[1]?.textContent?.trim()).toBe('New Tab');
             });
 
             it('should have append area', () => {
@@ -614,17 +617,17 @@ describe('DotFormComponent', () => {
             });
 
             it('should call lockContent when switch is turned on', () => {
-                const lockSwitch = spectator.query(InputSwitch);
+                const lockSwitch = spectator.query(ToggleSwitch);
 
-                lockSwitch.onChange.emit({ checked: true } as InputSwitchChangeEvent);
+                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
 
                 expect(dotContentletService.lockContent).toHaveBeenCalled();
             });
 
             it('should call unlockContent when switch is turned off', () => {
-                const lockSwitch = spectator.query(InputSwitch);
+                const lockSwitch = spectator.query(ToggleSwitch);
 
-                lockSwitch.onChange.emit({ checked: false } as InputSwitchChangeEvent);
+                lockSwitch.onChange.emit({ checked: false } as ToggleSwitchChangeEvent);
 
                 expect(dotContentletService.unlockContent).toHaveBeenCalled();
             });
@@ -645,7 +648,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should hide the lock switch when user can not lock', () => {
-                const lockSwitch = spectator.query(InputSwitch);
+                const lockSwitch = spectator.query(ToggleSwitch);
                 expect(lockSwitch).toBe(null);
             });
         });

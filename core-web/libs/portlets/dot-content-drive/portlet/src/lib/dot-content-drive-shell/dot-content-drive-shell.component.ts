@@ -16,7 +16,7 @@ import { Router } from '@angular/router';
 import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
 import { catchError, delay, switchMap } from 'rxjs/operators';
@@ -69,7 +69,7 @@ import { encodeFilters } from '../utils/functions';
         ToastModule,
         DialogModule,
         DotContentDriveDialogFolderComponent,
-        MessagesModule,
+        MessageModule,
         ButtonModule,
         DotMessagePipe,
         DotContentDriveDropzoneComponent,

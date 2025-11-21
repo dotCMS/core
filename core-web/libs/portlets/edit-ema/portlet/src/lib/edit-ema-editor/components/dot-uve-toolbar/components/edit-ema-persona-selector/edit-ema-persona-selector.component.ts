@@ -20,8 +20,8 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Listbox, ListboxModule } from 'primeng/listbox';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule } from 'primeng/paginator';
+import { PopoverModule } from 'primeng/popover';
 
 import { catchError } from 'rxjs/operators';
 
@@ -43,7 +43,7 @@ interface PersonaSelector {
         NgClass,
         ButtonModule,
         AvatarModule,
-        OverlayPanelModule,
+        PopoverModule,
         DotAvatarDirective,
         DotMessagePipe,
         ListboxModule,

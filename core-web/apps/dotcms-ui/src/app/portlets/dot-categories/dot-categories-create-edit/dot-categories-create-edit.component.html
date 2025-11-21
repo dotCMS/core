@@ -1,21 +1,30 @@
 @if (vm$ | async; as vm) {
     <dot-portlet-base [boxed]="false">
-        <p-tabView class="categories-create__tabs">
-            <p-tabPanel [header]="'message.categories.tab.childrens' | dm">
+        <p-tabs class="categories-create__tabs">
+            <p-tab>
+                <ng-template pTemplate="header">
+                    {{ 'message.categories.tab.childrens' | dm }}
+                </ng-template>
                 <ng-template pTemplate="content">
                     <dot-categories-list
                         (updateCategory)="updateCategory($event)"></dot-categories-list>
                 </ng-template>
-            </p-tabPanel>
-            <p-tabPanel [header]="'message.categories.tab.properties' | dm">
+            </p-tab>
+            <p-tab>
+                <ng-template pTemplate="header">
+                    {{ 'message.categories.tab.properties' | dm }}
+                </ng-template>
                 Properties works
-            </p-tabPanel>
-            <p-tabPanel [header]="'message.categories.tab.permissions' | dm">
+            </p-tab>
+            <p-tab>
+                <ng-template pTemplate="header">
+                    {{ 'message.categories.tab.permissions' | dm }}
+                </ng-template>
                 <ng-template pTemplate="content">
                     <dot-categories-permissions
                         [categoryId]="vm.category.id || ''"></dot-categories-permissions>
                 </ng-template>
-            </p-tabPanel>
-        </p-tabView>
+            </p-tab>
+        </p-tabs>
     </dot-portlet-base>
 }

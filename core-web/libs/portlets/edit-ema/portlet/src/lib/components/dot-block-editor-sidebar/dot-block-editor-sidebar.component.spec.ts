@@ -3,7 +3,7 @@ import { createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
-import { Sidebar } from 'primeng/sidebar';
+import { Sidebar } from 'primeng/drawer';
 
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {

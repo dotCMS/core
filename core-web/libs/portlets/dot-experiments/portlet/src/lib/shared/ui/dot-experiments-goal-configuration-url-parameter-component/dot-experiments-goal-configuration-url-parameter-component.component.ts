@@ -7,8 +7,8 @@ import {
     Validators
 } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -34,7 +34,7 @@ const PARAMETER_QUERY_PARAMETER = 'queryParameter';
         DotDropdownDirective,
         DotFieldValidationMessageComponent,
         DotMessagePipe,
-        DropdownModule,
+        SelectModule,
         DotFieldRequiredDirective,
         DotAutofocusDirective,
         InputTextModule

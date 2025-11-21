@@ -15,7 +15,7 @@ import { FormsModule, ReactiveFormsModule, ControlContainer } from '@angular/for
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -49,7 +49,7 @@ import {
     imports: [
         FormsModule,
         ReactiveFormsModule,
-        DropdownModule,
+        SelectModule,
         DotWysiwygTinymceComponent,
         DotEditContentMonacoEditorControlComponent,
         MonacoEditorModule,

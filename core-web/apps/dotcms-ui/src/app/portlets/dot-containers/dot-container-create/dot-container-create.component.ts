@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { pluck, take } from 'rxjs/operators';
 
@@ -22,7 +22,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
     styleUrls: ['./dot-container-create.component.scss'],
     imports: [
         DotPortletBaseComponent,
-        TabViewModule,
+        TabsModule,
         DotMessagePipe,
         DotContainerPropertiesComponent,
         DotContainerPermissionsComponent,

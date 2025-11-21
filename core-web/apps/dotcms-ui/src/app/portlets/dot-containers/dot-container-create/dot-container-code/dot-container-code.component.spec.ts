@@ -29,7 +29,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
@@ -193,7 +193,7 @@ describe('DotContentEditorComponent', () => {
                 FormsModule,
                 DynamicDialogModule,
                 DotAddVariableComponent,
-                TabViewModule,
+                TabsModule,
                 MenuModule,
                 ButtonModule,
                 DotSafeHtmlPipe,

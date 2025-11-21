@@ -6,14 +6,13 @@ import { RouterModule } from '@angular/router';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputSwitchModule } from 'primeng/inputswitch';
+import { SelectModule } from 'primeng/select';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
-import { MessagesModule } from 'primeng/messages';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -63,16 +62,16 @@ import { RuleEngineContainer } from './rule-engine.container';
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
-        DropdownModule,
+        SelectModule,
         MultiSelectModule,
         InputTextModule,
-        InputSwitchModule,
+        ToggleSwitchModule,
         AutoCompleteModule,
         DialogModule,
         ButtonModule,
-        MessagesModule,
         MessageModule,
-        CalendarModule,
+        MessageModule,
+        DatePickerModule,
         DotAutocompleteTagsModule,
         HttpClientModule,
         DotAutofocusModule,

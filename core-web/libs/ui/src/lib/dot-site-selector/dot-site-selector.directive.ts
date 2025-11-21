@@ -2,7 +2,7 @@ import { Subject } from 'rxjs';
 
 import { ChangeDetectorRef, Directive, Input, OnDestroy, OnInit, inject } from '@angular/core';
 
-import { Dropdown } from 'primeng/dropdown';
+import { Select } from 'primeng/select';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
@@ -14,7 +14,7 @@ import { Site } from '@dotcms/dotcms-js';
     providers: [PaginatorService]
 })
 export class DotSiteSelectorDirective implements OnInit, OnDestroy {
-    private readonly primeDropdown = inject(Dropdown, { optional: true, self: true });
+    private readonly primeDropdown = inject(Select, { optional: true, self: true });
     private readonly dotEventsService = inject(DotEventsService);
     private readonly dotSiteService = inject(DotSiteService);
     private readonly cd = inject(ChangeDetectorRef);
@@ -26,7 +26,7 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
 
     private readonly destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly dotEvents = ['login-as', 'logout-as'];
-    private readonly control: Dropdown;
+    private readonly control: Select;
 
     constructor() {
         this.control = this.primeDropdown;

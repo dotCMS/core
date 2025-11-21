@@ -23,9 +23,9 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -49,9 +49,9 @@ enum FieldStatus {
         ReactiveFormsModule,
         ButtonModule,
         CheckboxModule,
-        DropdownModule,
+        SelectModule,
         InputTextModule,
-        InputTextareaModule,
+        TextareaModule,
         TooltipModule,
         DotIconComponent,
         DotFieldRequiredDirective,

@@ -76,11 +76,16 @@
             [variant]="variant" />
 
         @if (showWhatsChanged && isEnterpriseLicense$ | async) {
-            <p-checkbox
-                (onChange)="whatschange.emit($event.checked)"
-                [binary]="true"
-                [label]="'dot.common.whats.changed' | dm"
-                class="dot-edit__what-changed-button" />
+            <div class="flex items-center">
+                <p-checkbox
+                    (onChange)="whatschange.emit($event.checked)"
+                    [inputId]="'whats-changed'"
+                    [binary]="true"
+                    class="dot-edit__what-changed-button" />
+                <label [for]="'whats-changed'">
+                    {{ 'dot.common.whats.changed' | dm }}
+                </label>
+            </div>
         }
     </div>
 

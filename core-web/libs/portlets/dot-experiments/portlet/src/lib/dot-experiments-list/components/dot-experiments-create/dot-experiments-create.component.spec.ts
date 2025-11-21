@@ -3,9 +3,9 @@ import { of } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { Sidebar, DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { Sidebar, SidebarModule } from 'primeng/sidebar';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotExperimentsService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -39,18 +39,18 @@ const dotExperimentsServiceMock = {
 describe('DotExperimentsCreateComponent', () => {
     let spectator: Spectator<DotExperimentsCreateComponent>;
 
-    let primeNgSidebar: Sidebar;
+    let primeNgSidebar: Drawer;
     let dotSidebarHeaderComponent: DotSidebarHeaderComponent;
     let dotSidebarDirective: DotSidebarDirective;
 
     const createComponent = createComponentFactory({
         imports: [
-            SidebarModule,
+            DrawerModule,
             DotSidebarDirective,
             DotSidebarHeaderComponent,
             ButtonModule,
             InputTextModule,
-            InputTextareaModule,
+            TextareaModule,
             DotFieldValidationMessageComponent
         ],
         component: DotExperimentsCreateComponent,

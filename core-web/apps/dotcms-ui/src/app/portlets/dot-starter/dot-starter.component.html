@@ -6,10 +6,15 @@
                     [innerHTML]="'starter.description' | dm: [user.username]"
                     class="dot-starter-description mt-5"></p>
             </div>
-            <p-checkbox
-                (onChange)="handleVisibility($event.checked)"
-                [binary]="true"
-                [label]="'starter.dont.show' | dm" />
+            <div class="flex items-center">
+                <p-checkbox
+                    (onChange)="handleVisibility($event.checked)"
+                    [inputId]="'dont-show-starter'"
+                    [binary]="true"></p-checkbox>
+                <label [for]="'dont-show-starter'">
+                    {{ 'starter.dont.show' | dm }}
+                </label>
+            </div>
         </div>
         <div class="col-12">
             <div class="grid">

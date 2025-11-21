@@ -9,7 +9,7 @@
                         <label dotFieldRequired for="parameter">
                             {{ 'experiments.goal.reach_page.form.conditions.parameter.label' | dm }}
                         </label>
-                        <p-dropdown
+                        <p-select
                             [dotOptions]="parametersList"
                             id="parameter"
                             data-testId="parameter-input"
@@ -18,7 +18,7 @@
                             placeholder="{{
                                 'experiments.goal.reach_page.form.conditions.parameter.placeholder'
                                     | dm
-                            }}"></p-dropdown>
+                            }}"></p-select>
                         <dot-field-validation-message
                             [field]="
                                 getConditionsFormArrayItemByIndex(i).controls['parameter']
@@ -28,7 +28,7 @@
                         <label dotFieldRequired for="operator">
                             {{ 'experiments.goal.reach_page.form.conditions.operator.label' | dm }}
                         </label>
-                        <p-dropdown
+                        <p-select
                             [dotOptions]="operatorsList"
                             id="operator"
                             data-testId="operator-input"
@@ -37,7 +37,7 @@
                             placeholder="{{
                                 'experiments.goal.reach_page.form.conditions.operator.placeholder'
                                     | dm
-                            }}"></p-dropdown>
+                            }}"></p-select>
                         <dot-field-validation-message
                             [field]="
                                 getConditionsFormArrayItemByIndex(i).controls['operator']

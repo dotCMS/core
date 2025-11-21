@@ -264,7 +264,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
         describe('events', () => {
             it('should set value propagate change and toggle the overlay', () => {
                 spectator.detectChanges();
-                jest.spyOn(component.searchableDropdown, 'toggleOverlayPanel');
+                jest.spyOn(component.searchableSelect, 'toggleOverlayPanel');
                 const value = mockDotThemes[0];
 
                 component.onChange(value);

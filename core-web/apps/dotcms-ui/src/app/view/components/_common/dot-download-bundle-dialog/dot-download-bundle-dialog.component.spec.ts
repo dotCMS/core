@@ -6,7 +6,7 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
 import {
@@ -97,7 +97,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                 DotDownloadBundleDialogComponent,
                 DotDialogComponent,
                 SelectButtonModule,
-                DropdownModule,
+                SelectModule,
                 DotMessagePipe
             ],
             providers: [
@@ -173,7 +173,7 @@ describe('DotDownloadBundleDialogComponent', () => {
         });
 
         describe('actions', () => {
-            let dropdown: Dropdown;
+            let dropdown: Select;
             let buttons: DebugElement[];
             let unPublishButton;
             let cancelButton;

@@ -11,6 +11,7 @@ import {
     OnDestroy,
     ViewChild
 } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
@@ -77,6 +78,7 @@ export interface DotActionsMenuEventParams {
     templateUrl: './dot-pages.component.html',
     imports: [
         CommonModule,
+        RouterModule,
         DotAddToBundleComponent,
         DotPagesFavoritePanelComponent,
         DotPagesListingPanelComponent,

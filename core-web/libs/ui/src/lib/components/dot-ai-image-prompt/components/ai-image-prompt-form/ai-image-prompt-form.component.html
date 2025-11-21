@@ -1,13 +1,13 @@
 <form (ngSubmit)="generate.emit()" [formGroup]="form">
     <p-accordion
         [multiple]="false"
-        [activeIndex]="0"
+        [value]="0"
         collapseIcon="pi pi-angle-up"
         expandIcon="pi pi-angle-down">
-        <p-accordionTab
-            [disabled]="isLoading"
-            [header]="'block-editor.extension.ai-image.settings' | dm"
-            iconPos="end">
+        <p-accordion-panel [disabled]="isLoading">
+            <p-accordion-header>
+                {{ 'block-editor.extension.ai-image.settings' | dm }}
+            </p-accordion-header>
             <div class="field ai-image-prompt__input">
                 <label dotFieldRequired>{{ 'block-editor.extension.ai-image.input' | dm }}</label>
                 <div>
@@ -31,17 +31,17 @@
                 <label dotFieldRequired for="orientation">
                     {{ 'block-editor.extension.ai-image.orientation' | dm }}
                 </label>
-                <p-dropdown
+                <p-select
                     [options]="orientationOptions"
                     formControlName="size"
                     inputId="orientation"
                     styleClass="w-full" />
             </div>
-        </p-accordionTab>
-        <p-accordionTab
-            [disabled]="isLoading"
-            [header]="'block-editor.extension.ai-image.prompt' | dm"
-            iconPos="end">
+        </p-accordion-panel>
+        <p-accordion-panel [disabled]="isLoading" iconPos="end">
+            <p-accordion-header>
+                {{ 'block-editor.extension.ai-image.prompt' | dm }}
+            </p-accordion-header>
             <div
                 [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading"
                 class="ai-image-prompt__text">
@@ -85,7 +85,7 @@
                     </div>
                 }
             </div>
-        </p-accordionTab>
+        </p-accordion-panel>
     </p-accordion>
     <button
         [disabled]="form.invalid || isLoading"

@@ -3,22 +3,22 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { NgStyle } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 
-type Args = Dropdown & { width: string };
+type Args = Select & { width: string };
 
-const DropdownTemplate = `
-    <p><p-dropdown [options]="options" showClear="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
-    <p><p-dropdown [options]="options" showClear="true" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
-    <p><p-dropdown [options]="options" showClear="true" [filter]="true" filterBy="label" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
-    <p><p-dropdown [options]="options" [disabled]="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
+const SelectTemplate = `
+    <p><p-select [options]="options" showClear="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-select></p>
+    <p><p-select [options]="options" showClear="true" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-select></p>
+    <p><p-select [options]="options" showClear="true" [filter]="true" filterBy="label" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-select></p>
+    <p><p-select [options]="options" [disabled]="true" [style]="{'width': width + 'px'}"></p-select></p>
     <hr />
-    <p><p-dropdown class="p-dropdown-sm" [options]="options" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
+    <p><p-select class="p-select-sm" [options]="options" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-select></p>
 `;
 
 const meta: Meta<Args> = {
     title: 'PrimeNG/Form/Dropdown',
-    component: Dropdown,
+    component: Select,
     parameters: {
         layout: 'centered',
         docs: {
@@ -31,7 +31,7 @@ const meta: Meta<Args> = {
 
     decorators: [
         moduleMetadata({
-            imports: [DropdownModule, BrowserAnimationsModule, NgStyle]
+            imports: [SelectModule, BrowserAnimationsModule, NgStyle]
         })
     ],
     argTypes: {
@@ -59,7 +59,7 @@ const meta: Meta<Args> = {
     },
     render: (args) => ({
         props: args,
-        template: DropdownTemplate
+        template: SelectTemplate
     })
 };
 export default meta;
@@ -70,7 +70,7 @@ export const Default: Story = {
     parameters: {
         docs: {
             source: {
-                code: DropdownTemplate
+                code: SelectTemplate
             },
             iframeHeight: 300
         }
@@ -81,13 +81,13 @@ export const CustomTemplate: Story = {
     render: (args) => ({
         props: args,
         template: `
-        <p-dropdown [options]="options" [style]="{'width': width + 'px'}">
+        <p-select [options]="options" [style]="{'width': width + 'px'}">
             <ng-template let-selected pTemplate="selectedItem">
                 --{{ selected.label }}--
             </ng-template>
             <ng-template let-item pTemplate="item">
                 **{{ item.label }}**
             </ng-template>
-        </p-dropdown>`
+        </p-select>`
     })
 };

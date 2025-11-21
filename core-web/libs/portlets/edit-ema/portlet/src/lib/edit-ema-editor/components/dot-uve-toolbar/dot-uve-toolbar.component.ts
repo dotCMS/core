@@ -16,11 +16,12 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CalendarModule } from 'primeng/calendar';
 import { ChipModule } from 'primeng/chip';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { DatePickerModule } from 'primeng/datepicker';
+import { PopoverModule } from 'primeng/popover';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { map } from 'rxjs/operators';
 
@@ -50,12 +51,12 @@ import { convertLocalTimeToUTC, createFullURL } from '../../../utils';
         FormsModule,
         ReactiveFormsModule,
         ButtonModule,
-        CalendarModule,
+        DatePickerModule,
         ChipModule,
         ClipboardModule,
-        ClipboardModule,
-        OverlayPanelModule,
+        PopoverModule,
         ToolbarModule,
+        TooltipModule,
         SplitButtonModule,
         DotMessagePipe,
         DotEditorModeSelectorComponent,

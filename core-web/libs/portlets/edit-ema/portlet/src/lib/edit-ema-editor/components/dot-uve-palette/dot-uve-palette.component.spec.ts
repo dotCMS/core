@@ -4,7 +4,7 @@ import { MockComponent, ngMocks } from 'ng-mocks';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
-import { TabView } from 'primeng/tabview';
+import { TabView } from 'primeng/tabs';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
 import { DotUvePaletteComponent } from './dot-uve-palette.component';
@@ -19,7 +19,7 @@ function triggerTabChange(
     index: number
 ): void {
     const tabViewDebugElement: DebugElement = spectator.debugElement.query(By.directive(TabView));
-    const tabViewComponent: TabView = tabViewDebugElement?.componentInstance;
+    const tabViewComponent: Tabs = tabViewDebugElement?.componentInstance;
 
     if (tabViewComponent && tabViewComponent.activeIndexChange) {
         tabViewComponent.activeIndexChange.emit(index);

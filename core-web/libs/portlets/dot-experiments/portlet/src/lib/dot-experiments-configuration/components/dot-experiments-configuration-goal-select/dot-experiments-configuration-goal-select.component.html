@@ -1,5 +1,5 @@
 @if (vm$ | async; as vm) {
-    <p-sidebar
+    <p-drawer
         (onHide)="closeSidebar()"
         [(visible)]="vm.status.isOpen"
         dotSidebar
@@ -69,7 +69,7 @@
             </form>
         </div>
         <dot-experiments-goals-coming-soon />
-    </p-sidebar>
+    </p-drawer>
     <ng-template #actionHeaderBtnTpl>
         <button
             (click)="save(vm.experimentId)"

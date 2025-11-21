@@ -8,12 +8,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AccordionModule } from 'primeng/accordion';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
 import { FocusTrapModule } from 'primeng/focustrap';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { SelectModule } from 'primeng/select';
 
 const FocusTrapTemplate = `
   <div pFocusTrap class="card">
@@ -42,7 +42,7 @@ const FocusTrapTemplate = `
     <button pButton type="button" icon="pi pi-check" tabindex="-1"  label="Check"></button>
 
     <h5>Dropdown</h5>
-    <p-dropdown [options]="cities" [(ngModel)]="selectedCity" placeholder="Select a City" optionLabel="name" [showClear]="true"></p-dropdown>
+    <p-select [options]="cities" [(ngModel)]="selectedCity" placeholder="Select a City" optionLabel="name" [showClear]="true"></p-select>
 </div>
 `;
 
@@ -71,9 +71,9 @@ const meta: Meta = {
                 AccordionModule,
                 FocusTrapModule,
                 AutoCompleteModule,
-                CalendarModule,
+                DatePickerModule,
                 MultiSelectModule,
-                DropdownModule,
+                SelectModule,
                 HttpClientModule
             ]
         })

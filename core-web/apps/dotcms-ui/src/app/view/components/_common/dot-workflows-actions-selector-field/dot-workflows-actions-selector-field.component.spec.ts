@@ -6,7 +6,7 @@ import { UntypedFormBuilder, UntypedFormGroup, NG_VALUE_ACCESSOR } from '@angula
 import { By } from '@angular/platform-browser';
 
 import { SelectItemGroup } from 'primeng/api';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
@@ -68,7 +68,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
     let component: DotWorkflowsActionsSelectorFieldComponent;
     let de: DebugElement;
     let dropdownDe: DebugElement;
-    let dropdown: Dropdown;
+    let dropdown: Select;
     let dotWorkflowsActionsSelectorFieldService: DotWorkflowsActionsSelectorFieldService;
 
     const getDropdownDebugElement = () => de.query(By.css('p-dropdown'));
@@ -87,7 +87,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                     useClass: DotWorkflowsActionsSelectorFieldServiceMock
                 }
             ],
-            imports: [DotWorkflowsActionsSelectorFieldComponent, DropdownModule, DotMessagePipe]
+            imports: [DotWorkflowsActionsSelectorFieldComponent, SelectModule, DotMessagePipe]
         }).overrideComponent(DotWorkflowsActionsSelectorFieldComponent, {
             set: {
                 providers: [

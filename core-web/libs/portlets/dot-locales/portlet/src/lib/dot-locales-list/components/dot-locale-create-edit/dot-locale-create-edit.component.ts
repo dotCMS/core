@@ -11,11 +11,11 @@ import {
     Validators
 } from '@angular/forms';
 
-import { SelectItem } from 'primeng/api/selectitem';
+import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -37,7 +37,7 @@ export interface DotLocaleCreateEditData {
     selector: 'dot-locale-create-edit',
     imports: [
         CommonModule,
-        DropdownModule,
+        SelectModule,
         ReactiveFormsModule,
         ButtonModule,
         DotMessagePipe,

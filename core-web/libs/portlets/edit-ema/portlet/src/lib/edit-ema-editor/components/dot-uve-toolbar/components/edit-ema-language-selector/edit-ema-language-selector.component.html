@@ -6,7 +6,7 @@
     pButton
     icon="pi pi-globe"
     data-testId="language-button"></button>
-<p-overlayPanel #op styleClass="edit-ema-selector" data-testId="language-op">
+<p-popover #op styleClass="edit-ema-selector" data-testId="language-op">
     <p-listbox
         [options]="languages$ | async"
         (onChange)="onChange($event); op.toggle($event)"
@@ -14,4 +14,4 @@
         optionLabel="label"
         dataKey="id"
         data-testId="language-listbox"></p-listbox>
-</p-overlayPanel>
+</p-popover>

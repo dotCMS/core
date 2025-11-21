@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { SidebarModule } from 'primeng/sidebar';
+import { DrawerModule } from 'primeng/drawer';
 
 import { switchMap, take, takeUntil } from 'rxjs/operators';
 
@@ -37,7 +37,7 @@ export interface BlockEditorInput {
     imports: [
         FormsModule,
         BlockEditorModule,
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         ConfirmDialogModule,
         DotMessagePipe

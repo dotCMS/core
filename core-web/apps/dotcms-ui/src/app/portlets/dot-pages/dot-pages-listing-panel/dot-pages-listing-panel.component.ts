@@ -19,8 +19,8 @@ import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
@@ -45,7 +45,7 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
         DotAutofocusDirective,
         DotMessagePipe,
         DotRelativeDatePipe,
-        DropdownModule,
+        SelectModule,
         InputTextModule,
         SkeletonModule,
         TableModule,

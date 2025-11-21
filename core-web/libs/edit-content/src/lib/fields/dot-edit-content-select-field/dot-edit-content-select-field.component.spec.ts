@@ -3,7 +3,7 @@ import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { Dropdown } from 'primeng/dropdown';
+import { Dropdown } from 'primeng/select';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';

@@ -6,8 +6,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
-import { SidebarModule } from 'primeng/sidebar';
 
 import { ComponentStatus, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import {
@@ -35,7 +35,7 @@ import {
         DotFieldValidationMessageComponent,
         DotSidebarDirective,
         //PrimeNg
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         InputTextModule,
         AutoFocusModule,

@@ -43,16 +43,21 @@
                                 role="button"></i>
                         }
                     </div>
-                    <p-dropdown
+                    <p-select
                         (onChange)="setPagesLanguage($event.value)"
                         [(ngModel)]="vm.languageIdValue"
                         [options]="vm.languageOptions"
-                        class="dot-pages-listing-header__language-input"></p-dropdown>
-                    <p-checkbox
-                        (onChange)="setPagesArchived($event.checked)"
-                        [(ngModel)]="vm.showArchivedValue"
-                        [binary]="true"
-                        [label]="'Show-Archived' | dm"></p-checkbox>
+                        class="dot-pages-listing-header__language-input"></p-select>
+                    <div class="flex items-center">
+                        <p-checkbox
+                            (onChange)="setPagesArchived($event.checked)"
+                            [(ngModel)]="vm.showArchivedValue"
+                            [inputId]="'show-archived'"
+                            [binary]="true"></p-checkbox>
+                        <label [for]="'show-archived'">
+                            {{ 'Show-Archived' | dm }}
+                        </label>
+                    </div>
                 </div>
                 <button
                     (click)="store.getPageTypes()"

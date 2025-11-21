@@ -12,10 +12,10 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
+import { SelectModule } from 'primeng/select';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -128,10 +128,10 @@ describe('SearchComponent', () => {
         imports: [
             ReactiveFormsModule,
             ButtonModule,
-            DropdownModule,
+            SelectModule,
             InputGroupModule,
             InputTextModule,
-            OverlayPanelModule,
+            PopoverModule,
             ChipModule,
             MockLanguageFieldComponent,
             MockSiteFieldComponent

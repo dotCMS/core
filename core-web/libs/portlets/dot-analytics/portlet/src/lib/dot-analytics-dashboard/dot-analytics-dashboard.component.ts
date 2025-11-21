@@ -5,7 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 
 import { DotLocalstorageService } from '@dotcms/data-access';
 import {
@@ -32,7 +32,7 @@ import { getProperQueryParamsFromUrl } from './utils/state-from-url';
     selector: 'lib-dot-analytics-dashboard',
     imports: [
         ButtonModule,
-        MessagesModule,
+        MessageModule,
         DotAnalyticsDashboardMetricsComponent,
         DotAnalyticsDashboardChartComponent,
         DotAnalyticsDashboardTableComponent,

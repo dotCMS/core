@@ -5,7 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -53,7 +53,7 @@ describe('DotLayoutPropertiesComponent', () => {
                 DotLayoutPropertiesComponent,
                 DotLayoutPropertiesItemComponent,
                 DotLayoutSidebarComponent,
-                OverlayPanelModule,
+                PopoverModule,
                 ButtonModule,
                 ReactiveFormsModule
             ],

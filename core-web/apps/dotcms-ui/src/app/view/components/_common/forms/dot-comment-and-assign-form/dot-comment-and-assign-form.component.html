@@ -8,12 +8,12 @@
         @if (data['assignable']) {
             <div class="field">
                 <label for="dotRoles">{{ 'assignee.form.assignee' | dm }}</label>
-                <p-dropdown
+                <p-select
                     [options]="dotRoles"
                     [style]="{ width: '100%' }"
                     id="dotRoles"
                     formControlName="assign"
-                    appendTo="body"></p-dropdown>
+                    appendTo="body"></p-select>
             </div>
         }
         @if (data['commentable']) {

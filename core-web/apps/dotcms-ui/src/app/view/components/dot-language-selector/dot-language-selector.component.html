@@ -2,7 +2,7 @@
     <span class="icon-lg"><i class="pi pi-globe"></i></span>
     <div class="language-selector__field flex-grow-1 flex">
         @if (!readonly) {
-            <p-dropdown
+            <p-select
                 (onChange)="selectedItem($event.value)"
                 [(ngModel)]="value"
                 [disabled]="disabled || languagesList().length === 0"

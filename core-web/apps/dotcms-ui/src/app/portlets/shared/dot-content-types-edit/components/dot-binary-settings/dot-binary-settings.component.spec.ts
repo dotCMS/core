@@ -10,8 +10,8 @@ import { of, throwError } from 'rxjs';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotMessageService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -67,7 +67,7 @@ describe('DotBinarySettingsComponent', () => {
                 FormsModule,
                 ReactiveFormsModule,
                 InputTextModule,
-                InputSwitchModule,
+                ToggleSwitchModule,
                 DividerModule,
                 DotMessagePipe
             ],
@@ -164,7 +164,7 @@ describe('DotBinarySettingsComponent', () => {
                 FormsModule,
                 ReactiveFormsModule,
                 InputTextModule,
-                InputSwitchModule,
+                ToggleSwitchModule,
                 DividerModule,
                 DotMessagePipe
             ],

@@ -1,10 +1,7 @@
 <div class="tabview-container">
-    <p-tabView>
-        <p-tabPanel
-            [cache]="false"
-            [disabled]="disableTabs"
-            header="Library"
-            leftIcon="pi pi-images">
+    <p-tabs>
+        <p-tab [disabled]="disableTabs" leftIcon="pi pi-images">
+            <ng-template pTemplate="header">Library</ng-template>
             <ng-template pTemplate="content">
                 <div class="wrapper">
                     <dot-asset-search
@@ -13,12 +10,11 @@
                         [languageId]="languageId"></dot-asset-search>
                 </div>
             </ng-template>
-        </p-tabPanel>
-        <p-tabPanel
-            [cache]="false"
-            [header]="'Upload ' + type"
-            [disabled]="disableTabs"
-            leftIcon="pi pi-folder">
+        </p-tab>
+        <p-tab [disabled]="disableTabs" leftIcon="pi pi-folder">
+            <ng-template pTemplate="header">
+                {{ 'Upload ' + type }}
+            </ng-template>
             <ng-template pTemplate="content">
                 <div class="wrapper">
                     <dot-upload-asset
@@ -28,12 +24,11 @@
                         [type]="type"></dot-upload-asset>
                 </div>
             </ng-template>
-        </p-tabPanel>
-        <p-tabPanel
-            [cache]="false"
-            [header]="type + ' URL'"
-            [disabled]="disableTabs"
-            leftIcon="pi pi-link">
+        </p-tab>
+        <p-tab [disabled]="disableTabs" leftIcon="pi pi-link">
+            <ng-template pTemplate="header">
+                {{ type + ' URL' }}
+            </ng-template>
             <ng-template pTemplate="content">
                 <div class="wrapper">
                     <dot-external-asset
@@ -41,6 +36,6 @@
                         [type]="type"></dot-external-asset>
                 </div>
             </ng-template>
-        </p-tabPanel>
-    </p-tabView>
+        </p-tab>
+    </p-tabs>
 </div>

@@ -1,5 +1,5 @@
 @if ($showMessage()) {
-    <p-messages severity="info" data-testid="message">
+    <p-message severity="info" data-testid="message">
         <ng-template pTemplate="content">
             <div class="flex align-items-center justify-content-between gap-2 w-full">
                 <div class="flex align-items-center gap-2">
@@ -25,7 +25,7 @@
                 </div>
             </div>
         </ng-template>
-    </p-messages>
+    </p-message>
 }
 
 <dot-content-drive-toolbar (addNewDotAsset)="onAddNewDotAsset()" data-testid="toolbar" />

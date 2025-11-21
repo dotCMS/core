@@ -23,7 +23,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -204,7 +204,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 FormsModule,
                 ReactiveFormsModule,
                 DotMessagePipe,
-                TabViewModule,
+                TabsModule,
                 TooltipModule,
                 ButtonModule,
                 DotDialogComponent,
@@ -502,7 +502,7 @@ describe('Load fields and drag and drop', () => {
                 DotDialogComponent,
                 HttpClientTestingModule,
                 DotMessagePipe,
-                TabViewModule
+                TabsModule
             ],
             providers: [
                 DragulaService,

@@ -9,7 +9,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -38,7 +38,7 @@ interface DotContainerContent extends DotCMSContentType {
     styleUrls: ['./dot-container-code.component.scss'],
     imports: [
         ReactiveFormsModule,
-        TabViewModule,
+        TabsModule,
         MenuModule,
         DotTextareaContentComponent,
         DotMessagePipe,

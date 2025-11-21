@@ -26,35 +26,45 @@
             <label dotFieldRequired for="menu" data-testId="menuOptionLabel">
                 {{ 'contenttypes.content.add_to_menu.show_under' | dm }}
             </label>
-            <p-dropdown
+            <p-select
                 [options]="menu$ | async"
                 id="menu"
                 data-testId="menuOption"
                 appendTo="body"
                 formControlName="menuOption"
                 optionLabel="name"
-                optionValue="id"></p-dropdown>
+                optionValue="id"></p-select>
         </div>
         <div class="field">
             <label dotFieldRequired for="cardViewMode" data-testId="ViewModeLabel">
                 {{ 'contenttypes.content.add_to_menu.default_view' | dm }}
             </label>
             <div class="field">
-                <p-radioButton
-                    [label]="'custom.content.portlet.dataViewMode.card' | dm"
-                    id="cardViewMode"
-                    data-testId="cardViewMode"
-                    name="defaultView"
-                    value="card"
-                    formControlName="defaultView"></p-radioButton>
+                <div class="flex items-center">
+                    <p-radioButton
+                        [inputId]="'cardViewMode'"
+                        id="cardViewMode"
+                        data-testId="cardViewMode"
+                        name="defaultView"
+                        value="card"
+                        formControlName="defaultView"></p-radioButton>
+                    <label [for]="'cardViewMode'">
+                        {{ 'custom.content.portlet.dataViewMode.card' | dm }}
+                    </label>
+                </div>
             </div>
             <div class="field">
-                <p-radioButton
-                    [label]="'custom.content.portlet.dataViewMode.list' | dm"
-                    data-testId="listViewMode"
-                    name="defaultView"
-                    value="list"
-                    formControlName="defaultView"></p-radioButton>
+                <div class="flex items-center">
+                    <p-radioButton
+                        [inputId]="'listViewMode'"
+                        data-testId="listViewMode"
+                        name="defaultView"
+                        value="list"
+                        formControlName="defaultView"></p-radioButton>
+                    <label [for]="'listViewMode'">
+                        {{ 'custom.content.portlet.dataViewMode.list' | dm }}
+                    </label>
+                </div>
             </div>
         </div>
     </form>

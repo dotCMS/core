@@ -17,7 +17,7 @@
         [class.edit-content-layout__topBar--beta-message-visible]="topBarHasMessages">
         <!-- TODO: Improve this to use all the messages as a service -->
         @if (isEnabledNewContentEditor && showBetaMessage) {
-            <p-messages
+            <p-message
                 styleClass="edit-content-layout__beta-message"
                 severity="info"
                 data-testId="edit-content-layout__beta-message">
@@ -49,11 +49,11 @@
                             size="small"></button>
                     </div>
                 </ng-template>
-            </p-messages>
+            </p-message>
         }
 
         @if (lockWarningMessage) {
-            <p-messages severity="warning" data-testId="edit-content-layout__lock-warning">
+            <p-message severity="warning" data-testId="edit-content-layout__lock-warning">
                 <ng-template pTemplate>
                     <div class="flex w-full gap-1">
                         <i class="pi pi-exclamation-triangle"></i>
@@ -63,11 +63,11 @@
                             [innerHTML]="lockWarningMessage"></div>
                     </div>
                 </ng-template>
-            </p-messages>
+            </p-message>
         }
 
         @if (showSelectWorkflowWarning) {
-            <p-messages
+            <p-message
                 styleClass="edit-content-layout__select-workflow-warning"
                 severity="warning"
                 data-testId="edit-content-layout__select-workflow-warning">
@@ -93,11 +93,11 @@
                         </div>
                     </div>
                 </ng-template>
-            </p-messages>
+            </p-message>
         }
 
         @if (showInvalidMessage) {
-            <p-messages severity="error" data-testId="edit-content-layout__lock-warning">
+            <p-message severity="error" data-testId="edit-content-layout__lock-warning">
                 <ng-template pTemplate>
                     <div class="flex w-full gap-1">
                         <i class="pi pi-times-circle"></i>
@@ -108,7 +108,7 @@
                         </div>
                     </div>
                 </ng-template>
-            </p-messages>
+            </p-message>
         }
     </div>
 

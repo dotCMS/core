@@ -12,7 +12,7 @@ import { MenuModule } from 'primeng/menu';
 import { OrderListModule } from 'primeng/orderlist';
 import { ScrollerModule } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 @NgModule({
     imports: [
@@ -23,7 +23,7 @@ import { TabViewModule } from 'primeng/tabview';
         CardModule,
         OrderListModule,
         ListboxModule,
-        TabViewModule,
+        TabsModule,
         SkeletonModule,
         ScrollerModule,
         FileUploadModule,
@@ -37,7 +37,7 @@ import { TabViewModule } from 'primeng/tabview';
         CardModule,
         OrderListModule,
         ListboxModule,
-        TabViewModule,
+        TabsModule,
         SkeletonModule,
         ScrollerModule,
         FileUploadModule,

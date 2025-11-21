@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
 
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
@@ -10,7 +10,7 @@ import { DotUVEPaletteListTypes } from './models';
 
 @Component({
     selector: 'dot-uve-palette',
-    imports: [TabViewModule, DotUvePaletteListComponent, TooltipModule],
+    imports: [TabsModule, DotUvePaletteListComponent, TooltipModule],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

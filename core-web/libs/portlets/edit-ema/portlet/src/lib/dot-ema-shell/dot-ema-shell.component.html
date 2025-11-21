@@ -1,6 +1,6 @@
 @if ($shellProps()?.canRead) {
     @if ($toggleLockOptions()?.showBanner && $showBanner()) {
-        <p-messages severity="warning" data-testid="message">
+        <p-message severity="warning" data-testid="message">
             <ng-template pTemplate="content">
                 <div class="flex align-items-center justify-content-between gap-2 w-full">
                     <div class="flex align-items-center gap-2">
@@ -33,7 +33,7 @@
                         (click)="onCloseMessage()" />
                 </div>
             </ng-template>
-        </p-messages>
+        </p-message>
     }
 
     <router-outlet></router-outlet>

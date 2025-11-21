@@ -5,9 +5,9 @@ import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { SidebarModule } from 'primeng/sidebar';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import {
@@ -44,9 +44,9 @@ interface CreateForm {
         DotFieldValidationMessageComponent,
         DotAutofocusDirective,
         // PrimeNg
-        InputTextareaModule,
+        TextareaModule,
         InputTextModule,
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         DotFieldRequiredDirective,
         DotTrimInputDirective

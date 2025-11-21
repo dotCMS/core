@@ -9,9 +9,9 @@ import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
-import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 import { MenuModule } from 'primeng/menu';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -140,7 +140,7 @@ describe('DotEditPageStateControllerComponent', () => {
             imports: [
                 DotEditPageStateControllerComponent,
                 DotEditPageLockInfoComponent,
-                InputSwitchModule,
+                ToggleSwitchModule,
                 SelectButtonModule,
                 TooltipModule,
                 DotSafeHtmlPipe,

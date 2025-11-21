@@ -32,7 +32,6 @@
                     "apps/dotcms-ui/src/assets/material-icons.css",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
                 ]
             },
@@ -55,7 +54,6 @@
                 },
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeflex/primeflex.css",
                     "apps/dotcms-ui/src/assets/material-icons.css",

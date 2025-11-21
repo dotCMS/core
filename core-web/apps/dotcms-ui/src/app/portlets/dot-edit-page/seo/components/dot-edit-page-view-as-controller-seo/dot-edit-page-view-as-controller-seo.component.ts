@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
@@ -41,7 +41,7 @@ import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-
     styleUrls: ['./dot-edit-page-view-as-controller-seo.component.scss'],
     imports: [
         CommonModule,
-        DropdownModule,
+        SelectModule,
         FormsModule,
         TooltipModule,
         DotPersonaSelectorComponent,

@@ -4,11 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 
 const meta: Meta = {
     title: 'PrimeNG/Form/InputTextArea',
-    component: InputTextareaModule,
+    component: TextareaModule,
     parameters: {
         docs: {
             description: {
@@ -19,7 +19,7 @@ const meta: Meta = {
     },
     decorators: [
         moduleMetadata({
-            imports: [BrowserModule, BrowserAnimationsModule, InputTextareaModule, FormsModule]
+            imports: [BrowserModule, BrowserAnimationsModule, TextareaModule, FormsModule]
         })
     ]
 };

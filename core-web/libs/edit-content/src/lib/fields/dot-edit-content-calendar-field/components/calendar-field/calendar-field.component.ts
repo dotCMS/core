@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormControl, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 
 import {
     DotCMSContentType,
@@ -55,7 +55,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
  */
 @Component({
     selector: 'dot-calendar-field',
-    imports: [CalendarModule, ReactiveFormsModule, DotMessagePipe],
+    imports: [DatePickerModule, ReactiveFormsModule, DotMessagePipe],
     templateUrl: 'calendar-field.component.html',
     styleUrls: ['./calendar-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

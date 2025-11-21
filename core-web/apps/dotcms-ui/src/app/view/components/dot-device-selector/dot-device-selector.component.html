@@ -2,7 +2,7 @@
     <dot-icon big name="devices"></dot-icon>
 
     <div class="device-selector__field flex-grow-1">
-        <p-dropdown
+        <p-select
             (onChange)="change($event.value)"
             [(ngModel)]="value"
             [disabled]="disabled"
@@ -11,6 +11,6 @@
             class="p-dropdown-sm"
             id="device-selector"
             dataKey="inode"
-            optionLabel="name"></p-dropdown>
+            optionLabel="name"></p-select>
     </div>
 </div>

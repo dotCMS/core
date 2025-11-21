@@ -1,4 +1,4 @@
-<p-overlayPanel
+<p-popover
     #op
     appendTo="body"
     styleClass="dot-layout-properties__overlayPanel"
@@ -15,7 +15,7 @@
             formControlName="footer"></dot-layout-properties-item>
         <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
     </div>
-</p-overlayPanel>
+</p-popover>
 <button
     (click)="op.toggle($event)"
     class="p-button-text p-button-vertical"

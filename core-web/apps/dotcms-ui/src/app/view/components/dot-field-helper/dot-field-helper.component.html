@@ -2,6 +2,6 @@
     (click)="hint.toggle($event); $event.preventDefault()"
     icon="pi pi-question-circle"
     styleClass="p-button-rounded p-button-sm p-button-text"></p-button>
-<p-overlayPanel [dismissable]="true" [style]="{ width: '350px' }" #hint appendTo="body">
+<p-popover [dismissable]="true" [style]="{ width: '350px' }" #hint appendTo="body">
     <div [innerHTML]="message"></div>
-</p-overlayPanel>
+</p-popover>

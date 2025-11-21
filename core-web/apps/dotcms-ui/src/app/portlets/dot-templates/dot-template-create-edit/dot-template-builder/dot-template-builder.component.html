@@ -1,7 +1,8 @@
-<p-tabView styleClass="dot-template-builder__new-template-builder">
-    <p-tabPanel
-        [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
-        data-testId="builder">
+<p-tabs styleClass="dot-template-builder__new-template-builder">
+    <p-tab data-testId="builder">
+        <ng-template pTemplate="header">
+            {{ item.type === 'advanced' ? ('code' | dm) : ('design' | dm) }}
+        </ng-template>
         <ng-template pTemplate="content">
             @switch (item.type) {
                 @case ('advanced') {
@@ -27,15 +28,21 @@
                 }
             }
         </ng-template>
-    </p-tabPanel>
-    <p-tabPanel [header]="'Permissions' | dm">
+    </p-tab>
+    <p-tab>
+        <ng-template pTemplate="header">
+            {{ 'Permissions' | dm }}
+        </ng-template>
         <ng-template pTemplate="content">
             <dot-portlet-box>
                 <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe"></dot-iframe>
             </dot-portlet-box>
         </ng-template>
-    </p-tabPanel>
-    <p-tabPanel [header]="'History' | dm">
+    </p-tab>
+    <p-tab>
+        <ng-template pTemplate="header">
+            {{ 'History' | dm }}
+        </ng-template>
         <ng-template pTemplate="content">
             <dot-portlet-box>
                 <dot-iframe
@@ -45,5 +52,5 @@
                     data-testId="historyIframe"></dot-iframe>
             </dot-portlet-box>
         </ng-template>
-    </p-tabPanel>
-</p-tabView>
+    </p-tab>
+</p-tabs>

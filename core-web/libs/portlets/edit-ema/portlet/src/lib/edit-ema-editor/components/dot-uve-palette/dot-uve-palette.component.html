@@ -1,5 +1,5 @@
-<p-tabView (activeIndexChange)="$currentIndex.set($event)">
-    <p-tabPanel>
+<p-tabs (activeIndexChange)="$currentIndex.set($event)">
+    <p-tab>
         <ng-template pTemplate="header">
             <div class="tab-header" pTooltip="Content types" tooltipPosition="bottom">
                 <i class="pi pi-stop" ti></i>
@@ -13,8 +13,8 @@
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }
-    </p-tabPanel>
-    <p-tabPanel>
+    </p-tab>
+    <p-tab>
         <ng-template pTemplate="header">
             <div class="tab-header" pTooltip="Widgets" tooltipPosition="bottom">
                 <i class="pi pi-th-large"></i>
@@ -26,8 +26,8 @@
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }
-    </p-tabPanel>
-    <p-tabPanel>
+    </p-tab>
+    <p-tab>
         <ng-template pTemplate="header">
             <div class="tab-header" pTooltip="Favorites" tooltipPosition="bottom">
                 <i class="pi pi-star"></i>
@@ -39,5 +39,5 @@
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }
-    </p-tabPanel>
-</p-tabView>
+    </p-tab>
+</p-tabs>

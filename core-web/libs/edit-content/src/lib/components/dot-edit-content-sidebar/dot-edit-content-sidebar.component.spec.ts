@@ -15,7 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { TabView, TabViewModule } from 'primeng/tabview';
+import { TabView } from 'primeng/tabs';
 
 import {
     DotContentletService,
@@ -61,7 +61,7 @@ describe('DotEditContentSidebarComponent', () => {
             MockComponent(DotEditContentSidebarWorkflowComponent)
         ],
         imports: [
-            TabViewModule,
+            TabsModule,
             DotEditContentSidebarActivitiesComponent,
             DotEditContentSidebarHistoryComponent
         ], // I need the real components to be rendered in the p-template="content"

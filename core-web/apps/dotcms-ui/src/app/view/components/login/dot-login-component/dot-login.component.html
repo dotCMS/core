@@ -5,14 +5,14 @@
                 <div class="login__logo">
                     <img src="{{ loginInfo.entity.logo }}" alt="DotCMS - Hybrid CMS" />
                 </div>
-                <p-dropdown
+                <p-select
                     (onChange)="onLanguageChange($event.value)"
                     [options]="languages"
                     [style]="{ width: '185px' }"
                     class="p-dropdown-sm"
                     #languageDropdown
                     data-testId="language"
-                    formControlName="language"></p-dropdown>
+                    formControlName="language"></p-select>
             </div>
             <h3 class="login__title" data-testId="header">
                 {{ loginInfo.i18nMessagesMap['welcome-login'] }}
@@ -64,11 +64,16 @@
                     [field]="loginForm.get('password')"></dot-field-validation-message>
             </div>
             <div class="login__password-settings field">
-                <p-checkbox
-                    [label]="loginInfo.i18nMessagesMap['remember-me']"
-                    formControlName="rememberMe"
-                    data-testId="rememberMe"
-                    binary="true"></p-checkbox>
+                <div class="flex items-center">
+                    <p-checkbox
+                        [inputId]="'rememberMe'"
+                        formControlName="rememberMe"
+                        data-testId="rememberMe"
+                        [binary]="true"></p-checkbox>
+                    <label [for]="'rememberMe'">
+                        {{ loginInfo.i18nMessagesMap['remember-me'] }}
+                    </label>
+                </div>
                 @if (!isLoginInProgress) {
                     <a
                         [routerLink]="['/public/forgotPassword']"

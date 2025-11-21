@@ -5,10 +5,10 @@ import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { CalendarModule } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
+import { DatePickerModule } from 'primeng/datepicker';
+import { DrawerModule } from 'primeng/drawer';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { SidebarModule } from 'primeng/sidebar';
 
 import { take } from 'rxjs/operators';
 
@@ -26,11 +26,11 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DotSidebarHeaderComponent,
         DotSidebarDirective,
         //PrimeNg
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         SelectButtonModule,
         CardModule,
-        CalendarModule
+        DatePickerModule
     ],
     templateUrl: './dot-experiments-configuration-scheduling-add.component.html',
     styleUrls: ['./dot-experiments-configuration-scheduling-add.component.scss'],

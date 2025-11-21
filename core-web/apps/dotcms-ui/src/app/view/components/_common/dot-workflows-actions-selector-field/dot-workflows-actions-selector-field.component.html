@@ -1,5 +1,5 @@
 @if (actions$ | async; as actions) {
-    <p-dropdown
+    <p-select
         (onChange)="handleChange($event)"
         [(ngModel)]="value"
         [disabled]="disabled || actions.length === 0"

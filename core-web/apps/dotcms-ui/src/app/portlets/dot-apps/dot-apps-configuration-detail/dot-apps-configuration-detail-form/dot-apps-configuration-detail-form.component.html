@@ -68,15 +68,17 @@
                             [field]="field" />
                     }
                     @case ('BOOL') {
-                        <p-checkbox
-                            [ngClass]="{
-                                required: field.required
-                            }"
-                            [id]="field.name"
-                            [label]="field.label"
-                            [formControlName]="field.name"
-                            [value]="field.value"
-                            binary="true"></p-checkbox>
+                        <div class="flex items-center">
+                            <p-checkbox
+                                [ngClass]="{
+                                    required: field.required
+                                }"
+                                [inputId]="field.name"
+                                [formControlName]="field.name"
+                                [value]="field.value"
+                                [binary]="true"></p-checkbox>
+                            <label [for]="field.name">{{ field.label }}</label>
+                        </div>
                         <ng-container
                             *ngTemplateOutlet="
                                 warningIcon;
@@ -93,7 +95,7 @@
                                 warningIcon;
                                 context: { field: field }
                             "></ng-container>
-                        <p-dropdown
+                        <p-select
                             [id]="field.name"
                             [formControlName]="field.name"
                             [ngClass]="{

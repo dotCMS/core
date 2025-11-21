@@ -5,7 +5,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { Listbox, ListboxModule } from 'primeng/listbox';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
 
 import { debounceTime, finalize, switchMap } from 'rxjs/operators';
 
@@ -36,7 +36,7 @@ const CONTENT_TYPE_CATEGORIES = [
 
 @Component({
     selector: 'dot-favorite-selector',
-    imports: [FormsModule, ListboxModule, DotMessagePipe, OverlayPanelModule],
+    imports: [FormsModule, ListboxModule, DotMessagePipe, PopoverModule],
     templateUrl: './dot-favorite-selector.component.html',
     styleUrls: ['./dot-favorite-selector.component.scss']
 })
@@ -48,8 +48,8 @@ const CONTENT_TYPE_CATEGORIES = [
  * debouncing, and persists selections using the favorites service.
  */
 export class DotFavoriteSelectorComponent implements OnInit {
-    /** Reference to the overlay panel instance controlling visibility. */
-    $overlayPanel = viewChild.required(OverlayPanel);
+    /** Reference to the popover instance controlling visibility. */
+    $overlayPanel = viewChild.required(Popover);
     /** Reference to the PrimeNG Listbox to manage its built-in filter. */
     $listbox = viewChild.required(Listbox);
     readonly #store = inject(DotPaletteListStore);

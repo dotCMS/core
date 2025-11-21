@@ -7,15 +7,15 @@
 @let referencePagesCount = $store.information.relatedContent();
 
 <aside class="content-sidebar h-full">
-    <p-tabView
-        [activeIndex]="activeIndex"
+    <p-tabs
+        [value]="activeIndex"
         (onChange)="onActiveIndexChange($event)"
         styleClass="h-full flex flex-column"
         data-testId="sidebar-tabs">
         <!-- Add prepend and append areas to the tabs -->
         <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
 
-        <p-tabPanel class="flex flex-column tab-panel">
+        <p-tab class="flex flex-column tab-panel">
             <ng-template pTemplate="header">
                 <i class="pi pi-info-circle"></i>
             </ng-template>
@@ -65,8 +65,8 @@
                     [isLoading]="$store.isLoadingWorkflow()"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
-        </p-tabPanel>
-        <p-tabPanel class="h-full flex-column tab-panel tab-panel--history">
+        </p-tab>
+        <p-tab class="h-full flex-column tab-panel tab-panel--history">
             <ng-template pTemplate="header">
                 <i class="pi pi-history"></i>
             </ng-template>
@@ -86,9 +86,9 @@
                     (deletePushPublishHistory)="onDeletePushPublishHistory()"
                     data-testId="history" />
             </ng-template>
-        </p-tabPanel>
+        </p-tab>
 
-        <p-tabPanel class="h-full flex-column tab-panel tab-panel--activities">
+        <p-tab class="h-full flex-column tab-panel tab-panel--activities">
             <ng-template pTemplate="header">
                 <i class="pi pi-comment"></i>
             </ng-template>
@@ -101,8 +101,8 @@
                     (commentSubmitted)="onCommentSubmitted($event)"
                     data-testId="activities" />
             </ng-template>
-        </p-tabPanel>
-    </p-tabView>
+        </p-tab>
+    </p-tabs>
 </aside>
 
 <!-- Confirmation dialog for delete actions -->

@@ -10,7 +10,7 @@ import {
 } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, map, take, takeUntil } from 'rxjs/operators';
@@ -40,7 +40,7 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
     imports: [
         FormsModule,
         ReactiveFormsModule,
-        DropdownModule,
+        SelectModule,
         SelectButtonModule,
         DotDialogComponent,
         DotFieldRequiredDirective,

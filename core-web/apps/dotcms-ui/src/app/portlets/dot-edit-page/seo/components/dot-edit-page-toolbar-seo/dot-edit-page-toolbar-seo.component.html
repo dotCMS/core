@@ -80,13 +80,18 @@
 
     <div class="lower-toolbar-right w-6">
         @if (showWhatsChanged && isEnterpriseLicense$ | async) {
-            <p-checkbox
-                (onChange)="whatschange.emit($event.checked)"
-                [binary]="true"
-                [label]="'dot.common.whats.changed' | dm"
-                [pTooltip]="'dot.common.whats.changed.clipboard' | dm"
-                class="flex dot-edit__what-changed-button"
-                tooltipPosition="bottom"></p-checkbox>
+            <div class="flex items-center">
+                <p-checkbox
+                    (onChange)="whatschange.emit($event.checked)"
+                    [inputId]="'whats-changed-toolbar-seo'"
+                    [binary]="true"
+                    [pTooltip]="'dot.common.whats.changed.clipboard' | dm"
+                    class="flex dot-edit__what-changed-button"
+                    tooltipPosition="bottom"></p-checkbox>
+                <label [for]="'whats-changed-toolbar-seo'">
+                    {{ 'dot.common.whats.changed' | dm }}
+                </label>
+            </div>
         }
         <dot-edit-page-view-as-controller-seo
             [pageState]="pageState"

@@ -11,9 +11,9 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { Calendar } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
-import { Sidebar } from 'primeng/sidebar';
+import { DatePicker } from 'primeng/datepicker';
+import { Drawer } from 'primeng/drawer';
 
 import {
     DotExperimentsService,
@@ -48,7 +48,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationSchedulingAddComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
-    let sidebar: Sidebar;
+    let sidebar: Drawer;
 
     const createComponent = createComponentFactory({
         imports: [ButtonModule, CardModule],
@@ -88,16 +88,16 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('should load scheduling current values', () => {
-        const startDateCalendar: Calendar = spectator.query(Calendar);
-        const endDateCalendar: Calendar = spectator.queryLast(Calendar);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker);
+        const endDateCalendar: DatePicker = spectator.queryLast(DatePicker);
 
         expect(startDateCalendar.value.getTime()).toEqual(EXPERIMENT_MOCK.scheduling.startDate);
         expect(endDateCalendar.value.getTime()).toEqual(EXPERIMENT_MOCK.scheduling.endDate);
     });
 
     it('should have set the props correctly', () => {
-        const startDateCalendar: Calendar = spectator.query(Calendar);
-        const endDateCalendar: Calendar = spectator.queryLast(Calendar);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker);
+        const endDateCalendar: DatePicker = spectator.queryLast(DatePicker);
 
         expect(startDateCalendar.stepMinute).toEqual(30);
         expect(startDateCalendar.readonlyInput).toEqual(true);
@@ -128,8 +128,8 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('should set min dates correctly', () => {
-        const startDateCalendar: Calendar = spectator.query(Calendar);
-        const endDateCalendar: Calendar = spectator.queryLast(Calendar);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker);
+        const endDateCalendar: DatePicker = spectator.queryLast(DatePicker);
         const component = spectator.component;
         const time5days = 432e6; // value set in the ActiveRouteMock
         const mockMinEndDate = MOCK_DATA_MILLISECONDS + time5days;
@@ -144,7 +144,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('should clear end date if start date is equal or more', () => {
-        const startDateCalendar: Calendar = spectator.query(Calendar);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker);
         const component = spectator.component;
 
         component.form.get('startDate').setValue(new Date());
@@ -157,7 +157,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('max end date date should be 90 days', () => {
-        const startDateCalendar: Calendar = spectator.query(Calendar);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker);
         const component = spectator.component;
         // Default vale of 90 because max end date is not defined in the Active Route
         const expectedEndDate = new Date(MOCK_DATA_MILLISECONDS + TIME_90_DAYS);
@@ -172,7 +172,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
     it('should close sidebar', () => {
         jest.spyOn(store, 'closeSidebar');
-        sidebar = spectator.query(Sidebar);
+        sidebar = spectator.query(Drawer);
         sidebar.hide();
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);

@@ -3,8 +3,8 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -28,7 +28,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
         imports: [
             FormsModule,
             ReactiveFormsModule,
-            InputSwitchModule,
+            ToggleSwitchModule,
             InputTextModule,
             ButtonModule
         ],

@@ -9,7 +9,7 @@ import { MockComponent } from 'ng-mocks';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 
 import { DotLocalstorageService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -46,7 +46,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
     const createComponent = createRoutingFactory({
         component: DotAnalyticsDashboardComponent,
-        imports: [MessagesModule, DotMessagePipe],
+        imports: [MessageModule, DotMessagePipe],
         declarations: [
             MockComponent(DotAnalyticsDashboardChartComponent),
             MockComponent(DotAnalyticsDashboardFiltersComponent),

@@ -2,7 +2,7 @@ import { moduleMetadata, StoryObj, Meta, componentWrapperDecorator } from '@stor
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DropdownModule, Dropdown } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotContainersServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -11,10 +11,10 @@ import { DotContainerOptionsDirective } from './dot-container-options.directive'
 
 const meta: Meta = {
     title: 'DotCMS/Container Options Directive',
-    component: Dropdown,
+    component: Select,
     decorators: [
         moduleMetadata({
-            imports: [BrowserAnimationsModule, DotContainerOptionsDirective, DropdownModule],
+            imports: [BrowserAnimationsModule, DotContainerOptionsDirective, SelectModule],
             providers: [
                 {
                     provide: DotMessageService,

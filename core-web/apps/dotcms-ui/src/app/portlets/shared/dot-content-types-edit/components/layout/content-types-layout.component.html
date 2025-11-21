@@ -54,10 +54,11 @@
             type="button"></button>
     </div>
 </dot-secondary-toolbar>
-<p-tabView>
-    <p-tabPanel
-        class="content-type__properties"
-        header="{{ 'contenttypes.tab.fields.header' | dm }}">
+<p-tabs>
+    <p-tab class="content-type__properties">
+        <ng-template pTemplate="header">
+            {{ 'contenttypes.tab.fields.header' | dm }}
+        </ng-template>
         <div class="content-type__fields-layout" id="content-type-form-layout">
             <div class="content-type__fields-main" id="content-type-form-main">
                 <ng-content></ng-content>
@@ -72,44 +73,44 @@
                     [baseType]="contentType.baseType"></dot-content-types-fields-list>
             </div>
         </div>
-    </p-tabPanel>
+    </p-tab>
     @if (contentType) {
-        <p-tabPanel
-            [cache]="false"
-            class="content-type__relationships"
-            header="{{ 'contenttypes.tab.relationship.header' | dm }}">
+        <p-tab [cache]="false" class="content-type__relationships">
+            <ng-template pTemplate="header">
+                {{ 'contenttypes.tab.relationship.header' | dm }}
+            </ng-template>
             <ng-template pTemplate="content">
                 <dot-portlet-box>
                     <dot-iframe [src]="relationshipURL"></dot-iframe>
                 </dot-portlet-box>
             </ng-template>
-        </p-tabPanel>
+        </p-tab>
     }
     @if (contentType && showPermissionsTab | async) {
-        <p-tabPanel
-            [cache]="false"
-            class="content-type__permissions"
-            header="{{ 'contenttypes.tab.permissions.header' | dm }}">
+        <p-tab [cache]="false" class="content-type__permissions">
+            <ng-template pTemplate="header">
+                {{ 'contenttypes.tab.permissions.header' | dm }}
+            </ng-template>
             <ng-template pTemplate="content">
                 <dot-portlet-box>
                     <dot-iframe [src]="permissionURL"></dot-iframe>
                 </dot-portlet-box>
             </ng-template>
-        </p-tabPanel>
+        </p-tab>
     }
     @if (contentType) {
-        <p-tabPanel
-            [cache]="false"
-            class="content-type__push_history"
-            header="{{ 'contenttypes.tab.publisher.push.history.header' | dm }}">
+        <p-tab [cache]="false" class="content-type__push_history">
+            <ng-template pTemplate="header">
+                {{ 'contenttypes.tab.publisher.push.history.header' | dm }}
+            </ng-template>
             <ng-template pTemplate="content">
                 <dot-portlet-box>
                     <dot-iframe [src]="pushHistoryURL"></dot-iframe>
                 </dot-portlet-box>
             </ng-template>
-        </p-tabPanel>
+        </p-tab>
     }
-</p-tabView>
+</p-tabs>
 @if (addToMenuContentType) {
     <dot-add-to-menu
         (cancel)="addToMenuContentType = false"

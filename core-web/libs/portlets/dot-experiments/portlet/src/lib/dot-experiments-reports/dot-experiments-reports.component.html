@@ -15,8 +15,8 @@
             <div
                 class="flex align-items-center flex-column w-full dot-experiment-report__container gap-3">
                 <div class="dot-experiment-report__tabview">
-                    <p-tabView>
-                        <p-tabPanel header="{{ 'experiments.reports.chart.title' | dm }}">
+                    <p-tabs>
+                        <p-tab header="{{ 'experiments.reports.chart.title' | dm }}">
                             <div class="flex flex-column gap-2 align-items-center content">
                                 <dot-experiments-reports-chart
                                     [config]="axisLabelsProbabilityChart"
@@ -25,8 +25,8 @@
                                     [isLoading]="vm.isLoading"
                                     data-testId="daily-chart" />
                             </div>
-                        </p-tabPanel>
-                        <p-tabPanel header="{{ 'experiments.bayesian.reports.chart.title' | dm }}">
+                        </p-tab>
+                        <p-tab header="{{ 'experiments.bayesian.reports.chart.title' | dm }}">
                             <div class="flex flex-column gap-2 align-items-center content">
                                 <dot-experiments-reports-chart
                                     [config]="axisLabelsBayesianChart"
@@ -36,8 +36,8 @@
                                     [isLoading]="vm.isLoading"
                                     data-testId="bayesian-chart" />
                             </div>
-                        </p-tabPanel>
-                    </p-tabView>
+                        </p-tab>
+                    </p-tabs>
                     <dot-experiments-report-daily-details
                         [detailData]="vm.detailData"
                         [experimentId]="vm.experiment.id"
@@ -52,4 +52,4 @@
 }
 
 <ng-template dotDynamic></ng-template>
-<p-confirmPopup></p-confirmPopup>
+<p-confirmpopup></p-confirmpopup>

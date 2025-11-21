@@ -27,7 +27,7 @@
         data-testId="template-builder-box">
         <div class="template-builder-box__header-container">
             @if (actions.includes('add')) {
-                <p-dropdown
+                <p-select
                     (onChange)="onContainerSelect($event)"
                     [showClear]="false"
                     [filter]="true"
@@ -43,7 +43,7 @@
                     <ng-template pTemplate="selectedItem">
                         {{ dropdownLabel }}
                     </ng-template>
-                </p-dropdown>
+                </p-select>
             }
             <div class="header-container__last-buttons">
                 @if (actions.includes('edit')) {

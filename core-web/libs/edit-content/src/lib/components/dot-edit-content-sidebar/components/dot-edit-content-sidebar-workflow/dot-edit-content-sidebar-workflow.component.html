@@ -86,7 +86,7 @@
                 <label for="workflow">
                     {{ 'edit.content.sidebar.workflow.dialog.title' | dm }}
                 </label>
-                <p-dropdown
+                <p-select
                     id="workflow"
                     appendTo="body"
                     [options]="workflowSelection.schemeOptions"
@@ -94,7 +94,7 @@
                     [(ngModel)]="$selectedWorkflow"
                     placeholder="{{
                         'edit.content.sidebar.workflow.dialog.dropdown.placeholder' | dm
-                    }}"></p-dropdown>
+                    }}"></p-select>
             </div>
         </div>
         <ng-template pTemplate="footer">

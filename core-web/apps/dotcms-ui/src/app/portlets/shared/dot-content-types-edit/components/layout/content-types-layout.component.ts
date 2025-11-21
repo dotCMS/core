@@ -17,7 +17,7 @@ import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SplitButtonModule } from 'primeng/splitbutton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { take } from 'rxjs/operators';
 
@@ -47,7 +47,7 @@ import { FieldDragDropService } from '../fields/service';
     imports: [
         CommonModule,
         AsyncPipe,
-        TabViewModule,
+        TabsModule,
         SplitButtonModule,
         ButtonModule,
         InputTextModule,

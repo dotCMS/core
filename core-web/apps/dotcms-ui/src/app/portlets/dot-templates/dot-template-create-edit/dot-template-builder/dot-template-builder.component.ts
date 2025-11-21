@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
@@ -35,7 +35,7 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
     imports: [
         DotMessagePipe,
         DotTemplateAdvancedComponent,
-        TabViewModule,
+        TabsModule,
         IframeComponent,
         DotPortletBoxComponent,
         TemplateBuilderComponent,

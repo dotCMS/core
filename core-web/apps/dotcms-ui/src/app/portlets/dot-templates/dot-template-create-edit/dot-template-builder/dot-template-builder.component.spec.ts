@@ -7,7 +7,7 @@ import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import {
     DotEventsService,
@@ -112,7 +112,7 @@ describe('DotTemplateBuilderComponent', () => {
         component: DotTemplateBuilderComponent,
         imports: [
             ButtonModule,
-            TabViewModule,
+            TabsModule,
             DotMessagePipe,
             DotIconComponent,
             DotTemplateAdvancedComponent,

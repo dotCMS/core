@@ -5,7 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotApiLinkComponent } from '@dotcms/ui';
@@ -35,7 +35,7 @@ const meta: Meta = {
                 CheckboxModule,
                 DotPortletBaseComponent,
                 DotApiLinkComponent,
-                TabViewModule
+                TabsModule
             ]
         }),
         componentWrapperDecorator(
@@ -220,11 +220,20 @@ export const ExtraActions: Story = {
 const WithTabsTemplate = `
 <dot-portlet-base [boxed]="false">
     <dot-portlet-toolbar [title]="title"></dot-portlet-toolbar>
-    <p-tabView>
-        <p-tabPanel header="Tab 1"> ${portletContent('Content for Tab 1')} </p-tabPanel>
-        <p-tabPanel header="Tab 2"> ${portletContent('Content for Tab 2')} </p-tabPanel>
-        <p-tabPanel header="Tab 3"> ${portletContent('Content for Tab 3')} </p-tabPanel>
-    </p-tabView>
+    <p-tabs>
+        <p-tab>
+            <ng-template pTemplate="header">Tab 1</ng-template>
+            ${portletContent('Content for Tab 1')}
+        </p-tab>
+        <p-tab>
+            <ng-template pTemplate="header">Tab 2</ng-template>
+            ${portletContent('Content for Tab 2')}
+        </p-tab>
+        <p-tab>
+            <ng-template pTemplate="header">Tab 3</ng-template>
+            ${portletContent('Content for Tab 3')}
+        </p-tab>
+    </p-tabs>
 </dot-portlet-base>
 `;
 export const WithTabs: Story = {

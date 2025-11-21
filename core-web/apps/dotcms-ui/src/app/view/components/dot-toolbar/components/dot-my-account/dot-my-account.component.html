@@ -76,7 +76,10 @@
                     [ngModelOptions]="{ standalone: true }"
                     data-testid="dot-my-account-show-starter-checkbox"
                     binary="true"
-                    label="{{ 'starter.show.getting.started' | dm }}"></p-checkbox>
+                    [inputId]="'show-starter'"></p-checkbox>
+                <label [for]="'show-starter'">
+                    {{ 'starter.show.getting.started' | dm }}
+                </label>
             </div>
 
             <div class="field">
@@ -105,7 +108,10 @@
                     id="dot-my-account-change-password-option"
                     data-testid="dot-my-account-change-password-checkbox"
                     binary="true"
-                    label="{{ 'change-password' | dm }}"></p-checkbox>
+                    [inputId]="'change-password-option'"></p-checkbox>
+                <label [for]="'change-password-option'">
+                    {{ 'change-password' | dm }}
+                </label>
             </div>
             <div class="field">
                 <label for="dot-my-account-new-password-input">{{ 'new-password' | dm }}</label>

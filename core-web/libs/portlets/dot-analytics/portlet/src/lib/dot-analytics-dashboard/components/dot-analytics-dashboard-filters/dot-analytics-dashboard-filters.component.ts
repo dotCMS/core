@@ -14,8 +14,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Params } from '@angular/router';
 
-import { CalendarModule } from 'primeng/calendar';
-import { DropdownModule, DropdownChangeEvent } from 'primeng/dropdown';
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectModule, SelectChangeEvent } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -35,7 +35,7 @@ import { isValidCustomDateRange } from '../../utils/dot-analytics.utils';
  */
 @Component({
     selector: 'dot-analytics-dashboard-filters',
-    imports: [CalendarModule, DropdownModule, FormsModule, DotMessagePipe],
+    imports: [DatePickerModule, SelectModule, FormsModule, DotMessagePipe],
     templateUrl: './dot-analytics-dashboard-filters.component.html',
     styleUrls: ['./dot-analytics-dashboard-filters.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -72,7 +72,7 @@ export class DotAnalyticsDashboardFiltersComponent {
     }
 
     /** Handle change time range */
-    onChangeTimeRange(event: DropdownChangeEvent): void {
+    onChangeTimeRange(event: SelectChangeEvent): void {
         if (event.value === TIME_RANGE_OPTIONS.custom) {
             return;
         }

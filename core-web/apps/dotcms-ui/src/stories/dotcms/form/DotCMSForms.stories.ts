@@ -5,16 +5,16 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
-import { CalendarModule } from 'primeng/calendar';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ChipsModule } from 'primeng/chips';
-import { DropdownModule } from 'primeng/dropdown';
+import { ChipModule } from 'primeng/chip';
+import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { RippleModule } from 'primeng/ripple';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { TextareaModule } from 'primeng/textarea';
 
 const meta: Meta = {
     title: 'DotCMS/Forms',
@@ -36,11 +36,11 @@ const meta: Meta = {
                 RadioButtonModule,
                 RippleModule,
                 BrowserAnimationsModule,
-                InputTextareaModule,
-                DropdownModule,
-                ChipsModule,
+                TextareaModule,
+                SelectModule,
+                ChipModule,
                 AutoCompleteModule,
-                CalendarModule,
+                DatePickerModule,
                 MultiSelectModule,
                 SelectButtonModule
             ]
@@ -152,7 +152,7 @@ const InputTemplate = (input) => {
         <p-multiSelect
             [options]="cities"
             id="multiSelect"
-            defaultLabel="Select a City"
+            placeholder="Select a City"
             optionLabel="name"
         ></p-multiSelect>
     </div>
@@ -275,7 +275,7 @@ const HorizontalTemplate = `
         <label for="lastname" class="p-sr-only">AutoComplete</label>
         <p-multiSelect
             [options]="cities"
-            defaultLabel="Select a City"
+            placeholder="Select a City"
             optionLabel="name"
         ></p-multiSelect>
     </div>

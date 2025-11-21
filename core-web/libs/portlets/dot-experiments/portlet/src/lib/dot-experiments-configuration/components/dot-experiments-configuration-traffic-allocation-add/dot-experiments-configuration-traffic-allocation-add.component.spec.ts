@@ -12,8 +12,8 @@ import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { Drawer } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
-import { Sidebar } from 'primeng/sidebar';
 import { Slider, SliderModule } from 'primeng/slider';
 
 import {
@@ -42,7 +42,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTrafficAllocationAddComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
-    let sidebar: Sidebar;
+    let sidebar: Drawer;
 
     const createComponent = createComponentFactory({
         imports: [ButtonModule, CardModule, SliderModule, InputTextModule],
@@ -114,7 +114,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
 
     it('should close sidebar ', () => {
         jest.spyOn(store, 'closeSidebar');
-        sidebar = spectator.query(Sidebar);
+        sidebar = spectator.query(Drawer);
         sidebar.hide();
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);

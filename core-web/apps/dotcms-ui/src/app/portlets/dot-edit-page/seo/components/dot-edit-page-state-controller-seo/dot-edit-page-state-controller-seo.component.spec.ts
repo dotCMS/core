@@ -12,9 +12,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
-import { InputSwitchModule } from 'primeng/inputswitch';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -159,7 +159,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 { provide: LOCALE_ID, useValue: 'en-US' }
             ],
             imports: [
-                InputSwitchModule,
+                ToggleSwitchModule,
                 SelectButtonModule,
                 TooltipModule,
                 DotSafeHtmlPipe,
@@ -170,7 +170,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 CommonModule,
                 FormsModule,
                 HttpClientTestingModule,
-                OverlayPanelModule,
+                PopoverModule,
                 BrowserAnimationsModule
             ]
         });

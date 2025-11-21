@@ -9,7 +9,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogModule } from 'primeng/dynamicdialog';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 import { PaginatorModule } from 'primeng/paginator';
 
 import {
@@ -65,7 +65,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         ConfirmDialogModule,
         DotAssetSearchComponent,
         DialogModule,
-        InputTextareaModule,
+        TextareaModule,
         PaginatorModule,
         DotSpinnerComponent,
         DotBubbleMenuComponent,

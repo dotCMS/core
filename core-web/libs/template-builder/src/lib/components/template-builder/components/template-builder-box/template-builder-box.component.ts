@@ -15,8 +15,8 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
+import { SelectModule } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { CONTAINER_SOURCE, DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
@@ -37,7 +37,7 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
         ScrollPanelModule,
         RemoveConfirmDialogComponent,
         DialogModule,
-        DropdownModule,
+        SelectModule,
         DotContainerOptionsDirective,
         ReactiveFormsModule,
         CommonModule,

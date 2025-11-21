@@ -9,7 +9,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -38,7 +38,7 @@ interface AIContentForm {
     imports: [
         DialogModule,
         ReactiveFormsModule,
-        InputTextareaModule,
+        TextareaModule,
         DotMessagePipe,
         ButtonModule,
         TooltipModule,

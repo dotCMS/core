@@ -24,7 +24,7 @@
             data-testid="dot-login-as-form"
             class="p-fluid">
             <div class="field">
-                <p-dropdown
+                <p-select
                     #dropdown
                     formControlName="loginAsUser"
                     [options]="userCurrentPage()"
@@ -51,7 +51,7 @@
                             {{ user.fullName }}
                         </div>
                     </ng-template>
-                </p-dropdown>
+                </p-select>
             </div>
             @if (needPassword()) {
                 <div class="field">

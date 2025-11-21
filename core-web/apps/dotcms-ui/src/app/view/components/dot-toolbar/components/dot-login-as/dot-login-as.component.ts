@@ -22,8 +22,8 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { PasswordModule } from 'primeng/password';
+import { Select, SelectModule } from 'primeng/select';
 
 import { take } from 'rxjs/operators';
 
@@ -44,7 +44,7 @@ import { DotNavigationService } from '../../../dot-navigation/services/dot-navig
         DialogModule,
         ButtonModule,
         PasswordModule,
-        DropdownModule,
+        SelectModule,
         DotMessagePipe
     ]
 })
@@ -54,7 +54,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     cancel = output<boolean>();
 
     passwordElem = viewChild<ElementRef>('password');
-    dropdown = viewChild<Dropdown>('dropdown');
+    dropdown = viewChild<Select>('dropdown');
     formEl = viewChild<HTMLFormElement>('formEl');
 
     form: FormGroup;

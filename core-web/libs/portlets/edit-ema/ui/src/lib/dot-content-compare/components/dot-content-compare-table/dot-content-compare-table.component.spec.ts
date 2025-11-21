@@ -10,7 +10,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 
@@ -293,7 +293,7 @@ describe('DotContentCompareTableComponent', () => {
                 DotContentComparePreviewFieldComponent,
                 DotContentCompareBlockEditorComponent,
                 TableModule,
-                DropdownModule,
+                SelectModule,
                 SelectButtonModule,
                 DotDiffPipe,
                 DotMessagePipe,
@@ -340,7 +340,7 @@ describe('DotContentCompareTableComponent', () => {
             ).toEqual('edit.content.sidebar.history.menu.current');
         });
         it('should show dropdown', () => {
-            const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+            const dropdown: Select = de.query(By.css('p-dropdown')).componentInstance;
             expect(dropdown.options).toEqual(dotContentCompareTableDataMock.versions);
         });
         it('should show selectButton', () => {
@@ -481,7 +481,7 @@ describe('DotContentCompareTableComponent', () => {
     describe('events', () => {
         it('should emit changeVersion', () => {
             jest.spyOn(hostComponent.changeVersion, 'emit');
-            const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+            const dropdown: Select = de.query(By.css('p-dropdown')).componentInstance;
             dropdown.onChange.emit({ value: 'test', originalEvent: createFakeEvent('click') });
 
             expect(hostComponent.changeVersion.emit).toHaveBeenCalledWith('test');

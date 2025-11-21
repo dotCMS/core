@@ -6,10 +6,10 @@ import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } fr
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { DropdownModule } from 'primeng/dropdown';
+import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { SidebarModule } from 'primeng/sidebar';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -47,12 +47,12 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DotSidebarHeaderComponent,
         DotSidebarDirective,
         DotExperimentsOptionsModule,
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         SelectButtonModule,
         CardModule,
         InputTextModule,
-        DropdownModule,
+        SelectModule,
         DotExperimentsGoalConfigurationReachPageComponent,
         DotExperimentsGoalConfigurationUrlParameterComponentComponent,
         DotExperimentsGoalsComingSoonComponent,

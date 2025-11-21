@@ -13,8 +13,8 @@ import {
 } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent, DotMessagePipe } from '@dotcms/ui';
@@ -50,10 +50,10 @@ import {
     templateUrl: './dot-edit-content-text-area.component.html',
     styleUrls: ['./dot-edit-content-text-area.component.scss'],
     imports: [
-        InputTextareaModule,
+        TextareaModule,
         ReactiveFormsModule,
         DotLanguageVariableSelectorComponent,
-        DropdownModule,
+        SelectModule,
         FormsModule,
         DotEditContentMonacoEditorControlComponent,
         DotCardFieldComponent,

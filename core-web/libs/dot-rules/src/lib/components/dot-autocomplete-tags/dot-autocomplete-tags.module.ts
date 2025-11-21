@@ -3,13 +3,13 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
-import { ChipsModule } from 'primeng/chips';
+import { ChipModule } from 'primeng/chip';
 
 import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
 
 @NgModule({
-    imports: [CommonModule, ChipsModule, AutoCompleteModule, FormsModule],
+    imports: [CommonModule, ChipModule, AutoCompleteModule, FormsModule],
     declarations: [DotAutocompleteTagsComponent],
-    exports: [DotAutocompleteTagsComponent, ChipsModule]
+    exports: [DotAutocompleteTagsComponent, ChipModule]
 })
 export class DotAutocompleteTagsModule {}

@@ -20,8 +20,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { Select, SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -70,16 +70,16 @@ const BUBBLE_MENU_VISIBLE_NODES = {
     imports: [
         TiptapBubbleMenuDirective,
         FormsModule,
-        DropdownModule,
+        SelectModule,
         DotLinkEditorPopoverComponent,
         DotImageEditorPopoverComponent,
-        OverlayPanelModule,
+        PopoverModule,
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBubbleMenuComponent implements OnInit {
-    dropdown = viewChild<Dropdown>('dropdown');
+    dropdown = viewChild<Select>('dropdown');
     linkModal = viewChild.required<DotLinkEditorPopoverComponent>('linkModal');
     imageModal = viewChild.required<DotImageEditorPopoverComponent>('imageModal');
     bubbleMenuRef = viewChild.required<ElementRef<HTMLElement>>('bubbleMenu');

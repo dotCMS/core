@@ -2,8 +2,6 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { format } from 'date-fns';
 
-import { Dropdown } from 'primeng/dropdown';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -182,7 +180,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
     describe('onChangeTimeRange', () => {
         it('should emit time range when time range is selected', () => {
             const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
-            spectator.triggerEventHandler(Dropdown, 'onChange', {
+            spectator.triggerEventHandler(Select, 'onChange', {
                 value: TIME_RANGE_OPTIONS.last7days,
                 originalEvent: createFakeEvent('change')
             });
@@ -194,7 +192,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
 
         it('should not emit when time range is a custom date range', () => {
             const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
-            spectator.triggerEventHandler(Dropdown, 'onChange', {
+            spectator.triggerEventHandler(Select, 'onChange', {
                 value: TIME_RANGE_OPTIONS.custom,
                 originalEvent: createFakeEvent('change')
             });

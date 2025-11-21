@@ -26,9 +26,9 @@ import {
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitchChangeEvent, InputSwitchModule } from 'primeng/inputswitch';
-import { MessagesModule } from 'primeng/messages';
-import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
+import { MessageModule } from 'primeng/message';
+import { TabsModule } from 'primeng/tabs';
+import { ToggleSwitchChangeEvent, ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { take } from 'rxjs/operators';
 
@@ -93,14 +93,14 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
-        TabViewModule,
+        TabsModule,
         DotWorkflowActionsComponent,
         TabViewInsertDirective,
         NgTemplateOutlet,
         DotMessagePipe,
-        InputSwitchModule,
+        ToggleSwitchModule,
         FormsModule,
-        MessagesModule
+        MessageModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
@@ -588,11 +588,11 @@ export class DotEditContentFormComponent implements OnInit {
      * This method is triggered by the PrimeNG TabView component when the active tab changes.
      * It synchronizes the UI state with the store to maintain tab selection across renders.
      *
-     * @param {TabViewChangeEvent} event - The tab change event containing the new active index
+     * @param {number} index - The new active tab index
      * @memberof DotEditContentFormComponent
      */
-    onActiveIndexChange({ index }: TabViewChangeEvent) {
-        this.$store.setActiveTab(index);
+    onActiveIndexChange(event: { index: number }) {
+        this.$store.setActiveTab(event.index);
     }
 
     /**
@@ -601,10 +601,10 @@ export class DotEditContentFormComponent implements OnInit {
      * This method is triggered when the user toggles the content lock switch.
      * It updates the content lock state in the store based on the switch value.
      *
-     * @param {InputSwitchChangeEvent} event - The switch change event containing the new checked state
+     * @param {ToggleSwitchChangeEvent} event - The switch change event containing the new checked state
      * @memberof DotEditContentFormComponent
      */
-    onContentLockChange(event: InputSwitchChangeEvent) {
+    onContentLockChange(event: ToggleSwitchChangeEvent) {
         event.checked ? this.$store.lockContent() : this.$store.unlockContent();
     }
 

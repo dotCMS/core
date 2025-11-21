@@ -22,9 +22,9 @@ import {
 import { AccordionModule } from 'primeng/accordion';
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { filter } from 'rxjs/operators';
@@ -52,8 +52,8 @@ import { DotValidators } from './../../../../validators/dotValidators';
         RadioButtonModule,
         ReactiveFormsModule,
         FormsModule,
-        DropdownModule,
-        InputTextareaModule,
+        SelectModule,
+        TextareaModule,
         DotFieldRequiredDirective,
         DotMessagePipe,
         DotCopyButtonComponent

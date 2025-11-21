@@ -1,6 +1,6 @@
 import { Directive, Input, inject } from '@angular/core';
 
-import { Sidebar } from 'primeng/sidebar';
+import { Drawer } from 'primeng/drawer';
 
 export const enum SIDEBAR_PLACEMENT {
     RIGHT = 'right'
@@ -20,7 +20,7 @@ export enum SIDEBAR_SIZES {
     selector: '[dotSidebar]'
 })
 export class DotSidebarDirective {
-    private readonly primeSidebar = inject(Sidebar, { optional: true, self: true });
+    private readonly primeSidebar = inject(Drawer, { optional: true, self: true });
 
     constructor() {
         if (this.primeSidebar) {
@@ -30,7 +30,7 @@ export class DotSidebarDirective {
             this.primeSidebar.dismissible = false;
             this.primeSidebar.closeOnEscape = false;
         } else {
-            console.warn('DotSidebarDirective is for use with PrimeNg Sidebar');
+            console.warn('DotSidebarDirective is for use with PrimeNg Drawer');
         }
     }
 

@@ -21,7 +21,6 @@
                 ],
                 "styles": [
                     "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "libs/dotcms-scss/angular/dotcms-theme/_misc.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/components/buttons/common.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/components/buttons/_button.scss",

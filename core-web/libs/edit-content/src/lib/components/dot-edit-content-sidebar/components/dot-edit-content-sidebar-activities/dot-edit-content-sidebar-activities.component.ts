@@ -16,8 +16,8 @@ import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angul
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TextareaModule } from 'primeng/textarea';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
@@ -43,7 +43,7 @@ const COMMENT_MAX_LENGTH = 500;
         AvatarModule,
         ButtonModule,
         DataViewModule,
-        InputTextareaModule,
+        TextareaModule,
         DotMessagePipe,
         SkeletonModule,
         DotGravatarDirective,

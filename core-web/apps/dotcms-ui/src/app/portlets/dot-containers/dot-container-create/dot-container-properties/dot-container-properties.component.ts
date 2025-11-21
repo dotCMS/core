@@ -18,7 +18,7 @@ import { CardModule } from 'primeng/card';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
@@ -59,7 +59,7 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
         InputTextModule,
         CardModule,
         DotTextareaContentComponent,
-        TabViewModule,
+        TabsModule,
         MenuModule,
         DotMessagePipe,
         DotLoopEditorComponent,

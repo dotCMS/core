@@ -18,13 +18,13 @@
         </div>
         <div class="field">
             <label for="filterKey">{{ 'contenttypes.content.push_publish.filters' | dm }}:</label>
-            <p-dropdown
+            <p-select
                 [autofocus]="true"
                 [options]="filterOptions"
                 id="filterKey"
                 pAutoFocus
                 formControlName="filterKey"
-                appendTo="body"></p-dropdown>
+                appendTo="body"></p-select>
         </div>
         <div class="field form-group__two-cols push-publish-dialog__publish-dates-container">
             <div class="field push-publish-dialog__publish-date">
@@ -32,7 +32,7 @@
                     {{ 'contenttypes.content.push_publish.publish_date' | dm }}:
                 </label>
                 <div class="push-publish-dialog__calendar">
-                    <p-calendar
+                    <p-datePicker
                         [minDate]="dateFieldMinDate"
                         class="push-publish-dialog__calendar-date"
                         id="publishDate"
@@ -42,7 +42,7 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true"></p-calendar>
+                        showTime="true"></p-datePicker>
                 </div>
                 <dot-field-validation-message
                     [field]="form.get('publishDate')"
@@ -55,7 +55,7 @@
                     {{ 'contenttypes.content.push_publish.expire_date' | dm }}:
                 </label>
                 <div class="push-publish-dialog__calendar">
-                    <p-calendar
+                    <p-datePicker
                         [minDate]="dateFieldMinDate"
                         class="push-publish-dialog__calendar-date"
                         id="expireDate"
@@ -64,7 +64,7 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true"></p-calendar>
+                        showTime="true"></p-datePicker>
                 </div>
                 <dot-field-validation-message
                     [field]="form.get('expireDate')"
@@ -80,7 +80,7 @@
         </div>
         <div [hidden]="!showTimezonePicker" class="field" data-testid="timeZoneSelectContainer">
             <label for="timezoneId">{{ 'time-zone' | dm }}:</label>
-            <p-dropdown
+            <p-select
                 (onChange)="updateTimezoneLabel($event.value)"
                 [options]="timeZoneOptions"
                 [filter]="true"
@@ -88,7 +88,7 @@
                 data-testid="timeZoneSelect"
                 formControlName="timezoneId"
                 filterBy="label"
-                appendTo="body"></p-dropdown>
+                appendTo="body"></p-select>
         </div>
         <div class="field">
             <label dotFieldRequired for="environment">

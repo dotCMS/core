@@ -1,15 +1,25 @@
 @if (!editing) {
     <div class="field relationship__type">
-        <p-radioButton
-            (click)="clean()"
-            [(ngModel)]="status"
-            [label]="'contenttypes.field.properties.relationship.new.label' | dm"
-            [value]="STATUS_NEW" />
-        <p-radioButton
-            (click)="clean()"
-            [(ngModel)]="status"
-            [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
-            [value]="STATUS_EXISTING" />
+        <div class="flex items-center">
+            <p-radioButton
+                (click)="clean()"
+                [(ngModel)]="status"
+                [inputId]="'relationship-new'"
+                [value]="STATUS_NEW" />
+            <label [for]="'relationship-new'">
+                {{ 'contenttypes.field.properties.relationship.new.label' | dm }}
+            </label>
+        </div>
+        <div class="flex items-center">
+            <p-radioButton
+                (click)="clean()"
+                [(ngModel)]="status"
+                [inputId]="'relationship-existing'"
+                [value]="STATUS_EXISTING" />
+            <label [for]="'relationship-existing'">
+                {{ 'contenttypes.field.properties.relationship.existing.label' | dm }}
+            </label>
+        </div>
     </div>
 }
 

@@ -3,7 +3,7 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/j
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
 
 import { DotToolbarBtnOverlayComponent } from './dot-toolbar-btn-overlay.component';
 
@@ -13,7 +13,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotToolbarBtnOverlayComponent,
-        imports: [OverlayPanelModule, ButtonModule],
+        imports: [PopoverModule, ButtonModule],
         detectChanges: false
     });
 
@@ -125,8 +125,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
             // Access PrimeNG OverlayPanel component instance to verify appendTo property
             const overlayPanelDebugElement = spectator.debugElement.query(By.css('p-overlaypanel'));
-            const overlayPanelComponent =
-                overlayPanelDebugElement?.componentInstance as OverlayPanel;
+            const overlayPanelComponent = overlayPanelDebugElement?.componentInstance as Popover;
             expect(overlayPanelComponent?.appendTo).toBe('body');
         });
 
@@ -146,8 +145,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
             const overlayPanelDebugElement = spectatorWithClass.debugElement.query(
                 By.css('p-overlaypanel')
             );
-            const overlayPanelComponent =
-                overlayPanelDebugElement?.componentInstance as OverlayPanel;
+            const overlayPanelComponent = overlayPanelDebugElement?.componentInstance as Popover;
             expect(overlayPanelComponent?.styleClass).toBe(customClass);
         });
     });
@@ -270,7 +268,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         it('should call handlerShow when overlay panel shows', () => {
             jest.spyOn(component, 'handlerShow');
 
-            spectator.triggerEventHandler(OverlayPanel, 'onShow', {});
+            spectator.triggerEventHandler(Popover, 'onShow', {});
 
             expect(component.handlerShow).toHaveBeenCalled();
         });
@@ -278,7 +276,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         it('should call handlerHide when overlay panel hides', () => {
             jest.spyOn(component, 'handlerHide');
 
-            spectator.triggerEventHandler(OverlayPanel, 'onHide', {});
+            spectator.triggerEventHandler(Popover, 'onHide', {});
 
             expect(component.handlerHide).toHaveBeenCalled();
         });

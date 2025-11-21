@@ -8,8 +8,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { Select, SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotRolesService, DotFormatDateService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
@@ -34,7 +34,7 @@ describe('DotAssigneeFormComponent', () => {
     let dotRolesService: DotRolesService;
     let textArea: DebugElement;
     let dropdownElement: DebugElement;
-    let dropdown: Dropdown;
+    let dropdown: Select;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -51,8 +51,8 @@ describe('DotAssigneeFormComponent', () => {
                 DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
-                InputTextareaModule,
-                DropdownModule
+                TextareaModule,
+                SelectModule
             ]
         }).compileComponents();
     });

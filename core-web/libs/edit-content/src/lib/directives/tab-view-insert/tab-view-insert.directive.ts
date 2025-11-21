@@ -8,7 +8,7 @@ import {
     ViewContainerRef
 } from '@angular/core';
 
-import { TabView } from 'primeng/tabview';
+import { Tabs } from 'primeng/tabs';
 
 @Directive({
     selector: '[dotTabViewAppend]'
@@ -19,11 +19,11 @@ export class TabViewInsertDirective implements AfterViewInit {
 
     #viewContainer = inject(ViewContainerRef);
     #renderer = inject(Renderer2);
-    #tabView = inject(TabView, { optional: true });
+    #tabView = inject(Tabs, { optional: true });
 
     ngAfterViewInit() {
         if (!this.#tabView) {
-            console.warn('TabViewAppendDirective is for use with PrimeNG TabView');
+            console.warn('TabViewAppendDirective is for use with PrimeNG Tabs');
 
             return;
         }

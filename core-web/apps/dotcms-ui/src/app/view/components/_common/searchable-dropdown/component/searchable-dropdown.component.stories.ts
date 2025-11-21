@@ -10,7 +10,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
 import { InputTextModule } from 'primeng/inputtext';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
@@ -45,7 +45,7 @@ const meta: Meta<SearchableDropdownComponent> = {
                 DotIconModule,
                 FormsModule,
                 InputTextModule,
-                OverlayPanelModule,
+                PopoverModule,
                 DotMessagePipe,
                 HttpClientModule
             ]

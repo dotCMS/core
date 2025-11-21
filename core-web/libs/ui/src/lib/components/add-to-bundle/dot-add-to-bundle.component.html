@@ -11,14 +11,14 @@
         #formEl="ngForm"
         novalidate>
         <div class="field">
-            <p-dropdown
+            <p-select
                 [options]="bundle$ | async"
                 [placeholder]="placeholder"
                 #addBundleDropdown
                 appendTo="body"
                 editable="true"
                 formControlName="addBundle"
-                optionLabel="name"></p-dropdown>
+                optionLabel="name"></p-select>
             <dot-field-validation-message
                 [field]="form.get('addBundle')"
                 message="{{

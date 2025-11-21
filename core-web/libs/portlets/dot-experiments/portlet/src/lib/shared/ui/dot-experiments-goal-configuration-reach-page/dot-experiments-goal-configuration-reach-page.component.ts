@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
+import { SelectModule } from 'primeng/select';
 
 import {
     GoalsConditionsOperatorsListByType,
@@ -29,7 +29,7 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
         DotDropdownDirective,
         DotFieldRequiredDirective,
         DotFieldValidationMessageComponent,
-        DropdownModule,
+        SelectModule,
         DotMessagePipe,
         InputTextModule,
         PaginatorModule,

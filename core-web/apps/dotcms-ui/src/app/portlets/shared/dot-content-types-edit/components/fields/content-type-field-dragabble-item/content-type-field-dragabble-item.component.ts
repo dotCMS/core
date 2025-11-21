@@ -10,7 +10,7 @@ import {
     inject
 } from '@angular/core';
 
-import { OverlayPanel } from 'primeng/overlaypanel';
+import { Popover } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -42,7 +42,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     @Output()
     edit: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
 
-    @ViewChild('op') overlayPanel: OverlayPanel;
+    @ViewChild('op') overlayPanel: Popover;
 
     open = false;
 

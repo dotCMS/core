@@ -14,19 +14,14 @@ import {
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { SelectItem, SelectItemGroup } from 'primeng/api';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule, SelectChangeEvent } from 'primeng/select';
 
 import { tap } from 'rxjs/operators';
 
-import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCMSWorkflow } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
-
-interface DropdownEvent {
-    originalEvent: MouseEvent;
-    value: DotCMSWorkflowAction;
-}
 
 @Component({
     selector: 'dot-workflows-actions-selector-field',
@@ -39,7 +34,7 @@ interface DropdownEvent {
             useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
         }
     ],
-    imports: [CommonModule, FormsModule, DropdownModule, DotMessagePipe]
+    imports: [CommonModule, FormsModule, SelectModule, DotMessagePipe]
 })
 export class DotWorkflowsActionsSelectorFieldComponent
     implements ControlValueAccessor, OnChanges, OnInit
@@ -48,7 +43,7 @@ export class DotWorkflowsActionsSelectorFieldComponent
         DotWorkflowsActionsSelectorFieldService
     );
 
-    @ViewChild('dropdown') dropdown: Dropdown;
+    @ViewChild('dropdown') dropdown: Select;
     @Input() workflows: DotCMSWorkflow[];
 
     actions$: Observable<SelectItemGroup[]>;
@@ -77,10 +72,10 @@ export class DotWorkflowsActionsSelectorFieldComponent
     /**
      * Update value on change of the multiselect
      *
-     * @param {DropdownEvent} { value }
+     * @param {SelectChangeEvent} { value }
      * @memberof DotWorkflowsActionsSelectorFieldComponent
      */
-    handleChange({ value }: DropdownEvent): void {
+    handleChange({ value }: SelectChangeEvent): void {
         this.propagateChange(value || '');
     }
 
@@ -139,7 +134,7 @@ export class DotWorkflowsActionsSelectorFieldComponent
      * @returns {boolean} - Returns `true` if the dropdown should be cleared (i.e., if the dropdown exists, there are available options,
      *                      and the current value is not in the list of options). Otherwise, returns `false`.
      */
-    private shouldClearDropdown(dropdown: Dropdown, options: string[], value: string): boolean {
+    private shouldClearDropdown(dropdown: Select, options: string[], value: string): boolean {
         return dropdown && options.length && !options.includes(value);
     }
 }

@@ -54,13 +54,13 @@
         <!--Add new language-->
         <div class="field">
             <label for="localeType">{{ 'locales.type' | dm }}</label>
-            <p-dropdown
+            <p-select
                 (onChange)="handleTypeChange()"
                 [options]="localeType"
                 id="localeType"
                 #localeTypeDropdown
                 data-testId="localeType"
-                appendTo="body"></p-dropdown>
+                appendTo="body"></p-select>
         </div>
 
         @if (localeTypeDropdown.value == 1) {
@@ -69,7 +69,7 @@
                 <label class="p-label-input-required" for="languageDropdown">
                     {{ 'locales.language' | dm }}
                 </label>
-                <p-dropdown
+                <p-select
                     [filter]="true"
                     [options]="data.languages"
                     [placeholder]="'locales.language.input.placeholder' | dm"
@@ -84,12 +84,12 @@
                     <ng-template let-language pTemplate="selectedItem">
                         {{ language.name }} - {{ language.code }}
                     </ng-template>
-                </p-dropdown>
+                </p-select>
                 <span class="p-field-hint">{{ 'locales.language.hint' | dm }}</span>
             </div>
             <div class="field">
                 <label for="countryDropdown">{{ 'locales.country' | dm }}</label>
-                <p-dropdown
+                <p-select
                     [filter]="true"
                     [options]="data.countries"
                     [placeholder]="'locales.language.input.placeholder' | dm"
@@ -104,7 +104,7 @@
                     <ng-template let-country pTemplate="selectedItem">
                         {{ country.name }} - {{ country.code }}
                     </ng-template>
-                </p-dropdown>
+                </p-select>
                 <span class="p-field-hint">{{ 'locales.country.hint' | dm }}</span>
             </div>
             <div class="field">

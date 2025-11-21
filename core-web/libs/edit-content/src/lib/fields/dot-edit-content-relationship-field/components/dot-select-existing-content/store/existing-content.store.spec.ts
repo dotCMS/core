@@ -3,7 +3,7 @@ import { Observable, of, throwError } from 'rxjs';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
-import { InputSwitchChangeEvent } from 'primeng/inputswitch';
+import { ToggleSwitchChangeEvent } from 'primeng/toggleswitch';
 
 import { delay } from 'rxjs/operators';
 
@@ -201,7 +201,7 @@ describe('ExistingContentStore', () => {
             expect(store.pagination().currentPage).toBe(2);
 
             // Toggle to selected view
-            const event = { checked: true } as InputSwitchChangeEvent;
+            const event = { checked: true } as ToggleSwitchChangeEvent;
             store.changeViewMode(event);
             expect(store.isSelectedView()).toBe(true);
             expect(store.viewMode()).toBe('selected');
@@ -227,12 +227,12 @@ describe('ExistingContentStore', () => {
             expect(store.pagination().currentPage).toBe(3);
 
             // Toggle to selected view
-            store.changeViewMode({ checked: true } as InputSwitchChangeEvent);
+            store.changeViewMode({ checked: true } as ToggleSwitchChangeEvent);
             expect(store.isSelectedView()).toBe(true);
             expect(store.pagination().currentPage).toBe(1); // reset
 
             // Toggle back to all view
-            store.changeViewMode({ checked: false } as InputSwitchChangeEvent);
+            store.changeViewMode({ checked: false } as ToggleSwitchChangeEvent);
             expect(store.isSelectedView()).toBe(false);
             // pagination should be restored to previousPagination (page 3)
             expect(store.pagination().currentPage).toBe(3);
@@ -243,19 +243,19 @@ describe('ExistingContentStore', () => {
             // Move to page 2
             store.nextPage();
             // Toggle to selected view
-            store.changeViewMode({ checked: true } as InputSwitchChangeEvent);
+            store.changeViewMode({ checked: true } as ToggleSwitchChangeEvent);
             // Move to page 1 in selected view (already at 1)
             expect(store.pagination().currentPage).toBe(1);
             // Toggle back to all view
-            store.changeViewMode({ checked: false } as InputSwitchChangeEvent);
+            store.changeViewMode({ checked: false } as ToggleSwitchChangeEvent);
             expect(store.pagination().currentPage).toBe(2);
             // Move to page 3
             store.setOffset({ first: 100 } as import('primeng/table').TablePageEvent);
             // Toggle to selected view again
-            store.changeViewMode({ checked: true } as InputSwitchChangeEvent);
+            store.changeViewMode({ checked: true } as ToggleSwitchChangeEvent);
             expect(store.pagination().currentPage).toBe(1);
             // Toggle back to all view
-            store.changeViewMode({ checked: false } as InputSwitchChangeEvent);
+            store.changeViewMode({ checked: false } as ToggleSwitchChangeEvent);
             expect(store.pagination().currentPage).toBe(3);
         });
 
@@ -269,7 +269,7 @@ describe('ExistingContentStore', () => {
             store.setSelectionItems([selectedItem]);
 
             // Toggle to show only selected items
-            const event = { checked: true } as InputSwitchChangeEvent;
+            const event = { checked: true } as ToggleSwitchChangeEvent;
             store.changeViewMode(event);
 
             // Should filter to show only the selected item
@@ -282,7 +282,7 @@ describe('ExistingContentStore', () => {
                 selectionMode: 'multiple',
                 selectedItemsIds: []
             });
-            const event = { checked: true } as InputSwitchChangeEvent;
+            const event = { checked: true } as ToggleSwitchChangeEvent;
             store.changeViewMode(event);
             expect(store.filteredData()).toEqual([]);
         });
@@ -293,7 +293,7 @@ describe('ExistingContentStore', () => {
                 selectionMode: 'multiple',
                 selectedItemsIds: [mockData.contentlets[0].inode]
             });
-            const event = { checked: true } as InputSwitchChangeEvent;
+            const event = { checked: true } as ToggleSwitchChangeEvent;
             store.changeViewMode(event);
             expect(store.filteredData()).toEqual([mockData.contentlets[0]]);
         });

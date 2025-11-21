@@ -17,9 +17,9 @@ import {
 import { LazyLoadEvent, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DataView, DataViewModule } from 'primeng/dataview';
-import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
@@ -39,7 +39,7 @@ import { DotMessagePipe, DotSiteSelectorDirective } from '@dotcms/ui';
     providers: [PaginatorService, DotThemesService, DialogService, MessageService],
     imports: [
         ButtonModule,
-        DropdownModule,
+        SelectModule,
         DotSiteSelectorDirective,
         DataViewModule,
         CommonModule,

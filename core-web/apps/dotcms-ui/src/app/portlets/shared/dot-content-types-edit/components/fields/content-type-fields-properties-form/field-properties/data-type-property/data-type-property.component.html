@@ -6,11 +6,16 @@
         <div class="formgroup-inline">
             @for (radio of radioInputs; track radio) {
                 <div class="field-checkbox">
-                    <p-radioButton
-                        [label]="radio.text | dm"
-                        [name]="property.name"
-                        [value]="radio.value"
-                        [formControlName]="property.name"></p-radioButton>
+                    <div class="flex items-center">
+                        <p-radioButton
+                            [inputId]="property.name + '_' + radio.value"
+                            [name]="property.name"
+                            [value]="radio.value"
+                            [formControlName]="property.name"></p-radioButton>
+                        <label [for]="property.name + '_' + radio.value">
+                            {{ radio.text | dm }}
+                        </label>
+                    </div>
                 </div>
             }
         </div>

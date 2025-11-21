@@ -23,8 +23,8 @@ import { ActivatedRoute } from '@angular/router';
 
 import { SelectItem } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 
 import { filter, startWith, take, takeUntil } from 'rxjs/operators';
 
@@ -77,7 +77,7 @@ import { DotFieldHelperComponent } from '../../../../../view/components/dot-fiel
         ReactiveFormsModule,
         AsyncPipe,
         CheckboxModule,
-        DropdownModule,
+        SelectModule,
         InputTextModule,
         DotMessagePipe,
         DotFieldRequiredDirective,

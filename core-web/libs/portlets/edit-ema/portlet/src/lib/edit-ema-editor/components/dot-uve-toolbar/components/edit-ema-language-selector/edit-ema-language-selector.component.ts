@@ -14,7 +14,7 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { Listbox, ListboxChangeEvent, ListboxModule } from 'primeng/listbox';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 
 import { map } from 'rxjs/operators';
 
@@ -23,7 +23,7 @@ import { DotLanguage } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-ema-language-selector',
-    imports: [OverlayPanelModule, ListboxModule, ButtonModule, AsyncPipe, NgClass],
+    imports: [PopoverModule, ListboxModule, ButtonModule, AsyncPipe, NgClass],
     templateUrl: './edit-ema-language-selector.component.html',
     styleUrls: ['./edit-ema-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
