@@ -2,7 +2,7 @@
 
 import { of } from 'rxjs';
 
-import { waitForAsync } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -43,7 +43,7 @@ describe('DotIframePorletLegacyResolver', () => {
     let dotLicenseService: DotLicenseService;
 
     beforeEach(waitForAsync(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             providers: [
                 DotSessionStorageService,
                 DotPageStateService,
@@ -74,10 +74,10 @@ describe('DotIframePorletLegacyResolver', () => {
             imports: [RouterTestingModule]
         });
 
-        dotPageStateService = testbed.get(DotPageStateService);
+        dotPageStateService = TestBed.inject(DotPageStateService);
         dotPageStateServiceRequestPageSpy = jest.spyOn(dotPageStateService, 'requestPage');
-        resolver = testbed.get(DotIframePortletLegacyResolver);
-        dotLicenseService = testbed.get(DotLicenseService);
+        resolver = TestBed.inject(DotIframePortletLegacyResolver);
+        dotLicenseService = TestBed.inject(DotLicenseService);
         state.url = '/rules';
     }));
 

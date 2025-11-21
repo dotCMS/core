@@ -2,6 +2,7 @@ import { it, expect, describe } from '@jest/globals';
 import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 
 import { Menu } from 'primeng/menu';
 
@@ -52,6 +53,7 @@ const baseUVEToolbarState = {
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
+    setOrientation: jest.fn(),
     setSEO: jest.fn(),
     pageParams: signal(params),
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
@@ -196,14 +198,18 @@ describe('DotUveDeviceSelectorComponent', () => {
 
         describe('orientation button', () => {
             it('should be disabled if the device is default', () => {
-                const button = spectator.query(`[data-testid="orientation"]`);
-
                 baseUVEState.device.set(
                     DEFAULT_DEVICES.find((device) => device.inode === 'default')
                 );
                 spectator.detectChanges();
 
-                expect(button.getAttribute('ng-reflect-disabled')).toBe('true');
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the disabled property on the p-button component instance
+                const buttonDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="orientation"]')
+                );
+                const buttonComponent = buttonDebugElement?.componentInstance;
+                expect(buttonComponent?.disabled).toBe(true);
             });
 
             it("should call onOrientationChange when the orientation button is clicked and the device isn't default", () => {
