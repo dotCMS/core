@@ -184,8 +184,10 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -8507,12 +8509,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         // query published contentlet in the last half hour
         final Date currentDate = new Date();
-        final FastDateFormat datetimeFormat = FastDateFormat.getInstance(
-                "yyyy-MM-dd't'HH:mm:ssZ", APILocator.systemTimeZone());
-        final String currentDateForQuery = datetimeFormat.format(currentDate);
+        final DateTimeFormatter datetimeFormat = DateTimeFormatter.ofPattern(
+                "yyyy-MM-dd't'HH:mm:ssZ").withZone(APILocator.systemTimeZone().toZoneId());
+        final String currentDateForQuery = datetimeFormat.format(currentDate.toInstant());
 
         final Date currentDateLessHalfHour = DateUtils.addMinutes(currentDate, -30);
-        final String currentDateLessHalfHourForQuery = datetimeFormat.format(currentDateLessHalfHour);
+        final String currentDateLessHalfHourForQuery = datetimeFormat.format(currentDateLessHalfHour.toInstant());
 
         final Contentlet mostRecentPublishedContent = contentletAPI.search(
                 String.format( "+contentType:%s +sysPublishDate:[%s TO %s]",
