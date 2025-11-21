@@ -1,28 +1,43 @@
 @use "variables" as *;
 
-// Layout constants
-$control-padding: 14px;
-$grid-gap: 14px;
-$grid-row-height: 6.875rem;
-$list-row-height: 4rem;
-$button-size: 2.5rem;
-$icon-size: 0.875rem;
-
 :host {
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
     overflow: hidden;
-    min-height: 0; // Allows the container to shrink
+    min-height: 0;
+
+    .dot-uve-palette-list__empty-title {
+        color: $color-palette-surface-900;
+        font-weight: $font-weight-bold;
+        line-height: 150%;
+    }
+
+    .dot-uve-palette-list__empty-text {
+        color: $color-palette-surface-800;
+        margin: 0;
+        line-height: 1.5;
+
+        ::ng-deep {
+            span {
+                color: $color-palette-primary-500;
+                text-decoration: underline;
+                cursor: pointer;
+                font-weight: $font-weight-semi-bold;
+
+                &:hover {
+                    color: $color-palette-primary-600;
+                }
+            }
+        }
+    }
 
     // Search and options controls bar
     .dot-uve-palette-list__controls {
         display: flex;
         gap: $spacing-1;
-        padding: $control-padding;
-        padding-bottom: 0;
-        margin-bottom: $control-padding;
+        padding: $spacing-width-m;
         flex-shrink: 0;
     }
 
@@ -30,9 +45,9 @@ $icon-size: 0.875rem;
     .dot-uve-palette-list__grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        grid-auto-rows: $grid-row-height;
-        gap: $grid-gap;
-        padding: 0 $control-padding;
+        grid-auto-rows: 6.875rem;
+        gap: $spacing-width-m;
+        padding: 0 $spacing-width-m;
         overflow-y: auto;
         overflow-x: hidden;
         padding-bottom: $spacing-1;
@@ -42,7 +57,7 @@ $icon-size: 0.875rem;
         // List view variant - single column with shorter rows
         &--list {
             grid-template-columns: 1fr;
-            grid-auto-rows: $list-row-height;
+            grid-auto-rows: 4rem;
         }
 
         dot-uve-palette-item {
@@ -68,16 +83,17 @@ $icon-size: 0.875rem;
             justify-content: center;
             grid-column: 1 / -1;
             grid-row: 1 / -1;
-            padding: 2rem;
+            padding: $spacing-4;
             text-align: center;
             min-height: 100%;
             width: 100%;
+            gap: $spacing-3;
 
             .dot-uve-palette-list__empty-icon {
-                margin-bottom: 1rem;
+                padding: $spacing-4;
 
                 i {
-                    font-size: 3rem;
+                    font-size: 4.375rem;
                     color: $color-palette-gray-600;
                     font-weight: 400;
                 }
@@ -93,16 +109,17 @@ $icon-size: 0.875rem;
     ::ng-deep {
         // Options menu button (sort & view toggle)
         .options-menu-button {
-            width: $button-size;
-            height: $button-size;
-            min-width: $button-size;
+            width: 2.5rem;
+            height: 2.5rem;
+            min-width: 2.5rem;
             padding: 0;
 
-            .p-button-icon {
-                width: $icon-size;
-                height: $icon-size;
-                font-size: $icon-size;
-                color: $color-palette-gray-800 !important;
+            .p-button-icon,
+            .p-button-icon.pi {
+                width: 0.875rem;
+                height: 0.875rem;
+                font-size: 0.875rem;
+                color: $color-palette-gray-800;
 
                 &.pi-arrow-right-arrow-left {
                     transform: rotate(90deg);
@@ -121,30 +138,12 @@ $icon-size: 0.875rem;
     // Options menu popup positioning
     .options-menu-popup.p-menu {
         transform: translateX(-100%);
-        margin-left: $button-size;
+        margin-left: 2.5rem;
 
         // Active menu item styling
         .p-menu-list {
             .active-menu-item {
                 background-color: $color-palette-primary-200;
-            }
-        }
-    }
-
-    .dot-uve-palette-list__empty-text {
-        font-size: 1rem;
-        color: $color-palette-gray-700;
-        margin: 0;
-        line-height: 1.5;
-
-        span {
-            color: $color-palette-primary-600;
-            text-decoration: underline;
-            cursor: pointer;
-            font-weight: 500;
-
-            &:hover {
-                color: $color-palette-primary-700;
             }
         }
     }

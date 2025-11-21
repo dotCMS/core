@@ -276,24 +276,6 @@ describe('DotPaletteListStore', () => {
                 expect(sort.direction).toBe('DESC');
             });
         });
-
-        describe('$emptyStateMessage', () => {
-            it('should return contentlets message when in contentlets view', () => {
-                store.getContentlets({ selectedContentType: 'Blog' });
-
-                expect(store.$emptyStateMessage()).toBe('uve.palette.empty.contentlets.message');
-            });
-
-            it('should return favorites message when in favorites list type', () => {
-                store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
-
-                expect(store.$emptyStateMessage()).toBe('uve.palette.empty.favorites.message');
-            });
-
-            it('should return content types message when in content types view', () => {
-                expect(store.$emptyStateMessage()).toBe('uve.palette.empty.content-types.message');
-            });
-        });
     });
 
     describe('Methods', () => {

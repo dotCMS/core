@@ -1,43 +1,45 @@
-<div class="dot-uve-palette-list__controls">
-    @if ($currentView() === DotUVEPaletteListView.CONTENTLETS) {
-        <p-button
-            data-testid="back-to-content-types-button"
-            icon="pi pi-chevron-left"
-            styleClass="options-menu-button"
-            [text]="true"
-            [rounded]="true"
-            (onClick)="onBackToContentTypes()" />
-    }
+@if (!$hideControls()) {
+    <div class="dot-uve-palette-list__controls">
+        @if ($currentView() === DotUVEPaletteListView.CONTENTLETS) {
+            <p-button
+                data-testid="back-to-content-types-button"
+                icon="pi pi-chevron-left"
+                styleClass="options-menu-button"
+                [text]="true"
+                [rounded]="true"
+                (onClick)="onBackToContentTypes()" />
+        }
 
-    <p-iconField iconPosition="left" [style]="{ width: '100%' }">
-        <p-inputIcon styleClass="pi pi-search" />
-        <input
-            pInputText
-            data-testid="palette-search-input"
-            styleClass="input-text-sm"
-            [formControl]="searchControl"
-            [placeholder]="'search' | dm"
-            [style]="{ width: '100%' }" />
-    </p-iconField>
+        <p-iconField iconPosition="left" [style]="{ width: '100%' }">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                pInputText
+                data-testid="palette-search-input"
+                styleClass="input-text-sm"
+                [formControl]="searchControl"
+                [placeholder]="'search' | dm"
+                [style]="{ width: '100%' }" />
+        </p-iconField>
 
-    @if ($showSortButton()) {
-        <p-button
-            data-testid="sort-menu-button"
-            icon="pi pi-arrow-right-arrow-left"
-            styleClass="options-menu-button"
-            [text]="true"
-            [rounded]="true"
-            (onClick)="menu.toggle($event)" />
-    } @else if ($isFavoritesList()) {
-        <p-button
-            data-testid="add-favorites-button"
-            icon="pi pi-plus"
-            styleClass="options-menu-button"
-            [text]="true"
-            [rounded]="true"
-            (onClick)="favoritesPanel.toggle($event)" />
-    }
-</div>
+        @if ($showSortButton()) {
+            <p-button
+                data-testid="sort-menu-button"
+                icon="pi pi-arrow-right-arrow-left"
+                styleClass="options-menu-button"
+                [text]="true"
+                [rounded]="true"
+                (onClick)="menu.toggle($event)" />
+        } @else if ($isFavoritesList()) {
+            <p-button
+                data-testid="add-favorites-button"
+                icon="pi pi-plus"
+                styleClass="options-menu-button"
+                [text]="true"
+                [rounded]="true"
+                (onClick)="favoritesPanel.toggle($event)" />
+        }
+    </div>
+}
 
 <div
     class="dot-uve-palette-list__grid"
@@ -64,13 +66,16 @@
 <ng-template #emptyStateTemplate>
     <div class="dot-uve-palette-list__empty">
         <div class="dot-uve-palette-list__empty-icon">
-            <i class="pi pi-plus"></i>
+            <i [class]="$emptyState().icon"></i>
         </div>
-        <p
-            data-testid="empty-state-message"
-            class="dot-uve-palette-list__empty-text"
-            [innerHTML]="$emptyStateMessage() | dm"
-            (click)="onEmptyStateClick($event)"></p>
+        <div>
+            <span class="dot-uve-palette-list__empty-title">{{ $emptyState().title | dm }}</span>
+            <p
+                data-testid="empty-state-message"
+                class="dot-uve-palette-list__empty-text"
+                [innerHTML]="$emptyState().message | dm"
+                (click)="onEmptyStateClick($event)"></p>
+        </div>
     </div>
 </ng-template>
 

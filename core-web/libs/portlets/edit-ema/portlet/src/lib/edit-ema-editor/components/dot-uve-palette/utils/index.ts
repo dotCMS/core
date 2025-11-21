@@ -5,7 +5,12 @@ import {
     ESContent
 } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PER_PAGE, DotPaletteSortOption, DotPaletteListStatus } from '../models';
+import {
+    DEFAULT_PER_PAGE,
+    DotPaletteSortOption,
+    DotPaletteListStatus,
+    DotUVEPaletteListTypes
+} from '../models';
 
 /**
  * Mock array for loading skeleton rows.
@@ -282,3 +287,36 @@ export const DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY = 'dot-uve-palette-layout-mode'
  * Key for storing the orderby in the local storage.
  */
 export const DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY = 'dot-uve-palette-sort-options';
+
+/**
+ * Object containing the empty message for the search state.
+ * @type {Object}
+ */
+export const EMPTY_MESSAGE_SEARCH = {
+    icon: 'pi pi-search',
+    title: 'uve.palette.empty.search.state.title',
+    message: 'uve.palette.empty.search.state.message'
+};
+
+/**
+ * Object containing empty messages for different list types.
+ * Each key corresponds to a DotUVEPaletteListTypes enum value.
+ * @type {Record<DotUVEPaletteListTypes, { icon: string; title: string; message: string }>}
+ */
+export const EMPTY_MESSAGES = {
+    [DotUVEPaletteListTypes.CONTENT]: {
+        icon: 'pi pi-folder-open',
+        title: 'uve.palette.empty.state.contenttypes.title',
+        message: 'uve.palette.empty.state.contenttypes.message'
+    },
+    [DotUVEPaletteListTypes.FAVORITES]: {
+        icon: 'pi pi-plus',
+        title: 'uve.palette.empty.state.favorites.title',
+        message: 'uve.palette.empty.state.favorites.message'
+    },
+    [DotUVEPaletteListTypes.WIDGET]: {
+        icon: 'pi pi-folder-open',
+        title: 'uve.palette.empty.state.widgets.title',
+        message: 'uve.palette.empty.state.widgets.message'
+    }
+};
