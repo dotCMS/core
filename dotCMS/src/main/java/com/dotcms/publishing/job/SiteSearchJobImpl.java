@@ -14,7 +14,6 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.PublisherAPI;
-import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -38,6 +37,7 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -363,7 +363,7 @@ public class SiteSearchJobImpl {
     private String newIndexName() {
         return SiteSearchAPI.ES_SITE_SEARCH_NAME
                 + StringPool.UNDERLINE
-                + ESMappingAPIImpl.datetimeFormat.format(new Date())
+                + ESMappingAPIImpl.datetimeFormat.format(Instant.now())
                 + StringPool.UNDERLINE
                 + UUIDUtil.uuidTimeBased();
     }

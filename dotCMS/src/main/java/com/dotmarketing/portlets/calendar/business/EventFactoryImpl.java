@@ -76,10 +76,10 @@ public class EventFactoryImpl extends EventFactory {
 		Field recurNoEndF = eventStructure.getFieldVar("noRecurrenceEnd");
 		Field recurs = eventStructure.getFieldVar("recurs");
 
-		String fromDateQuery = datetimeFormat.format(fromDate);
+        String fromDateQuery = datetimeFormat.format(fromDate.toInstant());
 		String fromDateQueryRec = new SimpleDateFormat("yyyy").format(fromDate);
 		String toDateQueryRec = new SimpleDateFormat("yyyy-MM-dd").format(30000101000000L);
-		String toDateQuery = datetimeFormat.format(toDate);
+        String toDateQuery = datetimeFormat.format(toDate.toInstant());
 		
 		StringBuffer query = new StringBuffer ("+type:content +structureInode:" + eventStructure.getInode() +
 			" +" + startDateF.getFieldContentlet() + ":[19000101000000" + " TO " + toDateQuery + "] " +

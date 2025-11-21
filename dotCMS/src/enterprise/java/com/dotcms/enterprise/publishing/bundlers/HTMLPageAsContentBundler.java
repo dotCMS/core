@@ -13,8 +13,12 @@ import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.enterprise.publishing.staticpublishing.StaticDependencyBundler;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.IPublisher;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -27,13 +31,15 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -148,8 +154,8 @@ public class HTMLPageAsContentBundler implements IBundler {
 		    } else {
 		    	end = cal.getTime();
 		    }
-	        luceneQuery.append(" +versionTs:[").append(ESMappingAPIImpl.datetimeFormat.format(start))
-					.append(" TO ").append(ESMappingAPIImpl.datetimeFormat.format(end))
+            luceneQuery.append(" +versionTs:[").append(ESMappingAPIImpl.datetimeFormat.format(start.toInstant()))
+                    .append(" TO ").append(ESMappingAPIImpl.datetimeFormat.format(end.toInstant()))
 					.append("] ");
 		}
 

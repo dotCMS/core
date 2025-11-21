@@ -47,6 +47,8 @@
 
 package com.dotcms.enterprise.publishing;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.publishExpireESDateTimeFormat;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -62,16 +64,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import graphql.VisibleForTesting;
-import org.apache.commons.lang3.StringUtils;
-import org.quartz.CronExpression;
-
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.publishExpireESDateTimeFormat;
+import org.apache.commons.lang3.StringUtils;
+import org.quartz.CronExpression;
 
 
 public class PublishDateUpdater {
@@ -316,7 +315,7 @@ public class PublishDateUpdater {
     public static String getPublishLuceneQuery(final Date date,
             final List<String> contentTypeVariableWithPublishField) {
 
-        final String time = publishExpireESDateTimeFormat.get().format(date);
+        final String time = publishExpireESDateTimeFormat.get().format(date.toInstant());
         return getLuceneQuery(PUBLISH_LUCENE_QUERY,
                 ESMappingConstants.PUBLISH_DATE,
                 ESMappingConstants.EXPIRE_DATE,
@@ -325,7 +324,8 @@ public class PublishDateUpdater {
     }
 
     public static String getExpireLuceneQuery(final Date date) {
-        return getLuceneQuery(UNPUBLISH_LUCENE_QUERY, ESMappingConstants.EXPIRE_DATE, publishExpireESDateTimeFormat.get().format(date));
+        return getLuceneQuery(UNPUBLISH_LUCENE_QUERY, ESMappingConstants.EXPIRE_DATE,
+                publishExpireESDateTimeFormat.get().format(date.toInstant()));
     }
 
     private static String getLuceneQuery(final String luceneQueryTemplate, final Object ... parameters) {

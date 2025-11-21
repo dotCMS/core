@@ -12,7 +12,12 @@ package com.dotcms.enterprise.publishing.bundlers;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.IPublisher;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.FileCreationException;
 import com.dotcms.repackage.com.google.common.collect.Lists;
@@ -37,7 +42,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -179,8 +183,8 @@ public class URLMapBundler implements IBundler {
                 }
 
                 luceneQuery.append(contentTypesWithModDetail.isEmpty() ? "+" : " ");
-                luceneQuery.append( "versionTs:[").append(ESMappingAPIImpl.datetimeFormat.format( start ))
-                        .append(" TO ").append(ESMappingAPIImpl.datetimeFormat.format( end )).append("] " );
+                luceneQuery.append("versionTs:[").append(ESMappingAPIImpl.datetimeFormat.format(start.toInstant()))
+                        .append(" TO ").append(ESMappingAPIImpl.datetimeFormat.format(end.toInstant())).append("] ");
                 
                 if (!contentTypesWithModDetail.isEmpty()) {
                     luceneQuery.append(" ) ");

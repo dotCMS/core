@@ -36,13 +36,13 @@ import java.security.KeyStore.SecretKeyEntry;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import org.apache.commons.lang.time.FastDateFormat;
 
 
 /**
@@ -350,9 +350,10 @@ public class SecretsKeyStoreHelper {
             Logger.warn(SecretsKeyStoreHelper.class, String.format("KeyStore file `%s` does NOT exist therefore it can not be backed-up. ",secretsKeyStorePath));
             return;
         }
-        final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+        final DateTimeFormatter datetimeFormat = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
         final String name = secretStoreFile.getName();
-        final File secretStoreFileBak = new File(secretStoreFile.getParent(), datetimeFormat.format(new Date()) + "-" + name );
+        final File secretStoreFileBak = new File(secretStoreFile.getParent(),
+                LocalDateTime.now().format(datetimeFormat) + "-" + name);
         Files.copy(secretStoreFile.toPath(), secretStoreFileBak.toPath());
         secretStoreFile.delete();
 

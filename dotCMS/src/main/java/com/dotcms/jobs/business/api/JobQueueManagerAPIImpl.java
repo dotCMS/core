@@ -203,7 +203,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             );
 
             startLatch = new CountDownLatch(threadPoolSize);
-            executorService = Executors.newFixedThreadPool(threadPoolSize);
+            executorService = Executors.newFixedThreadPool(threadPoolSize, Thread.ofVirtual().factory());
 
             for (int i = 0; i < threadPoolSize; i++) {
                 executorService.submit(() -> {

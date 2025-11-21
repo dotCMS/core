@@ -16,7 +16,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -24,15 +26,15 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.time.FastDateFormat;
 
 public class ThreadNameFilter implements Filter {
-	FastDateFormat df = FastDateFormat.getInstance("MM-dd-yyyy hh:mm:ss z");
 
-	private static final ThreadLocal<Date> startDate = new ThreadLocal<Date>() {
+    DateTimeFormatter df = DateTimeFormatter.ofPattern("MM-dd-yyyy hh:mm:ss z");
+
+    private static final ThreadLocal<LocalDateTime> startDate = new ThreadLocal<LocalDateTime>() {
 		@Override
-		protected Date initialValue() {
-			return new Date();
+        protected LocalDateTime initialValue() {
+            return LocalDateTime.now();
 		}
 	};
 
@@ -70,7 +72,7 @@ public class ThreadNameFilter implements Filter {
 			sw.append(" | ip:");
 			sw.append(request.getRemoteAddr());
 			sw.append(" | Admin:" + adminMode);
-			sw.append(" | start:" + df.format(startDate.get()));
+            sw.append(" | start:" + startDate.get().atZone(ZoneId.systemDefault()).format(df));
 			if(referer!=null&& referer.length()>0){
 				sw.append("  ref:");
 				sw.append(referer.replace('"', '\''));

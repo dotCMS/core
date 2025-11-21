@@ -1,7 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.dateFormat;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.dateFormatPattern;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormatPattern;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -49,10 +49,10 @@ public final class LuceneQueryDateTimeFormatter {
             put("MM/dd/yyyy HH:mm",
                     "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2})\\\"?");
 
-            put(datetimeFormat.getPattern(),
+            put(datetimeFormatPattern,
                     "\\\"?(\\d{4}\\d{2}\\d{2}\\d{2}\\d{2}\\d{2})\\\"?");
 
-            put(dateFormat.getPattern(), "\\\"?(\\d{4}\\d{2}\\d{2})\\\"?");
+            put(dateFormatPattern, "\\\"?(\\d{4}\\d{2}\\d{2})\\\"?");
 
             put("MM/dd/yyyy", "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4})\\\"?");
 
