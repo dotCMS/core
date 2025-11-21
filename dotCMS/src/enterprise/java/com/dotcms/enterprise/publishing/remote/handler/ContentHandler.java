@@ -187,10 +187,7 @@ public class ContentHandler implements IHandler {
 	 */
 	public void handle(final File bundleFolder, final Boolean isHost) throws Exception {
 
-	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-			throw new RuntimeException("need an enterprise pro license to run this");
-		}
-		List<File> contents = isHost?FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()):
+        List<File> contents = isHost ? FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()) :
 				FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
 		Collections.sort(contents);
 		contents = contents.stream().filter(File::isFile).collect(Collectors.toList());
@@ -647,7 +644,8 @@ public class ContentHandler implements IHandler {
 			final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 			final ContentType contentType = content.getContentType();
 			final List<Relationship> relationships = relationshipAPI.byContentType(contentType);
-            final boolean onlyChildren = Config.getBooleanProperty("PUSH_PUBLISHING_REINDEX_CHILDREN_ONLY", true);
+            final boolean onlyChildren = Config.getBooleanProperty("PUSH_PUBLISHING_REINDEX_RELATIONSHIP_PARENTS_ONLY",
+                    true);
 			if (!relationships.isEmpty()) {
 
                 for (final Relationship relationship : relationships) {
@@ -678,8 +676,6 @@ public class ContentHandler implements IHandler {
 
                         contentToRefresh.add(
                                 new Tuple3<>(relatedContent.getIdentifier(), info.getLang(), shouldReindex));
-
-
 
 
 					}
