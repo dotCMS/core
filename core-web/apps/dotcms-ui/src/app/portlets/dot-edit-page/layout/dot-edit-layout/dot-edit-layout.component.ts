@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostBinding, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -36,7 +35,7 @@ export const DEBOUNCE_TIME = 5000;
     selector: 'dot-edit-layout',
     templateUrl: './dot-edit-layout.component.html',
     styleUrls: ['./dot-edit-layout.component.scss'],
-    imports: [CommonModule, RouterModule, TemplateBuilderComponent, DotGlobalMessageComponent]
+    imports: [RouterModule, TemplateBuilderComponent, DotGlobalMessageComponent]
 })
 export class DotEditLayoutComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);
