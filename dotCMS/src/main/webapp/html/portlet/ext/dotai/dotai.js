@@ -602,6 +602,9 @@ const doSearchChatJson = () => {
     }, 500);
 }
 
+/////
+
+/////
 
 const doSearchChatJsonDebounced = async () => {
 
@@ -631,7 +634,8 @@ const doSearchChatJsonDebounced = async () => {
     } else if (responseType === "json") {
         return doJsonResponse(formData);
     } else {
-        return doChatResponse(formData);
+        //return doChatResponse(formData);
+        return doJsonResponseAsync(formData);
     }
 }
 
@@ -763,6 +767,51 @@ const doJsonResponse = async (formData) => {
     resetLoader();
 }
 
+///////
+const doJsonResponseAsync = async (formData) => {
+    const response = await fetch('/api/v1/ai/completions/async', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+    });
+
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    let fullText = "";
+    let partial = "";
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+
+        partial += chunk;
+
+        document.getElementById("answerChat").value = partial;
+    }
+
+
+    let json;
+    try {
+        json = JSON.parse(fullText);
+    } catch (e) {
+        console.error("Error parseando JSON:", e, fullText);
+        return;
+    }
+
+    document.getElementById("answerChat").value =
+        json.summaryStream +
+        "\n\n------\nRAG Response\n------\n" +
+        JSON.stringify(json.dotCMSResponse, null, 2);
+
+    resetLoader();
+};
+
+///////
 
 const doChatResponse = async (formData) => {
 

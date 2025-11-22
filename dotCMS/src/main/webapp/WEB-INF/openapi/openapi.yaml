@@ -2414,6 +2414,33 @@ paths:
       summary: Generate AI completions from content
       tags:
       - AI
+  /v1/ai/completions/async:
+    post:
+      description: Creates AI-powered content summaries and completions based on provided
+        prompts. Supports both streaming and non-streaming responses.
+      operationId: summarizeFromContent_1
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/CompletionsForm"
+        description: Completion form with prompt and configuration
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Completion generated successfully
+        "400":
+          description: Bad request - Missing or invalid prompt
+        "401":
+          description: Unauthorized - User not authenticated
+        "500":
+          description: Internal server error
+      summary: Generate AI completions from content async (streaming)
+      tags:
+      - AI
   /v1/ai/completions/config:
     get:
       description: "Retrieves the current AI service configuration including available\
