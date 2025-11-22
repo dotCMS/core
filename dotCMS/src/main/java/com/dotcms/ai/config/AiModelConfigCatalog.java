@@ -1,5 +1,7 @@
 package com.dotcms.ai.config;
 
+import com.dotcms.ai.rest.AiModelSummaryView;
+
 import java.util.List;
 
 /**
@@ -9,6 +11,22 @@ import java.util.List;
  */
 public interface AiModelConfigCatalog {
 
+    /**
+     * Returns all chat models as summary objects
+     */
+    List<AiModelSummaryView> getAllChatModelSummaries();
+
+    /**
+     * Returns all embedding models as a summary objects
+     */
+    List<AiModelSummaryView> getAllEmbeddingModelSummaries();
+
+    /**
+     * Returns chat models summary group by vendor
+     * @param vendor String
+     * @return
+     */
+    List<AiModelSummaryView> getChatModelSummariesByVendor(final String vendor);
     /**
      * Gets the default chat config based on the vendor
      * @param vendor
@@ -68,5 +86,7 @@ public interface AiModelConfigCatalog {
     List<String> getVendorNames();
 
     AiModelConfig getDefaultChatModel();
+
+    AiModelConfig getDefaultEmbeddingModel();
 
 }

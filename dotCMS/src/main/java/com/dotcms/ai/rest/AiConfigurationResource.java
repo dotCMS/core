@@ -1,5 +1,8 @@
 package com.dotcms.ai.rest;
 
+import com.dotcms.ai.config.AiModelConfigCatalog;
+import com.dotcms.ai.config.AiModelConfigFactory;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
@@ -31,6 +34,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -45,13 +49,16 @@ public class AiConfigurationResource {
     public static final String DOT_AI_APP_KEY = "dotAI";
     public static final String CONFIG_JSON_PATH = "/dot-ai/dot-ai-vendors-models-default-template-config.json";
     private final WebResource    webResource;
+    private final AiModelConfigFactory modelConfigFactory;
 
     public AiConfigurationResource() {
-        this(new WebResource());
+        this(new WebResource(), CDIUtils.getBeanThrows(AiModelConfigFactory.class));
     }
 
-    public AiConfigurationResource(WebResource webResource) {
+    public AiConfigurationResource(final WebResource webResource,
+                                   final AiModelConfigFactory modelConfigFactory) {
         this.webResource = webResource;
+        this.modelConfigFactory = modelConfigFactory;
     }
 
     /**
@@ -132,5 +139,75 @@ public class AiConfigurationResource {
         return new ResponseEntityStringView("A configuration already exists. To apply changes, you must first clear the 'Custom AI Provider Settings' field.");
     }
 
+
+    /**
+     * Returns all available chat model names across all vendors.
+     * Each entry has the form: vendor/modelKey
+     */
+    @GET
+    @Path("/chat/models/site/{siteId}")
+    @JSONP
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseAiModelSummaryEntityView listAllChatModels(@Context final HttpServletRequest request,
+                                      @Context final HttpServletResponse response,
+                                      @PathParam("siteId") @Parameter(
+                                              required = true,
+                                              description = "Identifier of site to populate the advanceProviderSettings.\n\n",
+                                              schema = @Schema(type = "string")
+                                      ) final String siteId) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        final Host site = APILocator.getHostAPI().find(siteId, user, pageMode.respectAnonPerms);
+
+        if (null == site) {
+
+            final String msg = "Site : " + siteId + " does not exist";
+            Logger.error(this, msg);
+            throw new DoesNotExistException(msg);
+        }
+
+        Logger.debug(this, ()-> "Requesting all ai models");
+
+        final List<AiModelSummaryView> aiModelSummaryViews = this.modelConfigFactory.getAllChatModelNames(site);
+        return new ResponseAiModelSummaryEntityView(aiModelSummaryViews);
+    }
+
+    /**
+     * Returns all available embedding model names across all vendors.
+     * Each entry has the form: vendor/modelKey
+     */
+    @GET
+    @Path("/embedding/models/site/{siteId}")
+    @JSONP
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseAiModelSummaryEntityView listAllEmbeddingModels(@Context final HttpServletRequest request,
+                                                              @Context final HttpServletResponse response,
+                                                              @PathParam("siteId") @Parameter(
+                                                                      required = true,
+                                                                      description = "Identifier of site to populate the advanceProviderSettings.\n\n",
+                                                                      schema = @Schema(type = "string")
+                                                              ) final String siteId) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        final Host site = APILocator.getHostAPI().find(siteId, user, pageMode.respectAnonPerms);
+
+        if (null == site) {
+
+            final String msg = "Site : " + siteId + " does not exist";
+            Logger.error(this, msg);
+            throw new DoesNotExistException(msg);
+        }
+
+        Logger.debug(this, ()-> "Requesting all ai embedding models");
+
+        final List<AiModelSummaryView> aiModelSummaryViews = this.modelConfigFactory.getAllEmbeddingModelNames(site);
+        return new ResponseAiModelSummaryEntityView(aiModelSummaryViews);
+    }
 
 }
