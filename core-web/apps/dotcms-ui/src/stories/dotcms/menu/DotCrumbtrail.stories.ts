@@ -1,39 +1,13 @@
 import { Meta, StoryObj, moduleMetadata, componentWrapperDecorator } from '@storybook/angular';
-import { of } from 'rxjs';
 
 import { DotCrumbtrailComponent } from '../../../app/view/components/dot-crumbtrail/dot-crumbtrail.component';
-import { DotCrumbtrailService } from '../../../app/view/components/dot-crumbtrail/service/dot-crumbtrail.service';
 
 const meta: Meta<DotCrumbtrailComponent> = {
     title: 'DotCMS/Menu/DotCrumbtrail',
     component: DotCrumbtrailComponent,
     decorators: [
         moduleMetadata({
-            imports: [DotCrumbtrailComponent],
-            providers: [
-                {
-                    provide: DotCrumbtrailService,
-                    useValue: {
-                        crumbTrail$: of([
-                            {
-                                label: 'Site',
-                                target: '_self',
-                                url: '#//pages'
-                            },
-                            {
-                                label: 'Pages',
-                                target: '_self',
-                                url: '#//pages'
-                            },
-                            {
-                                label: 'Apparel',
-                                target: '_self',
-                                url: ''
-                            }
-                        ])
-                    }
-                }
-            ]
+            imports: [DotCrumbtrailComponent]
         }),
         componentWrapperDecorator(
             (story) => `<div class="card flex justify-content-center">${story}</div>`

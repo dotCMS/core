@@ -16,7 +16,7 @@ import { computed, inject } from '@angular/core';
 import { switchMap } from 'rxjs/operators';
 
 import { DotSiteService } from '@dotcms/data-access';
-import { DotMenu, DotMenuItem, SiteEntity } from '@dotcms/dotcms-models';
+import { SiteEntity } from '@dotcms/dotcms-models';
 
 import { withBreadcrumbs } from './features/breadcrumb/breadcrumb.feature';
 import { withMenu } from './features/menu/with-menu.feature';
@@ -36,7 +36,6 @@ export interface GlobalState {
      * Contains the complete site entity from the API endpoint. Set to `null` when no site is selected.
      */
     siteDetails: SiteEntity | null;
-    menuItemsTemp: DotMenu[];
 }
 
 /**
@@ -46,8 +45,7 @@ export interface GlobalState {
  * with no site selected.
  */
 const initialState: GlobalState = {
-    siteDetails: null,
-    menuItemsTemp: []
+    siteDetails: null
 };
 
 /**
@@ -86,7 +84,7 @@ export const GlobalStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withSystem(),
-    withComputed(({ siteDetails, menuItemsTemp }) => ({
+    withComputed(({ siteDetails }) => ({
         /**
          * Computed signal that returns the current site identifier.
          *
@@ -104,25 +102,7 @@ export const GlobalStore = signalStore(
          * }
          * ```
          */
-        currentSiteId: computed(() => siteDetails()?.identifier ?? null),
-        /**
-         * Computed signal that returns the flattened menu items.
-         *
-         * This is the computed for getting the flattened menu items for the breadcrumb.
-         * Returns the flattened menu items from the menuItems.
-         *
-         * @returns The flattened menu items
-         */
-        flattenMenuItems: computed(() => {
-            const menu = menuItemsTemp();
-            return menu.reduce<DotMenuItem[]>((acc, menu: DotMenu) => {
-                const items = menu.menuItems.map((item) => ({
-                    ...item,
-                    labelParent: menu.tabName
-                }));
-                return [...acc, ...items];
-            }, []);
-        })
+        currentSiteId: computed(() => siteDetails()?.identifier ?? null)
     })),
     withMethods((store, siteService = inject(DotSiteService)) => {
         return {
@@ -172,16 +152,11 @@ export const GlobalStore = signalStore(
                 patchState(store, {
                     siteDetails: site
                 });
-            },
-            setMenuItemsTemp: (menuItemsTemp: DotMenu[]) => {
-                patchState(store, {
-                    menuItemsTemp
-                });
             }
         };
     }),
-    withFeature(({ flattenMenuItems }) => withBreadcrumbs(flattenMenuItems)),
     withMenu(),
+    withFeature(({ flattenMenuItems }) => withBreadcrumbs(flattenMenuItems)),
     withHooks({
         /**
          * Automatically loads the current site when the store is initialized.

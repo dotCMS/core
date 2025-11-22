@@ -9,7 +9,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotSystemConfigService } from '@dotcms/data-access';
-import { DotMenu } from '@dotcms/dotcms-models';
+import { MenuGroup } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 
@@ -19,7 +19,6 @@ import {
     LABEL_IMPORTANT_ICON,
     DotRandomIconPipe
 } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
-import { dotMenuMock } from '../../services/dot-navigation.service.spec';
 import { DotNavIconComponent } from '../dot-nav-icon/dot-nav-icon.component';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
@@ -31,9 +30,37 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     standalone: false
 })
 class TestHostComponent {
-    menu: DotMenu = {
-        ...dotMenuMock(),
-        active: true
+    menu: MenuGroup = {
+        id: '123',
+        label: 'Name',
+        icon: 'icon',
+        isOpen: false,
+        menuItems: [
+            {
+                active: true,
+                ajax: true,
+                angular: true,
+                id: '123',
+                label: 'Label 1',
+                url: 'url/one',
+                menuLink: 'url/one',
+                parentMenuId: '123',
+                parentMenuLabel: 'Name',
+                parentMenuIcon: 'icon'
+            },
+            {
+                active: false,
+                ajax: true,
+                angular: true,
+                id: '456',
+                label: 'Label 2',
+                url: 'url/two',
+                menuLink: 'url/two',
+                parentMenuId: '123',
+                parentMenuLabel: 'Name',
+                parentMenuIcon: 'icon'
+            }
+        ]
     };
     collapsed = false;
 }
@@ -130,7 +157,7 @@ describe('DotNavItemComponent', () => {
     });
 
     it('should avoid label_important icon', () => {
-        componentHost.menu.tabIcon = LABEL_IMPORTANT_ICON;
+        componentHost.menu.icon = LABEL_IMPORTANT_ICON;
         fixtureHost.detectChanges();
         const icon: DebugElement = de.query(By.css('dot-nav-icon'));
 
