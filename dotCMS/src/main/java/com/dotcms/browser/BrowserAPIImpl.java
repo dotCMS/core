@@ -1379,13 +1379,20 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendLanguageQuery(countQuery, browserQuery.languageIds,
                     browserQuery.showDefaultLangItems);
         }
-        if (browserQuery.site != null) {
-            appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(), browserQuery.forceSystemHost, parameters);
-            appendSiteQuery(countQuery, browserQuery.site.getIdentifier(), browserQuery.forceSystemHost, dump);
-        } else {
-            if (browserQuery.forceSystemHost) {
-                appendSystemHostQuery(selectQuery);
-                appendSystemHostQuery(countQuery);
+        // Handle site filtering based on ignoreSiteForFolders flag
+        final boolean shouldApplySiteFiltering = !browserQuery.ignoreSiteForFolders && browserQuery.folder != null;
+
+        if (shouldApplySiteFiltering) {
+            if (browserQuery.site != null) {
+                appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
+                        browserQuery.forceSystemHost, parameters);
+                appendSiteQuery(countQuery, browserQuery.site.getIdentifier(),
+                        browserQuery.forceSystemHost, dump);
+            } else {
+                if (browserQuery.forceSystemHost) {
+                    appendSystemHostQuery(selectQuery);
+                    appendSystemHostQuery(countQuery);
+                }
             }
         }
         //This property allows the exclusion of the folder in the base query
@@ -1411,6 +1418,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (!browserQuery.showArchived) {
             appendExcludeArchivedQuery(selectQuery);
             appendExcludeArchivedQuery(countQuery);
+        }
+
+        if (null != browserQuery.sortBy) {
+            appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
         }
 
         Logger.debug(this, "Select Query: " + selectQuery);
@@ -1646,6 +1657,20 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private void appendExcludeArchivedQuery(StringBuilder sqlQuery) {
         sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
+    }
+
+    /**
+     * Appends an order by condition to the main query
+     * @param sqlQuery
+     * @param orderByDesc
+     */
+    private void appendOrderByQuery(StringBuilder sqlQuery, boolean orderByDesc) {
+        sqlQuery.append(" order by ");
+        if (orderByDesc) {
+            sqlQuery.append(" c.mod_date desc");
+        } else  {
+            sqlQuery.append(" c.mod_date asc");
+        }
     }
 
     /**

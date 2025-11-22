@@ -67,6 +67,7 @@ public class BrowserQuery {
     final Host site;
     final boolean forceSystemHost;
     final boolean skipFolder;
+    final boolean ignoreSiteForFolders;
     final Folder folder;
     final Parentable directParent;
     final Role[] roles;
@@ -99,7 +100,7 @@ public class BrowserQuery {
     public String toString() {
         return "BrowserQuery {user:" + user + ", site:" + site + ", folder:" + folder + ", filter:"
                 + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
-                + ", skipFolder:" + skipFolder
+                + ", skipFolder:" + skipFolder + ", ignoreSiteForFolders:" + ignoreSiteForFolders
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:"
                 + showWorking + ", showArchived:"
                 + showArchived + ", showFolders:" + showFolders + ", showDefaultLangItems:"
@@ -118,12 +119,13 @@ public class BrowserQuery {
         this.filter = builder.filter;
         this.useElasticsearchFiltering = builder.useElasticsearchFiltering;
         this.skipFolder = builder.skipFolder;
+        this.ignoreSiteForFolders = builder.ignoreSiteForFolders;
         this.filterFolderNames = builder.filterFolderNames;
         this.fileName = builder.fileName;
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
-        this.maxResults = (builder.overrideMaxResults ? builder.maxResults :  Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST));
+        this.maxResults = Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST);
         this.showWorking = builder.showWorking || builder.showArchived;
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
@@ -233,7 +235,6 @@ public class BrowserQuery {
         private String sortBy = "moddate";
         private int offset = 0;
         private int maxResults = MAX_FETCH_PER_REQUEST;
-        private boolean overrideMaxResults = false;
         private boolean showMenuItemsOnly = false;
         private boolean showWorking = true;
         private boolean showArchived = false;
@@ -251,6 +252,7 @@ public class BrowserQuery {
         private String hostFolderId = FolderAPI.SYSTEM_FOLDER;
         private boolean forceSystemHost = false;
         private boolean skipFolder = false;
+        private boolean ignoreSiteForFolders = false;
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
@@ -264,6 +266,8 @@ public class BrowserQuery {
                     : browserQuery.folder.getInode();
             this.useElasticsearchFiltering = browserQuery.useElasticsearchFiltering;
             this.forceSystemHost = browserQuery.forceSystemHost;
+            this.skipFolder = browserQuery.skipFolder;
+            this.ignoreSiteForFolders = browserQuery.ignoreSiteForFolders;
             this.filter = browserQuery.filter;
             this.fileName = browserQuery.fileName;
             if (browserQuery.luceneQuery != null) {
@@ -309,16 +313,6 @@ public class BrowserQuery {
         }
 
         /**
-         * There's a hard limit configured, this allows me to bypass that limit
-         * @param overrideMaxResults
-         * @return
-         */
-        public Builder overrideMaxResults(boolean overrideMaxResults) {
-            this.overrideMaxResults = overrideMaxResults;
-            return this;
-        }
-
-        /**
          * Introduced to allow skipping the inclusion of a calculated folder path in the base query
          * This property ensures we don't break prior functionality.
          * This is useful if we want to retrieve everything under a site root. No folder should be included
@@ -327,6 +321,18 @@ public class BrowserQuery {
          */
         public Builder skipFolder(boolean skipFolder) {
             this.skipFolder = skipFolder;
+            return this;
+        }
+
+        /**
+         * When enabled, folder selection ignores site filtering for backward compatibility.
+         * This flag allows maintaining compatibility while enabling new folder selection behavior
+         * where site filtering is not applied when a folder is selected.
+         * @param ignoreSiteForFolders flag
+         * @return this
+         */
+        public Builder ignoreSiteForFolders(boolean ignoreSiteForFolders) {
+            this.ignoreSiteForFolders = ignoreSiteForFolders;
             return this;
         }
 

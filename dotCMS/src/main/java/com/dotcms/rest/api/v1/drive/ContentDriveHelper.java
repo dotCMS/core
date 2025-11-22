@@ -122,7 +122,7 @@ public class ContentDriveHelper {
         .excludedContentTypes(
             excludedContentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
         )
-        .withBaseTypes(new ArrayList<>(types))
+        .withBaseTypes(List.copyOf(types))
         .showDotAssets(showDotAssets)
         .showFiles(showFiles)
         .showImages(showFiles)
@@ -134,7 +134,6 @@ public class ContentDriveHelper {
         .withLanguageIds(langIds)
         .offset(requestForm.offset())
         .maxResults(requestForm.maxResults())
-        .overrideMaxResults(true)
         .sortBy(sortBy)
         .sortByDesc(sortDesc);
 
@@ -145,7 +144,10 @@ public class ContentDriveHelper {
              /// Therefore, we should skip setting a folder path
             .skipFolder(true);
         } else {
-            builder.withHostOrFolderId(folder.getInode());
+            builder.withHostOrFolderId(folder.getInode())
+            // When a specific folder is selected, enable ignoreSiteForFolders to allow
+            // folder selection without being limited by site filtering
+            .ignoreSiteForFolders(true);
         }
         //This ensures that despite the site passed systemHost will be included too
         builder.forceSystemHost(requestForm.includeSystemHost());

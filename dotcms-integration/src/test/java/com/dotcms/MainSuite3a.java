@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricTypeTest;
@@ -45,7 +46,8 @@ import org.junit.runners.Suite;
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
-        OpenAIVisionAPIImplTest.class
+        OpenAIVisionAPIImplTest.class,
+        ContentDriveHelperContentletAPIComparisonTest.class
 })
 
 public class MainSuite3a {
