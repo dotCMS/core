@@ -57,6 +57,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -88,6 +89,9 @@ public class PageRenderUtil implements Serializable {
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private final TagAPI tagAPI = APILocator.getTagAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+
+    private static final Lazy<Boolean> DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE =
+            Lazy.of(() -> Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false));
 
     final IHTMLPage htmlPage;
     final User user;
@@ -551,7 +555,7 @@ public class PageRenderUtil implements Serializable {
             final String variantName, final Date timeMachineDate) throws DotSecurityException {
 
         try {
-            return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false) ?
+            return Boolean.TRUE.equals(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE.get()) ?
                     getContentletOrFallback(contentletIdentifier, variantName, timeMachineDate) :
                     getSpecificContentlet(contentletIdentifier, variantName, timeMachineDate);
         } catch (final DotSecurityException se) {
@@ -608,11 +612,16 @@ public class PageRenderUtil implements Serializable {
             if(null != timeMachineDate && hasPublishOrExpireDateSet(contentletIdentifier)){
                 // if a time machine date is provided we need to return regardless of the result.
                 Logger.debug(this, "Trying to find contentlet with Time Machine date");
-                return contentletAPI.findContentletByIdentifier(
+                Contentlet contentletMatchingTimeMachineDate = contentletAPI.findContentletByIdentifier(
                         contentletIdentifier,
                         resolveLanguageId,
                         variantName, timeMachineDate, user, mode.respectAnonPerms
                 );
+                if(null != contentletMatchingTimeMachineDate){
+                    return contentletMatchingTimeMachineDate;
+                }
+                //Now if no contentlet was found using timeMachineDate we'll try to find the latest live contentlet
+                return contentletAPI.findContentletByIdentifier(contentletIdentifier,true,resolveLanguageId, user, mode.respectAnonPerms);
             }
             //If no time machine date is provided, we will return the contentlet based on the mode.showLive
             return contentletAPI.findContentletByIdentifier(
@@ -698,6 +707,12 @@ public class PageRenderUtil implements Serializable {
                         true);
                 if(contentlet.isPresent()) {
                      return contentlet.get();
+                }
+                final Optional<Contentlet> live = contentletAPI.findContentletByIdentifierOrFallback(
+                        contentletIdentifier, true, languageId,
+                        user, true);
+                if(live.isPresent()){
+                    return live.get();
                 }
             }
             // No need to apply the Time Machine date, just return the contentlet based on the mode.showLive
