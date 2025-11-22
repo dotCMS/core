@@ -3,7 +3,6 @@ package com.dotcms.ai.workflow;
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.ai.api.ImageAPI;
-import com.dotcms.ai.api.ImageAPIProvider;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.model.AIImageRequestDTO;
