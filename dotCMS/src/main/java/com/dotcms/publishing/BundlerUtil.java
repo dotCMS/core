@@ -34,7 +34,6 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -483,9 +482,9 @@ public class BundlerUtil {
             } else {
                 end = cal.getTime();
             }
-                        
-            luceneQuery.append(" +versionTs:[").append(ESMappingAPIImpl.datetimeFormat.format(start))
-                    .append(" TO ").append(ESMappingAPIImpl.datetimeFormat.format(end)).append("] ");
+
+            luceneQuery.append(" +versionTs:[").append(ESMappingAPIImpl.datetimeFormat.format(start.toInstant()))
+                    .append(" TO ").append(ESMappingAPIImpl.datetimeFormat.format(end.toInstant())).append("] ");
         }
 
         if (UtilMethods.isSet(config.getHosts())) {

@@ -1,13 +1,11 @@
 package org.apache.velocity.util;
 
+import com.dotmarketing.util.Logger;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.velocity.runtime.RuntimeServices;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * 
@@ -45,40 +43,41 @@ public class ConcurrentPool<Parser> {
 		// initialize pool
 		initialize(minIdle);
 
-		// check pool conditions in a separate thread
-		executorService = Executors.newSingleThreadScheduledExecutor();
-		executorService.scheduleWithFixedDelay(new Runnable() {
-			@Override
-			public void run() {
-				int size = pool.size();
+        // check pool conditions in a virtual thread with scheduled execution
+        executorService = Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory());
+        executorService.scheduleWithFixedDelay(() -> {
+            int size = pool.size();
 
-				if (size < minIdle) {
-					int sizeToBeAdded = minIdle - size;
-					for (int i = 0; i < sizeToBeAdded; i++) {
-						pool.add(createObject());
-					}
-				} else if (size > maxIdle) {
-					int sizeToBeRemoved = size - maxIdle;
-					for (int i = 0; i < sizeToBeRemoved; i++) {
-						pool.poll();
-					}
-				} else if (size > minIdle) {
-					// slowly tick the pool down to idle, loosing one connection
-					// per validationInterval sec
-					pool.poll();
-				}
-				if (size > poolMax) {
-					poolMax = size;
-				}
-				// log once an hour
-				if ((lastLog + 1000 * 60 * 60) < System.currentTimeMillis()) {
-					lastLog = System.currentTimeMillis();
-					Logger.info(ConcurrentPool.class, "Parsers waiting:" + size + ", max at load:" + poolMax + ", total created:"
-							+ totalParsers + ", avg creation ms:" + ((totalParserCreationTime / totalParsers) / 1000) + "ms");
-				} else {
-					Logger.debug(ConcurrentPool.class, "Parsers waiting:" + size + ", max at load:" + poolMax + ", total created:"
-							+ totalParsers + ", avg creation ms:" + ((totalParserCreationTime / totalParsers) / 1000) + "ms");
-				}
+            if (size < minIdle) {
+                int sizeToBeAdded = minIdle - size;
+                for (int i = 0; i < sizeToBeAdded; i++) {
+                    pool.add(createObject());
+                }
+            } else if (size > maxIdle) {
+                int sizeToBeRemoved = size - maxIdle;
+                for (int i = 0; i < sizeToBeRemoved; i++) {
+                    pool.poll();
+                }
+            } else if (size > minIdle) {
+                // slowly tick the pool down to idle, loosing one connection
+                // per validationInterval sec
+                pool.poll();
+            }
+            if (size > poolMax) {
+                poolMax = size;
+            }
+            // log once an hour
+            if ((lastLog + 1000 * 60 * 60) < System.currentTimeMillis()) {
+                lastLog = System.currentTimeMillis();
+                Logger.info(ConcurrentPool.class,
+                        "Parsers waiting:" + size + ", max at load:" + poolMax + ", total created:"
+                                + totalParsers + ", avg creation ms:" + ((totalParserCreationTime / totalParsers)
+                                / 1000) + "ms");
+            } else {
+                Logger.debug(ConcurrentPool.class,
+                        "Parsers waiting:" + size + ", max at load:" + poolMax + ", total created:"
+                                + totalParsers + ", avg creation ms:" + ((totalParserCreationTime / totalParsers)
+                                / 1000) + "ms");
 			}
 		}, validationInterval, validationInterval, TimeUnit.SECONDS);
 	}

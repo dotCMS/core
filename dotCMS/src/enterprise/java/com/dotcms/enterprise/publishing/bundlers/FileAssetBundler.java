@@ -36,13 +36,11 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -164,8 +162,8 @@ public class FileAssetBundler implements IBundler {
 		    } else {
 		    	end = cal.getTime();
 		    }
-	        luceneQuery.append(" +versionTs:[" + ESMappingAPIImpl.datetimeFormat.format(start)
-	                + " TO " + ESMappingAPIImpl.datetimeFormat.format(end) +"] ");
+            luceneQuery.append(" +versionTs:[" + ESMappingAPIImpl.datetimeFormat.format(start.toInstant())
+                    + " TO " + ESMappingAPIImpl.datetimeFormat.format(end.toInstant()) + "] ");
 		}
 		
 		if (UtilMethods.isSet(this.config.getHosts())) {

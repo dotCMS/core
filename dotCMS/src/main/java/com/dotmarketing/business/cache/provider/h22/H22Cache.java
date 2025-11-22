@@ -11,7 +11,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 import io.vavr.control.Try;
 import java.io.BufferedInputStream;
@@ -53,7 +52,7 @@ public class H22Cache extends CacheProvider {
     final boolean shouldAsync=Config.getBooleanProperty("cache_h22_async", true);
 
 
-    final ThreadFactory namedThreadFactory =  new ThreadFactoryBuilder().setDaemon(true).setNameFormat("H22-ASYNC-COMMIT-%d").build();
+    final ThreadFactory namedThreadFactory = Thread.ofVirtual().name("H22-ASYNC-COMMIT-", 0).factory();
     final private LinkedBlockingQueue<Runnable> asyncTaskQueue = new LinkedBlockingQueue<>();
     private ExecutorService executorService;
 

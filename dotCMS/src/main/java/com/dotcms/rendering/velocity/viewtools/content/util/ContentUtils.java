@@ -29,9 +29,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,6 +40,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * The purpose of this class is to abstract the methods called from the ContentTool Viewtool
@@ -238,11 +238,11 @@ public class ContentUtils {
                     final Date futureDate = new Date(Long.parseLong(tmDate));
                     query = query.replaceAll("\\+live\\:true", "")
                             .replaceAll("\\+working\\:true", "");
-                    final String formatedDate = ESMappingAPIImpl.datetimeFormat.format(futureDate);
+                    final String formatedDate = ESMappingAPIImpl.datetimeFormat.format(futureDate.toInstant());
 
                     final String notExpired = " +expdate:[" + formatedDate + " TO 29990101000000] ";
                     final String workingQuery = query + " +working:true " +
-                            "+pubdate:[" + ESMappingAPIImpl.datetimeFormat.format(new Date())
+                            "+pubdate:[" + ESMappingAPIImpl.datetimeFormat.format(Instant.now())
                             +
                             " TO " + formatedDate + "] " + notExpired;
                     final String liveQuery = query + " +live:true " + notExpired;

@@ -87,6 +87,7 @@ import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -98,11 +99,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -384,12 +383,16 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(contentType.baseType().getType()));
 			contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
 			contentletMap.put(ESMappingConstants.INODE, contentlet.getInode());
-			contentletMap.put(ESMappingConstants.MOD_DATE, elasticSearchDateTimeFormat.format(contentlet.getModDate()));
-			contentletMap.put(ESMappingConstants.MOD_DATE + TEXT, datetimeFormat.format(contentlet.getModDate()));
+            contentletMap.put(ESMappingConstants.MOD_DATE, elasticSearchDateTimeFormat.format(
+                    contentlet.getModDate().toInstant().atZone(ZoneId.systemDefault())));
+            contentletMap.put(ESMappingConstants.MOD_DATE + TEXT,
+                    datetimeFormat.format(contentlet.getModDate().toInstant().atZone(ZoneId.systemDefault())));
 			contentletMap.put(ESMappingConstants.OWNER, contentlet.getOwner()==null ? "0" : contentlet.getOwner());
 			contentletMap.put(ESMappingConstants.MOD_USER, contentlet.getModUser());
-			contentletMap.put(CREATION_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getCreateDate()));
-			contentletMap.put(CREATION_DATE + TEXT, datetimeFormat.format(contentIdentifier.getCreateDate()));
+            contentletMap.put(CREATION_DATE, elasticSearchDateTimeFormat.format(
+                    contentIdentifier.getCreateDate().toInstant().atZone(ZoneId.systemDefault())));
+            contentletMap.put(CREATION_DATE + TEXT, datetimeFormat.format(
+                    contentIdentifier.getCreateDate().toInstant().atZone(ZoneId.systemDefault())));
 			contentletMap.put(ESMappingConstants.LIVE, contentlet.isLive());
 			contentletMap.put(ESMappingConstants.LIVE + TEXT, Boolean.toString(contentlet.isLive()));
 			contentletMap.put(ESMappingConstants.WORKING, contentlet.isWorking());
@@ -431,8 +434,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			loadDateTimeFieldValue(contentletMap,
 					ESMappingConstants.SYS_PUBLISH_DATE, versionInfo.get().getPublishDate());
 
-			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
-			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.get().getVersionTs()));
+            contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(
+                    versionInfo.get().getVersionTs().toInstant().atZone(ZoneId.systemDefault())));
+            contentletMap.put(ESMappingConstants.VERSION_TS + TEXT,
+                    datetimeFormat.format(versionInfo.get().getVersionTs().toInstant().atZone(ZoneId.systemDefault())));
 
 			try{
 				final String urlMap = contentletAPI.getUrlMapForContentlet(contentlet, systemUser, RESPECT_FRONTEND_ROLES);
@@ -740,8 +745,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				workflowMap.put(ESMappingConstants.WORKFLOW_CURRENT_STEP, step.getName());
                 workflowMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
                 workflowMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
-                workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
-                workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
+                workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(
+                        task.getModDate().toInstant().atZone(ZoneId.systemDefault())));
+                workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT,
+                        datetimeFormat.format(task.getModDate().toInstant().atZone(ZoneId.systemDefault())));
             }
 
         } catch (Exception e) {
@@ -840,18 +847,21 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		m.put(ESMappingConstants.OWNER_CAN_PUBLISH + TEXT, Boolean.toString(ownerCanPub));
 	}
 
-	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
-	public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+    public static final String dateFormatPattern = "yyyyMMdd";
+    public static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern(dateFormatPattern);
+    public static final String datetimeFormatPattern = "yyyyMMddHHmmss";
+    public static final DateTimeFormatter datetimeFormat = DateTimeFormatter.ofPattern(datetimeFormatPattern);
 
 	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss";
-	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance(elasticSearchDateTimeFormatPattern);
+    public static final DateTimeFormatter elasticSearchDateTimeFormat = DateTimeFormatter.ofPattern(
+            elasticSearchDateTimeFormatPattern);
 
-	public static final Lazy<FastDateFormat> publishExpireESDateTimeFormat = Lazy.of(() -> {
-		final TimeZone timeZone = APILocator.systemTimeZone();
-		return FastDateFormat.getInstance("yyyy-MM-dd't'HH:mm:ssZ", timeZone);
+    public static final Lazy<DateTimeFormatter> publishExpireESDateTimeFormat = Lazy.of(() -> {
+        final ZoneId zoneId = APILocator.systemTimeZone().toZoneId();
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd't'HH:mm:ssZ").withZone(zoneId);
 	});
 
-	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HH:mm:ss");
+    public static final DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss");
 
 	public static final Date dateOufOfRange = Date.from(
 			LocalDate.of(2999, Month.JANUARY, 1)
@@ -916,8 +926,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 				else if(field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
 					try{
-						String timeStr=timeFormat.format(valueObj);
-						contentletMap.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
+                        Date dateValue = (Date) valueObj;
+                        String timeStr = timeFormat.format(dateValue.toInstant().atZone(ZoneId.systemDefault()));
+                        contentletMap.put(keyName, elasticSearchDateTimeFormat.format(
+                                dateValue.toInstant().atZone(ZoneId.systemDefault())));
 						contentletMap.put(keyNameText, timeStr);
 					}
 					catch(Exception e){
@@ -927,8 +939,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 				else if (field.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
 					try {
-						String dateString = dateFormat.format(valueObj);
-						contentletMap.put(keyName, elasticSearchDateTimeFormat.format((valueObj)));
+                        Date dateValue = (Date) valueObj;
+                        String dateString = dateFormat.format(dateValue.toInstant().atZone(ZoneId.systemDefault()));
+                        contentletMap.put(keyName, elasticSearchDateTimeFormat.format(
+                                dateValue.toInstant().atZone(ZoneId.systemDefault())));
 						contentletMap.put(keyNameText, dateString);
 					}
 					catch(Exception ex) {
@@ -937,8 +951,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					}
 				} else if(field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
 					try {
-						String datetimeString = datetimeFormat.format(valueObj);
-						contentletMap.put(keyName, elasticSearchDateTimeFormat.format((valueObj)));
+                        Date dateValue = (Date) valueObj;
+                        String datetimeString = datetimeFormat.format(
+                                dateValue.toInstant().atZone(ZoneId.systemDefault()));
+                        contentletMap.put(keyName, elasticSearchDateTimeFormat.format(
+                                dateValue.toInstant().atZone(ZoneId.systemDefault())));
 						contentletMap.put(keyNameText, datetimeString);
 					}
 					catch(Exception ex) {
@@ -989,8 +1006,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					} else {
 					    if (valueObj instanceof Date){
                             try {
-                                String datetimeString = datetimeFormat.format(valueObj);
-                                contentletMap.put(keyName, elasticSearchDateTimeFormat.format((valueObj)));
+                                Date dateValue = (Date) valueObj;
+                                String datetimeString = datetimeFormat.format(
+                                        dateValue.toInstant().atZone(ZoneId.systemDefault()));
+                                contentletMap.put(keyName, elasticSearchDateTimeFormat.format(
+                                        dateValue.toInstant().atZone(ZoneId.systemDefault())));
                                 contentletMap.put(keyNameText, datetimeString);
                             } catch(Exception ex) {
                                 contentletMap.put(keyName, valueObj);
@@ -1092,14 +1112,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			final String fieldName, final Date dateValue) {
 		if (UtilMethods.isSet(dateValue)) {
 			contentletMap.put(fieldName,
-					publishExpireESDateTimeFormat.get().format(dateValue));
+                    publishExpireESDateTimeFormat.get().format(dateValue.toInstant()));
 			contentletMap.put(fieldName + TEXT,
-					datetimeFormat.format(dateValue));
+                    datetimeFormat.format(dateValue.toInstant().atZone(ZoneId.systemDefault())));
 		} else {
 			contentletMap.put(fieldName,
-					publishExpireESDateTimeFormat.get().format(dateOufOfRange));
+                    publishExpireESDateTimeFormat.get().format(dateOufOfRange.toInstant()));
 			contentletMap.put(fieldName + TEXT,
-					datetimeFormat.format(dateOufOfRange));
+                    datetimeFormat.format(dateOufOfRange.toInstant().atZone(ZoneId.systemDefault())));
 		}
 	}
 
