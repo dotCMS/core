@@ -94,43 +94,43 @@ jobs:
         id: set-release-version
         run: |
           release_tag=${{ steps.set-common-vars.outputs.release_tag }}
-          if git rev-parse "${release_tag}" >/dev/null 2>&1; then 
+          if git rev-parse "${release_tag}" >/dev/null 2>&1; then
             echo "Tag ${release_tag} exists, removing it"
             git push origin :refs/tags/${release_tag}
           fi
-          
+
           git reset --hard ${{ steps.set-common-vars.outputs.release_commit }}
           release_version=${{ steps.set-common-vars.outputs.release_version }}
           release_branch=${{ steps.set-common-vars.outputs.release_branch }}
-          
+
           remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${release_branch} | wc -l | tr -d '[:space:]')
           if [[ "${remote}" == '1' ]]; then
             echo "Release branch ${release_branch} already exists, removing it"
             git push origin :${release_branch}
           fi
           git checkout -b ${release_branch}
-          
+
           # set version in .mvn/maven.config
           echo "-Dprod=true" > .mvn/maven.config
           echo "-Drevision=${release_version}" >> .mvn/maven.config
           echo "-Dchangelist=" >> .mvn/maven.config
-          
+
           git add .mvn/maven.config
-          
+
           # Update LICENSE file Change Date
           chmod +x .github/actions/update-license-date.sh
           .github/actions/update-license-date.sh
-          
+
           # Add LICENSE file if it was modified
           if ! git diff --quiet HEAD -- LICENSE; then
             echo "LICENSE file was updated, adding to commit"
             git add LICENSE
           fi
-          
+
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
           git push origin ${release_branch}
-          
+
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
 
@@ -279,7 +279,7 @@ jobs:
           servers: '[{ "id": "dotcms-libs-local", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -353,7 +353,7 @@ jobs:
   generate-sbom:
     name: Generate SBOM
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    needs: [  prepare-release, build-push-image ]
+    needs: [prepare-release, build-push-image]
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -369,19 +369,19 @@ jobs:
         with:
           path: ${{ github.workspace }}/artifacts
           pattern: ${{ steps.sbom-generator.outputs.sbom-artifact }}
-          
+
       - name: Upload SBOM Asset
         env:
-          GITHUB_TOKEN: ${{ github.token }}  
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           echo "::group::Upload SBOM Asset"
           ARTIFACT_NAME=${{ steps.sbom-generator.outputs.sbom-artifact }}
           SBOM="./artifacts/${ARTIFACT_NAME}/${ARTIFACT_NAME}.json"
-          
+
           if [ -f "${SBOM}" ]; then
             echo "SBOM: ${SBOM}"
             cat "${SBOM}"
-            
+
             zip "${ARTIFACT_NAME}.zip" "${SBOM}"
             gh release upload "${{ needs.prepare-release.outputs.release_tag }}" "${ARTIFACT_NAME}.zip"
           else
@@ -418,10 +418,10 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
           SLACK_USERNAME: dotBot
-          SLACK_TITLE: "Important news!"
-          SLACK_MSG_AUTHOR: " "
+          SLACK_TITLE: 'Important news!'
+          SLACK_MSG_AUTHOR: ' '
           MSG_MINIMAL: true
-          SLACK_FOOTER: ""
+          SLACK_FOOTER: ''
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
           SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.prepare-release.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.build-push-image.outputs.formatted_tags }}]"
         if: success() && github.event.inputs.notify_slack == 'true'

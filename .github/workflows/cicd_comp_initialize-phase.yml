@@ -47,7 +47,9 @@ on:
       cli:
         value: ${{ jobs.changes.outputs.cli }}
       sdk_libs:
-        value: ${{ jobs.changes.outputs.sdk_libs }}        
+        value: ${{ jobs.changes.outputs.sdk_libs }}
+      workflows:
+        value: ${{ jobs.changes.outputs.workflows }}
 
 jobs:
   # This job is used as a required check to indicate that the workflow has started and is running
@@ -117,7 +119,7 @@ jobs:
   # This job determines which components of the project need to be built or tested
   changes:
     name: Check Changed Files
-    needs: [ check-previous-build ]
+    needs: [check-previous-build]
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     outputs:
@@ -127,6 +129,7 @@ jobs:
       jvm_unit_test: ${{ steps.filter-rewrite.outputs.jvm_unit_test }}
       cli: ${{ steps.filter-rewrite.outputs.cli }}
       sdk_libs: ${{ steps.filter-rewrite.outputs.sdk_libs }}
+      workflows: ${{ steps.filter-rewrite.outputs.workflows }}
     steps:
       - uses: actions/checkout@v4
         if: ${{ inputs.validation-level != 'none' }}
@@ -138,7 +141,7 @@ jobs:
         with:
           filters: .github/filters.yaml
           list-files: 'escape'
-          
+
       - name: Rewrite Filter
         id: filter-rewrite
         env:
@@ -152,6 +155,7 @@ jobs:
           build=${{ steps.filter.outputs.build || 'true' }}
           jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test || 'true' }}
           sdk_libs=${{ steps.filter.outputs.sdk_libs || 'false' }}
+          workflows=${{ steps.filter.outputs.workflows || 'true' }}
 
           # Check if the commit is to the main branch
           skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
@@ -164,7 +168,7 @@ jobs:
             backend=false
             jvm_unit_test=false
           fi
-          
+
           # Adjust outputs based on validation_level
           if [ "${{ inputs.validation-level }}" == "custom" ]; then
             frontend=false
@@ -186,17 +190,18 @@ jobs:
               elif [ "${module}" == "jvm_unit_test" ]; then
                 jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
               elif [ "${module}" == "sdk_libs" ]; then
-                sdk_libs=${sdk_libs}                
+                sdk_libs=${sdk_libs}
               fi
             done
-          fi          
-          
+          fi
+
           echo "build=${build}"
           echo "frontend=${frontend}"
           echo "cli=${cli}"
           echo "backend=${backend}"
           echo "jvm_unit_test=${jvm_unit_test}"
           echo "sdk_libs=${sdk_libs}"
+          echo "workflows=${workflows}"
 
           # Export the outcomes as GitHub Actions outputs
           echo "frontend=${frontend}" >> $GITHUB_OUTPUT
@@ -205,4 +210,5 @@ jobs:
           echo "build=${build}" >> $GITHUB_OUTPUT
           echo "jvm_unit_test=${jvm_unit_test}" >> $GITHUB_OUTPUT
           echo "sdk_libs=${sdk_libs}" >> $GITHUB_OUTPUT
+          echo "workflows=${workflows}" >> $GITHUB_OUTPUT
           echo "::endgroup::"

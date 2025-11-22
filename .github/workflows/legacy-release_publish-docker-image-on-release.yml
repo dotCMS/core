@@ -1,8 +1,8 @@
 name: Build/Push dotCMS docker image (on release)
 on:
-#  push:
-#    branches:
-#      - release-*
+  #  push:
+  #    branches:
+  #      - release-*
   repository_dispatch:
     types:
       - enterprise-update
@@ -60,9 +60,9 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
           SLACK_USERNAME: dotBot
-          SLACK_TITLE: "Attention dotters: Docker image built!"
-          SLACK_MSG_AUTHOR: " "
+          SLACK_TITLE: 'Attention dotters: Docker image built!'
+          SLACK_MSG_AUTHOR: ' '
           MSG_MINIMAL: true
-          SLACK_FOOTER: ""
+          SLACK_FOOTER: ''
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
-          SLACK_MESSAGE: "<!channel> This automated script is happy to announce that a new docker image has been built for *${{ needs.build-push-image.outputs.version }}* with tags: [${{ needs.build-push-image.outputs.tags }}] :docker:"
+          SLACK_MESSAGE: '<!channel> This automated script is happy to announce that a new docker image has been built for *${{ needs.build-push-image.outputs.version }}* with tags: [${{ needs.build-push-image.outputs.tags }}] :docker:'

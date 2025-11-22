@@ -23,7 +23,7 @@ runs:
         echo '# Initial Disk Usage'
         df -h
         echo "Runner OS: $RUNNER_OS"
-        
+
         if [[ "$RUNNER_OS" == "macOS" ]]; then
           HOME_DIR="/Users/runner"
           echo '# du -sh $HOME_DIR'
@@ -81,7 +81,7 @@ runs:
           removeIfExists ${HOME_DIR}/.ghcup/bin/ghc
           removeIfExists ${HOME_DIR}/Library/Android/sdk
 
-          removeIfExists /usr/local/bin/pipx             
+          removeIfExists /usr/local/bin/pipx
           removeIfExists /usr/bin/swift
           removeIfExists /usr/local/bin/dotnet
           removeIfExists /usr/local/Caskroom/

@@ -22,5 +22,5 @@ outputs:
   changelog_report_contents:
     description: 'Changelog report contents'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'

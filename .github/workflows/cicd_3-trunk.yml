@@ -49,12 +49,12 @@ jobs:
       reuse-previous-build: ${{ inputs.reuse-previous-build || github.event_name != 'workflow_dispatch' }}
       build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || github.event_name != 'workflow_dispatch' }}
       validation-level: 'custom'
-      custom-modules: 'sdk_libs'      
+      custom-modules: 'sdk_libs'
 
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: Trunk Build
-    needs: [ initialize ]
+    needs: [initialize]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     permissions:
@@ -64,7 +64,7 @@ jobs:
   # Test job - runs various tests
   test:
     name: Trunk Test
-    needs: [ initialize,build ]
+    needs: [initialize, build]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
@@ -78,7 +78,7 @@ jobs:
 
   semgrep:
     name: Trunk Semgrep
-    needs: [ initialize, test ]
+    needs: [initialize, test]
     if: always() && !failure() && !cancelled() && vars.DISABLE_SEMGREP != 'true'
     uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
     with:
@@ -89,7 +89,7 @@ jobs:
   # CLI Build job - builds CLI artifacts
   build-cli:
     name: CLI Build
-    needs: [ initialize,test ]
+    needs: [initialize, test]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
@@ -99,7 +99,7 @@ jobs:
 
   # Deployment job - deploys to the trunk environment
   deployment:
-    needs: [ initialize,build-cli,semgrep,test ]
+    needs: [initialize, build-cli, semgrep, test]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
@@ -118,7 +118,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, semgrep, deployment]
+    needs: [initialize, build, build-cli, test, semgrep, deployment]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
@@ -128,7 +128,7 @@ jobs:
   report:
     name: Report
     if: always()
-    needs: [ finalize ]
+    needs: [finalize]
     uses: ./.github/workflows/cicd_post-workflow-reporting.yml
     secrets:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

@@ -49,15 +49,24 @@ jobs:
         id: prepare-workflow-data
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_NAME: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_USER: ${{ github.event.pull_request.head.user.login }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_USER: ${{ github.event.pull_request.base.user.login }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_MERGE_STATE: ${{ github.event.pull_request.mergeable_state }}
+          GITHUB_REF: ${{ github.ref }}
           NEEDS_DATA: ${{ inputs.needsData }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "NEEDS_DATA=${NEEDS_DATA}"
-          
+
           # Check for 'cancelled' and 'failure' results from direct dependencies
           cancelled=false
           failure=false
-          
+
           # Using jq to parse the JSON and check the conditions, with -e option
           if echo "$NEEDS_DATA" | jq -e 'any(.[]; .result == "cancelled")' >/dev/null; then
             cancelled=true
@@ -66,38 +75,38 @@ jobs:
           fi
 
           echo "Direct dependencies - Cancelled: $cancelled, Failure: $failure"
-          
+
           # Enhanced detection: Check ALL jobs in the current workflow run via GitHub API
           echo "Checking all workflow jobs via GitHub API..."
-          
+
           # Fetch workflow jobs with error handling
           if workflow_response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" 2>/dev/null); then
-            
+
             # Parse job information safely using jq to avoid colon parsing issues
             if [[ -n "$workflow_response" ]]; then
               echo "All workflow jobs:"
               echo "$workflow_response" | jq -r '.jobs[]? | "Name: \(.name // "unknown"), Status: \(.status // "unknown"), Conclusion: \(.conclusion // "null")"' 2>/dev/null
-              
+
               # Check for any cancelled or failed jobs in the entire workflow
               # Use temporary file for broader shell compatibility
               temp_jobs_file=$(mktemp)
               echo "$workflow_response" | jq -c '.jobs[]?' 2>/dev/null > "$temp_jobs_file"
-              
+
               while read -r job_data; do
                 if [[ -z "$job_data" ]]; then continue; fi
-                
+
                 job_name=$(echo "$job_data" | jq -r '.name // "unknown"')
                 job_status=$(echo "$job_data" | jq -r '.status // "unknown"')
                 job_conclusion=$(echo "$job_data" | jq -r '.conclusion // "null"')
-                
+
                 # Skip the finalize job itself and related jobs to avoid self-reference
                 if [[ "$job_name" =~ ^(Finalize|Final Status|.*[Ff]inalize.*)$ ]]; then
                   continue
                 fi
-                
+
                 echo "Checking job: $job_name (status: $job_status, conclusion: $job_conclusion)"
-                
+
                 # Only check conclusion for completed jobs (status API is reliable)
                 if [[ "$job_status" == "completed" ]]; then
                   # Detect cancelled jobs (only conclusion can be "cancelled")
@@ -105,7 +114,7 @@ jobs:
                     echo "Found cancelled job: $job_name"
                     cancelled=true
                   fi
-                  
+
                   # Detect failed jobs (conclusion: failure)
                   if [[ "$job_conclusion" == "failure" ]]; then
                     echo "Found failed job: $job_name"
@@ -115,7 +124,7 @@ jobs:
                   echo "Job $job_name is still running (status: $job_status), will rely on dependency data"
                 fi
               done < "$temp_jobs_file"
-              
+
               # Clean up temporary file
               rm -f "$temp_jobs_file"
             else
@@ -127,54 +136,54 @@ jobs:
 
           # Output the final results
           echo "Final status - Cancelled: $cancelled, Failure: $failure"
-          
+
           AGGREGATE_STATUS="SUCCESS"
           FIRST_FAIL_STEP=""
           FIRST_FAIL_MODULE=""
-          
+
           echo '{' > workflow-data.json
-          
+
           EVENT_TYPE="${{ github.event_name }}"
-          
+
           if [[ "$EVENT_TYPE" == "pull_request" ]]; then
             echo "Creating workflow data for pull request ${PR_TITLE}"
-            BRANCH="${{ github.head_ref }}"
+            BRANCH="${HEAD_REF}"
           else
               PR_TITLE="N/A"
-              BRANCH="${{ github.ref }}"
+              BRANCH="${GITHUB_REF}"
 
               echo "Creating workflow data for branch ${BRANCH}"
           fi
-          
+
           BRANCH="${BRANCH##*/}"
-          
+
           PR_TITLE_JQ=$(jq --arg title "$PR_TITLE" -n '$title')
-          
+
           echo '"branch": "'$BRANCH'",' >> workflow-data.json
           echo '"run_id": "'${{ github.run_id }}'",' >> workflow-data.json
           echo '"trigger_event_name": "'$GITHUB_EVENT_NAME'",' >> workflow-data.json
           echo '"source_repository": "'$GITHUB_REPOSITORY'",' >> workflow-data.json
-          
+
           echo '"merge_sha": "'${{ github.sha }}'",' >> workflow-data.json
-          
-          echo '"base_sha": "'${{ github.event.pull_request.base.sha }}'",' >> workflow-data.json
-          echo '"base_branch": "'${{ github.event.pull_request.base.sha }}'",' >> workflow-data.json
-          echo '"base_author": "'${{ github.event.pull_request.base.user.login }}'",' >> workflow-data.json
-          
-          echo '"head_author": "'${{ github.event.pull_request.head.user.login }}'",' >> workflow-data.json
-          echo '"head_name": "'${{ github.event.pull_request.head.ref }}'",' >> workflow-data.json
-          echo '"head_sha": "'${{ github.event.pull_request.head.sha }}'",' >> workflow-data.json
-          
+
+          echo '"base_sha": "'${BASE_SHA}'",' >> workflow-data.json
+          echo '"base_branch": "'${BASE_SHA}'",' >> workflow-data.json
+          echo '"base_author": "'${BASE_USER}'",' >> workflow-data.json
+
+          echo '"head_author": "'${HEAD_USER}'",' >> workflow-data.json
+          echo '"head_name": "'${HEAD_NAME}'",' >> workflow-data.json
+          echo '"head_sha": "'${HEAD_SHA}'",' >> workflow-data.json
+
           echo '"pr_id": "'${{ github.event.pull_request.id }}'",' >> workflow-data.json
           echo '"pr_number": "'${{ github.event.pull_request.number }}'",' >> workflow-data.json
           echo "\"pr_title\": $PR_TITLE_JQ," >> workflow-data.json
-          echo '"pr_author": "'${{ github.event.pull_request.user.login }}'",' >> workflow-data.json
-          echo '"pr_merge_state": "'${{ github.event.pull_request.mergeable_state }}'",' >> workflow-data.json
-          
-          
+          echo '"pr_author": "'${PR_AUTHOR}'",' >> workflow-data.json
+          echo '"pr_merge_state": "'${PR_MERGE_STATE}'",' >> workflow-data.json
+
+
           echo '"build_reports": [' >> workflow-data.json
           total_reports=$(find /tmp/build-step-reports/build-reports-*/target -name build-report.json 2>/dev/null | wc -l)
-          
+
           report_index=0
           if [ "$total_reports" -eq "0" ]; then
             echo "No build report files found."
@@ -197,14 +206,14 @@ jobs:
                 fi
                 done
               fi
-          
+
               # If not the last file, append a comma
               if (( report_index != total_reports )); then
                 echo ',' >> workflow-data.json
               fi
             done
           fi
-          
+
           echo '],' >> workflow-data.json
           if [[ "$AGGREGATE_STATUS" == "SUCCESS" ]]; then
             if [[ "$cancelled" == "true" ]]; then
@@ -223,7 +232,7 @@ jobs:
             echo '"first_fail_error": "'$FIRST_FAIL_ERROR'"' >> workflow-data.json
           fi
           echo '}' >> workflow-data.json
-         
+
           echo "aggregate_status=${AGGREGATE_STATUS}" >> $GITHUB_OUTPUT
       # Upload the final workflow data report as an artifact
       - name: Upload workflow data

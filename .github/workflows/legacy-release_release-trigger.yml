@@ -28,15 +28,15 @@ jobs:
         run: |
           git config user.name "${{ secrets.CI_MACHINE_USER }}"
           git config user.email "dotCMS-Machine-User@dotcms.com"
-          
+
           RELEASE_VERSION=${{ github.event.inputs.release_version }}
           RELEASE_TAG="v${RELEASE_VERSION}"
           RELEASE_BRANCH="release-${RELEASE_VERSION}"
           echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
           echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_ENV
           echo "RELEASE_BRANCH=${RELEASE_BRANCH}" >> $GITHUB_ENV
-          
-          if git rev-parse "${RELEASE_TAG}" >/dev/null 2>&1; then 
+
+          if git rev-parse "${RELEASE_TAG}" >/dev/null 2>&1; then
             echo "Tag ${RELEASE_TAG} exists, removing it"
             git push origin :refs/tags/${RELEASE_TAG}
           fi
@@ -45,7 +45,7 @@ jobs:
           [[ "${remote}" == '1' ]] \
             && echo "Release branch ${RELEASE_BRANCH} already exists, removing it" \
             && git push origin :${RELEASE_BRANCH}
-          
+
           git reset --hard ${{ github.event.inputs.commit_hash }}
           git checkout -b ${RELEASE_BRANCH}
           git push origin ${RELEASE_BRANCH}

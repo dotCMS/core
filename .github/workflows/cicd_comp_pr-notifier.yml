@@ -33,7 +33,7 @@ jobs:
           run_id=${{ github.run_id }}
           run_url=https://github.com/${{ github.repository }}/actions/runs/${run_id}
           details_message="Please check ${run_url} for more details."
-          
+
           case "${pr_status}" in
           "SUCCESS")
               message=":white_check_mark: PR passed all checks"
@@ -48,9 +48,9 @@ jobs:
               message=":question: PR status is unknown"
               ;;
           esac
-          
+
           message="${message}. ${details_message}"
-          
+
           echo "message: [${message}]"
           echo "message=${message}" >> $GITHUB_OUTPUT
 
@@ -58,7 +58,7 @@ jobs:
     name: Resolve Slack Channel
     uses: ./.github/workflows/utility_slack-channel-resolver.yml
     with:
-      github_users: "${{ github.actor }}"
+      github_users: '${{ github.actor }}'
       default_channel: eng
       default_channel_id: C028Z3R2D
       continue_on_error: true
@@ -82,7 +82,7 @@ jobs:
         run: |
           channel=${{ matrix.member }}
           message="${{ needs.message-resolver.outputs.message }}"
-          
+
           curl -X POST \
             -H "Content-type: application/json" \
             -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \

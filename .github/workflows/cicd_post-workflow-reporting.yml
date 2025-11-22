@@ -16,7 +16,7 @@
 # 1. It limits access to sensitive Slack tokens only to this workflow.
 # 2. It prevents potential exposure of secrets in PR builds from forks.
 # 3. It allows for more granular permissions and secret management.
-# This separation ensures that even if a PR workflow is compromised, 
+# This separation ensures that even if a PR workflow is compromised,
 # it doesn't have access to notification capabilities or sensitive tokens.
 
 name: CICD Reports
@@ -24,14 +24,14 @@ run-name: Reports - ${{ github.event.workflow_run.name }}
 
 on:
   workflow_run:
-    workflows: ['PR Check','Merge Group Check', "-1 PR Check", "-2 Merge Group Check"]
+    workflows: ['PR Check', 'Merge Group Check', '-1 PR Check', '-2 Merge Group Check']
     types: [completed]
   workflow_call:
     inputs:
       run-id:
         description: 'The run id of the build to report on'
         type: string
-        default: "${{ github.run_id }}"
+        default: '${{ github.run_id }}'
       slack-only-on-failure:
         description: 'Indicates if the slack notification should only be sent on failure'
         type: boolean
@@ -133,8 +133,8 @@ jobs:
               test_elapsed=${{ steps.test-reporter.outputs.time }}
               test_results_url=${{ steps.test-reporter.outputs.runHtmlUrl }}
             fi
-          
-          
+
+
             if [[ "$status" == "SUCCESS" ]]; then
               echo "status_icon=✅" >> $GITHUB_OUTPUT
             elif [[ "$status" == "CANCELLED" ]]; then
@@ -142,17 +142,17 @@ jobs:
             else
               echo "status_icon=❌" >> $GITHUB_OUTPUT
             fi
-          
+
             if [[ "$trigger_event_name" == "pull_request" ]]; then
               echo "report_type=PR" >> $GITHUB_OUTPUT
             elif [[ "$trigger_event_name" == "merge_group" ]]; then
               echo "report_type=Merge Queue" >> $GITHUB_OUTPUT
             elif [[ "$trigger_event_name" == "push" ]]; then
               echo "report_type=Branch Merge" >> $GITHUB_OUTPUT
-            else 
+            else
                echo "report_type=$trigger_event_name" >> $GITHUB_OUTPUT
             fi
-          
+
 
             echo "json=$json" >> $GITHUB_OUTPUT
             echo "trigger_event_name=$trigger_event_name" >> $GITHUB_OUTPUT
@@ -180,7 +180,7 @@ jobs:
             echo "test_failed=$test_failed" >> $GITHUB_OUTPUT
             echo "test_skipped=$test_skipped" >> $GITHUB_OUTPUT
             echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
-          
+
           fi
       # Prepare Slack message payload
       - name: Prepare Slack Message Payload

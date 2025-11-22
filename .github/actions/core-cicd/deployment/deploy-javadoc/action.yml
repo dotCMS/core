@@ -12,7 +12,7 @@ inputs:
     description: 'The version of the release'
     required: true
   artifact-run-id:
-    description: 'The run id of the core artifacts'    
+    description: 'The run id of the core artifacts'
   aws-access-key-id:
     description: 'AWS Access Key ID'
     required: true
@@ -25,7 +25,7 @@ inputs:
     required: true
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: 'Checkout'
       uses: actions/checkout@v4
@@ -34,9 +34,9 @@ runs:
 
     - uses: ./.github/actions/core-cicd/maven-job
       id: maven-clean
-      with:        
-        stage-name: "Clean Build"
-        maven-args: "clean install -DskipTests"
+      with:
+        stage-name: 'Clean Build'
+        maven-args: 'clean install -DskipTests'
         generate-docker: false
         cleanup-runner: true
         github-token: ${{ inputs.github-token }}
@@ -44,9 +44,9 @@ runs:
 
     - uses: ./.github/actions/core-cicd/maven-job
       id: maven-javadoc
-      with:        
-        stage-name: "Deploy Javadoc"
-        maven-args: "javadoc:javadoc -pl :dotcms-core"
+      with:
+        stage-name: 'Deploy Javadoc'
+        maven-args: 'javadoc:javadoc -pl :dotcms-core'
         generate-docker: false
         cleanup-runner: true
         restore-classes: true
@@ -58,7 +58,7 @@ runs:
       with:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
-        aws-region: ${{ inputs.aws-region }} 
+        aws-region: ${{ inputs.aws-region }}
 
     - name: Generate/Push Javadoc
       if: success()

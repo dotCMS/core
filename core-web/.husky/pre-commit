@@ -558,6 +558,87 @@ check_sdk_client_affected
 # Restore original working directory
 cd "${original_pwd}" || exit 1  # Exit if the directory does not exist
 
+# Workflow linting - check if any workflow files are staged
+workflow_files_staged=$(git diff --cached --name-only | grep -E '^\.github/(workflows|actions)/' || true)
+if [ -n "$workflow_files_staged" ]; then
+    print_color "$BLUE" "🔍 Running workflow linting on staged files..."
+
+    # Auto-fix YAML formatting with prettier
+    if [ -x "${root_dir}/installs/node/node" ]; then
+        print_color "$BLUE" "✨ Auto-fixing YAML formatting with prettier..."
+        cd "${root_dir}" || exit 1
+
+        # Filter for .yml and .yaml files only
+        yaml_files=$(echo "$workflow_files_staged" | grep -E '\.(yml|yaml)$' || true)
+
+        if [ -n "$yaml_files" ]; then
+            # Run prettier on workflow files (from root directory with absolute paths)
+            if echo "$yaml_files" | xargs -I {} "${root_dir}/installs/node/yarn/dist/bin/yarn" --cwd core-web prettier --write --config "${root_dir}/.prettierrc.yml" "${root_dir}/{}"; then
+                print_color "$GREEN" "✅ YAML files formatted with prettier"
+
+                # Re-stage the formatted files
+                echo "$yaml_files" | xargs git add
+            else
+                print_color "$YELLOW" "⚠️  Prettier formatting had issues, continuing with linting..."
+            fi
+        fi
+
+        cd "${original_pwd}" || exit 1
+    else
+        print_color "$YELLOW" "⚠️  Node.js not found, skipping prettier formatting"
+    fi
+
+    # Check if yamllint is available (try mise exec first, then direct command)
+    if command -v mise >/dev/null 2>&1 && mise exec -- yamllint --version >/dev/null 2>&1; then
+        print_color "$BLUE" "📋 Running yamllint (via mise)..."
+        if ! echo "$workflow_files_staged" | xargs mise exec -- yamllint; then
+            print_color "$RED" "❌ yamllint found issues in workflow files"
+            print_color "$YELLOW" "💡 Fix the issues or run 'git commit --no-verify' to bypass"
+            has_errors=true
+        else
+            print_color "$GREEN" "✅ yamllint passed"
+        fi
+    elif command -v yamllint >/dev/null 2>&1; then
+        print_color "$BLUE" "📋 Running yamllint..."
+        if ! echo "$workflow_files_staged" | xargs yamllint; then
+            print_color "$RED" "❌ yamllint found issues in workflow files"
+            print_color "$YELLOW" "💡 Fix the issues or run 'git commit --no-verify' to bypass"
+            has_errors=true
+        else
+            print_color "$GREEN" "✅ yamllint passed"
+        fi
+    else
+        print_color "$YELLOW" "⚠️  yamllint not found. Install with: mise install"
+    fi
+
+    # Check if actionlint is available (try mise exec first, then direct command)
+    if command -v mise >/dev/null 2>&1 && mise exec -- actionlint --version >/dev/null 2>&1; then
+        print_color "$BLUE" "🔍 Running actionlint (via mise)..."
+        cd "${root_dir}" || exit 1
+        if ! mise exec -- actionlint; then
+            print_color "$RED" "❌ actionlint found issues in workflow files"
+            print_color "$YELLOW" "💡 Fix the issues or run 'git commit --no-verify' to bypass"
+            has_errors=true
+        else
+            print_color "$GREEN" "✅ actionlint passed"
+        fi
+        cd "${original_pwd}" || exit 1
+    elif command -v actionlint >/dev/null 2>&1; then
+        print_color "$BLUE" "🔍 Running actionlint..."
+        cd "${root_dir}" || exit 1
+        if ! actionlint; then
+            print_color "$RED" "❌ actionlint found issues in workflow files"
+            print_color "$YELLOW" "💡 Fix the issues or run 'git commit --no-verify' to bypass"
+            has_errors=true
+        else
+            print_color "$GREEN" "✅ actionlint passed"
+        fi
+        cd "${original_pwd}" || exit 1
+    else
+        print_color "$YELLOW" "⚠️  actionlint not found. Install with: mise install"
+    fi
+fi
+
 # Final check before exiting
 if [ "$has_errors" = true ]; then
     print_color "$RED" "❌ Checks failed. Force commit with --no-verify option if bypass required."
