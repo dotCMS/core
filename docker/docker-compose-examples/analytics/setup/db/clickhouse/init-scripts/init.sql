@@ -1,110 +1,110 @@
-CREATE DATABASE IF NOT EXISTS clickhouse_test_db;
+
 CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
 (
     -- ######################################################
     --                  Jitsu Properties
     -- ######################################################
-    _timestamp DateTime,
-    event_type String,
-    original_url String,
+    _timestamp DateTime CODEC(DoubleDelta, ZSTD(3)),
+    event_type LowCardinality(String),
+    original_url String CODEC(ZSTD(3)),
     doc_host String,
     doc_path String,
     doc_search String,
     page_title String,
-    referer String,
-    doc_encoding String,
+    referer String CODEC(ZSTD(3)),
+    doc_encoding LowCardinality(String),
     local_tz_offset Int64,
-    eventn_ctx_event_id String,
+    eventn_ctx_event_id String CODEC(ZSTD(3)),
     user_agent String,
-    parsed_ua_device_brand String,
-    parsed_ua_device_family String,
-    parsed_ua_device_model String,
-    parsed_ua_os_family String,
-    parsed_ua_os_version String,
-    parsed_ua_ua_family String,
-    parsed_ua_ua_version String,
+    parsed_ua_device_brand LowCardinality(String) CODEC(ZSTD(3)),
+    parsed_ua_device_family LowCardinality(String) CODEC(ZSTD(3)),
+    parsed_ua_device_model LowCardinality(String),
+    parsed_ua_os_family LowCardinality(String) CODEC(ZSTD(3)),
+    parsed_ua_os_version Nullable(String),
+    parsed_ua_ua_family LowCardinality(String) CODEC(ZSTD(3)),
+    parsed_ua_ua_version Nullable(String),
     parsed_ua_bot UInt8,
     source_ip String,
     vp_size String,
-    utm_campaign String,
-    utm_medium String,
-    utm_source String,
-    utm_term String,
-    utm_content String,
-    doc_hash String,
-    doc_protocol String,
-    user_language String,
-    context_site_key String,
-    context_user_id String,
+    utm_campaign LowCardinality(String) CODEC(ZSTD(3)),
+    utm_medium LowCardinality(String) CODEC(ZSTD(3)),
+    utm_source LowCardinality(String) CODEC(ZSTD(3)),
+    utm_term Nullable(String),
+    utm_content Nullable(String) CODEC(ZSTD(3)),
+    doc_hash Nullable(String),
+    doc_protocol LowCardinality(String) CODEC(ZSTD(3)),
+    user_language LowCardinality(String) CODEC(ZSTD(3)),
+    context_site_auth String,
+    context_user_id String CODEC(ZSTD(3)),
     screen_resolution String,
     viewport_height String,
     viewport_width String,
     context_site_id String,
-    api_key String,
-    cluster_id String,
-    customer_id String,
+    api_key LowCardinality(String),
+    cluster_id LowCardinality(String),
+    customer_id LowCardinality(String),
     src String,
     user_anonymous_id String,
     user_hashed_anonymous_id String,
-    custom_1 String,
-    custom_2 String,
-    custom_3 String,
-    custom_4 String,
-    custom_5 String,
-    custom_6 String,
-    custom_7 String,
-    custom_8 String,
-    custom_9 String,
-    custom_10 String,
-    custom_11 String,
-    custom_12 String,
-    custom_13 String,
-    custom_14 String,
-    custom_15 String,
-    custom_16 String,
-    custom_17 String,
-    custom_18 String,
-    custom_19 String,
-    custom_20 String,
-    custom_21 String,
-    custom_22 String,
-    custom_23 String,
-    custom_24 String,
-    custom_25 String,
-    custom_26 String,
-    custom_27 String,
-    custom_28 String,
-    custom_29 String,
-    custom_30 String,
-    custom_31 String,
-    custom_32 String,
-    custom_33 String,
-    custom_34 String,
-    custom_35 String,
-    custom_36 String,
-    custom_37 String,
-    custom_38 String,
-    custom_39 String,
-    custom_40 String,
-    custom_41 String,
-    custom_42 String,
-    custom_43 String,
-    custom_44 String,
-    custom_45 String,
-    custom_46 String,
-    custom_47 String,
-    custom_48 String,
-    custom_49 String,
-    custom_50 String,
+    custom_1 Nullable(String),
+    custom_2 Nullable(String),
+    custom_3 Nullable(String),
+    custom_4 Nullable(String),
+    custom_5 Nullable(String),
+    custom_6 Nullable(String),
+    custom_7 Nullable(String),
+    custom_8 Nullable(String),
+    custom_9 Nullable(String),
+    custom_10 Nullable(String),
+    custom_11 Nullable(String),
+    custom_12 Nullable(String),
+    custom_13 Nullable(String),
+    custom_14 Nullable(String),
+    custom_15 Nullable(String),
+    custom_16 Nullable(String),
+    custom_17 Nullable(String),
+    custom_18 Nullable(String),
+    custom_19 Nullable(String),
+    custom_20 Nullable(String),
+    custom_21 Nullable(String),
+    custom_22 Nullable(String),
+    custom_23 Nullable(String),
+    custom_24 Nullable(String),
+    custom_25 Nullable(String),
+    custom_26 Nullable(String),
+    custom_27 Nullable(String),
+    custom_28 Nullable(String),
+    custom_29 Nullable(String),
+    custom_30 Nullable(String),
+    custom_31 Nullable(String),
+    custom_32 Nullable(String),
+    custom_33 Nullable(String),
+    custom_34 Nullable(String),
+    custom_35 Nullable(String),
+    custom_36 Nullable(String),
+    custom_37 Nullable(String),
+    custom_38 Nullable(String),
+    custom_39 Nullable(String),
+    custom_40 Nullable(String),
+    custom_41 Nullable(String),
+    custom_42 Nullable(String),
+    custom_43 Nullable(String),
+    custom_44 Nullable(String),
+    custom_45 Nullable(String),
+    custom_46 Nullable(String),
+    custom_47 Nullable(String),
+    custom_48 Nullable(String),
+    custom_49 Nullable(String),
+    custom_50 Nullable(String),
 
 
     -- ######################################################
     --      Jitsu and Backend Data Collectors Properties
     -- ######################################################
     url String,
-    utc_time DateTime,
-    request_id String,
-    sessionid String,
+    utc_time DateTime CODEC(DoubleDelta, ZSTD(3)),
+    request_id String CODEC(ZSTD(3)),
+    sessionid String CODEC(ZSTD(3)),
     sessionnew UInt8,
 
 
@@ -112,51 +112,65 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     --                 Experiments Properties
     -- ######################################################
     isexperimentpage Bool DEFAULT false,
-    experiment String,
-    variant String,
-    persona String,
-    userlanguage String,
-    lookbackwindow String,
-    runningid String,
+    experiment Nullable(String),
+    variant Nullable(String),
+    persona Nullable(String),
+    userlanguage LowCardinality(String),
+    lookbackwindow Nullable(String),
+    runningid Nullable(String),
     istargetpage Bool DEFAULT false,
-    ip String,
+    ip Nullable(String),
 
 
     -- ######################################################
     --              Used in UVE_MODE_CHANGE event
     -- ######################################################
-    frommode String,
-    tomode String,
+    frommode Nullable(String),
+    tomode Nullable(String),
 
 
     -- ######################################################
     --              Used in content_impression event
     -- ######################################################
-    content_identifier String,
-    content_inode String,
-    content_title String,
-    content_content_type String,
+    content_identifier Nullable(String) CODEC(ZSTD(3)),
+    content_inode Nullable(String) CODEC(ZSTD(3)),
+    content_title Nullable(String),
+    content_content_type Nullable(String),
 
-    position_viewport_offset_pct Int16,
-    position_dom_index Int8,
+    position_viewport_offset_pct Nullable(Int16),
+    position_dom_index Nullable(Int8),
 
     -- ######################################################
     --              Used in content_click event
     -- ######################################################
-    element_text String,
-    element_type String,
-    element_id String,
-    element_class String,
-    element_attributes String,
+    element_text Nullable(String),
+    element_type Nullable(String),
+    element_id Nullable(String),
+    element_class Nullable(String),
+    element_attributes Nullable(String),
 
     -- ######################################################
     --              Used in conversion event
     -- ######################################################
     conversion_name String
 ) Engine = MergeTree()
-    PARTITION BY customer_id
-    ORDER BY (_timestamp, customer_id)
-    SETTINGS index_granularity = 8192;
+PARTITION BY (customer_id, toYYYYMM(utc_time))
+ORDER BY (customer_id, context_user_id, utc_time)
+SETTINGS
+index_granularity = 8192,
+min_bytes_for_wide_part = 10485760,  -- 10MB
+min_rows_for_wide_part = 100000,     -- 100k rows
+merge_with_ttl_timeout = 3600;       -- merge once per hour
 
+-- Time and cluster filtering
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_utc_time (utc_time) TYPE minmax GRANULARITY 1;
-ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_cluster_id (cluster_id) TYPE minmax GRANULARITY 1;
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_cluster_id (cluster_id) TYPE bloom_filter GRANULARITY 64;
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_customer_id (customer_id) TYPE bloom_filter GRANULARITY 64;
+
+-- Event-type based filtering (funnels)
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_event_type (event_type) TYPE set(100) GRANULARITY 1;
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_conversion (conversion_name) TYPE set(100) GRANULARITY 1;
+
+-- Session/User/Content filtering
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_context_user_id (context_user_id) TYPE bloom_filter GRANULARITY 64;
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_content_identifier (content_identifier) TYPE bloom_filter GRANULARITY 64;
