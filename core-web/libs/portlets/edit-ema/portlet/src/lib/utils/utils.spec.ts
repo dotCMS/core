@@ -1113,9 +1113,9 @@ describe('utils functions', () => {
         it('should convert UTC time to local time representation', () => {
             // Create a date representing "2025-11-19T17:13:00.000Z" (5:13 PM UTC)
             const utcDate = new Date('2025-11-19T17:13:00.000Z');
-            
+
             const result = convertUTCToLocalTime(utcDate);
-            
+
             // The local time should show 17:13 (5:13 PM) in local timezone
             expect(result.getHours()).toBe(17);
             expect(result.getMinutes()).toBe(13);
@@ -1127,9 +1127,9 @@ describe('utils functions', () => {
 
         it('should preserve all time components including milliseconds', () => {
             const utcDate = new Date('2025-11-19T14:30:45.123Z');
-            
+
             const result = convertUTCToLocalTime(utcDate);
-            
+
             expect(result.getHours()).toBe(14);
             expect(result.getMinutes()).toBe(30);
             expect(result.getSeconds()).toBe(45);
@@ -1138,9 +1138,9 @@ describe('utils functions', () => {
 
         it('should handle midnight UTC correctly', () => {
             const utcDate = new Date('2025-11-19T00:00:00.000Z');
-            
+
             const result = convertUTCToLocalTime(utcDate);
-            
+
             expect(result.getHours()).toBe(0);
             expect(result.getMinutes()).toBe(0);
             expect(result.getSeconds()).toBe(0);
@@ -1148,9 +1148,9 @@ describe('utils functions', () => {
 
         it('should handle end of day UTC correctly', () => {
             const utcDate = new Date('2025-11-19T23:59:59.999Z');
-            
+
             const result = convertUTCToLocalTime(utcDate);
-            
+
             expect(result.getHours()).toBe(23);
             expect(result.getMinutes()).toBe(59);
             expect(result.getSeconds()).toBe(59);
@@ -1159,9 +1159,9 @@ describe('utils functions', () => {
 
         it('should handle leap year dates correctly', () => {
             const utcDate = new Date('2024-02-29T12:00:00.000Z'); // Leap year
-            
+
             const result = convertUTCToLocalTime(utcDate);
-            
+
             expect(result.getFullYear()).toBe(2024);
             expect(result.getMonth()).toBe(1); // February (0-indexed)
             expect(result.getDate()).toBe(29);

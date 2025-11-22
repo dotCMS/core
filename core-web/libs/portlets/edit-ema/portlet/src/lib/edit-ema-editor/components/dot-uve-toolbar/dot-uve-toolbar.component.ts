@@ -150,9 +150,9 @@ export class DotUveToolbarComponent {
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
         const publishDateUTC = convertLocalTimeToUTC(publishDate);
-        
+
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
-        
+
         this.#store.loadPageAsset({
             mode: UVE_MODE.LIVE,
             publishDate: publishDateUTC
