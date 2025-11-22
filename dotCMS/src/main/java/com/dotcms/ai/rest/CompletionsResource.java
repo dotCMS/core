@@ -2,7 +2,6 @@ package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.CompletionRequest;
-import com.dotcms.ai.api.CompletionResponse;
 import com.dotcms.ai.api.SearchForContentRequest;
 import com.dotcms.ai.api.SummarizeRequest;
 import com.dotcms.ai.app.AIModels;
@@ -15,14 +14,17 @@ import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import com.liferay.util.HttpHeaders;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -39,6 +41,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -48,6 +52,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -132,6 +138,69 @@ public class CompletionsResource {
                 output -> APILocator.getDotAIAPI()
                         .getCompletionsAPI()
                         .summarizeStream(resolvedForm, new LineReadingOutputStream(output)));
+    }
+
+    @POST
+    @Path("/async")
+    @JSONP
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Operation(
+            operationId = "summarizeFromContent",
+            summary = "Generate AI completions from content async (streaming)",
+            description = "Creates AI-powered content summaries and completions based on provided prompts. Supports both streaming and non-streaming responses.",
+            tags = {"AI"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Completion generated successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Missing or invalid prompt"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public final void summarizeFromContentAsync(@Context final HttpServletRequest request,
+                                @Context final HttpServletResponse response,
+                                @Suspended final AsyncResponse asyncResponse,
+                                @RequestBody(description = "Completion form with prompt and configuration",
+                                        content = @Content(schema = @Schema(implementation = CompletionsForm.class)))
+                                    final CompletionsForm formIn
+                                                ) {
+
+        final User user = new WebResource.InitBuilder(request, response).init().getUser();
+        final Host site = WebAPILocator.getHostWebAPI().getHost(request);
+        final Optional<AiModelConfig> modelConfigOpt = this.modelConfigFactory.getAiModelConfigOrDefaultChat(site, formIn.model);
+        final Optional<AiModelConfig> embeddingModelConfigOpt = this.modelConfigFactory.getAiModelConfigOrDefaultEmbedding(site, formIn.embeddingModel);
+
+        if(modelConfigOpt.isPresent() && embeddingModelConfigOpt.isPresent()) {
+
+            CompletionsForm mutableForm = formIn;
+            if (com.dotmarketing.util.StringUtils.isNotSet(formIn.model)) {
+                // probably get the default one
+                mutableForm = CompletionsForm.copy(formIn).model(modelConfigOpt.get().getName())
+                        .embeddingModel(embeddingModelConfigOpt.get().getName()).build();
+            }
+
+            Logger.debug(this, "Using new AI api for the text resource with the form: " + mutableForm);
+            final SummarizeRequest summarizeRequest = toSummarizeRequest(mutableForm, modelConfigOpt.get(),
+                    embeddingModelConfigOpt.get(), user);
+
+            asyncResponse.setTimeout(5, TimeUnit.MINUTES); // this should be configurable
+            CompletableFuture.runAsync(() -> {
+                try {
+                    asyncResponse.resume(
+                            Response.ok(new CompletionStreamingOutput(summarizeRequest))
+                                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                                    .build()
+                    );
+                } catch (Exception e) {
+                    asyncResponse.resume(e);
+                }
+            }, DotConcurrentFactory.getInstance().getSubmitter());
+
+            return;
+        }
+
+        throw new DotStateException("Advance AI configuration not properly set");
     }
 
     private SummarizeRequest toSummarizeRequest(final CompletionsForm form,

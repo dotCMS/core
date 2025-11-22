@@ -64,6 +64,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -146,6 +150,8 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     @Override
     public void summarize(final SummarizeRequest summaryRequest, final OutputStream out) {
 
+        final CompletableFuture<Void> streamingCompletion = new CompletableFuture<>();
+
         try {
             Logger.debug(this, () -> "Doing streaming summarize request: " + summaryRequest);
             final AiModelConfig modelConfig = summaryRequest.getCompletionRequest().getChatModelConfig();
@@ -185,7 +191,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                     .collect(Collectors.joining("\n---\n"));
 
             final String augmentedSystemPrompt = StringUtils.isSet(systemPrompt) ? systemPrompt : "";
-            final String instructionTemplate = "You are a helpful AI assistant. Use the provided context enclosed within the 'CONTEXT' tags below to answer the user's question. If the information is not present in the context, strictly state that you cannot answer based on the provided sources and do not make up answers.";
+            final String instructionTemplate = "You are a helpful AI assistant. Use the provided context enclosed within the 'CONTEXT' " +
+                    "tags below as your primary source of information. If the context does not fully answer the user's question," +
+                    " you may complement the response using your general knowledge. Prioritize accuracy and relevance from the provided sources.";
+
 
             final String finalSystemPrompt = String.format(
                     "%s\n\n%s\n\nCONTEXT:\n---\n%s\n---",
@@ -222,8 +231,8 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 out.write(String.format(",\"%s\": [{\"%s\": \"%s\", \"%s\": \"%s\"}]", AiKeys.MESSAGES, AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, userPrompt).getBytes(StandardCharsets.UTF_8));
 
                 // Marcamos donde debe insertarse la respuesta del LLM y cerramos la estructura inicial
-                out.write("}, \"summaryStream\": \"".getBytes(StandardCharsets.UTF_8));
-                out.flush();
+                    out.write("}, \"summaryStream\": \"".getBytes(StandardCharsets.UTF_8));
+                //out.flush();
             } catch (IOException e) {
                 Logger.error(this, "Error writing RAG metadata to output stream.", e);
                 throw new DotRuntimeException("Error in RAG data streaming setup.", e);
@@ -236,9 +245,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
                         final String escapedToken = partialResponse.replace("\\", "\\\\").replace("\"", "\\\"");
                         out.write(escapedToken.getBytes(StandardCharsets.UTF_8));
-                        out.flush();
+                        //out.flush();
                     } catch (IOException e) {
                         Logger.warn(this, "IOException during streaming token write: " + e.getMessage());
+                        streamingCompletion.completeExceptionally(e);
                     }
                 }
 
@@ -252,8 +262,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                     Logger.debug(this, () -> "Streaming response completed.");
                     try {
                         out.write("\"}".getBytes(StandardCharsets.UTF_8));
+                        streamingCompletion.complete(null);
                     } catch (IOException e) {
                         Logger.warn(this, "IOException writing stream end marker: " + e.getMessage());
+                        streamingCompletion.completeExceptionally(e);
                     }
                 }
 
@@ -280,12 +292,22 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                         Logger.error(this, "Secondary IO error during streaming error handling.", e);
                     }
 
-                    throw new DotRuntimeException("Error during LLM streaming.", error); // Re-throw to signal transaction failure
+                    streamingCompletion.completeExceptionally(error);
                 }
             };
 
             // Execute the streaming call.
             chatModel.chat(messages, handler);
+            try {
+                streamingCompletion.get(5, TimeUnit.MINUTES);
+            } catch (InterruptedException | ExecutionException e) {
+                // Si hay una excepción, la lanzamos como IOException para que JAX-RS sepa que la escritura falló.
+                throw new IOException("LLM Streaming failed or was interrupted: " + e.getMessage(), e);
+            } catch (TimeoutException e) {
+                // Si se agota el tiempo aquí, significa que el LLM no respondió a tiempo.
+                throw new IOException("LLM Streaming timed out after 5 minutes.", e);
+            }
+            Logger.debug(this, ()-> "Streaming complete.");
         } catch (Exception ex) {
             Logger.error(this, "Fatal error in streaming summarize request: " + ex.getMessage(), ex);
             throw new DotRuntimeException(ex);
