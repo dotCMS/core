@@ -1,0 +1,34 @@
+<div [formGroup]="group" class="field">
+    <label [for]="property.name" dotFieldRequired>
+        {{ 'contenttypes.field.properties.name.label' | dm }}
+    </label>
+    <div class="flex flex-wrap gap-3">
+        <div class="flex align-items-center">
+            <p-radioButton
+                name="newRenderMode"
+                value="true"
+                [formControlName]="property.name"
+                inputId="ingredient1" />
+            <label
+                for="ingredient1"
+                class="ml-2"
+                pTooltip="Runs on native components for faster, smoother editing and a modern, consistent experience.">
+                Recommended
+            </label>
+        </div>
+
+        <div class="flex align-items-center">
+            <p-radioButton
+                name="newRenderMode"
+                value="false"
+                [formControlName]="property.name"
+                inputId="ingredient2" />
+            <label
+                for="ingredient2"
+                class="ml-2"
+                pTooltip="Renders in an iframe, so the UI won't match and interactions may feel rough. Keep it only for older custom fields.">
+                Deprecated
+            </label>
+        </div>
+    </div>
+</div>

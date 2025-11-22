@@ -262,6 +262,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     saveFieldsHandler(fieldToSave: DotCMSContentTypeField): void {
+        console.log('fieldToSave', fieldToSave);
         if (!this.currentField) {
             const tabDividerFields = FieldUtil.getTabDividerFields(this.fieldRows);
             this.currentField = tabDividerFields.find(

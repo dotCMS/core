@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, linkedSignal } from '@angular/core';
 import { ReactiveFormsModule, FormsModule, ControlContainer } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
@@ -50,7 +50,7 @@ export class DotEditContentTextFieldComponent extends BaseWrapperField {
      * A computed signal that holds the initial value of the text field.
      * It is used to display the initial value in the text field component.
      */
-    $initValue = computed(() => {
+    $value = linkedSignal(() => {
         const contentlet = this.$contentlet();
         const field = this.$field();
         const value = contentlet
