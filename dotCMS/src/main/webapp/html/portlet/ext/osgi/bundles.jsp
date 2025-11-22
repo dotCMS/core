@@ -153,27 +153,32 @@
 
 <script type="application/javascript">
 
+    // Track bundle count for smart refresh logic
+    var lastBundleCount = 0;
+    var refreshAttempts = 0;
+    var maxRefreshAttempts = 3;
+
     var getBundlesData = function () {
 
         //Displays the loading dialog
         try {dijit.byId('savingOSGIDialog').show();} catch (e) {}
         dojo.byId("loading-row").show();
-        
-        
+
+        // Get checkbox state to determine if system bundles should be ignored
+        const showSystem = document.getElementById("ignoresystembundles").checked;
+        const ignoreSystemBundles = !showSystem; // Invert: if NOT showing system, then ignore them
+
         var xhrArgs = {
-            url: "/api/v1/osgi?ignoresystembundles=true",
+            url: "/api/v1/osgi?ignoresystembundles=" + ignoreSystemBundles,
             handleAs: "json",
             load: function (data) {
                 document.getElementById("bundlesTable-body").innerHTML="";
-                const showSystem=document.getElementById("ignoresystembundles").checked
                 if (data.entity.length > 0) {
 
                     var i = 0;
                     data.entity.forEach(function(bundleData){
 
-                        if(!showSystem && bundleData.system){
-                            return;
-                        }
+                        // No need for client-side filtering - server handles it based on ignoresystembundles parameter
                         //First we need to destroy any existing widget with the same id
                         try {dijit.byId("popupTr" + i).destroy(true);} catch (e) {}
                         try {dijit.byId("tr" + bundleData.jarFile).destroy(true);} catch (e) {}
@@ -224,6 +229,21 @@
                     document.getElementById("bundlesTable-body").innerHTML=htmlContent;
                 }
 
+                // Smart refresh logic: only retry if bundle list is empty and we haven't exceeded max attempts
+                var currentBundleCount = data.entity.length;
+                if (currentBundleCount === 0 && lastBundleCount === 0 && refreshAttempts < maxRefreshAttempts) {
+                    refreshAttempts++;
+                    setTimeout(function() {
+                        getBundlesData();
+                    }, 2000);
+                } else {
+                    // Reset attempts counter on successful load with bundles
+                    if (currentBundleCount > 0) {
+                        refreshAttempts = 0;
+                    }
+                    lastBundleCount = currentBundleCount;
+                }
+
                 //Hiddes the loading dialog
                 try {dijit.byId('savingOSGIDialog').hide();} catch (e) {}
                 dojo.byId("loading-row").hide();
@@ -248,6 +268,11 @@
             }, 50);
         } else {
             getBundlesData();
+            // If the saving dialog is shown, we just refreshed after a plugin upload
+            // The bundle might still be deploying, so refresh again after a short delay
+            setTimeout(function () {
+                getBundlesData();
+            }, 2000);
         }
     });
 
