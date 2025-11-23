@@ -5862,6 +5862,13 @@
   dependencies:
     "@primeuix/styled" "^0.7.3"
 
+"@primeuix/themes@^1.2.5":
+  version "1.2.5"
+  resolved "https://registry.npmjs.org/@primeuix/themes/-/themes-1.2.5.tgz#fa7f9c7004561c255b2c95bf2daeee41e16c0eef"
+  integrity sha512-n3YkwJrHQaEESc/D/A/iD815sxp8cKnmzscA6a8Tm8YvMtYU32eCahwLLe6h5rywghVwxASWuG36XBgISYOIjQ==
+  dependencies:
+    "@primeuix/styled" "^0.7.3"
+
 "@primeuix/utils@^0.6.1", "@primeuix/utils@^0.6.2":
   version "0.6.3"
   resolved "https://registry.npmjs.org/@primeuix/utils/-/utils-0.6.3.tgz#0d31e41c530fb64dd487ce768f8c244ca1d0872e"
@@ -21311,7 +21318,7 @@ primeicons@7.0.0:
   resolved "https://registry.npmjs.org/primeicons/-/primeicons-7.0.0.tgz#6b25c3fdcb29bb745a3035bdc1ed5902f4a419cf"
   integrity sha512-jK3Et9UzwzTsd6tzl2RmwrVY/b8raJ3QZLzoDACj+oTJ0oX7L9Hy+XnVwgo4QVKlKpnP/Ur13SXV/pVh4LzaDw==
 
-primeng@^20.0.0:
+primeng@^20.3.0:
   version "20.3.0"
   resolved "https://registry.npmjs.org/primeng/-/primeng-20.3.0.tgz#90f974fd9ec4d24c6a2eb638a7736c4c509e2182"
   integrity sha512-ljRRundjAfhR6PC75T3uDpg+v3IpBdbAyAlM0kMCHP5H0gtWUang68dd0ibO67/6CAKEcXVxwUnbqy2D6et4jA==
