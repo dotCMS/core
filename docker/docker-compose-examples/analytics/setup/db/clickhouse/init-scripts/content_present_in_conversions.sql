@@ -74,7 +74,7 @@ ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name,
 
 
 CREATE MATERIALIZED VIEW content_presents_in_conversion_mv
-REFRESH EVERY 1 MINUTE TO content_presents_in_conversion AS
+REFRESH EVERY 1 MINUTE APPEND TO content_presents_in_conversion AS
 WITH conversion AS (
     SELECT context_user_id,
            utc_time AS conversion_time,
@@ -117,13 +117,12 @@ GROUP BY customer_id, cluster_id, identifier, title, event_type, context_user_id
 ---
 
 
-CREATE MATERIALIZED VIEW conversion_time_mv
-REFRESH EVERY 2 MINUTE TO conversion_time AS
+CREATE MATERIALIZED VIEW conversion_time_mv TO conversion_time AS
 SELECT customer_id,
        cluster_id,
        context_user_id,
-       maxState(last_timestamp) as timestamp_last_time--,
-       --maxState(last_conversion_time) as conversion_last_time
+       maxState(last_timestamp) as timestamp_last_time,
+       maxState(last_conversion_time) as conversion_last_time
 FROM clickhouse_test_db.content_presents_in_conversion
 GROUP BY customer_id, cluster_id, context_user_id;
 
