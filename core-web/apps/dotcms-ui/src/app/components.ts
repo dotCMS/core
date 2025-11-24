@@ -1,5 +1,5 @@
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotDialogComponent, DotIconComponent } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';
 import { DotActionButtonComponent } from './view/components/_common/dot-action-button/dot-action-button.component';
@@ -40,7 +40,6 @@ export const STANDALONE_COMPONENTS = [
     DotToolbarComponent,
     DotActionButtonComponent,
     DotEditContentletComponent,
-    DotDialogComponent,
     DotIconComponent,
     DotTextareaContentComponent,
     DotWorkflowTaskDetailComponent,

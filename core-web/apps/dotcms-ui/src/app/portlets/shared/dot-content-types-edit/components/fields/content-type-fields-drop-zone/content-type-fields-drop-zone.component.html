@@ -25,13 +25,12 @@
     <dot-loading-indicator [fullscreen]="true"></dot-loading-indicator>
 </div>
 
-<dot-dialog
-    (hide)="removeFieldsWithoutId()"
+<p-dialog
     [(visible)]="displayDialog"
-    [actions]="dialogActions"
-    [hideButtons]="hideButtons"
     [header]="currentFieldType?.label"
-    width="45rem">
+    [modal]="true"
+    [style]="{ width: '45rem' }"
+    (visibleChange)="removeFieldsWithoutId()">
     <p-tabs (onChange)="handleTabChange($event.value)" [(value)]="activeTab">
         <p-tablist>
             <p-tab [value]="0">
@@ -104,4 +103,23 @@
             </p-tabpanel>
         </p-tabpanels>
     </p-tabs>
-</dot-dialog>
+    @if (dialogActions && !hideButtons) {
+        <ng-template pTemplate="footer">
+            @if (dialogActions.cancel) {
+                <p-button
+                    [label]="dialogActions.cancel.label"
+                    [disabled]="dialogActions.cancel.disabled"
+                    severity="secondary"
+                    (click)="dialogActions.cancel.action()"
+                    data-testId="dotDialogCancelAction"></p-button>
+            }
+            @if (dialogActions.accept) {
+                <p-button
+                    [label]="dialogActions.accept.label"
+                    [disabled]="dialogActions.accept.disabled"
+                    (click)="dialogActions.accept.action()"
+                    data-testId="dotDialogAcceptAction"></p-button>
+            }
+        </ng-template>
+    }
+</p-dialog>

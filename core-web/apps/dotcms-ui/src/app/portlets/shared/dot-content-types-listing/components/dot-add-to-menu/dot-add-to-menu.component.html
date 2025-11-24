@@ -1,9 +1,9 @@
-<dot-dialog
-    (hide)="close()"
-    [(visible)]="contentType"
-    [actions]="dialogActions"
+<p-dialog
+    [(visible)]="dialogShow"
     [header]="'contenttypes.content.add_to_menu.header' | dm: [contentType?.name]"
-    width="592px">
+    [modal]="true"
+    [style]="{ width: '592px' }"
+    (visibleChange)="close()">
     <form (ngSubmit)="submit()" [formGroup]="form" class="p-fluid" novalidate>
         <div class="field">
             <label dotFieldRequired for="title" data-testId="titleMenuLabel">
@@ -68,4 +68,23 @@
             </div>
         </div>
     </form>
-</dot-dialog>
+    @if (dialogActions) {
+        <ng-template pTemplate="footer">
+            @if (dialogActions.cancel) {
+                <p-button
+                    [label]="dialogActions.cancel.label"
+                    [disabled]="dialogActions.cancel.disabled"
+                    severity="secondary"
+                    (click)="dialogActions.cancel.action()"
+                    data-testId="dotDialogCancelAction"></p-button>
+            }
+            @if (dialogActions.accept) {
+                <p-button
+                    [label]="dialogActions.accept.label"
+                    [disabled]="dialogActions.accept.disabled"
+                    (click)="dialogActions.accept.action()"
+                    data-testId="dotDialogAcceptAction"></p-button>
+            }
+        </ng-template>
+    }
+</p-dialog>

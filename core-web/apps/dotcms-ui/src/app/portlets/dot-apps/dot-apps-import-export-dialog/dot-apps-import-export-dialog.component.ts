@@ -20,6 +20,8 @@ import {
     Validators
 } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
@@ -36,7 +38,6 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotDialogComponent,
     DotFieldRequiredDirective,
     DotMessagePipe
 } from '@dotcms/ui';
@@ -49,9 +50,10 @@ import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service'
     styleUrls: ['./dot-apps-import-export-dialog.component.scss'],
     imports: [
         ReactiveFormsModule,
+        DialogModule,
+        ButtonModule,
         InputTextModule,
         PasswordModule,
-        DotDialogComponent,
         DotAutofocusDirective,
         DotFieldRequiredDirective,
         DotMessagePipe

@@ -1,8 +1,9 @@
-<dot-dialog
-    (hide)="close()"
+<p-dialog
     [(visible)]="showDialog"
     [header]="'download.bundle.header' | dm"
-    [actions]="dialogActions">
+    [modal]="true"
+    [style]="{ width: '50rem' }"
+    (visibleChange)="close()">
     @if (showDialog) {
         <form
             (ngSubmit)="handleSubmit()"
@@ -32,4 +33,21 @@
     @if (errorMessage) {
         <span class="download-bundle__error">{{ errorMessage }}</span>
     }
-</dot-dialog>
+    <ng-template pTemplate="footer">
+        @if (dialogActions?.cancel) {
+            <p-button
+                [label]="dialogActions.cancel.label"
+                [disabled]="dialogActions.cancel.disabled"
+                severity="secondary"
+                (click)="dialogActions.cancel.action()"
+                data-testId="dotDialogCancelAction"></p-button>
+        }
+        @if (dialogActions?.accept) {
+            <p-button
+                [label]="dialogActions.accept.label"
+                [disabled]="dialogActions.accept.disabled"
+                (click)="dialogActions.accept.action()"
+                data-testId="dotDialogAcceptAction"></p-button>
+        }
+    </ng-template>
+</p-dialog>

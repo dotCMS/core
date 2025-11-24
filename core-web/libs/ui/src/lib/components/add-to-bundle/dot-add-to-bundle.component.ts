@@ -19,6 +19,8 @@ import {
     Validators
 } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { Select, SelectModule } from 'primeng/select';
 
 import { map, take, takeUntil, tap } from 'rxjs/operators';
@@ -27,8 +29,8 @@ import { AddToBundleService, DotCurrentUserService, DotMessageService } from '@d
 import { LoggerService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotBundle, DotDialogActions } from '@dotcms/dotcms-models';
 
+
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
-import { DotDialogComponent } from '../../modules/dot-dialog/dot-dialog.component';
 import { DotFieldValidationMessageComponent } from '../dot-field-validation-message/dot-field-validation-message.component';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
@@ -37,7 +39,8 @@ const LAST_BUNDLE_USED = 'lastSelectedBundle';
     selector: 'dot-add-to-bundle',
     templateUrl: 'dot-add-to-bundle.component.html',
     imports: [
-        DotDialogComponent,
+        DialogModule,
+        ButtonModule,
         DotMessagePipe,
         ReactiveFormsModule,
         SelectModule,

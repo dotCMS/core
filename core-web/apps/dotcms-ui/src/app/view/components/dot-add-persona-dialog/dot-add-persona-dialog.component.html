@@ -1,14 +1,33 @@
 @if (visible) {
-    <dot-dialog
-        (hide)="closeDialog()"
+    <p-dialog
+        [(visible)]="visible"
         [header]="'modes.persona.add.persona' | dm"
-        [visible]="visible"
-        [actions]="dialogActions"
-        [appendToBody]="true"
-        width="500px">
+        [modal]="true"
+        [style]="{ width: '500px' }"
+        appendTo="body"
+        (visibleChange)="closeDialog()">
         <dot-create-persona-form
             (isValid)="handlerFormValidState($event)"
             [personaName]="personaName"
             #personaForm></dot-create-persona-form>
-    </dot-dialog>
+        @if (dialogActions) {
+            <ng-template pTemplate="footer">
+                @if (dialogActions.cancel) {
+                    <p-button
+                        [label]="dialogActions.cancel.label"
+                        [disabled]="dialogActions.cancel.disabled"
+                        severity="secondary"
+                        (click)="dialogActions.cancel.action()"
+                        data-testId="dotDialogCancelAction"></p-button>
+                }
+                @if (dialogActions.accept) {
+                    <p-button
+                        [label]="dialogActions.accept.label"
+                        [disabled]="dialogActions.accept.disabled"
+                        (click)="dialogActions.accept.action()"
+                        data-testId="dotDialogAcceptAction"></p-button>
+                }
+            </ng-template>
+        }
+    </p-dialog>
 }

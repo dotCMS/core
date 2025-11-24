@@ -1,11 +1,12 @@
-<dot-dialog
-    (hide)="shutdown.emit($event)"
+<p-dialog
     [(visible)]="show"
+    [header]="'modes.Add-Form' | dm"
+    [modal]="true"
     [contentStyle]="{ padding: '0' }"
-    [cssClass]="
+    [styleClass]="
         paginatorService.totalRecords > paginatorService.paginationPerPage ? 'paginator' : ''
     "
-    [header]="'modes.Add-Form' | dm"
+    (visibleChange)="shutdown.emit($event)"
     #dialog>
     <p-table
         (onLazyLoad)="loadData($event)"
@@ -38,4 +39,4 @@
             </tr>
         </ng-template>
     </p-table>
-</dot-dialog>
+</p-dialog>

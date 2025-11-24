@@ -3,7 +3,9 @@ import { Subject } from 'rxjs';
 import { Component, EventEmitter, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
+import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
@@ -21,7 +23,6 @@ import {
     DotPushPublishData,
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
-import { DotDialogComponent } from '@dotcms/ui';
 
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
@@ -33,9 +34,10 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
         FormsModule,
         ReactiveFormsModule,
         DatePickerModule,
+        DialogModule,
         SelectModule,
         SelectButtonModule,
-        DotDialogComponent,
+        ButtonModule,
         DotPushPublishFormComponent
     ],
     providers: [DotPushPublishFiltersService]
@@ -51,6 +53,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     formData: DotPushPublishData;
     formValid = false;
     errorMessage = null;
+    isSaving = false;
 
     @Output() cancel = new EventEmitter<boolean>();
 
@@ -78,6 +81,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
         this.dialogShow = false;
         this.eventData = null;
         this.errorMessage = null;
+        this.isSaving = false;
     }
 
     /**
@@ -87,6 +91,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
      */
     submitPushAction(): void {
         if (this.formValid) {
+            this.isSaving = true;
             this.pushPublishService
                 .pushPublishContent(
                     this.eventData.assetIdentifier,
@@ -95,6 +100,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
                 )
                 .pipe(takeUntil(this.destroy$))
                 .subscribe((result: DotAjaxActionResponseView) => {
+                    this.isSaving = false;
                     if (!result?.errors) {
                         this.close();
                     } else {

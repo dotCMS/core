@@ -1,8 +1,9 @@
-<dot-dialog
-    (hide)="close()"
+<p-dialog
     [(visible)]="dialogShow"
-    [actions]="dialogActions"
-    [header]="'contenttypes.content.add_to_bundle' | dm">
+    [header]="'contenttypes.content.add_to_bundle' | dm"
+    [modal]="true"
+    [style]="{ width: '50rem' }"
+    (visibleChange)="close()">
     <form
         (ngSubmit)="submitBundle($event)"
         (keyup.enter)="submitBundle($event)"
@@ -26,4 +27,23 @@
                 }}"></dot-field-validation-message>
         </div>
     </form>
-</dot-dialog>
+    @if (dialogActions) {
+        <ng-template pTemplate="footer">
+            @if (dialogActions.cancel) {
+                <p-button
+                    [label]="dialogActions.cancel.label"
+                    [disabled]="dialogActions.cancel.disabled"
+                    severity="secondary"
+                    (click)="dialogActions.cancel.action()"
+                    data-testId="dotDialogCancelAction"></p-button>
+            }
+            @if (dialogActions.accept) {
+                <p-button
+                    [label]="dialogActions.accept.label"
+                    [disabled]="dialogActions.accept.disabled"
+                    (click)="dialogActions.accept.action()"
+                    data-testId="dotDialogAcceptAction"></p-button>
+            }
+        </ng-template>
+    }
+</p-dialog>

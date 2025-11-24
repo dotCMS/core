@@ -1,11 +1,10 @@
-<dot-dialog
-    (hide)="closeDialog()"
-    [actions]="dialogActions$ | async"
+<p-dialog
+    [(visible)]="isVisibleDialog"
     [header]="dialogTitle"
-    [isSaving]="isSaving$ | async"
-    [visible]="isVisibleDialog"
-    class="no-overflow"
-    width="600px">
+    [modal]="true"
+    [style]="{ width: '600px' }"
+    styleClass="no-overflow"
+    (visibleChange)="closeDialog()">
     <form [formGroup]="form" class="p-fluid" #formEl="ngForm" novalidate>
         <div class="field form__group--validation">
             <label dotFieldRequired for="content-type-form-name">{{ inputNameWithType }}</label>
@@ -59,4 +58,24 @@
                 formControlName="host"></dot-site-selector-field>
         </div>
     </form>
-</dot-dialog>
+    @if (dialogActions$ | async; as actions) {
+        <ng-template pTemplate="footer">
+            @if (actions.cancel) {
+                <p-button
+                    [label]="actions.cancel.label"
+                    [disabled]="actions.cancel.disabled"
+                    severity="secondary"
+                    (click)="actions.cancel.action()"
+                    data-testId="dotDialogCancelAction"></p-button>
+            }
+            @if (actions.accept) {
+                <p-button
+                    [label]="actions.accept.label"
+                    [disabled]="actions.accept.disabled"
+                    [loading]="isSaving$ | async"
+                    (click)="actions.accept.action()"
+                    data-testId="dotDialogAcceptAction"></p-button>
+            }
+        </ng-template>
+    }
+</p-dialog>

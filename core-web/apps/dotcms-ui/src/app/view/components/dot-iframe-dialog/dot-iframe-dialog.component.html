@@ -1,11 +1,11 @@
-<dot-dialog
-    (hide)="onDialogHide()"
+<p-dialog
     [(visible)]="show"
-    [contentStyle]="{ padding: '0' }"
-    [headerStyle]="{ 'background-color': '#f1f3f4' }"
     [header]="header"
-    width="90vw"
-    height="90vh"
+    [modal]="true"
+    [style]="{ width: '90vw', height: '90vh' }"
+    [contentStyle]="{ padding: '0' }"
+    styleClass="dot-iframe-dialog"
+    (visibleChange)="onDialogHide()"
     #dialog>
     <dot-iframe
         (charge)="onLoad($event)"
@@ -13,4 +13,4 @@
         (custom)="custom.emit($event)"
         [src]="url"
         class="dialog__iframe"></dot-iframe>
-</dot-dialog>
+</p-dialog>

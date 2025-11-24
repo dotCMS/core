@@ -21,6 +21,8 @@ import {
     Validators
 } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { map } from 'rxjs/operators';
@@ -29,7 +31,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyContentTypeDialogFormFields, DotDialogActions } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotDialogComponent,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
@@ -48,9 +49,10 @@ import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
     imports: [
         CommonModule,
         ReactiveFormsModule,
+        DialogModule,
+        ButtonModule,
         InputTextModule,
         DotFieldValidationMessageComponent,
-        DotDialogComponent,
         DotMdIconSelectorComponent,
         DotSiteSelectorFieldComponent,
         DotAutofocusDirective,

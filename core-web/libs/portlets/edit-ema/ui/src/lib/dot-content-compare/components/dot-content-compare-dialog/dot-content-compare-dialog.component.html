@@ -1,3 +1,8 @@
-<dot-dialog (hide)="close()" [visible]="show" [header]="'compare' | dm" width="90vw" height="90vh">
+<p-dialog
+    [(visible)]="show"
+    [header]="'compare' | dm"
+    [modal]="true"
+    [style]="{ width: '90vw', height: '90vh' }"
+    (visibleChange)="close()">
     <dot-content-compare (shutdown)="close()" [data]="data$ | async" />
-</dot-dialog>
+</p-dialog>
