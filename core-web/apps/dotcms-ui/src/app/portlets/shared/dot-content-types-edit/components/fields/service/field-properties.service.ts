@@ -1,7 +1,11 @@
 import { Injectable, Type, inject } from '@angular/core';
 import { ValidationErrors } from '@angular/forms';
 
-import { DotCMSClazzes, DotDynamicFieldComponent } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotDynamicFieldComponent
+} from '@dotcms/dotcms-models';
 
 import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
 import { PROPERTY_INFO } from './field-property-info';
@@ -67,6 +71,16 @@ export class FieldPropertyService {
         return propertyName === 'dataType'
             ? this.getDataType(fieldTypeClass)
             : this.getPropInfo(propertyName);
+    }
+
+    getValue(field: DotCMSContentTypeField, propertyName: string): unknown {
+        if (propertyName === 'newRenderMode') {
+            const fieldVariable = field.fieldVariables.find(
+                (variable) => variable.key === 'newRenderMode'
+            );
+            return fieldVariable?.value;
+        }
+        return field[propertyName];
     }
 
     /**

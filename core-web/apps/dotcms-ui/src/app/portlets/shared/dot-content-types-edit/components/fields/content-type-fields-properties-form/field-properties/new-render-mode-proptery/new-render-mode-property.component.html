@@ -6,28 +6,28 @@
         <div class="flex align-items-center">
             <p-radioButton
                 name="newRenderMode"
-                value="true"
+                [value]="'true'"
                 [formControlName]="property.name"
                 inputId="recommended" />
             <label
                 for="recommended"
                 class="ml-2"
-                [pTooltip]="'contenttypes.field.properties.newRenderMode.recommended.tooltip' | dm">
-                {{ 'contenttypes.field.properties.newRenderMode.recommended.label' | dm }}
+                [pTooltip]="'contenttypes.field.properties.newRenderMode.component.tooltip' | dm">
+                {{ 'contenttypes.field.properties.newRenderMode.component.label ' | dm }}
             </label>
         </div>
 
         <div class="flex align-items-center">
             <p-radioButton
                 name="newRenderMode"
-                value="false"
+                [value]="'false'"
                 [formControlName]="property.name"
                 inputId="deprecated" />
             <label
                 for="deprecated"
                 class="ml-2"
-                [pTooltip]="'contenttypes.field.properties.newRenderMode.component.tooltip' | dm">
-                {{ 'contenttypes.field.properties.newRenderMode.component.label' | dm }}
+                [pTooltip]="'contenttypes.field.properties.newRenderMode.iframe.tooltip' | dm">
+                {{ 'contenttypes.field.properties.newRenderMode.iframe.label' | dm }}
             </label>
         </div>
     </div>

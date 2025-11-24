@@ -130,7 +130,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                     formFields[property] = [
                         {
                             value:
-                                this.formFieldData[property] ||
+                                this.fieldPropertyService.getValue(this.formFieldData, property) ||
                                 this.fieldPropertyService.getDefaultValue(
                                     property,
                                     this.formFieldData.clazz

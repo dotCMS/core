@@ -11,7 +11,7 @@ import {
     NamePropertyComponent,
     RegexCheckPropertyComponent,
     ValuesPropertyComponent,
-    NewRenderModePropteryComponent
+    NewRenderModePropertyComponent
 } from '../content-type-fields-properties-form/field-properties';
 import { DotRelationshipsPropertyComponent } from '../content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships-property.component';
 import { validateRelationship } from '../content-type-fields-properties-form/field-properties/dot-relationships-property/services/validators/dot-relationship-validator';
@@ -92,7 +92,7 @@ export const PROPERTY_INFO = {
         validations: [validateRelationship]
     },
     newRenderMode: {
-        component: NewRenderModePropteryComponent,
+        component: NewRenderModePropertyComponent,
         defaultValue: 'false',
         order: 1
     }
