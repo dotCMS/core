@@ -863,6 +863,29 @@ export const convertLocalTimeToUTC = (date: Date, includeMilliseconds = false) =
     return includeMilliseconds ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
 };
 
+/**
+ * Converts a Date object (representing a UTC time) to a Local Date object
+ * where the Local time matches the UTC time of the input.
+ * This is the inverse of convertLocalTimeToUTC.
+ * @param {Date} date - Reference Date object (treated as UTC)
+ * @returns {Date} Date object where Local time matches input's UTC time
+ */
+export const convertUTCToLocalTime = (date: Date) => {
+    if (!(date instanceof Date)) {
+        throw new Error('Parameter must be a Date object');
+    }
+
+    return new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds(),
+        date.getUTCMilliseconds()
+    );
+};
+
 export const removeUndefinedValues = (params: DotPageAssetParams) => {
     return Object.fromEntries(Object.entries(params).filter(([_, value]) => value !== undefined));
 };
