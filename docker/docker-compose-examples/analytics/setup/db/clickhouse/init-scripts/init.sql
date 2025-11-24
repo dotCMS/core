@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     -- ######################################################
     --                  Jitsu Properties
     -- ######################################################
-    _timestamp DateTime,
+    _timestamp DateTime64(3, 'UTC'),
     event_type String,
     original_url String,
     doc_host String,
