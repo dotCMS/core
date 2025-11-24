@@ -17,7 +17,7 @@
         </ng-template>
     </p-tree>
 } @else {
-    <div class="flex w-full h-full flex-column p-2">
+    <div class="flex w-full h-full flex-col p-2">
         @for (col of $fakeColumns(); track $index) {
             <p-skeleton styleClass="mb-3" [width]="col" />
         }

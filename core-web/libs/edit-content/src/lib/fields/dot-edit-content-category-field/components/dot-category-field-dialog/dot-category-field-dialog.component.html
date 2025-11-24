@@ -9,7 +9,7 @@
     [header]="'edit.content.category-field.dialog.header.select-categories' | dm"
     styleClass="category-field__dialog">
     <div class="category-field__content h-full w-full">
-        <div class="category-field__left-pane flex flex-column">
+        <div class="category-field__left-pane flex flex-col">
             <div class="category-field__search">
                 <dot-category-field-search
                     (changeMode)="store.setMode($event)"
@@ -37,7 +37,7 @@
         </div>
 
         <div
-            class="category-field__right-pane flex flex-column"
+            class="category-field__right-pane flex flex-col"
             [ngClass]="{ empty: !store.dialog.selected().length }">
             @if (store.dialog.selected().length) {
                 <div class="category-field__selected-categories-list flex-1">

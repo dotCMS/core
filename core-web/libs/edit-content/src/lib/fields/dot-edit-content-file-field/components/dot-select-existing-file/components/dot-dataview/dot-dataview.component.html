@@ -13,7 +13,7 @@
     [(selection)]="$selectedProduct"
     (onRowSelect)="onRowSelect.emit($event.data)"
     [globalFilterFields]="['title', 'modUserName']"
-    styleClass="flex flex-column h-full justify-content-between">
+    styleClass="flex flex-col h-full justify-content-between">
     <ng-template pTemplate="emptymessage">
         <tr>
             <td colspan="4">

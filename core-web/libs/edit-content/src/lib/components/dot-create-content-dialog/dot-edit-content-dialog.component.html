@@ -1,4 +1,4 @@
-<div class="edit-content-dialog flex flex-column" data-testid="edit-content-dialog">
+<div class="edit-content-dialog flex flex-col" data-testid="edit-content-dialog">
     @switch (state()) {
         @case (ComponentStatus.LOADED) {
             <dot-edit-content-form-layout
@@ -10,7 +10,7 @@
         }
         @case (ComponentStatus.ERROR) {
             <div
-                class="edit-content-dialog__error flex flex-column align-items-center justify-content-center text-center flex-1"
+                class="edit-content-dialog__error flex flex-col align-items-center justify-content-center text-center flex-1"
                 data-testid="error-state">
                 <i class="pi pi-exclamation-triangle edit-content-dialog__error-icon"></i>
                 <h3 class="edit-content-dialog__error-title">
@@ -26,7 +26,7 @@
         }
         @default {
             <div
-                class="edit-content-dialog__loading flex flex-column align-items-center justify-content-center text-center flex-1"
+                class="edit-content-dialog__loading flex flex-col align-items-center justify-content-center text-center flex-1"
                 data-testid="loading-state">
                 <div class="edit-content-dialog__loading-spinner">
                     <i class="pi pi-spin pi-spinner"></i>

@@ -10,7 +10,7 @@
     <p-tabs
         [value]="activeIndex"
         (onChange)="onActiveIndexChange($event)"
-        styleClass="h-full flex flex-column"
+        styleClass="h-full flex flex-col"
         data-testId="sidebar-tabs">
         <!-- Add prepend and append areas to the tabs -->
         <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
@@ -27,7 +27,7 @@
             </p-tab>
         </p-tablist>
         <p-tabpanels>
-            <p-tabpanel [value]="0" class="flex flex-column tab-panel">
+            <p-tabpanel [value]="0" class="flex flex-col tab-panel">
                 <!-- Information section -->
                 <dot-edit-content-sidebar-section
                     [title]="'edit.content.sidebar.general.title' | dm"
@@ -74,7 +74,7 @@
                         data-testId="workflow" />
                 </dot-edit-content-sidebar-section>
             </p-tabpanel>
-            <p-tabpanel [value]="1" class="h-full flex-column tab-panel tab-panel--history">
+            <p-tabpanel [value]="1" class="h-full flex-col tab-panel tab-panel--history">
                 <!-- History section -->
                 <dot-edit-content-sidebar-history
                     [historyItems]="$versionsItems()"
@@ -90,7 +90,7 @@
                     (deletePushPublishHistory)="onDeletePushPublishHistory()"
                     data-testId="history" />
             </p-tabpanel>
-            <p-tabpanel [value]="2" class="h-full flex-column tab-panel tab-panel--activities">
+            <p-tabpanel [value]="2" class="h-full flex-col tab-panel tab-panel--activities">
                 <!-- Activities section -->
                 <dot-edit-content-sidebar-activities
                     [initialContentletState]="$initialContentletState()"

@@ -10,7 +10,7 @@
     <ng-template pTemplate="item" let-item>
         <a
             pRipple
-            class="flex flex-column p-menuitem-link menu-item align-items-start"
+            class="flex flex-col p-menuitem-link menu-item align-items-start"
             [ngClass]="{ 'menu-item--active': item.id === $currentMode() }"
             (click)="onModeChange(item.id)"
             [attr.data-testId]="item.id + '-menu-item'">

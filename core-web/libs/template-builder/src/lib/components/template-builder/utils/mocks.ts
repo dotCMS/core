@@ -513,7 +513,7 @@ export const MOCK_TEXT = 'Header';
 
 export const MOCK_SELECTED_STYLE_CLASSES = [
     'd-flex',
-    'flex-column',
+    'flex-col',
     'justify-content-center',
     'align-items-center',
     'justify-content-start',
@@ -543,9 +543,9 @@ export const MOCK_STYLE_CLASSES_FILE = {
         'd-sm-inline',
         'd-sm-inline-block',
         'flex-row',
-        'flex-column',
+        'flex-col',
         'flex-row-reverse',
-        'flex-column-reverse',
+        'flex-col-reverse',
         'flex-grow-0',
         'flex-grow-1',
         'flex-shrink-0',

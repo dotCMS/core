@@ -53,7 +53,7 @@ const meta: Meta<DataView> = {
             <ng-template pTemplate="list" let-products>
                 @for(item of products; track item.id){
                     <div class="w-full">
-                        <div class="flex flex-column sm:flex-row sm:align-items-center p-4 gap-3">
+                        <div class="flex flex-col sm:flex-row sm:align-items-center p-4 gap-3">
                             <div class="md:w-10rem relative">
                                 <img class="block xl:block mx-auto border-round w-full" [src]="item.image" [alt]="item.name" />
                             </div>
@@ -87,7 +87,7 @@ export const Grid: Story = {
                 <div class="grid grid-nogutter">
                     @for(item of products; track item.id){
                         <div class="col-4">
-                            <div class="flex flex-column sm:flex-row sm:align-items-center p-4 gap-3">
+                            <div class="flex flex-col sm:flex-row sm:align-items-center p-4 gap-3">
                                 <div class="md:w-10rem relative">
                                     <img class="block xl:block mx-auto border-round w-full" [src]="item.image" [alt]="item.name" />
                                 </div>
