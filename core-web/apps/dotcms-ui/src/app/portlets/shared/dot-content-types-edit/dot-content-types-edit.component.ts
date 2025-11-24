@@ -233,7 +233,6 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     saveFields(layout: DotCMSContentTypeLayoutRow[]): void {
-        console.log('saveFields', layout);
         this.loadingFields = true;
         this.fieldService
             .saveFields(this.data.id, layout)
@@ -262,7 +261,6 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     editField(fieldsToEdit: DotCMSContentTypeField): void {
-        console.log('fieldsToEdit', fieldsToEdit);
         this.loadingFields = true;
         this.fieldService
             .updateField(this.data.id, fieldsToEdit)
