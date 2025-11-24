@@ -33,17 +33,21 @@
             <!-- Add prepend and append areas to the tabs -->
             <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
 
-            <!-- Tabs are lazy -->
-            @for (tab of tabs; track tab) {
-                <p-tab [@fadeIn]>
-                    <ng-template pTemplate="header">
+            <p-tablist>
+                <!-- Tabs are lazy -->
+                @for (tab of tabs; track tab; let i = $index) {
+                    <p-tab [value]="i" [@fadeIn]>
                         {{ tab.title }}
-                    </ng-template>
-                    <ng-template pTemplate="content">
+                    </p-tab>
+                }
+            </p-tablist>
+            <p-tabpanels>
+                @for (tab of tabs; track tab; let i = $index) {
+                    <p-tabpanel [value]="i">
                         <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />
-                    </ng-template>
-                </p-tab>
-            }
+                    </p-tabpanel>
+                }
+            </p-tabpanels>
         </p-tabs>
 
         <!-- Template for the tab tabPanel -->

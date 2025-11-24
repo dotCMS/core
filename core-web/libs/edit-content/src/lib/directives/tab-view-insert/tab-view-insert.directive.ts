@@ -33,7 +33,10 @@ export class TabViewInsertDirective implements AfterViewInit {
 
     private insertContent() {
         const tabViewElement = this.#tabView.el.nativeElement;
-        const tabViewNavContent = tabViewElement.querySelector('.p-tabview-nav-content');
+        // Try new tabs API structure first (.p-tablist), fallback to old (.p-tabview-nav-content)
+        const tabViewNavContent =
+            tabViewElement.querySelector('.p-tablist') ||
+            tabViewElement.querySelector('.p-tabview-nav-content');
 
         if (!tabViewNavContent) {
             console.warn('TabView nav content not found');

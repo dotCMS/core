@@ -65,7 +65,7 @@ const meta: Meta<Args> = {
             })
         },
         template: `
-            <form [formGroup]="form" class="w-full flex flex-column">
+            <form [formGroup]="form" class="w-full flex flex-col">
                 <div class="flex align-items-center">
                     <dot-edit-content-host-folder-field
                         [formControlName]="field.variable"

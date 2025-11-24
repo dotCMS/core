@@ -16,12 +16,13 @@
     </dot-content-type-layout>
 }
 
-<dot-dialog
-    (hide)="onDialogHide()"
+<p-dialog
     [(visible)]="show"
-    [actions]="dialogActions"
-    [closeable]="dialogCloseable"
-    [header]="templateInfo.header">
+    [header]="templateInfo.header"
+    [modal]="true"
+    [closable]="dialogCloseable"
+    [style]="{ width: '50rem' }"
+    (visibleChange)="onDialogHide()">
     @if (show) {
         <dot-content-types-form
             (valid)="setDialogOkButtonState($event)"
@@ -30,4 +31,21 @@
             [data]="data"
             #form></dot-content-types-form>
     }
-</dot-dialog>
+    <ng-template pTemplate="footer">
+        @if (dialogActions?.cancel) {
+            <p-button
+                [label]="dialogActions.cancel.label"
+                [disabled]="dialogActions.cancel.disabled"
+                severity="secondary"
+                (click)="dialogActions.cancel.action?.()"
+                data-testId="dotDialogCancelAction"></p-button>
+        }
+        @if (dialogActions?.accept) {
+            <p-button
+                [label]="dialogActions.accept.label"
+                [disabled]="dialogActions.accept.disabled"
+                (click)="dialogActions.accept.action?.()"
+                data-testId="dotDialogAcceptAction"></p-button>
+        }
+    </ng-template>
+</p-dialog>

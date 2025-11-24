@@ -5,15 +5,15 @@
         </label>
     </div>
     <p-tabs
-        (onChange)="handleTabClick($event, $event.index)"
-        (onClose)="removeItem($event.index)"
+        [value]="activeTabIndex"
+        (onChange)="handleTabClick($event, $event.value)"
         [scrollable]="true"
         [@contentCodeAnimation]>
-        <p-tab headerStyleClass="tab-panel-btn">
-            <ng-template pTemplate="header">
+        <p-tablist>
+            <p-tab [value]="0" styleClass="tab-panel-btn">
                 @if (contentTypes.length > 0) {
                     <i
-                        (click)="handleTabClick($event); actionsMenu.toggle($event)"
+                        (click)="handleTabClick($event, 0); actionsMenu.toggle($event)"
                         class="pi pi-plus add-tab-icon"></i>
                 } @else {
                     <p-skeleton borderRadius="0px" height="3.9rem" width="4rem"></p-skeleton>
@@ -28,10 +28,25 @@
                     }"
                     #actionsMenu
                     appendTo="body"></p-menu>
-            </ng-template>
-            <ng-template pTemplate="content">
+            </p-tab>
+            @for (
+                containerContent of getcontainerStructures.controls;
+                track containerContent;
+                let i = $index
+            ) {
+                <p-tab [value]="i + 1" formArrayName="containerStructures">
+                    <span>{{ contentTypeNamesById[containerContent.value.structureId] }}</span>
+                    <i
+                        (click)="removeItem(i + 1); $event.stopPropagation()"
+                        class="pi pi-times p-tab-close-icon"
+                        style="margin-left: 0.5rem;"></i>
+                </p-tab>
+            }
+        </p-tablist>
+        <p-tabpanels>
+            <p-tabpanel [value]="0">
                 <div
-                    class="dot-container-code__empty-content flex justify-content-center align-items-center flex-column">
+                    class="dot-container-code__empty-content flex justify-content-center align-items-center flex-col">
                     <dot-icon data-testId="code" name="code" size="100"></dot-icon>
                     <div
                         class="dot-container-code__empty-content-title"
@@ -50,36 +65,33 @@
                         </a>
                     </div>
                 </div>
-            </ng-template>
-        </p-tab>
-        @for (
-            containerContent of getcontainerStructures.controls;
-            track containerContent;
-            let i = $index
-        ) {
-            <p-tab [closable]="true" formArrayName="containerStructures">
-                <ng-template pTemplate="header">
-                    {{ contentTypeNamesById[containerContent.value.structureId] }}
-                </ng-template>
-                <div [formGroupName]="i">
-                    <button
-                        (click)="handleAddVariable(containerContent.value)"
-                        [disabled]="contentTypes.length === 0"
-                        [label]="'add-variable' | dm"
-                        class="p-button-outlined dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
-                        pButton></button>
-                    <dot-textarea-content
-                        (monacoInit)="monacoInit($event)"
-                        [attr.data-testid]="containerContent.value.structureId"
-                        [customStyles]="{ border: 'none', height: '500px' }"
-                        [editorName]="containerContent.value.structureId"
-                        [show]="['code']"
-                        [value]="containerContent.value.code"
-                        #body
-                        formControlName="code"
-                        language="html"></dot-textarea-content>
-                </div>
-            </p-tab>
-        }
+            </p-tabpanel>
+            @for (
+                containerContent of getcontainerStructures.controls;
+                track containerContent;
+                let i = $index
+            ) {
+                <p-tabpanel [value]="i + 1">
+                    <div [formGroupName]="i">
+                        <button
+                            (click)="handleAddVariable(containerContent.value)"
+                            [disabled]="contentTypes.length === 0"
+                            [label]="'add-variable' | dm"
+                            class="p-button-outlined dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
+                            pButton></button>
+                        <dot-textarea-content
+                            (monacoInit)="monacoInit($event)"
+                            [attr.data-testid]="containerContent.value.structureId"
+                            [customStyles]="{ border: 'none', height: '500px' }"
+                            [editorName]="containerContent.value.structureId"
+                            [show]="['code']"
+                            [value]="containerContent.value.code"
+                            #body
+                            formControlName="code"
+                            language="html"></dot-textarea-content>
+                    </div>
+                </p-tabpanel>
+            }
+        </p-tabpanels>
     </p-tabs>
 </div>

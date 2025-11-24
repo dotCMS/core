@@ -6,9 +6,11 @@ import {
     ElementRef,
     EventEmitter,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
+    SimpleChanges,
     ViewChild,
     inject
 } from '@angular/core';
@@ -19,6 +21,8 @@ import {
     Validators
 } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
@@ -29,7 +33,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType, DotDialogActions, DotMenu } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotDialogComponent,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
@@ -47,17 +50,18 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
     imports: [
         CommonModule,
         ReactiveFormsModule,
+        DialogModule,
+        ButtonModule,
         SelectModule,
         InputTextModule,
         RadioButtonModule,
         DotAutofocusDirective,
-        DotDialogComponent,
         DotFieldValidationMessageComponent,
         DotFieldRequiredDirective,
         DotMessagePipe
     ]
 })
-export class DotAddToMenuComponent implements OnInit, OnDestroy {
+export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     fb = inject(UntypedFormBuilder);
     private dotMessageService = inject(DotMessageService);
     private dotMenuService = inject(DotMenuService);
@@ -89,6 +93,15 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
         );
     }
 
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes.contentType) {
+            this.dialogShow = !!this.contentType;
+            if (this.contentType) {
+                this.initForm();
+            }
+        }
+    }
+
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
@@ -100,6 +113,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
      */
     close(): void {
         this.cancel.emit(true);
+        this.dialogShow = false;
     }
 
     /**

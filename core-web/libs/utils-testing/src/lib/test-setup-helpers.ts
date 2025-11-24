@@ -72,16 +72,34 @@ export const MOCK_DOTCMS_COMPONENTS = [
  * Mock components for PrimeNG elements that commonly cause issues
  */
 @Component({
-    selector: 'p-tabView',
+    selector: 'p-tabs, p-tabView',
     template: '<ng-content></ng-content>'
 })
 export class MockPTabView {}
 
 @Component({
-    selector: 'p-tabPanel',
+    selector: 'p-tabPanel, p-tabpanel',
     template: '<ng-content></ng-content>'
 })
 export class MockPTabPanel {}
+
+@Component({
+    selector: 'p-tablist',
+    template: '<ng-content></ng-content>'
+})
+export class MockPTabList {}
+
+@Component({
+    selector: 'p-tab',
+    template: '<ng-content></ng-content>'
+})
+export class MockPTab {}
+
+@Component({
+    selector: 'p-tabpanels',
+    template: '<ng-content></ng-content>'
+})
+export class MockPTabPanels {}
 
 @Component({
     selector: 'p-dropdown',
@@ -98,7 +116,15 @@ export class MockPButton {}
 /**
  * Collection of commonly needed mock PrimeNG components
  */
-export const MOCK_PRIMENG_COMPONENTS = [MockPTabView, MockPTabPanel, MockPSelect, MockPButton];
+export const MOCK_PRIMENG_COMPONENTS = [
+    MockPTabView,
+    MockPTabPanel,
+    MockPTabList,
+    MockPTab,
+    MockPTabPanels,
+    MockPSelect,
+    MockPButton
+];
 
 /**
  * All mock components combined

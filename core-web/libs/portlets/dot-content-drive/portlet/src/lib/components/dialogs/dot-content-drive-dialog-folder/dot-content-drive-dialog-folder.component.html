@@ -1,93 +1,99 @@
-<p-tabs [formGroup]="folderForm">
-    <p-tab class="folder-dialog-tab-content">
-        <ng-template pTemplate="header">
-            {{ 'content-drive.dialog.folder.general.header' | dm }}
-        </ng-template>
-        <div class="folder-dialog-field">
-            <label [checkIsRequiredControl]="'title'" for="title" dotFieldRequired>
-                {{ 'content-drive.dialog.folder.field.title' | dm }}
-            </label>
-            <input
-                pInputText
-                id="title"
-                aria-describedby="title-help"
-                formControlName="title"
-                [autofocus]="true" />
-        </div>
-    </p-tab>
-    <p-tab class="folder-dialog-tab-content">
-        <ng-template pTemplate="header">
-            {{ 'content-drive.dialog.folder.advanced.header' | dm }}
-        </ng-template>
-        <div class="folder-dialog-field">
-            <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
-                {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
-            </label>
-            <p-inputNumber inputId="minmax" mode="decimal" [min]="0" formControlName="sortOrder" />
-        </div>
+<div [formGroup]="folderForm">
+    <p-tabs value="0">
+        <p-tablist>
+            <p-tab [value]="0">
+                {{ 'content-drive.dialog.folder.general.header' | dm }}
+            </p-tab>
+            <p-tab [value]="1">
+                {{ 'content-drive.dialog.folder.advanced.header' | dm }}
+            </p-tab>
+        </p-tablist>
+        <p-tabpanels>
+            <p-tabpanel [value]="0" class="folder-dialog-tab-content">
+                <div class="folder-dialog-field">
+                    <label [checkIsRequiredControl]="'title'" for="title" dotFieldRequired>
+                        {{ 'content-drive.dialog.folder.field.title' | dm }}
+                    </label>
+                    <input
+                        pInputText
+                        id="title"
+                        aria-describedby="title-help"
+                        formControlName="title"
+                        [autofocus]="true" />
+                </div>
+            </p-tabpanel>
+            <p-tabpanel [value]="1" class="folder-dialog-tab-content">
+                <div class="folder-dialog-field">
+                    <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
+                        {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
+                    </label>
+                    <p-inputNumber inputId="minmax" mode="decimal" [min]="0" formControlName="sortOrder" />
+                </div>
 
-        <div class="folder-dialog-field">
-            <label
-                [checkIsRequiredControl]="'allowedFileExtensions'"
-                for="allowedFileExtensions"
-                dotFieldRequired>
-                {{ 'content-drive.dialog.folder.field.allowed-file-extensions' | dm }}
-            </label>
-            <p-autoComplete
-                formControlName="allowedFileExtensions"
-                data-testid="allowed-file-extensions-autocomplete"
-                (completeMethod)="onCompleteMethod($event)"
-                [suggestions]="$filteredAllowedFileExtensions()"
-                [multiple]="true"
-                (keyup.enter)="onEnterKey($event)" />
-            <small id="allowedFileExtensions-help">
-                {{ 'content-drive.dialog.folder.field.allowed-file-extensions.help' | dm }}
-            </small>
-        </div>
+                <div class="folder-dialog-field">
+                    <label
+                        [checkIsRequiredControl]="'allowedFileExtensions'"
+                        for="allowedFileExtensions"
+                        dotFieldRequired>
+                        {{ 'content-drive.dialog.folder.field.allowed-file-extensions' | dm }}
+                    </label>
+                    <p-autoComplete
+                        formControlName="allowedFileExtensions"
+                        data-testid="allowed-file-extensions-autocomplete"
+                        (completeMethod)="onCompleteMethod($event)"
+                        [suggestions]="$filteredAllowedFileExtensions()"
+                        [multiple]="true"
+                        (keyup.enter)="onEnterKey($event)" />
+                    <small id="allowedFileExtensions-help">
+                        {{ 'content-drive.dialog.folder.field.allowed-file-extensions.help' | dm }}
+                    </small>
+                </div>
 
-        <div class="folder-dialog-field">
-            <label
-                [checkIsRequiredControl]="'defaultFileAssetType'"
-                for="defaultFileAssetType"
-                dotFieldRequired>
-                {{ 'content-drive.dialog.folder.field.default-file-asset-type' | dm }}
-            </label>
-            <p-select
-                [options]="$fileAssetTypes()"
-                optionLabel="name"
-                optionValue="variable"
-                [loading]="false"
-                id="defaultFileAssetType"
-                aria-describedby="defaultFileAssetType-help"
-                [placeholder]="
-                    'content-drive.dialog.folder.field.default-file-asset-type.help' | dm
-                "
-                formControlName="defaultFileAssetType" />
-        </div>
+                <div class="folder-dialog-field">
+                    <label
+                        [checkIsRequiredControl]="'defaultFileAssetType'"
+                        for="defaultFileAssetType"
+                        dotFieldRequired>
+                        {{ 'content-drive.dialog.folder.field.default-file-asset-type' | dm }}
+                    </label>
+                    <p-select
+                        [options]="$fileAssetTypes()"
+                        optionLabel="name"
+                        optionValue="variable"
+                        [loading]="false"
+                        id="defaultFileAssetType"
+                        aria-describedby="defaultFileAssetType-help"
+                        [placeholder]="
+                            'content-drive.dialog.folder.field.default-file-asset-type.help' | dm
+                        "
+                        formControlName="defaultFileAssetType" />
+                </div>
 
-        <div class="folder-dialog-field">
-            <label [checkIsRequiredControl]="'url'" for="url" dotFieldRequired>
-                {{ 'content-drive.dialog.folder.field.url' | dm }}
-            </label>
-            <input pInputText id="url" aria-describedby="url-help" formControlName="url" />
-        </div>
+                <div class="folder-dialog-field">
+                    <label [checkIsRequiredControl]="'url'" for="url" dotFieldRequired>
+                        {{ 'content-drive.dialog.folder.field.url' | dm }}
+                    </label>
+                    <input pInputText id="url" aria-describedby="url-help" formControlName="url" />
+                </div>
 
-        <div class="folder-dialog-field">
-            <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
-            <p class="folder-dialog-path">{{ $finalPath() }}</p>
-        </div>
+                <div class="folder-dialog-field">
+                    <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
+                    <p class="folder-dialog-path">{{ $finalPath() }}</p>
+                </div>
 
-        <div class="folder-dialog-field">
-            <label [checkIsRequiredControl]="'showOnMenu'" for="showOnMenu" dotFieldRequired>
-                {{ 'content-drive.dialog.folder.field.show-on-menu' | dm }}
-            </label>
-            <p-toggleSwitch
-                id="showOnMenu"
-                aria-describedby="showOnMenu-help"
-                formControlName="showOnMenu" />
-        </div>
-    </p-tab>
-</p-tabs>
+                <div class="folder-dialog-field">
+                    <label [checkIsRequiredControl]="'showOnMenu'" for="showOnMenu" dotFieldRequired>
+                        {{ 'content-drive.dialog.folder.field.show-on-menu' | dm }}
+                    </label>
+                    <p-toggleSwitch
+                        id="showOnMenu"
+                        aria-describedby="showOnMenu-help"
+                        formControlName="showOnMenu" />
+                </div>
+            </p-tabpanel>
+        </p-tabpanels>
+    </p-tabs>
+</div>
 
 <div class="folder-dialog-footer">
     <button

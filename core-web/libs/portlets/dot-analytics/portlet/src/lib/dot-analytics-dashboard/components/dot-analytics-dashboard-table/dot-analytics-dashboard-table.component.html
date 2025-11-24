@@ -14,7 +14,7 @@
                 <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
             </ng-template>
             <!-- Loading State -->
-            <div class="flex flex-column gap-3 h-full">
+            <div class="flex flex-col gap-3 h-full">
                 <!-- Custom Table Skeleton -->
                 <div class="p-datatable p-datatable-sm">
                     <!-- Skeleton Header -->
@@ -66,7 +66,7 @@
                 <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
             </ng-template>
             <!-- Error State -->
-            <div class="flex flex-column gap-3 h-full">
+            <div class="flex flex-col gap-3 h-full">
                 <dot-analytics-state-message
                     message="analytics.error.loading.top-pages-table"
                     icon="pi-exclamation-triangle" />
@@ -80,7 +80,7 @@
                 <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
             </ng-template>
             <!-- Empty State -->
-            <div class="flex flex-column gap-3 h-full">
+            <div class="flex flex-col gap-3 h-full">
                 <dot-analytics-state-message
                     message="analytics.table.empty.description"
                     icon="pi-info-circle" />
@@ -93,7 +93,7 @@
             <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
         </ng-template>
         <!-- Loaded State -->
-        <div class="flex flex-column gap-3 h-full">
+        <div class="flex flex-col gap-3 h-full">
             <!-- Real Table -->
             <p-table
                 [value]="tableData"

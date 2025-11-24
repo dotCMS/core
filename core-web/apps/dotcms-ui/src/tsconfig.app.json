@@ -2,7 +2,10 @@
     "extends": "../tsconfig.json",
     "compilerOptions": {
         "outDir": "../out-tsc/app",
-        "types": []
+        "types": [],
+        "module": "NodeNext",
+        "moduleResolution": "nodenext",
+        "resolvePackageJsonExports": true
     },
     "files": ["main.ts", "polyfills.ts"],
     "include": ["src/**/*.d.ts"],

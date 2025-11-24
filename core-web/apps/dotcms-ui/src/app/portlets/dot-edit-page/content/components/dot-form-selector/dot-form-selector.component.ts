@@ -12,19 +12,21 @@ import {
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule, Dialog } from 'primeng/dialog';
 import { Table, TableModule } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
+
 import { PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-form-selector',
     templateUrl: './dot-form-selector.component.html',
     styleUrls: ['./dot-form-selector.component.scss'],
-    imports: [TableModule, DotDialogComponent, ButtonModule, DotMessagePipe],
+    imports: [TableModule, DialogModule, ButtonModule, DotMessagePipe],
     providers: [PaginatorService]
 })
 export class DotFormSelectorComponent implements OnInit, OnChanges {
@@ -38,7 +40,7 @@ export class DotFormSelectorComponent implements OnInit, OnChanges {
 
     @ViewChild('datatable', { static: true }) datatable: Table;
 
-    @ViewChild('dialog', { static: true }) dotDialog: DotDialogComponent;
+    @ViewChild('dialog', { static: true }) dotDialog: Dialog;
 
     items: DotCMSContentType[];
     contentMinHeight: string;
@@ -50,13 +52,12 @@ export class DotFormSelectorComponent implements OnInit, OnChanges {
     ngOnChanges(changes: SimpleChanges) {
         setTimeout(() => {
             if (changes.show.currentValue) {
+                // container is already the native element
+                const dialogElement = this.dotDialog.container as HTMLElement;
+                const tableElement = dialogElement?.querySelector('.p-datatable');
                 this.contentMinHeight =
-                    this.paginatorService.totalRecords > this.paginatorService.paginationPerPage
-                        ? `${
-                              this.dotDialog.dialog.nativeElement
-                                  .querySelector('.p-datatable')
-                                  .getBoundingClientRect().height
-                          }px`
+                    this.paginatorService.totalRecords > this.paginatorService.paginationPerPage && tableElement
+                        ? `${tableElement.getBoundingClientRect().height}px`
                         : '';
                 this.datatable.tableViewChild.nativeElement.querySelector('button')?.focus();
             }

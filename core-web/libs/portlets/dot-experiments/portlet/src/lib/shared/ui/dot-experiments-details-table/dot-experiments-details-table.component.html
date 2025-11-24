@@ -1,6 +1,6 @@
 @if (!isLoading) {
     @if (!isEmpty) {
-        <div class="flex flex-column gap-2">
+        <div class="flex flex-col gap-2">
             @if (title) {
                 <div
                     class="header-title flex flex-row flex-wrap align-items-center"
@@ -10,7 +10,7 @@
                     </ng-container>
                 </div>
             }
-            <div class="flex flex-column gap-3 details">
+            <div class="flex flex-col gap-3 details">
                 <div class="details__headers grid grid-nogutter">
                     <ng-container
                         *ngTemplateOutlet="
@@ -18,7 +18,7 @@
                             context: { $implicit: data }
                         "></ng-container>
                 </div>
-                <div class="details__rows-wrapper flex flex-column gap-2">
+                <div class="details__rows-wrapper flex flex-col gap-2">
                     @for (row of data; track row) {
                         <div class="details__row grid grid-nogutter" data-testId="detail-row">
                             <ng-container
@@ -54,7 +54,7 @@
         </div>
     } @else {
         <div
-            class="empty flex justify-content-center align-items-center flex-column"
+            class="empty flex justify-content-center align-items-center flex-col"
             data-testId="empty-template">
             <i class="empty__icon pi pi-table mb-2"></i>
             <p class="empty__message m-0" data-testId="empty-title">

@@ -180,7 +180,9 @@ const ExtraActionsTemplate = `
         <p-checkbox label="Some stuff"></p-checkbox>
     </ng-container>
     <ng-container right>
-        <button pButton label="Another action" class="p-button-secondary"></button>
+        <button pButton class="p-button-secondary">
+            <span pButtonLabel>Another action</span>
+        </button>
         <p-checkbox label="Whatever"></p-checkbox>
     </ng-container>
     </dot-portlet-toolbar>

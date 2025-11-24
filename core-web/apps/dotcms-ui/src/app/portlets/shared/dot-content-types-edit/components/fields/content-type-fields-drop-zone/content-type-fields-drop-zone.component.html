@@ -25,80 +25,101 @@
     <dot-loading-indicator [fullscreen]="true"></dot-loading-indicator>
 </div>
 
-<dot-dialog
-    (hide)="removeFieldsWithoutId()"
+<p-dialog
     [(visible)]="displayDialog"
-    [actions]="dialogActions"
-    [hideButtons]="hideButtons"
     [header]="currentFieldType?.label"
-    width="45rem">
-    <p-tabs (onChange)="handleTabChange($event.index)" [(value)]="activeTab">
-        <p-tab>
-            <ng-template pTemplate="header">
+    [modal]="true"
+    [style]="{ width: '45rem' }"
+    (visibleChange)="removeFieldsWithoutId()">
+    <p-tabs (onChange)="handleTabChange($event.value)" [(value)]="activeTab">
+        <p-tablist>
+            <p-tab [value]="0">
                 {{ 'contenttypes.dropzone.tab.overview' | dm }}
-            </ng-template>
-            @if (
-                currentFieldType?.clazz ===
-                'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
-            ) {
-                <dot-convert-to-block-info
-                    (action)="scrollTo($event)"
-                    [currentFieldType]="currentFieldType"
-                    [currentField]="currentField"></dot-convert-to-block-info>
-            }
-            <div class="wrapper">
-                <dot-content-type-fields-properties-form
-                    (saveField)="saveFieldsHandler($event)"
-                    (valid)="setDialogOkButtonState($event)"
-                    [formFieldData]="currentField"
-                    [contentType]="contentType"
-                    #fieldPropertiesForm></dot-content-type-fields-properties-form>
-                @if (
-                    !!currentField?.id &&
-                    currentFieldType?.clazz ===
-                        'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
-                ) {
-                    <dot-convert-wysiwyg-to-block
-                        (convert)="convertWysiwygToBlock($event)"
-                        [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
-                }
-            </div>
-        </p-tab>
-        @if (!!currentField?.id && isFieldWithSettings) {
-            <p-tab [disabled]="!currentField?.id" #panel>
-                <ng-template pTemplate="header">
-                    {{ 'Settings' | dm }}
-                </ng-template>
-                @switch (this.currentFieldType?.clazz) {
-                    @case ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
-                        <dot-block-editor-settings
-                            (changeControls)="changesDialogActions($event)"
-                            (save)="toggleDialog()"
-                            (valid)="setDialogOkButtonState($event)"
-                            [field]="currentField"
-                            [isVisible]="panel.selected"></dot-block-editor-settings>
-                    }
-                    @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
-                        <dot-binary-settings
-                            (save)="toggleDialog()"
-                            (valid)="setDialogOkButtonState($event)"
-                            (changeControls)="changesDialogActions($event)"
-                            [field]="currentField"
-                            [isVisible]="panel.selected"></dot-binary-settings>
-                    }
-                }
             </p-tab>
-        }
-
-        <p-tab [disabled]="!currentField?.id" #panel>
-            <ng-template pTemplate="header">
+            @if (!!currentField?.id && isFieldWithSettings) {
+                <p-tab [value]="1" [disabled]="!currentField?.id">
+                    {{ 'Settings' | dm }}
+                </p-tab>
+            }
+            <p-tab [value]="!!currentField?.id && isFieldWithSettings ? 2 : 1" [disabled]="!currentField?.id">
                 {{ 'contenttypes.dropzone.tab.variables' | dm }}
-            </ng-template>
-            <ng-template pTemplate="content">
+            </p-tab>
+        </p-tablist>
+        <p-tabpanels>
+            <p-tabpanel [value]="0">
+                @if (
+                    currentFieldType?.clazz ===
+                    'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+                ) {
+                    <dot-convert-to-block-info
+                        (action)="scrollTo($event)"
+                        [currentFieldType]="currentFieldType"
+                        [currentField]="currentField"></dot-convert-to-block-info>
+                }
+                <div class="wrapper">
+                    <dot-content-type-fields-properties-form
+                        (saveField)="saveFieldsHandler($event)"
+                        (valid)="setDialogOkButtonState($event)"
+                        [formFieldData]="currentField"
+                        [contentType]="contentType"
+                        #fieldPropertiesForm></dot-content-type-fields-properties-form>
+                    @if (
+                        !!currentField?.id &&
+                        currentFieldType?.clazz ===
+                            'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+                    ) {
+                        <dot-convert-wysiwyg-to-block
+                            (convert)="convertWysiwygToBlock($event)"
+                            [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
+                    }
+                </div>
+            </p-tabpanel>
+            @if (!!currentField?.id && isFieldWithSettings) {
+                <p-tabpanel [value]="1">
+                    @switch (this.currentFieldType?.clazz) {
+                        @case ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
+                            <dot-block-editor-settings
+                                (changeControls)="changesDialogActions($event)"
+                                (save)="toggleDialog()"
+                                (valid)="setDialogOkButtonState($event)"
+                                [field]="currentField"
+                                [isVisible]="activeTab === 1"></dot-block-editor-settings>
+                        }
+                        @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
+                            <dot-binary-settings
+                                (save)="toggleDialog()"
+                                (valid)="setDialogOkButtonState($event)"
+                                (changeControls)="changesDialogActions($event)"
+                                [field]="currentField"
+                                [isVisible]="activeTab === 1"></dot-binary-settings>
+                        }
+                    }
+                </p-tabpanel>
+            }
+            <p-tabpanel [value]="!!currentField?.id && isFieldWithSettings ? 2 : 1">
                 <dot-content-type-fields-variables
-                    [showTable]="panel.selected"
+                    [showTable]="activeTab === (!!currentField?.id && isFieldWithSettings ? 2 : 1)"
                     [field]="currentField"></dot-content-type-fields-variables>
-            </ng-template>
-        </p-tab>
+            </p-tabpanel>
+        </p-tabpanels>
     </p-tabs>
-</dot-dialog>
+    @if (dialogActions && !hideButtons) {
+        <ng-template pTemplate="footer">
+            @if (dialogActions.cancel) {
+                <p-button
+                    [label]="dialogActions.cancel.label"
+                    [disabled]="dialogActions.cancel.disabled"
+                    severity="secondary"
+                    (click)="dialogActions.cancel.action()"
+                    data-testId="dotDialogCancelAction"></p-button>
+            }
+            @if (dialogActions.accept) {
+                <p-button
+                    [label]="dialogActions.accept.label"
+                    [disabled]="dialogActions.accept.disabled"
+                    (click)="dialogActions.accept.action()"
+                    data-testId="dotDialogAcceptAction"></p-button>
+            }
+        </ng-template>
+    }
+</p-dialog>

@@ -1,5 +1,5 @@
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotDialogComponent, DotIconComponent } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';
 import { DotActionButtonComponent } from './view/components/_common/dot-action-button/dot-action-button.component';
@@ -28,22 +28,18 @@ import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main
 import { MainComponentLegacyComponent } from './view/components/main-legacy/main-legacy.component';
 
 // Non-standalone components (traditional NgModule components)
-export const COMPONENTS = [
-    MainCoreLegacyComponent,
-    DotLogOutContainerComponent,
-    GlobalSearchComponent
-];
+export const COMPONENTS = [DotLogOutContainerComponent, GlobalSearchComponent];
 
 // Standalone components (migrated to standalone)
 export const STANDALONE_COMPONENTS = [
     AppComponent,
     MainComponentLegacyComponent,
+    MainCoreLegacyComponent,
     DotAlertConfirmComponent,
     DotLoginPageComponent,
     DotToolbarComponent,
     DotActionButtonComponent,
     DotEditContentletComponent,
-    DotDialogComponent,
     DotIconComponent,
     DotTextareaContentComponent,
     DotWorkflowTaskDetailComponent,

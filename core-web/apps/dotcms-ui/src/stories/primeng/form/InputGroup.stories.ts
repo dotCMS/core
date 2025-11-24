@@ -47,7 +47,9 @@ const InputGroupTemplate = `
 <div class="grid p-fluid">
   <div class="p-col-12 p-md-4 mb-3">
       <div class="p-inputgroup">
-          <button type="button" pButton pRipple label="Search"></button>
+          <button type="button" pButton pRipple>
+              <span pButtonLabel>Search</span>
+          </button>
           <input type="text" pInputText placeholder="Keyword">
       </div>
   </div>
@@ -55,15 +57,21 @@ const InputGroupTemplate = `
   <div class="p-col-12 p-md-4 mb-3">
       <div class="p-inputgroup">
           <input type="text" pInputText placeholder="Keyword">
-          <button type="button" pButton pRipple icon="pi pi-refresh" styleClass="p-button-warn"></button>
+          <button type="button" pButton pRipple class="p-button-warn">
+              <i class="pi pi-refresh" pButtonIcon></i>
+          </button>
       </div>
   </div>
 
   <div class="p-col-12 p-md-4 mb-3">
       <div class="p-inputgroup">
-          <button type="button" pButton pRipple icon="pi pi-check" styleClass="p-button-success"></button>
+          <button type="button" pButton pRipple class="p-button-success">
+              <i class="pi pi-check" pButtonIcon></i>
+          </button>
           <input type="text" pInputText placeholder="Vote">
-          <button type="button" pButton pRipple icon="pi pi-times" styleClass="p-button-danger"></button>
+          <button type="button" pButton pRipple class="p-button-danger">
+              <i class="pi pi-times" pButtonIcon></i>
+          </button>
       </div>
   </div>
 </div>

@@ -1,4 +1,4 @@
-<div class="analytics-dashboard flex flex-column" data-testid="analytics-dashboard">
+<div class="analytics-dashboard flex flex-col" data-testid="analytics-dashboard">
     <!-- Development Status Banner -->
     @if ($showMessage()) {
         <p-message severity="info" data-testid="analytics-message">
@@ -48,7 +48,7 @@
 
     <!-- Dashboard Row - White Background -->
     <div class="analytics-dashboard__dashboard-row">
-        <div class="analytics-dashboard__dashboard-container flex flex-column gap-3">
+        <div class="analytics-dashboard__dashboard-container flex flex-col gap-3">
             <!-- Metrics Section -->
             <div class="analytics-dashboard__metrics flex gap-3 flex-wrap">
                 @for (metric of $metricsData(); track metric.name) {

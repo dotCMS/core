@@ -30,7 +30,7 @@
             [pTooltip]="'editpage.header.copy' | dm"
             tooltipPosition="bottom"
             icon="pi pi-copy"
-            styleClass="p-button-text p-button-sm p-button-rounded"
+            class="p-button-text p-button-sm p-button-rounded"
             data-testId="uve-toolbar-copy-url">
             <p-popover #op>
                 <div class="url-list">
@@ -41,7 +41,7 @@
                                 <a [href]="url.value" target="_blank">{{ url.value }}</a>
                                 <p-button
                                     icon="pi pi-copy"
-                                    styleClass="p-button-text p-button-sm p-button-rounded"
+                                    class="p-button-text p-button-sm p-button-rounded"
                                     (cdkCopyToClipboardCopied)="triggerCopyToast()"
                                     [cdkCopyToClipboard]="url.value"
                                     data-testId="copy-url-button" />
@@ -76,7 +76,7 @@
                     "
                     tooltipPosition="bottom"
                     icon="pi pi-pencil"
-                    styleClass="p-button-text p-button-sm p-button-rounded"
+                    class="p-button-text p-button-sm p-button-rounded"
                     data-testId="edit-url-content-map" />
             }
         }
@@ -95,7 +95,7 @@
                 [readonlyInput]="true"
                 data-testId="uve-toolbar-calendar" />
             <p-button
-                styleClass="uve-toolbar-chips"
+                class="uve-toolbar-chips"
                 [label]="'Today' | dm"
                 alt="Page Day"
                 (click)="fetchPageOnDate()"

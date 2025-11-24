@@ -10,67 +10,71 @@
     <p-tabs
         [value]="activeIndex"
         (onChange)="onActiveIndexChange($event)"
-        styleClass="h-full flex flex-column"
+        styleClass="h-full flex flex-col"
         data-testId="sidebar-tabs">
         <!-- Add prepend and append areas to the tabs -->
         <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
 
-        <p-tab class="flex flex-column tab-panel">
-            <ng-template pTemplate="header">
+        <p-tablist>
+            <p-tab [value]="0">
                 <i class="pi pi-info-circle"></i>
-            </ng-template>
-
-            <!-- Information section -->
-            <dot-edit-content-sidebar-section
-                [title]="'edit.content.sidebar.general.title' | dm"
-                class="h-full">
-                <ng-template #sectionAction>
-                    @if (!$store.isNew() && !$store.isCopyingLocale()) {
-                        <dot-copy-button
-                            [copy]="contentlet.identifier"
-                            [label]="contentlet.shortyId"
-                            [tooltipText]="'Identifier' | dm"></dot-copy-button>
-                    }
-                </ng-template>
-
-                <dot-edit-content-sidebar-information
-                    [data]="{
-                        contentlet: contentlet,
-                        contentType: contentType,
-                        loading: isLoadingInformation,
-                        referencesPageCount: referencePagesCount
-                    }"
-                    data-testId="information" />
-            </dot-edit-content-sidebar-section>
-
-            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
-                <dot-edit-content-sidebar-locales
-                    [locales]="$store.locales()"
-                    [defaultLocale]="$store.systemDefaultLocale()"
-                    [currentLocale]="$store.currentLocale()"
-                    [isLoading]="$store.isLoadingLocales()"
-                    (switchLocale)="$store.switchLocale($event)"
-                    data-testId="locales" />
-            </dot-edit-content-sidebar-section>
-
-            <!-- Workflow section -->
-            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.workflow.title' | dm">
-                <dot-edit-content-sidebar-workflow
-                    [workflowSelection]="$workflowSelection()"
-                    [(showDialog)]="$showDialog"
-                    (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
-                    [resetWorkflowAction]="$store.getResetWorkflowAction()"
-                    (onResetWorkflow)="fireWorkflowAction($event)"
-                    [workflow]="$workflow()"
-                    [isLoading]="$store.isLoadingWorkflow()"
-                    data-testId="workflow" />
-            </dot-edit-content-sidebar-section>
-        </p-tab>
-        <p-tab class="h-full flex-column tab-panel tab-panel--history">
-            <ng-template pTemplate="header">
+            </p-tab>
+            <p-tab [value]="1">
                 <i class="pi pi-history"></i>
-            </ng-template>
-            <ng-template pTemplate="content">
+            </p-tab>
+            <p-tab [value]="2">
+                <i class="pi pi-comment"></i>
+            </p-tab>
+        </p-tablist>
+        <p-tabpanels>
+            <p-tabpanel [value]="0" class="flex flex-col tab-panel">
+                <!-- Information section -->
+                <dot-edit-content-sidebar-section
+                    [title]="'edit.content.sidebar.general.title' | dm"
+                    class="h-full">
+                    <ng-template #sectionAction>
+                        @if (!$store.isNew() && !$store.isCopyingLocale()) {
+                            <dot-copy-button
+                                [copy]="contentlet.identifier"
+                                [label]="contentlet.shortyId"
+                                [tooltipText]="'Identifier' | dm"></dot-copy-button>
+                        }
+                    </ng-template>
+
+                    <dot-edit-content-sidebar-information
+                        [data]="{
+                            contentlet: contentlet,
+                            contentType: contentType,
+                            loading: isLoadingInformation,
+                            referencesPageCount: referencePagesCount
+                        }"
+                        data-testId="information" />
+                </dot-edit-content-sidebar-section>
+
+                <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
+                    <dot-edit-content-sidebar-locales
+                        [locales]="$store.locales()"
+                        [defaultLocale]="$store.systemDefaultLocale()"
+                        [currentLocale]="$store.currentLocale()"
+                        [isLoading]="$store.isLoadingLocales()"
+                        (switchLocale)="$store.switchLocale($event)"
+                        data-testId="locales" />
+                </dot-edit-content-sidebar-section>
+
+                <!-- Workflow section -->
+                <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.workflow.title' | dm">
+                    <dot-edit-content-sidebar-workflow
+                        [workflowSelection]="$workflowSelection()"
+                        [(showDialog)]="$showDialog"
+                        (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
+                        [resetWorkflowAction]="$store.getResetWorkflowAction()"
+                        (onResetWorkflow)="fireWorkflowAction($event)"
+                        [workflow]="$workflow()"
+                        [isLoading]="$store.isLoadingWorkflow()"
+                        data-testId="workflow" />
+                </dot-edit-content-sidebar-section>
+            </p-tabpanel>
+            <p-tabpanel [value]="1" class="h-full flex-col tab-panel tab-panel--history">
                 <!-- History section -->
                 <dot-edit-content-sidebar-history
                     [historyItems]="$versionsItems()"
@@ -85,14 +89,8 @@
                     (timelineItemAction)="onTimelineItemAction($event)"
                     (deletePushPublishHistory)="onDeletePushPublishHistory()"
                     data-testId="history" />
-            </ng-template>
-        </p-tab>
-
-        <p-tab class="h-full flex-column tab-panel tab-panel--activities">
-            <ng-template pTemplate="header">
-                <i class="pi pi-comment"></i>
-            </ng-template>
-            <ng-template pTemplate="content">
+            </p-tabpanel>
+            <p-tabpanel [value]="2" class="h-full flex-col tab-panel tab-panel--activities">
                 <!-- Activities section -->
                 <dot-edit-content-sidebar-activities
                     [initialContentletState]="$initialContentletState()"
@@ -100,8 +98,8 @@
                     [status]="$activitiesStatus()"
                     (commentSubmitted)="onCommentSubmitted($event)"
                     data-testId="activities" />
-            </ng-template>
-        </p-tab>
+            </p-tabpanel>
+        </p-tabpanels>
     </p-tabs>
 </aside>
 

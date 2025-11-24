@@ -1,6 +1,6 @@
-<div class="message__wrapper flex gap-4 flex-column w-30rem">
+<div class="message__wrapper flex gap-4 flex-col w-30rem">
     <div
-        class="message__principal-wrapper flex align-items-center flex-column gap-2"
+        class="message__principal-wrapper flex align-items-center flex-col gap-2"
         data-testid="message-principal">
         @if (configuration.icon) {
             <i [class]="'message__icon pi ' + configuration.icon" data-testid="message-icon"></i>
@@ -15,7 +15,7 @@
 
     @if (!hideContactUsLink || buttonLabel) {
         <div
-            class="message__extra-wrapper flex align-items-center flex-column gap-2"
+            class="message__extra-wrapper flex align-items-center flex-col gap-2"
             data-testid="message-extra">
             @if (buttonLabel) {
                 <button

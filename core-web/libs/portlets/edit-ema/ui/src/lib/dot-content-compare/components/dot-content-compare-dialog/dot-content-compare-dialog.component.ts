@@ -3,11 +3,13 @@ import { Observable, Subject } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 
+import { DialogModule } from 'primeng/dialog';
+
 import { map, pluck, takeUntil, tap } from 'rxjs/operators';
 
 import { DotEventsService } from '@dotcms/data-access';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentCompareComponent } from '../../dot-content-compare.component';
 
@@ -17,7 +19,7 @@ const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
     selector: 'dot-content-compare-dialog',
     templateUrl: './dot-content-compare-dialog.component.html',
     styleUrls: ['./dot-content-compare-dialog.component.scss'],
-    imports: [CommonModule, DotDialogComponent, DotContentCompareComponent, DotMessagePipe]
+    imports: [CommonModule, DialogModule, DotContentCompareComponent, DotMessagePipe]
 })
 export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
     private dotEventsService = inject(DotEventsService);

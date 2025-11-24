@@ -1,13 +1,7 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 
-import { inject, NgModule } from '@angular/core';
-import {
-    ActivatedRouteSnapshot,
-    Route,
-    RouteReuseStrategy,
-    RouterModule,
-    Routes
-} from '@angular/router';
+import { inject } from '@angular/core';
+import { ActivatedRouteSnapshot, Route, Routes } from '@angular/router';
 
 import { DotExperimentsService, EmaAppConfigurationService } from '@dotcms/data-access';
 import { DotEnterpriseLicenseResolver } from '@dotcms/ui';
@@ -20,7 +14,6 @@ import { editPageGuard } from './api/services/guards/ema-app/edit-page.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
-import { DotCustomReuseStrategyService } from './shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 import { IframePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/iframe-porlet-legacy.component';
 import { DotIframePortletLegacyResolver } from './view/components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
@@ -169,6 +162,7 @@ const PORTLETS_ANGULAR: Route[] = [
         children: []
     }
 ];
+
 const PORTLETS_IFRAME = [
     {
         canActivateChild: [MenuGuardService],
@@ -222,7 +216,7 @@ const PORTLETS_IFRAME = [
     }
 ];
 
-const appRoutes: Routes = [
+export const appRoutes: Routes = [
     {
         path: 'public',
         canActivate: [PublicAuthGuardService],
@@ -261,18 +255,3 @@ const appRoutes: Routes = [
         children: []
     }
 ];
-
-@NgModule({
-    exports: [RouterModule],
-    imports: [
-        RouterModule.forRoot(appRoutes, {
-            useHash: true,
-            onSameUrlNavigation: 'reload'
-        })
-    ],
-    providers: [
-        { provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService },
-        DotLoginPageResolver
-    ]
-})
-export class AppRoutingModule {}

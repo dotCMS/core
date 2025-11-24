@@ -1,9 +1,17 @@
-<p-tabs styleClass="dot-template-builder__new-template-builder">
-    <p-tab data-testId="builder">
-        <ng-template pTemplate="header">
+<p-tabs value="0" styleClass="dot-template-builder__new-template-builder">
+    <p-tablist>
+        <p-tab [value]="0" data-testId="builder">
             {{ item.type === 'advanced' ? ('code' | dm) : ('design' | dm) }}
-        </ng-template>
-        <ng-template pTemplate="content">
+        </p-tab>
+        <p-tab [value]="1">
+            {{ 'Permissions' | dm }}
+        </p-tab>
+        <p-tab [value]="2">
+            {{ 'History' | dm }}
+        </p-tab>
+    </p-tablist>
+    <p-tabpanels>
+        <p-tabpanel [value]="0" data-testId="builder">
             @switch (item.type) {
                 @case ('advanced') {
                     <dot-template-advanced
@@ -27,23 +35,13 @@
                     </dotcms-template-builder-lib>
                 }
             }
-        </ng-template>
-    </p-tab>
-    <p-tab>
-        <ng-template pTemplate="header">
-            {{ 'Permissions' | dm }}
-        </ng-template>
-        <ng-template pTemplate="content">
+        </p-tabpanel>
+        <p-tabpanel [value]="1">
             <dot-portlet-box>
                 <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe"></dot-iframe>
             </dot-portlet-box>
-        </ng-template>
-    </p-tab>
-    <p-tab>
-        <ng-template pTemplate="header">
-            {{ 'History' | dm }}
-        </ng-template>
-        <ng-template pTemplate="content">
+        </p-tabpanel>
+        <p-tabpanel [value]="2">
             <dot-portlet-box>
                 <dot-iframe
                     (custom)="custom.emit($event)"
@@ -51,6 +49,6 @@
                     #historyIframe
                     data-testId="historyIframe"></dot-iframe>
             </dot-portlet-box>
-        </ng-template>
-    </p-tab>
+        </p-tabpanel>
+    </p-tabpanels>
 </p-tabs>

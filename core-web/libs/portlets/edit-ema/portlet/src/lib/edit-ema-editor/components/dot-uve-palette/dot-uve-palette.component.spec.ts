@@ -4,7 +4,7 @@ import { MockComponent, ngMocks } from 'ng-mocks';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
-import { TabView } from 'primeng/tabs';
+import { Tabs } from 'primeng/tabs';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
 import { DotUvePaletteComponent } from './dot-uve-palette.component';
@@ -12,17 +12,17 @@ import { DotUVEPaletteListTypes } from './models';
 
 /**
  * Helper function to trigger tab change event
- * Simulates the activeIndexChange event that p-tabView emits when a tab is clicked
+ * Simulates the onChange event that p-tabs emits when a tab is clicked
  */
 function triggerTabChange(
     spectator: SpectatorHost<DotUvePaletteComponent, TestHostComponent>,
     index: number
 ): void {
-    const tabViewDebugElement: DebugElement = spectator.debugElement.query(By.directive(TabView));
+    const tabViewDebugElement: DebugElement = spectator.debugElement.query(By.directive(Tabs));
     const tabViewComponent: Tabs = tabViewDebugElement?.componentInstance;
 
-    if (tabViewComponent && tabViewComponent.activeIndexChange) {
-        tabViewComponent.activeIndexChange.emit(index);
+    if (tabViewComponent && tabViewComponent.onChange) {
+        tabViewComponent.onChange.emit({ value: index });
         spectator.detectChanges();
     }
 }
@@ -76,8 +76,8 @@ describe('DotUvePaletteComponent', () => {
             expect(paletteLists).toHaveLength(1);
         });
 
-        it('should update rendering when switching to Widget tab via activeIndexChange event', () => {
-            // Trigger the activeIndexChange event from p-tabView
+        it('should update rendering when switching to Widget tab via onChange event', () => {
+            // Trigger the onChange event from p-tabs
             triggerTabChange(spectator, 1);
 
             expect(spectator.component.$currentIndex()).toBe(1);
@@ -87,8 +87,8 @@ describe('DotUvePaletteComponent', () => {
             expect(paletteList).toBeTruthy();
         });
 
-        it('should update rendering when switching to Favorites tab via activeIndexChange event', () => {
-            // Trigger the activeIndexChange event from p-tabView
+        it('should update rendering when switching to Favorites tab via onChange event', () => {
+            // Trigger the onChange event from p-tabs
             triggerTabChange(spectator, 2);
 
             expect(spectator.component.$currentIndex()).toBe(2);
@@ -98,7 +98,7 @@ describe('DotUvePaletteComponent', () => {
             expect(paletteList).toBeTruthy();
         });
 
-        it('should switch back to Content tab when activeIndexChange emits 0', () => {
+        it('should switch back to Content tab when onChange emits 0', () => {
             // First go to Widget tab
             triggerTabChange(spectator, 1);
             expect(spectator.component.$currentIndex()).toBe(1);
@@ -169,7 +169,7 @@ describe('DotUvePaletteComponent', () => {
         });
 
         it('should be writable to simulate tab changes', () => {
-            // This tests that the signal can be updated (simulating p-tabView activeIndexChange)
+            // This tests that the signal can be updated (simulating p-tabs onChange)
             spectator.component.$currentIndex.set(2);
             spectator.detectChanges();
 
