@@ -168,15 +168,29 @@ describe('AngularFormBridge', () => {
         });
 
         it('should run callbacks inside NgZone', () => {
+            // Reset and create a fresh bridge instance with spy already set up
+            AngularFormBridge.resetInstance();
+            // Reset the callback to ensure clean state
+            mockFormControl.valueChanges._callback = null;
             const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const testBridge = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any
+            );
             const callback = jest.fn();
 
-            bridge.onChangeField('testField', callback);
+            testBridge.onChangeField('testField', callback);
 
-            if (mockFormControl.valueChanges._callback) {
-                mockFormControl.valueChanges._callback('changed value');
+            const valueChangesCallback = mockFormControl.valueChanges._callback as
+                | ((value: string) => void)
+                | null;
+            expect(valueChangesCallback).toBeDefined();
+            if (valueChangesCallback) {
+                valueChangesCallback('changed value');
                 expect(zoneRunSpy).toHaveBeenCalled();
             }
+
+            zoneRunSpy.mockRestore();
         });
     });
 

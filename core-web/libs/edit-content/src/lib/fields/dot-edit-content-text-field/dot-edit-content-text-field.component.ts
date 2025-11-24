@@ -50,7 +50,7 @@ export class DotEditContentTextFieldComponent extends BaseWrapperField {
      * A computed signal that holds the initial value of the text field.
      * It is used to display the initial value in the text field component.
      */
-    $value = computed(() => {
+    $initValue = computed(() => {
         const contentlet = this.$contentlet();
         const field = this.$field();
         const value = contentlet

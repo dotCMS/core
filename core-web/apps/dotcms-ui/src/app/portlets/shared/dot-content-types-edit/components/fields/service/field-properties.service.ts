@@ -73,6 +73,13 @@ export class FieldPropertyService {
             : this.getPropInfo(propertyName);
     }
 
+    /**
+     * Return the value of a property for a specific field
+     * @param field DotCMSContentTypeField
+     * @param propertyName string
+     * @returns unknown
+     * @memberof FieldPropertyService
+     */
     getValue(field: DotCMSContentTypeField, propertyName: string): unknown {
         if (propertyName === 'newRenderMode') {
             const fieldVariable = field.fieldVariables.find(

@@ -6,25 +6,25 @@
         <div class="flex align-items-center">
             <p-radioButton
                 name="newRenderMode"
-                [value]="'true'"
+                value="iframe"
                 [formControlName]="property.name"
-                inputId="recommended" />
+                inputId="iframe" />
             <label
-                for="recommended"
+                for="iframe"
                 class="ml-2"
                 [pTooltip]="'contenttypes.field.properties.newRenderMode.component.tooltip' | dm">
-                {{ 'contenttypes.field.properties.newRenderMode.component.label ' | dm }}
+                {{ 'contenttypes.field.properties.newRenderMode.component.label' | dm }}
             </label>
         </div>
 
         <div class="flex align-items-center">
             <p-radioButton
                 name="newRenderMode"
-                [value]="'false'"
+                value="components"
                 [formControlName]="property.name"
-                inputId="deprecated" />
+                inputId="components" />
             <label
-                for="deprecated"
+                for="components"
                 class="ml-2"
                 [pTooltip]="'contenttypes.field.properties.newRenderMode.iframe.tooltip' | dm">
                 {{ 'contenttypes.field.properties.newRenderMode.iframe.label' | dm }}

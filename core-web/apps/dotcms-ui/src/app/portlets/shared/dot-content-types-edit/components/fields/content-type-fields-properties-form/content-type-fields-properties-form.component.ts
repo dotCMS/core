@@ -78,7 +78,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
 
-        this.valid.next(false);
+        this.valid.emit(false);
     }
 
     transformFormValue(value) {
@@ -154,7 +154,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private notifyFormChanges() {
         this.originalValue = this.form.value;
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.valid.next(this.isFormValueUpdated() && this.form.valid);
+            this.valid.emit(this.isFormValueUpdated() && this.form.valid);
         });
     }
 
@@ -170,9 +170,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.fieldProperties = properties
             .filter((property) => this.fieldPropertyService.existsComponent(property))
             .sort(
-                (property1, proeprty2) =>
+                (property1, property2) =>
                     this.fieldPropertyService.getOrder(property1) -
-                    this.fieldPropertyService.getOrder(proeprty2)
+                    this.fieldPropertyService.getOrder(property2)
             );
     }
 
