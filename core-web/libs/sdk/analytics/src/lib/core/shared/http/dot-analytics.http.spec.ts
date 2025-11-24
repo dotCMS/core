@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { ANALYTICS_ENDPOINT } from './constants';
-import { sendAnalyticsEvent } from './dot-content-analytics.http';
+import { sendAnalyticsEvent } from './dot-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSCustomEventRequestBody,

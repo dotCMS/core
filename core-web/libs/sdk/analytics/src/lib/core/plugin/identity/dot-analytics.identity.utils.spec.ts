@@ -1,30 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-import {
-    getLastActivityTime,
-    hasPassedMidnight,
-    hasUTMChanged,
-    isUserInactive,
-    updateActivityTime
-} from './dot-analytics.identity.utils';
+import { hasUTMChanged } from './dot-analytics.identity.utils';
 
-import { DEFAULT_SESSION_TIMEOUT_MINUTES, SESSION_UTM_KEY } from '../../shared/constants';
-import { extractUTMParameters, safeSessionStorage } from '../../shared/dot-content-analytics.utils';
+import { SESSION_UTM_KEY } from '../../shared/constants';
+import { extractUTMParameters, safeSessionStorage } from '../../shared/utils/dot-analytics.utils';
 
 // Mock the safeSessionStorage dependency but keep other exports
-jest.mock('../../shared/dot-content-analytics.utils', () => ({
-    ...jest.requireActual('../../shared/dot-content-analytics.utils'),
-    safeSessionStorage: {
-        getItem: jest.fn(),
-        setItem: jest.fn()
-    }
-}));
+jest.mock('../../shared/dot-analytics.utils', () => {
+    const actual = jest.requireActual('../../shared/dot-analytics.utils') as Record<
+        string,
+        unknown
+    >;
+    return {
+        ...actual,
+        safeSessionStorage: {
+            getItem: jest.fn(),
+            setItem: jest.fn()
+        }
+    };
+});
 
 describe('DotAnalytics Identity Utils', () => {
     let mockLocation: Location;
-    let mockSetTimeout: jest.MockedFunction<any>;
-    let mockClearTimeout: jest.MockedFunction<any>;
 
     beforeAll(() => {
         jest.useFakeTimers({ doNotFake: [] });
@@ -32,14 +30,6 @@ describe('DotAnalytics Identity Utils', () => {
     });
 
     beforeEach(() => {
-        // Create simple mocks
-        mockSetTimeout = jest.fn().mockReturnValue(123); // Mock timer ID
-        mockClearTimeout = jest.fn();
-
-        // Replace global functions
-        global.setTimeout = mockSetTimeout;
-        global.clearTimeout = mockClearTimeout;
-
         // Mock Location object
         mockLocation = {
             href: 'https://example.com/page?utm_source=google&utm_medium=cpc',
@@ -69,128 +59,6 @@ describe('DotAnalytics Identity Utils', () => {
 
     afterAll(() => {
         jest.useRealTimers();
-    });
-
-    describe('updateActivityTime', () => {
-        it('should update the last activity time', () => {
-            // Set initial time
-            jest.setSystemTime(new Date('2024-01-01T12:00:00Z'));
-            updateActivityTime();
-            const initialTime = getLastActivityTime();
-
-            // Advance time
-            jest.setSystemTime(new Date('2024-01-01T12:05:00Z'));
-            updateActivityTime();
-
-            const newTime = getLastActivityTime();
-            expect(newTime).toBeGreaterThan(initialTime);
-        });
-
-        it('should clear existing timeout before setting new one', () => {
-            // Clear mock history first
-            mockSetTimeout.mockClear();
-            mockClearTimeout.mockClear();
-
-            // First call - might clear existing timer
-            updateActivityTime();
-            const initialClearCalls = mockClearTimeout.mock.calls.length;
-            expect(mockSetTimeout).toHaveBeenCalledTimes(1);
-
-            // Second call should clear the previous timeout
-            updateActivityTime();
-            expect(mockClearTimeout).toHaveBeenCalledTimes(initialClearCalls + 1);
-            expect(mockSetTimeout).toHaveBeenCalledTimes(2);
-        });
-
-        it('should set timeout for session timeout duration', () => {
-            updateActivityTime();
-
-            const expectedTimeout = DEFAULT_SESSION_TIMEOUT_MINUTES * 60 * 1000;
-            expect(mockSetTimeout).toHaveBeenCalledWith(expect.any(Function), expectedTimeout);
-        });
-    });
-
-    describe('isUserInactive', () => {
-        it('should return false when user is active', () => {
-            updateActivityTime();
-            expect(isUserInactive()).toBe(false);
-        });
-
-        it('should return true when user has been inactive for timeout period', () => {
-            updateActivityTime();
-
-            // Move time forward beyond timeout
-            const timeoutMs = DEFAULT_SESSION_TIMEOUT_MINUTES * 60 * 1000;
-            jest.setSystemTime(new Date(Date.now() + timeoutMs + 1000));
-
-            expect(isUserInactive()).toBe(true);
-        });
-
-        it('should return false when user activity is within timeout period', () => {
-            updateActivityTime();
-
-            // Move time forward but within timeout
-            const timeoutMs = DEFAULT_SESSION_TIMEOUT_MINUTES * 60 * 1000;
-            jest.setSystemTime(new Date(Date.now() + timeoutMs - 1000));
-
-            expect(isUserInactive()).toBe(false);
-        });
-    });
-
-    describe('getLastActivityTime', () => {
-        it('should return the current last activity time', () => {
-            const testTime = new Date('2024-01-01T12:30:00Z').getTime();
-            jest.setSystemTime(testTime);
-
-            updateActivityTime();
-
-            expect(getLastActivityTime()).toBe(testTime);
-        });
-
-        it('should return different times after multiple updates', () => {
-            updateActivityTime();
-            const firstTime = getLastActivityTime();
-
-            // Advance time and update again
-            jest.setSystemTime(new Date('2024-01-01T12:35:00Z'));
-            updateActivityTime();
-            const secondTime = getLastActivityTime();
-
-            expect(secondTime).toBeGreaterThan(firstTime);
-        });
-    });
-
-    describe('hasPassedMidnight', () => {
-        it('should return false when session started on the same UTC day', () => {
-            const sessionStart = new Date('2024-01-01T10:00:00Z').getTime();
-            jest.setSystemTime(new Date('2024-01-01T14:00:00Z'));
-
-            expect(hasPassedMidnight(sessionStart)).toBe(false);
-        });
-
-        it('should return true when session started on a different UTC day', () => {
-            const sessionStart = new Date('2024-01-01T10:00:00Z').getTime();
-            jest.setSystemTime(new Date('2024-01-02T02:00:00Z'));
-
-            expect(hasPassedMidnight(sessionStart)).toBe(true);
-        });
-
-        it('should handle timezone differences correctly using UTC', () => {
-            // Session starts at 23:30 UTC on Jan 1st
-            const sessionStart = new Date('2024-01-01T23:30:00Z').getTime();
-            // Current time is 01:30 UTC on Jan 2nd (same local day in some timezones)
-            jest.setSystemTime(new Date('2024-01-02T01:30:00Z'));
-
-            expect(hasPassedMidnight(sessionStart)).toBe(true);
-        });
-
-        it('should return false for sessions on same UTC day but different local days', () => {
-            // Edge case: same UTC day
-            const sessionStart = new Date('2024-01-01T06:00:00Z').getTime();
-            jest.setSystemTime(new Date('2024-01-01T18:00:00Z'));
-
-            expect(hasPassedMidnight(sessionStart)).toBe(false);
-        });
     });
 
     describe('extractUTMParameters', () => {

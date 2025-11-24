@@ -1,20 +1,28 @@
 import { getUVEState } from '@dotcms/uve';
 
 import {
-    ANALYTICS_CONTENTLET_CLASS,
-    DEFAULT_IMPRESSION_CONFIG,
-    DEFAULT_IMPRESSION_MUTATION_OBSERVER_DEBOUNCE_MS,
-    IMPRESSION_EVENT_TYPE
-} from './constants';
-import { DotCMSAnalyticsConfig, DotCMSContentImpressionPayload, ImpressionConfig } from './models';
-
-import {
-    createDebounce,
-    extractContentletData,
-    extractContentletIdentifier,
     getViewportMetrics,
     isElementMeetingVisibilityThreshold
-} from '../plugin/impression/dot-analytics.impression.utils';
+} from './dot-analytics.impression.utils';
+
+import {
+    ANALYTICS_CONTENTLET_CLASS,
+    DEFAULT_IMPRESSION_CONFIG,
+    IMPRESSION_EVENT_TYPE
+} from '../../shared/constants';
+import {
+    DotCMSAnalyticsConfig,
+    DotCMSContentImpressionPayload,
+    ImpressionConfig
+} from '../../shared/models';
+import {
+    createContentletObserver,
+    createPluginLogger,
+    extractContentletData,
+    extractContentletIdentifier,
+    findContentlets,
+    isBrowser
+} from '../../shared/utils/dot-analytics.utils';
 
 /** Tracks the state of an element's impression (timer, visibility, tracked status) */
 interface ImpressionState {
@@ -47,10 +55,10 @@ export class DotCMSImpressionTracker {
     private impressionConfig: Required<ImpressionConfig>;
     private currentPagePath = '';
     private subscribers = new Set<ImpressionCallback>();
-    private debug: boolean;
+    private logger: ReturnType<typeof createPluginLogger>;
 
     constructor(config: DotCMSAnalyticsConfig) {
-        this.debug = config.debug ?? false;
+        this.logger = createPluginLogger('Impression', config);
         this.impressionConfig = this.resolveImpressionConfig(config.impressions);
     }
 
@@ -75,9 +83,7 @@ export class DotCMSImpressionTracker {
             try {
                 callback(eventName, payload);
             } catch (error) {
-                if (this.debug) {
-                    console.error('DotCMS Analytics: Error in impression subscriber:', error);
-                }
+                this.logger.error('Error in impression subscriber:', error);
             }
         });
     }
@@ -101,16 +107,13 @@ export class DotCMSImpressionTracker {
     /** Initializes tracking: sets up observers, finds contentlets, handles visibility/navigation */
     public initialize(): void {
         // Early return if SSR
-        if (typeof window === 'undefined' || typeof document === 'undefined') {
+        if (!isBrowser()) {
             return;
         }
 
         // Early return if in editor mode (check for UVE markers)
         if (getUVEState()) {
-            if (this.debug) {
-                console.warn('DotCMS Analytics: Impression tracking disabled in editor mode');
-            }
-
+            this.logger.warn('Impression tracking disabled in editor mode');
             return;
         }
 
@@ -129,12 +132,7 @@ export class DotCMSImpressionTracker {
         // Listen for page navigation to reset tracking
         this.initializePageNavigationHandler();
 
-        if (this.debug) {
-            console.warn(
-                `DotCMS Analytics: Impression tracking initialized with config:`,
-                this.impressionConfig
-            );
-        }
+        this.logger.info('Impression tracking initialized with config:', this.impressionConfig);
     }
 
     /** Sets up IntersectionObserver with configured visibility threshold */
@@ -154,15 +152,10 @@ export class DotCMSImpressionTracker {
     private findAndObserveContentletElements(): void {
         if (!this.observer) return;
 
-        const contentlets = document.querySelectorAll<HTMLElement>(
-            `.${ANALYTICS_CONTENTLET_CLASS}`
-        );
+        const contentlets = findContentlets();
 
         if (contentlets.length === 0) {
-            if (this.debug) {
-                console.warn('DotCMS Analytics: No contentlets found to track');
-            }
-
+            this.logger.warn('No contentlets found to track');
             return;
         }
 
@@ -178,11 +171,7 @@ export class DotCMSImpressionTracker {
                 // Skip elements that shouldn't be tracked
                 const skipReason = this.shouldSkipElement(element);
                 if (skipReason) {
-                    if (this.debug) {
-                        console.warn(
-                            `DotCMS Analytics: Skipping element ${identifier} (${skipReason})`
-                        );
-                    }
+                    this.logger.debug(`Skipping element ${identifier} (${skipReason})`);
                     continue;
                 }
 
@@ -197,52 +186,29 @@ export class DotCMSImpressionTracker {
                     });
 
                     observedCount++;
-
-                    // Add visual debugging indicators in development
-                    if (this.debug) {
-                        element.dataset.dotAnalyticsObserved = 'true';
-                        element.style.outline = '2px solid red';
-                        element.style.outlineOffset = '-2px';
-                        element.style.transition = 'outline-color 0.5s ease-in-out';
-                    }
                 }
             }
         }
 
-        if (this.debug) {
-            console.warn(`DotCMS Analytics: Observing ${observedCount} contentlets`);
-            if (contentlets.length > maxNodesToTrack) {
-                console.warn(
-                    `DotCMS Analytics: ${contentlets.length - maxNodesToTrack} contentlets not tracked (maxNodes limit: ${this.impressionConfig.maxNodes})`
-                );
-            }
+        this.logger.info(`Observing ${observedCount} contentlets`);
+        if (contentlets.length > maxNodesToTrack) {
+            this.logger.warn(
+                `${contentlets.length - maxNodesToTrack} contentlets not tracked (maxNodes limit: ${this.impressionConfig.maxNodes})`
+            );
         }
     }
 
     /** Watches for new contentlets added to DOM (debounced for performance) */
     private initializeDynamicContentDetector(): void {
-        if (typeof window === 'undefined' || typeof document === 'undefined') {
+        if (!isBrowser()) {
             return;
         }
 
-        const debouncedScan = createDebounce(() => {
+        this.mutationObserver = createContentletObserver(() => {
             this.findAndObserveContentletElements();
-        }, DEFAULT_IMPRESSION_MUTATION_OBSERVER_DEBOUNCE_MS);
-
-        this.mutationObserver = new MutationObserver(() => {
-            debouncedScan();
         });
 
-        this.mutationObserver.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-
-        if (this.debug) {
-            console.warn(
-                'DotCMS Analytics: MutationObserver enabled for dynamic content detection'
-            );
-        }
+        this.logger.info('MutationObserver enabled for dynamic content detection');
     }
 
     /** Cancels all timers when page is hidden (prevents false impressions) */
@@ -258,9 +224,7 @@ export class DotCMSImpressionTracker {
                     }
                 });
 
-                if (this.debug) {
-                    console.warn('DotCMS Analytics: Page hidden, all impression timers cancelled');
-                }
+                this.logger.warn('Page hidden, all impression timers cancelled');
             }
         });
     }
@@ -275,11 +239,9 @@ export class DotCMSImpressionTracker {
             const newPath = window.location.pathname;
 
             if (newPath !== this.currentPagePath) {
-                if (this.debug) {
-                    console.warn(
-                        `DotCMS Analytics: Navigation detected (${this.currentPagePath} → ${newPath}), resetting impression tracking`
-                    );
-                }
+                this.logger.warn(
+                    `Navigation detected (${this.currentPagePath} → ${newPath}), resetting impression tracking`
+                );
 
                 // Update current path
                 this.currentPagePath = newPath;
@@ -374,22 +336,18 @@ export class DotCMSImpressionTracker {
             if (this.isElementStillVisible(element)) {
                 this.trackAndSendImpression(identifier, element);
             } else {
-                if (this.debug) {
-                    console.warn(
-                        `DotCMS Analytics: Dwell timer expired for ${identifier} but element no longer visible, skipping impression`
-                    );
-                }
+                this.logger.warn(
+                    `Dwell timer expired for ${identifier} but element no longer visible, skipping impression`
+                );
                 // Clear state since we're not tracking
                 state.timer = null;
                 state.visibleSince = null;
             }
         }, this.impressionConfig.dwellMs);
 
-        if (this.debug) {
-            console.warn(
-                `DotCMS Analytics: Started dwell timer for ${identifier} (${this.impressionConfig.dwellMs}ms)`
-            );
-        }
+        this.logger.debug(
+            `Started dwell timer for ${identifier} (${this.impressionConfig.dwellMs}ms)`
+        );
     }
 
     /** Cancels active dwell timer (element left viewport before dwell time) */
@@ -402,9 +360,7 @@ export class DotCMSImpressionTracker {
         state.timer = null;
         state.visibleSince = null;
 
-        if (this.debug) {
-            console.warn(`DotCMS Analytics: Cancelled dwell timer for ${identifier}`);
-        }
+        this.logger.debug(`Cancelled dwell timer for ${identifier}`);
     }
 
     /** Fires impression event with content & position data (page data added by enricher plugin) */
@@ -454,16 +410,10 @@ export class DotCMSImpressionTracker {
             this.observer.unobserve(element);
         }
 
-        // Update visual indicator in debug mode
-        if (this.debug) {
-            element.style.outline = '2px solid green';
-            element.style.outlineOffset = '-2px';
-
-            console.warn(
-                `DotCMS Analytics: Fired impression for ${identifier} (dwell: ${dwellTime}ms) - element unobserved`,
-                contentletData
-            );
-        }
+        this.logger.info(
+            `Fired impression for ${identifier} (dwell: ${dwellTime}ms) - element unobserved`,
+            contentletData
+        );
     }
 
     /** Returns skip reason if element is hidden/too small, null if trackable */
@@ -552,8 +502,6 @@ export class DotCMSImpressionTracker {
         // Clear all subscribers
         this.subscribers.clear();
 
-        if (this.debug) {
-            console.warn('DotCMS Analytics: Impression tracking cleaned up');
-        }
+        this.logger.info('Impression tracking cleaned up');
     }
 }

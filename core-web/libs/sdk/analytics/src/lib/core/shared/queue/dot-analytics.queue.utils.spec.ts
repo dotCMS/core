@@ -2,11 +2,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { DEFAULT_QUEUE_CONFIG } from '../constants';
-import { sendAnalyticsEvent } from '../dot-content-analytics.http';
+import { sendAnalyticsEvent } from '../http/dot-analytics.http';
 import { DotCMSAnalyticsConfig, DotCMSAnalyticsEventContext, DotCMSEvent } from '../models';
 
 // Mock the HTTP utility
-jest.mock('../dot-content-analytics.http', () => ({
+jest.mock('../dot-analytics.http', () => ({
     sendAnalyticsEvent: jest.fn()
 }));
 
@@ -85,7 +85,13 @@ describe('createAnalyticsQueue', () => {
         mockContext = {
             site_auth: 'test-site-key',
             session_id: 'test-session-id',
-            user_id: 'test-user-id'
+            user_id: 'test-user-id',
+            device: {
+                screen_resolution: '1920x1080',
+                language: 'en-US',
+                viewport_width: '1024',
+                viewport_height: '768'
+            }
         };
 
         mockEvent = {
@@ -308,7 +314,7 @@ describe('createAnalyticsQueue', () => {
 
             // Call the callback with events (simulating smartQueue calling it)
             const events = [mockEvent, mockEvent];
-            sendBatchCallback(events);
+            sendBatchCallback(events, []);
 
             expect(sendAnalyticsEvent).toHaveBeenCalledTimes(1);
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
@@ -329,7 +335,7 @@ describe('createAnalyticsQueue', () => {
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             // Don't enqueue anything (no context set)
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             expect(sendAnalyticsEvent).not.toHaveBeenCalled();
         });
@@ -343,7 +349,7 @@ describe('createAnalyticsQueue', () => {
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
-            sendBatchCallback([mockEvent, mockEvent]);
+            sendBatchCallback([mockEvent, mockEvent], []);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
                 expect.stringContaining('Sending batch of 2 event(s)'),
@@ -404,7 +410,7 @@ describe('createAnalyticsQueue', () => {
             pagehideListener(new Event('pagehide'));
 
             // Now simulate smartQueue calling sendBatch
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
                 expect.any(Object),
@@ -532,7 +538,7 @@ describe('createAnalyticsQueue', () => {
             queue.enqueue(mockEvent, mockContext);
 
             // Should use keepalive=false again after cleanup
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
                 expect.any(Object),
@@ -552,7 +558,7 @@ describe('createAnalyticsQueue', () => {
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
                 expect.any(String),
@@ -580,7 +586,7 @@ describe('createAnalyticsQueue', () => {
             pagehideListener(new Event('pagehide'));
 
             // Simulate smartQueue calling sendBatch
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             // Find the sendBatch call (second console.log call)
             const sendBatchCall = mockConsoleLog.mock.calls.find((call) =>

@@ -3,13 +3,18 @@ import { AnalyticsInstance } from 'analytics';
 import {
     DotCMSImpressionTracker,
     ImpressionSubscription
-} from '../../shared/dot-content-analytics.impression-tracker';
+} from './dot-analytics.impression-tracker';
+
 import { DotCMSAnalyticsConfig } from '../../shared/models';
+import {
+    createPluginLogger,
+    isBrowser,
+    setupPluginCleanup
+} from '../../shared/utils/dot-analytics.utils';
 
 /**
  * Impression Plugin for DotAnalytics
  * Handles automatic tracking of content visibility and impressions.
- * Only activates when config.impressions is enabled (true or config object).
  *
  * This plugin initializes the impression tracker which:
  * - Uses IntersectionObserver to detect when contentlets are visible
@@ -23,42 +28,36 @@ import { DotCMSAnalyticsConfig } from '../../shared/models';
  * 3. Main Plugin - Sends to queue/server
  * 4. Impression Plugin - Runs independently, fires events via instance.track()
  *
+ * Note: This plugin is only registered if config.impressions is enabled.
+ * See getEnhancedTrackingPlugins() for conditional loading logic.
+ *
  * @param {DotCMSAnalyticsConfig} config - Configuration with impressions settings
  * @returns {Object} Plugin object with lifecycle methods
  */
 export const dotAnalyticsImpressionPlugin = (config: DotCMSAnalyticsConfig) => {
     let impressionTracker: DotCMSImpressionTracker | null = null;
     let subscription: ImpressionSubscription | null = null;
+    const logger = createPluginLogger('Impression', config);
 
     return {
         name: 'dot-analytics-impression',
 
         /**
-         * Initialize impression tracking if enabled
+         * Initialize impression tracking
          * Called when Analytics.js initializes the plugin with instance context
          * @param instance - Analytics.js instance with track method
          */
         initialize: ({ instance }: { instance: AnalyticsInstance }) => {
-            // Only initialize if impressions config exists
-            // Can be true (use defaults) or an object (custom config)
-            if (config.impressions) {
-                // Create and initialize tracker
-                impressionTracker = new DotCMSImpressionTracker(config);
-                impressionTracker.initialize();
+            // Create and initialize tracker
+            impressionTracker = new DotCMSImpressionTracker(config);
+            impressionTracker.initialize();
 
-                // Subscribe to impression events and call analytics track
-                subscription = impressionTracker.onImpression((eventName, payload) => {
-                    instance.track(eventName, payload);
-                });
+            // Subscribe to impression events and call analytics track
+            subscription = impressionTracker.onImpression((eventName, payload) => {
+                instance.track(eventName, payload);
+            });
 
-                if (config.debug) {
-                    console.warn('DotCMS Analytics: Impression tracking plugin initialized');
-                }
-            } else if (config.debug) {
-                console.warn(
-                    'DotCMS Analytics: Impression tracking disabled (config.impressions not set)'
-                );
-            }
+            logger.info('Impression tracking plugin initialized');
 
             return Promise.resolve();
         },
@@ -68,7 +67,7 @@ export const dotAnalyticsImpressionPlugin = (config: DotCMSAnalyticsConfig) => {
          * Called after Analytics.js completes plugin loading
          */
         loaded: () => {
-            if (typeof window !== 'undefined' && impressionTracker) {
+            if (isBrowser() && impressionTracker) {
                 const cleanup = () => {
                     // Unsubscribe before cleanup
                     if (subscription) {
@@ -80,18 +79,12 @@ export const dotAnalyticsImpressionPlugin = (config: DotCMSAnalyticsConfig) => {
                         impressionTracker.cleanup();
                         impressionTracker = null;
 
-                        if (config.debug) {
-                            console.warn(
-                                'DotCMS Analytics: Impression tracking cleaned up on page unload'
-                            );
-                        }
+                        logger.info('Impression tracking cleaned up on page unload');
                     }
                 };
 
                 // Cleanup on page unload
-                // Use both events for maximum compatibility
-                window.addEventListener('beforeunload', cleanup);
-                window.addEventListener('pagehide', cleanup);
+                setupPluginCleanup(cleanup);
             }
 
             return true;

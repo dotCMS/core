@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it } from '@jest/globals';
 
 import { ANALYTICS_MINIFIED_SCRIPT_NAME } from './constants';
 import {
-    cleanupActivityTracking,
     defaultRedirectFn,
     enrichPagePayloadOptimized,
     extractUTMParameters,
@@ -17,9 +16,8 @@ import {
     getSessionId,
     getUserId,
     getUtmData,
-    initializeActivityTracking,
     validateAnalyticsConfig
-} from './dot-content-analytics.utils';
+} from './dot-analytics.utils';
 import { DotCMSAnalyticsConfig } from './models';
 
 describe('Analytics Utils', () => {
@@ -689,73 +687,6 @@ describe('Analytics Utils', () => {
                 source: 'facebook',
                 campaign: 'summer'
             });
-        });
-    });
-
-    describe('initializeActivityTracking', () => {
-        let addEventListenerSpy: jest.SpyInstance;
-        let documentAddEventListenerSpy: jest.SpyInstance;
-
-        beforeEach(() => {
-            addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-            documentAddEventListenerSpy = jest.spyOn(document, 'addEventListener');
-        });
-
-        afterEach(() => {
-            addEventListenerSpy.mockRestore();
-            documentAddEventListenerSpy.mockRestore();
-            cleanupActivityTracking(); // Clean up after each test
-        });
-
-        it('should initialize event listeners for activity tracking', () => {
-            const config = { debug: false } as any;
-
-            initializeActivityTracking(config);
-
-            // Check click listener on window
-            expect(addEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function), {
-                passive: true
-            });
-
-            // Check visibilitychange listener on document
-            expect(documentAddEventListenerSpy).toHaveBeenCalledWith(
-                'visibilitychange',
-                expect.any(Function)
-            );
-        });
-    });
-
-    describe('cleanupActivityTracking', () => {
-        let removeEventListenerSpy: jest.SpyInstance;
-        let documentRemoveEventListenerSpy: jest.SpyInstance;
-
-        beforeEach(() => {
-            removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
-            documentRemoveEventListenerSpy = jest.spyOn(document, 'removeEventListener');
-        });
-
-        afterEach(() => {
-            removeEventListenerSpy.mockRestore();
-            documentRemoveEventListenerSpy.mockRestore();
-        });
-
-        it('should remove all activity event listeners', () => {
-            const config = { debug: false } as any;
-
-            // Initialize first
-            initializeActivityTracking(config);
-
-            // Then cleanup
-            cleanupActivityTracking();
-
-            // Check that click listener is removed from window
-            expect(removeEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
-
-            // Check that visibilitychange listener is removed from document
-            expect(documentRemoveEventListenerSpy).toHaveBeenCalledWith(
-                'visibilitychange',
-                expect.any(Function)
-            );
         });
     });
 

@@ -1,14 +1,15 @@
-import { DotCMSPredefinedEventType } from '../shared/constants/dot-content-analytics.constants';
-import { sendAnalyticsEvent } from '../shared/dot-content-analytics.http';
+import { DotCMSPredefinedEventType } from '../../shared/constants/dot-analytics.constants';
+import { sendAnalyticsEvent } from '../../shared/http/dot-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsRequestBody,
+    DotCMSContentClickPayload,
     DotCMSContentImpressionPayload,
     EnrichedAnalyticsPayload,
     EnrichedTrackPayload,
     JsonObject
-} from '../shared/models';
-import { createAnalyticsQueue } from '../shared/queue';
+} from '../../shared/models';
+import { createAnalyticsQueue } from '../../shared/queue';
 
 /**
  * Analytics plugin for tracking page views and custom events in DotCMS applications.
@@ -104,6 +105,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
          * Receives enriched payload from enricher plugin and structures it into proper event format.
          *
          * - content_impression → extracts from properties, combines with enriched page data
+         * - content_click → extracts from properties, combines with enriched page data
          * - custom events → wraps properties in custom object
          */
         track: ({ payload }: { payload: EnrichedTrackPayload }): void => {
@@ -133,6 +135,29 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                         data: {
                             content,
                             position,
+                            page
+                        }
+                    };
+                    break;
+                }
+
+                case DotCMSPredefinedEventType.CONTENT_CLICK: {
+                    // Extract click data from properties (sent by click plugin)
+                    const clickPayload = properties as DotCMSContentClickPayload;
+                    const { content, position, element } = clickPayload;
+                    const { page } = payload; // Added by enricher
+
+                    if (!content || !position || !element || !page) {
+                        throw new Error('DotCMS Analytics: Missing required click data');
+                    }
+
+                    analyticsEvent = {
+                        event_type: DotCMSPredefinedEventType.CONTENT_CLICK,
+                        local_time,
+                        data: {
+                            content,
+                            position,
+                            element,
                             page
                         }
                     };

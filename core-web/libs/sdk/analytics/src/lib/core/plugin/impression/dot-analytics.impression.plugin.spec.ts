@@ -2,13 +2,13 @@
 
 import { AnalyticsInstance } from 'analytics';
 
-import { dotAnalyticsImpressionPlugin } from './dot-analytics.impression.plugin';
-
-import { IMPRESSION_EVENT_TYPE } from '../../shared/constants';
 import {
     DotCMSImpressionTracker,
     ImpressionSubscription
-} from '../../shared/dot-content-analytics.impression-tracker';
+} from './dot-analytics.impression-tracker';
+import { dotAnalyticsImpressionPlugin } from './dot-analytics.impression.plugin';
+
+import { IMPRESSION_EVENT_TYPE } from '../../shared/constants';
 import { DotCMSAnalyticsConfig } from '../../shared/models';
 
 // Mock the tracker

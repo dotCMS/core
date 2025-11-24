@@ -2,8 +2,8 @@
 
 import { dotAnalyticsEnricherPlugin } from './dot-analytics.enricher.plugin';
 
-import { DotCMSPredefinedEventType } from '../../shared/constants/dot-content-analytics.constants';
-import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
+import { DotCMSPredefinedEventType } from '../../shared/constants/dot-analytics.constants';
+import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/utils/dot-analytics.utils';
 
 // Mock the utility functions
 jest.mock('../../shared/dot-content-analytics.utils', () => ({

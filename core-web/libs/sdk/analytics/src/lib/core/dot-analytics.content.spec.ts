@@ -2,25 +2,28 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Analytics } from 'analytics';
 
-import { initializeContentAnalytics } from './dot-content-analytics';
-import { dotAnalytics } from './plugin/dot-analytics.plugin';
+import { initializeContentAnalytics } from './dot-analytics.content';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { dotAnalyticsImpressionPlugin } from './plugin/impression/dot-analytics.impression.plugin';
+import { dotAnalytics } from './plugin/main/dot-analytics.plugin';
 import { DotCMSAnalyticsConfig } from './shared/models';
 
 // Mock dependencies
 jest.mock('analytics');
-jest.mock('./plugin/dot-analytics.plugin');
+jest.mock('./plugin/main/dot-analytics.plugin');
 jest.mock('./plugin/enricher/dot-analytics.enricher.plugin');
 jest.mock('./plugin/identity/dot-analytics.identity.plugin');
 jest.mock('./plugin/impression/dot-analytics.impression.plugin');
 
 // Partially mock utils - keep validateAnalyticsConfig but mock cleanupActivityTracking
-jest.mock('./shared/dot-content-analytics.utils', () => ({
-    ...jest.requireActual('./shared/dot-content-analytics.utils'),
-    cleanupActivityTracking: jest.fn()
-}));
+jest.mock('./shared/dot-analytics.utils', () => {
+    const actual = jest.requireActual('./shared/dot-analytics.utils') as Record<string, unknown>;
+    return {
+        ...actual,
+        cleanupActivityTracking: jest.fn()
+    };
+});
 
 const mockAnalytics = Analytics as jest.MockedFunction<typeof Analytics>;
 const mockDotAnalytics = dotAnalytics as jest.MockedFunction<typeof dotAnalytics>;
