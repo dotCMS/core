@@ -1,8 +1,7 @@
-import { AnalyticsInstance } from 'analytics';
+import { handleContentletClick } from './dot-analytics.click.utils';
 
-import { handleDocumentClick, trackClick } from './dot-analytics.click.utils';
-
-import { DotCMSAnalyticsConfig } from '../../shared/models';
+import { DEFAULT_CLICK_THROTTLE_MS } from '../../shared/constants/dot-analytics.constants';
+import { DotCMSAnalyticsConfig, DotCMSContentClickPayload } from '../../shared/models';
 import {
     createContentletObserver,
     createPluginLogger,
@@ -11,15 +10,23 @@ import {
     isBrowser
 } from '../../shared/utils/dot-analytics.utils';
 
+/** Callback function for click events */
+export type ClickCallback = (eventName: string, payload: DotCMSContentClickPayload) => void;
+
+/** Subscription object with unsubscribe method */
+export interface ClickSubscription {
+    unsubscribe: () => void;
+}
+
 /**
  * Tracks content clicks using event listeners on contentlet containers.
  * Detects clicks on <a> and <button> elements inside contentlets and fires events.
  */
 export class DotCMSClickTracker {
-    private instance: AnalyticsInstance | null = null;
     private mutationObserver: MutationObserver | null = null;
     private lastClickTime = { value: 0 };
     private logger: ReturnType<typeof createPluginLogger>;
+    private subscribers = new Set<ClickCallback>();
 
     // Track which elements already have listeners to avoid duplicates
     private trackedElements = new WeakSet<HTMLElement>();
@@ -31,19 +38,35 @@ export class DotCMSClickTracker {
     }
 
     /**
-     * Initialize click tracking with analytics instance
-     * @param instance - Analytics.js instance to use for tracking
+     * Subscribe to click events
+     * @param callback - Function called when click is detected
+     * @returns Subscription object with unsubscribe method
      */
-    public initialize(instance: AnalyticsInstance): void {
+    public onClick(callback: ClickCallback): ClickSubscription {
+        this.subscribers.add(callback);
+
+        return {
+            unsubscribe: () => {
+                this.subscribers.delete(callback);
+            }
+        };
+    }
+
+    /** Notifies all subscribers of a click */
+    private notifySubscribers(eventName: string, payload: DotCMSContentClickPayload): void {
+        this.subscribers.forEach((callback) => callback(eventName, payload));
+    }
+
+    /**
+     * Initialize click tracking
+     */
+    public initialize(): void {
         if (!isBrowser()) {
             this.logger.warn('No document, skipping');
             return;
         }
 
-        // Store instance for use in click handlers
-        this.instance = instance;
-
-        this.logger.debug(`Plugin initializing, instance assigned: ${!!this.instance}`);
+        this.logger.debug('Plugin initializing');
 
         // Wait for DOM to be ready before scanning
         if (typeof window !== 'undefined') {
@@ -71,26 +94,31 @@ export class DotCMSClickTracker {
             return; // Already tracked
         }
 
-        if (!this.instance) {
-            this.logger.warn('Instance not ready, cannot attach listener');
-            return; // Instance not ready yet
-        }
-
-        const currentInstance = this.instance;
         const clickHandler = (event: MouseEvent) => {
             this.logger.debug('Click handler triggered on contentlet');
-            handleDocumentClick(
+
+            // Pass the contentlet element directly - we already have it!
+            handleContentletClick(
                 event,
+                element,
                 (eventName, payload) => {
-                    trackClick(
-                        eventName,
-                        payload,
-                        currentInstance,
-                        this.config,
-                        this.lastClickTime
+                    // Apply throttling
+                    const now = Date.now();
+                    if (now - this.lastClickTime.value < DEFAULT_CLICK_THROTTLE_MS) {
+                        return;
+                    }
+                    this.lastClickTime.value = now;
+
+                    // Notify subscribers
+                    this.notifySubscribers(eventName, payload);
+
+                    // Debug logging
+                    this.logger.info(
+                        `Fired click event for ${payload.content.identifier}`,
+                        payload
                     );
                 },
-                this.config.debug
+                this.logger
             );
         };
 
@@ -106,12 +134,7 @@ export class DotCMSClickTracker {
      * Find and attach listeners to all contentlet elements
      */
     private findAndAttachListeners(): void {
-        this.logger.debug(`findAndAttachListeners called, instance=${!!this.instance}`);
-
-        if (!this.instance) {
-            this.logger.error('❌ Instance is null, cannot attach listeners!');
-            return;
-        }
+        this.logger.debug('findAndAttachListeners called');
 
         const contentlets = findContentlets();
 

@@ -173,6 +173,12 @@ export const CLICK_EVENT_TYPE = 'content_click';
 export const DEFAULT_CLICK_THROTTLE_MS = 300;
 
 /**
+ * CSS selector for clickable elements to track
+ * Only clicks on <a> and <button> elements are tracked
+ */
+export const CLICKABLE_ELEMENTS_SELECTOR = 'a, button';
+
+/**
  * Session storage key for tracked impressions (deduplication)
  */
 export const IMPRESSION_SESSION_KEY = 'dot_analytics_impressions';

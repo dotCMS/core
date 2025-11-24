@@ -106,11 +106,13 @@ export type DotCMSContentClickPayload = DotCMSContentImpressionPayload & {
         text: string;
         /** Type of element (anchor, button, etc.) */
         type: string;
-        /** Element ID */
+        /** Element ID (required by backend, empty string if not present) */
         id: string;
-        /** Element classes */
+        /** Element classes (required by backend, empty string if not present) */
         class: string;
-        /** Element attributes */
+        /** Link destination as written in HTML (relative path, only for <a> elements, empty string for buttons) */
+        href: string;
+        /** Additional element attributes (data-*, aria-*, target, etc.) */
         attributes: Record<string, string>;
     };
 };

@@ -1,122 +1,77 @@
-import { AnalyticsInstance } from 'analytics';
-
 import {
     ANALYTICS_CONTENTLET_CLASS,
-    CLICK_EVENT_TYPE,
-    DEFAULT_CLICK_THROTTLE_MS
+    CLICKABLE_ELEMENTS_SELECTOR,
+    CLICK_EVENT_TYPE
 } from '../../shared/constants/dot-analytics.constants';
-import { DotCMSAnalyticsConfig, DotCMSContentClickPayload } from '../../shared/models';
-import { extractContentletData } from '../../shared/utils/dot-analytics.utils';
+import { DotCMSContentClickPayload } from '../../shared/models';
+import { createPluginLogger, extractContentletData } from '../../shared/utils/dot-analytics.utils';
 import { getViewportMetrics } from '../impression/dot-analytics.impression.utils';
 
 /**
- * Tracks a click event with throttling to prevent duplicates.
- *
- * @param eventName - The name of the event to track
- * @param payload - The event payload
- * @param instance - The analytics instance
- * @param config - The analytics configuration (for debug logging)
- * @param lastClickTime - Mutable object to store the timestamp of the last click
- */
-export const trackClick = (
-    eventName: string,
-    payload: DotCMSContentClickPayload,
-    instance: AnalyticsInstance,
-    config: DotCMSAnalyticsConfig,
-    lastClickTime: { value: number }
-) => {
-    const now = Date.now();
-    if (now - lastClickTime.value < DEFAULT_CLICK_THROTTLE_MS) {
-        return;
-    }
-    lastClickTime.value = now;
-    instance.track(eventName, payload);
-
-    if (config.debug) {
-        console.warn(
-            `DotCMS Analytics [Click]: Fired click event for ${payload.content.identifier}`,
-            payload
-        );
-    }
-};
-
-/**
- * Handles document click events to detect clicks on contentlets.
+ * Handles click events on elements within a contentlet.
+ * The contentlet element is already known since we attach listeners to contentlets.
  *
  * @param event - The mouse event
+ * @param contentletElement - The contentlet container element
  * @param trackCallback - Callback to execute if the click is valid
+ * @param logger - Logger instance for debug messages
  */
-export const handleDocumentClick = (
+export const handleContentletClick = (
     event: MouseEvent,
+    contentletElement: HTMLElement,
     trackCallback: (eventName: string, payload: DotCMSContentClickPayload) => void,
-    debug = false
+    logger: ReturnType<typeof createPluginLogger>
 ) => {
     const target = event.target as HTMLElement;
 
-    if (debug) {
-        console.warn('DotCMS Analytics [Click]: Click detected on:', target);
-    }
+    logger.debug('Click detected on:', target);
 
-    // 1. Check if clicked element is relevant (a or button)
-    // We traverse up from target to find closest a or button
-    const clickableElement = target.closest('a, button') as HTMLElement;
+    // 1. Find clickable element (a or button) within the event path
+    const clickableElement = target.closest(CLICKABLE_ELEMENTS_SELECTOR) as HTMLElement;
 
     if (!clickableElement) {
-        if (debug) {
-            console.warn('DotCMS Analytics [Click]: No <a> or <button> found in click path');
-        }
+        logger.debug('No <a> or <button> found in click path');
         return;
     }
 
-    if (debug) {
-        console.warn('DotCMS Analytics [Click]: Found clickable element:', clickableElement);
-    }
-
-    // 2. Check if it's inside a tracked contentlet
-    const contentletElement = clickableElement.closest(
-        `.${ANALYTICS_CONTENTLET_CLASS}`
-    ) as HTMLElement;
-
-    if (!contentletElement) {
-        if (debug) {
-            console.warn('DotCMS Analytics [Click]: Clickable element is not inside a contentlet');
-        }
+    // 2. Verify clickable is actually inside this contentlet (safety check)
+    if (!contentletElement.contains(clickableElement)) {
+        logger.debug('Click was outside contentlet boundary');
         return;
     }
 
-    if (debug) {
-        console.warn('DotCMS Analytics [Click]: Found contentlet element:', contentletElement);
-    }
+    logger.debug('Found clickable element:', clickableElement);
 
-    // 3. Check for required attributes (validation)
-    // The contentlet element must have the analytics attributes.
+    // 3. Extract and validate contentlet data
     const contentletData = extractContentletData(contentletElement);
 
     if (!contentletData.identifier) {
-        if (debug) {
-            console.warn('DotCMS Analytics [Click]: Contentlet has no identifier');
-        }
+        logger.debug('Contentlet has no identifier');
         return;
     }
 
-    if (debug) {
-        console.warn('DotCMS Analytics [Click]: Contentlet data:', contentletData);
-    }
+    logger.debug('Contentlet data:', contentletData);
 
-    // 4. Extract Metadata
+    // 4. Build payload with metadata
     const viewportMetrics = getViewportMetrics(contentletElement);
 
     // Extract attributes from the clickable element
+    // Filter out: analytics attributes, and already-captured properties (class, id, href)
     const attributes: Record<string, string> = {};
-    if (clickableElement.hasAttributes()) {
-        for (let i = 0; i < clickableElement.attributes.length; i++) {
-            const attr = clickableElement.attributes[i];
-            // Filter out dot-analytics attributes to avoid noise
-            if (!attr.name.startsWith('data-dot-analytics')) {
-                attributes[attr.name] = attr.value;
-            }
+    for (const attr of clickableElement.attributes) {
+        if (
+            !attr.name.startsWith('data-dot-analytics') &&
+            attr.name !== 'class' &&
+            attr.name !== 'id' &&
+            attr.name !== 'href'
+        ) {
+            attributes[attr.name] = attr.value;
         }
     }
+
+    // Calculate dom_index (expensive operation, only once)
+    const allContentlets = document.querySelectorAll(`.${ANALYTICS_CONTENTLET_CLASS}`);
+    const domIndex = Array.from(allContentlets).indexOf(contentletElement);
 
     const payload: DotCMSContentClickPayload = {
         content: {
@@ -127,18 +82,17 @@ export const handleDocumentClick = (
         },
         position: {
             viewport_offset_pct: viewportMetrics.offsetPercentage,
-            dom_index: Array.from(
-                document.querySelectorAll(`.${ANALYTICS_CONTENTLET_CLASS}`)
-            ).indexOf(contentletElement)
+            dom_index: domIndex
         },
         element: {
             text: (clickableElement.innerText || clickableElement.textContent || '')
                 .trim()
                 .substring(0, 100), // Limit length
             type: clickableElement.tagName.toLowerCase(),
-            id: clickableElement.id,
-            class: clickableElement.className,
-            attributes: attributes
+            id: clickableElement.id || '', // Required by backend, empty string if not present
+            class: clickableElement.className || '', // Required by backend, empty string if not present
+            href: clickableElement.getAttribute('href') || '', // Path as written in HTML (relative), empty string for buttons
+            attributes: attributes // Additional attributes (data-*, aria-*, target, etc.)
         }
     };
 

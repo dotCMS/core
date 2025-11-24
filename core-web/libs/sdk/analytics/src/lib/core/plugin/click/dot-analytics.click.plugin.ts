@@ -1,6 +1,6 @@
 import { AnalyticsInstance } from 'analytics';
 
-import { DotCMSClickTracker } from './dot-analytics.click-tracker';
+import { ClickSubscription, DotCMSClickTracker } from './dot-analytics.click-tracker';
 
 import { DotCMSAnalyticsConfig } from '../../shared/models';
 import {
@@ -19,7 +19,7 @@ import {
  * - Filters for clicks on <a> or <button> elements inside tracked contentlets
  * - Extracts contentlet data and element metadata
  * - Throttles clicks to prevent duplicates
- * - Fires 'content_click' events via instance.track()
+ * - Fires 'content_click' events via subscription callback
  *
  * Note: This plugin is only registered if config.clicks is enabled.
  * See getEnhancedTrackingPlugins() for conditional loading logic.
@@ -29,6 +29,7 @@ import {
  */
 export const dotAnalyticsClickPlugin = (config: DotCMSAnalyticsConfig) => {
     let clickTracker: DotCMSClickTracker | null = null;
+    let subscription: ClickSubscription | null = null;
     const logger = createPluginLogger('Click', config);
 
     return {
@@ -42,7 +43,14 @@ export const dotAnalyticsClickPlugin = (config: DotCMSAnalyticsConfig) => {
         initialize: ({ instance }: { instance: AnalyticsInstance }) => {
             // Create and initialize tracker
             clickTracker = new DotCMSClickTracker(config);
-            clickTracker.initialize(instance);
+
+            // Subscribe to click events
+            subscription = clickTracker.onClick((eventName, payload) => {
+                instance.track(eventName, payload);
+            });
+
+            // Start tracking
+            clickTracker.initialize();
 
             logger.info('Click tracking plugin initialized');
 
@@ -56,6 +64,11 @@ export const dotAnalyticsClickPlugin = (config: DotCMSAnalyticsConfig) => {
         loaded: () => {
             if (isBrowser() && clickTracker) {
                 const cleanup = () => {
+                    if (subscription) {
+                        subscription.unsubscribe();
+                        subscription = null;
+                    }
+
                     if (clickTracker) {
                         clickTracker.cleanup();
                         clickTracker = null;
