@@ -32,10 +32,12 @@ export class DotNavigationService {
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
             this.#globalStore.loadMenu(menus);
 
-            this.#globalStore.setActiveMenu(
-                this.dotRouterService.currentPortlet.id,
-                this.dotRouterService.queryParams['mId']
-            );
+            if (this.dotRouterService.currentPortlet.id) {
+                this.#globalStore.setActiveMenu(
+                    this.dotRouterService.currentPortlet.id,
+                    this.dotRouterService.queryParams['mId']
+                );
+            }
         });
 
         // Handle navigation end events
@@ -43,17 +45,20 @@ export class DotNavigationService {
             .pipe(
                 switchMap((event: NavigationEnd) => {
                     return this.dotMenuService.loadMenu().pipe(
-                        tap((menu: DotMenu[]) => {
-                            const pageTitle = this.getPageCurrentTitle(event.url, menu);
+                        tap(() => {
+                            const pageTitle = this.#globalStore.getPageTitleByUrl(
+                                event.urlAfterRedirects
+                            );
                             if (pageTitle) {
                                 this.titleService.setTitle(`${pageTitle} - ${this._appMainTitle}`);
                             }
 
-                            // Load menu and set active item based on current portlet and parent context
-                            this.#globalStore.setActiveMenu(
-                                this.dotRouterService.currentPortlet.id,
-                                this.dotRouterService.queryParams['mId']
-                            );
+                            if (this.dotRouterService.currentPortlet.id) {
+                                this.#globalStore.setActiveMenu(
+                                    this.dotRouterService.currentPortlet.id,
+                                    this.dotRouterService.queryParams['mId']
+                                );
+                            }
                         }),
                         map(() => true)
                     );
@@ -70,10 +75,12 @@ export class DotNavigationService {
                 .subscribe((menus: DotMenu[]) => {
                     this.#globalStore.loadMenu(menus);
 
-                    this.#globalStore.setActiveMenu(
-                        this.dotRouterService.currentPortlet.id,
-                        this.dotRouterService.queryParams['mId']
-                    );
+                    if (this.dotRouterService.currentPortlet.id) {
+                        this.#globalStore.setActiveMenu(
+                            this.dotRouterService.currentPortlet.id,
+                            this.dotRouterService.queryParams['mId']
+                        );
+                    }
                 });
         });
 
@@ -99,18 +106,15 @@ export class DotNavigationService {
      * @memberof DotNavigationService
      */
     goToFirstPortlet(): Promise<boolean> {
-        const menuGroups = this.#globalStore.menuGroup();
+        const firstMenuItem = this.#globalStore.firstMenuItem();
 
-        if (!menuGroups.length) {
+        if (!firstMenuItem) {
             return Promise.resolve(false);
         }
 
-        const firstMenuGroup = menuGroups[0];
-        const firstMenuItem = firstMenuGroup.menuItems[0];
-
         return this.dotRouterService
             .gotoPortlet(firstMenuItem.menuLink, {
-                queryParams: { mId: firstMenuGroup.id.substring(0, 4) }
+                queryParams: { mId: firstMenuItem.parentMenuId.substring(0, 4) }
             })
             .then((isRouted: boolean) => {
                 if (!isRouted) {
@@ -125,22 +129,5 @@ export class DotNavigationService {
         if (this.router.url.indexOf('c/') > -1) {
             this.dotIframeService.reload();
         }
-    }
-
-    private getPageCurrentTitle(url: string, menu: DotMenu[]): string {
-        let title = '';
-        // Load menu to ensure entities are up to date
-        this.#globalStore.loadMenu(menu);
-
-        // Use flattened menu items from store (already processed)
-        const flattedMenu = this.#globalStore
-            .flattenMenuItems()
-            .reduce((a, { label, menuLink }) => ({ ...a, [menuLink]: label }), {});
-
-        Object.entries(flattedMenu).forEach(([menuLink, label]: [string, string]) => {
-            title = url.indexOf(menuLink) >= 0 ? label : title;
-        });
-
-        return title;
     }
 }

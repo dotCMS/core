@@ -156,7 +156,7 @@ export const GlobalStore = signalStore(
         };
     }),
     withMenu(),
-    withFeature(({ flattenMenuItems }) => withBreadcrumbs(flattenMenuItems)),
+    withFeature(({ menuItemsEntities }) => withBreadcrumbs(menuItemsEntities)),
     withHooks({
         /**
          * Automatically loads the current site when the store is initialized.

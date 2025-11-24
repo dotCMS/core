@@ -101,7 +101,7 @@ describe('withMenu Feature', () => {
 
     describe('Initial State', () => {
         it('should initialize with empty menu items', () => {
-            const items = store.flattenMenuItems();
+            const items = store.menuItemsEntities();
             expect(items).toBeDefined();
             expect(Array.isArray(items)).toBe(true);
             expect(items.length).toBe(0);
@@ -123,13 +123,13 @@ describe('withMenu Feature', () => {
     describe('Load Menu', () => {
         it('should load menu items and transform them to entities', () => {
             store.loadMenu(mockMenuItems);
-            const items = store.flattenMenuItems();
+            const items = store.menuItemsEntities();
             expect(items.length).toBe(4); // 1 + 1 + 2 menu items
         });
 
         it('should add parentMenuId, parentMenuLabel, and parentMenuIcon to entities', () => {
             store.loadMenu(mockMenuItems);
-            const items = store.flattenMenuItems();
+            const items = store.menuItemsEntities();
             const firstItem = items[0];
             expect(firstItem.parentMenuId).toBe('1');
             expect(firstItem.parentMenuLabel).toBe('Home');
@@ -163,14 +163,14 @@ describe('withMenu Feature', () => {
                 }
             ];
             store.loadMenu(newItems);
-            const items = store.flattenMenuItems();
+            const items = store.menuItemsEntities();
             expect(items.length).toBe(1);
             expect(items[0].id).toBe('100-1');
         });
 
         it('should generate menuLink for angular items', () => {
             store.loadMenu(mockMenuItems);
-            const items = store.flattenMenuItems();
+            const items = store.menuItemsEntities();
             const angularItem = items.find((item) => item.angular);
             expect(angularItem?.menuLink).toBe('/');
         });
@@ -201,7 +201,7 @@ describe('withMenu Feature', () => {
                 }
             ];
             store.loadMenu(legacyMenu);
-            const items = store.flattenMenuItems();
+            const items = store.menuItemsEntities();
             expect(items[0].menuLink).toBe('/c/legacy-portlet');
         });
     });
@@ -254,7 +254,7 @@ describe('withMenu Feature', () => {
             store.activateMenuItem('2-1__2');
             const activeItem = store.activeMenuItem();
             expect(activeItem?.id).toBe('2-1');
-            const allItems = store.flattenMenuItems();
+            const allItems = store.menuItemsEntities();
             const firstItem = allItems.find((item) => item.id === '1-1');
             expect(firstItem?.active).toBe(false);
         });
@@ -442,13 +442,13 @@ describe('withMenu Feature', () => {
         });
 
         it('should return all menu items as flat array', () => {
-            const flattened = store.flattenMenuItems();
+            const flattened = store.menuItemsEntities();
             expect(flattened.length).toBe(4);
             expect(flattened.every((item) => item instanceof Object)).toBe(true);
         });
 
         it('should preserve all menu item properties', () => {
-            const flattened = store.flattenMenuItems();
+            const flattened = store.menuItemsEntities();
             const firstItem = flattened[0];
             expect(firstItem.id).toBe('1-1');
             expect(firstItem.label).toBe('Home');
@@ -492,9 +492,9 @@ describe('withMenu Feature', () => {
         it('should maintain single active item constraint', () => {
             store.activateMenuItem('1-1__1');
             store.activateMenuItem('2-1__2');
-            store.activateMenuItem('4__3');
+            store.activateMenuItem('1-1__1');
 
-            const activeItems = store.flattenMenuItems().filter((item) => item.active);
+            const activeItems = store.menuItemsEntities().filter((item) => item.active);
             expect(activeItems.length).toBe(1);
             expect(activeItems[0].id).toBe('4');
         });

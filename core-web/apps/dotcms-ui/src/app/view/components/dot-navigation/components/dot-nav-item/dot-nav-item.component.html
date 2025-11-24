@@ -1,7 +1,9 @@
+@let data = $data();
+@let collapsed = $collapsed();
 <div class="dot-nav__title">
     <div
         (mouseenter)="setSubMenuPosition()"
-        [class.dot-nav__item--active]="isGroupActive"
+        [class.dot-nav__item--active]="isGroupActive()"
         class="dot-nav__item"
         data-testid="nav-item"
         appendTo="target">

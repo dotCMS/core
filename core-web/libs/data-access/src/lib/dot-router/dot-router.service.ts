@@ -352,7 +352,7 @@ export class DotRouterService {
 
         const url = this.router.createUrlTree([link], {
             queryParamsHandling,
-            queryParams: { ...queryParams, ...(parentMenuId && { mId: parentMenuId }) }
+            queryParams: { ...queryParams, ...(parentMenuId ? { mId: parentMenuId } : {}) }
         });
 
         return this.router.navigateByUrl(url, { replaceUrl });

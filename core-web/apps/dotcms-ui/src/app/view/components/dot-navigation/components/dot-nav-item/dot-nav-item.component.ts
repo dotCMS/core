@@ -2,16 +2,15 @@ import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
-    EventEmitter,
-    HostBinding,
     HostListener,
-    Input,
-    Output,
     ViewChild,
-    inject
+    inject,
+    input,
+    output
 } from '@angular/core';
 
 import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 
 import {
@@ -31,28 +30,29 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
         DotSubNavComponent,
         DotNavIconComponent,
         DotRandomIconPipe
-    ]
+    ],
+    host: {
+        'dot-nav-item__collapsed': '$collapsed()'
+    }
 })
 export class DotNavItemComponent {
     private hostElRef = inject(ElementRef);
 
     @ViewChild('subnav', { static: true }) subnav: DotSubNavComponent;
 
-    @Input() data: MenuGroup;
+    readonly #globalStore = inject(GlobalStore);
 
-    @Output()
-    menuClick: EventEmitter<{
+    $data = input.required<MenuGroup>({ alias: 'data' });
+
+    menuClick = output<{
         originalEvent: MouseEvent;
         data: MenuGroup;
         toggleOnly?: boolean;
-    }> = new EventEmitter();
+    }>();
 
-    @Output()
-    itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
+    itemClick = output<{ originalEvent: MouseEvent; data: DotMenuItem }>();
 
-    @HostBinding('class.dot-nav-item__collapsed')
-    @Input()
-    collapsed: boolean;
+    $collapsed = input.required<boolean>({ alias: 'collapsed' });
 
     customStyles = {};
     mainHeaderHeight = 60;
@@ -60,12 +60,7 @@ export class DotNavItemComponent {
     private windowHeight = window.innerHeight;
     labelImportantIcon = LABEL_IMPORTANT_ICON;
 
-    /**
-     * Check if any item in the group is active
-     */
-    get isGroupActive(): boolean {
-        return this.data?.menuItems?.some((item) => item.active) || false;
-    }
+    isGroupActive = this.#globalStore.isGroupActive;
 
     @HostListener('mouseleave', ['$event'])
     menuUnhovered() {
@@ -109,7 +104,7 @@ export class DotNavItemComponent {
      * @memberof DotNavItemComponent
      */
     setSubMenuPosition(): void {
-        if (this.collapsed) {
+        if (this.$collapsed()) {
             const [rects] = this.subnav.ul.nativeElement.getClientRects();
 
             if (window.innerHeight !== this.windowHeight) {
@@ -141,7 +136,7 @@ export class DotNavItemComponent {
      * @memberof DotNavItemComponent
      */
     resetSubMenuPosition(): void {
-        if (this.collapsed) {
+        if (this.$collapsed()) {
             this.customStyles = {
                 overflow: 'hidden'
             };
