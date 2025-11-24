@@ -644,7 +644,7 @@ public class ContentHandler implements IHandler {
 			final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 			final ContentType contentType = content.getContentType();
 			final List<Relationship> relationships = relationshipAPI.byContentType(contentType);
-            final boolean onlyChildren = Config.getBooleanProperty("PUSH_PUBLISHING_REINDEX_RELATIONSHIP_PARENTS_ONLY",
+            final boolean onlyParents = Config.getBooleanProperty("PUSH_PUBLISHING_REINDEX_RELATIONSHIP_PARENTS_ONLY",
                     true);
 			if (!relationships.isEmpty()) {
 
@@ -668,11 +668,10 @@ public class ContentHandler implements IHandler {
 					}
 
 					for (final Contentlet relatedContent : relatedContents) {
-                        boolean shouldReindex = !onlyChildren
-                                ? true
-                                : relationship.getChildStructureInode().equals(content.getContentTypeId())
-                                        ? true
-                                        : false;
+                        boolean shouldReindex = onlyParents
+                                ? relationship.getChildStructureInode().equals(content.getContentTypeId())
+                                : true;   // always reindex if config is not set
+
 
                         contentToRefresh.add(
                                 new Tuple3<>(relatedContent.getIdentifier(), info.getLang(), shouldReindex));
