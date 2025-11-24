@@ -303,7 +303,10 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 }
             },
             cancel: {
-                label: 'Cancel'
+                label: 'Cancel',
+                action: () => {
+                    this.onDialogHide();
+                }
             }
         };
     }
