@@ -80,11 +80,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.valid.next(false);
     }
 
-    transformFormValue(value: any): any {
-        console.log('value', value);
-        console.log('this.formFieldData.clazz', this.formFieldData.clazz);
+    transformFormValue(value) {
         if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
-            console.log('value.newRenderMode', value.newRenderMode);
             return {
                 ...value,
                 fieldVariables: [

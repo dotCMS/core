@@ -1,6 +1,6 @@
 <div [formGroup]="group" class="field">
     <label [for]="property.name" dotFieldRequired>
-        {{ 'contenttypes.field.properties.name.label' | dm }}
+        {{ 'contenttypes.field.properties.newRenderMode.label' | dm }}
     </label>
     <div class="flex flex-wrap gap-3">
         <div class="flex align-items-center">
@@ -8,12 +8,12 @@
                 name="newRenderMode"
                 value="true"
                 [formControlName]="property.name"
-                inputId="ingredient1" />
+                inputId="recommended" />
             <label
-                for="ingredient1"
+                for="recommended"
                 class="ml-2"
-                pTooltip="Runs on native components for faster, smoother editing and a modern, consistent experience.">
-                Recommended
+                [pTooltip]="'contenttypes.field.properties.newRenderMode.recommended.tooltip' | dm">
+                {{ 'contenttypes.field.properties.newRenderMode.recommended.label' | dm }}
             </label>
         </div>
 
@@ -22,12 +22,12 @@
                 name="newRenderMode"
                 value="false"
                 [formControlName]="property.name"
-                inputId="ingredient2" />
+                inputId="deprecated" />
             <label
-                for="ingredient2"
+                for="deprecated"
                 class="ml-2"
-                pTooltip="Renders in an iframe, so the UI won't match and interactions may feel rough. Keep it only for older custom fields.">
-                Deprecated
+                [pTooltip]="'contenttypes.field.properties.newRenderMode.component.tooltip' | dm">
+                {{ 'contenttypes.field.properties.newRenderMode.component.label' | dm }}
             </label>
         </div>
     </div>
