@@ -123,10 +123,10 @@ describe('DotNavigationComponent collapsed', () => {
             ],
             isOpen: false
         };
-        expect(items[0].data).toEqual(expectedMenu1);
+        expect(items[0].$data()).toEqual(expectedMenu1);
         // For the second menu, we need to check it has the transformed structure
-        expect(items[1].data.id).toBe('456');
-        expect(items[1].data.menuItems.length).toBeGreaterThan(0);
+        expect(items[1].$data().id).toBe('456');
+        expect(items[1].$data().menuItems.length).toBeGreaterThan(0);
     });
 
     it('should close on document click', () => {
@@ -294,8 +294,8 @@ describe('DotNavigationComponent expanded', () => {
 
         expect(items.length).toBe(2);
         // Verify the structure, not exact equality since we modified active states
-        expect(items[0].data.id).toBe('123');
-        expect(items[1].data.id).toBe('456');
+        expect(items[0].$data().id).toBe('123');
+        expect(items[1].$data().id).toBe('456');
     });
 
     it('should close on document click', () => {

@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
@@ -117,7 +119,9 @@ describe('DotNavItemComponent', () => {
             providers: [
                 {
                     provide: DotSystemConfigService,
-                    useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+                    useValue: {
+                        getSystemConfig: () => of({})
+                    }
                 },
                 GlobalStore,
                 provideHttpClient(),
@@ -133,6 +137,23 @@ describe('DotNavItemComponent', () => {
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-nav-item'));
         component = de.componentInstance;
+
+        // Load menu data into GlobalStore to activate the group
+        const globalStore = TestBed.inject(GlobalStore);
+        globalStore.loadMenu([
+            {
+                active: false,
+                id: '123',
+                isOpen: false,
+                menuItems: componentHost.menu.menuItems,
+                name: 'Name',
+                tabDescription: 'Description',
+                tabIcon: 'icon',
+                tabName: 'Name',
+                url: 'url'
+            }
+        ]);
+
         fixtureHost.detectChanges();
         navItem = de.query(By.css('[data-testid="nav-item"]'));
         subNav = de.query(By.css('dot-sub-nav'));
@@ -298,7 +319,8 @@ describe('DotNavItemComponent', () => {
         });
 
         it('should reset menu position when mouseleave', () => {
-            component.collapsed = true;
+            componentHost.collapsed = true;
+            fixtureHost.detectChanges();
             de.nativeElement.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
             fixtureHost.detectChanges();
             expect(subNav.styles.cssText).toEqual('height: 0px; overflow: hidden;');
