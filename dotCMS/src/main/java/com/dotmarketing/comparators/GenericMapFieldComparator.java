@@ -13,6 +13,13 @@ import com.liferay.portal.model.User;
  * Generic comparator for Map<String, Object> that can sort by any field with flexible handling
  * of missing fields. Supports ascending/descending order and multiple strategies for null/missing values.
  *
+ * Special Features:
+ * - FOLDER PRIORITY: Maps with type="folder" always appear first, regardless of sort field or direction
+ * - Field fallbacks: Intelligent fallbacks for common field names (name/title, displayName, etc.)
+ * - Type-aware comparison: Handles String, Date, Number, Boolean, and Comparable types
+ * - User resolution: Resolves user IDs to full names for "modUser" field
+ * - Sort order handling: Special handling for "sortOrder" field (0 = last)
+ *
  * Missing Field Handling Strategies:
  * 1. NULLS_LAST - Missing/null values are placed at the end
  * 2. NULLS_FIRST - Missing/null values are placed at the beginning
@@ -20,14 +27,18 @@ import com.liferay.portal.model.User;
  * 4. SKIP_MISSING - Items with missing values are treated as equal (return 0)
  *
  * Example usage:
- * // Sort by title descending, nulls last
+ * // Sort by title descending, folders first, then nulls last
  * Collections.sort(mapList, new GenericMapFieldComparator("title", true));
  *
- * // Sort by modDate ascending, nulls first
+ * // Sort by modDate ascending, folders first, then nulls first
  * Collections.sort(mapList, new GenericMapFieldComparator("modDate", false, NullHandling.NULLS_FIRST));
  *
- * // Sort by sortOrder ascending, missing values = 999999
+ * // Sort by sortOrder ascending, folders first, then missing values = 999999
  * Collections.sort(mapList, new GenericMapFieldComparator("sortOrder", false, "999999"));
+ *
+ * // Mixed content example:
+ * // Input: [{"type":"file", "title":"B"}, {"type":"folder", "title":"Z"}, {"type":"file", "title":"A"}]
+ * // Output: [{"type":"folder", "title":"Z"}, {"type":"file", "title":"A"}, {"type":"file", "title":"B"}]
  */
 public class GenericMapFieldComparator implements Comparator<Map<String, Object>> {
 
@@ -79,6 +90,12 @@ public class GenericMapFieldComparator implements Comparator<Map<String, Object>
 
     @Override
     public int compare(Map<String, Object> map1, Map<String, Object> map2) {
+        // Priority sorting: folders always come first regardless of sort field or direction
+        int folderComparison = compareFolderPriority(map1, map2);
+        if (folderComparison != 0) {
+            return folderComparison;
+        }
+
         Object value1 = getFieldValue(map1, fieldName);
         Object value2 = getFieldValue(map2, fieldName);
 
@@ -90,6 +107,43 @@ public class GenericMapFieldComparator implements Comparator<Map<String, Object>
 
         // Both values are non-null, proceed with comparison
         return compareNonNullValues(value1, value2);
+    }
+
+    /**
+     * Priority comparison to ensure folders always appear first in sorting results.
+     * This method checks if either map contains a "type" field with value "folder"
+     * and prioritizes those entries regardless of sort field or direction.
+     *
+     * @param map1 first map to compare
+     * @param map2 second map to compare
+     * @return -1 if map1 is folder and map2 is not, +1 if map2 is folder and map1 is not, 0 if both same type
+     */
+    private int compareFolderPriority(Map<String, Object> map1, Map<String, Object> map2) {
+        if (map1 == null || map2 == null) {
+            return 0;
+        }
+
+        boolean isFolder1 = isFolderType(map1);
+        boolean isFolder2 = isFolderType(map2);
+
+        // If both are folders or both are non-folders, no priority difference
+        if (isFolder1 == isFolder2) {
+            return 0;
+        }
+
+        // Folder always comes first, regardless of sort direction
+        return isFolder1 ? -1 : 1;
+    }
+
+    /**
+     * Determines if a map represents a folder by checking the "type" field.
+     *
+     * @param map the map to check
+     * @return true if the map has type="folder", false otherwise
+     */
+    private boolean isFolderType(Map<String, Object> map) {
+        Object type = map.get("type");
+        return "folder".equals(type);
     }
 
     /**
