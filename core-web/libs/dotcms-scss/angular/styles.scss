@@ -4,7 +4,7 @@
 @import "mixins";
 @import "typography";
 @import "dotcms-theme/utils/theme-variables"; /* temporary */
-@import "dotcms-theme/theme"; /* prime-ng */
+// @import "dotcms-theme/theme"; /* prime-ng */
 
 // INCLUDE FONT FACES
 @include assistant-font-face(400, "Regular");

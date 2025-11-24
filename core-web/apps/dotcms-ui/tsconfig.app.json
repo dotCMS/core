@@ -4,7 +4,10 @@
         "outDir": "../../dist/out-tsc",
         "types": [],
         "target": "ES2022",
-        "useDefineForClassFields": false
+        "useDefineForClassFields": false,
+        "module": "NodeNext",
+        "moduleResolution": "nodenext",
+        "resolvePackageJsonExports": true
     },
     "files": ["src/main.ts", "src/polyfills.ts"],
     "exclude": ["**/*.stories.ts", "**/*.stories.js"]

@@ -1,15 +1,19 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import Lara from '@primeuix/themes/lara';
 import { MarkdownModule } from 'ngx-markdown';
 
 import { provideHttpClient } from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import {
     provideRouter,
     RouteReuseStrategy,
     withHashLocation,
     withRouterConfig
 } from '@angular/router';
+
+import { providePrimeNG } from 'primeng/config';
 
 import { appRoutes } from './app.routes';
 import { NGFACES_MODULES } from './modules';
@@ -22,6 +26,15 @@ import { DotLoginPageResolver } from './view/components/login/dot-login-page-res
 export const appConfig: ApplicationConfig = {
     providers: [
         // Core Angular providers
+        provideAnimationsAsync(),
+        providePrimeNG({
+            theme: {
+                preset: Lara,
+                options: {
+                    darkModeSelector: false
+                }
+            }
+        }),
         provideAnimations(),
         provideHttpClient(),
         provideRouter(
