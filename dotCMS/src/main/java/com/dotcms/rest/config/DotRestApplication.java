@@ -10,10 +10,13 @@ import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.spi.internal.ResourceMethodInvocationHandlerProvider;
 
+import javax.inject.Singleton;
 import javax.ws.rs.ApplicationPath;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,24 +56,35 @@ import java.util.concurrent.ConcurrentHashMap;
 )
 public class DotRestApplication extends ResourceConfig {
 
+
+
 	private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
 			Config.getBooleanProperty("FEATURE_FLAG_TELEMETRY_CORE_ENABLED", false));
 
 	public DotRestApplication() {
+
+		//Include the rest of the application configuration
+		configureApplication();
+	}
+
+
+	private void configureApplication() {
 		final List<String> packages = new ArrayList<>(List.of(
 				"com.dotcms.rest",
 				"com.dotcms.contenttype.model.field",
 				"com.dotcms.rendering.js",
 				"com.dotcms.ai.rest",
 				"io.swagger.v3.jaxrs2"));
+
 		if (Boolean.TRUE.equals(ENABLE_TELEMETRY_FROM_CORE.get())) {
 			packages.add(TelemetryResource.class.getPackageName());
 		}
-		register(MultiPartFeature.class).
-		register(JacksonJaxbJsonProvider.class).
-		registerClasses(customClasses.keySet()).
-		packages(packages.toArray(new String[0])).
-		register(CdiComponentProvider.class);
+
+		register(MultiPartFeature.class)
+				.register(JacksonJaxbJsonProvider.class)
+				.registerClasses(customClasses.keySet())
+				.packages(packages.toArray(new String[0])
+				);
 	}
 
 	/**
@@ -107,6 +121,11 @@ public class DotRestApplication extends ResourceConfig {
 		}
 		if(customClasses.remove(clazz) != null){
 			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
+			try {
+				CDIUtils.cleanUpCache();
+			}catch (Exception e){
+				Logger.error(DotRestApplication.class, "Error cleaning up cache", e);
+			}
 			reloader.ifPresent(ContainerReloader::reload);
 		}
 	}

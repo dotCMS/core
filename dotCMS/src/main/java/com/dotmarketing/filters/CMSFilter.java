@@ -2,6 +2,7 @@ package com.dotmarketing.filters;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
@@ -57,6 +58,17 @@ public class CMSFilter implements Filter {
 
         try {
             doFilterInternal(req, res, chain);
+        } catch (Exception e) {
+            if(ExceptionUtil.causedBy(e, ExceptionUtil.LOUD_MOUTH_EXCEPTIONS)){
+                Logger.warn(this.getClass(), e.getMessage());
+                return;
+            }
+            if (e.getClass().getCanonicalName().contains("ClientAbortException")) {
+                Logger.info(this.getClass(), "ClientAbortException: " + ((HttpServletRequest) req).getRequestURI());
+                Logger.debug(this.getClass(), "ClientAbortException: " + e.getMessage());
+            } else {
+                throw e;
+            }
         } finally {
             DbConnectionFactory.closeSilently();
         }

@@ -79,4 +79,5 @@ This maintenance release includes the following code fixes:
 73. https://github.com/dotCMS/core/issues/33265 : [FEATURE] disregard common query params as Page Cache keys #33265
 74. https://github.com/dotCMS/core/issues/32802 : Long file names in the list view are clipped instead of being truncated gracefully #32802
 75. https://github.com/dotCMS/core/issues/32249 : Starter zip file entries being created with leading slash #32249
+76. https://github.com/dotCMS/core/issues/31348 : OSGI Rest Resource fails upon Redeploy with message: IllegalArgumentException: object is not an instance of declaring class #31348
 

@@ -1,5 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.util.Logger;
 
@@ -17,7 +18,11 @@ public class RuntimeExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<R
     public Response toResponse(RuntimeException exception) {
 
         //Log into our logs first.
-        Logger.warn(this.getClass(), exception.getMessage(), exception);
+        if(ExceptionUtil.causedBy(exception, ExceptionUtil.LOUD_MOUTH_EXCEPTIONS)){
+            Logger.warn(this.getClass(), exception.getMessage());
+        } else {
+            Logger.warn(this.getClass(), exception.getMessage(), exception);
+        }
 
         return ResponseUtil.mapExceptionResponse(exception);
     }

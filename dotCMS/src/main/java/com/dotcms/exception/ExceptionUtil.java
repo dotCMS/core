@@ -38,6 +38,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.dotcms.rest.config.DotServiceLocatorImpl.QuietServiceShutdownException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -110,6 +111,11 @@ public class ExceptionUtil {
                     InvalidFolderNameException.class
             );
 
+
+    //These are exceptions we want to log but not bubble up to the user
+    public static final Set<Class<? extends Throwable>> LOUD_MOUTH_EXCEPTIONS = Set.of(
+            QuietServiceShutdownException.class
+    );
 
     private ExceptionUtil () {}
 
