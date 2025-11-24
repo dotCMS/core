@@ -496,7 +496,7 @@ describe('withMenu Feature', () => {
 
             const activeItems = store.menuItemsEntities().filter((item) => item.active);
             expect(activeItems.length).toBe(1);
-            expect(activeItems[0].id).toBe('4');
+            expect(activeItems[0].id).toBe('1-1');
         });
 
         it('should maintain single open parent constraint', () => {
