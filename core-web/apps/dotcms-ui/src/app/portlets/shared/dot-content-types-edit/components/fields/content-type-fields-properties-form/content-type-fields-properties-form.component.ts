@@ -57,6 +57,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     }
 
     ngOnInit(): void {
+        // TODO: Migrate to Signal Forms
         this.initFormGroup();
     }
 
