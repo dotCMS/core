@@ -26,7 +26,6 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
 
 import { FieldPropertyService } from '../service';
-import { mockProvider } from '@ngneat/spectator/jest';
 
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,
