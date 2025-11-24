@@ -106,7 +106,7 @@ export const useAISearch = <T extends DotCMSBasicContentlet>({
 
     return {
         response: state.response,
-        results: state.response?.results,
+        results: state.response?.results ?? [],
         status: state.status,
         search,
         reset

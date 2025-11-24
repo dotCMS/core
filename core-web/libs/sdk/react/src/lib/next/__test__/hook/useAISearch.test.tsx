@@ -91,7 +91,7 @@ describe('useAISearch', () => {
 
             expect(result.current.status).toEqual({ state: DotCMSEntityState.IDLE });
             expect(result.current.response).toBeNull();
-            expect(result.current.results).toBeUndefined();
+            expect(result.current.results).toEqual([]);
         });
     });
 
@@ -295,7 +295,7 @@ describe('useAISearch', () => {
             });
 
             expect(result.current.response).toBeNull();
-            expect(result.current.results).toBeUndefined();
+            expect(result.current.results).toEqual([]);
             expect(result.current.status).toEqual({ state: DotCMSEntityState.IDLE });
         });
 
