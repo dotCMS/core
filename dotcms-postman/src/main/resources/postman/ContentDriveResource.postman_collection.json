@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "7de9c7f1-b8a4-463c-be7b-6a03b6f84919",
+		"_postman_id": "6d68d6dd-116e-470e-84a5-45b5d1ccb662",
 		"name": "Content Drive",
 		"description": "Comprehensive tests for Content Drive search functionality including pagination, sorting, and filtering tests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/Content-drive~7f0bb2ad-9828-4f6f-bae2-fa93bd3a09eb/collection/10041132-7de9c7f1-b8a4-463c-be7b-6a03b6f84919?action=share&source=collection_link&creator=10041132"
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/lol~49b6fcea-069f-4fba-af82-85fac14c87ed/collection/10041132-6d68d6dd-116e-470e-84a5-45b5d1ccb662?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -667,7 +667,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"modDate\",\n    \"maxResults\": 10\n}",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"modDate\",\n    \"showFolders\": false,\n    \"maxResults\": 10\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -734,7 +734,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:asc\",\n    \"maxResults\": 10\n}",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:asc\",\n    \"showFolders\": false,  \n    \"maxResults\": 10\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -801,7 +801,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:desc\",\n    \"maxResults\": 10\n}",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:desc\",\n    \"showFolders\": false,  \n    \"maxResults\": 10\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -884,7 +884,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:asc\",\n    \"maxResults\": 20\n}",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"sortBy\": \"title:asc\",\n    \"showFolders\": false,  \n    \"maxResults\": 20\n}",
 							"options": {
 								"raw": {
 									"language": "json"
