@@ -21,6 +21,23 @@ export interface ClickSubscription {
 /**
  * Tracks content clicks using event listeners on contentlet containers.
  * Detects clicks on <a> and <button> elements inside contentlets and fires events.
+ *
+ * Features:
+ * - Attaches event listeners to contentlet containers
+ * - Tracks clicks on anchor and button elements only
+ * - Uses MutationObserver to detect dynamically added content
+ * - Throttles rapid clicks to prevent duplicates (300ms)
+ * - Subscription-based event system for decoupling
+ *
+ * @example
+ * ```typescript
+ * const tracker = new DotCMSClickTracker(config);
+ * const subscription = tracker.onClick((eventName, payload) => {
+ *   console.log('Click detected:', payload);
+ * });
+ * tracker.initialize();
+ * // Later: subscription.unsubscribe();
+ * ```
  */
 export class DotCMSClickTracker {
     private mutationObserver: MutationObserver | null = null;
@@ -52,13 +69,25 @@ export class DotCMSClickTracker {
         };
     }
 
-    /** Notifies all subscribers of a click */
+    /**
+     * Notifies all subscribers of a click event
+     * @param eventName - Name of the event (e.g., 'content_click')
+     * @param payload - Click event payload with content and element data
+     */
     private notifySubscribers(eventName: string, payload: DotCMSContentClickPayload): void {
         this.subscribers.forEach((callback) => callback(eventName, payload));
     }
 
     /**
-     * Initialize click tracking
+     * Initialize click tracking system
+     *
+     * Performs the following:
+     * - Validates browser environment
+     * - Scans for existing contentlets after a delay (100ms)
+     * - Sets up MutationObserver for dynamic content
+     *
+     * The delay allows React/Next.js to finish initial rendering
+     * before attaching listeners.
      */
     public initialize(): void {
         if (!isBrowser()) {
@@ -86,6 +115,15 @@ export class DotCMSClickTracker {
 
     /**
      * Attach click listener to a contentlet container
+     *
+     * Skips if element already has a listener attached.
+     * The listener delegates to handleContentletClick which:
+     * - Finds clicked anchor/button elements
+     * - Extracts contentlet and element data
+     * - Applies throttling (300ms)
+     * - Notifies subscribers
+     *
+     * @param element - Contentlet container element to track
      */
     private attachClickListener(element: HTMLElement): void {
         if (this.trackedElements.has(element)) {
@@ -127,11 +165,17 @@ export class DotCMSClickTracker {
         this.elementHandlers.set(element, clickHandler);
 
         const identifier = element.dataset.dotAnalyticsIdentifier || 'unknown';
-        this.logger.log(`✅ Attached listener to contentlet ${identifier}`, element);
+        this.logger.log(`Attached listener to contentlet ${identifier}`, element);
     }
 
     /**
-     * Find and attach listeners to all contentlet elements
+     * Find and attach listeners to all contentlet elements in the DOM
+     *
+     * Scans the entire document for elements with the
+     * `.dotcms-analytics-contentlet` class and attaches click
+     * listeners if not already tracked.
+     *
+     * Called during initialization and whenever DOM mutations are detected.
      */
     private findAndAttachListeners(): void {
         this.logger.debug('findAndAttachListeners called');
@@ -171,7 +215,10 @@ export class DotCMSClickTracker {
     }
 
     /**
-     * Remove all click listeners
+     * Remove all click listeners from tracked contentlets
+     *
+     * Iterates through all contentlet elements and removes their
+     * click event handlers, cleaning up WeakMap references.
      */
     private removeAllListeners(): void {
         const contentlets = findContentlets();
@@ -186,7 +233,14 @@ export class DotCMSClickTracker {
     }
 
     /**
-     * Cleanup: removes all listeners and disconnects observers
+     * Cleanup all resources used by the click tracker
+     *
+     * Performs:
+     * - Removes all event listeners from contentlets
+     * - Disconnects MutationObserver
+     * - Clears internal references
+     *
+     * Should be called when the plugin is disabled or on page unload.
      */
     public cleanup(): void {
         this.removeAllListeners();
