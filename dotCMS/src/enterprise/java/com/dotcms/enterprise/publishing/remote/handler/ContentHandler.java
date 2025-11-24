@@ -645,7 +645,7 @@ public class ContentHandler implements IHandler {
 			final ContentType contentType = content.getContentType();
 			final List<Relationship> relationships = relationshipAPI.byContentType(contentType);
             final boolean onlyParents = Config.getBooleanProperty("PUSH_PUBLISHING_REINDEX_RELATIONSHIP_PARENTS_ONLY",
-                    true);
+                    false);
 			if (!relationships.isEmpty()) {
 
                 for (final Relationship relationship : relationships) {
