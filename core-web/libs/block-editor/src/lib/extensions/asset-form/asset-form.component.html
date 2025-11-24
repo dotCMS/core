@@ -1,21 +1,29 @@
 <div class="tabview-container">
-    <p-tabs>
-        <p-tab [disabled]="disableTabs" leftIcon="pi pi-images">
-            <ng-template pTemplate="header">Library</ng-template>
-            <ng-template pTemplate="content">
+    <p-tabs value="0">
+        <p-tablist>
+            <p-tab [value]="0" [disabled]="disableTabs">
+                <i class="pi pi-images"></i>
+                <span>Library</span>
+            </p-tab>
+            <p-tab [value]="1" [disabled]="disableTabs">
+                <i class="pi pi-folder"></i>
+                <span>{{ 'Upload ' + type }}</span>
+            </p-tab>
+            <p-tab [value]="2" [disabled]="disableTabs">
+                <i class="pi pi-link"></i>
+                <span>{{ type + ' URL' }}</span>
+            </p-tab>
+        </p-tablist>
+        <p-tabpanels>
+            <p-tabpanel [value]="0">
                 <div class="wrapper">
                     <dot-asset-search
                         (addAsset)="onSelectAsset($event)"
                         [type]="type"
                         [languageId]="languageId"></dot-asset-search>
                 </div>
-            </ng-template>
-        </p-tab>
-        <p-tab [disabled]="disableTabs" leftIcon="pi pi-folder">
-            <ng-template pTemplate="header">
-                {{ 'Upload ' + type }}
-            </ng-template>
-            <ng-template pTemplate="content">
+            </p-tabpanel>
+            <p-tabpanel [value]="1">
                 <div class="wrapper">
                     <dot-upload-asset
                         (uploadedFile)="onSelectAsset($event)"
@@ -23,19 +31,14 @@
                         (hide)="onHide($event)"
                         [type]="type"></dot-upload-asset>
                 </div>
-            </ng-template>
-        </p-tab>
-        <p-tab [disabled]="disableTabs" leftIcon="pi pi-link">
-            <ng-template pTemplate="header">
-                {{ type + ' URL' }}
-            </ng-template>
-            <ng-template pTemplate="content">
+            </p-tabpanel>
+            <p-tabpanel [value]="2">
                 <div class="wrapper">
                     <dot-external-asset
                         (addAsset)="onSelectAsset($event)"
                         [type]="type"></dot-external-asset>
                 </div>
-            </ng-template>
-        </p-tab>
+            </p-tabpanel>
+        </p-tabpanels>
     </p-tabs>
 </div>

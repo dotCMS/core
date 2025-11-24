@@ -1,35 +1,37 @@
 <dot-portlet-base [boxed]="false">
     <div class="container-create__tab-container">
-        <p-tabs class="container-create__tabs">
-            <p-tab>
-                <ng-template pTemplate="header">
+        <p-tabs value="0" class="container-create__tabs">
+            <p-tablist>
+                <p-tab [value]="0">
                     {{ 'message.containers.tab.properties' | dm }}
-                </ng-template>
-                <ng-template pTemplate="content">
-                    <dot-container-properties></dot-container-properties>
-                </ng-template>
-            </p-tab>
-            @if (containerId) {
-                <p-tab>
-                    <ng-template pTemplate="header">
+                </p-tab>
+                @if (containerId) {
+                    <p-tab [value]="1">
                         {{ 'message.containers.tab.permissions' | dm }}
-                    </ng-template>
-                    <ng-template pTemplate="content">
+                    </p-tab>
+                }
+                @if (containerId) {
+                    <p-tab [value]="2">
+                        {{ 'message.containers.tab.history' | dm }}
+                    </p-tab>
+                }
+            </p-tablist>
+            <p-tabpanels>
+                <p-tabpanel [value]="0">
+                    <dot-container-properties></dot-container-properties>
+                </p-tabpanel>
+                @if (containerId) {
+                    <p-tabpanel [value]="1">
                         <dot-container-permissions
                             [containerId]="containerId"></dot-container-permissions>
-                    </ng-template>
-                </p-tab>
-            }
-            @if (containerId) {
-                <p-tab>
-                    <ng-template pTemplate="header">
-                        {{ 'message.containers.tab.history' | dm }}
-                    </ng-template>
-                    <ng-template pTemplate="content">
+                    </p-tabpanel>
+                }
+                @if (containerId) {
+                    <p-tabpanel [value]="2">
                         <dot-container-history [containerId]="containerId"></dot-container-history>
-                    </ng-template>
-                </p-tab>
-            }
+                    </p-tabpanel>
+                }
+            </p-tabpanels>
         </p-tabs>
     </div>
     <dot-global-message></dot-global-message>
