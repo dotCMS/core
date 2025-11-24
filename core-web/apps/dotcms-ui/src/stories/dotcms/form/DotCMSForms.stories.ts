@@ -279,7 +279,9 @@ const HorizontalTemplate = `
             optionLabel="name"
         ></p-multiSelect>
     </div>
-    <button pButton type="button" label="Submit"></button>
+    <button pButton type="button">
+        <span pButtonLabel>Submit</span>
+    </button>
 </div>
 
 
@@ -311,7 +313,9 @@ const HorizontalTemplate = `
             [options]="options"
         ></p-dropdown>
     </div>
-    <button pButton type="button" class="p-button-sm" label="Submit"></button>
+    <button pButton type="button" class="p-button-sm">
+        <span pButtonLabel>Submit</span>
+    </button>
 </div>
 `;
 

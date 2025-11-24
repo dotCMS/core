@@ -33,13 +33,22 @@ const FocusTrapTemplate = `
     <input type="text" size="30" pInputText tabindex="-1" />
 
     <h5>Button</h5>
-    <button pButton type="button" icon="pi pi-check" label="Check"></button>
+    <button pButton type="button">
+        <i class="pi pi-check" pButtonIcon></i>
+        <span pButtonLabel>Check</span>
+    </button>
 
     <h5>Disabled Button</h5>
-    <button pButton type="button" icon="pi pi-check" [disabled]="true" label="Disabled"></button>
+    <button pButton type="button" [disabled]="true">
+        <i class="pi pi-check" pButtonIcon></i>
+        <span pButtonLabel>Disabled</span>
+    </button>
 
     <h5>Button with tabindex -1</h5>
-    <button pButton type="button" icon="pi pi-check" tabindex="-1"  label="Check"></button>
+    <button pButton type="button" tabindex="-1">
+        <i class="pi pi-check" pButtonIcon></i>
+        <span pButtonLabel>Check</span>
+    </button>
 
     <h5>Dropdown</h5>
     <p-select [options]="cities" [(ngModel)]="selectedCity" placeholder="Select a City" optionLabel="name" [showClear]="true"></p-select>

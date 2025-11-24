@@ -51,7 +51,7 @@
                         (onClick)="editClasses.emit()"
                         data-testId="box-style-class-button"
                         icon="pi pi-palette"
-                        styleClass="p-button-rounded p-button-text p-button-sm"></p-button>
+                        class="p-button-rounded p-button-text p-button-sm"></p-button>
                 }
 
                 @if (actions.includes('delete')) {
@@ -87,7 +87,7 @@
             <p-button
                 (onClick)="dialogVisible = true"
                 icon="pi pi-plus"
-                styleClass="p-button-rounded  p-button-text p-button-sm"
+                class="p-button-rounded  p-button-text p-button-sm"
                 data-testId="btn-plus-small"></p-button>
         }
         @if (actions.includes('edit')) {
@@ -95,7 +95,7 @@
                 (onClick)="editClasses.emit()"
                 data-testId="box-style-class-button-small"
                 icon="pi pi-palette"
-                styleClass="p-button-rounded  p-button-text p-button-sm"></p-button>
+                class="p-button-rounded  p-button-text p-button-sm"></p-button>
         }
         @if (actions.includes('delete')) {
             <dotcms-remove-confirm-dialog

@@ -91,7 +91,7 @@ const meta: Meta<DotDeviceSelectorSeoComponent> = {
                 selected: action('selected')
             },
             template: `
-                <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
+                <p-button label="Open Selector" class="p-button-outlined" (click)="op.openMenu($event)"></p-button>
                 <dot-device-selector-seo #op ${argsToTemplate(args)} />
             `
         };
