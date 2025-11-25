@@ -4284,6 +4284,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertEquals(contentlet.getIdentifier(), contentlets.iterator().next().getContentletId());
     }
 
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You create a new MultiTree with style properties
+     * Should: return the MultiTree with the style properties
+     * @throws DotDataException Exception when accessing the database
+     */
     @Test
     public void createAndPersist_styleProperties() throws DotDataException {
         Map<String, Object> styleProperties = createDefaultStyleProperties();
@@ -4303,6 +4309,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 retrieved.getStyleProperties().get("padding"));
     }
 
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You update a MultiTree with style properties
+     * Should: return the MultiTree with the updated style properties
+     * @throws DotDataException Exception when accessing the database
+     */
     @Test
     public void testUpdate_styleProperties() throws Exception {
         Map<String, Object> originalProperties = createDefaultStyleProperties();
@@ -4330,6 +4342,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 retrieved.getStyleProperties().get("fontSize"));
     }
 
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You update a MultiTree with style properties to null
+     * Should: return the MultiTree with null style properties
+     * @throws DotDataException Exception when accessing the database
+     */
     @Test
     public void testUpdate_stylePropertiesToNull() throws Exception {
         Map<String, Object> originalProperties = createDefaultStyleProperties();
@@ -4345,6 +4363,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 retrieved.getStyleProperties());
     }
 
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You create a new MultiTree with null style properties
+     * Should: return the MultiTree with null style properties
+     * @throws DotDataException Exception when accessing the database
+     */
     @Test
     public void testCreate_withNullStyleProperties() throws Exception {
         testMultiTree = createMultiTreeWithStyleProperties(null);
@@ -4355,6 +4379,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertNull("Style properties should be null", retrieved.getStyleProperties());
     }
 
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You create a new MultiTree with empty style properties
+     * Should: return the MultiTree with empty style properties
+     * @throws DotDataException Exception when accessing the database
+     */
     @Test
     public void testCreate_withEmptyStyleProperties() throws Exception {
         Map<String, Object> emptyProperties = new HashMap<>();
