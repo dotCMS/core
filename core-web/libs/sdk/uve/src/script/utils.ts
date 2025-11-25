@@ -166,7 +166,6 @@ export function listenBlockEditorInlineEvent() {
 }
 
 const listenBlockEditorClick = (): void => {
-    console.log('listenBlockEditorClick');
     const editBlockEditorNodes: NodeListOf<HTMLElement> = document.querySelectorAll(
         '[data-block-editor-content]'
     );
