@@ -4,7 +4,6 @@ import { of, throwError } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 
-
 import { DotUsageShellComponent } from './dot-usage-shell.component';
 
 import { DotUsageService, UsageSummary } from '../services/dot-usage.service';
@@ -55,9 +54,7 @@ describe('DotUsageShellComponent', () => {
     const createComponent = createComponentFactory({
         component: DotUsageShellComponent,
         imports: [HttpClientTestingModule],
-        providers: [
-            { provide: DotUsageService, useValue: mockService }
-        ]
+        providers: [{ provide: DotUsageService, useValue: mockService }]
     });
 
     beforeEach(() => {
@@ -78,9 +75,9 @@ describe('DotUsageShellComponent', () => {
         // Mock loading state
         usageService.loading.set(true);
         usageService.summary.set(null);
-        
+
         spectator.detectChanges();
-        
+
         expect(spectator.query('.usage-skeleton')).toBeTruthy();
         expect(spectator.query('p-skeleton')).toBeTruthy();
     });
@@ -89,9 +86,9 @@ describe('DotUsageShellComponent', () => {
         const errorMessage = 'Failed to load data';
         usageService.loading.set(false);
         usageService.error.set(errorMessage);
-        
+
         spectator.detectChanges();
-        
+
         expect(spectator.query('.usage-error')).toBeTruthy();
         expect(spectator.query('p-messages')).toBeTruthy();
         expect(spectator.query('[data-testid="retry-button"]')).toBeTruthy();
@@ -101,9 +98,9 @@ describe('DotUsageShellComponent', () => {
         usageService.loading.set(false);
         usageService.summary.set(mockSummary);
         usageService.error.set(null);
-        
+
         spectator.detectChanges();
-        
+
         expect(spectator.query('.usage-content')).toBeTruthy();
         expect(spectator.query('[data-testid="total-sites-card"]')).toBeTruthy();
         expect(spectator.query('[data-testid="total-content-card"]')).toBeTruthy();
@@ -120,15 +117,15 @@ describe('DotUsageShellComponent', () => {
         usageService.loading.set(false);
         usageService.error.set('Some error');
         spectator.detectChanges();
-        
+
         const retryButton = spectator.query('[data-testid="retry-button"]');
         expect(retryButton).toBeTruthy();
-        
+
         // Reset the mocks to clear previous calls
         jest.clearAllMocks();
-        
+
         spectator.click('[data-testid="retry-button"]');
-        
+
         expect(usageService.reset).toHaveBeenCalled();
         expect(usageService.getSummary).toHaveBeenCalled();
     });
@@ -142,9 +139,9 @@ describe('DotUsageShellComponent', () => {
     it('should handle service errors gracefully', () => {
         const errorSpy = jest.spyOn(console, 'error').mockImplementation();
         usageService.getSummary = jest.fn().mockReturnValue(throwError('Network error'));
-        
+
         spectator.component.loadData();
-        
+
         expect(errorSpy).toHaveBeenCalledWith('Failed to load usage data:', 'Network error');
         errorSpy.mockRestore();
     });
@@ -152,10 +149,10 @@ describe('DotUsageShellComponent', () => {
     it('should show correct metric values', () => {
         usageService.summary.set(mockSummary);
         spectator.detectChanges();
-        
+
         const totalSitesCard = spectator.query('[data-testid="total-sites-card"]');
         expect(totalSitesCard?.textContent).toContain('5');
-        
+
         const totalContentCard = spectator.query('[data-testid="total-content-card"]');
         expect(totalContentCard?.textContent).toContain('1.5K');
     });

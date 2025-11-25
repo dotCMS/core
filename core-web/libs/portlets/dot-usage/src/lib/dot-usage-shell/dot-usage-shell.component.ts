@@ -7,14 +7,13 @@ import { MessagesModule } from 'primeng/messages';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
-
 import { DotUsageService } from '../services/dot-usage.service';
 
 @Component({
     selector: 'lib-dot-usage-shell',
     imports: [
         CommonModule,
-        ButtonModule, 
+        ButtonModule,
         CardModule,
         MessagesModule,
         SkeletonModule,

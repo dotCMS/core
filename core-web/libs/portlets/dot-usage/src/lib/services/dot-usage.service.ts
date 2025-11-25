@@ -1,6 +1,5 @@
 import { Observable } from 'rxjs';
 
-
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 
@@ -92,7 +91,7 @@ export interface UsageServiceState {
 export class DotUsageService {
     #BASE_URL = '/api/v1/usage';
     #http = inject(HttpClient);
-    
+
     // Reactive state
     readonly summary = signal<UsageSummary | null>(null);
     readonly loading = signal<boolean>(false);
@@ -106,12 +105,12 @@ export class DotUsageService {
         this.error.set(null);
 
         return this.#http.get<UsageApiResponse>(`${this.#BASE_URL}/summary`).pipe(
-            map(response => response.entity),
-            tap(summary => {
+            map((response) => response.entity),
+            tap((summary) => {
                 this.summary.set(summary);
                 this.loading.set(false);
             }),
-            catchError(error => {
+            catchError((error) => {
                 const errorMessage = this.getErrorMessage(error);
                 this.error.set(errorMessage);
                 this.loading.set(false);
@@ -144,7 +143,7 @@ export class DotUsageService {
         if (error.error?.message) {
             return error.error.message;
         }
-        
+
         if (error.status) {
             switch (error.status) {
                 case 401:

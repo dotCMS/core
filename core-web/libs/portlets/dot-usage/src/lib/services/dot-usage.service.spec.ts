@@ -42,7 +42,7 @@ describe('DotUsageService', () => {
             imports: [HttpClientTestingModule],
             providers: [DotUsageService]
         });
-        
+
         service = TestBed.inject(DotUsageService);
         httpMock = TestBed.inject(HttpTestingController);
     });
@@ -58,7 +58,7 @@ describe('DotUsageService', () => {
     it('should get summary successfully', (done) => {
         const mockResponse: UsageApiResponse = { entity: mockSummary };
 
-        service.getSummary().subscribe(summary => {
+        service.getSummary().subscribe((summary) => {
             expect(summary).toEqual(mockSummary);
             expect(service.summary()).toEqual(mockSummary);
             expect(service.loading()).toBe(false);
@@ -132,7 +132,9 @@ describe('DotUsageService', () => {
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
             error: (_error) => {
-                expect(service.error()).toBe('Failed to load usage data. Please check your connection and try again.');
+                expect(service.error()).toBe(
+                    'Failed to load usage data. Please check your connection and try again.'
+                );
                 expect(service.loading()).toBe(false);
                 done();
             }
@@ -144,7 +146,7 @@ describe('DotUsageService', () => {
 
     it('should handle custom error messages', (done) => {
         const customErrorMessage = 'Custom service error message';
-        
+
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
             error: (_error) => {
@@ -160,13 +162,13 @@ describe('DotUsageService', () => {
 
     it('should maintain loading state during request', () => {
         expect(service.loading()).toBe(false);
-        
+
         service.getSummary().subscribe();
         expect(service.loading()).toBe(true);
-        
+
         const req = httpMock.expectOne('/api/v1/usage/summary');
         req.flush({ entity: mockSummary });
-        
+
         expect(service.loading()).toBe(false);
     });
 
@@ -174,11 +176,11 @@ describe('DotUsageService', () => {
         // Set initial error state
         service.error.set('Previous error');
         expect(service.error()).toBe('Previous error');
-        
+
         service.getSummary().subscribe();
-        
+
         expect(service.error()).toBeNull();
-        
+
         const req = httpMock.expectOne('/api/v1/usage/summary');
         req.flush({ entity: mockSummary });
     });
@@ -200,7 +202,7 @@ describe('DotUsageService', () => {
     it('should refresh data', (done) => {
         const mockResponse: UsageApiResponse = { entity: mockSummary };
 
-        service.refresh().subscribe(summary => {
+        service.refresh().subscribe((summary) => {
             expect(summary).toEqual(mockSummary);
             done();
         });
@@ -211,24 +213,24 @@ describe('DotUsageService', () => {
 
     it('should handle concurrent requests properly', () => {
         const spy = jest.spyOn(console, 'error').mockImplementation();
-        
+
         // Start two requests simultaneously
         service.getSummary().subscribe();
         service.getSummary().subscribe();
-        
+
         const requests = httpMock.match('/api/v1/usage/summary');
         expect(requests.length).toBe(2);
-        
+
         // Fulfill both requests
         requests[0].flush({ entity: mockSummary });
         requests[1].flush({ entity: mockSummary });
-        
+
         spy.mockRestore();
     });
 
     it('should validate response structure', (done) => {
         const invalidResponse = { invalidProperty: 'test' };
-        
+
         service.getSummary().subscribe({
             next: (summary) => {
                 // Should handle invalid response gracefully
@@ -236,7 +238,7 @@ describe('DotUsageService', () => {
                 done();
             }
         });
-        
+
         const req = httpMock.expectOne('/api/v1/usage/summary');
         req.flush({ entity: invalidResponse });
     });
