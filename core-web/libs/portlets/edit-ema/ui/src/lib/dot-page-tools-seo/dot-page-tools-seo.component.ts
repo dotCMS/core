@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
 
 import { ChipModule } from 'primeng/chip';
@@ -15,7 +15,7 @@ import { DotPageToolsSeoState, DotPageToolsSeoStore } from './store/dot-page-too
 @Component({
     selector: 'dot-page-tools-seo',
     providers: [DotPageToolsService, DotPageToolsSeoStore],
-    imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe, ChipModule, NgIf],
+    imports: [AsyncPipe, DialogModule, DotMessagePipe, ChipModule],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

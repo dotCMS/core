@@ -44,7 +44,12 @@ import {
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../models';
-import { getSortActiveClass, LOADING_ROWS_MOCK } from '../../utils';
+import {
+    EMPTY_MESSAGE_SEARCH,
+    EMPTY_MESSAGES,
+    getSortActiveClass,
+    LOADING_ROWS_MOCK
+} from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
@@ -89,7 +94,7 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
 export class DotUvePaletteListComponent implements OnInit {
     @ViewChild('favoritesPanel') favoritesPanel?: DotFavoriteSelectorComponent;
 
-    $listType = input.required<DotUVEPaletteListTypes>({ alias: 'listType' });
+    $type = input.required<DotUVEPaletteListTypes>({ alias: 'listType' });
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
     $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
@@ -113,16 +118,24 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $isEmpty = this.#paletteListStore.$isEmpty;
     protected readonly $layoutMode = this.#paletteListStore.layoutMode;
     protected readonly $showListLayout = this.#paletteListStore.$showListLayout;
-    protected readonly $emptyStateMessage = this.#paletteListStore.$emptyStateMessage;
+    protected readonly $hideControls = computed(() => {
+        return this.$isEmpty() && !(this.searchControl.value.trim().length > 0);
+    });
+    protected readonly $emptyState = computed(() => {
+        const searchTerm = this.searchControl.value.trim();
+        if (searchTerm.length > 0) {
+            return EMPTY_MESSAGE_SEARCH;
+        }
+
+        return EMPTY_MESSAGES[this.$type()];
+    });
 
     protected readonly $contextMenuItems = signal<MenuItem[]>([]);
 
     readonly $start = computed(
         () => (this.$pagination().currentPage - 1) * this.$pagination().perPage
     );
-    readonly $isFavoritesList = computed(
-        () => this.$listType() === DotUVEPaletteListTypes.FAVORITES
-    );
+    readonly $isFavoritesList = computed(() => this.$type() === DotUVEPaletteListTypes.FAVORITES);
     readonly $showSortButton = computed(
         () =>
             this.$currentView() === DotUVEPaletteListView.CONTENT_TYPES && !this.$isFavoritesList()
@@ -185,7 +198,7 @@ export class DotUvePaletteListComponent implements OnInit {
             const pagePathOrId = this.$pagePath();
             const language = this.$languageId();
             const variantId = this.$variantId();
-            const listType = this.$listType();
+            const listType = this.$type();
 
             // Use untracked to prevent writes during effect
             untracked(() => {
@@ -304,7 +317,7 @@ export class DotUvePaletteListComponent implements OnInit {
     private removeFavoriteItems(contentType: DotCMSContentType) {
         const contenttypes = this.#dotFavoriteContentTypeService.remove(contentType.id);
 
-        if (this.$listType() === DotUVEPaletteListTypes.FAVORITES) {
+        if (this.$type() === DotUVEPaletteListTypes.FAVORITES) {
             this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
         }
 
@@ -323,7 +336,7 @@ export class DotUvePaletteListComponent implements OnInit {
     private addFavoriteItems(contentType: DotCMSContentType) {
         const contenttypes = this.#dotFavoriteContentTypeService.add(contentType);
 
-        if (this.$listType() === DotUVEPaletteListTypes.FAVORITES) {
+        if (this.$type() === DotUVEPaletteListTypes.FAVORITES) {
             this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
         }
 
@@ -342,11 +355,12 @@ export class DotUvePaletteListComponent implements OnInit {
      */
     protected onEmptyStateClick(event: Event) {
         const target = event.target as HTMLElement;
+        const isTargetSpan = target.tagName === 'SPAN' || target.closest('span');
 
-        // Check if the clicked element is a span (or its parent is)
-        if (target.tagName === 'SPAN' || target.closest('span')) {
-            event.preventDefault();
-            this.favoritesPanel?.toggle(event);
+        if (!isTargetSpan) {
+            return;
         }
+
+        this.favoritesPanel?.toggle(event);
     }
 }
