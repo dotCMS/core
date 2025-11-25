@@ -29,7 +29,6 @@ import { AddToBundleService, DotCurrentUserService, DotMessageService } from '@d
 import { LoggerService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotBundle, DotDialogActions } from '@dotcms/dotcms-models';
 
-
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { DotFieldValidationMessageComponent } from '../dot-field-validation-message/dot-field-validation-message.component';
 

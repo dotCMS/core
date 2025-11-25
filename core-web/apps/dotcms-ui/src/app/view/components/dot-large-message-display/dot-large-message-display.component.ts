@@ -101,10 +101,7 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
         }
     }
 
-    private createContent(
-        dialogComponent: Dialog,
-        content: DotLargeMessageDisplayParams
-    ): void {
+    private createContent(dialogComponent: Dialog, content: DotLargeMessageDisplayParams): void {
         // Access the dialog container element - container is already the native element
         const dialogElement = dialogComponent.container as HTMLElement;
         const target = dialogElement?.querySelector('.dialog-message__body') as HTMLElement;

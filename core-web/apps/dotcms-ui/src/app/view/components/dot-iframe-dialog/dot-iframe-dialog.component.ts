@@ -3,14 +3,12 @@ import {
     EventEmitter,
     Input,
     OnChanges,
-    OnInit,
     Output,
     SimpleChanges,
     ViewChild
 } from '@angular/core';
 
 import { DialogModule, Dialog } from 'primeng/dialog';
-
 
 import { IframeComponent } from '../_common/iframe/iframe-component/iframe.component';
 
@@ -20,7 +18,7 @@ import { IframeComponent } from '../_common/iframe/iframe-component/iframe.compo
     styleUrls: ['./dot-iframe-dialog.component.scss'],
     imports: [DialogModule, IframeComponent]
 })
-export class DotIframeDialogComponent implements OnChanges, OnInit {
+export class DotIframeDialogComponent implements OnChanges {
     @ViewChild('dialog', { static: true })
     dotDialog: Dialog;
 
@@ -48,11 +46,6 @@ export class DotIframeDialogComponent implements OnChanges, OnInit {
     keyWasDown: EventEmitter<KeyboardEvent> = new EventEmitter();
 
     show: boolean;
-
-    ngOnInit() {
-        // Note: PrimeNG Dialog doesn't have beforeClose event like dot-dialog
-        // The beforeClose logic would need to be handled differently if needed
-    }
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes.url) {

@@ -42,7 +42,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { convertLocalTimeToUTC, createFullURL } from '../../../utils';
+import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -111,8 +111,7 @@ export class DotUveToolbarComponent {
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
         const publishDate = this.$pageParams().publishDate;
-
-        const previewDate = publishDate ? new Date(publishDate) : new Date();
+        const previewDate = publishDate ? convertUTCToLocalTime(new Date(publishDate)) : new Date();
 
         return previewDate;
     });

@@ -9,9 +9,7 @@ export const DotAnalyticsRoutes: Route[] = [
         path: 'error',
         title: 'analytics.error.title',
         loadComponent: () =>
-            import('./lib/dot-analytics-error/dot-analytics-error.component').then(
-                (m) => m.default
-            )
+            import('./lib/dot-analytics-error/dot-analytics-error.component').then((m) => m.default)
     },
     {
         path: 'search',

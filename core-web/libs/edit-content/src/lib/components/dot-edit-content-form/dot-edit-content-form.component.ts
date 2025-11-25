@@ -588,10 +588,11 @@ export class DotEditContentFormComponent implements OnInit {
      * This method is triggered by the PrimeNG Tabs component when the active tab changes.
      * It synchronizes the UI state with the store to maintain tab selection across renders.
      *
-     * @param {any} event - The change event containing the new active tab value
+     * @param {object} event - The change event containing the new active tab value
+     * @param {number} event.value - The index of the active tab
      * @memberof DotEditContentFormComponent
      */
-    onActiveIndexChange(event: { value: any }) {
+    onActiveIndexChange(event: { value: number }) {
         this.$store.setActiveTab(event.value);
     }
 

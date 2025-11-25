@@ -36,11 +36,7 @@ import {
     DotAppsSite,
     DotDialogActions
 } from '@dotcms/dotcms-models';
-import {
-    DotAutofocusDirective,
-    DotFieldRequiredDirective,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 

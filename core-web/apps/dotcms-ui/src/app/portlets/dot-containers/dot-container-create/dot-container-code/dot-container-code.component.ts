@@ -98,17 +98,15 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     /**
      * If the index is null or 0, prevent the default action and stop propagation. Otherwise, update the active tab index
      * and push the container content
-     * @param {any} event - The change event object containing the value.
+     * @param event - The change event object (TabView onChange) or click event (MouseEvent)
      * @param {number} [index=null] - number = null
      * @returns false
      */
-    public handleTabClick(event: any, index: number = null): boolean {
-        const tabIndex = index !== null ? index : (event?.value ?? 0);
+    public handleTabClick(event: MouseEvent | { value: number }, index: number = null): boolean {
+        const tabIndex = index !== null ? index : 'value' in event ? event.value : 0;
         if (tabIndex === 0) {
-            if (event?.preventDefault) {
+            if (event instanceof MouseEvent) {
                 event.preventDefault();
-            }
-            if (event?.stopPropagation) {
                 event.stopPropagation();
             }
         } else {

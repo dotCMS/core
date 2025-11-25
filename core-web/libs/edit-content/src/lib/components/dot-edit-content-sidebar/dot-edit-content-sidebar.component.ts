@@ -140,8 +140,9 @@ export class DotEditContentSidebarComponent {
     /**
      * Handles the active index change event from the sidebar tabs.
      * @param $event - The event object containing the active tab value.
+     * @param $event.value - The index of the active tab
      */
-    onActiveIndexChange($event: { value: any }) {
+    onActiveIndexChange($event: { value: number }) {
         const { value } = $event;
         this.$store.setActiveSidebarTab(value);
     }

@@ -10,10 +10,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
     template: `
         <p-confirmDialog [style]="{ width: '400px' }" [baseZIndex]="10000">
             <p-footer>
-                <button
-                    class="p-button-secondary"
-                    type="button"
-                    pButton>
+                <button class="p-button-secondary" type="button" pButton>
                     <i class="pi pi-times" pButtonIcon></i>
                     <span pButtonLabel>Cancel</span>
                 </button>

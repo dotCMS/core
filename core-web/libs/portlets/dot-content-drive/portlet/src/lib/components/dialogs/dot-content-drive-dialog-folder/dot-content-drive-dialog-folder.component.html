@@ -27,7 +27,11 @@
                     <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
                     </label>
-                    <p-inputNumber inputId="minmax" mode="decimal" [min]="0" formControlName="sortOrder" />
+                    <p-inputNumber
+                        inputId="minmax"
+                        mode="decimal"
+                        [min]="0"
+                        formControlName="sortOrder" />
                 </div>
 
                 <div class="folder-dialog-field">
@@ -82,7 +86,10 @@
                 </div>
 
                 <div class="folder-dialog-field">
-                    <label [checkIsRequiredControl]="'showOnMenu'" for="showOnMenu" dotFieldRequired>
+                    <label
+                        [checkIsRequiredControl]="'showOnMenu'"
+                        for="showOnMenu"
+                        dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.show-on-menu' | dm }}
                     </label>
                     <p-toggleSwitch

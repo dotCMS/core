@@ -107,7 +107,9 @@
             </p-tabpanel>
         }
         @if (contentType) {
-            <p-tabpanel [value]="contentType && (showPermissionsTab | async) ? 3 : 2" class="content-type__push_history">
+            <p-tabpanel
+                [value]="contentType && (showPermissionsTab | async) ? 3 : 2"
+                class="content-type__push_history">
                 <dot-portlet-box>
                     <dot-iframe [src]="pushHistoryURL"></dot-iframe>
                 </dot-portlet-box>

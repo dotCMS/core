@@ -62,7 +62,8 @@
                 </dot-edit-content-sidebar-section>
 
                 <!-- Workflow section -->
-                <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.workflow.title' | dm">
+                <dot-edit-content-sidebar-section
+                    [title]="'edit.content.sidebar.workflow.title' | dm">
                     <dot-edit-content-sidebar-workflow
                         [workflowSelection]="$workflowSelection()"
                         [(showDialog)]="$showDialog"

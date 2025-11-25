@@ -17,7 +17,6 @@ import { Table, TableModule } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
-
 import { PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -56,7 +55,8 @@ export class DotFormSelectorComponent implements OnInit, OnChanges {
                 const dialogElement = this.dotDialog.container as HTMLElement;
                 const tableElement = dialogElement?.querySelector('.p-datatable');
                 this.contentMinHeight =
-                    this.paginatorService.totalRecords > this.paginatorService.paginationPerPage && tableElement
+                    this.paginatorService.totalRecords > this.paginatorService.paginationPerPage &&
+                    tableElement
                         ? `${tableElement.getBoundingClientRect().height}px`
                         : '';
                 this.datatable.tableViewChild.nativeElement.querySelector('button')?.focus();

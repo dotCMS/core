@@ -15,7 +15,7 @@ import { MenuItem } from 'primeng/api';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotMenuItem } from '@dotcms/dotcms-models';
+import { MenuItemEntity } from '@dotcms/dotcms-models';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -57,7 +57,7 @@ const BREADCRUMBS_SESSION_KEY = 'breadcrumbs';
  *
  */
 
-export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
+export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
     return signalStoreFeature(
         withState(initialBreadcrumbState),
         withProps(() => ({
@@ -177,7 +177,15 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                 if (existingIndex > -1) {
                     truncateBreadcrumbs(existingIndex);
                 } else {
-                    const item = menu.find((item) => item.menuLink === url);
+                    const [urlPath, queryString] = url.split('?');
+                    const shortMenuId = new URLSearchParams(queryString || '').get('mId');
+
+                    const item = menu.find((item) => {
+                        const pathMatches = item.menuLink === urlPath;
+                        const parentMatches =
+                            !shortMenuId || item.parentMenuId.startsWith(shortMenuId);
+                        return pathMatches && parentMatches;
+                    });
 
                     if (item) {
                         setBreadcrumbs([
@@ -186,7 +194,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                                 disabled: true
                             },
                             {
-                                label: item.labelParent,
+                                label: item.parentMenuLabel,
                                 disabled: true
                             },
                             {
@@ -216,7 +224,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                                             disabled: true
                                         },
                                         {
-                                            label: templatesItem.labelParent,
+                                            label: templatesItem.parentMenuLabel,
                                             disabled: true
                                         },
                                         {
