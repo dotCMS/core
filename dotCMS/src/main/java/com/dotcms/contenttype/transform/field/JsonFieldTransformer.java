@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     private static final String CATEGORIES_PROPERTY_NAME = "categories";
     private static final String CARDINALITY_PROPERTY_NAME = "cardinality";
     private static final String VELOCITY_VARIABLE_PROPERTY_NAME = "velocityVar";
-    private static final String FIELDS_VARIABLES_PROPERTY_NAME = "fieldVariables";
+    public static final String FIELDS_VARIABLES_PROPERTY_NAME = "fieldVariables";
     private static final String VALUES = "values";
 
   final List<Field> list;
@@ -51,7 +52,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     // are we an array?
     try {
       JSONArray jarr = new JSONArray(json);
-      if (jarr.size() > 0) {
+      if (!jarr.isEmpty()) {
         JSONObject jo = jarr.getJSONObject(0);
         if (jo.has("fields")) {
           l = fromJsonArray(jo.getJSONArray("fields"));
@@ -74,16 +75,14 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     this.list = ImmutableList.copyOf(l);
   }
 
-
-
   private List<Field> fromJsonArrayStr(String json)
-      throws JSONException, JsonParseException, JsonMappingException, IOException {
+      throws JSONException, IOException {
     return fromJsonArray(new JSONArray(json));
 
   }
 
   private List<Field> fromJsonArray(JSONArray jarr)
-      throws JSONException, JsonParseException, JsonMappingException, IOException {
+      throws JSONException, IOException {
     List<Field> fields = new ArrayList<>();
     for (int i = 0; i < jarr.length(); i++) {
       JSONObject fieldJsonObject = jarr.getJSONObject(i);
@@ -102,7 +101,6 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     return fields;
   }
 
-
   private Field fromJsonStr(String input) throws DotStateException {
 
     try {
@@ -117,12 +115,10 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
           jo.put("relationType", relationship.get(VELOCITY_VARIABLE_PROPERTY_NAME));
       }
 
-      return (Field) mapper.readValue(jo.toString(), Field.class);
+      return mapper.readValue(jo.toString(), Field.class);
     } catch (Exception e) {
       throw new DotStateException(e);
     }
-
-
   }
 
   @Override
@@ -134,7 +130,6 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   public List<Field> asList() throws DotStateException {
     return this.list;
   }
-
 
   @Override
   public JSONObject jsonObject() {
@@ -188,8 +183,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
      * @param field The Field object to convert.
      * @return A Map containing the basic field properties.
      */
+    @SuppressWarnings("unchecked")
     private Map<String, Object> createBaseFieldMap(Field field) {
-
         Map<String, Object> fieldMap = mapper.convertValue(field, HashMap.class);
         fieldMap.put(FIELDS_VARIABLES_PROPERTY_NAME,
                 new JsonFieldVariableTransformer(field.fieldVariables()).mapList());
