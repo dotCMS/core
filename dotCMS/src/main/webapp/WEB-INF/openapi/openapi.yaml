@@ -19928,6 +19928,10 @@ components:
           type: string
         relationType:
           type: string
+        styleProperties:
+          type: object
+          additionalProperties:
+            type: object
         treeOrder:
           type: integer
           format: int32
