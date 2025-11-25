@@ -18133,7 +18133,11 @@ paths:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/move:
     put:
-      operationId: moveFields
+      description: "Moves or adds a field to a Content Type. This endpoint is called\
+        \ (1) when dragging-and-dropping a new field to a Content Type, (2) when updating\
+        \ an existing field, or (3) when moving such a field around in the Content\
+        \ Type's layout."
+      operationId: moveOrAddContentTypeField
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -18146,11 +18150,119 @@ paths:
             schema:
               $ref: "#/components/schemas/MoveFieldsForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example:
+                entity:
+                - divider:
+                    clazz: com.dotcms.contenttype.model.field.ImmutableRowField
+                    contentTypeId: 3b70f386cf65117a675f284eea928415
+                    dataType: SYSTEM
+                    fieldContentTypeProperties: []
+                    fieldType: Row
+                    fieldTypeLabel: Row
+                    fieldVariables: []
+                    fixed: false
+                    forceIncludeInApi: false
+                    iDate: 1763758144000
+                    id: 1b950209ec7b1a5e6901f7fe277e0a6a
+                    indexed: false
+                    listed: false
+                    modDate: 1763758164000
+                    name: fields-0
+                    readOnly: false
+                    required: false
+                    searchable: false
+                    sortOrder: 0
+                    unique: false
+                    variable: fields0
+                  columns:
+                  - columnDivider:
+                      clazz: com.dotcms.contenttype.model.field.ImmutableColumnField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: SYSTEM
+                      fieldContentTypeProperties: []
+                      fieldType: Column
+                      fieldTypeLabel: Column
+                      fieldVariables: []
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1763758144000
+                      id: 6515a7a25deb3b99711398c14bfe3062
+                      indexed: false
+                      listed: false
+                      modDate: 1763758164000
+                      name: fields-1
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 1
+                      unique: false
+                      variable: fields1
+                    fields:
+                    - clazz: com.dotcms.contenttype.model.field.ImmutableTextField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: TEXT
+                      fieldType: Text
+                      fieldTypeLabel: Text
+                      fieldVariables: []
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1763758164000
+                      id: ba34f109c9e86793384387e2619267ea
+                      indexed: false
+                      listed: false
+                      modDate: 1763761740000
+                      name: title
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 2
+                      unique: false
+                      variable: title
+                    - clazz: com.dotcms.contenttype.model.field.ImmutableTextField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: TEXT
+                      fieldType: Text
+                      fieldTypeLabel: Text
+                      fieldVariables:
+                      - clazz: com.dotcms.contenttype.model.field.ImmutableFieldVariable
+                        fieldId: e39533a92ee05d8c083f7e6a1a5ee5e5
+                        id: 7844f04c-0481-4b0d-aa22-95e1a097bb30
+                        key: My Field Var
+                        value: My value
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1764008792000
+                      id: e39533a92ee05d8c083f7e6a1a5ee5e5
+                      indexed: true
+                      listed: true
+                      modDate: 1764018597000
+                      name: Description
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 7
+                      unique: false
+                      variable: description
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Field was added or updated successfully
+        "400":
+          description: Invalid JSON body
+        "401":
+          description: User not specified
+        "404":
+          description: Content Type ID not found
+        "415":
+          description: Body must be a JSON object
+        "500":
+          description: Internal Server Error
+      summary: Moves or adds a field to a Content Type
       tags:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/{id}:

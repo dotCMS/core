@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0163d1f4-f6de-460a-b23f-982c3d63c2a9",
+		"_postman_id": "7f12ca96-680c-4f5f-9a57-51c83294f338",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -14711,223 +14711,455 @@
 			"name": "Rendered Custom Fields",
 			"item": [
 				{
-					"name": "Generate Test Data",
+					"name": "With Field Variable",
 					"item": [
 						{
-							"name": "Create Content Type",
-							"event": [
+							"name": "Generate Test Data",
+							"item": [
 								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Test Content Type with Custom Field was created successfully\", function () {",
-											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
-											"    ",
-											"    pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
-											"    pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
-											"});"
+									"name": "Create Content Type",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Content Type with Custom Field was created successfully\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
+													"    ",
+													"    pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
 										],
-										"type": "text/javascript",
-										"packages": {},
-										"requests": {}
-									}
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"My CT With Custom Field\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"My CT With Custom Field {{$randomBankAccount}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"sortOrder\": 3,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"Title\",\n            \"fixed\": true\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.CustomField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"My Custom Field\",\n            \"fixed\": true,\n            \"fieldVariables\": [\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n                    \"key\": \"newRenderMode\",\n                    \"value\": \"iframe\"\n                }\n            ],\n            \"values\": \"## This is some sample code\\r\\n#set($content = $dotcontent.find($request.getParameter(\\\"inode\\\")))\\r\\n#set($paramOne = 1)\\r\\n#set($paramTwo = 2)\\r\\n#set($total = $math.add($paramOne, $paramTwo))\\r\\n<h1>Title from Rich Text = '$!content.title'</h1><h3>My Custom Field</h3><p>Total = $total</p>\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a new dotCMS Content Type with a custom field via the Content Type API. This request demonstrates creating a Simple Content Type that includes a standard Title field and a Custom Field with inline Velocity code in the values property.\n\nNotice how the Field Variable named 'newRenderMode' has been set in order to render the Velocity code in the Custom Field ."
+									},
+									"response": []
+								},
+								{
+									"name": "Create Contentlet One",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test contentlet was created successfully\", function () {",
+													"    var entity = pm.response.json().entity;",
+													"    pm.expect(entity.summary.failCount).to.eql(0, \"An error occurred when creating the test Contentlet\");",
+													"    pm.expect(entity.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"",
+													"    var contentId = Object.keys(entity.results[0]);",
+													"    pm.collectionVariables.set(\"contentInode\", entity.results[0][contentId].inode);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"pm.collectionVariables.set(\"originalTitle\", \"My Test Title\");"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeVAR}}\",\n            \"languageId\": 1,\n            \"title\": \"Test Contentlet One\",\n            \"contentHost\": \"SYSTEM_HOST\",\n            \"myCustomField\": \"placeholder\" // This value is not important for the test\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										},
+										"description": "Create a test contentlet and immediately publish it using the default workflow action. This request is used in workflow-oriented test runs to validate content creation + publish in dotCMS and to capture the created inode for downstream steps."
+									},
+									"response": []
 								}
 							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My CT With Custom Field\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My CT With Custom Field {{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"sortOrder\": 3,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Title\",\n\t\t\t\"fixed\": true\n\t\t},\n        {\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.CustomField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"My Custom Field\",\n\t\t\t\"fixed\": true,\n            \"values\": \"## This is some sample code\\r\\n#set($content = $dotcontent.find($request.getParameter(\\\"inode\\\")))\\r\\n#set($paramOne = 1)\\r\\n#set($paramTwo = 2)\\r\\n#set($total = $math.add($paramOne, $paramTwo))\\r\\n<h1>Title from Rich Text = '$!content.title'</h1><h3>My Custom Field</h3><p>Total = $total</p>\"\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}\n"
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/contenttype",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"contenttype"
-									]
-								},
-								"description": "Creates a new dotCMS Content Type with a custom field via the Content Type API. This request demonstrates creating a Simple Content Type that includes a standard Title field and a Custom Field with inline Velocity code in the values property."
-							},
-							"response": []
-						},
-						{
-							"name": "Create Contentlet One",
 							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Test contentlet was created successfully\", function () {",
-											"    var entity = pm.response.json().entity;",
-											"    pm.expect(entity.summary.failCount).to.eql(0, \"An error occurred when creating the test Contentlet\");",
-											"    pm.expect(entity.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
-											"",
-											"    var contentId = Object.keys(entity.results[0]);",
-											"    pm.collectionVariables.set(\"contentInode\", entity.results[0][contentId].inode);",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {},
-										"requests": {}
-									}
-								},
 								{
 									"listen": "prerequest",
 									"script": {
-										"exec": [
-											"pm.collectionVariables.set(\"originalTitle\", \"My Test Title\");"
-										],
 										"type": "text/javascript",
 										"packages": {},
-										"requests": {}
+										"requests": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
 									}
 								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeVAR}}\",\n            \"languageId\": 1,\n            \"title\": \"Test Contentlet One\",\n            \"contentHost\": \"default\",\n            \"myCustomField\": \"placeholder\" // This value is not important for the test\n        }\n    ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"workflow",
-										"actions",
-										"default",
-										"fire",
-										"PUBLISH"
-									]
-								},
-								"description": "Create a test contentlet and immediately publish it using the default workflow action. This request is used in workflow-oriented test runs to validate content creation + publish in dotCMS and to capture the created inode for downstream steps."
-							},
-							"response": []
-						}
-					],
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {},
-								"exec": [
-									""
-								]
-							}
+							]
 						},
 						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {},
-								"exec": [
-									"pm.test(\"HTTP Status code must be successful\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
-								]
-							}
+							"name": "Test Rendered Data",
+							"item": [
+								{
+									"name": "Get Rendered Custom Field",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Check that Custom Field was rendered correctly\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
+													"    pm.expect(jsonData.entity.fields[3].rendered).to.not.equal(undefined, \"The 'rendered' attribute is missing\");",
+													"    pm.expect(jsonData.entity.fields[3].rendered).to.equal(\"<h1>Title from Rich Text = 'Test Contentlet One'</h1><h3>My Custom Field</h3><p>Total = 3</p>\", \"Generated code is not the expected one\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/render/id/{{contentTypeID}}?inode={{contentInode}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"render",
+												"id",
+												"{{contentTypeID}}"
+											],
+											"query": [
+												{
+													"key": "inode",
+													"value": "{{contentInode}}"
+												}
+											]
+										},
+										"description": "Retrieves the rendered output for a specific Custom Field in a dotCMS Content Type for a given contentlet.\n\nNotice how the title of the Test Contentlet One created previously is displayed in the rendered version. this Endpoint can take parameters through both the Request object and the Query String."
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							]
 						}
 					]
 				},
 				{
-					"name": "Test Rendered Data",
+					"name": "Without Field Variable",
 					"item": [
 						{
-							"name": "Get Rendered Custom Field",
+							"name": "Generate Test Data",
+							"item": [
+								{
+									"name": "Create Content Type Without Field Variable",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Content Type with Custom Field was created successfully\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
+													"    ",
+													"    pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"My CT 2 With Custom Field\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"My CT 2 With Custom Field {{$randomBankAccount}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"sortOrder\": 3,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"Title\",\n            \"fixed\": true\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.CustomField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"My Custom Field\",\n            \"fixed\": true,\n            \"values\": \"## This is some sample code\\r\\n#set($content = $dotcontent.find($request.getParameter(\\\"inode\\\")))\\r\\n#set($paramOne = 1)\\r\\n#set($paramTwo = 2)\\r\\n#set($total = $math.add($paramOne, $paramTwo))\\r\\n<h1>Title from Rich Text = '$!content.title'</h1><h3>My Custom Field</h3><p>Total = $total</p>\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a new dotCMS Content Type with a custom field via the Content Type API. This request demonstrates creating a Simple Content Type that includes a standard Title field and a Custom Field with inline Velocity code in the values property.\n\nThis definition does NOT have the required Field Variable that would render the Velocity Code in a custom field."
+									},
+									"response": []
+								},
+								{
+									"name": "Create Contentlet Two",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test contentlet was created successfully\", function () {",
+													"    var entity = pm.response.json().entity;",
+													"    pm.expect(entity.summary.failCount).to.eql(0, \"An error occurred when creating the test Contentlet\");",
+													"    pm.expect(entity.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"",
+													"    var contentId = Object.keys(entity.results[0]);",
+													"    pm.collectionVariables.set(\"contentInode\", entity.results[0][contentId].inode);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"pm.collectionVariables.set(\"originalTitle\", \"My Test Title\");"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeVAR}}\",\n            \"languageId\": 1,\n            \"title\": \"Test Contentlet Two\",\n            \"contentHost\": \"SYSTEM_HOST\",\n            \"myCustomField\": \"placeholder\" // This value is not important for the test\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										},
+										"description": "Create a test contentlet and immediately publish it using the default workflow action. This request is used in workflow-oriented test runs to validate content creation + publish in dotCMS and to capture the created inode for downstream steps."
+									},
+									"response": []
+								}
+							],
 							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											""
+										]
+									}
+								},
 								{
 									"listen": "test",
 									"script": {
-										"exec": [
-											"pm.test(\"Check that Custom Field was rendered correctly\", function () {",
-											"    const jsonData = pm.response.json();",
-											"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
-											"    pm.expect(jsonData.entity.fields[3].rendered).to.equal(\"<h1>Title from Rich Text = 'Test Contentlet One'</h1><h3>My Custom Field</h3><p>Total = 3</p>\", \"Generated code is not the expected one\");",
-											"});"
-										],
 										"type": "text/javascript",
 										"packages": {},
-										"requests": {}
+										"requests": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
 									}
 								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{serverURL}}/api/v1/contenttype/render/id/{{contentTypeID}}?inode={{contentInode}}",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"contenttype",
-										"render",
-										"id",
-										"{{contentTypeID}}"
-									],
-									"query": [
-										{
-											"key": "inode",
-											"value": "{{contentInode}}"
-										}
-									]
-								},
-								"description": "Retrieves the rendered output for a specific Custom Field in a dotCMS Content Type for a given contentlet.\n\nNotice how the title of the Test Contentlet One created previously is displayed in the rendered version. this Endpoint can take parameters through both the Request object and the Query String."
-							},
-							"response": []
-						}
-					],
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {},
-								"exec": [
-									""
-								]
-							}
+							]
 						},
 						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {},
-								"exec": [
-									"pm.test(\"HTTP Status code must be successful\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
-								]
-							}
+							"name": "Test Non-Rendered Data",
+							"item": [
+								{
+									"name": "Get Non-Rendered Custom Field",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Check that Custom Field was rendered correctly\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
+													"    pm.expect(jsonData.entity.fields[3].rendered).to.equal(undefined, \"The 'rendered' attribute MUST be missing\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/render/id/{{contentTypeID}}?inode={{contentInode}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"render",
+												"id",
+												"{{contentTypeID}}"
+											],
+											"query": [
+												{
+													"key": "inode",
+													"value": "{{contentInode}}"
+												}
+											]
+										},
+										"description": "Attempts to retrieves the rendered output for a specific Custom Field in a dotCMS Content Type for a given contentlet. However, the required Field Variable for that has NOT been set, so no rendered field should be returned."
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							]
 						}
 					]
 				}
