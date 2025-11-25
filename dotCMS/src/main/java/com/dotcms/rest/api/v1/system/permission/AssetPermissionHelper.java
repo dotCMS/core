@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -750,6 +751,77 @@ public class AssetPermissionHelper {
         assetData.put("permissions", rolePermissions);
 
         response.put("asset", assetData);
+
+        return response;
+    }
+
+    // ========================================================================
+    // RESET ASSET PERMISSIONS METHODS
+    // ========================================================================
+
+    /**
+     * Resets permissions for an asset to inherit from its parent.
+     * Removes all individual permissions from the asset, making it inherit permissions.
+     *
+     * @param assetId Asset identifier (inode or identifier)
+     * @param user    Requesting user (must be admin)
+     * @return Response map containing message, assetId, and previousPermissionCount
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     * @throws NotFoundInDbException If asset is not found
+     * @throws ConflictException    If asset already inherits permissions (409)
+     */
+    public Map<String, Object> resetAssetPermissions(final String assetId, final User user)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format(
+            "resetAssetPermissions - assetId: %s, user: %s", assetId, user.getUserId()));
+
+        // 1. Validate asset ID
+        if (!UtilMethods.isSet(assetId)) {
+            throw new IllegalArgumentException("Asset ID is required");
+        }
+
+        // 2. Resolve asset
+        final Permissionable asset = resolveAsset(assetId);
+        if (asset == null) {
+            throw new NotFoundInDbException("asset does not exist");
+        }
+
+        // 3. Check user has EDIT_PERMISSIONS on asset
+        final boolean canEditPermissions = permissionAPI.doesUserHavePermission(
+            asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false);
+        if (!canEditPermissions) {
+            throw new DotSecurityException(String.format(
+                "User does not have EDIT_PERMISSIONS permission on asset: %s", assetId));
+        }
+
+        // 4. Check if asset is already inheriting - return 409 Conflict
+        if (permissionAPI.isInheritingPermissions(asset)) {
+            Logger.debug(this, () -> String.format(
+                "Asset already inherits permissions: %s", assetId));
+            throw new ConflictException("Asset already inherits permissions from parent");
+        }
+
+        // 5. Get count of individual permissions before removal
+        final List<Permission> individualPermissions = permissionAPI.getPermissions(asset, true, true);
+        final int previousPermissionCount = individualPermissions.size();
+
+        Logger.debug(this, () -> String.format(
+            "Removing %d individual permissions from asset: %s", previousPermissionCount, assetId));
+
+        // 6. Remove all individual permissions - asset will now inherit
+        permissionAPI.removePermissions(asset);
+
+        // 7. Build and return response
+        Logger.info(this, () -> String.format(
+            "Successfully reset permissions for asset: %s (removed %d permissions)",
+            assetId, previousPermissionCount));
+
+        final Map<String, Object> response = new HashMap<>();
+        response.put("message", "Individual permissions removed. Asset now inherits from parent.");
+        response.put("assetId", assetId);
+        response.put("previousPermissionCount", previousPermissionCount);
 
         return response;
     }

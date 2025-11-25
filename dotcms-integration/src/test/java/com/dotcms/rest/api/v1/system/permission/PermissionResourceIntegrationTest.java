@@ -5,6 +5,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -346,6 +347,148 @@ public class PermissionResourceIntegrationTest {
                 testFolder.getInode(),
                 false,
                 form
+        );
+    }
+
+    // ========================================================================
+    // RESET ASSET PERMISSIONS TESTS
+    // ========================================================================
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Reset permissions on a folder with individual permissions
+     * ExpectedResult: Permissions reset successfully, folder now inherits
+     */
+    @Test
+    public void test_resetAssetPermissions_success() throws DotDataException, DotSecurityException {
+        // Create parent and child folder
+        final Folder parentFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder childFolder = new FolderDataGen().parent(parentFolder).nextPersisted();
+
+        // Create a test role and add individual permissions to child folder
+        final Role testRole = new RoleDataGen().nextPersisted();
+        final RolePermissionForm rolePermissionForm = new RolePermissionForm(
+                testRole.getId(),
+                Arrays.asList("READ", "WRITE"),
+                null
+        );
+        final UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(
+                Arrays.asList(rolePermissionForm)
+        );
+
+        // First, set individual permissions on child folder
+        resource.updateAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                childFolder.getInode(),
+                false,
+                form
+        );
+
+        // Verify child has individual permissions
+        assertFalse("Child folder should have individual permissions",
+                permissionAPI.isInheritingPermissions(childFolder));
+
+        // Now reset the permissions
+        final ResponseEntityResetPermissionsView responseView = resource.resetAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                childFolder.getInode()
+        );
+
+        // Verify response
+        assertNotNull("Response should not be null", responseView);
+        final Map<String, Object> entity = responseView.getEntity();
+        assertNotNull("Entity should not be null", entity);
+
+        // Verify response fields
+        assertEquals("Individual permissions removed. Asset now inherits from parent.",
+                entity.get("message"));
+        assertEquals(childFolder.getInode(), entity.get("assetId"));
+        assertNotNull("previousPermissionCount should be present", entity.get("previousPermissionCount"));
+        assertTrue("previousPermissionCount should be >= 0",
+                (Integer) entity.get("previousPermissionCount") >= 0);
+
+        // Verify folder is now inheriting
+        assertTrue("Child folder should now inherit permissions",
+                permissionAPI.isInheritingPermissions(childFolder));
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Non-admin user tries to reset permissions
+     * ExpectedResult: DotSecurityException is thrown
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_resetAssetPermissions_nonAdminUser_throws403() throws DotDataException, DotSecurityException {
+        // Create test folder
+        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+
+        // Create a non-admin user with backend role
+        final String knownPassword = "testPassword456";
+        final User nonAdminUser = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        // Call the endpoint - should throw DotSecurityException
+        resource.resetAssetPermissions(
+                getHttpRequest(nonAdminUser.getEmailAddress(), knownPassword),
+                response,
+                testFolder.getInode()
+        );
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Asset ID does not exist
+     * ExpectedResult: NotFoundInDbException is thrown
+     */
+    @Test(expected = com.dotcms.contenttype.exception.NotFoundInDbException.class)
+    public void test_resetAssetPermissions_assetNotFound_throws404() throws DotDataException, DotSecurityException {
+        // Call with non-existent asset ID
+        resource.resetAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                "non-existent-asset-id-67890"
+        );
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Asset already inherits permissions
+     * ExpectedResult: ConflictException is thrown (409 Conflict)
+     */
+    @Test(expected = ConflictException.class)
+    public void test_resetAssetPermissions_alreadyInheriting_throws409() throws DotDataException, DotSecurityException {
+        // Create parent and child folder (child inherits by default)
+        final Folder parentFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder childFolder = new FolderDataGen().parent(parentFolder).nextPersisted();
+
+        // Verify child is inheriting
+        assertTrue("Child folder should initially inherit permissions",
+                permissionAPI.isInheritingPermissions(childFolder));
+
+        // Try to reset - should throw ConflictException since already inheriting
+        resource.resetAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                childFolder.getInode()
+        );
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Reset with empty/null asset ID
+     * ExpectedResult: IllegalArgumentException is thrown
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_resetAssetPermissions_emptyAssetId_throws400() throws DotDataException, DotSecurityException {
+        // Call with empty asset ID - should throw IllegalArgumentException
+        resource.resetAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                ""
         );
     }
 }
