@@ -258,6 +258,7 @@ public class PageResourceHelper implements Serializable {
                                 .personalization(multiTree.getPersonalization())
                                 .treeOrder(multiTree.getTreeOrder())
                                 .variantId(multiTree.getVariantId())
+                                .styleProperties(multiTree.getStyleProperties())
                                 .build()
                         , user, pageMode, language);
             }
@@ -465,6 +466,7 @@ public class PageResourceHelper implements Serializable {
         final String variant    = copyContentletForm.getVariantId();
         final int treeOrder     = copyContentletForm.getTreeOrder();
         final String personalization = copyContentletForm.getPersonalization();
+        final Map<String, Object> styleProperties = copyContentletForm.getStyleProperties();
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(container)) {
 
@@ -486,9 +488,11 @@ public class PageResourceHelper implements Serializable {
 
         APILocator.getMultiTreeAPI().deleteMultiTree(currentMultitree);
 
-        final MultiTree newMultitree = new MultiTree(htmlPage, container, copiedContentlet.getIdentifier(),
-                instanceId, treeOrder, null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization,
-                null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        final MultiTree newMultitree = new MultiTree(htmlPage, container,
+                copiedContentlet.getIdentifier(), instanceId, treeOrder,
+                null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT : personalization,
+                null == variant ? VariantAPI.DEFAULT_VARIANT.name() : variant,
+                styleProperties);
         Logger.debug(this, ()-> "Saving current contentlet multi tree: " + currentMultitree);
         APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
 
