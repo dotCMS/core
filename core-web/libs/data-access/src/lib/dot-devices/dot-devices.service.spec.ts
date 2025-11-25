@@ -1,5 +1,5 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotDevice } from '@dotcms/dotcms-models';
@@ -8,7 +8,6 @@ import { CoreWebServiceMock, mockDotDevices } from '@dotcms/utils-testing';
 import { DotDevicesService } from './dot-devices.service';
 
 describe('DotDevicesService', () => {
-    let injector: TestBed;
     let dotDevicesService: DotDevicesService;
     let httpMock: HttpTestingController;
 
@@ -20,9 +19,8 @@ describe('DotDevicesService', () => {
                 DotDevicesService
             ]
         });
-        injector = getTestBed();
-        dotDevicesService = injector.get(DotDevicesService);
-        httpMock = injector.get(HttpTestingController);
+        dotDevicesService = TestBed.inject(DotDevicesService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get Devices', () => {
