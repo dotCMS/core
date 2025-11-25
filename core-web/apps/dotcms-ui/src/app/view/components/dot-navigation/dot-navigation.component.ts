@@ -111,18 +111,6 @@ export class DotNavigationComponent {
     }
 
     /**
-     * Handle click on document to hide the fly-out menu
-     *
-     * @memberof DotNavItemComponent
-     */
-    @HostListener('document:click')
-    handleDocumentClick(): void {
-        if (this.$isCollapsed()) {
-            this.#globalStore.closeAllParents();
-        }
-    }
-
-    /**
      * Handle click on main button to toggle the navigation
      *
      * @memberof DotNavigationComponent

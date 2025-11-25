@@ -68,7 +68,7 @@ export function withMenu() {
                 }, {});
 
                 // Transform grouped object into array of MenuGroup
-                return Object.entries(grouped).map(([parentMenuId, menuItems]) => {
+                const groups = Object.entries(grouped).map(([parentMenuId, menuItems]) => {
                     const firstItem = menuItems[0];
                     return {
                         id: parentMenuId,
@@ -78,6 +78,7 @@ export function withMenu() {
                         isOpen: parentMenuId === currentOpenParentMenuId
                     };
                 });
+                return groups;
             });
 
             /**
@@ -230,21 +231,9 @@ export function withMenu() {
              * Toggles the navigation menu collapsed/expanded state.
              */
             const toggleNavigation = () => {
-                const isCollapsed = store.isNavigationCollapsed();
-                patchState(store, {
-                    isNavigationCollapsed: !isCollapsed
-                });
-
-                // When collapsing, close all parent menu groups
-                if (!isCollapsed) {
-                    patchState(store, { openParentMenuId: null });
-                } else {
-                    // When expanding, open the parent menu group of the active item if there is one
-                    const activeItem = store.activeMenuItem();
-                    if (activeItem) {
-                        patchState(store, { openParentMenuId: activeItem.parentMenuId });
-                    }
-                }
+                patchState(store, (state) => ({
+                    isNavigationCollapsed: !state.isNavigationCollapsed
+                }));
             };
 
             /**
@@ -253,8 +242,7 @@ export function withMenu() {
              */
             const collapseNavigation = () => {
                 patchState(store, {
-                    isNavigationCollapsed: true,
-                    openParentMenuId: null
+                    isNavigationCollapsed: true
                 });
             };
 
