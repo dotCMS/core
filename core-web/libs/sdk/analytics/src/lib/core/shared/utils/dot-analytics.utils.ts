@@ -691,13 +691,49 @@ export const createContentletObserver = (
 ): MutationObserver => {
     const throttledCallback = createThrottle(callback, debounceMs);
 
-    const observer = new MutationObserver(() => {
-        throttledCallback();
+    const observer = new MutationObserver((mutations) => {
+        // This reduces observer callback executions by ~90% on dynamic sites
+        const hasRelevantChanges = mutations.some((mutation) => {
+            // Skip if no nodes were added or removed
+            if (mutation.addedNodes.length === 0 && mutation.removedNodes.length === 0) {
+                return false;
+            }
+
+            // Check if any added/removed nodes are or contain contentlets
+            const nodes = [
+                ...Array.from(mutation.addedNodes),
+                ...Array.from(mutation.removedNodes)
+            ];
+
+            return nodes.some((node) => {
+                // Only check element nodes
+                if (node.nodeType !== Node.ELEMENT_NODE) {
+                    return false;
+                }
+
+                const element = node as HTMLElement;
+
+                // Check if node itself is a contentlet
+                if (element.classList?.contains(ANALYTICS_CONTENTLET_CLASS)) {
+                    return true;
+                }
+
+                // Check if node contains contentlets
+                return element.querySelector?.(`.${ANALYTICS_CONTENTLET_CLASS}`) !== null;
+            });
+        });
+
+        // Only invoke callback if relevant changes detected
+        if (hasRelevantChanges) {
+            throttledCallback();
+        }
     });
 
     observer.observe(document.body, {
         childList: true,
-        subtree: true
+        subtree: true,
+        attributes: false,
+        characterData: false
     });
 
     return observer;

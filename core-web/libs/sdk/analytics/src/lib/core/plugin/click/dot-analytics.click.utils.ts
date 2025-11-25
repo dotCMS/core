@@ -1,5 +1,4 @@
 import {
-    ANALYTICS_CONTENTLET_CLASS,
     CLICKABLE_ELEMENTS_SELECTOR,
     CLICK_EVENT_TYPE
 } from '../../shared/constants/dot-analytics.constants';
@@ -69,9 +68,9 @@ export const handleContentletClick = (
         }
     }
 
-    // Calculate dom_index (expensive operation, only once)
-    const allContentlets = document.querySelectorAll(`.${ANALYTICS_CONTENTLET_CLASS}`);
-    const domIndex = Array.from(allContentlets).indexOf(contentletElement);
+    // Read cached DOM index instead of expensive O(3n) query
+    // Index is cached in data-attribute when listener is attached
+    const domIndex = parseInt(contentletElement.dataset.dotAnalyticsDomIndex || '-1', 10);
 
     const payload: DotCMSContentClickPayload = {
         content: {

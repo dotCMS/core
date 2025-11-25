@@ -5,11 +5,7 @@ import {
     isElementMeetingVisibilityThreshold
 } from './dot-analytics.impression.utils';
 
-import {
-    ANALYTICS_CONTENTLET_CLASS,
-    DEFAULT_IMPRESSION_CONFIG,
-    IMPRESSION_EVENT_TYPE
-} from '../../shared/constants';
+import { DEFAULT_IMPRESSION_CONFIG, IMPRESSION_EVENT_TYPE } from '../../shared/constants';
 import {
     DotCMSAnalyticsConfig,
     DotCMSContentImpressionPayload,
@@ -177,6 +173,10 @@ export class DotCMSImpressionTracker {
 
                 // Only observe and initialize if this is a new element
                 if (!this.elementImpressionStates.has(identifier)) {
+                    if (!element.dataset.dotAnalyticsDomIndex) {
+                        element.dataset.dotAnalyticsDomIndex = String(i);
+                    }
+
                     this.observer.observe(element);
                     this.elementImpressionStates.set(identifier, {
                         timer: null,
@@ -279,9 +279,6 @@ export class DotCMSImpressionTracker {
             originalReplaceState.apply(this, args);
             checkPathChange();
         };
-
-        // Fallback: check periodically for path changes (catches edge cases)
-        setInterval(checkPathChange, 1000);
     }
 
     /** Handles visibility changes: starts timer on enter, cancels on exit */
@@ -378,6 +375,10 @@ export class DotCMSImpressionTracker {
         // Calculate viewport metrics using utility
         const viewportMetrics = getViewportMetrics(element);
 
+        // Read cached DOM index instead of expensive query
+        // Falls back to -1 if not cached (should never happen in normal flow)
+        const domIndex = parseInt(element.dataset.dotAnalyticsDomIndex || '-1', 10);
+
         // Build impression payload (enricher plugin adds page data automatically)
         const impressionPayload: DotCMSContentImpressionPayload = {
             content: {
@@ -388,9 +389,7 @@ export class DotCMSImpressionTracker {
             },
             position: {
                 viewport_offset_pct: viewportMetrics.offsetPercentage,
-                dom_index: Array.from(
-                    document.querySelectorAll(`.${ANALYTICS_CONTENTLET_CLASS}`)
-                ).indexOf(element)
+                dom_index: domIndex
             }
         };
 

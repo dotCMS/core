@@ -132,6 +132,12 @@ export class DotCMSClickTracker {
             return; // Already tracked
         }
 
+        // Cache DOM index as data-attribute to avoid O(3n) query on each click
+        if (!element.dataset.dotAnalyticsDomIndex) {
+            const allContentlets = findContentlets();
+            element.dataset.dotAnalyticsDomIndex = String(allContentlets.indexOf(element));
+        }
+
         const clickHandler = (event: MouseEvent) => {
             this.logger.debug('Click handler triggered on contentlet');
 
