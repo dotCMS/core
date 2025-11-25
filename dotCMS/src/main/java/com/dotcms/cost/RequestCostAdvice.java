@@ -1,6 +1,5 @@
 package com.dotcms.cost;
 
-import com.dotcms.cost.RequestCostApi.Accounting;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
@@ -13,26 +12,23 @@ import net.bytebuddy.asm.Advice;
  */
 public class RequestCostAdvice {
 
-    @Advice.OnMethodEnter(suppress = Throwable.class, inline = false)
+    @Advice.OnMethodEnter(suppress = Throwable.class, inline = true)
     public static void enter(
             final @Advice.Origin Method method,
             final @Advice.AllArguments Object[] args
     ) {
-        RequestCost annotation = method.getAnnotation(RequestCost.class);
-        if (annotation != null) {
-            RequestCostApi api = APILocator.getRequestCostAPI();
-            String callingMethod = method.getDeclaringClass().getSimpleName() + "." + method.getName();
-            Price price = annotation.value();
-            // log requests if a fuller accounting is enabled
-            if (api.resolveAccounting().ordinal() > Accounting.HEADER.ordinal()) {
-                Logger.info(RequestCostAdvice.class,
-                        () -> "cost:" + price.price + " , method" + callingMethod);
-            } else {
-                Logger.debug(RequestCostAdvice.class,
-                        () -> "cost:" + price.price + " , method" + callingMethod);
-            }
+        try {
+            RequestCost annotation = method.getAnnotation(RequestCost.class);
+            if (annotation != null) {
+                RequestCostApi api = APILocator.getRequestCostAPI();
 
-            api.incrementCost(price, method, args);
+                Price price = annotation.value();
+
+                api.incrementCost(price, method, args);
+            }
+        } catch (Throwable t) {
+            // Log any exceptions that occur - even though suppress=Throwable.class prevents them from propagating
+            Logger.warnAndDebug(RequestCostAdvice.class, "Error in RequestCostAdvice.enter(): " + t.getMessage(), t);
         }
 
     }

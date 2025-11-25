@@ -94,7 +94,7 @@ public class RequestCostApiImpl implements RequestCostApi {
                             totalCost,
                             costPerRequest));
         } catch (Exception e) {
-            Logger.error(this.getClass(), "Error logging request cost", e);
+            Logger.warnAndDebug(this.getClass(), "Error logging request cost:" + e.getMessage(), e);
         }
     }
 
@@ -211,6 +211,17 @@ public class RequestCostApiImpl implements RequestCostApi {
             Map<String, Object> load = createAccountingEntry(price, clazz, method, args, accounting);
             getAccountList(request).add(load);
         }
+
+        String logMessage = "cost:" + price.price + " , method:" + clazz.getSimpleName() + "." + method;
+
+        // log requests if a fuller accounting is enabled
+        // Note: Cannot use lambdas with inline=true due to synthetic method access issues
+        if (accounting.ordinal() > Accounting.HEADER.ordinal()) {
+            Logger.info(RequestCostAdvice.class, logMessage);
+        } else {
+            Logger.debug(RequestCostAdvice.class, logMessage);
+        }
+
         request.setAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE, getRequestCost(request) + price.price);
         requestCostForWindow.add(price.price);
     }
@@ -229,13 +240,9 @@ public class RequestCostApiImpl implements RequestCostApi {
      */
     @Override
     public int getRequestCost(HttpServletRequest request) {
-        int runningTotal = 0;
-        if (request.getAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE) == null) {
-            request.setAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE, 0);
-        } else {
-            runningTotal = (int) request.getAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE);
-        }
-        return runningTotal;
+        Integer runningTotal = (Integer) request.getAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE);
+
+        return runningTotal == null ? 0 : runningTotal;
     }
 
     @Override
@@ -248,9 +255,9 @@ public class RequestCostApiImpl implements RequestCostApi {
         this.requestCountForWindow.increment();
 
         Accounting accounting = resolveAccounting(request);
-        Logger.debug(this.getClass(), "<Starting request cost accounting---");
+        Logger.debug(this.getClass(), "<Starting request cost accounting ---");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
-        request.setAttribute(REQUEST_COST_ATTRIBUTE, new ArrayList<>());
+
         request.setAttribute(REQUEST_COST_ACCOUNTING_TYPE, accounting);
 
         this.incrementCost(Price.COSTING_INIT, RequestCostApiImpl.class, "initAccounting",
