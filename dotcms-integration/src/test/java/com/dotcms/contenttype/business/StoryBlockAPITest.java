@@ -1122,4 +1122,129 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             }
         }
     }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object, String)}
+     * Given Scenario: Test the fix for issue-33900 where the data attribute could be a JSON String
+     * instead of a Map, causing a ClassCastException. This test covers three scenarios:
+     * 1. Data as a JSON String (the bug case) - should parse successfully
+     * 2. Data as a Map (normal case) - should process successfully
+     * 3. Data as an invalid type (Integer) - should handle gracefully
+     * 4. Data as an invalid JSON String - should handle gracefully
+     * ExpectedResult: All scenarios should be handled without throwing ClassCastException
+     */
+    @Test
+    public void test_refreshStoryBlockValueReferences_data_field_as_string_vs_map() throws DotDataException, DotSecurityException {
+        final ContentType contentTypeRichText = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+        final Contentlet richTextContentlet = new ContentletDataGen(contentTypeRichText)
+                .setProperty("title", "Test Content")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .nextPersistedAndPublish();
+
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+
+        try {
+            final HttpServletRequest request = new MockAttributeRequest(mock(HttpServletRequest.class));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+            // Test Case 1: Data field as JSON String (the bug case that caused ClassCastException)
+            final String storyBlockJsonWithDataAsString = String.format(
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotContent\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": \"{\\\"identifier\\\":\\\"%s\\\",\\\"languageId\\\":%s}\"" +
+                    "      }" +
+                    "    }" +
+                    "  ]" +
+                    "}",
+                    richTextContentlet.getIdentifier(),
+                    richTextContentlet.getLanguageId()
+            );
+
+            final StoryBlockReferenceResult resultWithString = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(storyBlockJsonWithDataAsString, "parent-123");
+
+            assertNotNull("Result should not be null for data as String", resultWithString);
+            assertTrue("Should successfully process data field as JSON String", resultWithString.isRefreshed());
+
+            // Test Case 2: Data field as Map (normal/expected case)
+            final String storyBlockJsonWithDataAsMap = String.format(
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotContent\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": {" +
+                    "          \"identifier\": \"%s\"," +
+                    "          \"languageId\": %s" +
+                    "        }" +
+                    "      }" +
+                    "    }" +
+                    "  ]" +
+                    "}",
+                    richTextContentlet.getIdentifier(),
+                    richTextContentlet.getLanguageId()
+            );
+
+            final StoryBlockReferenceResult resultWithMap = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(storyBlockJsonWithDataAsMap, "parent-456");
+
+            assertNotNull("Result should not be null for data as Map", resultWithMap);
+            assertTrue("Should successfully process data field as Map", resultWithMap.isRefreshed());
+
+            // Test Case 3: Data field as invalid type (Integer) - should handle gracefully
+            final String storyBlockJsonWithDataAsInteger =
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotContent\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": 12345" +
+                    "      }" +
+                    "    }" +
+                    "  ]" +
+                    "}";
+
+            final StoryBlockReferenceResult resultWithInteger = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(storyBlockJsonWithDataAsInteger, "parent-789");
+
+            assertNotNull("Result should not be null for data as Integer", resultWithInteger);
+            // Should return false in isRefreshed since data type is unexpected
+            assertFalse("Should handle unexpected data type gracefully", resultWithInteger.isRefreshed());
+
+            // Test Case 4: Data field as invalid JSON String - should handle gracefully
+            final String storyBlockJsonWithInvalidJsonString =
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotContent\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": \"this is not valid json {{{\"" +
+                    "      }" +
+                    "    }" +
+                    "  ]" +
+                    "}";
+
+            final StoryBlockReferenceResult resultWithInvalidJson = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(storyBlockJsonWithInvalidJsonString, "parent-999");
+
+            assertNotNull("Result should not be null for invalid JSON string", resultWithInvalidJson);
+            // Should return false since JSON parsing failed
+            assertFalse("Should handle invalid JSON string gracefully", resultWithInvalidJson.isRefreshed());
+
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+        }
+    }
 }
