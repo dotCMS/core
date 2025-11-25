@@ -118,7 +118,7 @@ describe('DotSubNavComponent', () => {
         links.forEach((link: DebugElement, index) => {
             expect(link.nativeElement.classList.contains('dot-nav-sub__link')).toBe(true);
             expect(link.nativeElement.textContent.trim()).toBe(`Label ${index + 1}`);
-            expect(link.properties.href).toContain(`/url/link${index + 1}`);
+            expect(link.properties.href).toContain(`/url/${index === 0 ? 'one' : 'two'}`);
 
             if (index === 1) {
                 expect(link.nativeElement.classList.contains('dot-nav-sub__link--active')).toBe(

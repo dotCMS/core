@@ -3,15 +3,12 @@ import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/c
 import { GlobalStore } from '@dotcms/store';
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
-import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
-
 @Component({
     selector: 'dot-crumbtrail',
     templateUrl: './dot-crumbtrail.component.html',
     styleUrls: ['./dot-crumbtrail.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotCollapseBreadcrumbComponent],
-    providers: [DotCrumbtrailService]
+    imports: [DotCollapseBreadcrumbComponent]
 })
 export class DotCrumbtrailComponent {
     /** Global store instance for accessing breadcrumb state */
