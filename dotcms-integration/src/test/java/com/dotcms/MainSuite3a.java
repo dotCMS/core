@@ -48,7 +48,7 @@ import org.junit.runners.Suite;
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
-        OpenAIVisionAPIImplTest.class
+        OpenAIVisionAPIImplTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class
 })
 
