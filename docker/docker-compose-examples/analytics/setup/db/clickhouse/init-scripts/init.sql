@@ -28,6 +28,11 @@
 --     content_presents_in_conversion; runs every minute.
 --   * conversion_time_mv: maintains last processed timestamps in conversion_time.
 -- =====================================================================
+
+
+-- =====================================================================
+-- This is the raw event ingestion table. All data from Jitsu/collectors enters here first.
+-- =====================================================================
 CREATE DATABASE IF NOT EXISTS clickhouse_test_db;
 CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
 (
@@ -192,7 +197,26 @@ ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_utc_time (utc_
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_cluster_id (cluster_id) TYPE minmax GRANULARITY 1;
 
 
-----
+-- =====================================================================
+-- Stores daily aggregated counts of events per:
+--
+-- day
+-- cluster_id
+-- customer_id
+-- event_type
+-- context_user_id
+-- identifier (URL or content_id)
+-- title
+
+-- Why SummingMergeTree?
+
+-- Because the MV inserts pre-aggregated rows, and daily_total is summed on merge.
+
+--This allows:
+--fast incremental updates
+--easy “daily counts” reporting
+--low storage overhead
+-- =====================================================================
 
 CREATE TABLE clickhouse_test_db.content_events_counter
 (
@@ -213,6 +237,22 @@ CREATE TABLE clickhouse_test_db.content_events_counter
         ORDER BY (customer_id, cluster_id, context_user_id, day, identifier, title, event_type);
 
 
+-- =====================================================================
+-- Transforms raw events into daily activity counters.
+-- For every event inserted into events, it computes:
+--
+-- day → start-of-day from utc_time
+-- identifier → URL for pageview, content_identifier otherwise
+-- title → page_title or content_title
+--
+-- Then groups by:
+-- customer_id, cluster_id, context_user_id, day, identifier, title, event_type
+--
+-- And inserts:
+--
+-- count(*) AS daily_total
+-- =====================================================================
+
 CREATE MATERIALIZED VIEW content_events_counter_mv TO clickhouse_test_db.content_events_counter AS
 SELECT customer_id,
        cluster_id,
@@ -225,7 +265,19 @@ SELECT customer_id,
 FROM clickhouse_test_db.events
 GROUP BY customer_id, cluster_id, context_user_id, day, identifier, title, event_type;
 
----
+-- =====================================================================
+-- Stores the latest known conversion timestamp per user, but in aggregate function format.
+-- Two aggregated fields:
+--
+-- conversion_last_time → last conversion event time
+--
+-- timestamp_last_time → last processed _timestamp inside content_presents_in_conversion
+--
+-- Why AggregatingMergeTree?
+--
+-- Because conversion_time_mv inserts aggregate states (maxState) and later merges them.
+-- This table provides a “boundary” so that future incremental batches don’t reprocess old records.
+-- =====================================================================
 
 CREATE TABLE clickhouse_test_db.conversion_time
 (
@@ -241,7 +293,9 @@ CREATE TABLE clickhouse_test_db.conversion_time
         PARTITION BY (customer_id)
         ORDER BY (customer_id, cluster_id, context_user_id);
 
----
+-- =====================================================================
+-- Tracks which content a user interacted with prior to a conversion and after the user's previous conversion
+-- =====================================================================
 
 CREATE TABLE clickhouse_test_db.content_presents_in_conversion
 (
@@ -266,7 +320,45 @@ CREATE TABLE clickhouse_test_db.content_presents_in_conversion
         ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name, identifier, title);
 
 
+-- =====================================================================
+-- It does:
+--
+-- Identifies new conversions since last refresh
+-- Locates content seen by the user right before each conversion
+-- Inserts attribution rows into content_presents_in_conversion
+--
+-- How it works (step-by-step)
+-- A) Define conversion CTE
+-- For each conversion event:
+-- Joins against conversion_time to get the previous batch’s last timestamps
+-- Uses lag() to find previous conversion in current batch
+--
+-- Calculates:
+-- previous_conversion_timestamp = max(previous_timestamp_current_batch, last_timestamp_previous_batch)
+--
+-- Filters conversions that are:
+--
+-- new (_timestamp > last_timestamp_previous_batch)
+-- recent (_timestamp <= now())
+--
+-- This ensures incremental processing, no duplicates.
+--
+-- B) Join events leading to conversion
+--
+-- Matches events where:
+--
+-- e.utc_time < conversion.conversion_time
+-- e.utc_time > conversion.conversion_last_time
+-- event_type <> 'conversion'
 
+-- Meaning:
+--
+-- Only consider events between the previous conversion timestamp and this conversion timestamp.
+--
+-- C) Group and insert
+--
+-- Inserts rows summarizing content presence before the conversion.
+-- =====================================================================
 CREATE MATERIALIZED VIEW content_presents_in_conversion_mv
     REFRESH EVERY 15 MINUTE APPEND TO clickhouse_test_db.content_presents_in_conversion AS
 WITH conversion AS (
@@ -308,7 +400,15 @@ FROM clickhouse_test_db.events e
 GROUP BY customer_id, cluster_id, identifier, title, event_type, context_user_id, conversion.conversion_name, day;
 
 
----
+-- =====================================================================
+-- Updates the conversion_time table using the output of content_presents_in_conversion. Every time new attribution rows are emitted
+--
+-- This ensures:
+--
+-- Next execution of the refreshable MV knows where the last batch ended
+--
+-- Prevents reprocessing or double counting
+-- =====================================================================
 
 
 CREATE MATERIALIZED VIEW conversion_time_mv TO clickhouse_test_db.conversion_time AS
