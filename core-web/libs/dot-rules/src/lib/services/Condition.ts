@@ -1,13 +1,17 @@
 import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
-import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { ServerSideTypeModel } from './ServerSideFieldModel';
+
 import { HttpResponse } from '@angular/common/http';
-import { ConditionGroupModel, ConditionModel, ICondition } from './Rule';
+import { Injectable } from '@angular/core';
+
+import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
+
+import { ApiRoot } from '@dotcms/dotcms-js';
 import { HttpCode } from '@dotcms/dotcms-js';
 import { CoreWebService, LoggerService } from '@dotcms/dotcms-js';
+
+import { ConditionGroupModel, ConditionModel, ICondition } from './Rule';
+import { ServerSideTypeModel } from './ServerSideFieldModel';
 
 // tslint:disable-next-line:no-unused-variable
 // const noop = (...arg: any[]) => {};
@@ -36,6 +40,7 @@ export class ConditionService {
         json.priority = condition.priority;
         json.operator = condition.operator;
         json.values = condition.parameters;
+
         return json;
     }
 
@@ -56,6 +61,7 @@ export class ConditionService {
             console.error('Error reading Condition.', e);
             throw e;
         }
+
         return conditionModel;
     }
 
@@ -79,6 +85,7 @@ export class ConditionService {
                             err
                         );
                     }
+
                     return observableEmpty();
                 })
             );
@@ -94,6 +101,7 @@ export class ConditionService {
             }),
             reduce((acc: ConditionModel[], entity: ConditionModel) => {
                 acc.push(entity);
+
                 return acc;
             }, [])
         );
@@ -110,6 +118,7 @@ export class ConditionService {
             map((entity) => {
                 entity.id = conditionId;
                 entity._type = conditionTypes ? conditionTypes[entity.conditionlet] : null;
+
                 return ConditionService.fromServerConditionTransformFn(entity);
             })
         );
@@ -121,6 +130,7 @@ export class ConditionService {
             throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
         }
+
         const json = ConditionService.toJson(model);
         json.owningGroup = groupId;
         const add = this.coreWebService
@@ -133,9 +143,11 @@ export class ConditionService {
                 map((res: HttpResponse<any>) => {
                     const json: any = res;
                     model.key = json.id;
+
                     return model;
                 })
             );
+
         return add.pipe(catchError(this._catchRequestError('add')));
     }
 
@@ -145,6 +157,7 @@ export class ConditionService {
             throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
         }
+
         if (!model.isPersisted()) {
             this.add(groupId, model);
         } else {
@@ -162,6 +175,7 @@ export class ConditionService {
                         return model;
                     })
                 );
+
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
@@ -177,6 +191,7 @@ export class ConditionService {
                     return model;
                 })
             );
+
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
 

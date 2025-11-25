@@ -5,7 +5,6 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.EnterpriseFeature;
 import com.dotcms.util.LogTime;
-import com.dotmarketing.util.Logger;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
@@ -23,6 +22,8 @@ import java.lang.instrument.Instrumentation;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static net.bytebuddy.matcher.ElementMatchers.declaresMethod;
 import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
@@ -38,6 +39,9 @@ import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
  * @author sbolton
  */
 public class ByteBuddyFactory {
+
+    // Use base log4j logger here to prevent recursive issues with internal Logger class
+    private static final Logger LOGGER = LogManager.getLogger(ByteBuddyFactory.class);
 
     private static final AtomicBoolean agentLoaded = new AtomicBoolean(false);
     private static final Map<Class<? extends Annotation>, Class<?>> adviceMap = Map.of(
@@ -69,16 +73,16 @@ public class ByteBuddyFactory {
         if (!agentLoaded.get()) {
             try {
                 premain(null, ByteBuddyAgent.install());
-                Logger.info(ByteBuddyFactory.class, "Loaded ByteBuddy Advice");
+                LOGGER.info("Loaded ByteBuddy Advice");
             } catch (Exception e) {
-                Logger.error(ByteBuddyFactory.class, "Cannot install ByteBuddy Advice");
+                LOGGER.error("Cannot install ByteBuddy Advice");
             }
         }
     }
 
 
     public static void premain(final String arg, final Instrumentation inst) throws Exception {
-        Logger.info(ByteBuddyFactory.class, "Starting ByteBuddy Agent");
+        LOGGER.info("Starting ByteBuddy Agent");
         if (!agentLoaded.compareAndSet(false, true)) {
             return;
         }
@@ -113,18 +117,18 @@ public class ByteBuddyFactory {
                     .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
                     .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                     .type(classMatcher)
-                    .transform((builder, typeDescription, classLoader, module) -> {
+                    .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
                         DynamicType.Builder<?> newBuilder = builder;
                         for (Map.Entry<Class<? extends Annotation>, Class<?>> entry : adviceMap.entrySet()) {
-                            newBuilder = getAdvice(entry.getKey(), entry.getValue()).transform(newBuilder, typeDescription, classLoader, module);
+                            newBuilder = getAdvice(entry.getKey(), entry.getValue()).transform(newBuilder, typeDescription, classLoader, module, protectionDomain);
                         }
                         return newBuilder;
                     })
 
                     .installOn(inst);
-            Logger.info(ByteBuddyFactory.class, "ByteBuddy Initialized");
+            LOGGER.info("ByteBuddy Initialized");
         } catch (Exception e) {
-            Logger.error(ByteBuddyFactory.class, "Error Initializing ByteBuddy", e);
+            LOGGER.error("Error Initializing ByteBuddy", e);
         }
 
 

@@ -1,12 +1,12 @@
-<ul #ul class="dot-nav-sub" [class.dot-nav-sub__collapsed]="collapsed">
+<ul [class.dot-nav-sub__collapsed]="collapsed" #ul class="dot-nav-sub">
     <li *ngFor="let subItem of data.menuItems" class="dot-nav-sub__item">
         <a
-            class="dot-nav-sub__link"
-            [class.dot-nav-sub__link--active]="subItem.active"
             (click)="onItemClick($event, subItem)"
+            [class.dot-nav-sub__link--active]="subItem.active"
             [routerLink]="subItem.menuLink"
             [state]="{ menuId: data.id }"
-            >{{ subItem.label }}</a
-        >
+            class="dot-nav-sub__link">
+            {{ subItem.label }}
+        </a>
     </li>
 </ul>

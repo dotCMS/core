@@ -37,7 +37,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.business.RelationshipAPITest.class,
         com.dotcms.contenttype.business.FieldAPITest.class,
         com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,
-        com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutColumnSerializerTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutSerializerTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutRowSerializerTest.class,
@@ -72,13 +71,13 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.vtl.VTLResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceIssue15124Test.class,
         com.dotcms.rest.api.v1.contenttype.FieldResourceTest.class,
-        com.dotcms.rest.api.v1.contenttype.FieldVariableResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class,
         Chainable404StorageCacheTest.class,
         FileStorageAPITest.class,
         com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class,
         QuartzUtilsTest.class,
-        DotConnectTest.class
+        DotConnectTest.class,
+        com.dotcms.contenttype.model.field.layout.FieldUtilTest.class
 })
 
 public class MainSuite1b {

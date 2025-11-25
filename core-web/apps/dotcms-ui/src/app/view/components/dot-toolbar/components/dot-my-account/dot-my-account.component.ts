@@ -13,7 +13,6 @@ import { NgForm } from '@angular/forms';
 
 import { map, take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotAccountService, DotAccountUser } from '@dotcms/app/api/services/dot-account-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
@@ -23,6 +22,7 @@ import {
     DotRouterService
 } from '@dotcms/data-access';
 import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
+import { DotDialogActions } from '@dotcms/dotcms-models';
 
 interface AccountUserForm extends DotAccountUser {
     confirmPassword?: string;

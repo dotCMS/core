@@ -45,16 +45,21 @@
 
 package com.dotcms.enterprise.achecker.model;
 
+import com.dotcms.enterprise.achecker.utility.Constants;
 
 import java.beans.IntrospectionException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
-import com.dotcms.enterprise.achecker.utility.Constants;
-import com.dotcms.enterprise.achecker.model.ReflectionBean;
-
+/**
+ * This class represents a Validation Guideline use by the Accessibility Checker to determine
+ * whether a specified content meets the expected requirements. Content Authors can select the
+ * guideline they want to validate against a given content.
+ *
+ * @author root
+ * @since N/A
+ */
 public class GuideLineBean extends ReflectionBean {
- 
 			
 	private String preamble;
 	private String earlid;
@@ -167,5 +172,22 @@ public class GuideLineBean extends ReflectionBean {
 		return Constants.DEFAULT_GUIDELINE.equalsIgnoreCase(this.abbr);
 	}
 
-	 
+	@Override
+	public String toString() {
+		return "GuideLineBean{" +
+				"preamble='" + preamble + '\'' +
+				", earlid='" + earlid + '\'' +
+				", long_name='" + long_name + '\'' +
+				", abbr='" + abbr + '\'' +
+				", title='" + title + '\'' +
+				", guideline_id=" + guideline_id +
+				", user_id=" + user_id +
+				", status=" + status +
+				", open_to_public=" + open_to_public +
+				", seal_icon_name='" + seal_icon_name + '\'' +
+				", subset='" + subset + '\'' +
+				", defaultGuideLine=" + defaultGuideLine +
+				'}';
+	}
+
 }

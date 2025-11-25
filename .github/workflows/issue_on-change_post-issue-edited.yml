@@ -1,0 +1,20 @@
+name: Post Issue Edited
+on:
+  issues:
+    types: [ edited, labeled ]
+
+jobs:
+  frontend-notify:
+    name: Issue Resolve Actions
+    uses: ./.github/workflows/issue_comp_frontend-notify.yml
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  next-release-label-update:
+    name: Next Release label update
+    if: github.event.action == 'labeled'
+    uses: ./.github/workflows/issue_comp_next-release-label.yml
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}

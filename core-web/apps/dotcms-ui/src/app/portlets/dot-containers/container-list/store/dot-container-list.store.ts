@@ -20,12 +20,12 @@ import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
     CONTAINER_SOURCE,
     DotActionBulkResult,
+    DotActionMenuItem,
     DotBulkFailItem,
     DotContainer
 } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 
 export interface DotContainerListState {

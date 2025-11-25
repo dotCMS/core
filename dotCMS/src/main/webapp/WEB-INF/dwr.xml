@@ -54,9 +54,6 @@
       <param name="class" value="com.dotmarketing.portlets.containers.ajax.ContainerAjaxDrawedTemplate"/>
     </create>
     <!-- END GRAZIANO issue-12-dnd-template -->
-    <create creator="new" javascript="TemplateAjax" scope="application">
-      <param name="class" value="com.dotmarketing.portlets.templates.ajax.TemplateAjax"/>
-    </create>
     <create creator="new" javascript="HTMLPageViewAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.htmlpageviews.ajax.HTMLPageViewAjax"/>
     </create>

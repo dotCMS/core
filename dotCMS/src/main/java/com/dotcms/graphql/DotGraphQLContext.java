@@ -1,7 +1,7 @@
 package com.dotcms.graphql;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.PaginatedContentList;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import graphql.kickstart.execution.context.DefaultGraphQLContext;
@@ -28,15 +28,17 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
     private final HttpServletResponse httpServletResponse;
     private final User user;
     private final List<Map<String, Object>> fieldCountMaps;
+    private final List<Map<String, Object>> fieldPaginationMaps;
     private final Map<String, Object> params;
 
     private DotGraphQLContext(DataLoaderRegistry dataLoaderRegistry, Subject subject, HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse, User user) {
-        super(dataLoaderRegistry, subject);
+        super(dataLoaderRegistry, new HashMap<>());
         this.httpServletRequest = httpServletRequest;
         this.httpServletResponse = httpServletResponse;
         this.user = user;
         this.fieldCountMaps = new ArrayList<>();
+        this.fieldPaginationMaps = new ArrayList<>();
         this.params = new HashMap<>();
     }
 
@@ -77,11 +79,46 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
     }
 
     public void addFieldCount(final String field, final long count) {
-        this.fieldCountMaps.add(map("fieldName", field, "totalCount", count));
+        this.fieldCountMaps.add(Map.of("fieldName", field, "totalCount", count));
     }
 
     public List<Map<String, Object>> getFieldCountMaps() {
         return ImmutableList.copyOf(fieldCountMaps);
+    }
+
+    /**
+     * Adds a field pagination to the fieldPaginationMaps list.
+     *
+     * @param field         the name of the field being paginated
+     * @param pageRecords   the number of records per page
+     * @param searchResults the paginated content list containing the pagination data
+     */
+    public void addFieldPagination(final String field, final long pageRecords,
+            final PaginatedContentList<Contentlet> searchResults) {
+
+        this.fieldPaginationMaps.add(
+                Map.of(
+                        "fieldName", field,
+                        "page", searchResults.getCurrentPage(),
+                        "offset", searchResults.getOffset(),
+                        "totalPages", searchResults.getTotalPages(),
+                        "totalRecords", searchResults.getTotalResults(),
+                        "pageRecords", pageRecords,
+                        "hasNextPage", searchResults.isNextPage(),
+                        "hasPreviousPage", searchResults.isPreviousPage(),
+                        "pageSize", searchResults.getLimit()
+                )
+        );
+    }
+
+    /**
+     * Returns a copy of the fieldPaginationMaps list with each field pagination data.
+     *
+     * @return The fieldPaginationMaps list as a list of maps, where each map represents a field
+     * pagination.
+     */
+    public List<Map<String, Object>> getFieldPaginationMaps() {
+        return ImmutableList.copyOf(fieldPaginationMaps);
     }
 
     public static Builder createServletContext(DataLoaderRegistry registry, Subject subject) {

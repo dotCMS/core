@@ -1,27 +1,24 @@
 package com.dotcms.cube;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.*;
-
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.cube.CubeJSQuery.Builder;
-import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
-
 import com.liferay.util.StringPool;
+import org.junit.Test;
 
 import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
 
 public class CubeJSClientTest {
 
@@ -42,24 +39,24 @@ public class CubeJSClientTest {
             IPUtils.disabledIpPrivateSubnet(true);
 
             final List<Map<String, String>> dataList = list(
-                    map(
+                    Map.of(
                             "Events.experiment", "A",
                             "Events.variant", "B",
                             "Events.utcTime", "2022-09-20T15:24:21.000"
                     ),
-                    map(
+                    Map.of(
                             "Events.experiment", "A",
                             "Events.variant", "C",
                             "Events.utcTime", "2022-09-20T15:24:21.000"
                     ),
-                    map(
+                    Map.of(
                             "Events.experiment", "B",
                             "Events.variant", "C",
                             "Events.utcTime", "2022-09-20T15:24:21.000"
                     )
             );
 
-            final Map<String, List<Map<String, String>>> dataExpected = map("data", dataList);
+            final Map<String, List<Map<String, String>>> dataExpected = Map.of("data", dataList);
 
             final CubeJSQuery cubeJSQuery = new Builder()
                 .dimensions("Events.experiment", "Events.variant")
@@ -160,14 +157,16 @@ public class CubeJSClientTest {
                     getAccessToken());
 
             try {
-                cubeClient.send(null);
+                CubeJSQuery query = null;
+                cubeClient.send(query);
                 throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");
             }
 
             try {
-                cubeClient.send(null);
+                CubeJSQuery query = null;
+                cubeClient.send(query);
                 throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");

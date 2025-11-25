@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
 import java.util.List;
 
 public class IdentifierAPIImpl implements IdentifierAPI {
@@ -148,7 +149,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public Identifier createNew(final Folder folder, final Treeable parent,
 			final String existingId) throws DotDataException {
 
-		Logger.debug(IdentifierAPIImpl.class, String.format(
+		Logger.debug(IdentifierAPIImpl.class, () -> String.format(
 				"Creating new identifier for folder `%s` ", folder.getName()));
 
 		if (UtilMethods.isNotSet(existingId)) {
@@ -184,7 +185,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public Identifier createNew(final Versionable asset, final Treeable parent,
 			final String existingId) throws DotDataException {
 
-		Logger.info(IdentifierAPIImpl.class, String.format(
+		Logger.debug(IdentifierAPIImpl.class, () -> String.format(
 				"Creating new identifier for versionable asset of type `%s` and title `%s` ",
 				asset.getVersionType(), asset.getTitle()));
 

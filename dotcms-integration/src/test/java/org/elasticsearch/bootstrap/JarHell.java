@@ -1,6 +1,5 @@
 package org.elasticsearch.bootstrap;
 
-import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -13,5 +12,5 @@ public class JarHell {
     public static void checkJarHell(Set<URL> urls) throws URISyntaxException, IOException{}
     public static void checkVersionFormat(String targetVersion) {}
     public static void checkJavaVersion(String resource, String targetVersion) {}
-    public static Set<URL> parseClassPath() {return ImmutableSet.of();}
+    public static Set<URL> parseClassPath() {return Set.of();}
 }

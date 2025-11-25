@@ -233,4 +233,5 @@ export interface Site {
     type: string;
     identifier: string;
     archived: boolean;
+    googleMap?: string;
 }

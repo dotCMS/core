@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.site;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
 /**
  * Form to create a site
@@ -43,6 +44,8 @@ public class SiteForm {
 
     private final boolean forceExecution;
 
+    private final List<SimpleSiteVariableForm> variables;
+
     @JsonCreator
     public SiteForm(@JsonProperty("aliases") final String aliases,
             @JsonProperty("siteName") final String siteName,
@@ -60,7 +63,8 @@ public class SiteForm {
             @JsonProperty("identifier") final String identifier,
             @JsonProperty("inode") final String inode,
             @JsonProperty("default") final boolean isDefault,
-            @JsonProperty("forceExecution") final boolean forceExecution) {
+            @JsonProperty("forceExecution") final boolean forceExecution,
+            @JsonProperty("variables") List<SimpleSiteVariableForm> siteVariables) {
 
         this.aliases = aliases;
         this.siteName = siteName;
@@ -79,6 +83,7 @@ public class SiteForm {
         this.inode = inode;
         this.isDefault = isDefault;
         this.forceExecution = forceExecution;
+        this.variables = siteVariables;
     }
 
     public String getIdentifier() {
@@ -147,6 +152,10 @@ public class SiteForm {
 
     public boolean isForceExecution() {
         return forceExecution;
+    }
+
+    public List<SimpleSiteVariableForm> getVariables() {
+        return variables;
     }
 
     @Override

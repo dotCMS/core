@@ -8,6 +8,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { MessagesModule } from 'primeng/messages';
 
 import {
     DotContentTypeService,
@@ -41,6 +42,7 @@ describe('EditContentLayoutComponent', () => {
         component: EditContentLayoutComponent,
         imports: [
             HttpClientTestingModule,
+            MessagesModule,
             MockPipe(DotMessagePipe),
             MockComponent(DotEditContentFormComponent),
             MockComponent(DotEditContentToolbarComponent),
@@ -60,7 +62,11 @@ describe('EditContentLayoutComponent', () => {
         const mockData: EditContentPayload = {
             actions: mockWorkflowsActions,
             contentType: CONTENT_TYPE_MOCK,
-            contentlet: BINARY_FIELD_CONTENTLET
+            contentlet: BINARY_FIELD_CONTENTLET,
+            loading: false,
+            layout: {
+                showSidebar: true
+            }
         };
 
         beforeEach(async () => {
@@ -116,22 +122,22 @@ describe('EditContentLayoutComponent', () => {
             spectator.detectChanges();
             const toolbarComponent = spectator.query(DotEditContentToolbarComponent);
             expect(toolbarComponent).toBeDefined();
-            expect(toolbarComponent.actions).toEqual(mockData.actions);
+            expect(toolbarComponent.$actions).toEqual(mockData.actions);
         });
 
         it('should pass the contentlet and contentType to the DotEditContentAside Component', () => {
             spectator.detectChanges();
             const asideComponent = spectator.query(DotEditContentAsideComponent);
             expect(asideComponent).toBeDefined();
-            expect(asideComponent.contentLet).toEqual(mockData.contentlet);
-            expect(asideComponent.contentType).toEqual(mockData.contentType.variable);
+            expect(asideComponent.$contentlet).toEqual(mockData.contentlet);
+            expect(asideComponent.$contentType).toEqual(mockData.contentType);
         });
 
         it('should fire workflow action', () => {
             const spyStore = jest.spyOn(dotEditContentStore, 'fireWorkflowActionEffect');
             spectator.detectChanges();
             const toolbarComponent = spectator.query(DotEditContentToolbarComponent);
-            toolbarComponent.actionFired.emit(mockWorkflowsActions[0]);
+            toolbarComponent.$actionFired.emit(mockWorkflowsActions[0]);
 
             expect(spyStore).toHaveBeenCalledWith({
                 actionId: mockWorkflowsActions[0].id,
@@ -159,13 +165,29 @@ describe('EditContentLayoutComponent', () => {
             const betaTopbar = spectator.query(byTestId('topBar'));
             expect(betaTopbar).not.toBeNull();
         });
+
+        it('should toggle the sidebar when the toggle button is clicked', () => {
+            spectator.detectChanges();
+            const toggleBtn = spectator.query(byTestId('sidebar-toggle'));
+
+            expect(toggleBtn.classList).toContain('showSidebar');
+
+            spectator.click(toggleBtn);
+
+            expect(toggleBtn.classList).not.toContain('showSidebar');
+            spectator.component.toggleSidebar();
+        });
     });
 
     describe('New content', () => {
         const mockData: EditContentPayload = {
             actions: mockWorkflowsActions,
             contentType: CONTENT_TYPE_MOCK,
-            contentlet: null
+            contentlet: null,
+            loading: false,
+            layout: {
+                showSidebar: true
+            }
         };
 
         beforeEach(async () => {
@@ -222,15 +244,15 @@ describe('EditContentLayoutComponent', () => {
             spectator.detectChanges();
             const toolbarComponent = spectator.query(DotEditContentToolbarComponent);
             expect(toolbarComponent).toBeDefined();
-            expect(toolbarComponent.actions).toEqual(mockData.actions);
+            expect(toolbarComponent.$actions).toEqual(mockData.actions);
         });
 
         it('should pass the contentlet and contentType to the DotEditContentAside Component', () => {
             spectator.detectChanges();
             const asideComponent = spectator.query(DotEditContentAsideComponent);
             expect(asideComponent).toBeDefined();
-            expect(asideComponent.contentLet).toEqual(mockData.contentlet);
-            expect(asideComponent.contentType).toEqual(mockData.contentType.variable);
+            expect(asideComponent.$contentlet).toEqual(mockData.contentlet);
+            expect(asideComponent.$contentType).toEqual(mockData.contentType);
         });
     });
 });

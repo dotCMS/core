@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input } from '@angular/core';
 import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
@@ -12,30 +12,37 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
     selector: 'dot-edit-content-select-field',
     standalone: true,
     imports: [DropdownModule, ReactiveFormsModule],
-    templateUrl: './dot-edit-content-select-field.component.html',
-    styleUrls: ['./dot-edit-content-select-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ]
+    ],
+    template: `
+        <p-dropdown
+            [formControlName]="$field().variable"
+            [options]="$options()"
+            [attr.aria-labelledby]="'field-' + $field().variable"
+            optionLabel="label"
+            optionValue="value" />
+    `
 })
 export class DotEditContentSelectFieldComponent implements OnInit {
-    @Input() field!: DotCMSContentTypeField;
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     private readonly controlContainer = inject(ControlContainer);
 
-    options = [];
+    $options = computed(() => {
+        const field = this.$field();
+
+        return getSingleSelectableFieldOptions(field?.values || '', field.dataType);
+    });
 
     ngOnInit() {
-        this.options = getSingleSelectableFieldOptions(
-            this.field?.values || '',
-            this.field.dataType
-        );
+        const options = this.$options();
 
-        if (this.formControl.value === null) {
-            this.formControl.setValue(this.options[0]?.value);
+        if (this.formControl.value === null && options.length > 0) {
+            this.formControl.setValue(options[0]?.value);
         }
     }
 
@@ -44,8 +51,10 @@ export class DotEditContentSelectFieldComponent implements OnInit {
      * @returns {AbstractControl} The form control for the select field.
      */
     get formControl() {
+        const field = this.$field();
+
         return this.controlContainer.control.get(
-            this.field.variable
+            field.variable
         ) as AbstractControl<DotEditContentFieldSingleSelectableDataTypes>;
     }
 }

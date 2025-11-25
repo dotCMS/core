@@ -9,9 +9,9 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotCardinalitySelectorComponent } from './dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotEditRelationshipsComponent } from './dot-edit-relationship/dot-edit-relationships.component';
@@ -35,7 +35,7 @@ import { DotRelationshipService } from './services/dot-relationship.service';
         FormsModule,
         RadioButtonModule,
         SearchableDropDownModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe,
         DotFieldRequiredDirective
     ],

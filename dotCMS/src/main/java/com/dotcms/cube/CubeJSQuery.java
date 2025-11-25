@@ -1,19 +1,17 @@
 package com.dotcms.cube;
 
 
-
-import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.cube.filters.Filter;
 import com.dotcms.cube.filters.Filter.Order;
 import com.dotcms.cube.filters.LogicalFilter;
 import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
-import com.dotcms.cube.filters.Filter;
-import com.dotcms.experiments.business.result.ExperimentResults;
-import com.dotcms.experiments.business.result.ExperimentResults.Builder;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Iterables;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,16 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -169,6 +157,26 @@ public class CubeJSQuery {
         return orders;
     }
 
+    public String[] dimensions() {
+        return dimensions;
+    }
+
+    public String[] measures() {
+        return measures;
+    }
+
+    public long limit() {
+        return limit;
+    }
+
+    public long offset() {
+        return offset;
+    }
+
+    public TimeDimension[] timeDimensions() {
+        return timeDimensions;
+    }
+
     public CubeJSQuery.Builder builder() {
         final Builder builder = new Builder()
                 .dimensions(dimensions)
@@ -280,12 +288,12 @@ public class CubeJSQuery {
             return UtilMethods.isSet(array) ? Arrays.asList(array) : Collections.emptyList();
         }
 
-        private Builder dimensions(final Collection<String> dimensions) {
+        public Builder dimensions(final Collection<String> dimensions) {
             this.dimensions = dimensions.toArray(new String[dimensions.size()]);
             return this;
         }
 
-        private Builder measures(final Collection<String> measures) {
+        public Builder measures(final Collection<String> measures) {
             this.measures = measures.toArray(new String[measures.size()]);
             return this;
         }
@@ -370,7 +378,7 @@ public class CubeJSQuery {
         }
     }
 
-    static class TimeDimension {
+    public static class TimeDimension {
         String dimension;
         String granularity;
 
@@ -388,7 +396,7 @@ public class CubeJSQuery {
         }
     }
 
-    static class OrderItem {
+    public static class OrderItem {
         private String orderBy;
         private Order order;
 

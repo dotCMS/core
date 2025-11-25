@@ -8,7 +8,9 @@ import { DotTrimInputDirective } from '@dotcms/ui';
 const STRING_WITH_SPACES = '   Test Value   ';
 
 @Component({
-    template: `<input [(ngModel)]="name" dotTrimInput data-testId="input-to-trim" />`
+    template: `
+        <input [(ngModel)]="name" dotTrimInput data-testId="input-to-trim" />
+    `
 })
 export class DotTrimInputHostMockComponent {
     name = STRING_WITH_SPACES;

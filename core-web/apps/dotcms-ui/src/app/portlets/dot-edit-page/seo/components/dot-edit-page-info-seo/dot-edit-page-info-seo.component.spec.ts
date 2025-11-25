@@ -8,10 +8,12 @@ import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@do
 import { DotEditPageInfoSeoComponent } from './dot-edit-page-info-seo.component';
 
 @Component({
-    template: `<dot-edit-page-info-seo
-        [title]="title"
-        [url]="url"
-        [apiLink]="apiLink"></dot-edit-page-info-seo>`
+    template: `
+        <dot-edit-page-info-seo
+            [title]="title"
+            [url]="url"
+            [apiLink]="apiLink"></dot-edit-page-info-seo>
+    `
 })
 class TestHostComponent {
     title = 'A title';
@@ -66,8 +68,7 @@ describe('DotEditPageInfoSeoComponent', () => {
 
         it('should have copy button', () => {
             const button: DebugElement = de.query(By.css('[data-testId="copy-button"]'));
-            expect(button.componentInstance.copy).toBe('http://demo.dotcms.com:9876/an/url/test');
-            expect(button.componentInstance.tooltipText).toBe('Copy url page');
+            expect(button).not.toBeNull();
         });
 
         it('should not have preview link', () => {

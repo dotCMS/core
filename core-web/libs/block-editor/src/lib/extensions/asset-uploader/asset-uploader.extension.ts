@@ -8,18 +8,14 @@ import { take } from 'rxjs/operators';
 
 import { Extension } from '@tiptap/core';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { UploadPlaceholderComponent } from './components/upload-placeholder/upload-placeholder.component';
 import { PlaceholderPlugin } from './plugins/placeholder.plugin';
 
 import { ImageNode } from '../../nodes';
-import {
-    deselectCurrentNode,
-    DotUploadFileService,
-    getCursorPosition,
-    isImageURL
-} from '../../shared';
+import { deselectCurrentNode, getCursorPosition, isImageURL } from '../../shared';
 
 interface UploadNode {
     view: EditorView;

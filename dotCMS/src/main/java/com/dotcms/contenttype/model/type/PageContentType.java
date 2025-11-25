@@ -11,9 +11,10 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
+import org.immutables.value.Value;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.immutables.value.Value;
 
 /**
  * Provides the basic definition and field layout of the Page Asset Base Type. By default, all contents of type Page
@@ -135,7 +136,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 		);
 		fields.add(
 				ImmutableCustomField.builder()
-				.name("Cache TTL")
+				.name("Cache TTL (seconds)")
 				.dataType(DataTypes.TEXT)
 				.variable(PAGE_CACHE_TTL_FIELD_VAR)
 				.indexed(true)

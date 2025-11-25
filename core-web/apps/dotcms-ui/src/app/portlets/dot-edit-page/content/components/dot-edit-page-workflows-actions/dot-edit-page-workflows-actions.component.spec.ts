@@ -17,19 +17,19 @@ import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotFormatDateService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
+    DotWizardService,
     DotWorkflowActionsFireService,
+    DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
     DotWorkflowService,
-    DotGlobalMessageService,
-    DotIframeService,
-    DotWizardService,
-    DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -49,15 +49,17 @@ import {
     LoginServiceMock,
     MockDotMessageService,
     mockDotPage,
+    MockPushPublishService,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
-import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 
 import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-actions.component';
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-edit-page-workflows-actions [page]="page"></dot-edit-page-workflows-actions> `
+    template: `
+        <dot-edit-page-workflows-actions [page]="page" />
+    `
 })
 class TestHostComponent {
     @Input() page: DotPage;
@@ -199,7 +201,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     });
                     fixture.detectChanges();
 
-                    splitButtons = de.queryAll(By.css('.p-menuitem-link'));
+                    splitButtons = de.queryAll(By.css('.p-menuitem-content'));
                     firstButton = splitButtons[0].nativeElement;
                     secondButton = splitButtons[1].nativeElement;
                     thirdButton = splitButtons[2].nativeElement;
@@ -277,14 +279,16 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     });
                 });
 
-                it('should fire actions on click in the menu items', () => {
+                it('should fire actions on click on secondButton', () => {
                     secondButton.click();
                     expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
                         actionId: mockWorkflowsActions[1].id,
                         inode: component.page.workingInode,
                         data: undefined
                     });
+                });
 
+                it('should fire actions on click on thirdButton', () => {
                     thirdButton.click();
                     expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
                         actionId: mockWorkflowsActions[2].id,

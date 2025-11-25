@@ -1,5 +1,7 @@
 package com.dotcms.datagen;
 
+import static org.hamcrest.Matchers.equalTo;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -57,10 +59,6 @@ import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
-import org.awaitility.Awaitility;
-import org.awaitility.core.ConditionTimeoutException;
-import org.junit.Assert;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -74,10 +72,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.hamcrest.Matchers.equalTo;
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
+import org.junit.Assert;
 
 /**
  * @author Jonathan Gamba 2019-04-16
@@ -237,7 +237,8 @@ public class TestDataUtils {
                         new FieldDataGen()
                                 .name("body")
                                 .velocityVarName("body")
-                                .searchable(true).indexed(true)
+                                .searchable(true)
+                                .indexed(true)
                                 .next()
                 );
                 fields.add(
@@ -246,6 +247,24 @@ public class TestDataUtils {
                                 .velocityVarName("sysPublishDate")
                                 .defaultValue(null)
                                 .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("postingDate")
+                                .velocityVarName("publishDate")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("seo")
+                                .velocityVarName("seo")
+                                .defaultValue(null)
+                                .dataType(DataTypes.LONG_TEXT)
+                                .searchable(true)
+                                .indexed(true)
                                 .next()
                 );
 
@@ -291,6 +310,7 @@ public class TestDataUtils {
                         .velocityVarName(contentTypeName)
                         .fields(fields)
                         .workflowId(workflowIds)
+                        .publishDateFieldVarName("publishDate")
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -893,12 +913,16 @@ public class TestDataUtils {
     }
 
     public static ContentType getWidgetLikeContentType() {
-        return getWidgetLikeContentType("SimpleWidget" + System.currentTimeMillis(), null);
+        return getWidgetLikeContentType("SimpleWidget" + System.currentTimeMillis(), null, null);
+    }
+
+    public static ContentType getWidgetLikeContentType(final Supplier<String> widgetCode) {
+        return getWidgetLikeContentType("SimpleWidget" + System.currentTimeMillis(), null, widgetCode);
     }
 
     @WrapInTransaction
     public static ContentType getWidgetLikeContentType(final String contentTypeName,
-            final Set<String> workflowIds) {
+            final Set<String> workflowIds, final Supplier<String> widgetCode) {
 
         ContentType simpleWidgetContentType = null;
         try {
@@ -918,6 +942,17 @@ public class TestDataUtils {
                                 .required(true)
                                 .next()
                 );
+                if(null != widgetCode){ //If the widgetCode is not null, then add the field
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("WidgetCode")
+                                    .velocityVarName("widgetCode")
+                                    .type(ConstantField.class)
+                                    .required(false)
+                                    .values(widgetCode.get())
+                                    .next()
+                    );
+                }
 
                 simpleWidgetContentType = new ContentTypeDataGen()
                         .baseContentType(BaseContentType.WIDGET)
@@ -1248,6 +1283,24 @@ public class TestDataUtils {
         return getBlogContent(persist, languageId, contentTypeId, null);
     }
 
+    public static Contentlet withEmbeddings(final boolean persist,
+                                            final Host host,
+                                            final long languageId,
+                                            final String contentTypeId,
+                                            final String text) {
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                .languageId(languageId)
+                .setProperty("title", "blogContent")
+                .setProperty("urlTitle", "blogContent")
+                .setProperty("author", "systemUser")
+                .setProperty("sysPublishDate", new Date())
+                .setProperty("body", "blogBody")
+                .setProperty("seo", text);
+
+        return getBlogContent(persist, host, contentletDataGen);
+    }
+
     public static Contentlet getBlogContent(Boolean persist, long languageId,
             String contentTypeId, final Host site) {
 
@@ -1262,6 +1315,13 @@ public class TestDataUtils {
                 .setProperty("author", "systemUser")
                 .setProperty("sysPublishDate", new Date())
                 .setProperty("body", "blogBody");
+
+        return getBlogContent(persist, site, contentletDataGen);
+    }
+
+    public static Contentlet getBlogContent(final boolean persist,
+                                            final Host site,
+                                            ContentletDataGen contentletDataGen) {
 
         if (null != site) {
             contentletDataGen = contentletDataGen.host(site)

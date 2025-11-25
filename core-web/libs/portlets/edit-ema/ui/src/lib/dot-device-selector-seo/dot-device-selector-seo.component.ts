@@ -5,6 +5,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    Inject,
     Input,
     OnInit,
     Output,
@@ -31,6 +32,7 @@ import {
     socialMediaTiles
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 
 @Component({
     standalone: true,
@@ -46,7 +48,13 @@ import { DotMessagePipe } from '@dotcms/ui';
         RouterLink,
         DividerModule
     ],
-    providers: [DotDevicesService],
+    providers: [
+        DotDevicesService,
+        {
+            provide: WINDOW,
+            useValue: window
+        }
+    ],
     selector: 'dot-device-selector-seo',
     templateUrl: './dot-device-selector-seo.component.html',
     styleUrls: ['./dot-device-selector-seo.component.scss'],
@@ -54,7 +62,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 })
 export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
-    @Input() hideMediaTiles = false;
+    @Input() hideSocialMedia = false;
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
     @Output() hideOverlayPanel = new EventEmitter<string>();
@@ -124,7 +132,8 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     constructor(
         private dotDevicesService: DotDevicesService,
         private dotMessageService: DotMessageService,
-        private dotCurrentUser: DotCurrentUserService
+        private dotCurrentUser: DotCurrentUserService,
+        @Inject(WINDOW) private window: Window
     ) {}
 
     ngOnInit() {
@@ -203,11 +212,29 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input()
     set apiLink(value: string) {
         if (value) {
-            const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
+            const frontEndUrl = `${value.replace(/api\/v1\/page\/(render|json)\//, '')}`;
 
-            this.previewUrl = `${frontEndUrl}${
-                frontEndUrl.indexOf('?') != -1 ? '&' : '?'
-            }disabledNavigateMode=true`;
+            const cleanMode = frontEndUrl.replace(/[?&]mode=(.*)/, ''); // Clean the mode so the Live always takes effect
+
+            let url: URL;
+
+            try {
+                // Sometimes the host is specified in the url so this will work
+                url = new URL(
+                    `${cleanMode}${
+                        frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+                    }disabledNavigateMode=true&mode=LIVE`
+                );
+            } catch {
+                // In case it is not a valid URL, we will use the current location
+                url = new URL(
+                    `${this.window.location.origin}/${cleanMode}${
+                        frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+                    }disabledNavigateMode=true&mode=LIVE`
+                );
+            } finally {
+                this.previewUrl = url.toString();
+            }
         }
     }
 }

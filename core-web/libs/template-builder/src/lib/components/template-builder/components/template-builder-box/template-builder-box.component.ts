@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { CommonModule, NgClass, NgFor, NgIf } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -32,8 +32,6 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
-        NgFor,
-        NgIf,
         NgClass,
         ButtonModule,
         ScrollPanelModule,
@@ -66,7 +64,10 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
 
-    constructor(private el: ElementRef, private dotMessage: DotMessageService) {}
+    constructor(
+        private el: ElementRef,
+        private dotMessage: DotMessageService
+    ) {}
 
     private _dropdownLabel: string | null = null;
 

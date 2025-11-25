@@ -213,7 +213,7 @@ $finder-s-input: ".ui.input input";
 
     .cw-filter-links {
         padding: $spacing-1;
-        font-size: 0.8em;
+        font-size: $font-size-sm;
         color: $foreground-disabled;
 
         span:first-child {
@@ -244,6 +244,7 @@ $finder-s-input: ".ui.input input";
         border: 1px solid $background-primary;
         border-radius: 0.5em;
         background-color: #fff;
+        font-size: $font-size-md;
 
         .cw-header-actions {
             margin-right: 0.5em;
@@ -365,7 +366,7 @@ $finder-s-input: ".ui.input input";
     }
 
     .cw-header-info-arrow {
-        font-size: 16px;
+        font-size: $font-size-md;
         font-weight: bold;
         padding: 0.5em;
     }
@@ -538,7 +539,7 @@ $finder-s-input: ".ui.input input";
         }
 
         h2 {
-            font-size: $font-size-xxl;
+            font-size: $font-size-xl;
             margin: 0;
             color: $color-palette-gray-700;
         }
@@ -576,7 +577,7 @@ $finder-s-input: ".ui.input input";
 
         i {
             color: $white;
-            font-size: $font-size-xl;
+            font-size: $font-size-lg;
         }
     }
 }

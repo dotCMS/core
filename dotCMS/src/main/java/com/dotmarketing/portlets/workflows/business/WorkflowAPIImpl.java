@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
-
+import com.dotcms.ai.workflow.DotEmbeddingsActionlet;
+import com.dotcms.ai.workflow.OpenAIAutoTagActionlet;
+import com.dotcms.ai.workflow.OpenAIContentPromptActionlet;
+import com.dotcms.ai.workflow.OpenAIGenerateImageActionlet;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -71,6 +73,7 @@ import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.AsyncEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
 import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
@@ -135,6 +138,12 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.elasticsearch.search.query.QueryPhaseExecutionException;
+import org.osgi.framework.BundleContext;
+
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -163,11 +172,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nullable;
-import org.apache.commons.lang.time.StopWatch;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
-import org.osgi.framework.BundleContext;
+
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
 
 /**
  * Implementation class for {@link WorkflowAPI}.
@@ -236,6 +242,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final String BULK_ACTIONS_CONTENTLET_FETCH_STEP = "workflow.action.bulk.fetch.step";
 
+	private static final String LICENSE_REQUIRED_MESSAGE_KEY = "Workflow-Schemes-License-required";
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
@@ -261,6 +269,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				PushPublishActionlet.class,
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
+				AsyncEmailActionlet.class,
                 SetValueActionlet.class,
                 ReindexContentActionlet.class,
                 PushNowActionlet.class,
@@ -275,7 +284,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				SendFormEmailActionlet.class,
 				ResetApproversActionlet.class,
 				RekognitionActionlet.class,
-				MoveContentActionlet.class
+				MoveContentActionlet.class,
+				DotEmbeddingsActionlet.class,
+				OpenAIContentPromptActionlet.class,
+				OpenAIGenerateImageActionlet.class,
+				OpenAIAutoTagActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -398,7 +411,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         // if the class calling the workflow api is not friend, so checks the validation
         if (!this.getFriendClass().isFriend()) {
             if (!hasValidLicense()) {
-                throw new InvalidLicenseException("Workflow-Schemes-License-required");
+                throw new InvalidLicenseException(LICENSE_REQUIRED_MESSAGE_KEY);
             }
 
             boolean hasAccessToPortlet = false;
@@ -596,13 +609,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public WorkflowScheme findScheme(final String id) throws DotDataException, DotSecurityException {
+	public WorkflowScheme findScheme(final String idOrVar) throws DotDataException, DotSecurityException {
 
-		final String schemeId = this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
+		final String schemeIdOrVar = this.getLongId(idOrVar, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
 
-		validateWorkflowLicense(schemeId, "Workflow-Schemes-License-required");
+		validateWorkflowLicense(schemeIdOrVar, LICENSE_REQUIRED_MESSAGE_KEY);
 
-		return workFlowFactory.findScheme(schemeId);
+		return workFlowFactory.findScheme(schemeIdOrVar);
 	}
 
 	@Override
@@ -720,7 +733,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<ContentType> findContentTypesForScheme(final WorkflowScheme workflowScheme) {
 
-		validateWorkflowLicense(workflowScheme.getId(), "Workflow-Schemes-License-required");
+		validateWorkflowLicense(workflowScheme.getId(), LICENSE_REQUIRED_MESSAGE_KEY);
 		try {
 			return workFlowFactory.findContentTypesByScheme(workflowScheme);
 		}catch(Exception e){
@@ -1391,7 +1404,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException {
+	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException{
 
 		final List<Contentlet> contents =  workFlowFactory.findWorkflowTaskFilesAsContent(task, user);
 		return APILocator.getFileAssetAPI().fromContentletsI(contents);
@@ -1569,10 +1582,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	} // findActions.
 
 	private void validateWorkflowLicense(String scheme, String message) {
-		if (!SYSTEM_WORKFLOW_ID.equals(scheme)) {
-			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new InvalidLicenseException(message);
-			}
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme) && !SYSTEM_WORKFLOW_VARIABLE_NAME.equals(scheme)
+				&& (!hasValidLicense() && !this.getFriendClass().isFriend())) {
+			throw new InvalidLicenseException(message);
 		}
 	}
 
@@ -2391,12 +2403,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	@Override
 	public void fireWorkflowPostCheckin(final WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-
 		try{
 			if(!processor.inProcess()){
 				return;
 			}
-
 			processor.getContentlet().setActionId(processor.getAction().getId());
 
 			final List<WorkflowActionClass> actionClasses = processor.getActionClasses();
@@ -2406,7 +2416,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					final WorkFlowActionlet actionlet = actionClass.getActionlet();
 					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
 					if (processor.isRunningBulk() && actionlet instanceof BatchAction) {
-						final BatchAction batchable = BatchAction.class.cast(actionlet);
+						final BatchAction batchable = (BatchAction) actionlet;
 						batchable.preBatchAction(processor, actionClass, params);
 						//gather data to run in batch later
 					} else {
@@ -2434,14 +2444,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					Logger.info(this, "Added contentlet to the index at the end of the workflow execution, dependencies: " + includeDependencies);
 				}
 			}
-		} catch(Exception e) {
-
-			/* Show a more descriptive error of what caused an issue here */
-			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage());
-			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-			throw new DotWorkflowException(e.getMessage(), e);
+		} catch (final Exception e) {
+			final String errorMsg = String.format("Failed to fire Workflow Action '%s' [%s]: %s",
+					processor.getAction().getName(), processor.getAction().getId(), ExceptionUtil.getErrorMessage(e));
+			Logger.error(WorkflowAPIImpl.class, errorMsg);
+			Logger.debug(WorkflowAPIImpl.class, errorMsg, e);
+			throw new DotWorkflowException(ExceptionUtil.getErrorMessage(e), e);
 		} finally {
-
 			// not matters what we need to reindex in deferred the index just in case.
 			if (UtilMethods.isSet(processor.getContentlet()) &&
 					UtilMethods.isSet(processor.getContentlet().getIdentifier())) {

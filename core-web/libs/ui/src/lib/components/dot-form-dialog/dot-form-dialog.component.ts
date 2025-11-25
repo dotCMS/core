@@ -1,6 +1,5 @@
 import { fromEvent, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -22,7 +21,7 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 @Component({
     selector: 'dot-form-dialog',
     standalone: true,
-    imports: [CommonModule, ButtonModule, FocusTrapModule, DotMessagePipe],
+    imports: [ButtonModule, FocusTrapModule, DotMessagePipe],
     templateUrl: './dot-form-dialog.component.html',
     styleUrls: ['./dot-form-dialog.component.scss']
 })
@@ -42,7 +41,10 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     @Output()
     cancel: EventEmitter<MouseEvent> = new EventEmitter(null);
 
-    constructor(private dynamicDialog: DynamicDialogRef, private el: ElementRef) {}
+    constructor(
+        private dynamicDialog: DynamicDialogRef,
+        private el: ElementRef
+    ) {}
 
     ngOnInit(): void {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');

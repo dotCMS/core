@@ -14,9 +14,12 @@ import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,

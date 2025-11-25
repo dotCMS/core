@@ -1,8 +1,329 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+#!/usr/bin/env bash
 
-cd core-web
-npx pretty-quick --staged
-npx nx format:write
-npm run nx affected -- --target=lint --exclude=dot-rules,dot-layout-grid,dot-primeng-theme-styles,dot-rules,dotcms,dotcms-field-elements,dotcms-js,dotcms-models,dotcms-webcomponents,dotcdn-e2e,dotcms-block-editor,dotcms-block-editor-e2e,dotcms-ui-e2e,utils-testing,dojo-theme --fix=true
-cd ..
+# Ensure this script runs with bash
+if [ -z "$BASH_VERSION" ]; then
+    exec bash "$0" "$@"
+fi
+
+# Color definitions
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_color() {
+    printf "%b%s%b\n" "$1" "$2" "$NC"
+}
+
+# This script is used as a pre-commit hook for a Git repository.
+# It performs operations such as formatting and linting on staged files.
+
+# Source husky script
+. "$(dirname "$0")/_/husky.sh" || {
+    print_color "$RED" "Failed to source husky.sh"
+    exit 1
+}
+
+# Determine the root directory of the git repository
+root_dir="$(git rev-parse --show-toplevel)"
+
+# Load nvm and use the version specified in .nvmrc
+setup_nvm() {
+    # Check if nvm is already installed
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        print_color "$GREEN" "nvm is already installed."
+    else
+        print_color "$YELLOW" "Installing nvm..."
+        # Use the project's Node.js to download and run the nvm install script
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+        print_color "$GREEN" "nvm installed successfully."
+    fi
+
+    # Source nvm
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+    # Ensure the correct Node.js version is used
+    if [ -f "$root_dir/.nvmrc" ]; then
+        print_color "$BLUE" "Using Node.js version specified in .nvmrc"
+        nvm install
+    else
+        print_color "$YELLOW" "No .nvmrc found. Using default Node.js version."
+        nvm use default
+    fi
+}
+
+check_sdk_client_affected() {
+    local affected_projects=$(npx nx show projects --affected)
+    printf "Affected projects: %s\n" "$affected_projects"
+
+    # Build sdk-client if affected
+    if echo "$affected_projects" | grep -q "sdk-client"; then
+        printf "Building sdk-client\n"
+        if ! yarn nx run sdk-client:build:js; then
+            print_color "$RED" "Failed to build sdk-client"
+            has_errors=true
+        fi
+    fi
+
+    file_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/package.json"
+    dir_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/libs"
+
+    # Check if the file exists, then delete it
+    if [ -f "$file_to_remove" ]; then
+        rm "$file_to_remove"
+        printf "Removed %s\n" "$file_to_remove"
+    else
+        printf "%s does not exist\n" "$file_to_remove"
+    fi
+
+    # Check if the directory exists, then delete it
+    if [ -d "$dir_to_remove" ]; then
+        rm -r "$dir_to_remove"
+        printf "Removed directory %s\n" "$dir_to_remove"
+    else
+        printf "%s does not exist\n" "$dir_to_remove"
+    fi
+
+    if ! git add "${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js"; then
+        print_color "$RED" "Failed to stage computed sdk-client.js"
+        exit 1
+    fi
+}
+
+check_sdkman() {
+    SDKMAN_INIT="$HOME/.sdkman/bin/sdkman-init.sh"
+
+    # Check if sdkman-init.sh exists and is readable
+    if [ -s "$SDKMAN_INIT" ]; then
+        source "$SDKMAN_INIT" # Source sdkman to make sdk command available
+        print_color "$GREEN" "SDKMAN! sourced from $SDKMAN_INIT"
+
+        # Optionally check if sdk command is available
+        if command -v sdk >/dev/null 2>&1; then
+            print_color "$GREEN" "SDKMAN! is installed and functional."
+        else
+            print_color "$RED" "SDKMAN! command is not available. Please check the installation."
+            exit 1
+        fi
+    else
+        print_color "$RED" "SDKMAN! not found at $SDKMAN_INIT. Please install SDKMAN! first."
+        print_color "$RED" "You can install this and other required utilities from https://github.com/dotCMS/dotcms-utilities"
+        exit 1
+    fi
+}
+
+has_errors=false
+
+# Perform fix operations on the staged files
+perform_frontend_fixes() {
+    local files="$1"
+    local add_to_index="$2"
+    local file
+
+    # Check if yarn.lock is present
+    if ! yarn install; then
+        print_color "$RED" "Failed to install dependencies with yarn install"
+        print_color "$YELLOW" "Please run 'yarn install' to update the lockfile and make sure you commit this with any package.json changes."
+        has_errors=true
+        return 1
+    else
+        printf "Completed yarn install adding yarn.lock if it was modified\n"
+        git add "${root_dir}/core-web/yarn.lock"
+    fi
+
+    if ! yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
+        has_errors=true
+    fi
+
+    if ! yarn nx format:write; then
+        has_errors=true
+    fi
+
+    if [ "$add_to_index" = "true" ]; then
+        local modified_files
+        modified_files=$( (git diff --name-only && git diff --name-only --cached) | sort | uniq)
+
+        local unmatched_files=()
+
+        for file in $files; do
+            if echo "$modified_files" | grep -Fxq "$file"; then
+                if ! git add -- "${root_dir}/${file}"; then
+                    has_errors=true
+                fi
+            else
+                unmatched_files+=("$file")
+            fi
+        done
+
+        if [ ${#unmatched_files[@]} -ne 0 ]; then
+            printf "===================================\n"
+            print_color "$YELLOW" "Warning: The following unrelated files in the affected modules should be linted and/or formatted"
+            printf "\n"
+            for file in "${unmatched_files[@]}"; do
+                printf "    %s\n" "${file}"
+                git restore "${file}"
+            done
+            printf "\n"
+            print_color "$YELLOW" "You can fix these files by running the following commands:"
+            printf "nx affected -t lint --exclude='tag:skip:lint' --fix=true\n"
+            printf "nx format:write;\n"
+        fi
+    fi
+}
+
+restore_untracked_files() {
+    if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ] && [ "$(ls -A "${temp_dir}")" ]; then
+        printf "Restoring untracked files...\n"
+        # Copy each file back from the temporary directory while maintaining the directory structure
+        find "${temp_dir}" -type f -exec sh -c '
+            for file do
+                temp_dir='"${temp_dir}"'
+                root_dir='"${root_dir}"'
+                rel_path="${file#${temp_dir}/}"  # Extract the relative path by removing the temp directory prefix
+                dest_dir="$(dirname "${rel_path}")"  # Determine the destination directory based on the relative path
+                full_dest_path="${root_dir}/${rel_path}"  # Construct the full destination path
+                mkdir -p "${root_dir}/${dest_dir}"  # Ensure the destination directory exists
+                cp "${file}" "${full_dest_path}"  # Copy the file to the destination directory
+            done
+        ' sh {} +
+    fi
+
+    # Clean up temporary directory
+    if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
+        rm -rf "${temp_dir}"
+    fi
+}
+
+original_pwd=${PWD}
+root_dir="$(git rev-parse --show-toplevel)"
+
+# Check for sdkman before running other initializations
+
+# This will ensure that the correct version of node and yarn is installed
+# from core-web/pom.xml and .nvmrc files are updated
+cd "${root_dir}" || exit 1
+
+# Need to follow steps to ensure versions are available
+# 1. SDKMAN to get right version of java before maven can be called.
+# 2. Run base validate on maven, will ensure that local version of node and yarn are installed to ${root_dir}/installs/node and ${root_dir}/installs/node/yarn/dist/bin:$PATH
+#.   This also updates the local .nvmrc file
+# 3  Ensure that developers have the correct version of node and yarn installed with nvm
+
+check_sdkman
+
+printf "Setting up Java\n"
+sdk env install
+printf "Initializing Maven, Node, and Yarn versions\n"
+# Output maven and java versions
+./mvnw --version
+
+# Run a base validate on maven to ensure that the correct version of node and yarn are installed
+if ! ./mvnw validate -pl :dotcms-core --am -q; then
+    print_color "$RED" "Failed to run './mvnw validate -pl :dotcms-core --am'"
+    print_color "$YELLOW" "Please run the following command to see the detailed output:"
+    printf "./mvnw validate -pl :dotcms-core --am\n"
+    exit 1
+else
+    printf "Completed Maven init\n"
+fi
+
+# Update PATH to include project-specific Node.js and Yarn
+export PATH="${root_dir}/installs/node:${root_dir}/installs/node/yarn/dist/bin:$PATH"
+
+# Verify that node and yarn are accessible
+if ! command -v node > /dev/null 2>&1 || ! command -v yarn > /dev/null 2>&1; then
+    print_color "$RED" "Error: Node.js or Yarn not found in the project directory."
+    print_color "$YELLOW" "Please ensure they are installed in ${root_dir}/installs/node"
+    exit 1
+fi
+
+# Not needed for this script as we are referring directly in the path to the binaries of maven and yarn maven downloaded
+# We want to make sure the developer has the correct version using nvm
+setup_nvm
+
+# Log the versions being used
+printf "Using Node version: %s\n" "$(node --version)"
+printf "Using Yarn version: %s\n" "$(yarn --version)"
+
+core_web_dir="${root_dir}/core-web"
+cd "${core_web_dir}" || exit 1
+
+staged_files=$(git diff --cached --name-only)
+modified_files=$(git diff --name-only)
+
+untracked_files=$(printf "%s\n%s" "$staged_files" "$modified_files" | sort | uniq -d)
+
+if [ -n "${staged_files}" ]; then
+    # Check if there are any staged files in the core-web directory
+    core_web_files_staged=$(echo "$staged_files" | grep -E '^core-web/' || true )
+
+    # Determine if untracked files should be backed up
+    backup_untracked=true # Default to true if not set
+fi
+
+printf "%s\n" "${core_web_files_staged}"
+
+# Only create a temporary directory if there are untracked files and backup_untracked is true
+if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
+    temp_dir=$(mktemp -d)
+    if [ ! -d "${temp_dir}" ]; then
+        print_color "$RED" "Failed to create temporary directory."
+        exit 1
+    fi
+    printf "Created temporary directory %s\n" "${temp_dir}"
+
+    for file in $untracked_files; do
+        if echo "${staged_files}" | grep -q "^${file}$"; then
+            mkdir -p "${temp_dir}/$(dirname "${file}")"  # Ensure the directory structure exists in the temp directory
+            cp "${root_dir}/${file}" "${temp_dir}/${file}"  # Copy the file to the temp directory, preserving the directory structure
+            printf "Backing up %s to %s\n" "${file}" "${temp_dir}/${file}"
+            # Restore the original file state in the repo, removing unstaged changes
+            git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+        fi
+    done
+
+    # Set trap to ensure restore_untracked_files is called on exit
+    trap restore_untracked_files EXIT
+
+    for file in $untracked_files; do
+            if echo "${staged_files}" | grep -q "^${file}$"; then
+                git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+            fi
+    done
+
+    printf "Backed up workspace to %s\n" "${temp_dir}"
+fi
+
+# Run fixes on staged files
+if [ -n "$core_web_files_staged" ]; then
+    perform_frontend_fixes "${core_web_files_staged}" true
+    errors=$?  # Capture the return value from perform_frontend_fixes
+fi
+
+# Restore untracked files if necessary
+restore_untracked_files
+
+## Running fixes on untracked files
+core_web_files_untracked=$(echo "$untracked_files" | grep -E '^core-web/' || true )
+if [ -n "$core_web_files_untracked" ]; then
+    perform_frontend_fixes "${core_web_files_untracked}" false
+fi
+
+# Check if sdk-client is affected
+check_sdk_client_affected
+
+# Restore original working directory
+cd "${original_pwd}" || exit 1  # Exit if the directory does not exist
+
+# Final check before exiting
+if [ "$has_errors" = true ]; then
+    print_color "$RED" "Checks failed. Force commit with --no-verify option if bypass required."
+    exit 1  # Change the exit code to reflect that an error occurred
+else
+    print_color "$GREEN" "Commit checks completed successfully."
+    exit 0  # No errors, exit normally
+fi

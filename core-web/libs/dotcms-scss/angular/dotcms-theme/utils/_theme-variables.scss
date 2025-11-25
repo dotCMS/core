@@ -186,7 +186,7 @@ $tabview-item-color: $color-palette-gray-700;
 $tabview-item-selected-color: $color-palette-secondary;
 $tabview-item-padding: $spacing-3 $spacing-4 10px; // To match the 48px height
 $tabview-item-border: 3px solid $white;
-$tabview-item-border-height: 4px;
+$tabview-item-border-height: 2px;
 $tabview-item-selected-border: 5px solid $color-palette-secondary-500;
 $tabview-item-disabled-color: $color-palette-black-op-20;
 $tabview-nav-height: 48px;
@@ -195,7 +195,7 @@ $tabview-nav-height: 48px;
 $menu-link-color: $black;
 
 // DIALOG
-$dialog-title-font-size: $font-size-xxl;
+$dialog-title-font-size: $font-size-xl;
 $dialog-message-line-height: $line-height;
 $dialog-message-warning-color: $red;
 $dialog-close-button-normal-color: $color-palette-black-op-70;

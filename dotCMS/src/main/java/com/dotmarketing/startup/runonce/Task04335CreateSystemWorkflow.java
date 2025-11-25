@@ -2,8 +2,6 @@
 
 package com.dotmarketing.startup.runonce;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
@@ -15,13 +13,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.velocity.util.ClassUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.velocity.util.ClassUtils;
 
 /**
  * This upgrade task will creates the system workflow
@@ -41,7 +40,7 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
     protected static final String INSERT_ACTION_FOR_STEP   = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
     protected static final String INSERT_ACTION_CLASS      = "insert into workflow_action_class (id, action_id, name, my_order, clazz) values (?,?, ?, ?, ?)";
     protected static final String DELIMITER                = ",";
-    protected static final Map<DbType, String> insertPermissionMap   = map(
+    protected static final Map<DbType, String> insertPermissionMap   = Map.of(
             DbType.POSTGRESQL,   "insert into permission(id, permission_type, inode_id, roleid, permission) values (nextval('permission_seq'), ?, ?, ?, ?)",
             DbType.ORACLE,       "insert into permission(id, permission_type, inode_id, roleid, permission) values (permission_seq.NEXTVAL,    ?, ?, ?, ?)",
             DbType.MYSQL,        "insert into permission(permission_type, inode_id, roleid, permission) values (?, ?, ?, ?)",
@@ -178,7 +177,7 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
                 .setSQL("select id,role_name,role_key from cms_role where role_key = ?")
                 .addParam(roleKey)
                 .loadObjectResults()
-                .stream().findFirst().orElse(map("id", defaultValue))
+                .stream().findFirst().orElse(Map.of("id", defaultValue))
                 .get("id");
     }
 

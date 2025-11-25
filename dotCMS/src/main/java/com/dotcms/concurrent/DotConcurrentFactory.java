@@ -42,8 +42,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}
  * @author jsanca
@@ -215,7 +213,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         return (null != dotConcurrent)?
                 (dotConcurrent instanceof DotConcurrentImpl)?
-                        map(
+                        Map.of(
                         "name",        name,
                         "threadPool",  DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().toString(),
                         "maxPoolSize", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getMaximumPoolSize(),
@@ -227,7 +225,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         "queue",       toString(DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getQueue()),
                         "isShutdown",  DotConcurrentImpl.class.cast(dotConcurrent).shutdown
                         ):
-                        map(
+                        Map.of(
                                 "name",        name,
                                 "threadPool",  "noInfo",
                                 "maxPoolSize", dotConcurrent.getMaxPoolSize(),
@@ -239,7 +237,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                                 "queue",       "noInfo",
                                 "isShutdown",  dotConcurrent.isAborting()
                         )
-                :map(
+                :Map.of(
                         "name",        name,
                         "threadPool",  "noInfo",
                         "maxPoolSize", -1,

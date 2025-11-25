@@ -9,19 +9,26 @@ export enum DotEditContentFieldSingleSelectableDataType {
 
 // Map to match the field type to component selector
 export enum FIELD_TYPES {
-    TEXT = 'Text',
-    TEXTAREA = 'Textarea',
-    SELECT = 'Select',
-    RADIO = 'Radio',
+    BINARY = 'Binary',
+    FILE = 'File',
+    IMAGE = 'Image',
+    BLOCK_EDITOR = 'Story-Block',
+    CATEGORY = 'Category',
+    CHECKBOX = 'Checkbox',
+    CONSTANT = 'Constant-Field',
+    CUSTOM_FIELD = 'Custom-Field',
     DATE = 'Date',
     DATE_AND_TIME = 'Date-and-Time',
-    TIME = 'Time',
-    TAG = 'Tag',
-    CHECKBOX = 'Checkbox',
-    MULTI_SELECT = 'Multi-Select',
-    BLOCK_EDITOR = 'Story-Block',
-    BINARY = 'Binary',
-    CUSTOM_FIELD = 'Custom-Field',
+    HIDDEN = 'Hidden-Field',
+    HOST_FOLDER = 'Host-Folder',
     JSON = 'JSON-Field',
-    KEY_VALUE = 'Key-Value'
+    KEY_VALUE = 'Key-Value',
+    MULTI_SELECT = 'Multi-Select',
+    RADIO = 'Radio',
+    SELECT = 'Select',
+    TAG = 'Tag',
+    TEXT = 'Text',
+    TEXTAREA = 'Textarea',
+    TIME = 'Time',
+    WYSIWYG = 'WYSIWYG'
 }

@@ -174,4 +174,8 @@ public final class Constants {
 	 * Extension for the JSON file: .json
 	 */
 	public static final String JSON_FILE_EXTENSION = ".json";
+
+	public static final boolean RESPECT_FRONT_END_ROLES = Boolean.TRUE;
+	public static final boolean DONT_RESPECT_FRONT_END_ROLES = Boolean.FALSE;
+
 }

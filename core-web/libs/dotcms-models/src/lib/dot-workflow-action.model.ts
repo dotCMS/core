@@ -4,7 +4,7 @@ export interface DotCMSWorkflowActionEvent {
     workflow: DotCMSWorkflowAction;
     callback: string;
     inode: string;
-    selectedInodes: string | string[];
+    selectedInodes?: string | string[];
 }
 
 export interface DotCMSWorkflowAction {

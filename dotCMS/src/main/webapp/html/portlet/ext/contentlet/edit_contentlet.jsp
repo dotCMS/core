@@ -74,6 +74,7 @@
 <%@ page import="org.apache.poi.ss.usermodel.Row" %>
 <%@ page import="com.dotcms.contenttype.transform.field.FieldTransformer" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="com.dotmarketing.util.ConfigUtils" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -95,8 +96,7 @@
 </style>
 
 <%
-	String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
-	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+	if (ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BINARY_FIELD")) {
 %>
 
 <!--  dotCMS Binary Field Builder -->
@@ -108,7 +108,6 @@
 <% } %>
 
 <script type="text/javascript">
-
 	const relationsLoadedMap = {};
 
 	function waitForRelation() {
@@ -137,10 +136,10 @@
 
 <script language="javascript">
 	require(["vs/editor/editor.main"], function() {
-		// Hack to avoid MonacoEditorLoaderService to load the editor again 
+		// Hack to avoid MonacoEditorLoaderService to load the editor again
 		// That service not works in `dojo` environment Dojo amdLoader. See docs: [https://dojotoolkit.org/reference-guide/1.7/loader/amd.html?highlight=packages%20location%20name%20main]
 		window.monacoEditorAlreadyInitialized = !!window.monaco;
-	});		
+	});
 </script>
 
 <%
@@ -496,6 +495,13 @@
                             formValue = (Object) contentletForm.getFieldValueByVar(f.getVelocityVarName());
 
                         }
+
+						if (newField instanceof StoryBlockField) {
+							if (UtilMethods.isSet(formValue)) {
+								formValue = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(formValue, contentlet.getIdentifier()).getValue();
+							}
+						}
+
                         request.setAttribute("value", formValue);
 
                         if (f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
@@ -576,7 +582,7 @@
 								<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
 								<%
 						}
-                    } else { %>
+                    } else if (!f.getFieldType().equals(Field.FieldType.CONSTANT.toString())) { %>
 						<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
 					<% } %>
 

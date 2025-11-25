@@ -2118,7 +2118,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     let cardThumbnail = document.createElement("dot-contentlet-thumbnail");
 
                     cardThumbnail.iconSize="48px";
-                    cardThumbnail.cover="true";
+                    cardThumbnail.backgroundImage="true";
                     cardThumbnail.contentlet=cellData;
 
                     holderDiv.appendChild(cardThumbnail);

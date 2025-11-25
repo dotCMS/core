@@ -19,8 +19,8 @@ push - *dotCMS global push*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*--retry-attempts*=_<retryAttempts>_]
-     [*--token*=_<token>_] [_path_]
+*push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-w*[=_watch_]] [*--dotcms-url*=_<remoteURL>_]
+     [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -36,22 +36,48 @@ push - *dotCMS global push*
 == Options
 
 *-dau, --disable-auto-update*::
-  Disable the default behaviour of updating the local file descriptor with the response from the server after a push. When this option is used, the local file will remain in its initial state even after a successful push.
+  Disable the default behaviour of updating the local file descriptor with the 
++
+response from the server after a push. When this option is used, the 
++
+local file will remain in its initial state even after a successful push.
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
 
 *--dry-run*::
-  When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
+  When this option is enabled, the push process displays information about the changes that would be made on 
++
+the remote server without actually pushing those changes. No modifications will be made to the remote server. 
++
+By default, this option is disabled, and the changes will be applied to the remote server.
 
 *-ff, --fail-fast*::
-  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+  Stop at first failure and exit the command. By default, this option is disabled, 
++
+and the command will continue on error.
 
 *-h*, *--help*::
   Display this help message.
 
 *--retry-attempts*=_<retryAttempts>_::
-  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
+  Number of retry attempts on errors. By default, this option is disabled, 
++
+and the command will not retry on error.
 
-*--token*=_<token>_::
-  A dot CMS token to use for authentication. 
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+*-w*, *--watch*[=_watch_]::
+  When this option is enabled the tool observes changes in the file system within the push path
++
+If a change is detected the push command being executed gets triggered. 
++
+The auto-update feature is disabled when watch mode is on
++
+The default watch interval is 2 seconds, but it can be specified passing an integer value with this option.
++
+e.g. --watch 5
 
 // end::picocli-generated-man-section-options[]
 

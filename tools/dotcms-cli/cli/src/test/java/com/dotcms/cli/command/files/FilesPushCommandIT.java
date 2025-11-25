@@ -1,5 +1,6 @@
 package com.dotcms.cli.command.files;
 
+import static com.dotcms.cli.common.FilesUtils.isDirectoryNotEmpty;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 
@@ -15,13 +16,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Collections;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
@@ -363,4 +365,45 @@ class FilesPushCommandIT extends CommandTest {
             deleteTempDirectory(tempFolder);
         }
     }
+
+    /**
+     * Given Scenario: Pull down a workspace doesn't matter if it is empty,
+     * Call the push command with a path that doesn't match any files folder but exists within the workspace.
+     * Expected Result: When the command is called passing a folder that exists within the workspace but its outside files it should return OK cause we default to the workspace root
+     * If the command is called with a path that doesn't match any files folder in the workspace, it should return OK.
+     *
+     * @throws IOException If an I/O error occurs.
+     */
+    @Test
+    void testPushNonFilesMatchingPath() throws IOException {
+
+        // Create a temporal folder for the pull
+        var tempFolder = createTempFolder();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            //Pull down a workspace if empty
+            commandLine.setOut(out);
+            final String path = String.format("//%s", "default");
+            int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path, "--workspace",
+                    tempFolder.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(FilesCommand.NAME, FilesPush.NAME, "--workspace",
+                    tempFolder.toAbsolutePath().toString(), "content-types");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            Assertions.assertTrue(isDirectoryNotEmpty(tempFolder));
+
+            //But if called with a path that doesn't match any files folder in the workspace
+            status = commandLine.execute(FilesCommand.NAME, FilesPush.NAME, "--workspace",
+                    tempFolder.toAbsolutePath().toString(), "non-existing-folder");
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+
 }

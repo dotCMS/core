@@ -3,29 +3,33 @@ import { ReactNode } from 'react';
 
 import { useDotcmsPageContext } from './useDotcmsPageContext'; // Adjust the import path based on your file structure.
 
-import { PageProviderContext } from '../components/PageProvider/PageProvider';
 import { PageContext } from '../contexts/PageContext';
+import { DotCMSPageContext } from '../models';
 
-const mockContextValue: PageProviderContext = {
+const mockContextValue: DotCMSPageContext = {
     components: {},
-    containers: {},
-    layout: {
-        header: false,
-        footer: false,
-        body: {
-            rows: []
-        }
-    },
-    page: {
-        title: 'Test Page',
-        identifier: 'test-page'
-    },
-    viewAs: {
-        language: {
-            id: 'en'
+    isInsideEditor: false,
+    pageAsset: {
+        containers: {},
+        layout: {
+            header: false,
+            footer: false,
+            body: {
+                rows: []
+            }
         },
-        persona: {
-            keyTag: 'persona'
+        page: {
+            title: 'Test Page',
+            identifier: 'test-page'
+        },
+        viewAs: {
+            language: {
+                id: 'en'
+            },
+            persona: {
+                keyTag: 'persona'
+            },
+            variantId: 'variant'
         }
     }
 };

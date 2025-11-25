@@ -360,7 +360,7 @@ public class MaintenanceResource implements Serializable {
     private InitDataObject assertBackendUser(HttpServletRequest request, HttpServletResponse response) {
         return new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requireAdmin(true)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .requiredPortlet(Portlet.MAINTENANCE)

@@ -1,36 +1,31 @@
 package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.init.DotInitScheduler;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.dotmarketing.portlets.contentlet.business.HostFactoryImpl.SITE_IS_LIVE_OR_STOPPED;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 public class HostFactoryImplTest extends IntegrationTestBase {
 
@@ -160,6 +155,129 @@ public class HostFactoryImplTest extends IntegrationTestBase {
         assertTrue(hostsList.isPresent() && hostsList.get().size() > 0);
         //now the user has permissions over the system host
         assertTrue(hostsList.get().contains(APILocator.systemHost()));
+    }
+
+    /**
+     * Method to test: {@link HostFactoryImpl#bySiteName(String)}
+     * Given Scenario: get host by name for a non-existing host
+     * ExpectedResult: host cache should return 404 for not existing host by name
+     */
+    @Test
+    public void test_get_404_for_not_existing_host_by_name() throws DotDataException, DotSecurityException {
+
+        Host site = null;
+        final HostFactoryImpl hostFactory = new HostFactoryImpl();
+
+        // Create and remove test host
+        final String hostName = "NotExistingSite" + System.currentTimeMillis();
+        try {
+            site = new SiteDataGen().name(hostName).nextPersisted(true);
+            final Host hostByName = APILocator.getHostAPI().findByName(
+                    hostName, APILocator.systemUser(), false);
+            assertNotNull(hostByName);
+            assertNotEquals(HostCache.CACHE_404_HOST, hostByName.getIdentifier());
+        } finally {
+            if (site != null) {
+                APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+            }
+        }
+
+        // Check 404 after deletion of test host
+        final HostCache hostCache = new HostCacheImpl();
+        final Host nonExistingHost = hostFactory.bySiteName(hostName);
+        final Host cached404Host = hostCache.getByName(hostName);
+
+        assertNull(nonExistingHost);
+        assertNotNull(cached404Host);
+        assertEquals(HostCache.CACHE_404_HOST, cached404Host.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link HostAPIImpl#delete(Host, User, boolean, boolean)}
+     * When: Try to archive and delete a Host that had a Published Template in it
+     * should: Archive and Delete both SIte and Template
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void deleteHostWithTemplate() throws DotDataException, DotSecurityException, WebAssetException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        APILocator.getTemplateAPI().publishTemplate(template, APILocator.systemUser(), false);
+
+        APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+        APILocator.getHostAPI().delete(host, APILocator.systemUser(), false);
+
+        final Host hostFromDB = APILocator.getHostAPI().find(host.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        assertNull(hostFromDB);
+        assertNull(templateFromDB);
+
+    }
+
+    /**
+     * Method to test: {@link HostAPIImpl#delete(Host, User, boolean, boolean)}
+     * When: Try to archive and delete a Host that had a Archived Template in it
+     * should: Archive and Delete both SIte and Template
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void deleteHostWithArchiveTemplate() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        APILocator.getTemplateAPI().unpublishTemplate(template, APILocator.systemUser(), false);
+        APILocator.getTemplateAPI().archive(template, APILocator.systemUser(), false);
+
+        APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+        APILocator.getHostAPI().delete(host, APILocator.systemUser(), false);
+
+        final Host hostFromDB = APILocator.getHostAPI().find(host.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        assertNull(hostFromDB);
+        assertNull(templateFromDB);
+
+    }
+
+    /**
+     * Method to test: {@link HostAPIImpl#delete(Host, User, boolean, boolean)}
+     * When: Try to archive and delete a Host that had a Unpublished Template in it
+     * should: Archive and Delete both SIte and Template
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void deleteHostWithUnpublishedTemplate() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        APILocator.getTemplateAPI().unpublishTemplate(template, APILocator.systemUser(), false);
+
+        APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+        APILocator.getHostAPI().delete(host, APILocator.systemUser(), false);
+
+        final Host hostFromDB = APILocator.getHostAPI().find(host.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(),
+                APILocator.systemUser(), false);
+
+        assertNull(hostFromDB);
+        assertNull(templateFromDB);
+
     }
 }
 

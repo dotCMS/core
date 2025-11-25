@@ -15,6 +15,12 @@ import {
     PALETTE_PAGINATOR_ITEMS_PER_PAGE
 } from '../../store/edit-ema-palette.store';
 
+const CONTENTLETS_PROP_MOCK = {
+    items: CONTENTLETS_MOCK,
+    totalRecords: 10,
+    itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
+};
+
 describe('EditEmaPaletteContentletsComponent', () => {
     let spectator: Spectator<EditEmaPaletteContentletsComponent>;
 
@@ -36,32 +42,12 @@ describe('EditEmaPaletteContentletsComponent', () => {
         spectator = createComponent({
             props: {
                 contentlets: {
-                    items: CONTENTLETS_MOCK,
-                    totalRecords: 10,
-                    itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
+                    ...CONTENTLETS_PROP_MOCK
                 },
                 control: new FormControl(''),
                 paletteStatus: EditEmaPaletteStoreStatus.LOADED
             }
         });
-    });
-
-    it('should emit dragStart event on drag start', () => {
-        const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
-        spectator.triggerEventHandler('[data-testId="contentlet-0"]', 'dragstart', {
-            identifier: '123',
-            contentType: 'Activity'
-        });
-        expect(dragSpy).toHaveBeenCalledWith({ identifier: '123', contentType: 'Activity' });
-    });
-
-    it('should emit dragEnd event on drag end', () => {
-        const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
-        spectator.triggerEventHandler('[data-testId="contentlet-0"]', 'dragend', {
-            identifier: '123',
-            contentType: 'Activity'
-        });
-        expect(dragSpy).toHaveBeenCalledWith({ identifier: '123', contentType: 'Activity' });
     });
 
     it('should emit showContentTypes event on backToContentTypes', () => {
@@ -72,12 +58,18 @@ describe('EditEmaPaletteContentletsComponent', () => {
     });
 
     it('should emit paginate event with filter on onPaginate', () => {
-        const spy = jest.spyOn(spectator.component.paginate, 'emit');
-        spectator.triggerEventHandler(Paginator, 'onPageChange', {
-            page: 1,
-            contentVarName: 'sample'
+        const spyEmit = jest.spyOn(spectator.component.paginate, 'emit');
+
+        const mock_filter = {
+            query: 'test',
+            contentTypeVarName: 'test'
+        };
+        spectator.setInput('contentlets', {
+            ...CONTENTLETS_PROP_MOCK,
+            filter: { ...mock_filter }
         });
-        expect(spy).toHaveBeenCalledWith({ page: 1, contentVarName: 'sample' });
+        spectator.triggerEventHandler(Paginator, 'onPageChange', { page: 1 });
+        expect(spyEmit).toHaveBeenCalledWith({ page: 1, ...mock_filter });
     });
 
     it('should render contentlet list with data-item attribute', () => {
@@ -86,9 +78,14 @@ describe('EditEmaPaletteContentletsComponent', () => {
         expect(spectator.query('[data-testId="contentlet-0"]')).toBeTruthy();
         expect(spectator.query('[data-testId="contentlet-0"]')).toHaveAttribute('data-item');
         expect(data).toEqual({
-            identifier: CONTENTLETS_MOCK[0].identifier,
-            contentType: CONTENTLETS_MOCK[0].contentType,
-            baseType: CONTENTLETS_MOCK[0].baseType
+            contentlet: {
+                identifier: CONTENTLETS_MOCK[0].identifier,
+                contentType: CONTENTLETS_MOCK[0].contentType,
+                baseType: CONTENTLETS_MOCK[0].baseType,
+                title: CONTENTLETS_MOCK[0].title,
+                inode: CONTENTLETS_MOCK[0].inode
+            },
+            move: false
         });
     });
 

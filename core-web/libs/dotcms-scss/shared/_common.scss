@@ -3,6 +3,7 @@ $border-radius-sm: 0.25rem; // 4px
 $border-radius-md: 0.375rem; // 6px
 $border-radius-lg: 0.5rem; // 8px
 $border-radius-xl: 1rem; // 16px
+$border-radius-circular: 50%;
 
 $field-border-radius: $border-radius-md;
 
@@ -19,6 +20,7 @@ $icon-md: 16px;
 $icon-md-box: 20px;
 $icon-lg: 18px;
 $icon-lg-box: 24px;
+$icon-xl: 48px;
 
 // Screen sizes for media queries
 $screen-sm: 40em; // 640px

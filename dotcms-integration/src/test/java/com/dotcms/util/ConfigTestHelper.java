@@ -8,7 +8,8 @@ import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.util.FileUtil;
-import org.mockito.Matchers;
+
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -58,7 +59,7 @@ public class ConfigTestHelper extends Config {
 
             String[] contextRoots = new String[]{topPath,testRoot.toString()};
 
-            Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
+            Mockito.when(context.getRealPath(ArgumentMatchers.anyString())).thenAnswer(new Answer<String>() {
             //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public String answer(InvocationOnMock invocation) throws Throwable {
@@ -67,7 +68,7 @@ public class ConfigTestHelper extends Config {
                     return (fullPath!=null) ? fullPath.toString() : null;
                 }
             });
-            Mockito.when(context.getResource(Matchers.anyString())).thenAnswer(new Answer<URL>() {
+            Mockito.when(context.getResource(ArgumentMatchers.anyString())).thenAnswer(new Answer<URL>() {
             //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public URL answer(InvocationOnMock invocation) throws Throwable {
@@ -92,8 +93,7 @@ public class ConfigTestHelper extends Config {
     }
 
 
-    private static Path getTestFilePath(String contextPath,String[] contextRoots)
-            throws MalformedURLException {
+    private static Path getTestFilePath(String contextPath,String[] contextRoots){
         if (!contextPath.startsWith("/"))
             throw new IllegalArgumentException("Resource path must start with a / and is relative to context root");
         else

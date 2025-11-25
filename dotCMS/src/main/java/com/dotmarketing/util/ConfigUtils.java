@@ -23,13 +23,8 @@ import java.nio.file.Paths;
  */
 public class ConfigUtils {
 
-
-    /*
-     * This property determine if the app is running on dev mode.
-     */
-    public static final String DEV_MODE_KEY = "dotcms.dev.mode";
-
-    private final static String DEFAULT_RELATIVE_ASSET_PATH = "/assets";
+    private static final String DEFAULT_RELATIVE_ASSET_PATH = "/assets";
+    private static final Lazy<Boolean> IS_DEV_MODE = Lazy.of(() -> Config.getBooleanProperty("dotcms.dev.mode", false));
 
 	/**
 	 * Returns true if app is running on dev mode.
@@ -39,7 +34,7 @@ public class ConfigUtils {
 
         // by default if the vars does not exists, we assume is not
         // running on dev mode, so it is false.
-        return Config.getBooleanProperty(DEV_MODE_KEY, false);
+        return IS_DEV_MODE.get();
 	}
 
 	public static String getDynamicContentPath() {
@@ -183,12 +178,11 @@ public class ConfigUtils {
     public static String getDotGeneratedPath() {
         return dotGeneratedPath.get() + File.separator + "dotGenerated";
     }
-    
-    private static Lazy<String> dotGeneratedPath =Lazy.of(()->{
-        return LOCAL.equalsIgnoreCase(Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL))
+
+    private static Lazy<String> dotGeneratedPath =Lazy.of(() ->
+			LOCAL.equalsIgnoreCase(Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL))
                     ? ConfigUtils.getDynamicContentPath()
-                    : ConfigUtils.getAbsoluteAssetsRootPath();
-            });
+                    : ConfigUtils.getAbsoluteAssetsRootPath());
 
 
 	public static Tuple2<String,String> getDeclaredDefaultLanguage(){
@@ -199,6 +193,15 @@ public class ConfigUtils {
 
 		return Tuple.of(langCode, countryCode);
 
+	}
+
+	/**
+	 * Checks the status of a feature flag.
+	 * @param featureFlagName
+	 * @return Boolean with the feature flag value. If not set, true is returned by default
+	 */
+	public static boolean isFeatureFlagOn(final String featureFlagName) {
+		return Config.getBooleanProperty(featureFlagName, true);
 	}
 
 }

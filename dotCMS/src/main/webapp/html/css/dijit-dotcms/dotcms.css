@@ -2876,6 +2876,9 @@
   --color-palette-primary-op-70: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.7);
   --color-palette-primary-op-80: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.8);
   --color-palette-primary-op-90: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.9);
+  --color-palette-primary-shade: var(--color-palette-primary-600);
+  --color-palette-primary: var(--color-palette-primary-500);
+  --color-palette-primary-tint: var(--color-palette-primary-200);
   --color-palette-secondary-100: hsl(var(--color-secondary-h) var(--color-secondary-s) 98%);
   --color-palette-secondary-200: hsl(var(--color-secondary-h) var(--color-secondary-s) 94%);
   --color-palette-secondary-300: hsl(var(--color-secondary-h) var(--color-secondary-s) 84%);
@@ -2939,6 +2942,9 @@
       60%,
       0.9
   );
+  --color-palette-secondary-shade: var(--color-palette-secondary-600);
+  --color-palette-secondary: var(--color-palette-secondary-500);
+  --color-palette-secondary-tint: var(--color-palette-secondary-200);
   /* COLOR BLACK OPACITY */
   --color-palette-black-op-10: hsla(
       var(--color-black-h),
@@ -3088,9 +3094,7 @@
   width: 0;
 }
 
-#font-icon-base, .arrowLeftIcon, .arrowRightIcon, .chevronExpandIcon, .deleteIcon, .editIcon, .folderIcon, .folderOpenIcon, .folderSelectedIcon,
-.toggleCloseIcon,
-.toggleOpenIcon, .dijitIconCopy, #dijit-icon, .tagLink.persona:before, .wmaIcon, .wavIcon, .raIcon, .mpaIcon, .mp3Icon, .midIcon, .m3uIcon, .iffIcon, .aifIcon, .aacIcon, .docxIcon, .docIcon, .pptxIcon, .pptIcon, .keynoteIcon, .pdfIcon, .svgIcon, .webpIcon, .gifIcon, .pngIcon, .pctIcon, .jpgIcon, .jpegIcon, .imageIcon, .bmpIcon, .xlsxIcon, .xlsIcon, .wksIcon, .numbersIcon, .csvIcon, .vobIcon, .rmIcon, .ogvIcon, .oggIcon, .mpgIcon, .mp4Icon, .movIcon, .aviIcon, .asfIcon, .wysiwygIcon, .workStreamIcon, .workingIcon, .workflowIcon, .windowsIcon, .vtlIcon, .vanityIcon, .userIcon, .uploadIcon, .unpublishIcon, .unlockIcon, .unarchiveIcon, .trashIcon, .toggleOpenIcon, .toggleCloseIcon, .thumbnailViewIcon, .textFieldIcon, .tagIcon, .tabIcon, .stopIcon, .statisticsIcon, .sServerIcon, .splitterIcon, .spellIcon, .shrinkIcon, .selectIcon, .searchIcon, .scrollPaneIcon, .saveAssignIcon, .statusIcon, .saveIcon, .rServerIcon, .rolesIcon, .resolveWorkflowIcon, .resolveIcon, .resetIcon, .requiredIcon, .republishIcon, .repeatIcon, .reorderIcon, .reopenWorkflowIcon, .rememberIcon, .reindexIcon, .radioIcon, .queryIcon, .publishIcon, .propertyIcon, .previousIcon, .previewIcon, .plusIcon, .personaIcon, .pasteIcon, .pagePropIcon, .pageIcon, .nextIcon, .newWorkflowIcon, .newTaskIcon, .newPageIcon, .multiSelectIcon, .movePageIcon, .mobileIcon, .minusIcon, .mapPinIcon, .mailListIcon, .loginAsIcon, .loginIcon, .lockIcon, .liveIcon, .listViewIcon, .linkAddIcon, .licenseIcon, .languageVarIcon, .keyvalueIcon, .keyIcon, .infoIcon, .imageNewIcon, .hourGlassIcon, .hostStoppedIcon, .hostDefaultIcon, .hostArchivedIcon, .hostIcon, .hintIcon, .hideIcon, .helpIcon, .greyDotIcon, .gearPlusIcon, .gearPencilIcon, .gearMinusIcon, .gearIcon, .formNewIcon, .formIcon, .folderGlobeIcon, .folderFilesIcon, .folderEditIcon, .folderDeleteIcon, .folderCopyIcon, .folderAddIcon, .fixIcon, .fileNewIcon, .fileMultiIcon, .fileIcon, .femaleIcon, .exclamationIcon, .exclamation-redIcon, .encryptIcon, .editScriptIcon, .dropIcon, .downloadIcon, .dotAssetIcon, .documentIcon, .docTextIcon, .docNumIcon, .docCopyIcon, .docConvertIcon, .detailViewIcon, .deleteWorkflowIcon, .cutIcon, .copyIcon, .contentIcon, .colorIcon, .closeIcon, .chevronIcon, .checkBoxIcon, .cartIcon, .cancelWorkflowIcon, .cancelIcon, .calWeekIcon, .calMonthIcon, .calListIcon, .calDayIcon, .calClockIcon, .bundleIcon, .bugIcon, .browseIcon, .bgIcon, .backupIcon, .assignWorkflowIcon, .archivedIcon, .archiveIcon, .appMonitorIcon, .appleIcon, .androidIcon, .addIcon, .actionIcon, .uknIcon, .dijitIcon {
+#font-icon-base, .arrowLeftIcon, .arrowRightIcon, .chevronExpandIcon, .deleteIcon, .editIcon, .folderIcon, .folderOpenIcon, .folderSelectedIcon, .toggleCloseIcon, .toggleOpenIcon, .dijitIconCopy, #dijit-icon, .tagLink.persona:before, .wmaIcon, .wavIcon, .raIcon, .mpaIcon, .mp3Icon, .midIcon, .m3uIcon, .iffIcon, .aifIcon, .aacIcon, .docxIcon, .docIcon, .pptxIcon, .pptIcon, .keynoteIcon, .pdfIcon, .svgIcon, .webpIcon, .gifIcon, .pngIcon, .pctIcon, .jpgIcon, .jpegIcon, .imageIcon, .bmpIcon, .xlsxIcon, .xlsIcon, .wksIcon, .numbersIcon, .csvIcon, .vobIcon, .rmIcon, .ogvIcon, .oggIcon, .mpgIcon, .mp4Icon, .movIcon, .aviIcon, .asfIcon, .wysiwygIcon, .workStreamIcon, .workingIcon, .workflowIcon, .windowsIcon, .vtlIcon, .vanityIcon, .userIcon, .uploadIcon, .unpublishIcon, .unlockIcon, .unarchiveIcon, .trashIcon, .thumbnailViewIcon, .textFieldIcon, .tagIcon, .tabIcon, .stopIcon, .statisticsIcon, .sServerIcon, .splitterIcon, .spellIcon, .shrinkIcon, .selectIcon, .searchIcon, .scrollPaneIcon, .saveAssignIcon, .statusIcon, .saveIcon, .rServerIcon, .rolesIcon, .resolveWorkflowIcon, .resolveIcon, .resetIcon, .requiredIcon, .republishIcon, .repeatIcon, .reorderIcon, .reopenWorkflowIcon, .rememberIcon, .reindexIcon, .radioIcon, .queryIcon, .publishIcon, .propertyIcon, .previousIcon, .previewIcon, .plusIcon, .personaIcon, .pasteIcon, .pagePropIcon, .pageIcon, .nextIcon, .newWorkflowIcon, .newTaskIcon, .newPageIcon, .multiSelectIcon, .movePageIcon, .mobileIcon, .minusIcon, .mapPinIcon, .mailListIcon, .loginAsIcon, .loginIcon, .lockIcon, .liveIcon, .listViewIcon, .linkAddIcon, .licenseIcon, .languageVarIcon, .keyvalueIcon, .keyIcon, .infoIcon, .imageNewIcon, .hourGlassIcon, .hostStoppedIcon, .hostDefaultIcon, .hostArchivedIcon, .hostIcon, .hintIcon, .hideIcon, .helpIcon, .greyDotIcon, .gearPlusIcon, .gearPencilIcon, .gearMinusIcon, .gearIcon, .formNewIcon, .formIcon, .folderGlobeIcon, .folderFilesIcon, .folderEditIcon, .folderDeleteIcon, .folderCopyIcon, .folderAddIcon, .fixIcon, .fileNewIcon, .fileMultiIcon, .fileIcon, .femaleIcon, .exclamationIcon, .exclamation-redIcon, .encryptIcon, .editScriptIcon, .dropIcon, .downloadIcon, .dotAssetIcon, .documentIcon, .docTextIcon, .docNumIcon, .docCopyIcon, .docConvertIcon, .detailViewIcon, .deleteWorkflowIcon, .cutIcon, .copyIcon, .contentIcon, .colorIcon, .closeIcon, .chevronIcon, .checkBoxIcon, .cartIcon, .cancelWorkflowIcon, .cancelIcon, .calWeekIcon, .calMonthIcon, .calListIcon, .calDayIcon, .calClockIcon, .bundleIcon, .bugIcon, .browseIcon, .bgIcon, .backupIcon, .assignWorkflowIcon, .archivedIcon, .archiveIcon, .appMonitorIcon, .appleIcon, .androidIcon, .addIcon, .actionIcon, .uknIcon, .dijitIcon {
   font: normal normal normal 14px/1 FontAwesome;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
@@ -3155,7 +3159,7 @@
 .dijitTextBox,
 .dijitToggleButton {
   border-radius: 0.375rem;
-  height: 2.5rem;
+  height: 2.125rem;
 }
 
 .dijitButton,
@@ -3355,7 +3359,7 @@
   color: #14151a;
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 0.5rem;
-  font-size: 1rem;
+  font-size: 0.875rem;
   min-height: 9.375rem;
   resize: vertical;
 }
@@ -3549,7 +3553,7 @@
 }
 .dijitButtonNode {
   border: none;
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 .dijitButtonHover {
   background-color: var(--color-palette-primary-100);
@@ -3840,7 +3844,7 @@
   color: #ffffff;
   line-height: 2.5rem;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1rem;
 }
 .dijitDropDownActionButton .dijitButtonNode {
   height: 2.5rem;
@@ -4403,10 +4407,10 @@
 
 .dijitTitlePane {
   border-radius: 1px;
-  box-shadow: 0 1px 3px var(--color-palette-black-op-10), 0 1px 2px var(--color-palette-black-op-20);
+  box-shadow: 0px 2px 8px 0px hsla(230, 13%, 9%, 0.02);
 }
 .dijitTitlePaneHover {
-  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
+  box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
 }
 .dijitTitlePaneHover .dijitTitlePaneContentOuter {
   border: none;
@@ -4462,7 +4466,7 @@
   background-color: #ffffff;
   border-radius: 0px;
   border: none;
-  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
+  box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
 }
 .dijitDialogCloseIcon {
   width: 17px;
@@ -4514,7 +4518,7 @@
   color: #14151a;
   border: 0 none;
   border-radius: 0.375rem;
-  box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+  box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
   padding: 0.5rem;
   margin-top: 0.5rem;
 }
@@ -5079,7 +5083,7 @@
   color: #14151a;
   border: 0 none;
   border-radius: 0.375rem;
-  box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+  box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
   padding: 0.5rem;
   margin-top: 0.5rem;
 }
@@ -5215,7 +5219,8 @@
 .dojoxGrid .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
 .dojoxGrid .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  padding: 10px 0.5rem;
+  padding: 0.1875rem 0.5rem;
+  height: 2.5rem;
 }
 .dojoxGrid .dojoxGridPaginator {
   background-color: #d1d4db;
@@ -5315,7 +5320,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-size: 100%;
+  font-size: 0.875rem;
   font-weight: normal;
 }
 
@@ -5803,32 +5808,33 @@ body {
 }
 
 h1 {
-  font-size: 174%;
+  font-size: 1.5rem;
 }
 
 h2 {
-  font-size: 138.5%;
+  font-size: 1.25rem;
   line-height: 115%;
   margin: 0 0 0.2em 0;
   font-weight: normal;
 }
 
 h3 {
-  font-size: 100%;
+  font-size: 0.875rem;
   margin: 0 0 0.2em 0;
   font-weight: bold;
 }
 
 h4 {
+  font-size: 0.875rem;
   font-weight: bold;
 }
 
 h5 {
-  font-size: 77%;
+  font-size: 0.75rem;
 }
 
 h6 {
-  font-size: 77%;
+  font-size: 0.75rem;
   font-style: italic;
 }
 
@@ -5888,7 +5894,7 @@ ul li {
 }
 
 .inputCaption {
-  font-size: 85%;
+  font-size: 0.75rem;
   color: #888;
   font-style: italic;
 }
@@ -5914,12 +5920,12 @@ kbd,
 samp,
 tt {
   font-family: monospace;
-  *font-size: 108%;
+  *font-size: 1rem;
   line-height: 99%;
 }
 
 sup {
-  font-size: 60%;
+  font-size: 0.625rem;
 }
 
 abbr {
@@ -6027,7 +6033,7 @@ select[multiple]:hover {
   position: absolute;
   top: 4px;
   right: 30px;
-  font-size: 85%;
+  font-size: 0.75rem;
   color: #ddd;
 }
 
@@ -6119,7 +6125,7 @@ select[multiple]:hover {
   right: 30px;
   top: 34px;
   width: 225px;
-  font-size: 85%;
+  font-size: 0.75rem;
   border: 1px solid #d1d4db;
   border-top: 0;
   background: #fff;
@@ -6131,7 +6137,7 @@ select[multiple]:hover {
 
 .account-flyout h3 {
   margin: 20px 0 0 0;
-  font-size: 12px;
+  font-size: 0.625rem;
   font-weight: bold;
   padding: 0 15px;
 }
@@ -6172,7 +6178,7 @@ select[multiple]:hover {
 }
 
 .copyright {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: #555;
   text-align: center;
 }
@@ -6211,7 +6217,7 @@ select[multiple]:hover {
   opacity: 0.7;
   color: #ddd;
   line-height: 14px;
-  font-size: 11px;
+  font-size: 0.625rem;
   box-shadow: 0px 0px 5px var(--color-palette-black-op-50);
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
@@ -6228,7 +6234,7 @@ select[multiple]:hover {
 .changeHost {
   cursor: pointer;
   float: right;
-  font-size: 85%;
+  font-size: 0.75rem;
   line-height: 15px;
   margin: 6px 10px 0 0;
   padding: 0;
@@ -6258,6 +6264,7 @@ select[multiple]:hover {
 }
 #listing-table tr, .listingTable tr, .dojoxUploaderFileListTable tr {
   transition: background-color 0.1s;
+  height: 2.4375rem;
 }
 #listing-table tr .selected, .listingTable tr .selected, .dojoxUploaderFileListTable tr .selected {
   background-color: #e0e9f6;
@@ -6266,16 +6273,17 @@ select[multiple]:hover {
 #listing-table td,
 .listingTable td,
 .dojoxUploaderFileListTable td {
-  padding: 10px 0.5rem;
   border-bottom: 1px solid #f3f3f4;
   vertical-align: middle;
+  height: 2.5rem !important;
+  padding: 0.5rem;
 }
 #listing-table th .listingThumbDiv, .listingTable th .listingThumbDiv, .dojoxUploaderFileListTable th .listingThumbDiv,
 #listing-table td .listingThumbDiv,
 .listingTable td .listingThumbDiv,
 .dojoxUploaderFileListTable td .listingThumbDiv {
-  height: 60px;
-  width: 80px;
+  height: 2.9375rem;
+  width: 4.5rem;
   position: relative;
   border-radius: 0.25rem;
   overflow: hidden;
@@ -6435,7 +6443,7 @@ tr.active {
 .excelDownload {
   text-align: right;
   padding: 5px 10px;
-  font-size: 85%;
+  font-size: 0.75rem;
 }
 
 .excelDownload a {
@@ -6446,7 +6454,7 @@ tr.active {
 .lockedAgo {
   display: block;
   color: #999;
-  font-size: 11px;
+  font-size: 0.625rem;
   font-style: italic;
   line-height: 14px;
 }
@@ -6476,7 +6484,7 @@ tr.active {
 .contentHint {
   display: block;
   color: #999;
-  font-size: 11px;
+  font-size: 0.625rem;
   font-weight: normal;
   line-height: 14px;
   white-space: normal;
@@ -6624,7 +6632,7 @@ tr.active {
 }
 
 .tagsBox a {
-  font-size: 93%;
+  font-size: 0.875rem;
   color: #999;
 }
 
@@ -6632,13 +6640,13 @@ tr.active {
   display: block;
   color: #999;
   line-height: 140%;
-  font-size: 80%;
+  font-size: 0.75rem;
   margin: 3px 0 0 5px;
 }
 
 .suggestHeading {
   padding: 7px 10px;
-  font-size: 12px;
+  font-size: 0.625rem;
   font-weight: bold;
   color: #555;
   background: url("/html/images/skin/skin-sprite.png") repeat-x scroll 0 -325px transparent;
@@ -7347,7 +7355,7 @@ table.sTypeTable.sTypeItem {
 }
 
 .siteOverview span {
-  font-size: 300%;
+  font-size: 48px;
   display: block;
   padding: 8px;
 }
@@ -7369,7 +7377,7 @@ table.dojoxLegendNode td {
 #pieChartLegend td.dojoxLegendText {
   text-align: left;
   vertical-align: top;
-  font-size: 85%;
+  font-size: 0.75rem;
   line-height: 131%;
 }
 
@@ -7394,7 +7402,7 @@ table.dojoxLegendNode td {
   border-radius: 10px;
   color: #fff;
   text-align: center;
-  font-size: 131%;
+  font-size: 1.25rem;
 }
 
 .noPie {
@@ -7577,7 +7585,7 @@ table.dojoxLegendNode td {
 }
 
 .dojoxColorPickerOptional input {
-  font-size: 11px;
+  font-size: 0.625rem;
   border: 1px solid #a7a7a7;
   width: 25px;
   padding: 1px 3px 1px 3px;
@@ -7586,7 +7594,7 @@ table.dojoxLegendNode td {
 
 .dojoxColorPickerHex input {
   width: 55px;
-  font-size: 11px;
+  font-size: 0.625rem;
 }
 
 /* Image Picker */
@@ -7662,7 +7670,7 @@ div#_dotHelpMenu {
   background: #fff;
   color: #5f5f5f;
   display: block;
-  font-size: 85%;
+  font-size: 0.75rem;
   margin: 0;
   padding: 3px 10px;
   vertical-align: middle;
@@ -7710,7 +7718,7 @@ div#_dotHelpMenu {
 }
 .navbar .navMenu-title {
   color: #404040;
-  font-size: 93%;
+  font-size: 0.875rem;
   font-weight: 700;
   line-height: 14px;
   margin: 0;
@@ -7719,7 +7727,7 @@ div#_dotHelpMenu {
 }
 .navbar .navMenu-subtitle {
   color: #5f5f5f;
-  font-size: 77%;
+  font-size: 0.625rem;
   margin: 0;
   overflow: hidden;
   padding: 0;
@@ -7750,7 +7758,7 @@ div#_dotHelpMenu {
   -moz-osx-font-smoothing: grayscale;
   content: "\f054";
   color: #afb3c0;
-  font-size: 9px;
+  font-size: 0.625rem;
   position: absolute;
   right: 5px;
   top: 5px;
@@ -8802,7 +8810,7 @@ Styles for commons fields along the backend
   border-radius: 0.125rem;
   border: solid 1.5px #d1d4db;
   display: inline-block;
-  font-size: 12px;
+  font-size: 0.625rem;
   margin: 2px 5px 2px 0px;
   padding: 0.25rem 0.5rem 0.25rem 0.25rem;
   position: relative;
@@ -8822,7 +8830,7 @@ Styles for commons fields along the backend
 
 .lineDividerTitle {
   color: #6c7389;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   border-bottom: 1px solid #d1d4db;
   padding-bottom: 1rem;
   margin: 3rem 0 1.5rem;
@@ -8936,23 +8944,31 @@ Styles for commons fields along the backend
   background: var(--color-palette-primary-200);
   border-radius: 0.25rem;
   color: var(--color-palette-primary-500);
-  font-size: 0.813rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 0.374rem;
+  text-align: center;
   text-decoration: none;
   border: 1px solid rgba(0, 0, 0, 0.1);
+  width: auto;
+  max-width: 112px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-left: 1.25rem;
+  position: relative;
 }
 .tagLink.persona:before {
   content: "\f007";
   display: flex;
 }
 .tagLink:after {
+  position: absolute;
+  left: 0.5rem;
   color: var(--color-palette-primary-500);
   content: "✕";
-  font-size: 0.813rem;
+  font-size: 0.75rem;
   text-align: center;
+  line-height: 0.374rem;
 }
 .tagLink:hover {
   border: 1px solid var(--color-palette-primary-500);
@@ -9050,7 +9066,7 @@ Styles for commons fields along the backend
 }
 
 .hint-text {
-  font-size: 11px;
+  font-size: 0.625rem;
   color: #999;
   display: block;
   line-height: normal;
@@ -9343,7 +9359,7 @@ dd .buttonCaption {
 }
 .calendar-events .portlet-toolbar__info {
   flex: 1 0 auto;
-  font-size: 1.25rem;
+  font-size: 1rem;
   justify-content: center;
 }
 
@@ -9444,7 +9460,7 @@ dd .buttonCaption {
 }
 
 .dayNumberSection {
-  font-size: 11px;
+  font-size: 0.625rem;
 }
 
 .dayNumber {
@@ -9477,7 +9493,7 @@ dd .buttonCaption {
 .dayEventsSection span {
   font-weight: bold;
   text-transform: uppercase;
-  font-size: 77%;
+  font-size: 0.625rem;
 }
 
 /* NAV MENU STYLES */
@@ -9533,7 +9549,7 @@ dd .buttonCaption {
 
 #eventDetailTitle {
   font-weight: bold;
-  font-size: 1.2em;
+  font-size: 1rem;
   padding-bottom: 5px;
   width: 459;
   overflow: hidden;
@@ -9707,7 +9723,7 @@ a.category_higlighted, a.tag_higlighted {
   text-overflow: clip;
   white-space: nowrap;
   font-family: Monaco, Menlo, sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .aceTextTemplate,
@@ -9724,7 +9740,7 @@ a.category_higlighted, a.tag_higlighted {
   text-overflow: clip;
   white-space: nowrap;
   font-family: Monaco, Menlo, sans-serif;
-  font-size: 12px;
+  font-size: 0.625rem;
 }
 
 .content-edit__main {
@@ -10126,7 +10142,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .nameText {
   align-self: center;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: normal;
 }
 
@@ -10244,7 +10260,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .fullUserName {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
   padding-bottom: 0;
@@ -10344,7 +10360,6 @@ a.category_higlighted, a.tag_higlighted {
 .tag-manager__tags-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell:first-child,
 .tag-manager__tags-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell:first-child {
   width: 48px !important;
-  padding-left: 1.5rem;
 }
 
 .add-relationship dt {
@@ -10384,7 +10399,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .context-menu {
-  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
+  box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
   position: absolute;
   background: #ffffff;
   border: 1px solid #d1d4db;
@@ -10399,7 +10414,7 @@ a.category_higlighted, a.tag_higlighted {
   color: #515667;
   cursor: pointer;
   display: block;
-  font-size: 1rem;
+  font-size: 0.875rem;
   height: 2.5rem;
   line-height: 2.5rem;
   padding: 0px 1.5rem;
@@ -10414,8 +10429,8 @@ a.category_higlighted, a.tag_higlighted {
   display: none;
 }
 .context-menu__item .arrowRightIcon {
-  font-size: 0.813rem;
-  margin-top: -0.4065rem;
+  font-size: 0.75rem;
+  margin-top: -0.375rem;
   position: absolute;
   right: 0.5rem;
   top: 50%;
@@ -10574,7 +10589,7 @@ a.category_higlighted, a.tag_higlighted {
   position: absolute;
 }
 .file-selector-tree__card .label {
-  font-size: 16px;
+  font-size: 0.875rem;
   padding: 1.5rem 1rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -11149,7 +11164,7 @@ Resize Handle
   border-radius: 0.375rem;
   color: #6c7389;
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 2.5rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
@@ -11195,13 +11210,37 @@ Resize Handle
 
 html {
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 1rem;
   color: #14151a;
 }
 
 body {
   margin: 0;
   padding: 0;
+}
+
+span,
+label,
+div,
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+pre,
+code,
+form,
+fieldset,
+legend,
+input,
+button,
+textarea,
+select,
+p,
+blockquote,
+th,
+td {
+  font-size: 0.875rem;
 }
 
 .material-icons {

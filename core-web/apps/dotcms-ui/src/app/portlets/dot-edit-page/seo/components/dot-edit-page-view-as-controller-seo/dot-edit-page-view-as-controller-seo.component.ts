@@ -21,6 +21,7 @@ import {
     DotAlertConfirmService,
     DotLicenseService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
@@ -32,10 +33,7 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller-seo',
@@ -50,7 +48,7 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
         DotPersonaSelectorModule,
         DotLanguageSelectorComponent,
         DotDeviceSelectorModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotIconModule,
         CheckboxModule,
         ConfirmDialogModule,
@@ -69,12 +67,12 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     private confirmationService = inject(ConfirmationService);
 
     private readonly customEventsHandler;
+    dotPageStateService = inject(DotPageStateService);
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotLicenseService: DotLicenseService,
-        private dotPageStateService: DotPageStateService,
         private dotPersonalizeService: DotPersonalizeService,
         private router: Router
     ) {

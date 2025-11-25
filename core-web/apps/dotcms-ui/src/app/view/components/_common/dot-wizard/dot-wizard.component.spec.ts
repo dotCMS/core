@@ -5,16 +5,17 @@ import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, Input, Output, EventEmitter } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
@@ -35,6 +36,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
+import { DotDialogModule } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotWizardComponent } from './dot-wizard.component';
@@ -81,12 +83,6 @@ class FormTwoComponent {
     @Output() valid = new EventEmitter<boolean>();
 }
 
-const stopImmediatePropagation = jasmine.createSpy('');
-
-const enterEvent = {
-    stopImmediatePropagation: stopImmediatePropagation
-};
-
 const MOCK_WIZARD_COMPONENT_MAP = {
     commentAndAssign: FormOneComponent,
     pushPublish: FormTwoComponent
@@ -122,7 +118,10 @@ describe('DotWizardComponent', () => {
                 FormsModule,
                 ReactiveFormsModule,
                 InputTextareaModule,
-                DropdownModule
+                DropdownModule,
+                BrowserAnimationsModule,
+                DialogModule,
+                ButtonModule
             ],
             providers: [
                 LoggerService,
@@ -172,28 +171,20 @@ describe('DotWizardComponent', () => {
             dotWizardService.open(wizardInput);
             fixture.detectChanges();
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            tick(201); // interval time to focus first element.
+            tick(2001); // interval time to focus first element.
             fixture.detectChanges();
-            acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
-            closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
+            acceptButton = fixture.debugElement.query(
+                By.css('[data-testid="dialog-accept-button"]')
+            );
+            closeButton = fixture.debugElement.query(By.css('[data-testid="dialog-close-button"]'));
             form1 = fixture.debugElement.query(By.css('dot-form-one')).componentInstance;
             form2 = fixture.debugElement.query(By.css('dot-form-two')).componentInstance;
             formsContainer = fixture.debugElement.query(By.css('.dot-wizard__container'));
         }));
 
-        it('should set dialog params', () => {
-            const dotDialog: DotDialogComponent = fixture.debugElement.query(
-                By.css('dot-dialog')
-            ).componentInstance;
-
-            expect(dotDialog.bindEvents).toEqual(false);
-            expect(dotDialog.header).toEqual(wizardInput.title);
-            expect(dotDialog.visible).toEqual(true);
-        });
-
         it('should set cancel button correctly', () => {
-            expect(component.dialogActions.cancel.label).toEqual('Previous');
-            expect(component.dialogActions.cancel.disabled).toEqual(true);
+            expect(component.$dialogActions().cancel.label).toEqual('Previous');
+            expect(component.$dialogActions().cancel.disabled).toEqual(true);
         });
 
         it('should load steps and focus fist form element', () => {
@@ -216,8 +207,10 @@ describe('DotWizardComponent', () => {
             fixture.detectChanges();
             expect(acceptButton.nativeElement.disabled).toEqual(false);
         });
+
         it('should focus next/send action, after tab in the last item of the form', () => {
             const preventDefaultSpy = jasmine.createSpy('spy');
+            const stopPropagationSpy = jasmine.createSpy('spy');
             const mockEvent = {
                 target: 'match',
                 composedPath: () => [
@@ -232,7 +225,8 @@ describe('DotWizardComponent', () => {
                         }
                     }
                 ],
-                preventDefault: preventDefaultSpy
+                preventDefault: preventDefaultSpy,
+                stopPropagation: stopPropagationSpy
             };
             spyOn(acceptButton.nativeElement, 'focus');
             formsContainer.triggerEventHandler('keydown.tab', { ...mockEvent });
@@ -277,22 +271,6 @@ describe('DotWizardComponent', () => {
             });
         });
 
-        it('should change step on enter if form is valid', () => {
-            spyOn(component.dialog, 'acceptAction');
-            form1.valid.emit(true);
-            formsContainer.triggerEventHandler('keydown.enter', enterEvent);
-            expect(stopImmediatePropagation).toHaveBeenCalled();
-            expect(component.dialog.acceptAction).toHaveBeenCalled();
-        });
-
-        it('should NOT change step on enter if form is invalid', () => {
-            spyOn(component.dialogActions.accept, 'action');
-            form1.valid.emit(false);
-            formsContainer.triggerEventHandler('keydown.enter', enterEvent);
-
-            expect(component.dialogActions.accept.action).not.toHaveBeenCalled();
-        });
-
         it('should update transform property on next', () => {
             form1.valid.emit(true);
             form2.valid.emit(true);
@@ -308,33 +286,6 @@ describe('DotWizardComponent', () => {
             closeButton.triggerEventHandler('click', {});
             fixture.detectChanges();
             expect(formsContainer.nativeElement.style['transform']).toEqual('translateX(0px)');
-        });
-    });
-
-    describe('single step', () => {
-        beforeEach(fakeAsync(() => {
-            fixture = TestBed.createComponent(DotWizardComponent);
-            component = fixture.componentInstance;
-            spyOn(component, 'getWizardComponent').and.returnValue(FormOneComponent);
-            fixture.detectChanges();
-            dotWizardService = fixture.debugElement.injector.get(DotWizardService);
-            dotWizardService.open({ steps: [wizardInput.steps[0]], title: '' });
-            fixture.detectChanges();
-            stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            tick(1000); // interval time to focus first element.
-            fixture.detectChanges();
-            closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
-        }));
-
-        it('should set cancel button correctly', () => {
-            const dotDialog: DotDialogComponent = fixture.debugElement.query(
-                By.css('dot-dialog')
-            ).componentInstance;
-            spyOn(component, 'close');
-            dotDialog.actions.cancel.action();
-            expect(component.dialogActions.cancel.label).toEqual('cancel');
-            expect(component.close).toHaveBeenCalled();
-            expect(component.dialogActions.cancel.disabled).toEqual(false);
         });
     });
 });

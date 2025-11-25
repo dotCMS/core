@@ -6,32 +6,51 @@
     [resizable]="false"
     [maximizable]="true"
     [modal]="true"
-    (visibleChange)="resetDialog()"
+    appendTo="body"
     data-testId="dialog"
-    styleClass="edit-ema-dialog">
-    <ng-container [ngSwitch]="ds.type">
-        <dot-ema-form-selector
-            *ngSwitchCase="'form'"
-            (selected)="onFormSelected($event)"
-            data-testId="form-selector" />
+    styleClass="edit-ema-dialog"
+    (visibleChange)="onHide()">
+    @switch (ds.type) {
+        @case ('form') {
+            <dot-ema-form-selector
+                (selected)="onFormSelected($event)"
+                data-testId="form-selector" />
+        }
+        @case ('content') {
+            @if (ds.url) {
+                <iframe
+                    (load)="onIframeLoad()"
+                    [style]="{
+                        border: 'none',
+                        height: ds.status !== dialogStatus.INIT ? '0' : null
+                    }"
+                    [src]="ds.url | safeUrl"
+                    #iframe
+                    title="dialog"
+                    data-testId="dialog-iframe"
+                    width="100%"
+                    height="100%"></iframe>
+            }
+            @if (ds.status === dialogStatus.LOADING) {
+                <dot-spinner class="absolute top-50" data-testId="spinner"></dot-spinner>
+            }
+        }
+    }
 
-        <ng-container *ngSwitchCase="'content'">
-            <iframe
-                #iframe
-                [style]="{
-                    border: 'none',
-                    display: ds.status !== dialogStatus.INIT ? 'none' : 'block'
-                }"
-                [src]="ds.url | safeUrl"
-                (load)="onIframeLoad()"
-                title="dialog"
-                data-testId="dialog-iframe"
-                width="100%"
-                height="100%"></iframe>
-            <dot-spinner
-                *ngIf="ds.status === dialogStatus.LOADING"
-                [ngStyle]="{ position: 'absolute', top: '50%' }"
-                data-testId="spinner"></dot-spinner>
-        </ng-container>
-    </ng-container>
+    <p-dialog
+        (visibleChange)="closeCompareDialog()"
+        [visible]="$compareDataExists()"
+        [style]="{ height: '90vh', width: '90vw' }"
+        [header]="'Compare'"
+        [draggable]="false"
+        [resizable]="false"
+        [maximizable]="true"
+        [modal]="true"
+        [maskStyleClass]="'p-dialog-mask-transparent-nested'"
+        appendTo="body"
+        data-testId="dialog-compare">
+        <dot-content-compare
+            (letMeBringBack)="bringBack($event)"
+            [data]="$compareData()"></dot-content-compare>
+    </p-dialog>
 </p-dialog>

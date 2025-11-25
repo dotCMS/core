@@ -1,13 +1,11 @@
-<p-menu #menu *ngIf="isHaveOptions()" [model]="model" appendTo="body" popup="popup"></p-menu>
+<p-menu *ngIf="isHaveOptions()" [model]="model" #menu appendTo="body" popup="popup"></p-menu>
 
 <p-button
+    (click)="buttonOnClick($event)"
     [disabled]="disabled"
     [icon]="icon"
-    (click)="buttonOnClick($event)"
-    styleClass="p-button-rounded"
->
-</p-button>
+    styleClass="p-button-rounded"></p-button>
 
-<p class="action-button__label" *ngIf="label" [class.action-button__label--disabled]="disabled">
+<p *ngIf="label" [class.action-button__label--disabled]="disabled" class="action-button__label">
     {{ label }}
 </p>

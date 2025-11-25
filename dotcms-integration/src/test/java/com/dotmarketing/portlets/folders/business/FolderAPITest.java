@@ -1,18 +1,21 @@
 package com.dotmarketing.portlets.folders.business;
 
-import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
@@ -63,10 +66,6 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -74,6 +73,25 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * This Integration Test verifies that the {@link FolderAPIImpl} is working correctly.
+ *
+ * @author Nollymar Longa
+ * @since Mov 28th, 2017
+ */
 @RunWith(DataProviderRunner.class)
 public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 
@@ -1611,6 +1629,180 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 			if (null != testFolderTwo) {
 				folderAPI.delete(testFolderTwo, user, false);
 			}
+		}
+	}
+
+
+	/**
+	 * <ul>
+	 *     <li>Method to test:
+	 *     {@link FolderAPI#getContentReport(Folder, String, String, int, int, User)}</li>
+	 *     <li>Given Scenario: Create a test Folder, add an HTML Page to it, and generate a
+	 *     content report for it.</li>
+	 *     <li>ExpectedResult: The report must contain only one Content Type -- Page -- and the
+	 *     number of entries must be 1.</li>
+	 * </ul>
+	 */
+	@Test
+	public void getContentReportForFolder() throws DotDataException, DotSecurityException {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		Folder testFolder = null;
+		Template template = null;
+		try {
+			final Host defaultSite = hostAPI.findDefaultHost(user, false);
+			final ContentType htmlPageType =
+					contentTypeAPI.find(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+
+			// ╔════════════════════════╗
+			// ║  Generating Test data  ║
+			// ╚════════════════════════╝
+			final String testFolderName = "my-test-folder-" + System.currentTimeMillis();
+			final String testPageName = "my-test-report-page";
+
+			template = new TemplateDataGen().nextPersisted();
+			testFolder =
+					new FolderDataGen().title(testFolderName).name(testFolderName).site(defaultSite).nextPersisted();
+			this.createTestHtmlPage(testPageName, testPageName, template, testFolder);
+			final List<Map<String, Object>> report = folderAPI.getContentReport(testFolder,
+					"(upper) name", "ASC", 10, 0, user);
+
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			assertNotNull("The 'report' object cannot be null", report);
+			assertEquals("There must be only one Content Report for the test Folder", 1,
+					report.size());
+			final Map<String, Object> reportEntry = report.get(0);
+			assertTrue("There must be a 'contentTypeName' key in the Content Report",
+					reportEntry.containsKey("contentTypeName"));
+			assertTrue("There must be an 'entries' key in the Content Report",
+					reportEntry.containsKey("entries"));
+			assertEquals("The Content Report must contain the type 'Page'", htmlPageType.name(),
+					reportEntry.get("contentTypeName").toString());
+
+			assertEquals("The Content Report must return a total of 1 content for this Content Type",
+					1, Integer.parseInt(reportEntry.get("entries").toString()));
+		} finally {
+			// ╔═══════════╗
+			// ║  Cleanup  ║
+			// ╚═══════════╝
+			if (null != testFolder) {
+				folderAPI.delete(testFolder, user, false);
+			}
+			if (null != template) {
+				templateAPI.unpublishTemplate(template, user, false);
+				templateAPI.archive(template, user, false);
+				templateAPI.deleteTemplate(template, user, false);
+			}
+		}
+	}
+
+	/**
+	 * <ul>
+	 *     <li>Method to test:
+	 *     {@link FolderAPI#getContentTypeCount(Folder, User, boolean)}</li>
+	 *     <li>Given Scenario: Create a test Folder, add an HTML Page to it, and get the total
+	 *     count of Content Types that live under a Folder.</li>
+	 *     <li>ExpectedResult: The report must contain only one Content Type -- Page -- and the
+	 *     number of entries must be 1.</li>
+	 * </ul>
+	 */
+	@Test
+	public void getContentTypeCountForFolder() throws DotDataException, DotSecurityException {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		Folder testFolder = null;
+		Template template = null;
+		try {
+			// ╔════════════════════════╗
+			// ║  Generating Test data  ║
+			// ╚════════════════════════╝
+			final String testFolderName = "my-test-folder-" + System.currentTimeMillis();
+			final String testPageName = "my-test-count-page";
+			final Host defaultSite = hostAPI.findDefaultHost(user, false);
+			template = new TemplateDataGen().nextPersisted();
+			testFolder =
+					new FolderDataGen().title(testFolderName).name(testFolderName).site(defaultSite).nextPersisted();
+			this.createTestHtmlPage(testPageName, testPageName, template, testFolder);
+			final int count = folderAPI.getContentTypeCount(testFolder, user, false);
+
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			assertTrue("There must be no -1 count. That means something failed", count >= 0);
+            assertEquals("The count must be 1, as we added a single tst HTML Page to the folder", 1, count);
+		} finally {
+			// ╔═══════════╗
+			// ║  Cleanup  ║
+			// ╚═══════════╝
+			if (null != testFolder) {
+				folderAPI.delete(testFolder, user, false);
+			}
+			if (null != template) {
+				templateAPI.unpublishTemplate(template, user, false);
+				templateAPI.archive(template, user, false);
+				templateAPI.deleteTemplate(template, user, false);
+			}
+		}
+	}
+
+	/**
+	 * Creates a simple HTML Page in the Default site.
+	 *
+	 * @param pageName The name and title of the HTML Page.
+	 * @param pageUrl  The URL of the HTML Page.
+	 * @param template The Template to be used by the HTML Page.
+	 * @param folder   The Folder where the HTML Page will be created.
+	 *
+	 * @return The created HTML Page.
+	 *
+	 * @throws DotDataException     If an error occurs while creating the HTML Page.
+	 * @throws DotSecurityException If an error occurs while creating the HTML Page.
+	 */
+	private Contentlet createTestHtmlPage(final String pageName, final String pageUrl,
+										  final Template template, final Folder folder) throws DotDataException, DotSecurityException {
+		final Host defaultSite = hostAPI.findDefaultHost(user, false);
+		Contentlet htmlPage = new Contentlet();
+		htmlPage.setContentTypeId(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		htmlPage.setHost(defaultSite.getIdentifier());
+		htmlPage.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageName);
+		htmlPage.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageUrl);
+		htmlPage.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageName);
+		htmlPage.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		htmlPage.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		htmlPage.setLanguageId(langId);
+		htmlPage.setFolder(folder.getInode());
+		htmlPage.setIndexPolicy(IndexPolicy.FORCE);
+		htmlPage = contentletAPI.checkin(htmlPage, user, false);
+		contentletAPI.publish(htmlPage, user, false);
+		return htmlPage;
+	}
+
+	/**
+	 * Method to test
+	 * {@link FolderAPI#save(Folder, String, User, boolean)}
+	 * Given scenario: Create a folder, then change its name for the same name but in uppercase
+	 * Expected result: The folder name should be saved in uppercase without any exception
+	 */
+	@Test
+	public void testSave_Same_Name_UpperCase()
+			throws DotDataException, DotSecurityException {
+		Identifier newIdentifier=null;
+		try {
+			final Folder existingFolder = new FolderDataGen().name("test").next();
+			newIdentifier = identifierAPI.createNew(existingFolder, host);
+			existingFolder.setIdentifier(newIdentifier.getId());
+			folderAPI.save(existingFolder, APILocator.systemUser(), false);
+			existingFolder.setName("TEST");
+			folderAPI.save(existingFolder, APILocator.systemUser(), false);
+			final Folder checkFolder = folderAPI.findFolderByPath(StringPool.SLASH + existingFolder.getName(), host, user, false);
+			assertEquals("TEST", checkFolder.getName());
+		} finally {
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
 		}
 	}
 

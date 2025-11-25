@@ -5,6 +5,7 @@ import static com.dotcms.cli.command.site.SitePush.SITE_PUSH_OPTION_FORCE_EXECUT
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.PushHandler;
+import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
@@ -17,9 +18,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.apache.commons.lang3.BooleanUtils;
 import org.jboss.logging.Logger;
 
@@ -40,6 +41,11 @@ public class SitePushHandler implements PushHandler<SiteView> {
     @Override
     public String title() {
         return "Sites";
+    }
+
+    @Override
+    public String fileName(final SiteView site) {
+        return NamingUtils.siteFileName(site);
     }
 
     @Override
@@ -149,6 +155,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
                 .embeddedDashboard(siteView.embeddedDashboard())
                 .forceExecution(forceExecution)
                 .isDefault(Boolean.TRUE.equals(siteView.isDefault()))
+                .variables(siteView.variables())
                 .build();
     }
 
@@ -322,7 +329,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
      * @return A completable future with the site view
      */
     @ActivateRequestContext
-    private CompletableFuture<SiteView> verifyAndReturnSiteAfterCompletion(
+    CompletableFuture<SiteView> verifyAndReturnSiteAfterCompletion(
             final String siteName, final boolean isSiteLive, final boolean isArchived
     ) {
 

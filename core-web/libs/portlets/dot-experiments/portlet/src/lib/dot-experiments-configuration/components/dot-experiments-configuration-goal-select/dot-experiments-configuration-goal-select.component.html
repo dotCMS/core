@@ -1,7 +1,7 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-sidebar
-        [(visible)]="vm.status.isOpen"
         (onHide)="closeSidebar()"
+        [(visible)]="vm.status.isOpen"
         dotSidebar
         dotSize="{{ sidebarSizes.LG }}">
         <dot-sidebar-header
@@ -9,9 +9,9 @@
             dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}" />
         <div class="experiment-goal-select__form-wrapper flex flex-column">
             <form
+                [formGroup]="form"
                 class="p-fluid"
                 id="select-goal-form"
-                [formGroup]="form"
                 data-testId="select-goal-form"
                 novalidate>
                 <div formGroupName="primary">
@@ -51,13 +51,13 @@
                         </dot-experiment-options>
                     </div>
                     <div class="field flex-auto flex flex-column">
-                        <label class="p-label-input-required">{{
-                            'experiments.goal.reach_page.form.name.label' | dm
-                        }}</label>
+                        <label class="p-label-input-required">
+                            {{ 'experiments.goal.reach_page.form.name.label' | dm }}
+                        </label>
                         <input
-                            id="name"
                             [maxlength]="this.maxNameLength + 1"
                             [placeholder]="'experiments.goal.reach_page.form.name.placeholder' | dm"
+                            id="name"
                             data-testId="goal-name-input"
                             dotTrimInput
                             formControlName="name"
@@ -78,9 +78,9 @@
 
     <ng-template #actionHeaderBtnTpl>
         <button
+            (click)="save(vm.experimentId)"
             [disabled]="!form.valid"
             [loading]="vm.status.status === statusList.SAVING"
-            (click)="save(vm.experimentId)"
             data-testId="add-goal-button"
             label="{{ 'experiments.configure.goals.sidebar.header.button.apply.label' | dm }}"
             pButton

@@ -11,6 +11,7 @@ import {
     DotPropertiesService
 } from '@dotcms/data-access';
 import {
+    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotCMSContentType,
     DotContainerStructure,
@@ -143,12 +144,17 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 contenttypeName: string;
                 languageId: string;
                 page?: number;
+                variantId?: string;
             }>
         ) => {
             return data$.pipe(
                 tap(() => this.setStatus(EditEmaPaletteStoreStatus.LOADING)),
-                switchMap(({ filter, contenttypeName, languageId, page = 0 }) => {
+                switchMap(({ filter, contenttypeName, languageId, variantId, page = 0 }) => {
                     this.setCurrentContentType(contenttypeName);
+
+                    const variantTerm = variantId
+                        ? `+variant:(${DEFAULT_VARIANT_ID} OR ${variantId})`
+                        : `+variant:${DEFAULT_VARIANT_ID}`;
 
                     return this.dotESContentService
                         .get({
@@ -156,7 +162,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                             lang: languageId || '1',
                             filter: filter || '',
                             offset: (page * PALETTE_PAGINATOR_ITEMS_PER_PAGE).toString(),
-                            query: `+contentType: ${contenttypeName} +deleted: false`.trim()
+                            query: `+contentType:${contenttypeName} +deleted:false ${variantTerm}`.trim()
                         })
                         .pipe(
                             tapResponse(

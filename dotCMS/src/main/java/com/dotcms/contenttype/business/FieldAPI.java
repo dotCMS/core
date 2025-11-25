@@ -131,16 +131,20 @@ public interface FieldAPI {
 	Field save(Field field, User user) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Saves a new Field
+	 * Saves a {@link Field} object to the database. If the field already exists, it updates the
+	 * existing field. This method also handles the necessary validations, reordering, and cache
+	 * invalidations.
 	 *
-	 * @param field
-	 * @param user
-	 * @param reorderIfNeed  if it’s true then reorder all the fields relative to the order of the field being saved
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * @param field         the field to be saved
+	 * @param user          the user performing the save operation
+	 * @param reorderIfNeed if it’s true, then reorder all the fields relative to the order of the
+	 *                      field being saved
+	 * @return the saved field
+	 * @throws DotDataException     if a data access error occurs
+	 * @throws DotSecurityException if a security violation occurs
 	 */
-	Field save(Field field, User user, boolean reorderIfNeed) throws DotDataException, DotSecurityException;
+	Field save(Field field, User user, boolean reorderIfNeed)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * Saves a new Field Variable.

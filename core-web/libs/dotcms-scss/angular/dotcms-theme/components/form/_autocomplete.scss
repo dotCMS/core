@@ -27,6 +27,7 @@ p-autocomplete.p-inputwrapper-focus {
     .p-autocomplete.p-component.p-autocomplete-dd.p-autocomplete-multiple:has(.p-icon-wrapper) {
     grid-template-columns: max-content 1fr auto;
 }
+
 .p-autocomplete {
     @extend #form-field-extend;
     height: auto;
@@ -95,6 +96,12 @@ p-autocomplete.p-inputwrapper-focus {
 
             .p-autocomplete-token {
                 @extend #field-chip;
+
+                .p-autocomplete-token-label {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
             }
 
             .p-autocomplete-input-token {
@@ -135,6 +142,10 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
 
             &.p-highlight {
                 @extend #field-panel-item-highlight;
+            }
+
+            &.p-focus {
+                background-color: $color-palette-primary-300;
             }
         }
     }

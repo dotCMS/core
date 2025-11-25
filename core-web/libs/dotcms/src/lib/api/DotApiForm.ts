@@ -1,8 +1,10 @@
-import { DotCMSFormConfig } from '../models';
+import { DotCMSContentType } from 'dotcms-models';
+
 import { DotApiContentType } from './DotApiContentType';
 
+import { DotCMSFormConfig } from '../models';
+
 // This import allow us to use the type for the form: HTMLDotFormElement
-import { DotCMSContentType } from 'dotcms-models';
 
 /**
  * Creates and provide methods to render a DotCMS Form

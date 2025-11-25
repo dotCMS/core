@@ -5,8 +5,12 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotLinkComponent } from '@components/dot-link/dot-link.component';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import {
+    DotApiLinkComponent,
+    DotCopyButtonComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 
 /**
  * Basic page information for edit mode
@@ -24,7 +28,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         ButtonModule,
         DotCopyButtonComponent,
         DotApiLinkComponent,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe,
         DotLinkComponent
     ],

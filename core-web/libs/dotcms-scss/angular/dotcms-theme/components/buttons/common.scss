@@ -4,7 +4,7 @@
 #large {
     height: $field-height-lg;
     border-radius: $border-radius-lg;
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
 
     .p-button-label {
         font-size: inherit;
@@ -58,6 +58,23 @@
 
     &:focus {
         background-color: $color-palette-secondary;
+        @include field-focus;
+    }
+}
+
+#main-tertiary-severity {
+    background-color: $color-palette-primary-200;
+
+    &:hover {
+        background-color: $color-palette-primary-300;
+    }
+
+    &:active {
+        background-color: $color-palette-primary-400;
+    }
+
+    &:focus {
+        background-color: $color-palette-primary-200;
         @include field-focus;
     }
 }
@@ -119,6 +136,35 @@
     border: 1px solid $color-palette-secondary;
 }
 
+// outlined only apply to icon-only
+#outlined-tertiary-severity.p-button-icon-only {
+    border: $field-border-size solid $color-palette-primary-300;
+    white-space: nowrap;
+
+    .p-button-label,
+    .p-button-icon,
+    .pi {
+        color: $color-palette-primary;
+    }
+
+    &:hover {
+        background-color: $color-palette-primary-100;
+    }
+
+    &:active {
+        background-color: $color-palette-primary-200;
+    }
+
+    &:focus {
+        background-color: $white;
+        @include field-focus;
+    }
+}
+
+#outlined-tertiary-severity-sm {
+    border: 1px solid $color-palette-primary-300;
+}
+
 #text-primary-severity {
     background-color: transparent;
     color: $black;
@@ -126,7 +172,7 @@
     max-width: 100%;
 
     .p-button-label {
-        color: inherit;
+        color: $color-palette-primary;
         @include truncate-text;
     }
 
@@ -158,7 +204,7 @@
     }
 
     .p-button-label {
-        color: inherit;
+        color: $color-palette-secondary;
     }
 
     .p-button-icon,
@@ -187,16 +233,55 @@
     }
 }
 
+// Apply for icon only and button
+#text-tertiary-severity {
+    background-color: $white;
+    color: $color-palette-primary-500;
+    overflow: hidden;
+    max-width: 100%;
+
+    .p-button-label {
+        color: $color-palette-primary-500;
+        @include truncate-text;
+    }
+
+    .p-button-icon,
+    .pi {
+        color: $color-palette-primary-500;
+    }
+
+    &.p-button-icon-only {
+        .p-button-icon,
+        .pi {
+            color: $color-palette-gray-800;
+        }
+    }
+
+    &:hover {
+        background-color: $white;
+    }
+
+    &:active {
+        background-color: $white;
+    }
+
+    &:focus {
+        background-color: $color-palette-primary-200;
+
+        @include field-focus;
+    }
+}
+
 #text-danger-severity {
     background-color: transparent;
     color: $color-accessible-text-red;
 
     &:hover {
-        background-color: $color-accessible-text-red-op-10;
+        background-color: $color-palette-red-op-10;
     }
 
     &:active {
-        background-color: $color-accessible-text-red-op-20;
+        background-color: $color-palette-red-op-20;
     }
 
     &:focus {
@@ -219,10 +304,23 @@
     .pi {
         color: inherit;
     }
+
+    svg,
+    path {
+        fill: $color-palette-gray-500;
+    }
 }
 
 #button-disabled-outlined {
     border: $field-border-size solid $color-palette-gray-300;
+    background-color: $color-palette-gray-200;
+
+    &.p-button-icon-only {
+        .p-button-icon,
+        .pi {
+            color: $color-palette-gray-500;
+        }
+    }
 }
 
 #button-disabled-text {

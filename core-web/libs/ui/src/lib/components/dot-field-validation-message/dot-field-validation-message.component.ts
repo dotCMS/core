@@ -4,7 +4,6 @@
 
 import { Subject } from 'rxjs';
 
-import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -32,7 +31,7 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
     selector: 'dot-field-validation-message',
     templateUrl: './dot-field-validation-message.component.html',
     standalone: true,
-    imports: [NgIf, DotMessagePipe],
+    imports: [DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFieldValidationMessageComponent implements OnDestroy {

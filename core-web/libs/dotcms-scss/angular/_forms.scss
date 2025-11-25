@@ -59,7 +59,8 @@
     color: $color-palette-gray-700;
     display: block;
     font-size: $font-size-sm;
-    margin-top: 0.25rem;
+    margin-top: $spacing-0;
+    word-break: break-word;
 }
 
 .form__label {

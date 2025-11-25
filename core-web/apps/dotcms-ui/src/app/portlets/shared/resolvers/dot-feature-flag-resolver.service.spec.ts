@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotFeatureFlagResolver } from './dot-feature-flag-resolver.service';
 
@@ -25,7 +26,10 @@ describe('DotFeatureFlagResolver', () => {
     it('should return an observable of boolean values', (done) => {
         const route: ActivatedRouteSnapshot = {
             data: {
-                featuredFlagsToCheck: ['flag1', 'flag2']
+                featuredFlagsToCheck: [
+                    FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS,
+                    FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE
+                ]
             },
             url: [],
             params: {},
@@ -45,8 +49,8 @@ describe('DotFeatureFlagResolver', () => {
         };
 
         const expectedFlagsResult: Record<string, boolean> = {
-            flag1: true,
-            flag2: false
+            [FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS]: true,
+            [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: false
         };
 
         spyOn(dotConfigurationService, 'getFeatureFlags').and.returnValue(of(expectedFlagsResult));
@@ -54,8 +58,8 @@ describe('DotFeatureFlagResolver', () => {
         (resolver.resolve(route) as Observable<Record<string, boolean>>).subscribe(
             (result: Record<string, boolean>) => {
                 expect(dotConfigurationService.getFeatureFlags).toHaveBeenCalledWith([
-                    'flag1',
-                    'flag2'
+                    FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS,
+                    FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE
                 ]);
 
                 expect(result).toEqual(expectedFlagsResult);

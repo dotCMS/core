@@ -16,7 +16,11 @@ describe('NotLicenseComponent', () => {
             providers: [
                 {
                     provide: DotMessageService,
-                    useValue: { get: () => {} }
+                    useValue: {
+                        get: () => {
+                            //
+                        }
+                    }
                 },
                 {
                     provide: DotLicenseService,

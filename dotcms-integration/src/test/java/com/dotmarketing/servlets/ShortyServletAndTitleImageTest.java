@@ -8,6 +8,14 @@ import java.util.Arrays;
 import java.util.Base64;
 
 import java.util.Optional;
+
+import com.dotcms.concurrent.DotSubmitter;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.focalpoint.FocalPoint;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -28,7 +36,12 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
+import org.junit.runner.RunWith;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@RunWith(DataProviderRunner.class)
 public class ShortyServletAndTitleImageTest {
     
 
@@ -37,6 +50,78 @@ public class ShortyServletAndTitleImageTest {
     final static byte[] txtBlah = "Here is a text blah".getBytes();
     private static User user ;
     private static Host host ;
+
+    public static class Uri{
+         final ShortyServlet servlet = new ShortyServlet();
+         final String uri;
+         final int      width;
+         final int      height;
+         final int      maxWidth;
+         final int      maxHeight;
+         final int      minWidth;
+         final int      minHeight;
+         final int      quality;
+         final int      cropWidth;
+         final int      cropHeight;
+         int            expectedWidth;
+         int            expectedHeight;
+         int            expectedMaxWidth;
+         int            expectedMaxHeight;
+         int            expectedMinWidth;
+         int            expectedMinHeight;
+         int            expectedQuality;
+         int            expectedCopWidth;
+         int            expectedCropHeight;
+         final boolean  jpeg;
+         final boolean  webp;
+         final boolean  isImage;
+
+         boolean expectedIsImage;
+
+
+        public Uri(String uri, int expectedWidth, int expectedHeight, int expectedMaxWidth, int expectedMaxHeight, int expectedMinWidth, int expectedMinHeight, int expectedQuality, int expectedCopWidth, int expectedCropHeight, boolean expectedIsImage) {
+            this.uri = uri;
+            this.expectedWidth = expectedWidth;
+            this.expectedHeight = expectedHeight;
+            this.expectedMaxWidth = expectedMaxWidth;
+            this.expectedMaxHeight = expectedMaxHeight;
+            this.expectedMinWidth = expectedMinWidth;
+            this.expectedMinHeight = expectedMinHeight;
+            this.expectedQuality = expectedQuality;
+            this.expectedCopWidth = expectedCopWidth;
+            this.expectedCropHeight = expectedCropHeight;
+            this.expectedIsImage = expectedIsImage;
+            width = servlet.getWidth(uri, 0);
+            height = servlet.getHeight(uri, 0);
+            maxWidth = servlet.getMaxWidth(uri);
+            maxHeight = servlet.getMaxHeight(uri);
+            minWidth = servlet.getMinWidth(uri);
+            minHeight = servlet.getMinHeight(uri);
+            quality = servlet.getQuality(uri, 0);
+            cropWidth = servlet.cropWidth(uri);
+            cropHeight = servlet.cropHeight(uri);
+            jpeg    = uri.contains("jpg");
+            webp    = uri.contains("webp");
+            isImage = webp || jpeg || width+height+maxWidth+maxHeight +minHeight+minWidth> 0 || quality>0 || cropHeight>0 || cropWidth>0;
+        }
+    }
+
+
+    @DataProvider
+    public static Object[] uriTestCases() {
+        return new Object[] {
+                //file is an image and have different properties (width, height, maxWidth, etc)
+                new Uri("https://www.dotcms.com/6a50a56c-c281-4282-b9ba-fa9f07fea4da/fileAsset/test.jpg", 0, 0, 0, 0, 0, 0, 0, 0, 0, true),
+                new Uri("https://www.dotcms.com/6a50a56c-c281-4282-b9ba-fa9f07fea4da/fileAsset/100h/test.jpg", 0, 100, 0, 0, 0, 0, 0, 0, 0, true),
+                new Uri("https://www.dotcms.com/6a50a56c-c281-4282-b9ba-fa9f07fea4da/fileAsset/100w/100h/test.jpg", 100, 100, 0, 0, 0, 0, 0, 0, 0, true),
+                new Uri("https://www.dotcms.com/6a50a56c-c281-4282-b9ba-fa9f07fea4da/fileAsset/300maxw/test.jpg", 0, 0, 300, 0, 0, 0, 0, 0, 0, true),
+                //file is not an image and has some properties in the name
+                new Uri("https://www.dotcms.com/6a50a56c-c281-4282-b9ba-fa9f07fea4da/fileAsset/test.pdf", 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+                new Uri("https://www.dotcms.com/6a50a56c-c281-4282-b9ba-fa9f07fea4da/fileAsset/100qtest.pdf", 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+
+        };
+    }
+
     
     @BeforeClass
     public static void prepare()  {
@@ -208,6 +293,30 @@ public class ShortyServletAndTitleImageTest {
         
         
     }
-    
+
+    /**
+     * Method to test: {@link ShortyServlet#doForward(HttpServletRequest, HttpServletResponse, String, String, boolean, Optional)}
+     * Given Scenario: Different uri of files such as jpg, pdf, webp, etc are passed to the method
+     * ExpectedResult: The method should check if the expected values are correct and if the file is an image or not
+     *
+     */
+
+    @Test
+    @UseDataProvider("uriTestCases")
+    public void test_ShortyServlet_Process_Correct_Uri(Uri uri) {
+
+        assertEquals(uri.width, uri.expectedWidth);
+        assertEquals(uri.height, uri.expectedHeight);
+        assertEquals(uri.maxWidth, uri.expectedMaxWidth);
+        assertEquals(uri.maxHeight, uri.expectedMaxHeight);
+        assertEquals(uri.minWidth, uri.expectedMinWidth);
+        assertEquals(uri.minHeight, uri.expectedMinHeight);
+        assertEquals(uri.quality, uri.expectedQuality);
+        assertEquals(uri.cropWidth, uri.expectedCopWidth);
+        assertEquals(uri.cropHeight, uri.expectedCropHeight);
+        assertEquals(uri.isImage, uri.expectedIsImage);
+
+
+    }
     
 }

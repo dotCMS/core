@@ -224,33 +224,6 @@ describe('EditEmaPaletteComponent', () => {
             expect(spectator.query(EditEmaPaletteContentletsComponent)).toBeNull();
         });
 
-        it('should emit dragStart event on drag start', () => {
-            const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
-
-            spectator.triggerEventHandler(EditEmaPaletteContentTypeComponent, 'dragStart', {
-                variable: 'test',
-                name: 'Test'
-            });
-
-            expect(dragSpy).toHaveBeenCalledWith({
-                variable: 'test',
-                name: 'Test'
-            });
-        });
-
-        it('should emit dragEnd event on drag end', () => {
-            const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
-
-            spectator.triggerEventHandler(EditEmaPaletteContentTypeComponent, 'dragEnd', {
-                variable: 'test',
-                name: 'Test'
-            });
-            expect(dragSpy).toHaveBeenCalledWith({
-                variable: 'test',
-                name: 'Test'
-            });
-        });
-
         it('should show contentlets from content type', () => {
             const storeSpy = jest.spyOn(store, 'loadContentlets');
             spectator.triggerEventHandler(
@@ -262,6 +235,24 @@ describe('EditEmaPaletteComponent', () => {
                 filter: '',
                 languageId: '1',
                 contenttypeName: 'TestNameContentType'
+            });
+        });
+
+        it('should show contentlets from content type when a variant is present', () => {
+            spectator.setInput('variantId', 'cool-variant');
+            spectator.detectChanges();
+
+            const storeSpy = jest.spyOn(store, 'loadContentlets');
+            spectator.triggerEventHandler(
+                EditEmaPaletteContentTypeComponent,
+                'showContentlets',
+                'TestNameContentType'
+            );
+            expect(storeSpy).toHaveBeenCalledWith({
+                filter: '',
+                languageId: '1',
+                contenttypeName: 'TestNameContentType',
+                variantId: 'cool-variant'
             });
         });
     });
@@ -322,36 +313,22 @@ describe('EditEmaPaletteComponent', () => {
             });
         });
 
-        it('should show content types when component emits click on back button', () => {
-            const resetContentLetsSpy = jest.spyOn(store, 'resetContentlets');
-            spectator.triggerEventHandler(
-                EditEmaPaletteContentletsComponent,
-                'showContentTypes',
-                true
-            );
+        it('should load contentlets on paginate when a variant is present', () => {
+            spectator.setInput('variantId', 'cool-variant');
+            spectator.detectChanges();
 
-            expect(resetContentLetsSpy).toHaveBeenCalled();
-        });
-
-        it('should emit dragStart event on drag start', () => {
-            const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
-
-            spectator.triggerEventHandler(EditEmaPaletteContentletsComponent, 'dragStart', {
-                inode: '123'
+            const storeSpy = jest.spyOn(store, 'loadContentlets');
+            spectator.triggerEventHandler(EditEmaPaletteContentletsComponent, 'paginate', {
+                contentTypeVarName: 'TestNameContentType',
+                page: 1
             });
-            expect(dragSpy).toHaveBeenCalledWith({
-                inode: '123'
-            });
-        });
 
-        it('should emit dragEnd event on drag end', () => {
-            const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
-
-            spectator.triggerEventHandler(EditEmaPaletteContentletsComponent, 'dragEnd', {
-                inode: '123'
-            });
-            expect(dragSpy).toHaveBeenCalledWith({
-                inode: '123'
+            expect(storeSpy).toHaveBeenCalledWith({
+                filter: '',
+                languageId: '1',
+                contenttypeName: 'TestNameContentType',
+                page: 1,
+                variantId: 'cool-variant'
             });
         });
     });

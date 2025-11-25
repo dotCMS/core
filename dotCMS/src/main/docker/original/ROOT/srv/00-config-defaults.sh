@@ -14,7 +14,7 @@ export LANG=${LANG:-"C.UTF-8"}
 
 export TOMCAT_HOME=/srv/dotserver/tomcat
 # JAVA args to pass to the Tomcat JVM
-export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/  -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahUncommitDelay=1000 -XX:ShenandoahGuaranteedGCInterval=10000 "}
+export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseZGC -XX:+ZGenerational "}
 export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
 
 # $CMS_JAVA_OPTS is last so it trumps them all
@@ -35,6 +35,7 @@ if [[ "${TOMCAT_REDIS_SESSION_ENABLED}" == 'true' ]]; then
   export TOMCAT_REDIS_SESSION_CONFIG=${TOMCAT_REDIS_SESSION_CONFIG:-'<Valve className="com.dotcms.tomcat.redissessions.RedisSessionHandlerValve" \/><Manager className="com.dotcms.tomcat.redissessions.RedisSessionManager" \/>'}
   export TOMCAT_REDIS_SESSION_HOST=${TOMCAT_REDIS_SESSION_HOST:-"redis"}
   export TOMCAT_REDIS_SESSION_PORT=${TOMCAT_REDIS_SESSION_PORT:-"6379"}
+  export TOMCAT_REDIS_SESSION_USERNAME=${TOMCAT_REDIS_SESSION_USERNAME:-""}
   export TOMCAT_REDIS_SESSION_PASSWORD=${TOMCAT_REDIS_SESSION_PASSWORD:-""}
   export TOMCAT_REDIS_SESSION_SSL_ENABLED=${TOMCAT_REDIS_SESSION_SSL_ENABLED:-"false"}
   export TOMCAT_REDIS_SESSION_SENTINEL_MASTER=${TOMCAT_REDIS_SESSION_SENTINEL_MASTER}
@@ -85,6 +86,8 @@ export DB_DRIVER=${DB_DRIVER:-"org.postgresql.Driver"}
 export DB_BASE_URL=${DB_BASE_URL:-"jdbc:postgresql://db.dotcms.site/dotcms"}
 export DB_USERNAME=${DB_USERNAME:-"dotcmsdbuser"}
 export DB_PASSWORD=${DB_PASSWORD:-"password"}
+export DB_HOST=${DB_HOST:-"db.dotcms.site"}
+export DB_NAME=${DB_NAME:-"dotcms"}
 export DB_MAX_WAIT=${DB_MAX_WAIT:-"180000"}
 export DB_MAX_TOTAL=${DB_MAX_TOTAL:-"200"}
 export DB_CONNECTION_TIMEOUT=${DB_CONNECTION_TIMEOUT:-"5000"}
@@ -92,6 +95,7 @@ export DB_MIN_IDLE=${DB_MIN_IDLE:-"10"}
 export DB_VALIDATION_QUERY=${DB_VALIDATION_QUERY:-""}
 export DB_LEAK_DETECTION_THRESHOLD=${DB_LEAK_DETECTION_THRESHOLD:-"300000"}
 export DB_DEFAULT_TRANSACTION_ISOLATION=${DB_DEFAULT_TRANSACTION_ISOLATION:-""}
+export DB_LOAD_DUMP_SQL=${DB_LOAD_DUMP_SQL:-""}
 
 ## Elasticsearch config
 # ES Auth Type = BASIC|JWT

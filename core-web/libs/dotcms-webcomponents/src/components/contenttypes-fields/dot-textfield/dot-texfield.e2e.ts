@@ -29,9 +29,9 @@ describe('dot-textfield', () => {
             expect(element).toHaveClasses(dotTestUtil.class.filled);
         });
 
-       xit('should have touched but pristine on blur', async () => {
+        xit('should have touched but pristine on blur', async () => {
             input.triggerEvent('blur');
-            await page.$eval('input', (e: HTMLInputElement ) => e.blur());
+            await page.$eval('input', (e: HTMLInputElement) => e.blur());
             await page.waitForChanges();
             expect(element).toHaveClasses(dotTestUtil.class.touchedPristine);
         });
@@ -148,7 +148,7 @@ describe('dot-textfield', () => {
             it('should not break hint with invalid value', async () => {
                 element.setProperty('hint', { test: 'hint' });
                 await page.waitForChanges();
-                expect((await dotTestUtil.getHint(page))).toBeNull();
+                expect(await dotTestUtil.getHint(page)).toBeNull();
             });
         });
 

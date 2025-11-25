@@ -1,0 +1,213 @@
+# Test Phase Workflow
+#
+# This reusable workflow is responsible for running various types of tests on the codebase.
+# It includes JVM unit tests, CLI tests, frontend tests, integration tests, and Postman tests.
+#
+# Key features:
+# - Configurable test execution based on input parameters
+# - Parallel execution of different test suites
+# - Matrix strategy for running multiple test suites concurrently
+# - Reusable Maven job action for consistent test environment setup
+# - Artifact reuse from previous workflow runs
+
+name: Test Phase
+
+on:
+  workflow_call:
+    inputs:
+      run-all-tests:
+        type: boolean
+        default: false
+      artifact-run-id:
+        default: ${{ github.run_id }}
+        type: string
+      jvm_unit_test:
+        required: false
+        type: boolean
+        default: false
+      cli:
+        required: false
+        type: boolean
+        default: false
+      frontend:
+        required: false
+        type: boolean
+        default: false
+      postman:
+        required: false
+        type: boolean
+        default: false
+      integration:
+        required: false
+        type: boolean
+        default: false
+      e2e:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      DOTCMS_LICENSE:
+        required: true
+
+env:
+  ARTIFACT_RUN_ID: ${{ inputs.artifact-run-id || github.run_id }}
+
+jobs:
+  # JVM Unit Tests
+  linux-jvm-tests:
+    name: JVM Unit Tests - JDK ${{matrix.java.name}}
+    runs-on: ubuntu-20.04
+    if: inputs.jvm_unit_test || inputs.run-all-tests
+    timeout-minutes: 240
+    env:
+      MAVEN_OPTS: -Xmx2048m
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "JVM Tests"
+          maven-args: "-Pcoverage -Dprod test -pl :dotcms-core"
+          cleanup-runner: true
+          generates-test-results: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+
+  # CLI Tests
+  linux-cli-tests:
+    name: CLI Tests
+    runs-on: ubuntu-20.04
+    if: inputs.cli || inputs.run-all-tests
+    timeout-minutes: 240
+    env:
+      MAVEN_OPTS: -Xmx2048m
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "CLI Tests"
+          maven-args: "-pl :dotcms-api-data-model,:dotcms-cli verify"
+          generates-test-results: true
+          cleanup-runner: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          needs-docker-image: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+
+  # Frontend Tests
+  linux-frontend-tests:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-20.04
+    if: inputs.frontend || inputs.run-all-tests
+    timeout-minutes: 240
+    env:
+      MAVEN_OPTS: -Xmx2048m
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "Frontend Tests"
+          maven-args: "-pl :dotcms-core-web test"
+          generates-test-results: true
+          cleanup-runner: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+
+  # Integration Tests
+  linux-integration-tests:
+    name: JVM IT Tests ${{matrix.suites.name}}
+    runs-on: ubuntu-20.04
+    if: inputs.integration || inputs.run-all-tests
+    timeout-minutes: 240
+    env:
+      MAVEN_OPTS: -Xmx2048m
+    strategy:
+      fail-fast: false
+      matrix:
+        suites:
+          - { name: "MainSuite 1a", pathName: "mainsuite1a", maven_args: '-Dit.test=MainSuite1a' }
+          - { name: "MainSuite 1b", pathName: "mainsuite1b", maven_args: '-Dit.test=MainSuite1b' }
+          - { name: "MainSuite 2a", pathName: "mainsuite2a", maven_args: '-Dit.test=MainSuite2a' }
+          - { name: "MainSuite 2b", pathName: "mainsuite2b", maven_args: '-Dit.test=MainSuite2b' }
+          - { name: "Junit5 Suite 1", pathName: "junit5suite1", maven_args: '-Dit.test=Junit5Suite1' }
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "IT Tests ${{ matrix.suites.name }}"
+          maven-args: "-Dit.test.forkcount=1 -Pcoverage verify -pl :dotcms-integration -Dcoreit.test.skip=false ${{ matrix.suites.maven_args}}"
+          generates-test-results: true
+          cleanup-runner: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          requires-node: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+
+  # Postman Tests
+  linux-postman-tests:
+    name: Run Postman Tests - ${{matrix.collection_group}}
+    runs-on: ubuntu-24.04
+    if: inputs.postman || inputs.run-all-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        collection_group: [ 'ai', 'category-content', 'container', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow', 'default-split', 'default' ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "Postman ${{ matrix.collection_group }}"
+          maven-args: "-Pcoverage verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
+          generates-test-results: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          requires-node: true
+          needs-docker-image: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          cleanup-runner: true
+
+  # E2E Tests
+  linux-e2e-tests:
+    name: E2E Tests ${{matrix.suites.name}}
+    runs-on: ubuntu-24.04
+    if: inputs.e2e || inputs.run-all-tests
+    timeout-minutes: 240
+    env:
+      MAVEN_OPTS: -Xmx2048m
+    strategy:
+      fail-fast: false
+      matrix:
+        suites:
+          - { name: "JVM E2E Suite", pathName: "jvme2etestsuite", maven_args: '-Dci=true -Dit.test=E2eTestSuite -De2e.test.forkCount=1 -pl :dotcms-e2e-java' }
+          - { name: "Node E2E Suite", pathName: "nodee2etestsuite", maven_args: '-De2e.test.env=ci -pl :dotcms-e2e-node' }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "E2E ${{ matrix.suites.name }}"
+          maven-args: "verify -Pcoverage -De2e.test.skip=false ${{ matrix.suites.maven_args}}"
+          generates-test-results: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          requires-node: true
+          needs-docker-image: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          cleanup-runner: true

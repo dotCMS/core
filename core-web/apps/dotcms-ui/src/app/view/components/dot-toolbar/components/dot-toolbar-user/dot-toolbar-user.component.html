@@ -1,14 +1,25 @@
-<ng-container *ngIf="vm$ | async as vm">
-    <p-avatar [email]="vm.userData.email" (click)="menu.toggle($event)" dotGravatar></p-avatar>
-    <p-menu #menu [model]="vm.items" [popup]="true" appendTo="body"></p-menu>
+@if (vm$ | async; as vm) {
+    @if ($showMask()) {
+        <div (click)="toggleMenu($event)" class="dot-mask" data-testId="dot-mask"></div>
+    }
+    <p-avatar
+        (click)="toggleMenu($event)"
+        [email]="vm.userData.email"
+        data-testId="avatar"
+        dotGravatar />
+    <p-menu
+        [model]="vm.items"
+        [popup]="true"
+        #menu
+        (onHide)="hideMask()"
+        appendTo="body"
+        styleClass="toolbar-user__menu" />
 
-    <dot-my-account
-        *ngIf="vm.showMyAccount"
-        [visible]="vm.showMyAccount"
-        (shutdown)="store.showMyAccount(false)"></dot-my-account>
+    @if (vm.showMyAccount) {
+        <dot-my-account (shutdown)="store.showMyAccount(false)" [visible]="vm.showMyAccount" />
+    }
 
-    <dot-login-as
-        *ngIf="vm.showLoginAs"
-        [visible]="vm.showLoginAs"
-        (cancel)="store.showLoginAs(false)"></dot-login-as>
-</ng-container>
+    @if (vm.showLoginAs) {
+        <dot-login-as (cancel)="store.showLoginAs(false)" [visible]="vm.showLoginAs" />
+    }
+}

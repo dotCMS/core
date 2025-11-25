@@ -1,8 +1,20 @@
-import { NgClass, NgForOf, CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, OnInit, Signal, inject } from '@angular/core';
+import { NgClass, CommonModule } from '@angular/common';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnChanges,
+    OnInit,
+    Output,
+    Signal,
+    ViewChild,
+    inject,
+    signal
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
-import { skip } from 'rxjs/operators';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
 import {
     Announcement,
@@ -19,13 +31,15 @@ import { DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-    imports: [NgForOf, NgClass, DotMessagePipe, RouterLink, CommonModule],
+    imports: [NgClass, DotMessagePipe, RouterLink, CommonModule, OverlayPanelModule],
     providers: [AnnouncementsStore]
 })
 export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
     announcementsStore = inject(AnnouncementsStore);
     dotMessageService = inject(DotMessageService);
     siteService = inject(SiteService);
+    @ViewChild('toolbarAnnouncements', { static: true }) toolbarAnnouncements: OverlayPanel;
+    @Output() hideMenu = new EventEmitter();
 
     @Input() showUnreadAnnouncement: boolean;
     announcements: Signal<Announcement[]> = this.announcementsStore.announcementsSignal;
@@ -33,20 +47,55 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
     knowledgeCenterLinks: Signal<AnnouncementLink[]> =
         this.announcementsStore.selectKnowledgeCenterLinks;
     linkToDotCms: Signal<string> = this.announcementsStore.selectLinkToDotCms;
+    showMask = signal<boolean>(false);
+
+    aboutLinks: { title: string; items: Signal<AnnouncementLink[]> }[] = [];
+
+    constructor() {
+        this.siteService.switchSite$.pipe(takeUntilDestroyed()).subscribe(() => {
+            this.announcementsStore.load();
+            this.aboutLinks = this.getAboutLinks();
+        });
+    }
 
     ngOnInit(): void {
         this.announcementsStore.load();
-
-        this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
-            this.announcementsStore.refreshUtmParameters();
-            this.announcementsStore.load();
-        });
+        this.aboutLinks = this.getAboutLinks();
     }
 
     ngOnChanges(changes): void {
         if (!changes.showUnreadAnnouncement.currentValue) {
             this.announcementsStore.markAnnouncementsAsRead();
         }
+    }
+
+    /**
+     * Get the about links
+     * @returns About links
+     */
+    getAboutLinks(): { title: string; items: Signal<AnnouncementLink[]> }[] {
+        return [
+            { title: 'announcements.knowledge.center', items: this.knowledgeCenterLinks },
+            { title: 'announcements.knowledge.contact.us', items: this.contactLinks }
+        ];
+    }
+
+    /**
+     * Toggle the dialog
+     * @param event
+     */
+    toggleDialog(event): void {
+        this.showMask.update((value) => !value);
+        this.toolbarAnnouncements.toggle(event);
+    }
+
+    /**
+     * On hide dialog mark announcements as read
+     * @param event
+     */
+    hideDialog(): void {
+        this.hideMenu.emit();
+        this.showMask.set(false);
     }
 
     typesIcons = {

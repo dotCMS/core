@@ -59,6 +59,7 @@ export interface DotCMSContentTypeField {
     unique: boolean;
     values?: string;
     variable: string;
+    forceIncludeInApi?: boolean;
     metadata?: { [key: string]: string | number | boolean };
 }
 

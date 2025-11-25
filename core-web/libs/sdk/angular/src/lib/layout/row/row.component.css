@@ -1,0 +1,6 @@
+:host {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+    row-gap: 1rem;
+}

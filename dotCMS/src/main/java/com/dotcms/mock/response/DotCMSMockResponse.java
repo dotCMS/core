@@ -1,5 +1,6 @@
 package com.dotcms.mock.response;
 
+import com.dotcms.business.SystemCache;
 import com.dotcms.ema.proxy.MockPrintWriter;
 import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletResponse;
 import java.io.IOException;
@@ -22,6 +23,7 @@ public class DotCMSMockResponse implements HttpServletResponse {
 
     private ServletOutputStream outputStream;
     private List<Cookie> cookies = new ArrayList<>();
+    private Map<String, String> headersMap = new HashMap<>();
 
     @Override
     public void addCookie(final Cookie cookie) {
@@ -90,6 +92,7 @@ public class DotCMSMockResponse implements HttpServletResponse {
     @Override
     public void addHeader(String s, String s1) {
 
+        headersMap.put(s, s1);
     }
 
     @Override
@@ -119,7 +122,7 @@ public class DotCMSMockResponse implements HttpServletResponse {
 
     @Override
     public String getHeader(String s) {
-        return null;
+        return headersMap.get(s);
     }
 
     @Override

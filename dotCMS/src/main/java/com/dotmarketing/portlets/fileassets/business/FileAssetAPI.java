@@ -422,5 +422,14 @@ public interface FileAssetAPI {
 	 * @param fileAssetFilter {@link FileListener}
 	 */
 	void subscribeFileListener (final FileListener fileListener, final Predicate<FileAsset> fileAssetFilter);
-    
+
+	/**
+	 * Finds a File Asset by Path
+	 * @param uri
+	 * @param site
+	 * @param languageId
+	 * @param live
+	 * @return
+	 */
+	FileAsset getFileByPath(String uri, Host site, long languageId, boolean live);
 }

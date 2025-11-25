@@ -1,10 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotmarketing.util.UtilMethods;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotmarketing.business.APILocator;
@@ -21,14 +17,19 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.exception.ExceptionUtil.*;
-import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.exception.ExceptionUtil.ValidationError;
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.exception.ExceptionUtil.mapValidationException;
 
 /**
  * Created by Oscar Arrieta on 8/27/15.
@@ -137,7 +138,7 @@ public final class ExceptionMapperUtil {
 
         return Response
                 .status(status)
-                .entity(map("message", message))
+                .entity(Map.of("message", message))
                 .header("error-message", message)
                 .type(MediaType.APPLICATION_JSON)
                 .build();
@@ -176,19 +177,23 @@ public final class ExceptionMapperUtil {
             final StringWriter errors = new StringWriter();
             exception.printStackTrace(new PrintWriter(errors));
 
+            final Map<String, Object> entityMap = new HashMap<>();
+            entityMap.put("message", message);
+            entityMap.put("stacktrace", errors);
             return Response
                     .status(status)
-                    .entity(map("message", message,
-                            "stacktrace", errors))
+                    .entity(entityMap)
                     .header("error-key", key)
                     .header("access-control", getAccessControlHeader(exception))
                     .build();
         }
 
+        final Map<String, Object> entityMap = new HashMap<>();
+        entityMap.put("message", message);
 
         return Response
                 .status(status)
-                .entity(map("message", message))
+                .entity(entityMap)
                 .header("error-key", key)
                 .header("access-control", getAccessControlHeader(exception))
                 .build();

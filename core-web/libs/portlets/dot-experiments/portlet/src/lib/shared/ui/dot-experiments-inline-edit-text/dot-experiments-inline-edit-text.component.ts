@@ -26,9 +26,9 @@ import {
     DotAutofocusDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
-    DotTrimInputDirective
+    DotTrimInputDirective,
+    DotValidators
 } from '@dotcms/ui';
-import { DotValidators } from '@shared/validators/dotValidators';
 
 type InplaceInputSize = 'small' | 'large';
 const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {

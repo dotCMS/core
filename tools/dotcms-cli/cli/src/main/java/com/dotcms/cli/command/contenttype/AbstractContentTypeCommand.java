@@ -2,14 +2,15 @@ package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.text.SimpleDateFormat;
 import java.util.Optional;
 import picocli.CommandLine;
@@ -21,6 +22,9 @@ public abstract class AbstractContentTypeCommand {
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    protected AuthenticationMixin authenticationMixin;
 
     @CommandLine.Mixin
     protected HelpOptionMixin helpOption;
@@ -39,7 +43,7 @@ public abstract class AbstractContentTypeCommand {
 
     String shortFormat(final ContentType contentType) {
         return String.format(
-                "varName: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] host: [@|bold,underline,green %s|@] modDate:[@|bold,yellow %s|@] desc: [@|bold,yellow %s|@]",
+                "variable: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] host: [@|bold,underline,green %s|@] modDate:[@|bold,yellow %s|@] description: [@|bold,yellow %s|@]",
                 contentType.variable(),
                 contentType.id(),
                 contentType.host(),

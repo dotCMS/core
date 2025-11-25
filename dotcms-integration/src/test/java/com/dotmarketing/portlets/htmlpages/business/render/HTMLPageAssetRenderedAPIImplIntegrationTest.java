@@ -1,16 +1,5 @@
 package com.dotmarketing.portlets.htmlpages.business.render;
 
-import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -34,7 +23,6 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.model.Experiment;
-
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
@@ -44,13 +32,11 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -71,21 +57,27 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
-
-
 import com.liferay.util.StringPool;
-import java.io.File;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.Set;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTestBase {
 
@@ -172,6 +164,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * 7) publish again the content
      * 8) Get the versions
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -180,6 +173,9 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void test_getPageRenderedLivePreviewVersion_diff() throws DotDataException, DotSecurityException, WebAssetException {
         init();
         final User adminUser = new UserDataGen().nextPersisted();
+
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), adminUser);
+
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), adminUser);
         assertTrue(APILocator.getUserAPI().isCMSAdmin(adminUser));
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -276,6 +272,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         when(httpRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
         when(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(languageId+"");
         when(session.getAttribute(WebKeys.PAGE_MODE_SESSION)).thenReturn(PageMode.PREVIEW_MODE);
+
         final PageLivePreviewVersionBean pageLivePreviewVersionBean =
                 APILocator.getHTMLPageAssetRenderedAPI().getPageRenderedLivePreviewVersion(
                         page.getIdentifier(), adminUser, languageId, httpRequest, httpResponse);
@@ -283,7 +280,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         Assert.assertTrue(pageLivePreviewVersionBean.isDiff());
 
         // 7) publish again the content
-        APILocator.getContentletAPI().publish(contentlet, adminUser, false);
+        APILocator.getContentletAPI().publish(contentletCheckout, adminUser, false);
 
         // 8) Get the versions
         final PageLivePreviewVersionBean pageLivePreviewVersionBean2 =
@@ -297,6 +294,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
      * When The host_id request's parameter is set, it should take this over session attribute
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -330,6 +328,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The host_id request's parameter is set but it does not exists, it should take hostsession attribute
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -359,6 +358,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When the {@link Host#HOST_VELOCITY_VAR_NAME} request's parameter is set, it should take this over session attribute
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -391,6 +391,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * When the {@link Host#HOST_VELOCITY_VAR_NAME} request's parameter is set but does not exists,
      * it should take the host session attribute
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -421,6 +422,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When Host is not set into request it should use session host,
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -451,6 +453,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * When Host is not set into request neither session
      * it should take the default host
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -481,6 +484,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * When Host is not set into request neither session
      * it should take the request's server name before then the default host
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -510,6 +514,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The host_id request's parameter is set, but the user does not have permission over it
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -531,6 +536,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The {@link Host#HOST_VELOCITY_VAR_NAME} request's parameter is set, but the user does not have permission over it
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -551,6 +557,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The session host is set, but the user does not have permission over it
      * Should throw a {@link DotSecurityException}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -571,6 +578,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The WebKeys.CURRENT_HOST request attribute is set, but the user does not have permission over it
      * Should throw a {@link DotSecurityException}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -592,6 +600,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * When Host is not set into request neither session
      * it should take the request's server name before then the default host
      * Should return a right {@link PageView}
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -1562,6 +1571,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: You have at least one {@link Experiment} RUNNING and try to render a page and the page had a HEAD section
      * Should inject the JS Code need for Experiment to work into the head tag
+     *
      * @throws WebAssetException
      * @throws DotDataException
      * @throws DotSecurityException
@@ -1577,7 +1587,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             ExperimentDataGen.start(experiment);
 
             final Language language = new LanguageDataGen().nextPersisted();
-            final Host host = new SiteDataGen().nextPersisted();
+            final Contentlet pageContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+
+            final HTMLPageAsset experimentPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
+            final Host host = APILocator.getHostAPI().find(experimentPage.getHost(), APILocator.systemUser(), false);
 
             final ContentType contentType = createContentType();
             final Container container = createAndPublishContainer(host, contentType);
@@ -1624,6 +1638,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: You have at least one {@link Experiment} RUNNING and try to render a page and the page does not had a HEAD section
      * Should inject the JS Code need for Experiment to work on the top of the HTML code
+     *
      * @throws WebAssetException
      * @throws DotDataException
      * @throws DotSecurityException
@@ -1638,7 +1653,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             ExperimentDataGen.start(experiment);
 
             final Language language = new LanguageDataGen().nextPersisted();
-            final Host host = new SiteDataGen().nextPersisted();
+            final Contentlet pageContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+
+            final HTMLPageAsset experimentPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
+            final Host host = APILocator.getHostAPI().find(experimentPage.getHost(), APILocator.systemUser(), false);
 
             final ContentType contentType = createContentType();
             final Container container = createAndPublishContainer(host, contentType);
@@ -1675,198 +1694,223 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     }
 
     private static String getExpectedExperimentJsCode(Experiment experiment) {
-        return "<script src=\"/s/lib.js\" data-key=\"\"\n"
-                + "        data-init-only=\"false\"\n"
-                + "        defer>\n"
-                + "</script>\n"
-                + "\n"
-                + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
-                + "<SCRIPT>\n"
-                + "function setJitsuExperimentData (experimentData) {\n"
-                + "    let experimentsShortData = {\n"
-                + "        experiments: experimentData.experiments.map((experiment) => ({\n"
-                + "                experiment: experiment.id,\n"
-                + "                runningId: experiment.runningId,\n"
-                + "                variant: experiment.variant.name,\n"
-                + "                lookBackWindow: experiment.lookBackWindow.value\n"
-                + "            })\n"
-                + "        )\n"
-                + "    };\n"
-                + "\n"
-                + "    jitsu('set', experimentsShortData);\n"
-                + "}\n"
-                + "\n"
-                + "function stopRender(){\n"
-                + "    window.stop();\n"
-                + "}\n"
-                + "\n"
-                + "function getParams (experimentData) {\n"
-                + "    return (location.href.includes(\"?\") ? \"&\" : \"?\") + `variantName=${experimentData.variant.name}&redirect=true`;\n"
-                + "}\n"
-                + "\n"
-                + "function redirectIfNeedIt(experimentsData,\n"
-                + "    additionalValidation = (experimentData) => true){\n"
-                + "\n"
-                + "    if (!location.href.includes(\"redirect=true\")) {\n"
-                + "\n"
-                + "        for (let i = 0; i < experimentsData.experiments.length; i++) {\n"
-                + "            const pattern = new RegExp(experimentsData.experiments[i].redirectPattern);\n"
-                + "\n"
-                + "            if (additionalValidation(experimentsData.experiments[i]) &&\n"
-                + "                pattern.test(location.href.toLowerCase())) {\n"
-                + "\n"
-                + "                const param = experimentsData.experiments[i].variant.name === 'DEFAULT' ?\n"
-                + "                    '' : getParams(experimentsData.experiments[i]);\n"
-                + "\n"
-                + "                location.href = location.href + param;\n"
-                + "\n"
-                + "                return true;\n"
-                + "            }\n"
-                + "        }\n"
-                + "    }\n"
-                + "\n"
-                + "    return false;\n"
-                + "}\n"
-                + "\n"
-                + "window.addEventListener(\"experiment_loaded\", function (event) {\n"
-                + "    let experimentsData = event.detail;\n"
-                + "    setJitsuExperimentData(experimentsData);\n"
-                + "    redirectIfNeedIt(experimentsData, (experimentData) => experimentData.variant.name !== 'DEFAULT');\n"
-                + "});\n"
-                + "\n"
-                + "window.addEventListener(\"experiment_loaded_from_endpoint\", function (event) {\n"
-                + "    let experimentsData = event.detail;\n"
-                + "    setJitsuExperimentData(experimentsData);\n"
-                + "    const wasRedirect = redirectIfNeedIt(experimentsData);\n"
-                + "\n"
-                + "    if (!wasRedirect) {\n"
-                + "        location.reload();\n"
-                + "    }\n"
-                + "});\n"
-                + "\n"
-                + "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n"
-                + "\n"
-                + "if (!experimentAlreadyCheck) {\n"
-                + "    let currentRunningExperimentsId = ['" + experiment.id().get() + "'];\n"
-                + "\n"
-                + "    function shouldHitEndPoint() {\n"
-                + "        let experimentData = localStorage.getItem('experiment_data');\n"
-                + "\n"
-                + "        if (experimentData) {\n"
-                + "            let includedExperimentIds = JSON.parse(experimentData)\n"
-                + "                .includedExperimentIds;\n"
-                + "\n"
-                + "            return !currentRunningExperimentsId.every(\n"
-                + "                element => includedExperimentIds.includes(element));\n"
-                + "        } else {\n"
-                + "            return true;\n"
-                + "        }\n"
-                + "    }\n"
-                + "\n"
-                + "    function cleanExperimentDataUp() {\n"
-                + "        let experimentDataAsString = localStorage.getItem('experiment_data');\n"
-                + "\n"
-                + "        if (experimentDataAsString) {\n"
-                + "            let experimentData = JSON.parse(experimentDataAsString);\n"
-                + "\n"
-                + "            var now = Date.now();\n"
-                + "\n"
-                + "            experimentData.experiments = experimentData.experiments\n"
-                + "            .filter(experiment => currentRunningExperimentsId.includes(experiment.id))\n"
-                + "            .filter(experiment => experiment.lookBackWindow.expireTime > now);\n"
-                + "\n"
-                + "\n"
-                + "            experimentData.includedExperimentIds = experimentData.includedExperimentIds\n"
-                + "            .filter(experimentId => currentRunningExperimentsId.includes(experimentId));\n"
-                + "\n"
-                + "            if (!experimentData.experiments.length) {\n"
-                + "                localStorage.removeItem('experiment_data');\n"
-                + "            } else {\n"
-                + "                localStorage.setItem('experiment_data', JSON.stringify(experimentData));\n"
-                + "            }\n"
-                + "        }\n"
-                + "    }\n"
-                + "\n"
-                + "    cleanExperimentDataUp();\n"
-                + "\n"
-                + "    if (shouldHitEndPoint()) {\n"
-                + "        stopRender();\n"
-                + "        let experimentData = localStorage.getItem('experiment_data');\n"
-                + "        let body = experimentData ?\n"
-                + "            {\n"
-                + "                exclude: JSON.parse(experimentData).includedExperimentIds\n"
-                + "            } : {\n"
-                + "                exclude: []\n"
-                + "            };\n"
-                + "\n"
-                + "        fetch('/api/v1/experiments/isUserIncluded', {\n"
-                + "            method: 'POST',\n"
-                + "            body: JSON.stringify(body),\n"
-                + "            headers: {\n"
-                + "                'Accept': 'application/json',\n"
-                + "                'Content-Type': 'application/json'\n"
-                + "            }\n"
-                + "        })\n"
-                + "        .then(response => response.json())\n"
-                + "        .then(data => {\n"
-                + "            if (data.entity.experiments) {\n"
-                + "                let dataToStorage = Object.assign({}, data.entity);\n"
-                + "                let oldExperimentData = JSON.parse(\n"
-                + "                    localStorage.getItem('experiment_data'));\n"
-                + "\n"
-                + "                delete dataToStorage['excludedExperimentIds'];\n"
-                + "\n"
-                + "                dataToStorage.includedExperimentIds = [\n"
-                + "                    ...dataToStorage.includedExperimentIds,\n"
-                + "                    ...data.entity.excludedExperimentIds\n"
-                + "                ];\n"
-                + "\n"
-                + "                if (oldExperimentData) {\n"
-                + "                    dataToStorage.experiments = [\n"
-                + "                        ...oldExperimentData.experiments,\n"
-                + "                        ...dataToStorage.experiments\n"
-                + "                    ];\n"
-                + "                }\n"
-                + "\n"
-                + "                var now = Date.now();\n"
-                + "\n"
-                + "                dataToStorage.experiments = dataToStorage.experiments.map(experiment => ({\n"
-                + "                    ...experiment,\n"
-                + "                    lookBackWindow: {\n"
-                + "                        ...experiment.lookBackWindow,\n"
-                + "                        expireTime: now + experiment.lookBackWindow.expireMillis\n"
-                + "                    }\n"
-                + "                }));\n"
-                + "\n"
-                + "                localStorage.setItem('experiment_data',\n"
-                + "                    JSON.stringify(dataToStorage));\n"
-                + "\n"
-                + "                const event = new CustomEvent('experiment_loaded_from_endpoint',\n"
-                + "                    {detail: dataToStorage});\n"
-                + "                window.dispatchEvent(event);\n"
-                + "            }\n"
-                + "        });\n"
-                + "    }\n"
-                + "\n"
-                + "    let experimentDataAsString = localStorage.getItem('experiment_data');\n"
-                + "\n"
-                + "    if (experimentDataAsString) {\n"
-                + "        let experimentData = JSON.parse(experimentDataAsString);\n"
-                + "\n"
-                + "        const event = new CustomEvent('experiment_loaded',\n"
-                + "            {detail: experimentData});\n"
-                + "        window.dispatchEvent(event);\n"
-                + "    }\n"
-                + "\n"
-                + "    sessionStorage.setItem(\"experimentAlreadyCheck\", true);\n"
-                + "} else {\n"
-                + "    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));\n"
-                + "\n"
-                + "    const event = new CustomEvent('experiment_loaded',\n"
-                + "        {detail: experimentData});\n"
-                + "    window.dispatchEvent(event);\n"
-                + "}\n"
-                + "</SCRIPT>";
+        return "<script src=\"/s/lib.js\" data-key=\"\"\n" +
+                "        data-init-only=\"false\"\n" +
+                "        defer>\n" +
+                "</script>\n" +
+                "\n" +
+                "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n" +
+                "<SCRIPT>\n" +
+                "let regexsChecks = [];\n" +
+                "\n" +
+                "function setJitsuExperimentData (experimentData) {\n" +
+                "    let experimentsShortData = {\n" +
+                "        experiments: experimentData.experiments.map((experiment) => ({\n" +
+                "                experiment: experiment.id,\n" +
+                "                runningId: experiment.runningId,\n" +
+                "                variant: experiment.variant.name,\n" +
+                "                lookBackWindow: experiment.lookBackWindow.value,\n" +
+                "                ...regexsChecks.filter(regexCheked => regexCheked.id === experiment.id)[0].checks\n" +
+                "            })\n" +
+                "        )\n" +
+                "    };\n" +
+                "\n" +
+                "    jitsu('set', experimentsShortData);\n" +
+                "}\n" +
+                "\n" +
+                "function stopRender(){\n" +
+                "    window.stop();\n" +
+                "}\n" +
+                "\n" +
+                "function getParams (experimentData) {\n" +
+                "    return (location.href.includes(\"?\") ? \"&\" : \"?\") + `variantName=${experimentData.variant.name}&redirect=true`;\n" +
+                "}\n" +
+                "\n" +
+                "function validateRegexs(experimentsData){\n" +
+                "\n" +
+                "    for (let i = 0; i < experimentsData.experiments.length; i++) {\n" +
+                "        let experimentId = experimentsData.experiments[i].id;\n" +
+                "        let experimentRegex = {id: experimentId, checks: []}\n" +
+                "\n" +
+                "        for (const key in experimentsData.experiments[i].regexs) {\n" +
+                "            const pattern = new RegExp(experimentsData.experiments[i].regexs[key]);\n" +
+                "\n" +
+                "            let indexOf = location.href.indexOf(\"?\");\n" +
+                "            let urlWithoutParameters = indexOf > -1 ? location.href.substring(0, indexOf) : location.href;\n" +
+                "            let parameters = indexOf > -1 ? location.href.substring(indexOf) : '';\n" +
+                "\n" +
+                "            let url = urlWithoutParameters.toLowerCase() + parameters;\n" +
+                "            experimentRegex.checks[key] = pattern.test(url)\n" +
+                "        }\n" +
+                "        regexsChecks.push(experimentRegex);\n" +
+                "\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "function redirectIfNeedIt(experimentsData,\n" +
+                "                          additionalValidation = (experimentData) => true){\n" +
+                "\n" +
+                "    if (!location.href.includes(\"redirect=true\")) {\n" +
+                "\n" +
+                "        for (let i = 0; i < experimentsData.experiments.length; i++) {\n" +
+                "            let experimentId = experimentsData.experiments[i].id;\n" +
+                "            let regexs = regexsChecks.filter(regexs => regexs.id === experimentId)[0];\n" +
+                "\n" +
+                "            if (additionalValidation(experimentsData.experiments[i]) && regexs.checks.isExperimentPage) {\n" +
+                "                const param = experimentsData.experiments[i].variant.name === 'DEFAULT' ?\n" +
+                "                    '' : getParams(experimentsData.experiments[i]);\n" +
+                "\n" +
+                "                location.href = location.href + param;\n" +
+                "\n" +
+                "                return true;\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "\n" +
+                "    return false;\n" +
+                "}\n" +
+                "\n" +
+                "window.addEventListener(\"experiment_loaded\", function (event) {\n" +
+                "    let experimentsData = event.detail;\n" +
+                "    validateRegexs(experimentsData);\n" +
+                "    setJitsuExperimentData(experimentsData);\n" +
+                "\n" +
+                "    redirectIfNeedIt(experimentsData, (experimentData) => experimentData.variant.name !== 'DEFAULT');\n" +
+                "});\n" +
+                "\n" +
+                "window.addEventListener(\"experiment_loaded_from_endpoint\", function (event) {\n" +
+                "    let experimentsData = event.detail;\n" +
+                "    validateRegexs(experimentsData);\n" +
+                "    setJitsuExperimentData(experimentsData);\n" +
+                "    const wasRedirect = redirectIfNeedIt(experimentsData);\n" +
+                "\n" +
+                "    if (!wasRedirect) {\n" +
+                "        location.reload();\n" +
+                "    }\n" +
+                "});\n" +
+                "\n" +
+                "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n" +
+                "\n" +
+                "if (!experimentAlreadyCheck) {\n" +
+                "    let currentRunningExperimentsId = ['" + experiment.id().get() + "'];\n" +
+                "\n" +
+                "    function shouldHitEndPoint() {\n" +
+                "        let experimentData = localStorage.getItem('experiment_data');\n" +
+                "\n" +
+                "        if (experimentData) {\n" +
+                "            let includedExperimentIds = JSON.parse(experimentData)\n" +
+                "                .includedExperimentIds;\n" +
+                "\n" +
+                "            return !currentRunningExperimentsId.every(\n" +
+                "                element => includedExperimentIds.includes(element));\n" +
+                "        } else {\n" +
+                "            return true;\n" +
+                "        }\n" +
+                "    }\n" +
+                "\n" +
+                "    function cleanExperimentDataUp() {\n" +
+                "        let experimentDataAsString = localStorage.getItem('experiment_data');\n" +
+                "\n" +
+                "        if (experimentDataAsString) {\n" +
+                "            let experimentData = JSON.parse(experimentDataAsString);\n" +
+                "\n" +
+                "            var now = Date.now();\n" +
+                "\n" +
+                "            experimentData.experiments = experimentData.experiments\n" +
+                "                .filter(experiment => currentRunningExperimentsId.includes(experiment.id))\n" +
+                "                .filter(experiment => experiment.lookBackWindow.expireTime > now);\n" +
+                "\n" +
+                "            experimentData.includedExperimentIds = experimentData.includedExperimentIds\n" +
+                "                .filter(experimentId => currentRunningExperimentsId.includes(experimentId));\n" +
+                "\n" +
+                "            if (!experimentData.experiments.length) {\n" +
+                "                localStorage.removeItem('experiment_data');\n" +
+                "            } else {\n" +
+                "                localStorage.setItem('experiment_data', JSON.stringify(experimentData));\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "\n" +
+                "    cleanExperimentDataUp();\n" +
+                "\n" +
+                "    if (shouldHitEndPoint()) {\n" +
+                "        stopRender();\n" +
+                "        let experimentData = localStorage.getItem('experiment_data');\n" +
+                "        let body = experimentData ?\n" +
+                "            {\n" +
+                "                exclude: JSON.parse(experimentData).includedExperimentIds\n" +
+                "            } : {\n" +
+                "                exclude: []\n" +
+                "            };\n" +
+                "\n" +
+                "        fetch('/api/v1/experiments/isUserIncluded', {\n" +
+                "            method: 'POST',\n" +
+                "            body: JSON.stringify(body),\n" +
+                "            headers: {\n" +
+                "                'Accept': 'application/json',\n" +
+                "                'Content-Type': 'application/json'\n" +
+                "            }\n" +
+                "        })\n" +
+                "            .then(response => response.json())\n" +
+                "            .then(data => {\n" +
+                "                if (data.entity.experiments) {\n" +
+                "                    let dataToStorage = Object.assign({}, data.entity);\n" +
+                "                    let oldExperimentData = JSON.parse(\n" +
+                "                        localStorage.getItem('experiment_data'));\n" +
+                "\n" +
+                "                    delete dataToStorage['excludedExperimentIds'];\n" +
+                "\n" +
+                "                    dataToStorage.includedExperimentIds = [\n" +
+                "                        ...dataToStorage.includedExperimentIds,\n" +
+                "                        ...data.entity.excludedExperimentIds\n" +
+                "                    ];\n" +
+                "\n" +
+                "                    if (oldExperimentData) {\n" +
+                "                        dataToStorage.experiments = [\n" +
+                "                            ...oldExperimentData.experiments,\n" +
+                "                            ...dataToStorage.experiments\n" +
+                "                        ];\n" +
+                "                    }\n" +
+                "\n" +
+                "                    var now = Date.now();\n" +
+                "\n" +
+                "                    dataToStorage.experiments = dataToStorage.experiments.map(experiment => ({\n" +
+                "                        ...experiment,\n" +
+                "                        lookBackWindow: {\n" +
+                "                            ...experiment.lookBackWindow,\n" +
+                "                            expireTime: now + experiment.lookBackWindow.expireMillis\n" +
+                "                        }\n" +
+                "                    }));\n" +
+                "\n" +
+                "                    localStorage.setItem('experiment_data',\n" +
+                "                        JSON.stringify(dataToStorage));\n" +
+                "\n" +
+                "                    const event = new CustomEvent('experiment_loaded_from_endpoint',\n" +
+                "                        {detail: dataToStorage});\n" +
+                "                    window.dispatchEvent(event);\n" +
+                "                }\n" +
+                "            });\n" +
+                "    }\n" +
+                "\n" +
+                "    let experimentDataAsString = localStorage.getItem('experiment_data');\n" +
+                "\n" +
+                "    if (experimentDataAsString) {\n" +
+                "        let experimentData = JSON.parse(experimentDataAsString);\n" +
+                "\n" +
+                "        const event = new CustomEvent('experiment_loaded',\n" +
+                "            {detail: experimentData});\n" +
+                "        window.dispatchEvent(event);\n" +
+                "    }\n" +
+                "\n" +
+                "    sessionStorage.setItem(\"experimentAlreadyCheck\", true);\n" +
+                "} else {\n" +
+                "    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));\n" +
+                "\n" +
+                "    const event = new CustomEvent('experiment_loaded',\n" +
+                "        {detail: experimentData});\n" +
+                "    window.dispatchEvent(event);\n" +
+                "}\n" +
+                "</SCRIPT>";
 
     }
 
@@ -2430,7 +2474,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .nextPersistedAndPublish();
 
         final Contentlet widgetWithLabeVariant = ContentletDataGen.createNewVersion(widgetWithLabelDefault, variant_1, language,
-                map("label", "Testing Variant URLMap"));
+                Map.of("label", "Testing Variant URLMap"));
 
         ContentletDataGen.publish(widgetWithLabeVariant);
 
@@ -2461,7 +2505,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .languageId(language.getId())
                 .nextPersistedAndPublish();
 
-        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, map());
+        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, new HashMap<>());
         ContentletDataGen.publish(pageVariant);
 
         new MultiTreeDataGen()
@@ -2571,7 +2615,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .nextPersistedAndPublish();
 
         final Contentlet widgetWithLabeVariant = ContentletDataGen.createNewVersion(widgetWithLabelDefault, variant_1, language,
-                map("label", "Testing Variant URLMap"));
+                Map.of("label", "Testing Variant URLMap"));
 
         ContentletDataGen.publish(widgetWithLabeVariant);
 
@@ -2602,7 +2646,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .languageId(language.getId())
                 .nextPersistedAndPublish();
 
-        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, map());
+        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, new HashMap<>());
         ContentletDataGen.publish(pageVariant);
 
         new MultiTreeDataGen()
@@ -2650,7 +2694,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .nextPersistedAndPublish();
 
         final Contentlet newVersion = ContentletDataGen.createNewVersion(contentlet, variant_1, language,
-                map("title", "Test into Variant"));
+                Map.of("title", "Test into Variant"));
         ContentletDataGen.publish(newVersion);
 
         final HttpServletRequest mockRequest = new MockAttributeRequest(
@@ -2678,7 +2722,9 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Should: Inject the Experiment JS Code
      */
     @Test
+    @Ignore("Look like that the  TOOLBOX_MANAGER_PATH property is not set to the test environment anymore")
     public void usingViewToolToInjectExperimentCode() throws IOException {
+
         final Experiment experiment = new ExperimentDataGen().nextPersisted();
         ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
         ConfigExperimentUtil.INSTANCE.setExperimentAutoJsInjection(false);
@@ -2687,7 +2733,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             ExperimentDataGen.start(experiment);
 
             final Language language = new LanguageDataGen().nextPersisted();
-            final Host host = new SiteDataGen().nextPersisted();
+            final Contentlet pageContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+
+            final HTMLPageAsset experimentPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
+            final Host host = APILocator.getHostAPI().find(experimentPage.getHost(), APILocator.systemUser(), false);
 
             final ContentType contentType = createContentType();
             final Container container = createAndPublishContainer(host, contentType);
@@ -2753,5 +2803,52 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     private String getNotExperimentJsCode(){
         return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: Try to render a page with a specific Archived {@link Variant}} and a specific {@link Language}
+     * and the page had a contentlet that:
+     * - had version in that language and that variant.
+     * - had version in that language and DEFAULT variant.
+     * - The page just have version in that specific language.
+     * Should: render the page for DEFAULT {@link Variant}} and  {@link Language} {@link Contentlet} version
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void renderPageWithSpecificArchivedVariant() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+        final Contentlet contentlet = createContentlet(language, host, contentType);
+
+        createNewVersion(contentlet, language, variant);
+
+        addToPage(container, page, contentlet);
+
+        APILocator.getVariantAPI().archive(variant.name());
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 }

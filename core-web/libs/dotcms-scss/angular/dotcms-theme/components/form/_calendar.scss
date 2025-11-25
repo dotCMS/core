@@ -42,10 +42,16 @@
         height: auto;
         aspect-ratio: 1/1;
         background-color: $color-palette-gray-200;
+        color: $color-palette-primary;
+        border-radius: 0 $border-radius-sm $border-radius-sm 0;
 
         .pi {
             width: $icon-lg-box;
             font-size: $icon-lg;
+        }
+
+        .p-icon-wrapper {
+            color: $color-palette-primary-500;
         }
     }
 
@@ -119,7 +125,7 @@
                 .p-datepicker-year,
                 .p-datepicker-month,
                 .p-datepicker-decade {
-                    font-size: $font-size-lg;
+                    font-size: $font-size-lmd;
                     font-family: $font-default;
                     font-weight: $font-weight-regular-bold;
                     color: inherit;
@@ -135,6 +141,7 @@
                 height: $field-height-md;
                 width: $field-height-md;
                 border-radius: 50%;
+                color: $color-palette-primary-500;
 
                 @extend #outlined-primary-severity;
             }
@@ -152,6 +159,7 @@
                 display: flex;
                 gap: $spacing-1;
             }
+
             td,
             th {
                 border-spacing: 0;
@@ -186,6 +194,15 @@
         gap: $spacing-0;
         border-top: 1px solid $color-palette-gray-300;
         padding: $spacing-3;
+
+        button {
+            width: $icon-lg-box;
+            height: auto;
+            aspect-ratio: 1/1;
+            font-size: $icon-lg;
+            color: $color-palette-primary-500;
+        }
+
         span {
             font-size: $font-size-md;
             font-weight: $font-weight-regular-bold;
@@ -195,15 +212,8 @@
             justify-content: center;
             align-content: center;
             flex-wrap: wrap;
-
-            &.pi {
-                width: $icon-lg-box;
-                height: auto;
-                aspect-ratio: 1/1;
-                font-size: $icon-lg;
-                color: $color-palette-primary-500;
-            }
         }
+
         button {
             border-radius: $border-radius-sm;
 
@@ -238,11 +248,12 @@ p-calendar.p-calendar-clearable {
     }
 
     .p-calendar-clear-icon {
-        margin-top: -12px;
-        color: $color-palette-gray-500;
+        margin-top: -0.438rem;
+        color: $color-palette-primary;
         width: $icon-lg-box;
         font-size: $icon-lg;
         right: 44px;
+
         &:hover {
             color: $color-palette-primary-600;
         }

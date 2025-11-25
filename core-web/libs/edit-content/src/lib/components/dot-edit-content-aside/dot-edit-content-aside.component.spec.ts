@@ -1,102 +1,87 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
-import { mockProvider } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ActivatedRoute } from '@angular/router';
 
-import { DotMessageService, DotWorkflowService, DotFormatDateService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
+import { DotContentAsideInformationComponent } from './components/dot-content-aside-information/dot-content-aside-information.component';
+import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
 import { DotEditContentAsideComponent } from './dot-edit-content-aside.component';
 
-import { CONTENT_FORM_DATA_MOCK } from '../../utils/mocks';
+import { CONTENT_FORM_DATA_MOCK, MockResizeObserver } from '../../utils/mocks';
 
 describe('DotEditContentAsideComponent', () => {
     let spectator: Spectator<DotEditContentAsideComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentAsideComponent,
-        detectChanges: false,
-        imports: [HttpClientTestingModule],
+        imports: [
+            HttpClientTestingModule,
+            DotContentAsideInformationComponent,
+            DotContentAsideWorkflowComponent
+        ],
+        declarations: [
+            MockComponent(DotContentAsideInformationComponent),
+            MockComponent(DotContentAsideWorkflowComponent)
+        ],
         providers: [
-            mockProvider(ActivatedRoute), // Needed, use RouterLink
             {
                 provide: DotMessageService,
-                useValue: {
-                    get() {
-                        return 'Sample';
-                    }
-                }
-            },
-            {
-                provide: DotFormatDateService,
-                useValue: {
-                    differenceInCalendarDays: () => 10,
-                    format: () => '11/07/2023',
-                    getUTC: () => new Date()
-                }
+                useValue: new MockDotMessageService({
+                    Information: 'Information',
+                    Workflow: 'Workflow',
+                    'show-all': 'Show all'
+                })
             }
         ]
+    });
+    beforeAll(() => {
+        window.ResizeObserver = MockResizeObserver;
     });
 
     beforeEach(() => {
         spectator = createComponent({
-            providers: [
-                {
-                    provide: DotWorkflowService,
-                    useValue: {
-                        getWorkflowStatus: () =>
-                            of({
-                                scheme: { name: 'Test' },
-                                step: { name: 'Test' },
-                                task: { assignedTo: 'Admin User' }
-                            })
-                    }
-                }
-            ]
+            props: {
+                contentlet: CONTENT_FORM_DATA_MOCK.contentlet,
+                contentType: dotcmsContentTypeBasicMock,
+                loading: false,
+                collapsed: false
+            } as unknown
         });
     });
 
     it('should render aside information data', () => {
-        spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
-        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
         spectator.detectChanges();
-        expect(spectator.query(byTestId('modified-by')).textContent.trim()).toBe('Admin User');
-        expect(spectator.query(byTestId('last-modified')).textContent.trim()).toBe('11/07/2023');
-        expect(spectator.query(byTestId('inode')).textContent.trim()).toBe(
-            CONTENT_FORM_DATA_MOCK.contentlet.inode.slice(0, 8)
+        const dotContentAsideInformationComponent = spectator.query(
+            DotContentAsideInformationComponent
         );
-    });
 
-    it('should not render aside information data', () => {
-        const CONTENT_WITHOUT_CONTENTLET = { ...CONTENT_FORM_DATA_MOCK };
-        delete CONTENT_WITHOUT_CONTENTLET.contentlet;
-        spectator.setInput('contentLet', CONTENT_WITHOUT_CONTENTLET.contentlet);
-        spectator.setInput('contentType', CONTENT_WITHOUT_CONTENTLET.contentType.contentType);
-        spectator.detectChanges();
-
-        expect(spectator.query(byTestId('modified-by')).textContent).toBe('');
-        expect(spectator.query(byTestId('last-modified')).textContent).toBe('');
-        expect(spectator.query(byTestId('inode'))).toBeFalsy();
+        expect(dotContentAsideInformationComponent).toBeTruthy();
+        expect(dotContentAsideInformationComponent.contentType).toEqual(dotcmsContentTypeBasicMock);
+        expect(dotContentAsideInformationComponent.contentlet).toEqual(
+            CONTENT_FORM_DATA_MOCK.contentlet
+        );
     });
 
     it('should render aside workflow data', () => {
-        spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
-        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
         spectator.detectChanges();
+        const dotContentAsideWorkflowComponent = spectator.query(DotContentAsideWorkflowComponent);
 
-        expect(spectator.component.workflow$).toBeDefined();
-        expect(spectator.query(byTestId('workflow-name')).textContent.trim()).toBe('Test');
-        expect(spectator.query(byTestId('workflow-step')).textContent.trim()).toBe('Test');
-        expect(spectator.query(byTestId('workflow-assigned')).textContent.trim()).toBe(
-            'Admin User'
+        expect(dotContentAsideWorkflowComponent).toBeTruthy();
+        expect(dotContentAsideWorkflowComponent.inode).toEqual(
+            CONTENT_FORM_DATA_MOCK.contentlet.inode
         );
+        expect(dotContentAsideWorkflowComponent.contentType).toEqual(dotcmsContentTypeBasicMock);
     });
 
-    it('should render New as status when dont have contentlet', () => {
-        spectator.setInput('contentLet', null);
-        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
-        spectator.detectChanges();
+    it('should emit toggle event on button click', () => {
+        const spy = jest.spyOn(spectator.component.$toggle, 'emit');
 
-        expect(spectator.query(byTestId('workflow-step')).textContent).toBe('New');
+        const toggleBtn = spectator.query('[data-testId="toggle-button"]');
+
+        spectator.click(toggleBtn);
+
+        expect(spy).toHaveBeenCalled();
     });
 });

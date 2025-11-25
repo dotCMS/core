@@ -52,9 +52,10 @@ describe('TemplateBuilderBoxComponent', () => {
 
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder-box [width]="width" [items]="items" [containerMap]="containerMap"> </dotcms-template-builder-box>`,
+            `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"> </dotcms-template-builder-box>`,
             {
                 hostProps: {
+                    actions: ['add', 'delete', 'edit'],
                     width: 10,
                     items: CONTAINERS_DATA_MOCK,
                     containerMap: CONTAINER_MAP_MOCK,
@@ -80,7 +81,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render with medium variant and update the class', () => {
-        spectator.setInput('width', 3);
+        spectator.setHostInput('width', 3);
         spectator.detectComponentChanges();
         expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
             'template-builder-box--medium'
@@ -88,7 +89,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render with small variant and update the class', () => {
-        spectator.setInput('width', 1);
+        spectator.setHostInput('width', 1);
         spectator.detectComponentChanges();
         expect(spectator.query(byTestId('template-builder-box-small')).classList).toContain(
             'template-builder-box--small'
@@ -96,7 +97,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render the first ng-template for large and medium variants', () => {
-        spectator.setInput('width', 10);
+        spectator.setHostInput('width', 10);
         spectator.detectComponentChanges();
         const firstTemplate = spectator.query(byTestId('template-builder-box'));
         const secondTemplate = spectator.query(byTestId('template-builder-box-small'));
@@ -105,8 +106,8 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should only show the specified actions on actions input', () => {
-        spectator.setInput('actions', ['add', 'delete']); // Here we hide the edit button
-        spectator.detectComponentChanges();
+        spectator.setHostInput('actions', ['add', 'delete']); // Here we hide the edit button
+        spectator.detectChanges();
 
         const paletteButton = spectator.query(byTestId('box-style-class-button'));
 
@@ -114,7 +115,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should show all buttons for small variant', () => {
-        spectator.setInput('width', 1);
+        spectator.setHostInput('width', 1);
         spectator.detectComponentChanges();
 
         const addButton = spectator.query(byTestId('btn-plus-small'));
@@ -249,7 +250,7 @@ describe('TemplateBuilderBoxComponent', () => {
 
     describe('Dialog', () => {
         it('should open dialog when click on edit button', () => {
-            spectator.setInput('width', 1);
+            spectator.setHostInput('width', 1);
             spectator.detectComponentChanges();
 
             const templateBuilderSmallBox = spectator.query(byTestId('template-builder-box-small'));
@@ -276,7 +277,8 @@ describe('TemplateBuilderBoxComponent', () => {
 
         it('should not open dialog when the size is large', () => {
             // Make sure the current tampalte-builder-box component is the small one
-            spectator.setInput('width', 5);
+            spectator.setHostInput('width', 5);
+
             spectator.detectComponentChanges();
 
             const plusButton = spectator.query(byTestId('btn-plus'));

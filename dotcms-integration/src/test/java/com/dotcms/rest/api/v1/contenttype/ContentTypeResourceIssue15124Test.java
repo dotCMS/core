@@ -2,10 +2,16 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import static com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.getHttpRequest;
 
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -42,7 +48,7 @@ public class ContentTypeResourceIssue15124Test {
             + "      \"name\":\"CodeShare\",\n"
             + "      \"variable\":\"Codeshare\",\n"
             + "      \"host\":\"SYSTEM_HOST\",\n"
-            + "      \"detailPage\":\"b334b5eb-f371-4014-9921-403023d59a1e\",\n"
+            + "      \"detailPage\":\"%s\",\n"
             + "      \"fixed\":false,\n"
             + "      \"id\":\"e96da09f-161c-4ea9-bb06-5d7680c3477a\",\n"
             + "      \"fields\":[\n"
@@ -529,6 +535,17 @@ public class ContentTypeResourceIssue15124Test {
     @Test
     public void testMain() throws Exception {
 
+        // Creating a page, so we can use it as a detail page
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        HTMLPageDataGen.publish(htmlPageAsset);
+
+        var contentTypeJSON = String.format(
+                JSON_OFFENDING_CONTENT_TYPE_CREATE,
+                htmlPageAsset.getIdentifier()
+        );
+
         final ContentTypeResource resource = new ContentTypeResource();
         final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
         final HttpServletRequest request = getHttpRequest();
@@ -537,7 +554,7 @@ public class ContentTypeResourceIssue15124Test {
 
         try {
             final Response createTypeResponse = resource.createType(request,  new EmptyHttpResponse(),
-                    contentTypeFormDeserialize.buildForm(JSON_OFFENDING_CONTENT_TYPE_CREATE));
+                    contentTypeFormDeserialize.buildForm(contentTypeJSON));
             RestUtilTest.verifySuccessResponse(createTypeResponse);
 
             final ResponseEntityView entityView = ResponseEntityView.class.cast(createTypeResponse.getEntity());

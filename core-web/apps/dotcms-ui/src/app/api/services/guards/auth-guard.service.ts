@@ -13,7 +13,10 @@ import { LoginService } from '@dotcms/dotcms-js';
  */
 @Injectable()
 export class AuthGuardService implements CanActivate {
-    constructor(private dotRouterService: DotRouterService, private loginService: LoginService) {}
+    constructor(
+        private dotRouterService: DotRouterService,
+        private loginService: LoginService
+    ) {}
 
     canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return this.loginService.isLogin$.pipe(

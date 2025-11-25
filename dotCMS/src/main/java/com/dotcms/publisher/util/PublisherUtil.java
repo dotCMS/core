@@ -112,7 +112,7 @@ public class PublisherUtil {
 		b.setAssetType(row.get("asset_type").toString());
 		b.setPushDate((Date)row.get("push_date"));
 		b.setEnvironmentId(row.get("environment_id").toString());
-		b.setEndpointId(row.get("endpoint_ids").toString());
+		b.setEndpointId(UtilMethods.isSet(row.get("endpoint_ids"))?row.get("endpoint_ids").toString():"");
 
 		final Object publisher = row.get("publisher");
 

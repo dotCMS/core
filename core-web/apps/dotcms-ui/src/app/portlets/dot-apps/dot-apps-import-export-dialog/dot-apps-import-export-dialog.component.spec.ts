@@ -9,7 +9,6 @@ import { By } from '@angular/platform-browser';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -18,9 +17,13 @@ import {
     DotAppsImportConfiguration,
     DotAppsSite
 } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotDialogModule,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
@@ -38,11 +41,11 @@ export class DotAppsServiceMock {
     selector: 'dot-host-component',
     template: `
         <dot-apps-import-export-dialog
+            (resolved)="resolveHandler($event)"
             [action]="action"
             [app]="app"
             [site]="site"
-            [show]="true"
-            (resolved)="resolveHandler($event)"></dot-apps-import-export-dialog>
+            [show]="true"></dot-apps-import-export-dialog>
     `
 })
 class HostTestComponent {
@@ -81,7 +84,7 @@ describe('DotAppsImportExportDialogComponent', () => {
                 DotDialogModule,
                 CommonModule,
                 ReactiveFormsModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 HttpClientTestingModule
             ],

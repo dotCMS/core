@@ -2105,6 +2105,7 @@ alter table Company add constraint fk_default_lang_id foreign key (default_langu
 create table workflow_scheme(
 	id varchar(36) primary key,
 	name varchar(255) not null,
+    variable_name varchar(255) not null unique,
 	description text,
 	archived boolean default false,
 	mandatory boolean default false,
@@ -2112,6 +2113,7 @@ create table workflow_scheme(
 	entry_action_id varchar(36),
 	mod_date timestamptz
 );
+CREATE INDEX idx_workflow_lower_variable_name ON workflow_scheme (LOWER(variable_name));
 
 create table workflow_step(
 	id varchar(36) primary key,
@@ -2521,3 +2523,52 @@ create table system_table (
 -- Set up "like 'param%'" indexes for inode and identifier
 CREATE INDEX if not exists inode_inode_leading_idx ON inode(inode  COLLATE "C");
 CREATE INDEX if not exists identifier_id_leading_idx ON identifier(id  COLLATE "C");
+
+-- Table for active jobs in the queue
+CREATE TABLE job_queue
+(
+    id         VARCHAR(255) PRIMARY KEY,
+    queue_name VARCHAR(255) NOT NULL,
+    state      VARCHAR(50)  NOT NULL,
+    priority   INTEGER DEFAULT 0,
+    created_at timestamptz  NOT NULL
+);
+
+-- Table for job details and historical record
+CREATE TABLE job
+(
+    id             VARCHAR(255) PRIMARY KEY,
+    queue_name     VARCHAR(255) NOT NULL,
+    state          VARCHAR(50)  NOT NULL,
+    parameters     JSONB        NOT NULL,
+    result         JSONB,
+    progress       FLOAT   DEFAULT 0,
+    created_at     timestamptz  NOT NULL,
+    updated_at     timestamptz  NOT NULL,
+    started_at     timestamptz,
+    completed_at   timestamptz,
+    execution_node VARCHAR(255),
+    retry_count    INTEGER DEFAULT 0
+);
+
+-- Table for detailed job history
+CREATE TABLE job_history
+(
+    id             VARCHAR(255) PRIMARY KEY,
+    job_id         VARCHAR(255) NOT NULL,
+    state          VARCHAR(50)  NOT NULL,
+    execution_node VARCHAR(255),
+    created_at     timestamptz  NOT NULL,
+    result         JSONB,
+    FOREIGN KEY (job_id) REFERENCES job (id)
+);
+
+-- Indexes (add an index for the new parameters field in job_queue)
+CREATE INDEX idx_job_queue_status ON job_queue (state);
+CREATE INDEX idx_job_queue_priority_created_at ON job_queue (priority DESC, created_at ASC);
+CREATE INDEX idx_job_parameters ON job USING GIN (parameters);
+CREATE INDEX idx_job_result ON job USING GIN (result);
+CREATE INDEX idx_job_status ON job (state);
+CREATE INDEX idx_job_created_at ON job (created_at);
+CREATE INDEX idx_job_history_job_id ON job_history (job_id);
+CREATE INDEX idx_job_history_job_id_state ON job_history (job_id, state);

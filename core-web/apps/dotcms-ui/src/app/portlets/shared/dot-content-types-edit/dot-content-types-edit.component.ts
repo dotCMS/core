@@ -8,7 +8,6 @@ import { MenuItem } from 'primeng/api';
 
 import { mergeMap, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import {
     DotContentTypesInfoService,
     DotCrudService,
@@ -21,7 +20,8 @@ import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSWorkflow
+    DotCMSWorkflow,
+    DotDialogActions
 } from '@dotcms/dotcms-models';
 
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';

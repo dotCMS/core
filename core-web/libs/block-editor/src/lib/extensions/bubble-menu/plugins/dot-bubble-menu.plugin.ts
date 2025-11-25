@@ -188,9 +188,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             }
         });
 
-        this.updateComponent();
-        this.setMenuItems(doc, from);
         this.show();
+        this.setMenuItems(doc, from);
+        this.updateComponent();
     }
 
     /* @Overrrider */
@@ -324,6 +324,10 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     /* Run commands */
     exeCommand(item: BubbleMenuItem) {
         const { markAction: action, active } = item;
+        const { data = {} } = this.selectionNode.attrs;
+        const { inode, languageId } = data;
+        const currentInode = this.getQueryParam('inode');
+
         switch (action) {
             case 'bold':
                 this.editor.commands.toggleBold?.();
@@ -413,6 +417,26 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             case 'subscript':
                 this.editor.commands?.toggleSubscript?.();
                 break;
+
+            case 'goToContentlet':
+                this.goToContentlet(inode, currentInode, languageId);
+
+                break;
+        }
+    }
+
+    /**
+     * Navigates to a contentlet by calling a legacy JSP function.
+     *
+     * @param {string} newInode - The new contentlet inode to navigate to.
+     * @param {string} siblingInode - The sibling contentlet inode.
+     * @param {number} languageId - The language ID of the contentlet.
+     */
+    goToContentlet(newInode: string, siblingInode: string, languageId: number) {
+        // TODO: Remove JSPRedirectFn when Edit Content JSP is removed.
+        const JSPRedirectFn = (window as any).rel_BlogblogComment_PeditRelatedContent;
+        if (JSPRedirectFn) {
+            JSPRedirectFn(newInode, '', languageId);
         }
     }
 
@@ -546,5 +570,19 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         }
 
         this.tippyChangeTo?.hide();
+    }
+
+    /**
+     * Retrieves the value of the specified query parameter from the URL.
+     *
+     * @param {string} param - The name of the query parameter to retrieve.
+     * @private
+     *
+     * @returns {?string} - The value of the query parameter, or null if the parameter does not exist.
+     */
+    private getQueryParam(param: string) {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        return urlParams.get(param);
     }
 }

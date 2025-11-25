@@ -191,8 +191,7 @@ export class KeyValueTableComponent {
             <button
                 aria-label={label}
                 onClick={() => this.onDelete(index)}
-                class="dot-key-value__delete-button"
-            >
+                class="dot-key-value__delete-button">
                 {this.buttonLabel}
             </button>
         );

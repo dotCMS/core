@@ -8,10 +8,11 @@ import { DotAutofocusDirective } from '@dotcms/ui';
 
 @Component({
     template: `
-        <input *ngIf="disabled; else not" type="text" dotAutofocus disabled />
-        <ng-template #not>
+        @if (disabled) {
+            <input type="text" dotAutofocus disabled />
+        } @else {
             <input type="text" dotAutofocus />
-        </ng-template>
+        }
     `
 })
 class TestHostComponent {

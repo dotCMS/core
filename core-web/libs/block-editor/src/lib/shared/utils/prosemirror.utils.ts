@@ -4,7 +4,8 @@ import { EditorView } from 'prosemirror-view';
 
 import { Editor } from '@tiptap/core';
 
-import { AI_IMAGE_PLACEHOLDER_PROPERTY, CustomNodeTypes, NodeTypes } from '../../extensions';
+import { CustomNodeTypes, NodeTypes } from '../../extensions';
+import { toJSONFn } from '../../NodeViewRenderer';
 
 const aTagRex = new RegExp(/<a(|\s+[^>]*)>(\s|\n|<img[^>]*src="[^"]*"[^>]*>)*?<\/a>/gm);
 const imgTagRex = new RegExp(/<img[^>]*src="[^"]*"[^>]*>/gm);
@@ -14,6 +15,35 @@ export interface DotTiptapNodeInformation {
     from: number;
     to: number;
 }
+
+/**
+ * Set Custom JSON for this type of Node
+ * For this JSON we are going to only add the `contentlet` identifier to the backend
+ *
+ * @param {*} this
+ * @return {*}
+ */
+export const contentletToJSON: toJSONFn = function () {
+    const { attrs, type } = this?.node || {}; // Add null check for this.node
+    const { data } = attrs;
+
+    const formattedData = data
+        ? {
+              identifier: data?.identifier,
+              languageId: data?.languageId
+          }
+        : {};
+
+    const customAttrs = {
+        ...attrs,
+        data: formattedData
+    };
+
+    return {
+        type: type.name,
+        attrs: customAttrs
+    };
+};
 
 /**
  * Get the parent node of the ResolvedPos sent
@@ -272,21 +302,6 @@ export const findNodeByType = (
     });
 
     return nodes.length ? nodes : null;
-};
-
-/**
- * Get the information about the first occurrence of an AI placeholder image node in the TipTap editor.
- *
- * @param {Editor} editor - The TipTap editor instance.
- * @returns {DotTiptapNodeInformation | null}
- */
-export const getAIPlaceholderImage = (editor: Editor): DotTiptapNodeInformation => {
-    const nodes = findNodeByType(editor, NodeTypes.DOT_IMAGE);
-    const aIPlaceholderImages = nodes
-        ? nodes.filter((nodeInfo) => nodeInfo.node.attrs.data[AI_IMAGE_PLACEHOLDER_PROPERTY])
-        : null;
-
-    return aIPlaceholderImages?.[0];
 };
 
 /**

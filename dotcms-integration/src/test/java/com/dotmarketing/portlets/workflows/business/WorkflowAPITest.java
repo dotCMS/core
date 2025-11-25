@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -23,6 +24,7 @@ import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowActionClassDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -45,6 +47,8 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -61,6 +65,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -90,7 +95,18 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -959,6 +975,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         final WorkflowAction workflowAction       = new WorkflowAction();
         workflowAction.setId("non-existing");
+        workflowAction.setSchemeId("non-existing");
         final Optional<WorkflowStep> workflowStep = workflowAPI.findFirstStepForAction(workflowAction);
         Assert.assertFalse(workflowStep.isPresent());
     }
@@ -4661,6 +4678,224 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertTrue(comments1.get(0).createdDate().after(comments1.get(1).createdDate()) );
         //the comment 1 should be the first one
         assertEquals("comment test 1", comments1.get(0).commentDescription());
+    }
+
+    /**
+     * Method to test: N/A
+     * <p>
+     * Given Scenario: Workflows with the same and different names are created
+     * <p>
+     * ExpectedResult: Variable names are correctly created and incremented for workflows with
+     * duplicate names and properly created for workflows with different names
+     *
+     * @throws DotDataException      if a data access error occurs.
+     * @throws DotSecurityException  if a security error occurs.
+     * @throws AlreadyExistException if an existing entity conflicts with the operation.
+     */
+    @Test
+    public void test_variableName_creation()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        final long currentTimeMilis = System.currentTimeMillis();
+        final String schemeName = "TestScheme" + currentTimeMilis;
+
+        // Creating test workflows, some with the same name
+        final var workflow1 = new WorkflowDataGen().name(schemeName).nextPersisted();
+        final var workflow2 = new WorkflowDataGen().name(schemeName).nextPersisted();
+        final var workflow3 = new WorkflowDataGen().name(schemeName).nextPersisted();
+        final var workflow4 = new WorkflowDataGen().name(schemeName).nextPersisted();
+        final var workflow5 = new WorkflowDataGen().name("AnotherTestScheme" + currentTimeMilis).
+                nextPersisted();
+
+        try {
+            // Validate we created properly the variable name
+            var expectedVariableNames = new String[]{
+                    "TestScheme" + currentTimeMilis,
+                    "TestScheme" + currentTimeMilis + "1",
+                    "TestScheme" + currentTimeMilis + "2",
+                    "TestScheme" + currentTimeMilis + "3",
+                    "AnotherTestScheme" + currentTimeMilis
+            };
+
+            for (String variableName : expectedVariableNames) {
+                final DotConnect dotConnect = new DotConnect();
+                dotConnect.setSQL("SELECT count(*) FROM workflow_scheme WHERE variable_name = ?");
+                dotConnect.addParam(variableName);
+
+                assertEquals(1, dotConnect.getInt("count"));
+            }
+        } finally {
+            cleanUpWorkflows(workflow1, workflow2, workflow3, workflow4, workflow5);
+        }
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#findScheme(String)}
+     * <p>
+     * Given Scenario: Workflow schemes are searched by their ID and variable name
+     * <p>
+     * ExpectedResult: Workflow schemes are found by their ID and variable name, and an appropriate
+     * error is thrown for non-existent schemes
+     *
+     * @throws DotDataException      if a data access error occurs.
+     * @throws DotSecurityException  if a security error occurs.
+     * @throws AlreadyExistException if an existing entity conflicts with the operation.
+     */
+    @Test
+    public void test_findScheme()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        final long currentTimeMilis = System.currentTimeMillis();
+
+        // Creating test workflows, some with the same name
+        final var workflow1 = new WorkflowDataGen().name("testScheme" + currentTimeMilis).
+                nextPersisted();
+        final var workflow2 = new WorkflowDataGen().name("anotherTestScheme" + currentTimeMilis).
+                nextPersisted();
+
+        try {
+            // Searching the system workflow by id
+            var systemWorkflow = workflowAPI.findScheme(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID);
+            assertNotNull(systemWorkflow);
+            assertEquals(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID, systemWorkflow.getId());
+            assertEquals(SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME,
+                    systemWorkflow.getVariableName());
+
+            // Searching the system workflow by variable name
+            systemWorkflow = workflowAPI.findScheme(
+                    SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME);
+            assertNotNull(systemWorkflow);
+            assertEquals(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID, systemWorkflow.getId());
+            assertEquals(SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME,
+                    systemWorkflow.getVariableName());
+
+            // Searching for the just created test workflows
+            var result = workflowAPI.findScheme("testscheme" + currentTimeMilis);
+            assertNotNull(result);
+            assertEquals(workflow1.getId(), result.getId());
+
+            result = workflowAPI.findScheme("tesTscheME" + currentTimeMilis);
+            assertNotNull(result);
+            assertEquals(workflow1.getId(), result.getId());
+
+            result = workflowAPI.findScheme(workflow2.getId());
+            assertNotNull(result);
+            assertEquals(workflow2.getId(), result.getId());
+
+            // Searching a non-existing workflow scheme and validate the proper error handling
+            try {
+                workflowAPI.findScheme("does-not-exist");
+                fail("Expected DoesNotExistException not thrown");
+            } catch (Exception e) {
+                assertTrue(e instanceof DoesNotExistException);
+            }
+        } finally {
+            cleanUpWorkflows(workflow1, workflow2);
+        }
+    }
+
+    /**
+     * Cleans up the test workflows created during the test cases.
+     *
+     * @param workflowSchemes the workflows to be removed.
+     */
+    private void cleanUpWorkflows(final WorkflowScheme... workflowSchemes)
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+        for (WorkflowScheme testScheme : workflowSchemes) {
+            APILocator.getWorkflowAPI().archive(testScheme, APILocator.systemUser());
+            APILocator.getWorkflowAPI().deleteScheme(testScheme, APILocator.systemUser());
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link WorkflowAPI#findActionlet(String)}</li>
+     *     <li><b>Given Scenario: </b>Find the list of expected Actionlets in a Workflow Action of
+     *     the first Step in the System Workflow.</li>
+     *     <li><b>Expected Result: </b>The API must return the expected two Actionlets: "Save Draft
+     *     content", and "Unlock content".</li>
+     * </ul>
+     */
+    @Test
+    public void findActionletsInWorkflowActionByClassNameAsString() throws DotDataException,
+            DotSecurityException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final Map<String, String> expectedActionletData = Map.of(
+                SAVE_AS_DRAFT_SUBACTION, SaveContentAsDraftActionlet.class.getName(),
+                UNLOCK_SUBACTION, CheckinContentActionlet.class.getName());
+
+        // Get the list of Actionlets from the 'Save' Step in the 'System Workflow'
+        final WorkflowScheme systemWorkflow = workflowAPI.findScheme(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID);
+        final List<WorkflowStep> workflowSteps = workflowAPI.findSteps(systemWorkflow);
+        assertFalse("There must be at least one Step for the System Workflow", workflowSteps.isEmpty());
+        final WorkflowStep firstWorkflowStep = workflowSteps.get(0);
+        final List<WorkflowAction> workflowActions = workflowAPI.findActions(firstWorkflowStep, user);
+        assertFalse("There must be at least one Action for the System Workflow", workflowActions.isEmpty());
+        final List<WorkflowActionClass> actionClasses =
+                workflowAPI.findActionClasses(workflowActions.get(0));
+        assertEquals(String.format("Workflow Step '%s' must have 2 Workflow Actionlets", firstWorkflowStep.getName()),
+                2, actionClasses.size());
+        for (final WorkflowActionClass actionClass : actionClasses) {
+            final WorkFlowActionlet workFlowActionlet = workflowAPI.findActionlet(actionClass.getClazz());
+
+            // ╔══════════════╗
+            // ║  Assertions  ║
+            // ╚══════════════╝
+            assertNotNull(String.format("Actionlet '%s' cannot be null", actionClass.getClazz()), workFlowActionlet);
+            assertNotNull(String.format("Actionlet '%s' is not the expected one", workFlowActionlet.getName()),
+                    expectedActionletData.get(workFlowActionlet.getName()));
+            assertEquals(String.format("Actionlet class '%s' is not the expected one", actionClass.getClazz()),
+                    expectedActionletData.get(workFlowActionlet.getName()), actionClass.getClazz());
+        }
+    }
+
+
+    /**
+     * Method to test: This test tries the {@link WorkflowAPIImpl#findWorkflowTaskFilesAsContent(WorkflowTask, User)}
+     * Given Scenario: Attaching a file to a workflow task when it is a dotAsset
+     * ExpectedResult: The addition of the dotAsset should be made without throwing exceptions and it also should add a new "fileLink" property.
+     */
+    @Test
+    public void testAttachDotAssetToWorkflowTask()
+            throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        //final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+        Contentlet contentlet = null;
+
+        try {
+            contentlet = TestDataUtils.getPageContent(true, language.getId());
+
+            //save workflow task
+            final WorkflowStep workflowStep = workflowAPI.findStep(
+                    SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, systemUser);
+            final WorkflowTask workflowTask = workflowAPI
+                    .createWorkflowTask(contentlet, systemUser, workflowStep, "test", "test");
+            workflowAPI.saveWorkflowTask(workflowTask);
+
+
+
+            //save workflow task dot asset file
+            final Contentlet fileAsset = TestDataUtils.getDotAssetLikeContentlet();
+            workflowAPI.attachFileToTask(workflowTask, fileAsset.getInode());
+
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(new MockInternalRequest().request());
+
+            List<IFileAsset> files = workflowAPI.findWorkflowTaskFilesAsContent(workflowTask, systemUser);
+
+            assertNotNull(((FileAsset) files.get(0)).getMap().get("fileLink"));
+
+        } finally {
+            if (contentlet != null && contentlet.getInode() != null) {
+                ContentletDataGen.destroy(contentlet);
+            }
+
+        }
+
     }
 
 }

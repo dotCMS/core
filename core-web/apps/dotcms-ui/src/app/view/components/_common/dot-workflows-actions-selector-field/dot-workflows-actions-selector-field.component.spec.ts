@@ -23,8 +23,7 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
         <form [formGroup]="form">
             <dot-workflows-actions-selector-field
                 [workflows]="workfows"
-                formControlName="action"
-            ></dot-workflows-actions-selector-field>
+                formControlName="action"></dot-workflows-actions-selector-field>
             {{ form.value | json }}
         </form>
     `
@@ -148,9 +147,8 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                 it('should have basics', () => {
                     expect(dropdown.appendTo).toBe('body');
                     expect(dropdown.group).toBe(true);
-                    expect(dropdown.placeholder).toBe('Select an action');
+                    expect(dropdown.placeholder()).toBe('Select an action');
                     expect(dropdown.style).toEqual({ width: '100%' });
-                    expect(dropdown.autoDisplayFirst).toBe(false);
                 });
             });
 
@@ -163,7 +161,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                     expect(dropdown.disabled).toBe(true);
                 });
 
-                it('should be enaled when actions list is filled', () => {
+                it('should be enabled when actions list is filled', () => {
                     fixtureHost.detectChanges();
                     dropdown = getDropdownComponent();
                     expect(dropdown.disabled).toBe(false);

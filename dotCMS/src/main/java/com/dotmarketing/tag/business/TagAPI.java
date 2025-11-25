@@ -2,10 +2,12 @@ package com.dotmarketing.tag.business;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Provides access to all the operations related to the handling of Tags in dotCMS.
@@ -17,6 +19,12 @@ import java.util.List;
  */
 public interface TagAPI {
 
+	/**
+	 * Get a list of top the tags for a given contentlet
+	 * @param siteId
+	 * @return list of tags
+	 */
+	Set<String> findTopTags(final String siteId) throws DotDataException;
 	/**
 	 * Get a list of all the tags created
 	 * @return list of all tags created

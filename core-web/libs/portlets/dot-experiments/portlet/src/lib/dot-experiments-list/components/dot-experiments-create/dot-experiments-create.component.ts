@@ -15,11 +15,11 @@ import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
-    DotTrimInputDirective
+    DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    DotTrimInputDirective,
+    DotValidators
 } from '@dotcms/ui';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
-import { DotValidators } from '@shared/validators/dotValidators';
 
 import {
     DotExperimentsListStore,

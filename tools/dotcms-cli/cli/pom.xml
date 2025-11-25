@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>dotcms-cli-parent</artifactId>
         <groupId>com.dotcms</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
     <artifactId>dotcms-cli</artifactId>
     <packaging>jar</packaging>
 
     <properties>
+        <maven.deploy.skip>false</maven.deploy.skip>
         <executable-suffix/>
         <distribution.directory>${project.build.directory}/distributions</distribution.directory>
         <picocli.codegen.version>4.6.3</picocli.codegen.version>
@@ -24,6 +24,7 @@
         <java.keytar.version>1.0.0</java.keytar.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
+        <quarkus.native.additional-build-args>--native-compiler-options=-Wno-nullability-completeness, -H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
     </properties>
 
     <dependencyManagement>
@@ -42,13 +43,13 @@
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-api-data-model</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-api-data-model</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -145,6 +146,7 @@
                         <configuration>
                             <systemProperties>
                                 <testcontainers.docker.image>${testcontainers.docker.image}</testcontainers.docker.image>
+                                <attachRunnerAsMainArtifact>true</attachRunnerAsMainArtifact>
                             </systemProperties>
                         </configuration>
                     </execution>
@@ -202,6 +204,7 @@
                     <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
                     <arguments>
                         <argument>--outdir=${project.basedir}/docs</argument>
+                        <argument>com.dotcms.cli.command.ConfigCommand</argument>
                         <argument>com.dotcms.cli.command.InstanceCommand</argument>
                         <argument>com.dotcms.cli.command.LoginCommand</argument>
                         <argument>com.dotcms.cli.command.PushCommand</argument>
@@ -256,9 +259,6 @@
                     </plugin>
                 </plugins>
             </build>
-            <properties>
-                <quarkus.native.additional-build-args>-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
-            </properties>
         </profile>
         <profile>
             <id>dist-windows</id>
@@ -278,6 +278,7 @@
                     <name>native</name>
                 </property>
             </activation>
+
             <build>
                 <plugins>
                     <plugin>
@@ -294,6 +295,21 @@
                                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                         <maven.home>${maven.home}</maven.home>
                                     </systemPropertyVariables>
+                                    <manifestEntries>
+                                        <Implementation-URL>${project.url}</Implementation-URL>
+                                        <Java-Vendor>${java.vendor}</Java-Vendor>
+                                        <Java-Version>${java.version}</Java-Version>
+                                        <Os-Arch>${os.arch}</Os-Arch>
+                                        <Os-Name>${os.name}</Os-Name>
+                                        <Os-Version>${os.version}</Os-Version>
+                                        <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                                        <Scm-Url>${project.scm.url}</Scm-Url>
+                                        <Scm-Revision>${buildNumber}</Scm-Revision>
+                                        <!--suppress UnresolvedMavenProperty-->
+                                        <Scm-Build>${scmBranch}</Scm-Build>
+                                        <Implementation-Build>${buildNumber}</Implementation-Build>
+                                        <Implementation-Timestamp>${timestamp}</Implementation-Timestamp>
+                                    </manifestEntries>
                                 </configuration>
                             </execution>
                         </executions>
@@ -302,7 +318,6 @@
             </build>
             <properties>
                 <quarkus.package.type>native</quarkus.package.type>
-                <quarkus.native.additional-build-args>-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
             </properties>
         </profile>
     </profiles>

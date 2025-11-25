@@ -1,5 +1,3 @@
-import * as _ from 'lodash';
-
 import { Component, OnInit } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
@@ -37,7 +35,7 @@ export class DotRelationshipsPropertyComponent implements OnInit {
 
     constructor(private dotMessageService: DotMessageService) {}
     ngOnInit() {
-        this.beforeValue = _.cloneDeep(this.group.get(this.property.name).value);
+        this.beforeValue = structuredClone(this.group.get(this.property.name).value);
         this.editing = !!this.group.get(this.property.name).value.velocityVar;
     }
 
@@ -57,7 +55,7 @@ export class DotRelationshipsPropertyComponent implements OnInit {
      * @memberof DotRelationshipsPropertyComponent
      */
     clean(): void {
-        this.group.get(this.property.name).setValue(_.cloneDeep(this.beforeValue));
+        this.group.get(this.property.name).setValue(structuredClone(this.beforeValue));
     }
 
     /**

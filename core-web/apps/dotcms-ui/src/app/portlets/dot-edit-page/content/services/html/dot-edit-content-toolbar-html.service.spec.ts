@@ -1,10 +1,9 @@
-import { Observable, of as observableOf } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 
-import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLicenseServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-html.service';
@@ -14,12 +13,6 @@ const mouseoverEvent = new MouseEvent('mouseover', {
     bubbles: true,
     cancelable: true
 });
-@Injectable()
-export class DotLicenseServiceMock {
-    isEnterprise(): Observable<boolean> {
-        return observableOf(true);
-    }
-}
 
 describe('DotEditContentToolbarHtmlService', () => {
     let service: DotEditContentToolbarHtmlService;

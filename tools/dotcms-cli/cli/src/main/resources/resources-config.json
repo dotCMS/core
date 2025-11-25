@@ -8,6 +8,9 @@
     },
     {
       "pattern": ".*\\.dll$"
+    },
+    {
+      "pattern": "(.*\\/)?build\\.properties$"
     }
   ]
 }

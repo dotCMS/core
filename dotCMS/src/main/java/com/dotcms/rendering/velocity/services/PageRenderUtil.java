@@ -1,9 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -13,9 +10,6 @@ import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.rest.ContentResource;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-import com.dotcms.util.ConversionUtils;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
@@ -42,7 +36,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -52,31 +45,22 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONObject;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
@@ -269,7 +253,7 @@ public class PageRenderUtil implements Serializable {
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI
                 .getPageMultiTrees(htmlPage, currentVariantId, live);
         final Set<String> personalizationsForPage = this.multiTreeAPI.getPersonalizationsForPage(htmlPage, currentVariantId);
-        final List<ContainerRaw> raws  = Lists.newArrayList();
+        final List<ContainerRaw> rawContainers  = Lists.newArrayList();
         final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage);
 
         for (final String containerId : pageContents.rowKeySet()) {
@@ -310,6 +294,7 @@ public class PageRenderUtil implements Serializable {
                     final DotContentletTransformer transformer = new DotTransformerBuilder()
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
+                    this.addContentletPageReferenceCount(contentlet);
 
                     final long contentsSize = containerUuidPersona
                             .getSize(container, uniqueUUIDForRender, personalizedContentlet);
@@ -317,8 +302,8 @@ public class PageRenderUtil implements Serializable {
                     if (container.getMaxContentlets() < contentsSize) {
 
                         Logger.debug(this, ()-> "Contentlet: "          + contentlet.getIdentifier()
-                                + ", has been skipped. Max contentlet: "    + container.getMaxContentlets()
-                                + ", has been overcome for the container: " + containerId);
+                                + ", has been skipped. Max contentlet capacity: " + container.getMaxContentlets()
+                                + ", has been exceeded for container: " + containerId);
                         continue;
                     }
 
@@ -348,10 +333,34 @@ public class PageRenderUtil implements Serializable {
                 contextMap.put("totalSize"      + entry.getKey(), entry.getValue().size());
             }
 
-            raws.add(new ContainerRaw(container, containerStructures, contentMaps));
+            rawContainers.add(new ContainerRaw(container, containerStructures, contentMaps));
         }
 
-        return raws;
+        return rawContainers;
+        }
+
+    /**
+     * When <b>in Edit Mode only</b>, we can determine the number of Containers in any HTML Page in
+     * the repository that are referencing a given Contentlet. This piece of information will be
+     * added to the Contentlet's data map so that the UI can provide the editing User two choices:
+     * <ol>
+     *     <li>Edit that specific Contentlet: This will create a brand new copy of such a
+     *     Contentlet that the User will modify. This means that any other page referencing it
+     *     WILL NOT have the new changes.</li>
+     *     <li>Edit the "global" Content: The User will be editing the unique instance of this
+     *     Contentlet. This means that any change made to it will be reflected on all other HTML
+     *     Pages that are displaying it.</li>
+     * </ol>
+     * This new property is specified in {@link Contentlet#ON_NUMBER_OF_PAGES}.
+     *
+     * @param contentlet The {@link Contentlet} whose HTML Page references will be counted.
+     */
+    private void addContentletPageReferenceCount(final Contentlet contentlet) {
+        if (this.mode.isEditMode()) {
+            final Optional<Integer> pageReferences =
+                    Try.of(() -> this.contentletAPI.getAllContentletReferencesCount(contentlet.getIdentifier())).getOrElse(Optional.empty());
+            pageReferences.ifPresent(integer -> contentlet.getMap().put(Contentlet.ON_NUMBER_OF_PAGES, integer));
+        }
     }
 
     private void addRelationships(final Contentlet contentlet) {
@@ -476,14 +485,14 @@ public class PageRenderUtil implements Serializable {
      * and Personalization are associated. Depending on the current configuration in your dotCMS
      * instance, the {@link Contentlet} being returned will be either the one in the current
      * language, or the version in the default language.
-     *
      * <p>Now, for HTML Page editing purposes ONLY, if the current User does not have {@code READ}
-     * permission on the
-     * specified Contentlet, the Anonymous User will be used to retrieve it. This way, limited Users
-     * can still open and edit the HTML Page without any problems.</p>
+     * permission on the specified Contentlet, the Anonymous User will be used to retrieve it. This
+     * way, limited Users can still open and edit the HTML Page without any problems.</p>
      *
      * @param personalizedContentlet The Personalized Content object.
-     * @param variantName
+     * @param variantName            The name of the Variant that the Contentlet is associated
+     *                               with.
+     *
      * @return An instance of the {@link Contentlet} represented by the Identifier in the
      * Personalized Contentlet object.
      */
@@ -535,30 +544,29 @@ public class PageRenderUtil implements Serializable {
      * from the {@code multi_tree} table that determines how HTML Pages, Containers, Contentlets,
      * and Personalization are associated.
      *
-     * @param personalizedContentlet - The Personalized Content object.
-     * @param variantName
+     * @param personalizedContentlet The Personalized Content object.
+     * @param variantName            The name of the Variant that the Contentlet is associated with
+     *
      * @return An instance of the {@link Contentlet} represented by the Identifier in the
      * Personalized Contentlet object.
+     *
      * @throws DotSecurityException The specified User does not have {@code READ} permission on the
      *                              specified Content
      */
     private Contentlet getSpecificContentlet(final PersonalizedContentlet personalizedContentlet,
-            String variantName) throws
+            final String variantName) throws
             DotSecurityException {
         try {
-
-            final Contentlet contentlet = contentletAPI.findContentletByIdentifier
+            return contentletAPI.findContentletByIdentifier
                     (personalizedContentlet.getContentletId(), mode.showLive, this.resolveLanguageId(),
                             variantName, user, mode.respectAnonPerms);
-
-            return contentlet;
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control
             return null;
         } catch (final DotSecurityException e) {
             // Expected behavior. The User might not have permissions on a given Contentlet
             throw e;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new DotStateException(e);
         }
     }
@@ -589,14 +597,14 @@ public class PageRenderUtil implements Serializable {
      * from the {@code multi_tree} table that determines how HTML Pages, Containers, Contentlets,
      * and Personalization are associated. If the {@link Contentlet} being returned is NOT available
      * in the current language, the version in the default language will be returned instead.
-     *
      * <p>Now, for HTML Page editing purposes ONLY, if the current User does not have {@code READ}
-     * permission on the
-     * specified Contentlet, the Anonymous User will be used to retrieve it. This way, limited Users
-     * can still open and edit the HTML Page without any problems.</p>
+     * permission on the specified Contentlet, the Anonymous User will be used to retrieve it. This
+     * way, limited Users can still open and edit the HTML Page without any problems.</p>
      *
      * @param personalizedContentlet The Personalized Content object.
-     * @param variantName
+     * @param variantName            The name of the Variant that the Contentlet is associated
+     *                               with.
+     *
      * @return An instance of the {@link Contentlet} represented by the Identifier in the
      * Personalized Contentlet object.
      */
@@ -605,10 +613,9 @@ public class PageRenderUtil implements Serializable {
         try {
             final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback
                     (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, true);
-            final Contentlet contentlet = contentletOpt.isPresent()
+            return contentletOpt.isPresent()
                     ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(personalizedContentlet.getContentletId(),
                     variantName);
-            return contentlet;
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control
             return null;

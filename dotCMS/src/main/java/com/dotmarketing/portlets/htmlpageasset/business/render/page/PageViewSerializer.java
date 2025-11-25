@@ -31,13 +31,16 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 /**
- * JsonSerializer of {@link PageView}
+ * This JSON Serializer is used to transform a {@link PageView} object into a JSON string.
+ *
+ * @author Freddy Rodriguez
+ * @since May 4th, 2018
  */
 public class PageViewSerializer extends JsonSerializer<PageView> {
 
     @Override
     public void serialize(final PageView pageView, final JsonGenerator jsonGenerator,
-                          final SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+                          final SerializerProvider serializerProvider) throws IOException {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
         final ImmutableMap.Builder<String, Object> builder = new ImmutableMap.Builder<>();
         builder.putAll(getObjectMap(pageView));
@@ -45,9 +48,16 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         jsonGenerator.writeRawValue(json);
     }
 
+    /**
+     * Generates the Map with the expected properties from the HTML Page that will be exposed in the
+     * JSON response.
+     *
+     * @param pageView The {@link PageView} object to serialize.
+     *
+     * @return A Map with the HTML Page properties.
+     */
     protected Map<String, Object> getObjectMap(final PageView pageView) {
         final Template template = pageView.getTemplate();
-
         final Map<String, Object> pageViewMap = new TreeMap<>();
         pageViewMap.put("page", this.asPageMap(pageView));
         pageViewMap.put("containers", pageView.getContainersMap());
@@ -70,6 +80,12 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
             this.createObjectMapUrlContent(pageView.getUrlContent(), pageViewMap);
         }
 
+        if (pageView.getRunningExperiment() != null) {
+            pageViewMap.put("runningExperimentId", pageView.getRunningExperiment().getIdentifier());
+        }
+        if (null != pageView.getVanityUrl()) {
+            pageViewMap.put("vanityUrl", pageView.getVanityUrl());
+        }
         return pageViewMap;
     }
 
@@ -103,6 +119,9 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
 
     private Map<Object, Object> asPageMap(final PageView pageView)  {
+
+        addRelationships(pageView.getPage());
+
         final Map<Object, Object> pageMap = this.asMap(pageView.getPage());
 
         final String pageUrlMapper = pageView.getPageUrlMapper();

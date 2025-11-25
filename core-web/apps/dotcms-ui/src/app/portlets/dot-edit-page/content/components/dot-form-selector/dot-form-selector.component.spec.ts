@@ -11,12 +11,10 @@ import { TableModule } from 'primeng/table';
 
 import { delay } from 'rxjs/operators';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotDialogModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -38,7 +36,9 @@ const mockContentType: DotCMSContentType = {
 };
 
 @Component({
-    template: ` <dot-form-selector [show]="show"></dot-form-selector> `
+    template: `
+        <dot-form-selector [show]="show"></dot-form-selector>
+    `
 })
 class TestHostComponent {
     show = false;
@@ -76,7 +76,7 @@ describe('DotFormSelectorComponent', () => {
                 BrowserAnimationsModule,
                 HttpClientTestingModule,
                 TableModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 ButtonModule
             ]

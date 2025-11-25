@@ -7,7 +7,9 @@ import { AvatarModule } from 'primeng/avatar';
 import { DotAvatarDirective } from './dot-avatar.directive';
 
 @Component({
-    template: ` <p-avatar [text]="text" [image]="image" dotAvatar></p-avatar> `
+    template: `
+        <p-avatar [text]="text" [image]="image" dotAvatar></p-avatar>
+    `
 })
 class TestHostComponent {
     text: string;

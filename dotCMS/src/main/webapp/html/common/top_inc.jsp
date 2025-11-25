@@ -8,6 +8,7 @@ THIS FILE AND ITS INCLUDES
 --%>
 <%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.util.Config"%>
+<%@page import="com.dotmarketing.util.ConfigUtils"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%
 
@@ -44,8 +45,7 @@ THIS FILE AND ITS INCLUDES
 	<link rel="stylesheet" href="/html/assets/monaco-editor/min/vs/editor/editor.main.css" />
 
 	<%
-		String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
-		if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+		if (ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BINARY_FIELD")) {
 	%>
 		<link rel="stylesheet" href="/dotcms-binary-field-builder/styles.css" />
 	<% } %>
@@ -93,7 +93,6 @@ THIS FILE AND ITS INCLUDES
   	<script type="text/javascript" src="/html/common/javascript.jsp?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/engine.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/util.js?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/dwr/interface/TemplateAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/interface/HostAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/interface/ContainerAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/interface/RoleAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>

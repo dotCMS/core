@@ -1,10 +1,10 @@
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
 
 import { AddWidgetComponent } from './add-widget.component';
 
 import { rowIcon, colIcon } from '../../assets/icons';
 
-export default {
+const meta: Meta<AddWidgetComponent> = {
     title: 'Library/Template Builder/Components/Add',
     component: AddWidgetComponent,
     decorators: [
@@ -12,29 +12,28 @@ export default {
             imports: []
         })
     ]
-} as Meta<AddWidgetComponent>;
+};
+export default meta;
 
-const Template: Story<AddWidgetComponent> = (args: AddWidgetComponent) => ({
-    props: args
-});
+type Story = StoryObj<AddWidgetComponent>;
 
-export const AddRow = Template.bind({});
-
-export const AddBox = Template.bind({});
-
-export const MaterialIcon = Template.bind({});
-
-AddRow.args = {
-    label: 'Add Row',
-    icon: rowIcon
+export const AddRow: Story = {
+    args: {
+        label: 'Add Row',
+        icon: rowIcon
+    }
 };
 
-AddBox.args = {
-    label: 'Add Box',
-    icon: colIcon
+export const AddBox: Story = {
+    args: {
+        label: 'Add Box',
+        icon: colIcon
+    }
 };
 
-MaterialIcon.args = {
-    label: 'Fallback Material Icon',
-    icon: 'add'
+export const MaterialIcon: Story = {
+    args: {
+        label: 'Fallback Material Icon',
+        icon: 'add'
+    }
 };

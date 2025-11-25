@@ -872,6 +872,31 @@ describe('ContentTypesFormComponent', () => {
                 fixture.detectChanges();
                 expect(comp.form.get('workflows').value).toEqual([]);
             });
+            it('should initialize workflowsSelected$ with the value from workflows field', async () => {
+                comp.data = {
+                    ...dotcmsContentTypeBasicMock,
+                    baseType: 'CONTENT',
+                    id: '123',
+                    workflows: [
+                        {
+                            ...mockWorkflows[0],
+                            id: '123',
+                            name: 'Workflow 1'
+                        }
+                    ]
+                };
+                fixture.detectChanges();
+                await fixture.whenStable();
+                comp.workflowsSelected$.subscribe((value) => {
+                    expect(value).toEqual([
+                        {
+                            ...mockWorkflows[0],
+                            id: '123',
+                            name: 'Workflow 1'
+                        }
+                    ]);
+                });
+            });
         });
     });
 });

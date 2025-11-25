@@ -5,24 +5,49 @@
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nrwl/js:tsc",
+            "executor": "@nx/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
+                "format": ["esm", "cjs"],
+                "compiler": "tsc",
+                "generateExportsField": true,
+                "assets": [{ "input": "libs/sdk/client", "output": ".", "glob": "*.md" }],
                 "outputPath": "dist/libs/sdk/client",
                 "main": "libs/sdk/client/src/index.ts",
+                "tsConfig": "libs/sdk/client/tsconfig.lib.json"
+            }
+        },
+        "build:js": {
+            "executor": "@nx/esbuild:esbuild",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
+                "outputFileName": "sdk-editor",
+                "format": ["esm"],
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json",
-                "assets": ["libs/sdk/client/*.md"]
+                "project": "libs/sdk/client/package.json",
+                "entryFile": "libs/sdk/client/src/lib/editor/sdk-editor-vtl.ts",
+                "external": ["react/jsx-runtime"],
+                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+                "compiler": "tsc",
+                "extractCss": false,
+                "minify": true
             }
         },
         "publish": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "node tools/scripts/publish.mjs sdk-js-client {args.ver} {args.tag}"
+                "command": "node tools/scripts/publish.mjs sdk-client {args.ver} {args.tag}"
             },
             "dependsOn": ["build"]
         },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/client"
+            }
+        },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"],
             "options": {
                 "lintFilePatterns": ["libs/sdk/client/**/*.ts"]

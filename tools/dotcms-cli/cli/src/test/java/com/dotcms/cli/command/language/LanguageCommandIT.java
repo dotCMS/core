@@ -23,7 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,7 +82,7 @@ class LanguageCommandIT extends CommandTest {
             var json = Files.readString(languageFilePath);
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             Language result = mapper.readValue(json, Language.class);
-            Assertions.assertEquals(1, result.id().get());
+            Assertions.assertEquals("en-us", result.isoCode());
         } finally {
             workspaceManager.destroy(workspace);
         }
@@ -116,7 +116,7 @@ class LanguageCommandIT extends CommandTest {
             var json = Files.readString(languageFilePath);
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             Language result = mapper.readValue(json, Language.class);
-            Assertions.assertEquals(1, result.id().get());
+            Assertions.assertEquals("en-us", result.isoCode());
         } finally {
             workspaceManager.destroy(workspace);
         }
@@ -218,7 +218,7 @@ class LanguageCommandIT extends CommandTest {
             final int status = commandLine.execute(LanguageCommand.NAME, LanguageFind.NAME);
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.contains("English"));
+            Assertions.assertTrue(output.contains("isoCode: [en-us]"));
         }
     }
 
@@ -242,7 +242,25 @@ class LanguageCommandIT extends CommandTest {
                     "--byIso", "es-VE", workspace.languages().toFile().getAbsolutePath());
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.contains("Spanish"));
+            Assertions.assertTrue(output.contains("isoCode: \"es-ve\""));
+
+            // Checking we pushed the language correctly
+            var foundLanguage = clientFactory.getClient(LanguageAPI.class).
+                    getFromLanguageIsoCode("es-ve");
+            Assertions.assertNotNull(foundLanguage);
+            Assertions.assertNotNull(foundLanguage.entity());
+            Assertions.assertTrue(foundLanguage.entity().id().isPresent());
+            Assertions.assertNotNull(foundLanguage.entity().isoCode());
+            Assertions.assertEquals("es-ve", foundLanguage.entity().isoCode());
+
+            // Cleaning up
+            try {
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundLanguage.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
         } finally {
             deleteTempDirectory(tempFolder);
         }
@@ -360,8 +378,7 @@ class LanguageCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
 
             //Create a JSON file with the language to push
-            final Language language = Language.builder().isoCode("it-it").languageCode("it-IT")
-                    .countryCode("IT").language("Italian").country("Italy").build();
+            final Language language = Language.builder().isoCode("it-it").build();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             final var targetFilePath = Path.of(workspace.languages().toString(), "language.json");
             mapper.writeValue(targetFilePath.toFile(), language);
@@ -381,17 +398,15 @@ class LanguageCommandIT extends CommandTest {
             createdLanguage = foundLanguage.entity();
 
             // ---
-            // Now validating the auto update updated the language descriptor
+            // Now validating the auto update updated the language descriptor file name and the
+            // iso code is it still correct
+            final var updatedFile = Path.of(workspace.languages().toString(), "it-it.json");
             var updatedDescriptor = this.mapperService.map(
-                    targetFilePath.toFile(),
+                    updatedFile.toFile(),
                     Language.class
             );
             Assertions.assertEquals(createdLanguage.isoCode(), updatedDescriptor.isoCode());
-            Assertions.assertEquals(createdLanguage.languageCode(),
-                    updatedDescriptor.languageCode());
-            Assertions.assertTrue(updatedDescriptor.id().isPresent());
-            Assertions.assertNotNull(updatedDescriptor.id().get());
-            Assertions.assertEquals(createdLanguage.id(), updatedDescriptor.id());
+            Assertions.assertFalse(Files.exists(targetFilePath));
 
         } finally {
 
@@ -514,9 +529,18 @@ class LanguageCommandIT extends CommandTest {
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             Language result = mapper.readValue(json, Language.class);
 
+            // Checking we pushed the language correctly
+            var foundLanguage = clientFactory.getClient(LanguageAPI.class).
+                    getFromLanguageIsoCode("es-VE");
+            Assertions.assertNotNull(foundLanguage);
+            Assertions.assertNotNull(foundLanguage.entity());
+            Assertions.assertTrue(foundLanguage.entity().id().isPresent());
+            Assertions.assertNotNull(foundLanguage.entity().isoCode());
+            Assertions.assertEquals("es-ve", foundLanguage.entity().isoCode());
+
             //We remove the language with iso code "es-VE"
             status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME,
-                    String.valueOf(result.id().get()), "--cli-test");
+                    String.valueOf(foundLanguage.entity().id().get()), "--cli-test");
             Assertions.assertEquals(ExitCode.OK, status);
 
             //We check that the language with iso code "es-VE" is not present
@@ -588,16 +612,12 @@ class LanguageCommandIT extends CommandTest {
             // Make sure the language it is really there
             final var languageUSPath = Path.of(workspace.languages().toString(), "en-us.yml");
             var json = Files.readString(languageUSPath);
-            Assertions.assertTrue(json.contains("countryCode: \"US\""));
+            Assertions.assertTrue(json.contains("isoCode: \"en-us\""));
 
             //Now, create a couple of files with new languages to push
             // Italian
             final Language italian = Language.builder().
                     isoCode("it-it").
-                    languageCode("it-IT").
-                    countryCode("IT").
-                    language("Italian").
-                    country("Italy").
                     build();
             var mapper = new ClientObjectMapper().getContext(null);
             var targetItalianFilePath = Path.of(workspace.languages().toString(), "it-it.json");
@@ -606,7 +626,6 @@ class LanguageCommandIT extends CommandTest {
             // French
             final Language french = Language.builder().
                     isoCode("fr").
-                    language("French").
                     build();
             var targetFrenchFilePath = Path.of(workspace.languages().toString(), "fr.json");
             mapper.writeValue(targetFrenchFilePath.toFile(), french);
@@ -643,24 +662,12 @@ class LanguageCommandIT extends CommandTest {
             Assertions.assertEquals("French", frenchResponse.entity().language().get());
 
             // ---
-            // Pulling italian, we need the file with the updated id
-            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "it-IT",
-                    "-fmt", InputOutputFormat.JSON.toString().toUpperCase(),
-                    "--workspace", workspace.root().toString());
-            Assertions.assertEquals(ExitCode.OK, status);
-
-            // ---
             // Now we remove a file and test the removal is working properly
             Files.delete(targetFrenchFilePath);
 
             // Editing the italian file to validate the update works
             final Language updatedItalian = Language.builder().
                     isoCode("it-va").
-                    id(italianResponse.entity().id().get()).
-                    languageCode("it-va").
-                    countryCode("VA").
-                    language("Italian").
-                    country("Vatican City").
                     build();
             mapper = new ClientObjectMapper().getContext(null);
             targetItalianFilePath = Path.of(workspace.languages().toString(), "it-it.json");
@@ -1111,6 +1118,26 @@ class LanguageCommandIT extends CommandTest {
             } catch (Exception e) {
                 // Ignoring
             }
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language pull <br>
+     * <b>Given Scenario:</b> Test the language find command using a token. <br>
+     * <b>Expected Result:</b> We should be able to get all the languages in the system passing the token
+     * files.
+     */
+    @Test
+    void Test_Command_Language_Find_Authenticate_With_Token() throws IOException{
+        final String token = requestToken();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguageFind.NAME, "--token", token);
+            Assertions.assertEquals(ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.contains("isoCode: [en-us]"));
         }
     }
 

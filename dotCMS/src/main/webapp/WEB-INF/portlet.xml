@@ -487,4 +487,16 @@
         <display-name>Velocity Playground</display-name>
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
+
+    <portlet>
+        <portlet-name>dotai</portlet-name>
+        <display-name>dotAI</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>locales</portlet-name>
+        <display-name>Locales</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
 </portlet-app>

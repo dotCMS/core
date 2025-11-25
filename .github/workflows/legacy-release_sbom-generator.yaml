@@ -1,0 +1,73 @@
+# Generate SBOM for latest version of dotCMS and put into core-test-repo
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dotcms_version:
+        description: 'Enter the dotCMS version (vYY.MM.DD)'
+        required: true
+        default: ''
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Ensure write access to contents
+
+    steps:
+      - name: Checkout core-test-results repository
+        uses: actions/checkout@v3
+        with:
+          repository: dotCMS/core-test-results
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: core-test-results
+
+      - name: Get dotCMS release version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            # Extract the tag name from the release event context
+            latest_tag=${{ github.event.release.tag_name }}
+          else
+            # Use the input provided in manual run
+            latest_tag=${{ github.event.inputs.dotcms_version }}
+          fi
+
+          # Format the tag name if necessary
+          formatted_tag=$(echo "$latest_tag" | sed -e 's/^dotcms-cli-//' -e 's/^v//')
+
+          echo "Latest tag: $formatted_tag"
+          echo "DOTCMS_VERSION=$formatted_tag" >> $GITHUB_ENV
+
+      - name: Pull and run dotCMS Docker image
+        run: |
+          docker pull dotcms/dotcms:${{ env.DOTCMS_VERSION }}
+          docker run -d -p 8082:8082 dotcms/dotcms:${{ env.DOTCMS_VERSION }}
+
+      - name: Install pipx
+        run: |
+          pip install pipx
+
+      - name: Scan Docker Image with Syft
+        run: |
+          pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core-test-results/sbom/cyclonedx.json
+
+      - name: Rename SBOM file with dotCMS version
+        run: |
+          mkdir -p core-test-results/sbom
+          mv core-test-results/sbom/cyclonedx.json core-test-results/sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "Github Actions"
+
+      - name: Commit and push results to core-test-results repository
+        run: |
+          cd core-test-results
+          git add sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
+          git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

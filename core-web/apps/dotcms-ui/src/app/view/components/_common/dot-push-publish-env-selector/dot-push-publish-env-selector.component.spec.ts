@@ -42,11 +42,13 @@ export class PushPublishServiceMock {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <form [formGroup]="group">
-        <dot-push-publish-env-selector
-            showList="true"
-            formControlName="environment"></dot-push-publish-env-selector>
-    </form>`
+    template: `
+        <form [formGroup]="group">
+            <dot-push-publish-env-selector
+                showList="true"
+                formControlName="environment"></dot-push-publish-env-selector>
+        </form>
+    `
 })
 class TestHostComponent {
     group: UntypedFormGroup;

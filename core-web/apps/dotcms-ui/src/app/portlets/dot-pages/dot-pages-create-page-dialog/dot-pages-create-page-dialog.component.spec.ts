@@ -243,44 +243,4 @@ describe('DotPagesCreatePageDialogComponent', () => {
             expect(data).toEqual(mockContentTypes);
         });
     });
-
-    describe("when it's content editor 2 enabled", () => {
-        beforeEach(async () => await setupTestingModule(true));
-
-        it('should redirect url when click on page', () => {
-            const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
-            pageType.triggerEventHandler('click', mockContentType.variable);
-            expect(dotRouterService.goToURL).toHaveBeenCalledWith(
-                `content/new/${mockContentType.variable}`
-            );
-            expect(dialogRef.close).toHaveBeenCalled();
-        });
-    });
-
-    describe("when it's content editor 2 enabled and limited content types", () => {
-        beforeEach(async () => await setupTestingModule(true, [mockContentType.variable, 'test']));
-
-        it('should redirect url when click on page', () => {
-            const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
-            pageType.triggerEventHandler('click', mockContentType.variable);
-            expect(dotRouterService.goToURL).toHaveBeenCalledWith(
-                `content/new/${mockContentType.variable}`
-            );
-            expect(dialogRef.close).toHaveBeenCalled();
-        });
-
-        it('should redirect url when click on page for content type test', () => {
-            const pageType = de.queryAll(By.css(`.dot-pages-create-page-dialog__page-item`))[1];
-            pageType.triggerEventHandler('click');
-            expect(dotRouterService.goToURL).toHaveBeenCalledWith(`content/new/test`);
-            expect(dialogRef.close).toHaveBeenCalled();
-        });
-
-        it('should not redirect to new edit content url when click on page', () => {
-            const pageType = de.queryAll(By.css(`.dot-pages-create-page-dialog__page-item`))[2];
-            pageType.triggerEventHandler('click');
-            expect(dotRouterService.goToURL).toHaveBeenCalledWith('/pages/new/notAvailable');
-            expect(dialogRef.close).toHaveBeenCalled();
-        });
-    });
 });

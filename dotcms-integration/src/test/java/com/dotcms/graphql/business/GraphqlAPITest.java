@@ -63,6 +63,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.graphql.CustomFieldType;
+import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -88,6 +89,7 @@ import graphql.schema.GraphQLSchema;
 import io.vavr.Tuple2;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -532,6 +534,29 @@ public class GraphqlAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Given Scenario: Generate a graphQL Schema and validate the field definitions.
+     * <p>
+     * ExpectedResult: Field definitions are not duplicated.
+     */
+    @Test
+    public void testGetSchema_Validate_No_Duplicated_Fields() throws DotDataException {
+
+        final GraphqlAPI api = APILocator.getGraphqlAPI();
+
+        final GraphQLSchema schema = api.getSchema();
+        final var fieldDefinitions = schema.getQueryType().getFieldDefinitions();
+
+        var fieldNames = new HashSet<String>();
+        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
+            assertFalse(
+                    String.format("Found duplicated field in graphQL Scheme [%s]",
+                            fieldDefinition.getName()),
+                    fieldNames.contains(fieldDefinition.getName().toLowerCase())
+            );
+            fieldNames.add(fieldDefinition.getName().toLowerCase());
+        }
+    }
 
     @UseDataProvider("fieldTestCases")
     @Test
@@ -563,8 +588,8 @@ public class GraphqlAPITest extends IntegrationTestBase {
 
             if (testCase.fieldRequired) {
                 Assert.assertEquals("Type of GraphQL Field should match type expected",
-                        new GraphQLNonNull(expectedType)
-                        , graphQLFieldType);
+                        new GraphQLNonNull(expectedType).toString()
+                        , graphQLFieldType.toString());
             } else {
                 Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
                         , graphQLFieldType);
@@ -648,11 +673,11 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 if (isOneEndingCardinality(cardinality)) {
                     assertFalse(outputTypeFromParentToChild instanceof GraphQLList);
                     assertEquals(childContentType.variable(),
-                            outputTypeFromParentToChild.getName());
+                            TypeUtil.getName(outputTypeFromParentToChild));
                 } else {
                     assertTrue(outputTypeFromParentToChild instanceof GraphQLList);
                     assertEquals(childContentType.variable(),
-                            ((GraphQLList) outputTypeFromParentToChild).getWrappedType().getName());
+                            TypeUtil.getName(((GraphQLList) outputTypeFromParentToChild).getWrappedType()));
                 }
 
                 final GraphQLFieldDefinition fieldDefinitionFromChildToParent =
@@ -664,11 +689,11 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 if (isManyStartingCardinality(cardinality)) {
                     assertTrue(outputTypeFromChildToParent instanceof GraphQLList);
                     assertEquals(parentContentType.variable(),
-                            ((GraphQLList) outputTypeFromChildToParent).getWrappedType().getName());
+                            TypeUtil.getName(((GraphQLList) outputTypeFromChildToParent).getWrappedType()));
                 } else {
                     assertFalse(outputTypeFromChildToParent instanceof GraphQLList);
                     assertEquals(parentContentType.variable(),
-                            outputTypeFromChildToParent.getName());
+                            TypeUtil.getName(outputTypeFromChildToParent));
                 }
             }
 

@@ -25,10 +25,11 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -65,12 +66,25 @@ public interface ContentletAPI {
 			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
 	};
 
+	/**
+	 * Returns the {@link Contentlet} date formats
+	 * @return String array of formats
+	 */
+	default String [] getContentletDateFormats () {
+
+		final String[] dateFormats = Config.getStringArrayProperty("dotcontentlet_dateformats",
+				ContentletAPI.DEFAULT_DATE_FORMATS);
+
+		return dateFormats;
+	}
+
 	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
 	/**
 	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
 	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
 	 * of content.  Doesn't respect permissions.
+	 *
 	 * @param offset can be 0 if no offset
 	 * @param limit can be 0 of no limit
 	 * @return List<Contentlet> list of contentlets
@@ -180,6 +194,7 @@ public interface ContentletAPI {
 	/**
 	 * Retrieves a contentlet from the Lucene index + cache first, then falls back
 	 * to the database if not found based on its identifier
+	 *
 	 * @param identifier 
 	 * @param live Retrieves the live version. If false retrieves the working version
 	 * @param languageId languageId The LanguageId of the content version we'd like to retrieve
@@ -318,6 +333,7 @@ public interface ContentletAPI {
 	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content. The difference between this method and the other one
 	 * is that the user can specify which content type want to include and exclude.
 	 * NOTE: If the parameters includingContentTypes and excludingContentTypes are empty if will return all the contentlets.
+	 *
 	 * @param parentHost
 	 * @param includingContentTypes this is a list of content types that you would like to include in the results
 	 * @param excludingContentTypes this is a list of content types that you would like to exclude in the results
@@ -397,8 +413,36 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException
 	 */
-	public Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles)
+	Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 *
+	 * @return The copied {@link Contentlet} object.
+	 *
+	 * @throws DotDataException            An error occurred when interacting with the database.
+	 * @throws DotSecurityException        The specified User does not have the necessary
+	 *                                     permissions to perform this action.
+	 * @throws DotContentletStateException The Contentlet being copied doesn't contain valid
+	 *                                     information.
+	 */
+	Contentlet copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+							  final Host site, final User user, final boolean respectFrontendRoles) throws DotDataException
+	 , DotSecurityException, DotContentletStateException;
 	
 	/**
 	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
@@ -414,7 +458,34 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException
 	 */
-	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+	Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 *
+	 * @return The copied {@link Contentlet} object.
+	 *
+	 * @throws DotDataException            An error occurred when interacting with the database.
+	 * @throws DotSecurityException        The specified User does not have the necessary
+	 *                                     permissions to perform this action.
+	 * @throws DotContentletStateException The Contentlet being copied doesn't contain valid
+	 *                                     information.
+	 */
+	Contentlet copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+							  final Folder folder, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**
 	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
@@ -450,6 +521,76 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException
 	 */
 	Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder. When
+	 * copying a File Asset, the value of the {@code opySuffix} parameter will be appended to the
+	 * file name.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param copySuffix           The suffix that will be appended to the file name, if
+	 *                             applicable.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 *
+	 * @return The copied {@link Contentlet} object.
+	 *
+	 * @throws DotDataException            An error occurred when interacting with the database.
+	 * @throws DotSecurityException        The specified User does not have the necessary
+	 *                                     permissions to perform this action.
+	 * @throws DotContentletStateException The Contentlet being copied doesn't contain valid
+	 *                                     information.
+	 */
+	Contentlet copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+							  final Host site, final Folder folder, final User user, final String copySuffix,
+							  final boolean respectFrontendRoles) throws DotDataException, DotSecurityException,
+			DotContentletStateException;
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param contentsPerPage      The maximum number of items to return per page.
+	 * @param page                 The page number to retrieve.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return A PaginatedContentList object containing the paginated search results.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	PaginatedContentList<Contentlet> searchPaginatedByPage(String luceneQuery, int contentsPerPage,
+			int page, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param limit                The maximum number of items to return per page.
+	 * @param offset               The offset to start retrieving items from.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return A PaginatedContentList object containing the paginated search results.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	PaginatedContentList<Contentlet> searchPaginated(String luceneQuery, int limit,
+			int offset, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
@@ -1704,6 +1845,7 @@ public interface ContentletAPI {
 	/**
 	 * Retrieves all versions for a contentlet identifier.
 	 * Note: This method could pull too many versions.
+	 *
 	 * @param identifier - Identifier object that belongs to a contentlet
 	 * @param bringOldVersions - boolean value which determines if old versions (non-live, non-working
 	 * 	should be brought here). @see {@link ContentletAPI#copyContentlet(Contentlet, Host, Folder, User, String, boolean)} method,

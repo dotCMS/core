@@ -1,20 +1,18 @@
 <div class="template-builder-sidebar__header">
     <h5 class="header__title">{{ 'dot.template.builder.sidebar.header.title' | dm }}</h5>
     <p-dropdown
+        (onChange)="widthChange($event)"
         [options]="widthOptions"
         [ngModel]="width"
-        (onChange)="widthChange($event)"
-        data-testId="select-sidebar-width"
-    ></p-dropdown>
+        data-testId="select-sidebar-width"></p-dropdown>
 </div>
 
 <div class="template-builder-sidebar__body-container">
     <dotcms-template-builder-box
+        (addContainer)="addContainer($event)"
+        (deleteContainer)="deleteContainer($event)"
         [width]="4"
         [items]="containers"
         [actions]="['add']"
-        [containerMap]="containerMap"
-        (addContainer)="addContainer($event)"
-        (deleteContainer)="deleteContainer($event)"
-    ></dotcms-template-builder-box>
+        [containerMap]="containerMap"></dotcms-template-builder-box>
 </div>

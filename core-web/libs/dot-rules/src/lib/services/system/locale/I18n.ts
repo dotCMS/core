@@ -1,14 +1,16 @@
 import { defer as observableDefer, Observer } from 'rxjs';
-
-import { catchError, map } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { HttpResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { catchError, map } from 'rxjs/operators';
+
 import { ApiRoot } from '@dotcms/dotcms-js';
-import { Verify } from '../../validation/Verify';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { CoreWebService, HttpCode } from '@dotcms/dotcms-js';
-import { HttpResponse } from '@angular/common/http';
+
+import { Verify } from '../../validation/Verify';
 
 export class TreeNode {
     [key: string]: TreeNode | any;
@@ -34,6 +36,7 @@ export class TreeNode {
                 cNode.$addAllFromJson(cKey, childJson[cKey]);
             });
         }
+
         cNode._loaded = true;
     }
 
@@ -74,6 +77,7 @@ export class TreeNode {
             child._loading = this._loading;
             this[cKey] = child;
         }
+
         return child;
     }
 
@@ -83,6 +87,7 @@ export class TreeNode {
         if (path.length > 1) {
             child = child.$descendant(path.slice(1));
         }
+
         return child;
     }
 
@@ -153,6 +158,7 @@ export class I18nService {
                                     err
                                 );
                             }
+
                             return Observable.create((obs) => {
                                 obs.next(defaultValue);
                             });
@@ -185,6 +191,7 @@ export class I18nService {
                         } else {
                             v = cNode._value;
                         }
+
                         obs.next(v);
                         obs.complete();
                     });

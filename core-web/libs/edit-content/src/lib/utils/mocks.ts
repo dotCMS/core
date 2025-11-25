@@ -12,12 +12,18 @@ import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotCMSTempFile,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { WYSIWYG_MOCK } from '../fields/dot-edit-content-wysiwyg-field/mocks/dot-edit-content-wysiwyg-field.mock';
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { EditContentPayload } from '../models/dot-edit-content-form.interface';
+import {
+    CustomTreeNode,
+    TreeNodeItem
+} from '../models/dot-edit-content-host-folder-field.interface';
 
 /* FIELDS MOCK BY TYPE */
 export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
@@ -445,26 +451,89 @@ export const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
 
 export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
-    contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
-    dataType: 'BINARY',
+    contentTypeId: 'd1901a41d38b6686dd5ed8f910346d7a',
+    dataType: 'SYSTEM',
     fieldType: 'Binary',
-    fieldTypeLabel: 'Binary Field',
-    fieldVariables: [],
+    fieldTypeLabel: 'Binary',
+    fieldVariables: [
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+            fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
+            id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
+            key: 'accept',
+            value: 'image/*,.html,.ts'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+            fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
+            id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
+            key: 'maxFileSize',
+            value: '50000'
+        }
+    ],
+    hint: 'Helper label to be displayed below the field',
     fixed: false,
-    hint: 'A hint text',
-    iDate: 1698264695000,
-    id: '535a6de288e3fe91fad2679e8d7d966b',
+    forceIncludeInApi: false,
+    iDate: 1698153564000,
+    id: '5df3f8fc49177c195740bcdc02ec2db7',
     indexed: false,
     listed: false,
-    modDate: 1698291913000,
-    name: 'Binary',
+    modDate: 1698153564000,
+    name: 'Binary Field',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    variable: 'binaryField'
+};
+
+export const IMAGE_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
+    contentTypeId: 'a8f941d835e4b4f3e4e71b45add34c60',
+    dataType: 'TEXT',
+    fieldType: 'Image',
+    fieldTypeLabel: 'Image',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1726517012000,
+    id: 'fec3e11696cf9b0f99139c160a598e02',
+    indexed: false,
+    listed: false,
+    modDate: 1726517012000,
+    name: 'Image Field',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    variable: 'imageField',
+    hint: 'Helper label to be displayed below the field'
+};
+
+export const FILE_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableFileField',
+    contentTypeId: 'a8f941d835e4b4f3e4e71b45add34c60',
+    dataType: 'TEXT',
+    fieldType: 'File',
+    fieldTypeLabel: 'File',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1726507692000,
+    id: 'f90afb1384e04507ba03e8701f7e4000',
+    indexed: false,
+    listed: false,
+    modDate: 1726517016000,
+    name: 'File Field',
     readOnly: false,
     required: false,
     searchable: false,
     sortOrder: 3,
     unique: false,
-    values: '/test.png',
-    variable: 'Binary'
+    variable: 'file1',
+    hint: 'Helper label to be displayed below the field'
 };
 
 export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
@@ -539,6 +608,103 @@ export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
     variable: 'KeyValue'
 };
 
+export const HOST_FOLDER_TEXT_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
+    contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+    dataType: 'SYSTEM',
+    fieldType: 'Host-Folder',
+    fieldTypeLabel: 'Site or Folder',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    forceIncludeInApi: false,
+    iDate: 1717083750000,
+    id: 'b7c41ffd6b6bc1250f2fc85a3637471b',
+    indexed: true,
+    listed: false,
+    modDate: 1717088310000,
+    name: 'Site Or Folder',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    variable: 'siteOrFolder'
+};
+
+export const CATEGORY_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
+    contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
+    dataType: 'TEXT',
+    fieldType: 'Category',
+    fieldTypeLabel: 'Category',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698291913000,
+    id: '96909fa20a00497cd3b766b52edac0ec',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'Category',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 1,
+    unique: false,
+    values: '<p>HELLO</p>',
+    variable: 'Category'
+};
+
+export const CONSTANT_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableConstantField',
+    contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
+    dataType: 'SYSTEM',
+    fieldType: 'Constant-Field',
+    fieldTypeLabel: 'Constant Field',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    hint: 'this is a hint',
+    iDate: 1725491385000,
+    id: '666817fcecef5c10cb520c1866baa411',
+    indexed: false,
+    listed: false,
+    modDate: 1725491385000,
+    name: 'constant',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    values: 'constant-value',
+    variable: 'constant'
+};
+
+export const HIDDEN_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableHiddenField',
+    contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+    dataType: 'SYSTEM',
+    fieldType: 'Hidden-Field',
+    fieldTypeLabel: 'Hidden Field',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1725498554000,
+    id: '22b95419744e89549bb7f2b662f5d312',
+    indexed: false,
+    listed: false,
+    modDate: 1725499601000,
+    name: 'hidden',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 5,
+    unique: false,
+    values: 'hidden-value',
+    variable: 'hidden'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -558,9 +724,16 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     MULTI_SELECT_FIELD_MOCK,
     BLOCK_EDITOR_FIELD_MOCK,
     BINARY_FIELD_MOCK,
+    FILE_FIELD_MOCK,
+    IMAGE_FIELD_MOCK,
     CUSTOM_FIELD_MOCK,
     JSON_FIELD_MOCK,
-    KEY_VALUE_MOCK
+    KEY_VALUE_MOCK,
+    WYSIWYG_MOCK,
+    HOST_FOLDER_TEXT_MOCK,
+    CATEGORY_MOCK,
+    CONSTANT_FIELD_MOCK,
+    HIDDEN_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
@@ -919,6 +1092,10 @@ export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
         __icon__: 'contentIcon',
         contentTypeIcon: 'event_note',
         variant: 'DEFAULT'
+    },
+    loading: false,
+    layout: {
+        showSidebar: true
     }
 };
 
@@ -1092,8 +1269,272 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
 };
 
 export const MockResizeObserver = class {
-    constructor() {}
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    constructor() {
+        //
+    }
+
+    observe() {
+        //
+    }
+
+    unobserve() {
+        //
+    }
+
+    disconnect() {
+        //
+    }
+};
+
+export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
+    {
+        key: 'demo.dotcms.com',
+        label: 'demo.dotcms.com',
+        data: {
+            hostname: 'demo.dotcms.com',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
+    },
+    {
+        key: 'nico.dotcms.com',
+        label: 'nico.dotcms.com',
+        data: {
+            hostname: 'nico.dotcms.com',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
+    },
+    {
+        key: 'System Host',
+        label: 'System Host',
+        data: {
+            hostname: 'System Host',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
+    }
+];
+
+export const TREE_SELECT_MOCK: TreeNodeItem[] = [
+    {
+        key: 'demo.dotcms.com',
+        label: 'demo.dotcms.com',
+        data: {
+            hostname: 'demo.dotcms.com',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder',
+        children: [
+            {
+                key: 'demo.dotcms.comlevel1',
+                label: 'demo.dotcms.com/level1/',
+                data: {
+                    hostname: 'demo.dotcms.com',
+                    path: '/level1/',
+                    type: 'folder'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder',
+                children: [
+                    {
+                        key: 'demo.dotcms.comlevel1child1',
+                        label: 'demo.dotcms.com/level1/child1/',
+                        data: {
+                            hostname: 'demo.dotcms.com',
+                            path: '/level1/child1/',
+                            type: 'folder'
+                        },
+                        expandedIcon: 'pi pi-folder-open',
+                        collapsedIcon: 'pi pi-folder'
+                    }
+                ]
+            },
+            {
+                key: 'demo.dotcms.comlevel2',
+                label: 'demo.dotcms.com/level2/',
+                data: {
+                    hostname: 'demo.dotcms.com',
+                    path: '/level2/',
+                    type: 'folder'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder'
+            }
+        ]
+    },
+    {
+        key: 'nico.dotcms.com',
+        label: 'nico.dotcms.com',
+        data: {
+            hostname: 'nico.dotcms.com',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
+    }
+];
+
+export const TREE_SELECT_MOCK_NODE: CustomTreeNode = {
+    node: { ...TREE_SELECT_MOCK[0].children[0] },
+    tree: {
+        path: 'demo.dotcms.com',
+        folders: [...TREE_SELECT_MOCK[0].children]
+    }
+};
+
+export const NEW_FILE_MOCK: { entity: DotCMSContentlet } = {
+    entity: {
+        AUTO_ASSIGN_WORKFLOW: false,
+        __IS_NEW_CONTENT__: true,
+        __icon__: 'Icon',
+        archived: false,
+        asset: '/dA/a991ddc5-39dc-4782-bc04-f4c4fa0ccff6/asset/image 2.jpg',
+        assetContentAsset: 'a991ddc5-39dc-4782-bc04-f4c4fa0ccff6/asset',
+        assetMetaData: {
+            contentType: 'image/jpeg',
+            editableAsText: false,
+            fileSize: 3878653,
+            height: 1536,
+            isImage: true,
+            length: 3878653,
+            modDate: 1727377876393,
+            name: 'image 2.jpg',
+            sha256: '132597a99d807d12d0b13d9bf3149c6644d9f252e33896d95fc9fd177320da62',
+            title: 'image 2.jpg',
+            version: 20220201,
+            width: 2688
+        },
+        assetVersion: '/dA/fe160e65-5cf4-4ef6-9b1d-47c5326fec30/asset/image 2.jpg',
+        baseType: 'DOTASSET',
+        contentType: 'dotAsset',
+        creationDate: 1727377876409,
+        extension: 'jpg',
+        folder: 'SYSTEM_FOLDER',
+        hasLiveVersion: true,
+        hasTitleImage: true,
+        host: 'SYSTEM_HOST',
+        hostName: 'System Host',
+        identifier: 'a991ddc5-39dc-4782-bc04-f4c4fa0ccff6',
+        inode: 'fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
+        isContentlet: true,
+        languageId: 1,
+        live: true,
+        locked: false,
+        mimeType: 'image/jpeg',
+        modDate: '1727377876407',
+        modUser: 'dotcms.org.1',
+        modUserName: 'Admin User',
+        name: 'image 2.jpg',
+        owner: 'dotcms.org.1',
+        ownerName: 'Admin User',
+        path: '/content.fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
+        publishDate: 1727377876428,
+        publishUser: 'dotcms.org.1',
+        publishUserName: 'Admin User',
+        size: 3878653,
+        sortOrder: 0,
+        stInode: 'f2d8a1c7-2b77-2081-bcf1-b5348988c08d',
+        statusIcons:
+            "<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>",
+        title: 'image 2.jpg',
+        titleImage: 'asset',
+        type: 'dotasset',
+        url: '/content.fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
+        working: true
+    }
+};
+
+export const NEW_FILE_EDITABLE_MOCK: { entity: DotCMSContentlet } = {
+    entity: {
+        AUTO_ASSIGN_WORKFLOW: false,
+        __IS_NEW_CONTENT__: true,
+        __icon__: 'Icon',
+        archived: false,
+        asset: '/dA/a1bb59eb-6708-4701-aeea-ab93c8831203/asset/docker-compose.yml',
+        assetContentAsset: 'a1bb59eb-6708-4701-aeea-ab93c8831203/asset',
+        assetMetaData: {
+            contentType: 'text/plain; charset=ISO-8859-1',
+            editableAsText: true,
+            fileSize: 3786,
+            isImage: false,
+            length: 3786,
+            modDate: 1727356262640,
+            name: 'docker-compose.yml',
+            sha256: 'd5d719c2f9fe025252e421b0344310d5839ff39ef9e4a38bafd93148591a2439',
+            title: 'docker-compose.yml',
+            version: 20220201
+        },
+        assetVersion: '/dA/eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5/asset/docker-compose.yml',
+        baseType: 'DOTASSET',
+        contentType: 'dotAsset',
+        creationDate: 1727356262667,
+        extension: 'yml',
+        folder: 'SYSTEM_FOLDER',
+        hasLiveVersion: true,
+        hasTitleImage: false,
+        host: 'SYSTEM_HOST',
+        hostName: 'System Host',
+        identifier: 'a1bb59eb-6708-4701-aeea-ab93c8831203',
+        inode: 'eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5',
+        isContentlet: true,
+        languageId: 1,
+        live: true,
+        locked: false,
+        mimeType: 'unknown',
+        modDate: '1727356262665',
+        modUser: 'dotcms.org.1',
+        modUserName: 'Admin User',
+        name: 'docker-compose.yml',
+        owner: 'dotcms.org.1',
+        ownerName: 'Admin User',
+        path: '/content.eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5',
+        publishDate: 1727356262706,
+        publishUser: 'dotcms.org.1',
+        publishUserName: 'Admin User',
+        size: 3786,
+        sortOrder: 0,
+        stInode: 'f2d8a1c7-2b77-2081-bcf1-b5348988c08d',
+        statusIcons:
+            "<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>",
+        title: 'docker-compose.yml',
+        titleImage: 'TITLE_IMAGE_NOT_FOUND',
+        type: 'dotasset',
+        url: '/content.eccdb89f-5aa1-4f0c-a9ec-aa97304d80d5',
+        working: true,
+        content: 'my content'
+    }
+};
+
+export const TEMP_FILE_MOCK: DotCMSTempFile = {
+    fileName: 'enterprise-angular.pdf',
+    folder: '',
+    id: 'temp_1e8021f973',
+    image: false,
+    length: 13909932,
+    metadata: {
+        contentType: 'application/pdf',
+        editableAsText: false,
+        fileSize: 13909932,
+        isImage: false,
+        length: 13909932,
+        modDate: 1727375044693,
+        name: 'enterprise-angular.pdf',
+        sha256: '7f8bc1f6485876ca6d49be77917bd35ae3de99f9a56ff94a42df3217419b30cd',
+        title: 'enterprise-angular.pdf',
+        version: 20220201
+    },
+    mimeType: 'application/pdf',
+    referenceUrl: '/dA/temp_1e8021f973/tmp/enterprise-angular.pdf',
+    thumbnailUrl:
+        '/contentAsset/image/temp_1e8021f973/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/enterprise-angular.pdf'
 };

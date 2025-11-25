@@ -1,70 +1,67 @@
 <div class="form-container">
     <!-- FORM -->
     <form
-        [formGroup]="form"
         (keydown)="onKeyDownEvent($event)"
         (ngSubmit)="submitForm()"
-        autocomplete="off"
-    >
+        [formGroup]="form"
+        autocomplete="off">
         <div class="p-inputgroup search-container">
             <div class="p-inputgroup">
                 <input
+                    (input)="setLoading()"
                     id="editor-input-link"
                     #input
-                    (input)="setLoading()"
                     pInputText
                     type="text"
                     placeholder="Paste link or search for pages"
-                    formControlName="link"
-                />
+                    formControlName="link" />
                 <button
-                    class="p-button"
                     [style]="{ width: '5rem', padding: '.75rem 1rem', borderRadius: '0 2px 2px 0' }"
+                    class="p-button"
                     pButton
                     type="submit"
-                    label="ADD"
-                ></button>
+                    label="ADD"></button>
             </div>
         </div>
 
-        <hr class="divider" *ngIf="showSuggestions || currentLink" />
+        @if (showSuggestions || currentLink) {
+            <hr class="divider" />
+        }
 
-        <div class="info-container" *ngIf="currentLink && !showSuggestions">
-            <a class="url-container" [href]="currentLink" target="_blank">
-                <span class="material-icons" [style]="{ fontSize: '32px' }">language</span>
-                <span class="truncate">{{ currentLink }}</span>
-            </a>
-
-            <div class="field-checkbox">
-                <div class="checkbox-container">
-                    <p-checkbox
-                        id="editor-input-checkbox"
-                        [binary]="true"
-                        formControlName="blank"
-                    ></p-checkbox>
+        @if (currentLink && !showSuggestions) {
+            <div class="info-container">
+                <a [href]="currentLink" class="url-container" target="_blank">
+                    <span [style]="{ fontSize: '32px' }" class="material-icons">language</span>
+                    <span class="truncate">{{ currentLink }}</span>
+                </a>
+                <div class="field-checkbox">
+                    <div class="checkbox-container">
+                        <p-checkbox
+                            [binary]="true"
+                            id="editor-input-checkbox"
+                            formControlName="blank"></p-checkbox>
+                    </div>
+                    <label for="editor-input-checkbox">Open link in new window</label>
                 </div>
-                <label for="editor-input-checkbox">Open link in new window</label>
             </div>
-        </div>
+        }
     </form>
 
     <!-- Suggestions -->
-    <dot-suggestion-page
-        #suggestions
-        *ngIf="showSuggestions"
-        [items]="items"
-        [loading]="loading"
-        [title]="noResultsTitle"
-        (back)="resetForm()"
-    >
-    </dot-suggestion-page>
+    @if (showSuggestions) {
+        <dot-suggestion-page
+            (back)="resetForm()"
+            [items]="items"
+            [loading]="loading"
+            [title]="noResultsTitle"
+            #suggestions></dot-suggestion-page>
+    }
 
     <!-- Form Actions -->
-    <dot-form-actions
-        *ngIf="!showSuggestions && currentLink"
-        [link]="currentLink"
-        (hide)="hide.emit($event)"
-        (remove)="removeLink.emit($event)"
-    >
-    </dot-form-actions>
+    @if (!showSuggestions && currentLink) {
+        <dot-form-actions
+            (hide)="hide.emit($event)"
+            (remove)="removeLink.emit($event)"
+            [link]="currentLink"></dot-form-actions>
+    }
 </div>

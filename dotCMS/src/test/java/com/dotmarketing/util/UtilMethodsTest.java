@@ -5,10 +5,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.liferay.portal.model.User;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Unit test for {@link UtilMethods}
@@ -169,4 +173,101 @@ public class UtilMethodsTest extends UnitTestBase {
 		assertFalse(UtilMethods.isEmpty(()->contentlet.getMap()));
 
 	}
+	/**
+	 * Test method {@link UtilMethods#exceedsMaxLength(CharSequence, int)}
+	 * Given scenario: The method is invoked with a valid string value and maximum length allowed
+	 * Expected result: This returns the false when the length of given string value doesn't exceed the maximum value length
+	 */
+	@Test
+	public void testStringWithinMaxLength() {
+		assertFalse(UtilMethods.exceedsMaxLength("hello", 10));
+	}
+
+	/**
+	 * Test method {@link UtilMethods#exceedsMaxLength(CharSequence, int)}
+	 * Given scenario: The method is invoked with a valid string value and maximum length allowed
+	 * Expected result: This returns the true when the length of given string value doesn't exceed the maximum value length
+	 */
+	@Test
+	public void testStringMaxLength() {
+		assertTrue(UtilMethods.exceedsMaxLength("J7uQX9vLsI6MwP8oYgqK4jVt2A0L5jXt2W4hS9bE8pZ7yM3iR1oV6nL3eZ2hK4tD9", 10));
+	}
+
+
+	static String[] goodImageNames = {"default-persona.png", "default.PnG", "testing-avif.avif",
+			"here is a tiff.tiff", "here is another tiff.tif", "another-Gif.Gif", "look a jpeg.jpeg",
+			"Guess this is a jpg.jpg", "My bigSVG.SvG"};
+
+	static String[] badImageNames = {"default-personapng", "default-PnG", "testing.pdf", "testing..pdf", "testing_pdf", "testing..pdff", "testing-avif-avf",
+			"here is a tiff", "another-Gif", "look a jpeg!", "Guess this is a jpg*", "here is a.vtl"};
+
+
+	@Test
+	public void test_isImage_method(){
+		for(String imageName:goodImageNames){
+			assertTrue(UtilMethods.isImage(imageName));
+		}
+		for(String imageName:badImageNames){
+			assertFalse(UtilMethods.isImage(imageName));
+		}
+	}
+
+	/**
+	 * Scenario: Extracting user ID from a User object
+	 * Given a null User object
+	 * When the user ID is extracted
+	 * Then the result should be null
+	 *
+	 * Given a mocked User object with no user ID
+	 * When the user ID is extracted
+	 * Then the result should be null
+	 *
+	 * Given a mocked User object with a user ID "userId"
+	 * When the user ID is extracted
+	 * Then the result should be "userId"
+	 */
+	@Test
+	public void test_extractUserIdOrNull(){
+		assertNull(UtilMethods.extractUserIdOrNull(null));
+
+		final User user = mock(User.class);
+		assertNull(UtilMethods.extractUserIdOrNull(user));
+
+		when(user.getUserId()).thenReturn("userId");
+		assertEquals("userId", UtilMethods.extractUserIdOrNull(user));
+	}
+
+	final static String[] rasterImagesExtensions = new String[]{"webp", "png", "gif", "jpg"};
+	final static String[] vectorImagesExtensions = new String[]{"svg", "eps", "ai", "dxf"};
+
+	/**
+	 * Given vector image extensions (SVG or EPS),
+	 * When checking if are vector images,
+	 * Then the method should return true for all vector extensions.
+	 */
+	@Test
+	public void testIsVectorImageWithVectorExtensions() {
+		// Given
+		// When & Then
+		for (String vectorExtension : vectorImagesExtensions) {
+			Assertions.assertTrue(UtilMethods.isVectorImage(vectorExtension),
+					"Expected transformation to be skipped for vector extension: " + vectorExtension);
+		}
+	}
+
+	/**
+	 * Given raster image extensions (JPG, PNG, etc.),
+	 * When checking if are vector images,
+	 * Then the method should return false for all raster extensions.
+	 */
+	@Test
+	public void testIsVectorImageWithRasterExtensions() {
+		// Given
+		// When & Then
+		for (String rasterExtension : rasterImagesExtensions) {
+			Assertions.assertFalse(UtilMethods.isVectorImage(rasterExtension),
+					"Expected transformation not to be skipped for raster extension: " + rasterExtension);
+		}
+	}
+
 }

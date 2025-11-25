@@ -1,5 +1,3 @@
-version: '3.5'
-
 networks:
   cluster-mode_db_net:
     external: true
@@ -23,10 +21,10 @@ services:
         DOT_ES_ENDPOINTS: 'https://opensearch:9200'
         DOT_INITIAL_ADMIN_PASSWORD: 'admin'
         DOT_DOTCMS_CLUSTER_ID:  'dotcms-production'
-        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240719/starter-20240719.zip'
     volumes:
       #- {local_data_path}:/data/shared
-      - {license_local_path}/license.zip:/data/shared/assets/license.zip
+      #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - cluster-mode_db_net
       - cluster-mode_opensearch-net

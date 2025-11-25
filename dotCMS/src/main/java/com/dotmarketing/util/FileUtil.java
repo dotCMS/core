@@ -9,6 +9,7 @@ import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.nio.charset.Charset;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -27,12 +28,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
+import org.mozilla.universalchardet.UniversalDetector;
 
 /**
  * Provide utility methods to work with binary files in dotCMS.
@@ -46,6 +50,25 @@ public class FileUtil {
 	private static final Set<String> extensions = new HashSet<>();
 	private static final Lazy<Set<String>> EDITABLE_AS_TEXT_FILE_TYPES = Lazy.of(FileUtil::getEditableAsTextFileTypes);
 
+	protected static final String[] DEFAULT_IMAGE_EXTENSIONS = {
+			"png", "gif", "webp", "jpeg", ".jpg", "tiff", "bpm", "svg", "avif",
+			"bmp", "tif", "tiff"
+	};
+
+	/**
+	 * returns the valid image extensions with a . in front of the extension, e.g.
+	 * png -> .png
+	 */
+	public static final Lazy<String[]> IMAGE_EXTENSIONS = Lazy.of(() ->
+
+			Try.of(() -> Arrays.stream(Config.getStringArrayProperty("VALID_IMAGE_EXTENSIONS",DEFAULT_IMAGE_EXTENSIONS))
+					.map(x -> x.startsWith(".") ? x : "." + x)
+					.toArray(String[]::new)
+			).getOrElse(() -> Arrays.stream(DEFAULT_IMAGE_EXTENSIONS)
+					.map(x -> x.startsWith(".") ? x : "." + x)
+					.toArray(String[]::new))
+	);
+
 	/**
 	 * Returns the MIME Types of files whose contents can be safely edited inside the dotCMS Edit
 	 * Mode. You can add your own types via the {@code DOT_EDITABLE_AS_TEXT_FILE_TYPES}
@@ -56,6 +79,13 @@ public class FileUtil {
 	private static Set<String> getEditableAsTextFileTypes() {
 		final Set<String> editableTypes = new HashSet<>();
 		editableTypes.addAll(Set.of(
+				"text/plain",
+				"text/css",
+				"text/javascript",
+				"text/markdown",
+				"text/xml",
+				"text/csv",
+				"text/html",
 				"application/xml",
 				"application/json",
 				"application/x-yaml",
@@ -417,7 +447,85 @@ public class FileUtil {
 		return UtilMethods.isSet(mimeType) && (mimeType.startsWith("text/") || EDITABLE_AS_TEXT_FILE_TYPES.get().contains(mimeType));
 	}
 
+	/**
+	 * NIO based method to copy a directory from one location to another
+	 * @param src source directory
+	 * @param dest destination directory
+	 */
+	public static void copyDir(Path src, Path dest)  {
+		try (Stream<Path> stream = Files.walk(src)) {
+			// Iterate over each Path object in the stream
+			stream.forEach(source -> {
+				// Get the relative path from the source directory
+				Path relativePath = src.relativize(source);
+
+				// Get the corresponding path in the destination directory
+				Path destination = dest.resolve(relativePath);
+
+				try {
+					// Copy each Path object from source to destination
+					Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+				} catch (IOException e) {
+					Logger.debug(FileUtil.class, e.getMessage(), e);
+				}
+			});
+		} catch (IOException e) {
+			Logger.debug(FileUtil.class, e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Attempts to infer the extension of an image file based on its MIME Type.
+	 *
+	 * @param mimeType The MIME Type in a given file.
+	 *
+	 * @return The extension of the image file.
+	 */
+	public static String getImageExtensionFromMIMEType(final String mimeType) {
+		if (UtilMethods.isEmpty(mimeType)) {
+			return mimeType;
+		}
+		final String mimeTypeLc = mimeType.toLowerCase();
+		for (final String ext : IMAGE_EXTENSIONS.get()) {
+			if (mimeTypeLc.contains(ext.replace(StringPool.PERIOD, StringPool.BLANK))) {
+				return ext;
+			}
+		}
+		return StringPool.BLANK;
+	}
+
+
+	/**
+	 *
+	 * @param file
+	 * @throws IOException
+	 */
+	public static Charset detectEncodeType(final File file)  {
+
+		byte[] buf = new byte[4096];
+		try (InputStream is = Files.newInputStream(file.toPath())){
+
+
+			UniversalDetector detector = new UniversalDetector(null);
+			int nread;
+			while ((nread = is.read(buf)) > 0 && !detector.isDone()) {
+				detector.handleData(buf, 0, nread);
+			}
+			detector.dataEnd();
+			return Charset.forName(detector.getDetectedCharset());
+		}catch (Exception e){
+			Logger.error(FileUtil.class, e.getMessage(),e);
+
+		}
+		return Charset.defaultCharset();
+
+	}
+
+
+
 }
+
+
 
 final class PNGFileNameFilter implements FilenameFilter {
 	public boolean accept(File dir, String name) {

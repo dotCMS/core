@@ -3,6 +3,7 @@ import { Subject } from 'rxjs';
 import {
     Component,
     EventEmitter,
+    inject,
     Input,
     OnDestroy,
     OnInit,
@@ -13,8 +14,7 @@ import {
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotPropertiesService, DotRouterService } from '@dotcms/data-access';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotRouterService } from '@dotcms/data-access';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -26,6 +26,8 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
     styleUrls: ['./dot-template-builder.component.scss']
 })
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
+    readonly #dotRouterService = inject(DotRouterService);
+
     @Input() item: DotTemplateItem;
     @Input() didTemplateChanged: boolean;
     @Output() saveAndPublish = new EventEmitter<DotTemplateItem>();
@@ -36,17 +38,10 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     @ViewChild('historyIframe') historyIframe: IframeComponent;
     permissionsUrl = '';
     historyUrl = '';
-    readonly featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
-    featureFlagIsOn$ = this.propertiesService.getFeatureFlag(this.featureFlag);
 
     templateUpdate$ = new Subject<DotTemplateItem>();
     destroy$: Subject<boolean> = new Subject<boolean>();
     lastTemplate: DotTemplateItem;
-
-    constructor(
-        private propertiesService: DotPropertiesService,
-        private dotRouterService: DotRouterService
-    ) {}
 
     ngOnInit() {
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;
@@ -67,12 +62,11 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onTemplateItemChange(item: DotTemplateItem) {
-        this.updateTemplate.emit(item);
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
         }
 
-        this.dotRouterService.forbidRouteDeactivation();
+        this.#dotRouterService.forbidRouteDeactivation();
         this.lastTemplate = item;
 
         this.templateUpdate$.next(item);
@@ -88,7 +82,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     }
 
     private subscribeOnChangeBeforeLeaveHandler(): void {
-        this.dotRouterService.pageLeaveRequest$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.#dotRouterService.pageLeaveRequest$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.save.emit(this.lastTemplate);
         });
     }

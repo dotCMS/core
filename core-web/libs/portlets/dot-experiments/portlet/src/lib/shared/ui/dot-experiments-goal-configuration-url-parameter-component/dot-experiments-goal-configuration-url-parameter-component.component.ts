@@ -16,11 +16,11 @@ import { takeUntil } from 'rxjs/operators';
 import { GOAL_OPERATORS, GoalsConditionsOperatorsListByType } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
+    DotDropdownDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
 } from '@dotcms/ui';
-import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 

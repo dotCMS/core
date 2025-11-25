@@ -1,0 +1,27 @@
+<p-treeSelect
+    (onNodeSelect)="store.chooseNode($event)"
+    (onNodeExpand)="store.loadChildren($event)"
+    [formControl]="pathControl"
+    [filter]="true"
+    [options]="store.tree()"
+    [attr.aria-labelledby]="'field-' + $field().variable"
+    [virtualScroll]="true"
+    [virtualScrollItemSize]="50"
+    [scrollHeight]="'450px'"
+    [virtualScrollOptions]="{
+        autoSize: true,
+        style: {
+            width: '100%',
+            height: '450px'
+        }
+    }"
+    filterBy="label"
+    filterMode="lenient"
+    selectionMode="single">
+    <ng-template let-node pTemplate="default">
+        <span>{{ node.label | truncatePath }}</span>
+    </ng-template>
+    <ng-template pTemplate="triggericon">
+        <i [ngClass]="store.iconClasses()" class="pi"></i>
+    </ng-template>
+</p-treeSelect>

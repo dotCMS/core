@@ -1,16 +1,9 @@
 package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
-import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.type.ContentType;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -19,14 +12,22 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Resource for handle fields operations, all this end point check if the {@link ContentType}'s layout is valid
@@ -226,7 +227,7 @@ public class FieldResource {
                 this.contentTypeFieldLayoutAPI.deleteField(contentType, fieldsID, user);
 
         return Response.ok(new ResponseEntityView(
-                map(
+                Map.of(
                    "fields", deleteFieldResult.getLayout().getRows(),
                         "deletedIds", deleteFieldResult.getFieldDeletedIds()
                 )

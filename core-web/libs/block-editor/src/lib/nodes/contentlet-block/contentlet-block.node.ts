@@ -1,4 +1,4 @@
-import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
+import { DOMOutputSpec } from 'prosemirror-model';
 
 import { Injector } from '@angular/core';
 
@@ -7,6 +7,7 @@ import { Node, NodeViewRenderer } from '@tiptap/core';
 import { ContentletBlockComponent } from './contentlet-block.component';
 
 import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
+import { contentletToJSON } from '../../shared';
 
 export type ContentletBlockOptions = {
     HTMLAttributes: Record<string, unknown>;
@@ -19,42 +20,41 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         inline: false,
         draggable: true,
 
-        // ...configuration
         addAttributes() {
             return {
                 data: {
                     default: null,
-                    parseHTML: (element) => ({
-                        data: element.getAttribute('data')
-                    }),
-                    renderHTML: (attributes) => {
-                        return { data: attributes.data };
+                    rendered: true,
+                    parseHTML: (element) => {
+                        return {
+                            data: element.getAttribute('data')
+                        };
+                    },
+                    renderHTML: ({ data }) => {
+                        return { data };
                     }
                 }
             };
         },
 
-        parseHTML(): ParseRule[] {
-            return [{ tag: 'dotcms-contentlet-block' }];
-        },
-
         renderHTML({ HTMLAttributes }): DOMOutputSpec {
-            let img = ['span', {}];
-            if (HTMLAttributes.data.hasTitleImage) {
-                img = ['img', { src: HTMLAttributes.data.image }];
-            }
+            const { data } = HTMLAttributes;
+            const img = data.hasTitleImage ? ['img', { src: data.image }] : ['span', {}];
 
             return [
                 'div',
-                ['h3', { class: HTMLAttributes.data.title }, HTMLAttributes.data.title],
-                ['div', HTMLAttributes.data.identifier],
+                ['h3', data.title],
+                ['div', data.identifier],
                 img,
-                ['div', {}, HTMLAttributes.data.language]
+                ['div', {}, data.language]
             ];
         },
 
         addNodeView(): NodeViewRenderer {
-            return AngularNodeViewRenderer(ContentletBlockComponent, { injector });
+            return AngularNodeViewRenderer(ContentletBlockComponent, {
+                injector,
+                toJSON: contentletToJSON
+            });
         }
     });
 };

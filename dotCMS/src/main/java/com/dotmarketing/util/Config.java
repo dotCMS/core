@@ -60,6 +60,10 @@ public class Config {
     @VisibleForTesting
     public static boolean enableSystemTableConfigSource = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "true"));
 
+    public static boolean isSystemTableConfigSourceInit() {
+        return null != systemTableConfigSource;
+    }
+
     public static void initSystemTableConfigSource() {
         systemTableConfigSource = new SystemTableConfigSource();
     }
@@ -187,7 +191,7 @@ public class Config {
 
         if (props.getBoolean(USE_CONFIG_TEST_OVERRIDE_TRACKER, false)) {
             testOverrideTracker.forEach((key, value) -> {
-                String currentValue = props.getString(key);
+                String currentValue = Try.of(()->props.getString(key)).getOrNull();
                 if (value.equals("[remove]"))
                 {
                     if (currentValue != null)
@@ -347,6 +351,9 @@ public class Config {
     public static List<String> subsetContainsAsList(final String containsString){
         final List<String> fullListProps = new ArrayList<String>();
         props.getKeys().forEachRemaining(fullListProps::add);
+        if(null != systemTableConfigSource && enableSystemTableConfigSource){
+            systemTableConfigSource.getPropertyNames().forEach(fullListProps::add);
+        }
 
         //List with all system env props that contains the pattern
         final String envContainsString = envKey(containsString);

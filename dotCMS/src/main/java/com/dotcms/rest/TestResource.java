@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.rest.config.Disabled;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -27,6 +28,7 @@ import javax.ws.rs.core.Response;
  * @author Jonathan Gamba
  *         Date: 8/22/13
  */
+@Disabled
 @Path ("/testResource")
 public class TestResource {
 

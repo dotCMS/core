@@ -21,6 +21,7 @@ import {
 import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
+    DotActionMenuItem,
     DotBulkFailItem,
     DotContentState,
     DotMessageSeverity,
@@ -29,7 +30,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 
 @Component({
     selector: 'dot-template-list',
@@ -112,7 +112,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} { template }
      * @memberof DotTemplateListComponent
      */
-    editTemplate(template: DotTemplate): void {
+    editTemplate(event: unknown): void {
+        const template = event as DotTemplate;
         this.isTemplateAsFile(template)
             ? this.dotSiteBrowserService.setSelectedFolder(template.identifier).subscribe(() => {
                   this.dotRouterService.goToSiteBrowser();
@@ -139,7 +140,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      *
      * @memberof DotTemplateListComponent
      */
-    updateSelectedTemplates(templates: DotTemplate[]): void {
+    updateSelectedTemplates(event: unknown): void {
+        const templates = event as DotTemplate[];
         this.selectedTemplates = templates;
     }
 
@@ -174,7 +176,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} template
      * @memberof DotTemplateListComponent
      */
-    setContextMenu(template: DotTemplate): void {
+    setContextMenu(event: unknown): void {
+        const template = event as DotTemplate;
         this.listing.contextMenuItems = this.setTemplateActions(template).map(
             ({ menuItem }: DotActionMenuItem) => menuItem
         );

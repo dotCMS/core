@@ -38,7 +38,7 @@ import java.util.Set;
 public class ContentTypeInitializer implements DotInitializer {
 
     public static final String LEGACY_FAVORITE_PAGE_VAR_NAME = "favoritePage";
-    static final String FAVORITE_PAGE_VAR_NAME = "dotFavoritePage";
+    public static final String FAVORITE_PAGE_VAR_NAME = "dotFavoritePage";
 
     private static final Lazy<Boolean> doDefaultPagePermissions = Lazy.of(()->Config.getBooleanProperty("DO_DEFAULT_PAGE_PERMISSIONS", true));
 

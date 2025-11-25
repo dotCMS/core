@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule, NgFor } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -25,7 +24,7 @@ import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-p
 @Component({
     selector: 'dotcms-template-builder-actions',
     standalone: true,
-    imports: [CommonModule, ButtonModule, NgFor, DotLayoutPropertiesModule, DotMessagePipe],
+    imports: [ButtonModule, DotLayoutPropertiesModule, DotMessagePipe],
     templateUrl: './template-builder-actions.component.html',
     styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

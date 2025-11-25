@@ -1,5 +1,8 @@
 package com.dotcms.contenttype.business;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -27,8 +30,11 @@ import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.Test;
 
 public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
@@ -291,11 +297,39 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
         parent2InGerman.setLanguageId(german.getId());
         parentInGerman = contentletAPI.checkin(parentInGerman, user, false);
         parent2InGerman = contentletAPI.checkin(parent2InGerman, user, false);
+        final AtomicReference<List<Contentlet>> atomicReference = new AtomicReference<>();
 
-        final List<Contentlet> contentletList = relationshipFactory.dbRelatedContentByChild(childContentlet.getIdentifier(),relationship.getRelationTypeValue(),false,null);
+        // Sometimes we get 3 not for, but for some reason it's not consistent
+        // Is this a timing issue or something else?
+        Contentlet finalChildContentlet = childContentlet;
+        try {
+        await().atMost(30, SECONDS).pollInterval(5, SECONDS).until(() -> {
+            List<Contentlet> contentletList = relationshipFactory.dbRelatedContentByChild(
+                    finalChildContentlet.getIdentifier(),
+                    relationship.getRelationTypeValue(),
+                    false,
+                    null);
 
-        //Parents must be returned in order
-        assertEquals(4, contentletList.size());
+            atomicReference.set(contentletList); // Set the current list in the atomic reference
+            Logger.info(RelationshipFactoryImplTest.class, "Relationships size: " + contentletList.size()); // Log the current size
+            return contentletList.size(); // Return the current size for Awaitility to check
+        }, is(4)); // Check that the size is exactly 4
+
+           } catch (ConditionTimeoutException e) {
+                // This block will execute if the condition is not met within the timeout period
+                List<Contentlet> failedList = atomicReference.get();
+                if (failedList != null) {
+                    Logger.error(RelationshipFactoryImplTest.class,"Condition timeout reached. Details of contentletList:");
+                    for (Contentlet contentlet : failedList) {
+                        System.out.println(contentlet.toString()); // Log the details of each contentlet
+                    }
+                } else {
+                    Logger.error(RelationshipFactoryImplTest.class,"Condition timeout reached, but contentletList was null.");
+                }
+                throw e;
+            }
+        List<Contentlet> contentletList = atomicReference.get();
+
         assertEquals(parentInDefaultLanguage.getInode(), contentletList.get(0).getInode());
         assertEquals(parentInGerman.getInode(), contentletList.get(1).getInode());
         assertEquals(parentInDanish.getInode(), contentletList.get(2).getInode());

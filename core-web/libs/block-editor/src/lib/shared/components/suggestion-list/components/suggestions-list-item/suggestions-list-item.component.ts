@@ -34,7 +34,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     }
 
     ngOnInit() {
-        this.icon = this.icon = typeof this.url === 'string' && !(this.url.split('/').length > 1);
+        this.icon = typeof this.url === 'string' && !(this.url.split('/').length > 1);
     }
 
     getLabel(): string {

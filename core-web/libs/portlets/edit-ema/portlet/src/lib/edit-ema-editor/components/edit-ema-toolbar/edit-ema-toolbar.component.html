@@ -1,9 +1,82 @@
-<ng-content select="[title]"></ng-content>
 <p-toolbar>
     <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
-        <ng-content select="[left]"></ng-content>
+        <dot-device-selector-seo
+            (selected)="updateCurrentDevice($event)"
+            (changeSeoMedia)="onSeoMediaChange($event)"
+            [apiLink]="$toolbarProps().deviceSelector.apiLink"
+            [hideSocialMedia]="$toolbarProps().deviceSelector.hideSocialMedia"
+            #deviceSelector
+            appendTo="body"
+            data-testId="dot-device-selector" />
+
+        <p-button
+            (onClick)="deviceSelector.openMenu($event)"
+            [label]="'editpage.toolbar.preview.page' | dm"
+            icon="pi pi-desktop"
+            styleClass="p-button-text p-button-sm"
+            data-testId="ema-preview" />
+
+        @if ($toolbarProps().urlContentMap; as urlContentMap) {
+            <p-button
+                (onClick)="editUrlContentMap.emit(urlContentMap)"
+                [label]="'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]"
+                icon="pi pi-pencil"
+                styleClass="p-button-text p-button-sm"
+                data-testId="edit-url-content-map" />
+        }
+
+        <dot-ema-bookmarks [url]="$toolbarProps().bookmarksUrl" />
+        <p-button
+            (cdkCopyToClipboardCopied)="triggerCopyToast()"
+            [cdkCopyToClipboard]="$toolbarProps().copyUrl"
+            [label]="'editpage.header.copy' | dm"
+            icon="pi pi-copy"
+            styleClass="p-button-text p-button-sm"
+            data-testId="ema-copy-url" />
+        <a
+            [href]="$toolbarProps().apiUrl"
+            [title]="$toolbarProps().apiUrl"
+            class="p-button-sm p-button-text"
+            pButton
+            target="_blank"
+            data-testId="ema-api-link"
+            icon="pi pi-link"
+            label="API"></a>
     </div>
     <div class="p-toolbar-group-right" data-testId="toolbar-right-content">
-        <ng-content select="[right]"></ng-content>
+        @if ($toolbarProps().runningExperiment; as runningExperiment) {
+            <dot-ema-running-experiment
+                [runningExperiment]="runningExperiment"
+                data-testId="ema-running-experiment" />
+        }
+
+        <dot-edit-ema-language-selector
+            (selected)="onLanguageSelected($event)"
+            [language]="$toolbarProps().currentLanguage"
+            data-testId="language-selector" />
+
+        <dot-edit-ema-persona-selector
+            (selected)="onPersonaSelected($event)"
+            (despersonalize)="onDespersonalize($event)"
+            [pageId]="$toolbarProps().personaSelector.pageId"
+            [value]="$toolbarProps().personaSelector.value"
+            #personaSelector
+            data-testId="persona-selector" />
+
+        @if ($toolbarProps().workflowActionsInode; as inode) {
+            <dot-edit-ema-workflow-actions (newPage)="handleNewPage($event)" [inode]="inode" />
+        }
+        @if ($toolbarProps().unlockButton; as unlockButton) {
+            <p-button
+                (click)="unlockPage(unlockButton.inode)"
+                [label]="'Unlock' | dm"
+                [loading]="unlockButton.loading"
+                styleClass="p-button-sm"
+                data-testId="unlock-button"></p-button>
+        }
     </div>
 </p-toolbar>
+
+@if ($toolbarProps().showInfoDisplay) {
+    <dot-ema-info-display data-testId="info-display" />
+}

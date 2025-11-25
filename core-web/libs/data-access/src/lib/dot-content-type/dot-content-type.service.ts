@@ -69,10 +69,7 @@ export class DotContentTypeService {
      * @return {*}  {Observable<DotCMSContentType[]>}
      * @memberof DotContentTypeService
      */
-    filterContentTypes(
-        filter: string = '',
-        allowedTypes: string = ''
-    ): Observable<DotCMSContentType[]> {
+    filterContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
         return this.coreWebService
             .requestView({
                 body: {
@@ -155,9 +152,9 @@ export class DotContentTypeService {
      */
     getByTypes(type: string, per_page = 100): Observable<DotCMSContentType[]> {
         return this.http
-            .get<{ entity: DotCMSContentType[] }>(
-                `/api/v1/contenttype?type=${type}&per_page=${per_page}`
-            )
+            .get<{
+                entity: DotCMSContentType[];
+            }>(`/api/v1/contenttype?type=${type}&per_page=${per_page}`)
             .pipe(pluck('entity'));
     }
 

@@ -34,19 +34,23 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 /**
  * This API allows developers to access information related to Sites objects in your dotCMS content repository.
@@ -117,23 +121,16 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     @CloseDBIfOpened
     public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        Host host = hostCache.getHostByAlias(serverName);
         User systemUser = APILocator.systemUser();
-
-        if(host == null){
-
-            try {
-                final Optional<Host> optional = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
-                host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
-            } catch (Exception e) {
-                host = findDefaultHost(systemUser, respectFrontendRoles);
-            }
-
-            if(host != null){
-                hostCache.addHostAlias(serverName, host);
-            }
+        Host host;
+        try {
+            final Optional<Host> optional =
+                    resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
+            host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
+        } catch (Exception e) {
+            Logger.debug(this, "Exception resolving host using default", e);
+            host = findDefaultHost(systemUser, respectFrontendRoles);
         }
-
         checkSitePermission(user, respectFrontendRoles, host);
         return host;
     }
@@ -142,17 +139,24 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @CloseDBIfOpened
     public Optional<Host> resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        Host host = hostCache.getHostByAlias(serverName);
-        User systemUser = APILocator.systemUser();
-
-        if(host == null){
+        Host host;
+        final Host cachedHostByAlias = hostCache.getHostByAlias(serverName);
+        if (UtilMethods.isSet(() -> cachedHostByAlias.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(cachedHostByAlias.getIdentifier())) {
+                return Optional.empty();
+            }
+            host = cachedHostByAlias;
+        } else {
+            User systemUser = APILocator.systemUser();
             host = findByNameNotDefault(serverName, systemUser, respectFrontendRoles);
 
             if(host == null){
                 host = findByAlias(serverName, systemUser, respectFrontendRoles);
             }
 
-            if(host != null){
+            if (host == null) {
+                hostCache.addHostAlias(serverName, HostCache.cache404Contentlet);
+            } else {
                 hostCache.addHostAlias(serverName, host);
             }
         }
@@ -165,7 +169,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     /**
-     * Verifies that the specified User has READ permission on a given Site.
+     * Verifies that the specified User has READ permission on a given Site. If it doesn't, a
+     * {@link DotSecurityException} will be thrown
      *
      * @param user                 The {@link User} whose READ permission needs to be checked.
      * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
@@ -178,8 +183,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      */
     private void checkSitePermission(final User user, final boolean respectFrontendRoles, final Host site) throws DotDataException, DotSecurityException {
         if (!APILocator.getPermissionAPI().doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-            String userId = (user != null) ? user.getUserId() : null;
-            String siteName = (site != null) ? site.getHostname() : null;
+            final String userId = Try.of(user::getUserId).getOrElse("- null -");
+            final String siteName = Try.of (site::getHostname).getOrElse("- null -");
             throw new DotSecurityException(String.format("User '%s' does not have read permissions on '%s'", userId,
                     siteName));
         }
@@ -229,6 +234,23 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
+    public Optional<Host> findByIdOrKey(final String siteIdOrKey, final User user,
+                                        final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        checkNotEmpty(siteIdOrKey, IllegalArgumentException.class, "'siteIdOrKey' parameter cannot be null or empty");
+        checkNotNull(user, IllegalArgumentException.class, "'user' parameter cannot be null");
+        final String trimmedSiteIdOrKey = siteIdOrKey.trim();
+        final Optional<Host> siteOpt = UUIDUtil.isUUID(trimmedSiteIdOrKey) || Host.SYSTEM_HOST.equals(trimmedSiteIdOrKey)
+                ? Optional.ofNullable(find(trimmedSiteIdOrKey, user, respectFrontendRoles))
+                : resolveHostNameWithoutDefault(trimmedSiteIdOrKey, APILocator.systemUser(), respectFrontendRoles);
+        if (siteOpt.isPresent()) {
+            this.checkSitePermission(user, respectFrontendRoles, siteOpt.get());
+        } else {
+            Logger.debug(this, () -> String.format("Site ID/Key '%s' was not found", siteIdOrKey));
+        }
+        return siteOpt;
+    }
+
+    @Override
     @CloseDBIfOpened
     public Host findByAlias(final String alias, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         final Host site = this.getHostFactory().byAlias(alias);
@@ -275,7 +297,14 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             return findSystemHost();
         }
 
-        Host site  = hostCache.get(id);
+        Host site = null;
+        Host cachedSiteById = hostCache.getById(id);
+        if (UtilMethods.isSet(() -> cachedSiteById.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(cachedSiteById.getIdentifier())) {
+                return null;
+            }
+            site = cachedSiteById;
+        }
 
         if (site == null) {
             site = DBSearch(id,user,respectFrontendRoles);

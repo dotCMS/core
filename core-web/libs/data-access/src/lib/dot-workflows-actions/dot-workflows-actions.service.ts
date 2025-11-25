@@ -59,9 +59,9 @@ export class DotWorkflowsActionsService {
      */
     getDefaultActions(contentTypeId: string): Observable<DotCMSWorkflowAction[]> {
         return this.httpClient
-            .get<DotCMSResponse<{ action: DotCMSWorkflowAction; scheme: DotCMSWorkflow }[]>>(
-                `${this.BASE_URL}/initialactions/contenttype/${contentTypeId}`
-            )
+            .get<
+                DotCMSResponse<{ action: DotCMSWorkflowAction; scheme: DotCMSWorkflow }[]>
+            >(`${this.BASE_URL}/initialactions/contenttype/${contentTypeId}`)
             .pipe(
                 pluck('entity'),
                 map((res = []) => {

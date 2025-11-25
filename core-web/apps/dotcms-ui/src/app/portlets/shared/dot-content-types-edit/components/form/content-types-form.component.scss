@@ -17,6 +17,10 @@
     }
 }
 
+label {
+    font-size: $font-size-md;
+}
+
 .content-type__form {
     width: 522px;
     &.content-type__form-banner {

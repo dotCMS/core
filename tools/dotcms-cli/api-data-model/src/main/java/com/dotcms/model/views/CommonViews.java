@@ -46,4 +46,40 @@ public class CommonViews {
 
     }
 
+    /**
+     * The LanguageFileView interface defines the view used for the language file descriptor
+     */
+    public interface LanguageFileView {
+
+    }
+
+    /**
+     * The LanguageReadView interface defines the view used for some server read operations
+     */
+    public interface LanguageReadView {
+
+    }
+
+    /**
+     * The LanguageWriteView interface defines the view used for some server write operations
+     */
+    public interface LanguageWriteView {
+
+    }
+
+    /**
+     * This interface represents the "Internal" view for our Content Type JSON serialization.
+     */
+    public interface ContentTypeInternalView {
+
+    }
+
+    /**
+     * This interface represents the "External" view for our Content Type JSON serialization used
+     * for creating or updating content types.
+     */
+    public interface ContentTypeExternalView {
+
+    }
+
 }

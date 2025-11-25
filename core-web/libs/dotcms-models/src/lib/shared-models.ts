@@ -6,13 +6,15 @@
  *      |-> IDLE = Finished Loading or Saving
  * SAVING = Status of an action of the component loaded (delete, saving, editing)
  *      |-> IDLE = Finished delete, saving, editing
+ * ERROR = Error state for the component
  **/
 export enum ComponentStatus {
     INIT = 'INIT',
     LOADING = 'LOADING',
     LOADED = 'LOADED',
     SAVING = 'SAVING',
-    IDLE = 'IDLE'
+    IDLE = 'IDLE',
+    ERROR = 'ERROR'
 }
 
 export const enum FeaturedFlags {
@@ -24,8 +26,11 @@ export const enum FeaturedFlags {
     FEATURE_FLAG_EDIT_URL_CONTENT_MAP = 'FEATURE_FLAG_EDIT_URL_CONTENT_MAP',
     FEATURE_FLAG_CONTENT_EDITOR2_ENABLED = 'CONTENT_EDITOR2_ENABLED',
     FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE = 'CONTENT_EDITOR2_CONTENT_TYPE',
-    FEATURE_FLAG_ANNOUNCEMENTS = 'FEATURE_FLAG_ANNOUNCEMENTS'
+    FEATURE_FLAG_ANNOUNCEMENTS = 'FEATURE_FLAG_ANNOUNCEMENTS',
+    FEATURE_FLAG_NEW_EDIT_PAGE = 'FEATURE_FLAG_NEW_EDIT_PAGE'
 }
+
+export const FEATURE_FLAG_NOT_FOUND = 'NOT_FOUND';
 
 export type DotDropdownGroupSelectOption<T> = {
     label: string;

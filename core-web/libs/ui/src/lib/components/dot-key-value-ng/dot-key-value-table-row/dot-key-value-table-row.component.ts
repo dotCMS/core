@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -32,7 +31,6 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
     templateUrl: './dot-key-value-table-row.component.html',
     standalone: true,
     imports: [
-        CommonModule,
         ButtonModule,
         InputSwitchModule,
         InputTextareaModule,
@@ -49,7 +47,7 @@ export class DotKeyValueTableRowComponent implements OnInit {
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
     @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
-    @Input() showHiddenField: boolean = false;
+    @Input() showHiddenField = false;
     @Input() variable: DotKeyValue;
 
     form: FormGroup;

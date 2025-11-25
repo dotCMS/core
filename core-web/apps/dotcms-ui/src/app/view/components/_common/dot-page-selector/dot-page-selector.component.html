@@ -1,19 +1,18 @@
 <div class="field">
     <p-autoComplete
-        #autoComplete
-        [minLength]="2"
-        [ngModel]="val"
-        [suggestions]="suggestions$ | async"
-        [placeholder]="'page.selector.placeholder' | dm"
         (completeMethod)="search($event)"
         (keydown.enter)="onKeyEnter($event)"
         (keydown.tab)="$event.preventDefault()"
         (onClear)="onClear()"
         (onSelect)="onSelect($event)"
+        [minLength]="2"
+        [ngModel]="val"
+        [suggestions]="suggestions$ | async"
+        [placeholder]="'page.selector.placeholder' | dm"
+        #autoComplete
         appendTo="body"
         data-testId="p-autoComplete"
-        field="label"
-    >
+        field="label">
         <ng-template let-item pTemplate="item">
             <div class="dot-page-selector__item">
                 <span *ngIf="searchType === 'site'; else notSite">{{ item.label }}</span>
@@ -31,9 +30,9 @@
     <small
         [class]="isError ? 'p-invalid' : 'p-info'"
         [textContent]="message"
-        data-testId="message"
-    ></small>
+        data-testId="message"></small>
     <dot-field-helper
-        [message]="(folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm"
-    ></dot-field-helper>
+        [message]="
+            (folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm
+        "></dot-field-helper>
 </div>

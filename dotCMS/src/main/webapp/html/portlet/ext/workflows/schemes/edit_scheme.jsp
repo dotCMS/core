@@ -52,6 +52,17 @@
 					</strong>
 				</dd>
 			</dl>
+			<dl>
+				<dt>
+					<span><%=LanguageUtil.get(pageContext, "Variable")%></span>
+				</dt>
+				<dd>
+					<input type="text" name="schemeVariable" id="schemeVariable"
+						   dojoType="dijit.form.ValidationTextBox"
+						   value="<%=scheme.getVariableName()%>" readonly="true"
+						   maxlength="255" style="width:250px;">
+				</dd>
+			</dl>
 		<%}%>
 		<dl>
 			<dt>

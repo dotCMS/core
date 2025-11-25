@@ -4,6 +4,7 @@
 
 :host {
     display: block;
+    font-size: $font-size-md;
 
     &.dot-nav-item__collapsed {
         position: relative;
@@ -20,7 +21,9 @@
                 position: absolute;
                 top: 0;
                 transform: translateY(0);
-                transition: opacity $basic-speed ease, transform $basic-speed ease;
+                transition:
+                    opacity $basic-speed ease,
+                    transform $basic-speed ease;
                 z-index: 9999;
             }
         }

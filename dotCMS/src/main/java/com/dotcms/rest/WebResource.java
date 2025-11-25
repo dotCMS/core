@@ -26,35 +26,53 @@ import org.glassfish.jersey.server.ContainerRequest;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
-import org.apache.commons.io.IOUtils;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.validation.ServletPreconditions;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.util.CookieUtil;
 import com.liferay.util.StringPool;
-
 import io.vavr.control.Try;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.glassfish.jersey.server.ContainerRequest;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * The Web Resource is a helper for all authentication and get the current user logged in
@@ -128,8 +146,7 @@ public  class WebResource {
     /**
      *
      * <p>
-     *     1) Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenException.
-     *
+     *     1) Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenExceptionz
      *      If no User can be retrieved, and <code>rejectWhenNoUser</code> is <code>true</code>, it will throw an exception,
      *      otherwise returns <code>null</code>.
      * </p>
@@ -146,7 +163,7 @@ public  class WebResource {
      * @param response {@link HttpServletResponse}
      * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
      * @return an initDataObject with the resulting <code>Map</code>
-     * @throws SecurityException
+     * @throws SecurityException if authentication fails
      */
     @Deprecated
     public InitDataObject init(final HttpServletRequest request, final HttpServletResponse response,
@@ -158,11 +175,11 @@ public  class WebResource {
     /**
      * @deprecated
      * @see #init(HttpServletRequest, HttpServletResponse, boolean)
-     * @param authenticate
-     * @param request
-     * @param rejectWhenNoUser
+     * @param authenticate boolean
+     * @param request {@link HttpServletRequest}
+     * @param rejectWhenNoUser boolean
      * @return InitDataObject
-     * @throws SecurityException
+     * @throws SecurityException if authentication fails
      */
     @Deprecated
     public InitDataObject init(final boolean authenticate, final HttpServletRequest request,
@@ -228,8 +245,8 @@ public  class WebResource {
      *
      *
      * @param params a string containing the URL parameters in the /key/value form
-     * @param authenticate
-     * @param request
+     * @param authenticate boolean
+     * @param request {@link HttpServletRequest}
      * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
      * @param requiredPortlet portlet name which the user needs to have access to
      * @return an initDataObject with the resulting <code>Map</code>
@@ -250,19 +267,19 @@ public  class WebResource {
     /**
      * @deprecated
      * @see #init(String, String, HttpServletRequest, HttpServletResponse, boolean, String)
-     * @param userId
-     * @param password
-     * @param authenticate
-     * @param request
-     * @param rejectWhenNoUser
-     * @param requiredPortlet
-     * @return
-     * @throws SecurityException
+     * @param userId {@link String} a string with the userId/email
+     * @param password {@link String} a string with password.
+     * @param authenticate boolean
+     * @param request {@link HttpServletRequest}
+     * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
+     * @param requiredPortlet portlet name which the user needs to have access to
+     * @return an initDataObject with the resulting <code>Map</code>
+     * @throws SecurityException if authentication fails
      */
     @Deprecated
     public InitDataObject init(String userId, String password, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
         AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
-        return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), request, new EmptyHttpResponse(), access, requiredPortlet);
+        return initWithMap(new HashMap<>(Map.of("userid", userId, "pwd", password)), request, new EmptyHttpResponse(), access, requiredPortlet);
     }
 
     /**
@@ -299,7 +316,7 @@ public  class WebResource {
       
         AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
       
-        return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), request, response, access, requiredPortlet);
+        return initWithMap(new HashMap<>(Map.of("userid", userId, "pwd", password)), request, response, access, requiredPortlet);
     }
 
     private InitDataObject initWithMap(final Map<String, String> paramsMap,
@@ -329,35 +346,60 @@ public  class WebResource {
     }
 
     /**
-     *
-     * @param builder
-     * @return
-     * @throws SecurityException
+     * @param builder {@link InitBuilder}
+     * @return an {@link InitDataObject} with the resulting <code>Map</code>
+     * @throws SecurityException if authentication fails
      */
-    @VisibleForTesting
     public InitDataObject init(final InitBuilder builder) throws SecurityException {
 
         checkForceSSL(builder.request);
 
         final InitDataObject initData = new InitDataObject();
-        final Map<String, String> paramsMap = new HashMap<>(
-                buildParamsMap(
-                        UtilMethods.isSet(builder.params) ? builder.params : BLANK
-                )
-        );
+        Map<String,String> paramsMap = builder.paramsMap();
 
-        if (UtilMethods.isSet(builder.userId) && UtilMethods.isSet(builder.password)) {
-            paramsMap.putAll(CollectionsUtils
-                    .map("userid", builder.userId, "pwd", builder.password));
+        final User user = getCurrentUser(builder.request, builder.response, paramsMap, builder.anonAccess);
+
+        checkAdminPermissions(builder, user);
+        checkAnonymousPermissions(builder, user);
+        checkPortletPermissions(builder, user);
+        checkRolePermissions(builder, user);
+
+        initData.setUser(user);
+        initData.setParamsMap(paramsMap);
+
+        return initData;
+    }
+
+    /**
+     * make sure we have the right anon permissions
+     * @param builder {@link InitBuilder}
+     * @param user {@link User}
+     */
+    @VisibleForTesting
+    void checkAnonymousPermissions(final InitBuilder builder, @NotNull User user) {
+        // if we are not an anonymous user
+        if (user != null && !user.isAnonymousUser()) {
+            return;
         }
-        
-        final User user = getCurrentUser(builder.request, builder.response, paramsMap,
-                builder.anonAccess);
+        if(builder.anonAccess == AnonymousAccess.NONE ||  AnonymousAccess.systemSetting() == AnonymousAccess.NONE){
+            throw new SecurityException(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS + " permission denied", Response.Status.UNAUTHORIZED);
+        }
 
+        if(builder.anonAccess.ordinal() > AnonymousAccess.systemSetting().ordinal()) {
+            throw new SecurityException(String.format(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS
+                            + " permission exceeded - system set to %s but %s was required",
+                    AnonymousAccess.systemSetting().name(), builder.anonAccess.name()), Response.Status.UNAUTHORIZED);
+        }
+    }
 
-        // make sure we have the right anon permissions
-        if(user.equals(userAPI.getAnonymousUserNoThrow())){
-          if(builder.anonAccess.ordinal()>AnonymousAccess.systemSetting().ordinal()) {
+    /**
+     * make sure we have the right Admin permissions
+     * @param builder {@link InitBuilder}
+     * @param user {@link User}
+     */
+    @VisibleForTesting
+    void checkAdminPermissions(final InitBuilder builder, User user) {
+        if (builder.requiredRolesSet.contains(Role.CMS_ADMINISTRATOR_ROLE) && !user.isAdmin()) {
             throw new SecurityException(
                 String.format(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS +  " permission exceeded - system set to %s but %s was required", AnonymousAccess.systemSetting().name(), builder.anonAccess.name()),
                 Response.Status.UNAUTHORIZED);
@@ -394,36 +436,49 @@ public  class WebResource {
             }
             
         }
-        
+    }
 
-        if (UtilMethods.isSet(builder.requiredPortlet)) {
-            for (final String requiredPortlet : builder.requiredPortlet) {
-                try {
-                    if (!layoutAPI.doesUserHaveAccessToPortlet(requiredPortlet, user)) {
-                        throw new SecurityException(
-                                String.format(
-                                        "User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" does not have access to required Portlet %s",
-                                        requiredPortlet),
-                                Response.Status.UNAUTHORIZED);
-                    }
-                } catch (DotDataException e) {
-                    throw new SecurityException("User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" does not have access to required Portlet",
-                            Response.Status.UNAUTHORIZED);
-                }
+    /**
+     * make sure we have the right Portal permissions
+     * @param builder {@link InitBuilder}
+     * @param user {@link User}
+     */
+    @VisibleForTesting
+    void checkPortletPermissions(final InitBuilder builder, User user) {
+        if(builder.requiredPortlet.isEmpty()){
+            return;
+        }
+        for (String portlet : builder.requiredPortlet) {
+            if (Try.of(() -> layoutAPI.doesUserHaveAccessToPortlet(portlet, user)).getOrElse(false)) {
+                return;
             }
         }
-        
-
-        
-        
-        
-
-
-        initData.setUser(user);
-        initData.setParamsMap(paramsMap);
-
-        return initData;
+        throw new SecurityException(user.getFullName() + ":" + user.getEmailAddress(), Response.Status.UNAUTHORIZED);
     }
+
+    /**
+     * make sure we have the right Role permissions
+     * @param builder {@link InitBuilder}
+     * @param user {@link User}
+     */
+    @VisibleForTesting
+    void checkRolePermissions(final InitBuilder builder, User user) {
+        if(builder.requiredRolesSet.isEmpty()){
+            return;
+        }
+        for (String roleKey : builder.requiredRolesSet) {
+            if (Try.of(() -> APILocator.getRoleAPI()
+                    .doesUserHaveRole(user, roleKey)).getOrElse(false)) {
+                return;
+            }
+        }
+        throw new SecurityException(
+                String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
+                        + " lacks one of the required role %s", builder.requiredRolesSet),
+                Response.Status.UNAUTHORIZED);
+    }
+
+
 
     /**
      * Return the current login user.<br>
@@ -432,7 +487,7 @@ public  class WebResource {
      * @param request  {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param paramsMap {@link Map}
-     * @param rejectWhenNoUser {@link Boolean}
+     * @param access {@link AnonymousAccess}
      *
      * @return the login user or the login as user if exist any
      */
@@ -450,14 +505,14 @@ public  class WebResource {
 
     /**
      * @deprecated
-     * @see #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, boolean)
+     * @see #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess) 
      *
      * Return the current login user.<br>
      * if exist a user login by login as then return this user not the principal user
      *
-     * @param request
-     * @param paramsMap
-     * @param rejectWhenNoUser
+     * @param request {@link HttpServletRequest}
+     * @param paramsMap {@link Map}
+     * @param rejectWhenNoUser boolean
      *
      * @return the login user or the login as user if exist any
      */
@@ -471,7 +526,7 @@ public  class WebResource {
 
     /**
      * @deprecated
-     * @see #authenticate(HttpServletRequest, HttpServletResponse, Map, boolean)
+     * @see #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess)
      * Returns an authenticated {@link User}. There are five ways to get the User's credentials.
      * They are executed in the specified order. When found, the remaining ways won't be executed.
      * <br>1) Using username and password contained in <code>params</code>.
@@ -499,7 +554,7 @@ public  class WebResource {
     public User authenticate(HttpServletRequest request, final HttpServletResponse response,
                              final Map<String, String> params, final AnonymousAccess access) throws SecurityException {
 
-        request = ServletPreconditions.checkSslIsEnabledIfRequired(request);
+        ServletPreconditions.checkSslIsEnabledIfRequired(request);
 
         User user = null;
 
@@ -521,9 +576,11 @@ public  class WebResource {
             user = this.jsonWebTokenAuthCredentialProcessor.processAuthHeaderFromJWT(request);
         }
 
+        /*
         if(null == user) {
-           // user = this.processCookieJWT(request);
+           user = this.processCookieJWT(request);
         }
+         */
 
 
         if(user == null ) {
@@ -698,21 +755,6 @@ public  class WebResource {
         return user;
     }
 
-    private User processCookieJWT(final HttpServletRequest request) {
-        User user = null;
-
-        if(request != null) {
-            final String jwt=Try.of(()->CookieUtil.get(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN)).getOrNull();
-            user = APILocator.getApiTokenAPI().userFromJwt(jwt, request.getRemoteAddr()).orElse(null);
-        }
-
-        return user;
-    }
-
-
-
-
-
 
     /**
      * This method returns a <code>Map</code> with the keys and values extracted from <code>params</code>
@@ -752,10 +794,10 @@ public  class WebResource {
         }
     }
 
-    public static Map processJSON(final InputStream input) throws JSONException, IOException {
+    public static Map<String,Object> processJSON(final InputStream input) throws JSONException, IOException {
 
         final HashMap<String,Object> map = new HashMap<>();
-        final JSONObject obj        = new JSONObject(IOUtils.toString(input));
+        final JSONObject obj        = new JSONObject(IOUtils.toString(input, StandardCharsets.UTF_8));
         final Iterator<String> keys = obj.keys();
         while(keys.hasNext()) {
 
@@ -781,20 +823,34 @@ public  class WebResource {
 
    public static class InitBuilder {
 
-        private WebResource webResource;
+        private final WebResource webResource;
 
         private String userId = null;
         private String password = null;
         private String params = BLANK;
         private HttpServletRequest request = null;
         private HttpServletResponse response = null;
-        private String[] requiredPortlet = null;
+        private final Set<String> requiredPortlet  = new HashSet<>();
         private final Set<String> requiredRolesSet = new HashSet<>();
         private AnonymousAccess anonAccess=AnonymousAccess.NONE;
         private boolean requireLicense = false;
-        
         public InitBuilder() {
           this(new WebResource());
+
+        }
+        public Map<String,String> paramsMap(){
+            Map<String,String> map = buildParamsMap(UtilMethods.isSet(this.params) ? this.params : BLANK);
+
+
+            if (UtilMethods.isSet(this.userId)) {
+                map.put("userid", this.userId);
+            }
+            if(UtilMethods.isSet(this.password)) {
+                map.put("pwd", this.password);
+            }
+
+            return map;
+
 
         }
 
@@ -835,6 +891,16 @@ public  class WebResource {
             return this;
         }
 
+       public InitBuilder requireAdmin(final boolean requireAdmin) {
+           if (requireAdmin) {
+               requiredRolesSet.add(Role.CMS_ADMINISTRATOR_ROLE);
+           } else {
+               requiredRolesSet.remove(Role.CMS_ADMINISTRATOR_ROLE);
+           }
+           return this;
+       }
+
+
         public InitBuilder requiredFrontendUser(final boolean requiredFrontendUser) {
             if (requiredFrontendUser) {
                 requiredRolesSet.add(Role.DOTCMS_FRONT_END_USER);
@@ -846,6 +912,9 @@ public  class WebResource {
 
         public InitBuilder requiredRoles(final String... requiredRoles) {
             requiredRolesSet.addAll(Arrays.asList(requiredRoles));
+            if(requiredRolesSet.contains(Role.CMS_ADMINISTRATOR_ROLE)){
+                requireAdmin(true);
+            }
             return this;
         }
 
@@ -861,7 +930,9 @@ public  class WebResource {
         }
 
         public InitBuilder requiredPortlet(final String... requiredPortlet) {
-            this.requiredPortlet = requiredPortlet;
+            if(requiredPortlet!=null) {
+                this.requiredPortlet.addAll(Arrays.asList(requiredPortlet));
+            }
             return this;
         }
 

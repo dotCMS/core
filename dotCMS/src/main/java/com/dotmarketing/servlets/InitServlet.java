@@ -1,5 +1,32 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.rest.api.v1.maintenance.ClusterManagementTopic;
+import com.dotcms.util.GeoIp2CityDbUtil;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.init.DotInitScheduler;
+import com.dotmarketing.loggers.mbeans.Log4jConfig;
+import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.quartz.job.ShutdownHookThread;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.util.ReleaseInfo;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -22,44 +49,10 @@ import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
-
 import org.apache.commons.lang.SystemUtils;
 import org.apache.felix.framework.OSGISystem;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
-import org.quartz.SchedulerException;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.rest.api.v1.maintenance.ClusterManagementTopic;
-import com.maxmind.geoip2.exception.GeoIp2Exception;
-
-import com.dotcms.util.GeoIp2CityDbUtil;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.init.DotInitScheduler;
-import com.dotmarketing.loggers.mbeans.Log4jConfig;
-import com.dotmarketing.menubuilders.RefreshMenus;
-import com.dotmarketing.plugin.PluginLoader;
-import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.quartz.job.ShutdownHookThread;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.util.ReleaseInfo;
 
 /**
  * Initialization servlet for specific dotCMS components and features.
@@ -111,10 +104,6 @@ public class InitServlet extends HttpServlet {
         Logger.info(this, "");
 
         Logger.info(this, "");
-
-        String classPath = config.getServletContext().getRealPath("/WEB-INF/lib");
-
-        new PluginLoader().loadPlugins(config.getServletContext().getRealPath("/"),classPath);
 
         int mc = Config.getIntProperty("lucene_max_clause_count", 4096);
         BooleanQuery.setMaxClauseCount(mc);

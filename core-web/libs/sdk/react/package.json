@@ -1,29 +1,30 @@
 {
-    "name": "@dotcms/react",
-    "version": "0.0.1-alpha.7",
-    "peerDependencies": {
-        "react": ">=18",
-        "react-dom": ">=18",
-        "@dotcms/client": "0.0.1-alpha.7"
-    },
-    "description": "Official React Components library to render a dotCMS page.",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/dotCMS/core.git#master"
-    },
-    "keywords": [
-        "dotCMS",
-        "CMS",
-        "Content Management",
-        "API Client",
-        "REST API",
-        "React",
-        "Components"
-    ],
-    "author": "dotcms <dev@dotcms.com>",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/dotCMS/core/issues"
-    },
-    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/react/README.md"
+  "name": "@dotcms/react",
+  "version": "0.0.1-alpha.38",
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "@dotcms/client": "0.0.1-alpha.38",
+    "@tinymce/tinymce-react": "^5.1.1"
+  },
+  "description": "Official React Components library to render a dotCMS page.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dotCMS/core.git#main"
+  },
+  "keywords": [
+    "dotCMS",
+    "CMS",
+    "Content Management",
+    "API Client",
+    "REST API",
+    "React",
+    "Components"
+  ],
+  "author": "dotcms <dev@dotcms.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dotCMS/core/issues"
+  },
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react/README.md"
 }

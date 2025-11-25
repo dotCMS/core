@@ -13,7 +13,10 @@ import { LoginService } from '@dotcms/dotcms-js';
  */
 @Injectable()
 export class PublicAuthGuardService implements CanActivate {
-    constructor(private router: DotRouterService, private loginService: LoginService) {}
+    constructor(
+        private router: DotRouterService,
+        private loginService: LoginService
+    ) {}
 
     /**
      * Guard checks is the User is logged in to redirect to the First Portlet otherwise approve the route request.

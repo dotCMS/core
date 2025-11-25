@@ -1,5 +1,52 @@
 package org.apache.felix.framework;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.concurrent.Debouncer;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.ClusterLockManager;
+import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ResourceCollectorUtil;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.FileUtil;
+import com.liferay.util.MathUtil;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.control.Try;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.framework.util.manifestparser.ManifestParser;
+import org.apache.felix.framework.util.manifestparser.ParsedHeaderClause;
+import org.apache.felix.main.AutoProcessor;
+import org.apache.felix.main.Main;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.Version;
+import org.osgi.framework.launch.Framework;
+
+import javax.servlet.ServletException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -9,6 +56,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -28,47 +76,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.servlet.ServletException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.felix.framework.util.FelixConstants;
-import org.apache.felix.main.AutoProcessor;
-import org.apache.felix.main.Main;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.launch.Framework;
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
-import com.dotcms.concurrent.Debouncer;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.lock.ClusterLockManager;
-import com.dotcms.dotpubsub.DotPubSubEvent;
-import com.dotcms.dotpubsub.DotPubSubProvider;
-import com.dotcms.dotpubsub.DotPubSubProviderLocator;
-import org.apache.commons.io.IOUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ResourceCollectorUtil;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.ImmutableList;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.util.FileUtil;
-import com.liferay.util.MathUtil;
-import io.vavr.control.Try;
 
 /**
  * Created by Jonathan Gamba
@@ -147,6 +154,14 @@ public class OSGIUtil {
         this.pubsub.subscribe(this.osgiRestartTopic);
     }
 
+    public List<String> getPortletIDsStopped() {
+        return portletIDsStopped;
+    }
+
+    public List<String> getActionletsStopped() {
+        return actionletsStopped;
+    }
+
     /**
      * Loads the default properties
      *
@@ -198,7 +213,7 @@ public class OSGIUtil {
      * @throws ServletException
      * @throws IOException
      */
-    public void writeOsgiExtras ( final String extraPackages )  {
+    public void writeOsgiExtras (final String extraPackages, final boolean testDryRun)  {
 
         if(UtilMethods.isEmpty(extraPackages)) {
             return ;
@@ -210,34 +225,27 @@ public class OSGIUtil {
             return;
         }
 
+        if (Config.getBooleanProperty("OSGI_TEST_DRY_RUN", true) && testDryRun) {
+            this.testDryRun(extraPackages);
+        }
+
         //Override the file with the values we just read
-        
         final String osgiExtraFile = OSGIUtil.getInstance().getOsgiExtraConfigPath();
         final String osgiExtraFileTmp = osgiExtraFile + "_" + UUIDGenerator.shorty();
-        
-        
+
         try(BufferedWriter writer = new BufferedWriter( new FileWriter( osgiExtraFileTmp   ) )){
             writer.write( extraPackages );
-            Logger.info( OSGIAJAX.class, "OSGI Extra Packages Saved");
+            Logger.info( this, "OSGI Extra Packages Saved");
         }
         catch(Exception e) {
             Logger.error( OSGIUtil.class, e.getMessage(), e );
             throw new DotRuntimeException( e.getMessage(), e );
         }
         new File(osgiExtraFileTmp).renameTo(new File(osgiExtraFile));
-        
-        
+
         //restart OSGI after delay
         debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
-        
-        
-        
-        
     }
-    
-    
-    
-    
 
     public String getOsgiExtraConfigPath () {
 
@@ -245,6 +253,73 @@ public class OSGIUtil {
                 + File.separator + "server" + File.separator + "osgi" + File.separator +  "osgi-extra.conf";
         final String dirPath = Config.getStringProperty(OSGI_EXTRA_CONFIG_FILE_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();
+    }
+
+    /**
+     * Test if the Osgi Packages are ok to be overriden
+     * @param osgiPackages
+     */
+    public void testDryRun (final String osgiPackages) {
+
+        final List<ParsedHeaderClause> exportClauses =
+                invokeParserStandardHeader(osgiPackages);
+        for (final ParsedHeaderClause clause : exportClauses) {
+
+            for (final String packageName : clause.m_paths) {
+                if (packageName.equals(".")) {
+
+                    Logger.error(this, "Exporing '.' is invalid.");
+                    throw new OsgiException("Exporing '.' is invalid.");
+                }
+
+                if (packageName.length() == 0) {
+
+                    Logger.error(this, "Exported package names cannot be zero length.\nPackages: " + osgiPackages);
+                    throw new OsgiException(
+                            "Exported package names cannot be zero length.");
+                }
+            }
+
+            // Check for "version" and "specification-version" attributes
+            // and verify they are the same if both are specified.
+            final Object versionAttr = clause.m_attrs.get(Constants.VERSION_ATTRIBUTE);
+            final Object packageSpecVersion = clause.m_attrs.get(Constants.PACKAGE_SPECIFICATION_VERSION);
+            if ((versionAttr != null) && (packageSpecVersion != null)) {
+                // Verify they are equal.
+                if (!String.class.cast (versionAttr).trim().equals(String.class.cast(packageSpecVersion).trim())) {
+                    throw new OsgiException(
+                            "Both version and specification-version are specified, but they are not equal.");
+                }
+            }
+
+            try {
+                if (versionAttr != null) {
+                    // check version format
+                    Version.parseVersion(versionAttr.toString());
+                }
+
+                if (packageSpecVersion != null) {
+                    // check version format
+                    Version.parseVersion(packageSpecVersion.toString());
+                }
+            } catch (IllegalArgumentException e) {
+
+                Logger.error(this, e.getMessage() + ".\nPackages: " + osgiPackages);
+                throw new OsgiException(e.getMessage(), e);
+            }
+        }
+    }
+
+    private  List<ParsedHeaderClause>  invokeParserStandardHeader (final String osgiPackages) {
+
+        try {
+            final Method method = ManifestParser.class.getDeclaredMethod("parseStandardHeader", String.class);
+            method.setAccessible(true);
+            return (List<ParsedHeaderClause>) method.invoke(null, osgiPackages);
+        } catch (Exception e) {
+            throw new OsgiException(
+                    "Can not access the parseStandardHeader to run the dry run");
+        }
     }
 
     /**
@@ -304,7 +379,8 @@ public class OSGIUtil {
 
             final String fileUploadDirectory = felixProps.getProperty(FELIX_UPLOAD_DIR);
             // before init we have to check if any new bundle has been upload
-            this.fireReload(new File(fileUploadDirectory));
+            final boolean testDryRun = false; // we do not want to do test dry run when starting the osgi
+            this.fireReload(new File(fileUploadDirectory), testDryRun);
             // Create an instance and initialize the framework.
             FrameworkFactory factory = getFrameworkFactory();
             felixFramework = factory.newFramework(felixProps);
@@ -394,14 +470,13 @@ public class OSGIUtil {
             Logger.debug(this, ()-> "***** Checking the upload folder for jars");
             if (this.anyJarOnUploadFolder(uploadFolderFile)) {
 
-
-
                 Logger.debug(this, ()-> "****** Has found jars on upload, folder, acquiring the lock and reloading the OSGI restart *****");
 
                 try {
 
                     Logger.debug(this, () -> "Trying to lock to start the reload");
-                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile));
+                    final boolean testDryRun = true;
+                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile, testDryRun));
                     Logger.debug(this, () -> "File Reload Done");
                 } catch (Throwable e) {
 
@@ -412,10 +487,7 @@ public class OSGIUtil {
 
                 Logger.debug(this, ()-> "No jars on upload folder");
                 // if not jars we want to wait for the next read of the upload folder
-
-
             }
-        
     }
 
     private boolean anyJarOnUploadFolder(final File uploadFolderFile) {
@@ -425,11 +497,7 @@ public class OSGIUtil {
         return UtilMethods.isSet(pathnames) && pathnames.length > 0;
     }
 
-
-    
-    
-    
-    private void fireReload(final File uploadFolderFile) {
+    private void fireReload(final File uploadFolderFile, final boolean testDryRun) {
 
         Logger.info(this, ()-> "Starting the osgi reload on folder: " + uploadFolderFile);
 
@@ -454,13 +522,14 @@ public class OSGIUtil {
                 osgiUserPackages.addAll(packages);
             }
 
-            processOsgiPackages(uploadFolderFile, pathnames, osgiUserPackages);
+            processOsgiPackages(uploadFolderFile, pathnames, osgiUserPackages, testDryRun);
         }
     }
     
     private void processOsgiPackages(final File uploadFolderFile,
                                      final String[] pathnames,
-                                     final Set<String> osgiUserPackages) {
+                                     final Set<String> osgiUserPackages,
+                                     final boolean testDryRun) {
         try {
 
             final LinkedHashSet<String> exportedPackagesSet = this.getExportedPackagesAsSet();
@@ -472,9 +541,9 @@ public class OSGIUtil {
                 
             Logger.info(this, "There are a new changes into the exported packages");
             exportedPackagesSet.addAll(osgiUserPackages);
-            this.writeExtraPackagesFiles(exportedPackagesSet);
+            this.writeExtraPackagesFiles(exportedPackagesSet, testDryRun);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
         }
     }
@@ -561,40 +630,16 @@ public class OSGIUtil {
     private void moveNewBundlesToFelixLoadFolder(final File uploadFolderFile, final String[] pathnames) {
 
         final File deployDirectory   = new File(this.getFelixDeployPath());
-        final File undeployDirectory = new File(this.getFelixUndeployPath());
         try {
 
             if (deployDirectory.exists() && deployDirectory.canWrite()) {
 
                 for (final String pathname : pathnames) {
 
-                    final File bundle      = new File(uploadFolderFile, pathname);
-                    File bundleDestination = new File(deployDirectory, bundle.getName());
-                    if (ResourceCollectorUtil.isFragmentJar(bundle)) {
-
-                        bundleDestination = new File(undeployDirectory, bundle.getName());
-                    }
-
-                    Logger.debug(this, "Moving the bundle: " + bundle + " to " + deployDirectory);
-
-                    if (FileUtil.move(bundle, bundleDestination)) {
-
-                        Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
-                                .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(pathnames)))
-                                .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
-
-                        Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
-                    } else {
-                        Logger.debug(this, "Could not move the bundle: " + bundle + " to " + deployDirectory);
-                    }
+                    moveBundle(uploadFolderFile, pathnames, deployDirectory, pathname);
                 }
-
-                final String messageKey      = pathnames.length > 1? "new-osgi-plugins-installed":"new-osgi-plugin-installed";
-                final String successMessage  = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI()
-                        .getDefaultCompany().getLocale(), messageKey)).getOrElse(()-> "New OSGi Plugin(s) have been installed");
-                SystemMessageEventUtil.getInstance().pushMessage("OSGI_BUNDLES_LOADED",new SystemMessageBuilder().setMessage(successMessage)
-                        .setLife(DateUtil.FIVE_SECOND_MILLIS)
-                        .setSeverity(MessageSeverity.SUCCESS).create(), null);
+                
+                sendOSGIBundlesLoadedMessage(pathnames);
             } else {
 
                 Logger.warn(this, "The directory: " + this.getFelixDeployPath()
@@ -604,6 +649,79 @@ public class OSGIUtil {
 
             Logger.error(this, e.getMessage(), e);
         }
+    }
+
+    private void moveBundle(final File uploadFolderFile,
+                            final String[] pathnames,
+                            final File deployDirectory,
+                            final String pathname) throws IOException {
+
+        final File bundle      = new File(uploadFolderFile, pathname);
+        final File bundleDestination = new File(deployDirectory, bundle.getName());
+        if (ResourceCollectorUtil.isFragmentJar(bundle)) { // now we delete the bundle if it is a fragment since we already have the exported packages covered
+
+            Files.delete(bundle.toPath());
+            Logger.debug(this, "Deleted the fragment bundle: " + bundle);
+            return;
+        }
+
+        Logger.debug(this, "Moving the bundle: " + bundle + " to " + deployDirectory);
+
+        move(pathnames, deployDirectory, bundle, bundleDestination);
+    }
+
+    private void move(final String[] pathnames,
+                      final File deployDirectory,
+                      final File bundle,
+                      final File bundleDestination) throws IOException {
+
+        if (FileUtil.move(bundle, bundleDestination)) {
+
+            Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
+                    .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(pathnames)))
+                    .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+
+            Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
+        } else {
+            Logger.debug(this, "Could not move the bundle: " + bundle + " to " + deployDirectory);
+        }
+    }
+
+    private static void sendOSGIBundlesLoadedMessage(final String[] pathnamesIn) {
+
+        final Tuple2<Boolean, String []> result = containsFragments(pathnamesIn);
+        if (result._1()) {
+
+            final String successMessage  =  "The packages in the fragment have been added to the exported packages list.";
+            SystemMessageEventUtil.getInstance().pushMessage("OSGI_BUNDLES_LOADED",new SystemMessageBuilder().setMessage(successMessage)
+                    .setLife(DateUtil.FIVE_SECOND_MILLIS)
+                    .setSeverity(MessageSeverity.SUCCESS).create(), null);
+        }
+
+        final String[] pathnames = result._2();
+        final String messageKey      = pathnames.length > 1? "new-osgi-plugins-installed":"new-osgi-plugin-installed";
+        final String successMessage  = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI()
+                .getDefaultCompany().getLocale(), messageKey)).getOrElse(()-> "New OSGi Plugin(s) have been installed");
+        SystemMessageEventUtil.getInstance().pushMessage("OSGI_BUNDLES_LOADED",new SystemMessageBuilder().setMessage(successMessage)
+                .setLife(DateUtil.FIVE_SECOND_MILLIS)
+                .setSeverity(MessageSeverity.SUCCESS).create(), null);
+    }
+
+
+    private static Tuple2<Boolean, String[]> containsFragments(final String[] pathnamesIn) {
+
+        boolean hasFragments = false;
+        final List<String> pathnames = new ArrayList<>();
+        for (final String pathname : pathnamesIn) {
+
+            if (pathname.contains("fragment")) {
+                hasFragments = true;
+            } else {
+                pathnames.add(pathname);
+            }
+        }
+
+        return Tuple.of(hasFragments, pathnames.toArray(new String []{}));
     }
 
     /**
@@ -797,11 +915,10 @@ public class OSGIUtil {
         
 
     }
-    
-    
-    private void writeExtraPackagesFiles(final Set<String> packages) throws IOException {
 
-        this.writeOsgiExtras(packagesToOrderedString(packages));
+    private void writeExtraPackagesFiles(final Set<String> packages, final boolean testDryRun) {
+
+        this.writeOsgiExtras(packagesToOrderedString(packages), testDryRun);
     }
 
     /**

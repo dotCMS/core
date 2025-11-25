@@ -1,7 +1,19 @@
 # dotCMS CLI 
-The dotCMS CLI is a command-line tool that you can use to populate and modify your dotCMS instances from a command shell.
+The **dotCMS CLI**, sometimes shortened to **dotCLI**, is a standalone tool for interacting with a dotCMS instance through a command shell, allowing a wide array of automated operations and behaviors.
 
-## Quick start
+## Getting Started
+
+### Installation
+
+### NPM
+
+The simplest and most recommended way to get the dotCMS CLI is from its npm package:
+
+```shell script
+npm install -g @dotcms/dotcli
+```
+### Manual JAR Download
+
 1. Download the CLI: The dotCMS CLI is delivered as an uber jar that can be downloaded from [here](https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/).
  Once downloaded, you just need to run it with: 
 
@@ -9,7 +21,7 @@ The dotCMS CLI is a command-line tool that you can use to populate and modify yo
 java -jar dotcli.jar
 ```
 
-2. Configure the dotCMS instances you want to connect to using a dot-service.yml file. More details on how to do it [on this section](## CLI Instance Configuration). Make sure you make a site active in the yml file, otherwise you will have to active one using the [`instance` command](## Available Commands)
+2. Configure the dotCMS instances you want to connect to using the `config` command. More details on how to do it on the [Configuration](#Configuration) section. 
 
 3. Log in to the selected instance
 ```shell script
@@ -22,6 +34,7 @@ java -jar dotcli.jar login --user={USER} --password
 
 | Command                                    | Description                                                                         |
 |--------------------------------------------|-------------------------------------------------------------------------------------|
+| [config](cli/docs/config.adoc)             | Sets the initial configuration required by all commands to operate                  |
 | [content-type](cli/docs/content-type.adoc) | Performs operations over content types. For example: pull, push, remove             |
 | [files](cli/docs/files.adoc)               | Performs operations over files. For example: tree, ls, push                         |
 | [instance](cli/docs/instance.adoc)         | Prints a list of available dotCMS instances                                         |
@@ -39,7 +52,21 @@ You can find more details about how to use the dotCMS CLI in the [Examples](#exa
 
 ## Examples
 
-1. Log in with an admin user
+1. Run Configuration command to set the initial configuration required by all commands to operate
+```shell script
+config 
+Enter the key/name that will serve to identify the dotCMS instance (must be unique) [local].
+The name is [local]
+Enter the dotCMS base URL (must be a valid URL starting protocol http or https) [http://localhost:8080]
+The URL is [http://localhost:8080]
+Are these values OK? (Enter to confirm or N to cancel)  (Y/n)
+...
+Do you want to continue adding another dotCMS instance?  (Y/n)n
+ 0. Profile [local], Uri [http://localhost:8080], active [no].
+ 1. Profile [local#1], Uri [https://demo.dotcms.com], active [no].
+One of these profiles needs to be made the current active one. Please select the number of the profile you want to activate. 1
+```
+2. Log in with an admin user
 ```shell script
 login --user=admin@dotCMS.com --password
 ```
@@ -181,39 +208,35 @@ Example:
 ../mvnw quarkus:dev -Dquarkus.log.file.path=/Users/my-user/CLI/dotcms-cli.log
 ```
 
-## CLI Instance Configuration
+## Configuration
 
 The CLI can be used to manage multiple dotCMS instances. Each instance profile is defined in the `~/.dotcms/dot-service.yml` file. 
-Whatever profile is active will be used by the CLI to execute the commands.
+Whatever profile is active will be used by the CLI to execute the commands on
 The selected profile can be obtained by running the `status` command.
 Here's an example of the default `dot-service.yml` file shipped with the CLI:
 
 ```yaml
 - name: "default"
+  url: "http://localhost:8080"
   credentials:
     user: "admin@dotcms.com"
 - name: "demo"
+  url: "https://demo.dotcms.com"
   active: true
   credentials:
     user: "admin@dotCMS.com"
 ```
 
-The profiles declared on this file are paired up with properties defined in an internal `application.properties` file.
+Therefore, in order to add a new instance profile, you need to add a new entry in the `dot-service.yml` as it is shown on the example above.
+The `active` attribute indicates which profile is currently active. The CLI will use the active profile to execute the commands. 
+If more than one profile is marked active, this will result in an InvalidStateException.
+The `credentials` section is optional. If the credentials are not provided, the CLI will prompt the user to enter them when the `login` command is executed.
 
-```properties
-# Your configuration properties
-dotcms.client.servers.default=http://localhost:8080/api
-dotcms.client.servers.demo=https://demo.dotcms.com/api
-```
+If the `dot-service.yml` file does not exist, the CLI will prompt to create one No commands can operate without having a valid configuration in place.
 
-Notice how the `dotcms.client.servers` property has a suffix matching the profile name in the `dot-service.yml` file.
+The CLI provides a `config` command to set the initial configuration required by all commands to operate. The command will guide you through the process of adding a new instance profile to the `dot-service.yml` file. and setting the active profile.
+See the [Configuration](cli/docs/config.adoc) section for more details. And the [Examples](#examples) section for a practical example.
 
-Therefore, in order to add a new instance profile, you need to add a new entry in the `dot-service.yml` file and a new property extending the `application.properties` file.
-Application properties can be extended via system properties, environment variables, `.env` file or in `$PWD/config/application.properties` file.
-
-To learn more about how to extend the `application.properties` file see the Quarkus configuration guide [Here](https://es.quarkus.io/guides/config-reference#application-properties-file) 
-
-In future versions this process will be facilitated by the CLI itself.
 
 ### Workspace
 
@@ -221,6 +244,7 @@ The CLI needs a workspace to be able to pull and push content to a dotCMS instan
 The workspace is basically a set of directories and files used to house and organize the different type of assets that can be managed by the CLI.
 Additionally, a marker file called `.dot-workspace.yml` indicates to the CLI that the current directory is a valid workspace.
 In the following table you can see the different directories and files that conform a workspace.
+
 
 | File/Directory       | Type | Description             |
 |----------------------|------|-------------------------|
@@ -241,7 +265,7 @@ In order to incorporate the CLI into your GitHub Actions workflow, you need to:
 - In Your repository General Settings, enable the following permissions:
   -  Workflow Permissions : Read and Write permissions 
 - In Your repository General Settings, Secrets and variables, Actions
-  - Create a new variable called `DOT_API_URL` and set the value to a valid dotCMS URL. e.g. `https://demo.dotcms.com/api`
+  - Create a new variable called `DOT_API_URL` and set the value to a valid dotCMS URL. e.g. `https://demo.dotcms.com`
   ![How to create a variable](doc_images/create_variable.png)
   - Create a new secret called `DOT_TOKEN` and set the value to a valid dotCMS CLI token. 
   ![How to create a secret](doc_images/create_secret.png)

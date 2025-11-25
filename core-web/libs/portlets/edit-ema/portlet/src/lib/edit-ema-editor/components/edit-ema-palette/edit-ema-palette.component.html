@@ -1,21 +1,20 @@
-<ng-container *ngIf="vm$ | async as vm">
-    <dot-edit-ema-palette-content-type
-        *ngIf="vm.currentPaletteType === PALETTE_TYPES_ENUM.CONTENTTYPE"
-        [contentTypes]="vm.contenttypes.items"
-        [filter]="vm.contenttypes.filter"
-        [paletteStatus]="vm.status"
-        (search)="loadContentTypes($event, vm.allowedTypes)"
-        (showContentlets)="showContentletsFromContentType($event)"
-        (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)" />
-
-    <dot-edit-ema-palette-contentlets
-        *ngIf="vm.currentPaletteType === PALETTE_TYPES_ENUM.CONTENTLET"
-        [contentlets]="vm.contentlets"
-        [paletteStatus]="vm.status"
-        (paginate)="onPaginate($event)"
-        (search)="loadContentlets($event, vm.currentContentType)"
-        (showContentTypes)="showContentTypes()"
-        (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)" />
-</ng-container>
+@if (vm$ | async; as vm) {
+    @switch (vm.currentPaletteType) {
+        @case (PALETTE_TYPES_ENUM.CONTENTTYPE) {
+            <dot-edit-ema-palette-content-type
+                (search)="loadContentTypes($event, vm.allowedTypes)"
+                (showContentlets)="showContentletsFromContentType($event)"
+                [contentTypes]="vm.contenttypes.items"
+                [filter]="vm.contenttypes.filter"
+                [paletteStatus]="vm.status" />
+        }
+        @case (PALETTE_TYPES_ENUM.CONTENTLET) {
+            <dot-edit-ema-palette-contentlets
+                (paginate)="onPaginate($event)"
+                (search)="loadContentlets($event, vm.currentContentType)"
+                (showContentTypes)="showContentTypes()"
+                [contentlets]="vm.contentlets"
+                [paletteStatus]="vm.status" />
+        }
+    }
+}

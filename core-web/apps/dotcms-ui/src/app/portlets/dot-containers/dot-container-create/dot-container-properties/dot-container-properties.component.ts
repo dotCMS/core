@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
@@ -26,23 +26,22 @@ import {
     providers: [DotContainerPropertiesStore]
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
-    vm$ = this.store.vm$;
+    readonly #store = inject(DotContainerPropertiesStore);
+    readonly #dotRouterService = inject(DotRouterService);
+
+    vm$ = this.#store.vm$;
     editor: MonacoEditor;
     form: FormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private store: DotContainerPropertiesStore,
         private dotMessageService: DotMessageService,
         private fb: FormBuilder,
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotRouterService: DotRouterService
-    ) {
-        //
-    }
+        private dotAlertConfirmService: DotAlertConfirmService
+    ) {}
 
     ngOnInit(): void {
-        this.store.containerAndStructure$
+        this.#store.containerAndStructure$
             .pipe(take(1))
             .subscribe((state: DotContainerPropertiesState) => {
                 const { container, containerStructures } = state;
@@ -69,14 +68,14 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
 
                 this.addContainerFormControl(containerStructures);
                 if (this.form.value.identifier) {
-                    this.store.updateOriginalFormState(this.form.value);
+                    this.#store.updateOriginalFormState(this.form.value);
                 }
             });
 
         this.form.valueChanges
             .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
             .subscribe(([prevValue, currValue]) => {
-                this.store.updateFormStatus({
+                this.#store.updateFormStatus({
                     invalidForm: !this.form.valid,
                     container: currValue
                 });
@@ -89,7 +88,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        this.store.loadContentTypesAndUpdateVisibility();
+        this.#store.loadContentTypesAndUpdateVisibility();
     }
 
     /**
@@ -150,7 +149,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
      * @memberof DotContainerPropertiesComponent
      */
     showLoopInput(): void {
-        this.store.updatePrePostLoopInputVisibility(true);
+        this.#store.updatePrePostLoopInputVisibility(true);
     }
 
     /**
@@ -167,7 +166,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             ]);
             this.form.get('code').clearValidators();
             this.form.get('code').reset('');
-            this.store.updateContentTypeVisibility(true);
+            this.#store.updateContentTypeVisibility(true);
         } else {
             this.form.get('code').setValidators(Validators.required);
             this.form.get('containerStructures').clearValidators();
@@ -184,12 +183,12 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     save(): void {
         const formValues = this.form.value;
         if (formValues.identifier) {
-            this.store.editContainer(formValues);
-            this.store.updateOriginalFormState(formValues);
+            this.#store.editContainer(formValues);
+            this.#store.updateOriginalFormState(formValues);
             this.form.updateValueAndValidity();
         } else {
             delete formValues.identifier;
-            this.store.saveContainer(formValues);
+            this.#store.saveContainer(formValues);
         }
     }
 
@@ -199,7 +198,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
      * @memberof DotContainerPropertiesComponent
      */
     cancel(): void {
-        this.dotRouterService.goToURL('/containers');
+        this.#dotRouterService.goToURL('/containers');
     }
 
     /**
@@ -242,7 +241,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
         this.form.get('maxContentlets').setValue(0);
         this.form.updateValueAndValidity();
 
-        this.store.updateContentTypeAndPrePostLoopVisibility({
+        this.#store.updateContentTypeAndPrePostLoopVisibility({
             isContentTypeVisible: false,
             showPrePostLoopInput: false
         });

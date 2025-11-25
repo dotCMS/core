@@ -1,0 +1,531 @@
+{
+	"info": {
+		"_postman_id": "05419f5a-54bd-4e2c-a42d-5b5ffae04fce",
+		"name": "Image",
+		"description": "This Postman collection is designed to validate the image-related functionalities of our API. The collection includes endpoints for authentication, image upload, image retrieval with scaling filters, and content type deletion. Each request is equipped with tests to ensure the correctness of the API responses and the expected behavior of the endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "22650869"
+	},
+	"item": [
+		{
+			"name": "Delete",
+			"item": [
+				{
+					"name": "Delete Image ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    const statusCode = pm.response.code;",
+									"    const status = pm.response.status;",
+									"    ",
+									"    console.log('status:', status);",
+									"    ",
+									"    if (statusCode === 404) {",
+									"        pm.expect.fail(\"Status code is 404 - Not Found\");",
+									"    } else if (statusCode !== 200) {",
+									"        pm.expect.fail(`Status code is ${statusCode} - Expected 200`);",
+									"    } else {",
+									"        pm.response.to.have.status(200);",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Content-Type is application/json\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/2c46b6586c38852ac08a824a303ced80",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"2c46b6586c38852ac08a824a303ced80"
+							]
+						},
+						"description": "**Description**: Deletes an image content type by its ID.\n\n**Tests**: Ensures the response status code is 200 if the content type is found and successfully deleted.\n\nGiven a content type ID.  \nExpect that code is 200.  \nExpect content type is deleted successfully."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Video ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    const statusCode = pm.response.code;",
+									"    const status = pm.response.status;",
+									"    ",
+									"    console.log('status:', status);",
+									"    ",
+									"    if (statusCode === 404) {",
+									"        pm.expect.fail(\"Status code is 404 - Not Found\");",
+									"    } else if (statusCode !== 200) {",
+									"        pm.expect.fail(`Status code is ${statusCode} - Expected 200`);",
+									"    } else {",
+									"        pm.response.to.have.status(200);",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Content-Type is application/json\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/c77450b834901a20c8193ef9d561ee5b",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"c77450b834901a20c8193ef9d561ee5b"
+							]
+						},
+						"description": "**Description**: Deletes an image content type by its ID.\n\n**Tests**: Ensures the response status code is 200 if the content type is found and successfully deleted."
+					},
+					"response": []
+				}
+			],
+			"description": "The Delete Folder within the Image Collection Postman collection contains requests designed to manage and remove specific content types from the system. This includes endpoints for deleting both image and video content types.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Scale Filter",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithTestImage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"beach-resort-night-image.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/octet-stream",
+								"type": "text"
+							},
+							{
+								"key": "Content-Disposition",
+								"value": "attachment",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/image/beach-resort-night-image.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/sync",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"sync"
+							],
+							"query": [
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "**Description**: Imports a bundle that includes a test image (beach-resort-night-image.tar.gz). This bundle is used to validate the image upload functionality.\n\n**Tests**: Ensures that the bundle is uploaded successfully and the response contains the correct bundle name and status.\n\n  \nImports a Bundle that includes:\n\n- beach-resort-night.jpg - Identifier : 7376c014-e6bc-480c-bb82-da8b39e91ccb"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Image with Scale Filter W900 H500",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Image should have proper dimentions\", function () {",
+									"    pm.response.to.be.header(\"Content-Type\", \"image/png\")",
+									"    pm.response.to.be.header(\"Content-Length\", \"980852\")",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/contentAsset/image/2effe099-ca91-48a6-8928-baa4fceeec71/fileAsset/scale_w/900/scale_h/500",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"contentAsset",
+								"image",
+								"2effe099-ca91-48a6-8928-baa4fceeec71",
+								"fileAsset",
+								"scale_w",
+								"900",
+								"scale_h",
+								"500"
+							]
+						},
+						"description": "**Description**: Retrieves an image with a width of 900 pixels and a height of 500 pixels.\n\n**Tests**: Verifies that the image has the correct content type and length."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Image with Scale Filter W500 H300",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Image should have proper dimentions\", function () {",
+									"    pm.response.to.be.header(\"Content-Type\", \"image/png\")",
+									"    pm.response.to.be.header(\"Content-Length\", \"355062\")",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/contentAsset/image/2effe099-ca91-48a6-8928-baa4fceeec71/fileAsset/scale_w/500/scale_h/300",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"contentAsset",
+								"image",
+								"2effe099-ca91-48a6-8928-baa4fceeec71",
+								"fileAsset",
+								"scale_w",
+								"500",
+								"scale_h",
+								"300"
+							]
+						},
+						"description": "**Description**: Retrieves an image with a width of 500 pixels and a height of 300 pixels.\n\n**Tests**: Verifies that the image has the correct content type and length."
+					},
+					"response": []
+				}
+			],
+			"description": "**Description**: Retrieves an image with a width of 900 pixels and a height of 500 pixels.\n\n**Tests**: Verifies that the image has the correct content type and length.\n\n**Description**: Retrieves an image with a width of 500 pixels and a height of 300 pixels.\n\n**Tests**: Verifies that the image has the correct content type and length.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    const statusCode = pm.response.code;",
+							"    ",
+							"    if (statusCode === 404) {",
+							"        pm.expect.fail(\"Status code is 404 - Not Found\");",
+							"    } else {",
+							"        pm.response.to.have.status(200);",
+							"    }",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "dotAsset Image",
+			"item": [
+				{
+					"name": "Import dotAsset Image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"dot_asset_image.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/octet-stream",
+								"type": "text"
+							},
+							{
+								"key": "Content-Disposition",
+								"value": "attachment",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/image/dot_asset_image.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/sync",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"sync"
+							],
+							"query": [
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "**Description**: Imports a bundle that includes a dotAsset image (dot_asset_image.tar.gz). This bundle contains a content type, dotAsset, and a contentlet associated with the imported content type.\n\n**Tests**: Verifies that the bundle is uploaded successfully and the response contains the correct bundle name and status.\n\nImports a Bundle that includes:\n\n- ContentType\n    \n- dotAsset\n    \n- Contentlet of the imported ContentType, that has the uploaded dotAsset"
+					},
+					"response": []
+				},
+				{
+					"name": "Get DotAsset Image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dA/1c70cae1-45c5-4562-99a0-f6eb837fb2cd/titleImage/256w",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dA",
+								"1c70cae1-45c5-4562-99a0-f6eb837fb2cd",
+								"titleImage",
+								"256w"
+							]
+						},
+						"description": "**Description**: Retrieves a dotAsset image by its identifier.\n\n**Tests**: Ensures that the image is successfully retrieved with a status code of 200."
+					},
+					"response": []
+				}
+			],
+			"description": "The Import dotAsset Image folder is designed to handle the importation and validation of dotAsset images into the system. This folder includes endpoints to upload image bundles and verify their successful integration.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    const statusCode = pm.response.code;",
+							"    ",
+							"    if (statusCode === 404) {",
+							"        pm.expect.fail(\"Status code is 404 - Not Found\");",
+							"    } else {",
+							"        pm.response.to.have.status(200);",
+							"    }",
+							"});"
+						]
+					}
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = 'admin@dotcms.com';",
+					"        const password = 'admin';",
+					"        const basicAuth = btoa(`${username}:${password}`);",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

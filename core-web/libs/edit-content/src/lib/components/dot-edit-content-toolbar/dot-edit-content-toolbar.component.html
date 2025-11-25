@@ -1,9 +1,10 @@
 <p-toolbar class="header">
     <div class="p-toolbar-group-left"></div>
     <div class="p-toolbar-group-right">
+        <ng-content></ng-content>
         <dot-workflow-actions
-            [actions]="actions"
-            [groupAction]="true"
-            (actionFired)="actionFired.emit($event)" />
+            (actionFired)="$actionFired.emit($event)"
+            [actions]="$actions()"
+            [groupActions]="true" />
     </div>
 </p-toolbar>

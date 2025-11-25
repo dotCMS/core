@@ -52,7 +52,7 @@ describe('DotBinaryFieldUiMessageComponent', () => {
         ).className;
 
         expect(messageText).toBe('Drag and Drop File');
-        expect(messageIconClass).toBe('pi pi-upload');
+        expect(messageIconClass).toBe('icon pi pi-upload');
         expect(messageIconContainer).toBe('icon-container info');
     });
 

@@ -26,12 +26,24 @@ yarn add @dotcms/client
 
 ## Usage
 
+`@dotcms/client` supports both ES modules and CommonJS. You can import it using either syntax:
+
+### ES Modules
+
+```javascript
+import { DotCmsClient } from '@dotcms/client';
+```
+
+### CommonJS
+
+```javascript
+const { DotCmsClient } = require('@dotcms/client');
+```
+
 First, initialize the client with your DotCMS instance details.
 
 ```javascript
-import { dotcmsClient } from '@dotcms/client';
-
-const client = dotcmsClient.init({
+const client = DotCmsClient.init({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',
     siteId: 'your-site-id'
@@ -70,7 +82,7 @@ console.log(navData);
 
 Detailed documentation of the `@dotcms/client` methods, parameters, and types can be found below:
 
-### `dotcmsClient.init(config: ClientConfig): DotCmsClient`
+### `DotCmsClient.init(config: ClientConfig): DotCmsClient`
 
 Initializes the DotCMS client with the specified configuration.
 
@@ -105,7 +117,6 @@ Always refer to the official [DotCMS documentation](https://www.dotcms.com/docs/
 | Installation    | [Installation](https://dotcms.com/docs/latest/installation)         |
 | Documentation   | [Documentation](https://dotcms.com/docs/latest/table-of-contents)   |
 | Videos          | [Helpful Videos](http://dotcms.com/videos/)                         |
-| Code Examples   | [Codeshare](https://dotcms.com/codeshare/)                          |
 | Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter         | @dotCMS                                                             |
 | Main Site       | [dotCMS.com](https://dotcms.com/)                                   |

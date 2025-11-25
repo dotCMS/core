@@ -570,6 +570,8 @@ public final class WebKeys {
     //VISITOR
     public static final String VISITOR = "com.dotcms.visitor";
 
+    public static final String EXECUTED_LUCENE_QUERY = "executed.lucene.query";
+
     public static class Cache
     {
         public static final String CACHE_BANNER_CACHE = "com.dotmarketing.cache.BannerCache";

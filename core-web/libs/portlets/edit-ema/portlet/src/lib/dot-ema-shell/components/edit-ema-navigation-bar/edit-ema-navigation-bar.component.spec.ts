@@ -20,7 +20,6 @@ const messageServiceMock = new MockDotMessageService(messages);
 
 describe('EditEmaNavigationBarComponent', () => {
     let spectator: SpectatorRouting<EditEmaNavigationBarComponent>;
-    const mockedAction = jest.fn();
 
     const createComponent = createRoutingFactory({
         component: EditEmaNavigationBarComponent,
@@ -53,28 +52,32 @@ describe('EditEmaNavigationBarComponent', () => {
                     {
                         icon: 'pi-file',
                         label: 'editema.editor.navbar.content',
+                        id: 'content',
                         href: 'content'
                     },
                     {
                         icon: 'pi-table',
                         label: 'editema.editor.navbar.layout',
                         href: 'layout',
+                        id: 'layout',
                         isDisabled: true
                     },
                     {
                         icon: 'pi-sliders-h',
                         label: 'editema.editor.navbar.rules',
-                        href: 'rules'
+                        href: 'rules',
+                        id: 'rules'
                     },
                     {
                         iconURL: 'assets/images/experiments.svg',
                         label: 'editema.editor.navbar.experiments',
-                        href: 'experiments'
+                        href: 'experiments',
+                        id: 'experiments'
                     },
                     {
                         icon: 'pi-sliders-h',
                         label: 'editema.editor.navbar.action',
-                        action: mockedAction
+                        id: 'action'
                     }
                 ]
             }
@@ -105,12 +108,13 @@ describe('EditEmaNavigationBarComponent', () => {
                 expect(actionLink).not.toBeNull();
             });
 
-            it("should trigger mockedAction on clicking last item 'Action'", () => {
+            it("should emit action on clicking last item 'Action'", () => {
                 const actionLink = spectator.query(byText('Action'));
+                const mockedAction = jest.spyOn(spectator.component.action, 'emit');
 
                 spectator.click(actionLink);
 
-                expect(mockedAction).toHaveBeenCalled();
+                expect(mockedAction).toHaveBeenCalledWith('action');
             });
 
             describe('NavBar with disabled', () => {
@@ -128,7 +132,7 @@ describe('EditEmaNavigationBarComponent', () => {
 
                 spectator.click(contentButton);
 
-                expect(spectator.query(byTestId('nav-bar-item')).classList[1]).toBe(
+                expect(spectator.query(byTestId('nav-bar-item')).classList).toContain(
                     'edit-ema-nav-bar__item--active'
                 );
             });

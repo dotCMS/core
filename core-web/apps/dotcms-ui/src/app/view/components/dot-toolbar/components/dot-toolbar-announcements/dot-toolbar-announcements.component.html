@@ -1,67 +1,73 @@
-<h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
-<ul class="announcements__list">
-    @for (item of announcements(); track item.identifier;) {
-    <li
-        class="announcements__list-item"
-        [class.announcements__list-item--active]="!item.hasBeenRead">
-        <span class="announcements__badge" *ngIf="!item.hasBeenRead"></span>
-        <span
-            class="announcements__image pi"
-            [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"></span>
-        <a
-            class="announcements__url"
-            [href]="item.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testId="announcement_link"
-            aria-labelledby="announcement-label date-label">
-            <div class="announcements__content">
-                <span class="announcements__label">{{ item.title }}</span>
-                <span class="announcements__date">{{ item.announcementDateAsISO8601 | date }}</span>
+@if (showMask()) {
+    <div class="dot-mask" data-testId="dot-mask"></div>
+}
+<p-overlayPanel
+    (onHide)="hideDialog()"
+    #toolbarAnnouncements
+    appendTo="body"
+    styleClass="toolbar-announcements__container">
+    <div class="announcements__main-container">
+        <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
+        <ul class="announcements__list">
+            @for (item of announcements(); track item.identifier) {
+                <li
+                    [class.announcements__list-item--active]="!item.hasBeenRead"
+                    class="announcements__list-item">
+                    @if (!item.hasBeenRead) {
+                        <span class="announcements__badge"></span>
+                    }
+                    <span
+                        [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"
+                        class="announcements__image pi"></span>
+                    <a
+                        (click)="toggleDialog($event)"
+                        [href]="item.url"
+                        class="announcements__url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testId="announcement_link"
+                        aria-labelledby="announcement-label date-label">
+                        <div class="announcements__content">
+                            <span class="announcements__label">{{ item.title }}</span>
+                            <span class="announcements__date">
+                                {{ item.announcementDateAsISO8601 | date }}
+                            </span>
+                        </div>
+                    </a>
+                </li>
+            }
+        </ul>
+
+        <div class="announcements__container">
+            <div class="announcements__link-container">
+                <i class="pi pi-external-link"></i>
+                <a
+                    (click)="toggleDialog($event)"
+                    [href]="linkToDotCms()"
+                    class="announcements__link"
+                    target="_blank"
+                    data-testId="announcement_link_all"
+                    rel="noopener">
+                    {{ 'announcements.show.all' | dm }}
+                </a>
             </div>
-        </a>
-    </li>
-    }
-</ul>
+        </div>
 
-<div class="announcements__container">
-    <div class="announcements__link-container">
-        <i class="pi pi-external-link"></i>
-        <a
-            class="announcements__link"
-            [href]="linkToDotCms()"
-            target="_blank"
-            data-testId="announcement_link_all"
-            rel="noopener"
-            >{{ 'announcements.show.all' | dm }}</a
-        >
+        @for (item of aboutLinks; track $index) {
+            <h5 class="announcements__title">{{ item.title | dm }}</h5>
+            <div class="announcements__about">
+                @for (item of item.items(); track $index) {
+                    <a
+                        (click)="toggleDialog($event)"
+                        [href]="item.url"
+                        class="announcements__about-link"
+                        data-testId="announcements__about-link"
+                        target="_blank"
+                        rel="noopener">
+                        {{ item.label }}
+                    </a>
+                }
+            </div>
+        }
     </div>
-</div>
-
-<h5 class="announcements__title">{{ 'announcements.knowledge.center' | dm }}</h5>
-<div class="announcements__about">
-    @for (item of knowledgeCenterLinks(); track item.id;) {
-    <a
-        class="announcements__about-link"
-        [href]="item.url"
-        data-testId="announcement_link"
-        target="_blank"
-        rel="noopener"
-        >{{ item.label }}</a
-    >
-    }
-</div>
-
-<h5 class="announcements__title">{{ 'announcements.knowledge.contact.us' | dm }}</h5>
-<div class="announcements__about">
-    @for (item of contactLinks(); track item.id;) {
-    <a
-        class="announcements__about-link"
-        [href]="item.url"
-        data-testId="announcement_link"
-        target="_blank"
-        rel="noopener"
-        >{{ item.label }}</a
-    >
-    }
-</div>
+</p-overlayPanel>

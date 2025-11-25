@@ -3,6 +3,23 @@
 :host {
     display: block;
 
+    &.hide {
+        visibility: hidden;
+    }
+
+    .drag-image {
+        position: absolute;
+        top: -1000px;
+        left: -1000px;
+        padding: $spacing-3;
+        width: fit-content;
+        background-color: white;
+        border: 1px solid $color-palette-gray-400;
+        border-radius: $border-radius-lg;
+        z-index: 1;
+        visibility: visible;
+    }
+
     ::ng-deep {
         .p-button-raised {
             background-color: $white;
@@ -10,7 +27,8 @@
             box-shadow: $shadow-s;
             transition: all 0.15s ease-in-out;
 
-            &:hover {
+            &:hover,
+            &:enabled:focus {
                 background-color: $color-palette-primary-100;
                 color: $color-palette-primary-500;
                 box-shadow: $shadow-s;
@@ -32,5 +50,6 @@
 
 .actions {
     display: flex;
+    justify-content: flex-end;
     gap: $spacing-0;
 }

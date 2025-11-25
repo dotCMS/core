@@ -1,18 +1,36 @@
 @use "variables" as *;
 
-::ng-deep .p-breadcrumb {
-    ul li {
-        &:first-child a span.p-menuitem-text {
-            color: $black;
-            font-size: $font-size-lg;
-            font-weight: $font-weight-regular-bold;
-        }
-
-        &:last-child a {
-            pointer-events: none;
-        }
-        &:nth-child(2) .p-icon-wrapper {
-            display: none;
+:host ::ng-deep .p-breadcrumb {
+    .p-breadcrumb-list {
+        li {
+            &:first-child {
+                font-size: $font-size-lg;
+                a span.p-menuitem-text {
+                    color: $black;
+                    font-size: $font-size-lg;
+                    font-weight: $font-weight-regular-bold;
+                }
+            }
+            .p-menuitem-link[href] {
+                .p-menuitem-text {
+                    font-size: $font-size-lg;
+                }
+            }
+            &:last-child a {
+                pointer-events: none;
+            }
+            &:nth-child(2) {
+                &::before {
+                    content: "";
+                    width: 1px;
+                    height: 20px;
+                    background: $color-palette-gray-500;
+                    display: block;
+                }
+                .p-icon-wrapper {
+                    display: none;
+                }
+            }
         }
     }
 }

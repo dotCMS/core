@@ -1,22 +1,20 @@
-<dot-searchable-dropdown
-    #searchableDropdown
-    *ngIf="moreThanOneSite || asField; else hostName"
-    [data]="sitesCurrentPage"
-    [ngModel]="currentSite"
-    [pageLinkSize]="3"
-    [rows]="pageSize"
-    [totalRecords]="paginationService.totalRecords"
-    [class]="'site-selector__field ' + cssClass"
-    [width]="width"
-    (switch)="siteChange($event)"
-    (filterChange)="handleFilterChange($event)"
-    (hide)="hide.emit()"
-    (pageChange)="handlePageChange($event)"
-    (display)="display.emit()"
-    labelPropertyName="hostname"
-    cssClassDataList="site_selector__data-list">
-</dot-searchable-dropdown>
-
-<ng-template #hostName>
-    <span class="site-selector__title">{{ currentSite?.hostname }}</span>
-</ng-template>
+@if ($moreThanOneSite() || asField) {
+    <dot-searchable-dropdown
+        (switch)="siteChange($event)"
+        (filterChange)="handleFilterChange($event)"
+        (hide)="hide.emit()"
+        (pageChange)="handlePageChange($event)"
+        (display)="display.emit()"
+        [data]="$sitesCurrentPage()"
+        [ngModel]="$currentSite()"
+        [pageLinkSize]="3"
+        [rows]="pageSize"
+        [totalRecords]="paginationService.totalRecords"
+        [class]="'site-selector__field ' + cssClass"
+        [width]="width"
+        #searchableDropdown
+        labelPropertyName="hostname"
+        cssClassDataList="site_selector__data-list" />
+} @else {
+    <span class="site-selector__title">{{ $currentSite()?.hostname }}</span>
+}

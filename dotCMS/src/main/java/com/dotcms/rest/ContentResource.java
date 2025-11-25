@@ -7,19 +7,14 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.util.xstream.XStreamHandler;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import com.dotcms.util.JsonUtil;
-import com.dotmarketing.portlets.structure.model.Field.FieldType;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.JsonUtil;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.FireActionForm;
@@ -42,6 +37,7 @@ import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -54,7 +50,12 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -62,6 +63,8 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -70,12 +73,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -92,7 +97,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -108,11 +112,21 @@ import java.util.stream.Stream;
 import static com.dotmarketing.util.NumberUtil.toInt;
 import static com.dotmarketing.util.NumberUtil.toLong;
 
+/**
+ * This REST Endpoint provides access to Contentlet data, fields, and different actions that can be
+ * performed on them. It's worth noting that several methods in this Endpoint may belong to legacy
+ * code or should not be used in recent dotCMS versions. If you need to add further functionality,
+ * make sure you add it to the {@link com.dotcms.rest.api.v1.content.ContentResource} class
+ * instead, which represents the most recent versioned REST Endpoint.
+ *
+ * @author Daniel Silva
+ * @since May 25th, 2012
+ */
 @Path("/content")
 @Tag(name = "Content Delivery")
 public class ContentResource {
 
-    // set this only from an environmental variable so it cannot be overrriden in our Config class
+    // set this only from an environmental variable so it cannot be overridden in our Config class
     private final boolean USE_XSTREAM_FOR_DESERIALIZATION = System.getenv("USE_XSTREAM_FOR_DESERIALIZATION")!=null && "true".equals(System.getenv("USE_XSTREAM_FOR_DESERIALIZATION"));
 
     public static final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
@@ -130,23 +144,27 @@ public class ContentResource {
     private final ContentHelper contentHelper = ContentHelper.getInstance();
 
     /**
+     * Performs a content search. Parameters are received via POST and returns a JSON object with
+     * the search info and contentlet results. This is an example call using CURL:
+     * <pre>
+     *     curl --location --request POST 'http://localhost:8080/api/content/_search' \
+     *      --header 'Content-Type: application/json' \
+     *      --data-raw '{
+     *           	 "query": "+structurename:webpagecontent",
+     *            	 "sort":"modDate",
+     *            	 "limit":20,
+     *            	 "offset":0,
+     *            	 "userId":"dotcms.org.1"
+     *      }'
+     * </pre>
      *
-     * Do a search, parameter are received by post and returns the json with the search info and contentlet results
+     * @param request       {@link HttpServletRequest} object
+     * @param response      {@link HttpServletResponse} object
+     * @param rememberQuery Indicates if the specified Lucene Query must be stored in the current
+     *                      session or not. This usually means that the request is coming from the
+     *                      {@code Query Tool} portlet.
+     * @param searchForm    {@link SearchForm}
      *
-     * Example call using curl:
-     * curl --location --request POST 'http://localhost:8080/api/content/_search' \
-     * --header 'Content-Type: application/json' \
-     * --data-raw '{
-     *      	 "query": "+structurename:webpagecontent",
-     *       	 "sort":"modDate",
-     *       	 "limit":20,
-     *       	 "offset":0,
-     *           "userId":"dotcms.org.1"
-     * }'
-     *
-     * @param request {@link HttpServletRequest} object
-     * @param response {@link HttpServletResponse} object
-     * @param searchForm {@link SearchForm}
      * @return json array of objects. each object with inode and identifier
      */
     @POST
@@ -154,6 +172,7 @@ public class ContentResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response search(@Context HttpServletRequest request,
                            @Context final HttpServletResponse response,
+                           @QueryParam("rememberQuery") @DefaultValue("false") final boolean rememberQuery,
                            final SearchForm searchForm) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = this.webResource.init
@@ -171,7 +190,7 @@ public class ContentResource {
         final String userToPullID       = searchForm.getUserId();
         final boolean allCategoriesInfo = searchForm.isAllCategoriesInfo();
         User   userForPull              = user;
-        List<Contentlet> contentlets    = Collections.emptyList();
+        List<Contentlet> contentlets;
         long resultsSize                = 0;
         long startAPISearchPull         = 0;
         long afterAPISearchPull         = 0;
@@ -186,18 +205,16 @@ public class ContentResource {
 
         Logger.debug(this, ()-> "Searching contentlets by: " + searchForm);
 
-        //If the user is an admin can send an user to filter the search
-        if(null != user && user.isAdmin()){
-
-            if(UtilMethods.isSet(userToPullID)) {
-
-                userForPull = APILocator.getUserAPI().loadUserById(userToPullID, APILocator.systemUser(),true);
-            }
+        // If the user is an admin, they can send a user to filter the search
+        if (null != user && user.isAdmin() && UtilMethods.isSet(userToPullID)) {
+            userForPull = APILocator.getUserAPI().loadUserById(userToPullID, APILocator.systemUser(),true);
         }
 
         if (UtilMethods.isSet(query)) {
-
-            final String realQuery = query.indexOf("variant:") != -1 ? query : query + " +variant:default";
+            if (rememberQuery) {
+                request.getSession().setAttribute(WebKeys.EXECUTED_LUCENE_QUERY, query);
+            }
+            final String realQuery = query.contains("variant:") ? query : query + " +variant:default";
 
             startAPISearchPull = Calendar.getInstance().getTimeInMillis();
             resultsSize        = APILocator.getContentletAPI().indexCount(realQuery, userForPull, pageMode.respectAnonPerms);
@@ -217,8 +234,7 @@ public class ContentResource {
 
         final long queryTook     = afterAPISearchPull-startAPISearchPull;
         final long contentTook   = afterAPIPull-startAPIPull;
-
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 new SearchView(resultsSize, queryTook, contentTook, new JsonObjectView(resultJson)))).build();
     }
 
@@ -554,10 +570,9 @@ public class ContentResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("params") String params) {
-
         final InitDataObject initData = this.webResource.init
                 (params, request, response, false, null);
-        //Creating an utility response object
+        // Creating a utility response object
         final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
@@ -569,9 +584,7 @@ public class ContentResource {
         final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
         final String inode = paramsMap.get(RESTParams.INODE.getValue());
         final String respectFrontEndRolesKey = RESTParams.RESPECT_FRONT_END_ROLES.getValue().toLowerCase();
-        final boolean respectFrontendRoles = UtilMethods.isSet(paramsMap.get(respectFrontEndRolesKey))
-                ? Boolean.valueOf(paramsMap.get(respectFrontEndRolesKey))
-                : true;
+        final boolean respectFrontendRoles = !UtilMethods.isSet(paramsMap.get(respectFrontEndRolesKey)) || Boolean.parseBoolean(paramsMap.get(respectFrontEndRolesKey));
         final long language = toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
                 () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
         /* Limit and Offset Parameters Handling, if not passed, using default */
@@ -597,44 +610,37 @@ public class ContentResource {
 
         /* Fetching the content using a query if passed or an id */
         List<Contentlet> contentlets = new ArrayList<>();
-        Boolean idPassed = false;
-        Boolean inodePassed = false;
-        Boolean queryPassed = false;
+        boolean idPassed = UtilMethods.isSet(id);
+        boolean inodePassed  = UtilMethods.isSet(inode);
+        boolean queryPassed = UtilMethods.isSet(query);
         String result = null;
         Optional<Status> status = Optional.empty();
         String type = paramsMap.get(RESTParams.TYPE.getValue());
         String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
         final String tmDate = (String) request.getSession().getAttribute("tm_date");
-
         type = UtilMethods.isSet(type) ? type : "json";
-
         final String relatedOrder = UtilMethods.isSet(orderBy) ? orderBy: null;
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
 
         try {
-
-            if (idPassed = UtilMethods.isSet(id)) {
-
+            if (idPassed) {
                 final Contentlet contentlet = APILocator.getContentletAPI()
                         .findContentletByIdentifier(id, live, language, user, respectFrontendRoles);
-
                 if (contentlet != null){
-                    contentlets.add(this.contentHelper.hydrateContentlet(contentlet));
+                    contentlets.add(contentlet);
                 }
-
-            } else if (inodePassed = UtilMethods.isSet(inode)) {
-
+            } else if (inodePassed) {
                 final Contentlet contentlet = APILocator.getContentletAPI()
                         .find(inode, user, respectFrontendRoles);
                 if (contentlet != null){
-                    contentlets.add(this.contentHelper.hydrateContentlet(contentlet));
+                    contentlets.add(contentlet);
                 }
             } else if (UtilMethods.isSet(related)){
                 //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
                 //In case of multiple relationships, they must be sent as a comma separated list
                 //i.e.: ContentTypeVarName1.FieldVarName1:contentletIdentifier1,ContentTypeVarName2.FieldVarName2:contentletIdentifier2
                 int i = 0;
-                for(String relationshipValue: related.split(",")){
+                for (final String relationshipValue : related.split(StringPool.COMMA)) {
                     if (i == 0) {
                         contentlets.addAll(getPullRelated(user, limit, offset, relatedOrder, tmDate,
                                 processQuery(query), relationshipValue, language, live));
@@ -648,16 +654,14 @@ public class ContentResource {
 
                     i++;
                 }
-            } else if (queryPassed = UtilMethods.isSet(query)){
+            } else if (queryPassed){
                 contentlets = ContentUtils
                         .pull(processQuery(query), offset, limit, orderBy, user, tmDate);
             }
-
-        } catch (DotSecurityException e) {
-
+        } catch (final DotSecurityException e) {
             Logger.debug(this, "Permission error: " + e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             if (idPassed) {
                 Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id + " " + e.getMessage(), e);
             } else if (queryPassed || UtilMethods.isSet(related)) {
@@ -677,10 +681,10 @@ public class ContentResource {
                 result = getJSON(contentlets, request, response, render, user, depth,
                         respectFrontendRoles, language, live, allCategoriesInfo);
             }
-        } catch (Exception e) {
-            Logger.warn(this, "Error converting result to XML/JSON");
+        } catch (final Exception e) {
+            Logger.warn(this, String.format("Error converting result to %s for request [ %s ]: " +
+                    "%s", type, params, ExceptionUtil.getErrorMessage(e)));
         }
-
         return responseResource.response(result, null, status);
     }
 
@@ -2207,7 +2211,7 @@ public class ContentResource {
     protected void processJSON(final Contentlet contentlet, final InputStream input)
             throws JSONException, IOException, DotDataException, DotSecurityException {
 
-        processMap(contentlet, webResource.processJSON(input));
+        processMap(contentlet, WebResource.processJSON(input));
     }
 
     private void setRequestMetadata(Contentlet contentlet, HttpServletRequest request) {

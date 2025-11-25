@@ -1,0 +1,208 @@
+# Initialize Phase Workflow
+#
+# This reusable workflow is responsible for initializing the build process,
+# checking for previous builds, and determining which components need to be
+# built or tested based on changes in the codebase.
+#
+# Key features:
+# - Supports incremental builds
+# - Can reuse artifacts from previous builds
+# - Determines which components (backend, frontend, CLI) need attention
+# - Configurable test skipping
+
+name: Initialize Phase
+
+on:
+  workflow_call:
+    inputs:
+      validation-level:
+        default: 'none'
+        type: string
+        description: 'Levels of validation: none, full, or custom'
+      custom-modules:
+        default: ''
+        type: string
+        description: 'Comma-separated list of custom modules to validate'
+      reuse-previous-build:
+        description: 'Indicates if the workflow should reuse the previous build'
+        type: boolean
+        default: false
+      build-on-missing-artifacts:
+        description: 'If artifacts from previous build cannot be found should we build now or error. Only applicable if reuse-previous-build is set'
+        type: boolean
+        default: false
+    outputs:
+      artifact-run-id:
+        value: ${{ jobs.check-previous-build.outputs.artifact-run-id }}
+      found_artifacts:
+        value: ${{ jobs.check-previous-build.outputs.found_artifacts }}
+      build:
+        value: ${{ jobs.changes.outputs.build }}
+      backend:
+        value: ${{ jobs.changes.outputs.backend }}
+      frontend:
+        value: ${{ jobs.changes.outputs.frontend }}
+      jvm_unit_test:
+        value: ${{ jobs.changes.outputs.jvm_unit_test }}
+      cli:
+        value: ${{ jobs.changes.outputs.cli }}
+      sdk_libs:
+        value: ${{ jobs.changes.outputs.sdk_libs }}        
+
+jobs:
+  # This job is used as a required check to indicate that the workflow has started and is running
+  initialize:
+    name: Initialize
+    runs-on: ubuntu-20.04
+    if: always()
+    steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+      - name: Initialize
+        id: initialize
+        shell: bash
+        run: |
+          echo "Initializing..."
+        # Check can be removed if we have resolved root cause
+        # We cannot use a local github action for this as it is run before we checkout the repo
+        # secrets.GITHUB_TOKEN is not available in composite workflows so it needs to be passed in.
+      - name: Check API Rate Limit
+        shell: bash
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/rate_limit || true
+
+  # This job checks for artifacts from previous builds and determines if they can be reused
+  check-previous-build:
+    name: Check Previous Build
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-run-id: ${{ steps.check.outputs.run_id }}
+      found_artifacts: ${{ steps.check.outputs.found_artifacts }}
+    steps:
+      - name: Download Build Artifact
+        id: data-download
+        uses: dawidd6/action-download-artifact@v3.1.4
+        if: ${{ inputs.reuse-previous-build == true }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow_search: true
+          commit: ${{ github.sha }}
+          workflow_conclusion: success
+          search_artifacts: true
+          dry_run: true
+          name: maven-repo
+          path: .
+          if_no_artifact_found: warn
+      - name: Set Outputs
+        id: check
+        run: |
+          build_artifact_exists=${{ steps.data-download.outputs.found_artifact }}
+          if [[ ${build_artifact_exists} == "true" ]]; then
+              run_id=`echo '${{ steps.data-download.outputs.artifacts }}' | jq -r '.[0].workflow_run.id'`
+              found_artifacts=true
+              echo "Merge Group Artifact Run id: $run_id"
+          else
+             echo "No Merge Group artifact found"
+             run_id="${{ github.run_id }}"
+             found_artifacts=false
+          fi
+          echo "run_id=$run_id" >> $GITHUB_OUTPUT
+          echo "found_artifacts=$found_artifacts" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.reuse-previous-build || 'false' }}" == "true" && "${found_artifacts}" != "true" && "${{ inputs.build-on-missing-artifacts }}" != "true" ]]; then
+            echo "build-on-missing-artifacts set to false. Failing build"
+            exit 1
+          fi
+
+  # This job determines which components of the project need to be built or tested
+  changes:
+    name: Check Changed Files
+    needs: [ check-previous-build ]
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.filter-rewrite.outputs.build }}
+      backend: ${{ steps.filter-rewrite.outputs.backend }}
+      frontend: ${{ steps.filter-rewrite.outputs.frontend }}
+      jvm_unit_test: ${{ steps.filter-rewrite.outputs.jvm_unit_test }}
+      cli: ${{ steps.filter-rewrite.outputs.cli }}
+      sdk_libs: ${{ steps.filter-rewrite.outputs.sdk_libs }}
+    steps:
+      - uses: actions/checkout@v4
+        if: ${{ inputs.validation-level != 'none' }}
+
+      # Execute the paths-filter step to determine changes
+      - uses: dorny/paths-filter@v3.0.1
+        if: ${{ inputs.validation-level != 'none' }}
+        id: filter
+        with:
+          filters: .github/filters.yaml
+          list-files: 'escape'
+          
+      - name: Rewrite Filter
+        id: filter-rewrite
+        env:
+          CICD_SKIP_TESTS: ${{ vars.CICD_SKIP_TESTS }}
+        run: |
+          echo "::group::Rewrite Fiter"
+          # Default action outcomes based on paths-filter action outputs
+          frontend=${{ steps.filter.outputs.frontend || 'true'}}
+          cli=${{ steps.filter.outputs.cli || 'true' }}
+          backend=${{ steps.filter.outputs.backend || 'true' }}
+          build=${{ steps.filter.outputs.build || 'true' }}
+          jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test || 'true' }}
+          sdk_libs=${{ steps.filter.outputs.sdk_libs || 'false' }}
+
+          # Check if the commit is to the main branch
+          skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
+
+          # If skip_tests is true, set all tests to false
+          if [ "$skip_tests" == "true" ]; then
+            echo "Skipping tests as per CICD_SKIP_TESTS flag."
+            frontend=false
+            cli=false
+            backend=false
+            jvm_unit_test=false
+          fi
+          
+          # Adjust outputs based on validation_level
+          if [ "${{ inputs.validation-level }}" == "custom" ]; then
+            frontend=false
+            cli=false
+            backend=false
+            build=false
+            jvm_unit_test=false
+
+            IFS=',' read -r -a custom_modules_list <<< "${{ inputs.custom-modules }}"
+            for module in "${custom_modules_list[@]}"; do
+              if [ "${module}" == "frontend" ]; then
+                frontend=${{ steps.filter.outputs.frontend }}
+              elif [ "${module}" == "cli" ]; then
+                cli=${{ steps.filter.outputs.cli }}
+              elif [ "${module}" == "backend" ]; then
+                backend=${{ steps.filter.outputs.backend }}
+              elif [ "${module}" == "build" ]; then
+                build=${{ steps.filter.outputs.build }}
+              elif [ "${module}" == "jvm_unit_test" ]; then
+                jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
+              elif [ "${module}" == "sdk_libs" ]; then
+                sdk_libs=${sdk_libs}                
+              fi
+            done
+          fi          
+          
+          echo "build=${build}"
+          echo "frontend=${frontend}"
+          echo "cli=${cli}"
+          echo "backend=${backend}"
+          echo "jvm_unit_test=${jvm_unit_test}"
+          echo "sdk_libs=${sdk_libs}"
+
+          # Export the outcomes as GitHub Actions outputs
+          echo "frontend=${frontend}" >> $GITHUB_OUTPUT
+          echo "cli=${cli}" >> $GITHUB_OUTPUT
+          echo "backend=${backend}" >> $GITHUB_OUTPUT
+          echo "build=${build}" >> $GITHUB_OUTPUT
+          echo "jvm_unit_test=${jvm_unit_test}" >> $GITHUB_OUTPUT
+          echo "sdk_libs=${sdk_libs}" >> $GITHUB_OUTPUT
+          echo "::endgroup::"

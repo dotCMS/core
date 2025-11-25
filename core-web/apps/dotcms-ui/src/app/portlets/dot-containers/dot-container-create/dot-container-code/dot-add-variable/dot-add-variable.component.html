@@ -1,22 +1,26 @@
-<p-dataView *ngIf="vm$ | async as vm" [value]="vm.fields" layout="list">
-    <ng-template let-field pTemplate="listItem">
-        <div class="dot-add-variable-list__item">
-            <div class="item__info">
-                <h3 class="info__title" [attr.data-testId]="'h3' + field.variable">
-                    {{ field?.name }}
-                </h3>
-                <small class="info__label">
-                    {{ field?.fieldTypeLabel }}
-                </small>
-            </div>
-            <div class="item__action">
-                <button
-                    class="p-button-outlined p-button-primary p-button-sm"
-                    [attr.data-testId]="field.variable"
-                    [label]="'Add' | dm"
-                    (click)="addCustomCode(field)"
-                    pButton></button>
-            </div>
-        </div>
-    </ng-template>
-</p-dataView>
+@if (vm$ | async; as vm) {
+    <p-dataView [value]="vm.fields" layout="list">
+        <ng-template pTemplate="list" let-data>
+            @for (field of data; track $index) {
+                <div class="dot-add-variable-list__item">
+                    <div class="item__info">
+                        <h3 [attr.data-testId]="'h3' + field.variable" class="info__title">
+                            {{ field?.name }}
+                        </h3>
+                        <small class="info__label">
+                            {{ field?.fieldTypeLabel }}
+                        </small>
+                    </div>
+                    <div class="item__action">
+                        <button
+                            (click)="addCustomCode(field)"
+                            [attr.data-testId]="field.variable"
+                            [label]="'Add' | dm"
+                            class="p-button-outlined p-button-primary p-button-sm"
+                            pButton></button>
+                    </div>
+                </div>
+            }
+        </ng-template>
+    </p-dataView>
+}

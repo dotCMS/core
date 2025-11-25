@@ -36,10 +36,10 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
@@ -880,5 +881,28 @@ public class ContentToolTest extends IntegrationTestBase {
                 children.containsAll(pullRelatedContent));
 
 
+    }
+
+    /**
+     * Method to Test: {@link ContentTool#pull(String, int, int, String)}}
+     * When: pulling content and having more than one content
+     * Should: Return the total under the key "totalResults"
+     *
+     */
+    @Test
+    public void testPull_includeTotal() {
+        final ContentType blogLikeType = TestDataUtils.getBlogLikeContentType();
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(blogLikeType.inode()).host(defaultHost);
+        IntStream.range(0, 10).forEach(i -> contentletDataGen.nextPersisted());
+
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+
+        final PaginatedArrayList<ContentMap> results = contentTool.pull(
+                "+contentType:" + blogLikeType.variable(), 0, 0,
+                "modDate desc"
+        );
+
+        Assert.assertEquals(10, results.getTotalResults());
     }
 }

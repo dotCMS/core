@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -30,7 +29,7 @@ export interface DropZoneFileValidity {
 @Component({
     selector: 'dot-drop-zone',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './dot-drop-zone.component.html',
     styleUrls: ['./dot-drop-zone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -82,9 +81,6 @@ export class DotDropZoneComponent {
         if (files.length === 0) return;
 
         this.setValidity(files);
-
-        dataTransfer.items?.clear();
-        dataTransfer.clearData();
         this.fileDropped.emit({
             file, // Only one file is allowed
             validity: this._validity

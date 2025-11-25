@@ -41,6 +41,9 @@
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
+<%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
+<%@ page import="com.dotmarketing.util.ConfigUtils" %>
+
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -52,7 +55,7 @@
 
     Object value = (Object) request.getAttribute("value");
     ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
-
+    mapper.registerModule(new Jdk8Module());
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
     boolean isReadOnly = field.isReadOnly();
     String defaultValue = field.getDefaultValue() != null ? field
@@ -216,7 +219,7 @@
             String jsonField = "{}";
             String contentletObj = "{}";
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
-            
+
             // If it can be parsed as a JSON, then it means that the value is already a Block Editor's value
             if (value != null) {
                 try {
@@ -287,7 +290,7 @@
                             field.value = !detail ? null : JSON.stringify(detail);;
                         });
 
-                        // 
+                        //
                         blockEditor.contentlet = contentlet;
                         blockEditor.field = fieldData;
 
@@ -296,7 +299,7 @@
                         blockEditor.contentletIdentifier = '<%=contentletIdentifier%>';
                         blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
                         blockEditor.isFullscreen = <%=fullScreenField%>;
-                        blockEditor.lang = '<%=contentLanguage%>';
+                        blockEditor.languageId = '<%=contentLanguage%>';
                         blockEditorContainer.appendChild(blockEditor);
                     }
                 )();
@@ -691,8 +694,7 @@
 
 
         <%
-            String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
-            if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+            if (ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BINARY_FIELD")) {
         %>
 
             <%
@@ -730,16 +732,16 @@
                         helperText=fv.getValue();
                     }
                 }
-            
+
                 %>
-            
+
 
             <div id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>" dojoType="dijit.Dialog" >
                 <div dojoType="dijit.layout.ContentPane" style="text-align:center;height:auto;" class="box" hasShadow="true" id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>CP">
                     <p style="margin:0;max-width:600px;word-wrap: break-word">
-                        <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %> 
-                        "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue"> </span>" 
-                        <%= LanguageUtil.get(pageContext, "with") %>  
+                        <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %>
+                        "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue"> </span>"
+                        <%= LanguageUtil.get(pageContext, "with") %>
                         "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-newValue"></span>""
                         <br>&nbsp;<br>
                     </p>
@@ -767,7 +769,7 @@
                     fileNameField?.setValue(newFileName);
                     dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").hide();
                 }
-                
+
                 function closeConfirmReplaceName(){
                     dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").hide();
                 }
@@ -830,12 +832,12 @@
                             if(contentBaseType === 4){ // FileAsset
                                 let titleField = dijit.byId("title");
                                 let fileNameField = dijit.byId("fileName");
-                                window.newFileName = fileName; //To use in confirmReplaceName function 
-                                
+                                window.newFileName = fileName; //To use in confirmReplaceName function
+
                                 if(!fileNameField.value){
                                     titleField?.setValue(fileName);
                                 }
-    
+
                                 if(fileNameField.value && fileName && fileNameField.value !== fileName) {
                                     document.getElementById("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue").innerHTML = fileNameField.value;
                                     document.getElementById("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-newValue").innerHTML = fileName;
@@ -1050,7 +1052,7 @@
 
     </script>
 
-    <%} %>
+
     <%
 
         String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
@@ -1076,8 +1078,8 @@
             <% } %>
 
         <% } %>
-    <% } %>
-
+      <% } %>
+    <%} %>
     <!--  END display -->
     <!-- javascript -->
     <script type="text/javascript">

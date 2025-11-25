@@ -1,8 +1,10 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
@@ -75,6 +77,8 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, site);
             }
 
+            Logger.debug(this, ()-> "Fetching page for URL: " + url);
+
             final PageContext pageContext = PageContextBuilder.builder()
                     .setUser(user)
                     .setPageUri(url)
@@ -90,6 +94,12 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             } catch (HTMLPageAssetNotFoundException e) {
                 Logger.error(this, e.getMessage());
                 return null;
+            } catch (DotSecurityException e) {
+                if(mode.equals(PageMode.WORKING)) {
+                    throw new PermissionDeniedGraphQLException(
+                            "Unauthorized: You do not have the necessary permissions to request this page in edit mode.");
+                }
+                throw new PermissionDeniedGraphQLException();
             }
 
             final HTMLPageAsset pageAsset = pageUrl.getHTMLPage();
@@ -108,7 +118,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             return transformer.hydrate().get(0);
 
         } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
             throw e;
         }
     }

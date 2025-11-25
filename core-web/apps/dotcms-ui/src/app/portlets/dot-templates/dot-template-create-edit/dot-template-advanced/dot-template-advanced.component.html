@@ -4,15 +4,14 @@
     </dot-portlet-toolbar>
 
     <form [formGroup]="form">
-        <dot-container-selector (swap)="containerChange($event)"> </dot-container-selector>
+        <dot-container-selector (swap)="containerChange($event)"></dot-container-selector>
         <dot-textarea-content
+            (monacoInit)="initEditor($event)"
+            [show]="['code']"
             formControlName="body"
             #value
             height="100%"
             formControlName="body"
-            [show]="['code']"
-            language="html"
-            (monacoInit)="initEditor($event)"
-        ></dot-textarea-content>
+            language="html"></dot-textarea-content>
     </form>
 </dot-portlet-base>

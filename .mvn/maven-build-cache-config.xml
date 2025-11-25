@@ -1,0 +1,34 @@
+<!--
+Opted for a simple configuration to cache the build output of the project.
+
+For a full featured example, see:
+
+https://maven.apache.org/extensions/maven-build-cache-extension/maven-build-cache-config.xml
+
+
+-->
+
+<cache xmlns="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0 https://maven.apache.org/xsd/build-cache-config-1.0.0.xsd">
+    <configuration>
+        <enabled>false</enabled>
+        <hashAlgorithm>SHA-256</hashAlgorithm>
+        <validateXml>true</validateXml>
+        <local>
+            <maxBuildsCached>3</maxBuildsCached>
+        </local>
+        <projectVersioning adjustMetaInf="true"/>
+    </configuration>
+    <input>
+        <global>
+            <glob> {*.java,*.yaml,*.properties,*.js,*.ts,*.json,*.xml,*.mjs,*.jsp} </glob>
+            <includes>
+                <include>src/</include>
+            </includes>
+            <excludes>
+                <exclude>temp.out</exclude>
+            </excludes>
+        </global>
+    </input>
+</cache>

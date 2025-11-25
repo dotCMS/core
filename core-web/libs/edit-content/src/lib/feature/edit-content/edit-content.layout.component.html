@@ -1,34 +1,81 @@
-<ng-container *ngIf="vm$ | async as vm; else noContent">
-    <div
-        class="topBar"
-        *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]"
-        data-testId="topBar">
-        <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
-        <a
-            [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"
-            data-testId="content-type"
-            >{{ 'edit.content.layout.beta.message.switch' | dm }}</a
-        >
-        {{ 'edit.content.layout.beta.message.needed' | dm }}
-    </div>
+@if (vm$ | async; as vm) {
+    @if (vm?.contentType?.metadata?.[$featuredFlagContentKEY()]) {
+        <p-messages
+            class="topBar"
+            styleClass="p-message-border-y"
+            severity="success"
+            data-testId="topBar">
+            <ng-template pTemplate>
+                <i class="pi pi-info-circle"></i>
+                <div>
+                    <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
+                    <a
+                        [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"
+                        data-testId="content-type">
+                        {{ 'edit.content.layout.beta.message.switch' | dm }}
+                    </a>
+                    <span>{{ ' ' }}{{ 'edit.content.layout.beta.message.needed' | dm }}</span>
+                </div>
+            </ng-template>
+        </p-messages>
+    }
     <dot-edit-content-toolbar
-        class="header"
-        [actions]="vm.actions"
         (actionFired)="
             fireWorkflowAction({
                 actionId: $event.id,
                 inode: vm.contentlet?.inode,
                 contentType: vm.contentType.variable
             })
-        "></dot-edit-content-toolbar>
-    <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
-    <aside class="sidebar">
-        <dot-edit-content-aside
-            [contentLet]="vm.contentlet"
-            [contentType]="vm.contentType.variable" />
-    </aside>
-</ng-container>
-
-<ng-template #noContent>{{ 'edit.content.layout.no.content.to.show ' | dm }}</ng-template>
+        "
+        [actions]="vm.actions"
+        class="header"
+        [class.showSidebar]="vm.layout.showSidebar">
+        <button
+            [class.showSidebar]="vm.layout.showSidebar"
+            class="edit-content-layout__sidebar-btn p-button p-button-sm p-button-text p-button-rounded p-button-icon-only content-aside__closeBtn"
+            (click)="toggleSidebar()"
+            data-testId="sidebar-toggle">
+            <svg
+                width="16"
+                height="16"
+                viewBox="0 0 20 20"
+                version="1.1"
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:xlink="http://www.w3.org/1999/xlink">
+                <g id="Canvas" fill="none">
+                    <g id="icon">
+                        <g id="Rectangle 2">
+                            <rect
+                                x="1"
+                                y="1"
+                                width="18"
+                                height="18"
+                                rx="1"
+                                stroke-width="2"
+                                stroke="#444444" />
+                        </g>
+                        <g id="Rectangle 2.1">
+                            <path
+                                d="M 0 0L 2 0L 2 20L 0 20L 0 0Z"
+                                transform="matrix(1 1.74846e-07 -1.74846e-07 1 12 0)"
+                                fill="#444444" />
+                        </g>
+                    </g>
+                </g>
+            </svg>
+        </button>
+    </dot-edit-content-toolbar>
+    <dot-edit-content-form (changeValue)="setFormValue($event)" [formData]="vm" class="body" />
+    <dot-edit-content-aside
+        [loading]="vm.loading"
+        [contentlet]="vm.contentlet"
+        [contentType]="vm.contentType"
+        [collapsed]="vm.layout.showSidebar"
+        (toggle)="toggleSidebar()"
+        class="sidebar" />
+} @else {
+    {{ 'edit.content.layout.no.content.to.show ' | dm }}
+}
 
 <p-toast></p-toast>
+<p-confirmDialog />

@@ -7,8 +7,8 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.language.Language;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
 

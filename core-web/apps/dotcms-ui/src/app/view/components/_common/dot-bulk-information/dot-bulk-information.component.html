@@ -7,7 +7,7 @@
         <span class="material-icons">error_outline</span>
         <span data-testId="fails">{{ data.fails?.length }} {{ 'failed' | dm }}</span>
     </p>
-    <div class="bulk-information__fail-item" *ngFor="let item of data.fails">
+    <div *ngFor="let item of data.fails" class="bulk-information__fail-item">
         <h5>{{ item.description }}</h5>
         <p>{{ item.errorMessage }}</p>
     </div>

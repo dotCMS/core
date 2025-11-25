@@ -7,28 +7,26 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Contentlet}
@@ -49,7 +47,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
            } else   if (fileName.endsWith(ContentBundler.CONTENT_WORKFLOW_EXTENSION)) {
                return getWorkflowTaskFileArguments(contentlet);
            } else {
-               return map();
+               return new HashMap<>();
            }
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -59,7 +57,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
     @NotNull
     private Map<String, Object> getWorkflowTaskFileArguments(Contentlet contentlet) throws DotDataException {
         final WorkflowTask taskByContentlet = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
-        return map(
+        return Map.of(
                 "id", taskByContentlet.getId(),
                 "title", taskByContentlet.getTitle(),
                 "description", taskByContentlet.getDescription().replaceAll("\"", "&quot;"),
@@ -73,7 +71,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
     private Map<String, Object> getContentletFileArguments(Contentlet contentlet) throws DotDataException, DotSecurityException {
         final Identifier  identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
 
-        final Map<String, Object> map = map(
+        final Map<String, Object> map = new HashMap<>(Map.of(
                 "id", contentlet.getIdentifier(),
                 "inode", contentlet.getInode(),
                 "sort_order", contentlet.getSortOrder(),
@@ -82,7 +80,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
                 "asset_name", identifier.getAssetName(),
                 "parent_path", identifier.getParentPath(),
                 "stInode", contentlet.getMap().get("stInode")
-        );
+        ));
 
         final FileAsset fileAsset = APILocator.getFileAssetAPI()
                 .find(contentlet.getInode(), APILocator.systemUser(), false);

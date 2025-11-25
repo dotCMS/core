@@ -41,6 +41,12 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     .p-dropdown-label {
         padding-right: $spacing-1;
         @include truncate-text;
+
+        &:focus,
+        &:enabled:focus {
+            outline: 0 none;
+            box-shadow: none;
+        }
     }
 
     &:has(.p-dropdown-clear-icon) {
@@ -124,9 +130,7 @@ p-dropdown.p-dropdown-sm {
         }
 
         .p-dropdown-empty-message {
-            padding: $spacing-2 $spacing-2;
-            color: $black;
-            background: transparent;
+            @extend #field-panel-empty-message;
         }
 
         .p-dropdown-item-group {

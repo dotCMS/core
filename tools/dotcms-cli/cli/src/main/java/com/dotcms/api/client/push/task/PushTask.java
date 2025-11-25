@@ -10,10 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.function.Function;
-import javax.enterprise.context.Dependent;
+import java.util.concurrent.CompletableFuture;
+import jakarta.enterprise.context.Dependent;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
@@ -23,7 +21,8 @@ import org.jboss.logging.Logger;
  * @param <T> the type of analysis result
  */
 @Dependent
-public class PushTask<T> extends TaskProcessor {
+public class PushTask<T> extends
+        TaskProcessor<PushTaskParams<T>, CompletableFuture<List<Exception>>> {
 
     private PushTaskParams<T> params;
 
@@ -53,6 +52,7 @@ public class PushTask<T> extends TaskProcessor {
      *
      * @param params The parameters for the PullTask
      */
+    @Override
     public void setTaskParams(final PushTaskParams<T> params) {
         this.params = params;
     }
@@ -62,54 +62,50 @@ public class PushTask<T> extends TaskProcessor {
      *
      * @return a list of exceptions encountered during the computation
      */
-    public List<Exception> compute() {
-
-        CompletionService<List<Exception>> completionService =
-                new ExecutorCompletionService<>(executor);
-
-        var errors = new ArrayList<Exception>();
+    @Override
+    public CompletableFuture<List<Exception>> compute() {
 
         if (this.params.results().size() <= THRESHOLD) {
 
-            // If the list is small enough, process sequentially
-            for (var result : this.params.results()) {
+            return CompletableFuture.supplyAsync(() -> {
 
-                try {
-                    processAnalysisResult(result);
-                } catch (Exception e) {
-                    if (this.params.failFast()) {
-                        throw e;
-                    } else {
-                        errors.add(e);
+                List<Exception> errors = new ArrayList<>();
+
+                // If the list is small enough, process sequentially
+                for (var result : this.params.results()) {
+                    try {
+                        processAnalysisResult(result);
+                    } catch (Exception e) {
+                        if (this.params.failFast()) {
+                            throw e;
+                        } else {
+                            errors.add(e);
+                        }
+                    } finally {
+                        this.params.progressBar().incrementStep();
                     }
-                } finally {
-                    this.params.progressBar().incrementStep();
                 }
-            }
+                return errors;
+            }, executor).exceptionally(e -> {
+                if (e.getCause() instanceof PushException) {
+                    throw (PushException) e.getCause();
+                } else {
+                    throw new PushException(e.getCause().getMessage(), e.getCause());
+                }
+            });
 
-        } else {
-
-            // If the list is large, split it into smaller tasks
-            int toProcessCount = splitTasks(completionService);
-
-            // Wait for all tasks to complete and gather the results
-            Function<List<Exception>, Void> processFunction = taskResult -> {
-                errors.addAll(taskResult);
-                return null;
-            };
-            processTasks(toProcessCount, completionService, processFunction);
         }
 
-        return errors;
+        // If the list is large, split it into smaller tasks
+        return splitTasks();
     }
 
     /**
      * Splits a list of T objects into separate tasks.
      *
-     * @param completionService The CompletionService to submit tasks to.
-     * @return The number of tasks to process.
+     * @return A CompletableFuture representing the combined results of the separate tasks.
      */
-    private int splitTasks(final CompletionService<List<Exception>> completionService) {
+    private CompletableFuture<List<Exception>> splitTasks() {
 
         int mid = this.params.results().size() / 2;
         var paramsTask1 = this.params.withResults(
@@ -121,14 +117,17 @@ public class PushTask<T> extends TaskProcessor {
 
         PushTask<T> task1 = new PushTask<>(logger, mapperService, executor);
         task1.setTaskParams(paramsTask1);
+        var futureTask1 = task1.compute();
 
         PushTask<T> task2 = new PushTask<>(logger, mapperService, executor);
         task2.setTaskParams(paramsTask2);
+        var futureTask2 = task2.compute();
 
-        completionService.submit(task1::compute);
-        completionService.submit(task2::compute);
-
-        return 2;
+        return futureTask1.thenCombine(futureTask2, (list1, list2) -> {
+            var combinedList = new ArrayList<>(list1);
+            combinedList.addAll(list2);
+            return combinedList;
+        });
     }
 
     /**
@@ -316,6 +315,25 @@ public class PushTask<T> extends TaskProcessor {
 
             final Path path = Path.of(localFile.getAbsolutePath());
             Files.writeString(path, asString);
+
+            // Check if we need to rename the file
+            String localFileName = localFile.getName();
+            int lastDotPosition = localFileName.lastIndexOf('.');
+            String localDileNameWithoutExtension = localFileName.substring(0, lastDotPosition);
+            String localFileNameExtension = localFileName.substring(lastDotPosition + 1);
+
+            final var expectedFileName = this.params.pushHandler().fileName(content);
+            if (!localDileNameWithoutExtension.equals(expectedFileName)) {
+
+                // Something changed in the content that requires a file rename
+
+                final String renamedFileName = String.format(
+                        "%s.%s", expectedFileName, localFileNameExtension
+                );
+
+                final var renamedFile = new File(localFile.getParent(), renamedFileName);
+                Files.move(path, renamedFile.toPath());
+            }
 
         } catch (Exception e) {
 

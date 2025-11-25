@@ -1,9 +1,5 @@
 package com.dotcms.graphql.datafetcher;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -21,11 +17,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import graphql.language.Field;
 import graphql.schema.DataFetchingEnvironment;
-import java.util.Date;
-import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class CategoryFieldDataFetcherTest {
 
@@ -106,8 +108,7 @@ public class CategoryFieldDataFetcherTest {
         contentletDataGen.setProperty("story", "BicycleBicycleBicycle");
         contentletDataGen.setProperty("sysPublishDate", new Date());
         contentletDataGen.setProperty("urlTitle", "/news/bicycle");
-        contentletDataGen.setProperty("categories", CollectionsUtils
-                .map("categories", CollectionsUtils.list(categoryChild1, categoryChild2)));
+        contentletDataGen.setProperty("categories", Map.of("categories", CollectionsUtils.list(categoryChild1, categoryChild2)));
 
         Mockito.when(environment.getContext())
                 .thenReturn(DotGraphQLContext.createServletContext().with(

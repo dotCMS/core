@@ -18,10 +18,12 @@ import {
     EventEmitter,
     HostListener,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
     QueryList,
+    SimpleChanges,
     ViewChild,
     ViewChildren
 } from '@angular/core';
@@ -37,7 +39,8 @@ import {
     DotLayoutBody,
     DotTemplateDesigner,
     DotTheme,
-    DotContainerMap
+    DotContainerMap,
+    DotTemplate
 } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
@@ -74,12 +77,12 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore]
 })
-export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
+export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     @Input()
     layout!: DotLayout;
 
     @Input()
-    themeId!: string; // In the layout we have the themeId we can consider removing this.
+    template!: Partial<DotTemplate>;
 
     @Input()
     containerMap!: DotContainerMap;
@@ -127,6 +130,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
 
     grid!: GridStack;
+
     addBoxIsDragging = false;
 
     get layoutProperties(): DotTemplateLayoutProperties {
@@ -187,7 +191,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private dotMessage: DotMessageService,
         private cd: ChangeDetectorRef
     ) {
-        this.rows$ = this.store.rows$.pipe(map((rows) => parseFromGridStackToDotObject(rows)));
+        this.rows$ = this.store.rows$.pipe(
+            filter(({ shouldEmit }) => shouldEmit),
+            map(({ rows }) => parseFromGridStackToDotObject(rows))
+        );
 
         combineLatest([this.rows$, this.store.layoutProperties$, this.themeId$])
             .pipe(
@@ -220,8 +227,22 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             layoutProperties: this.layoutProperties,
             resizingRowID: '',
             containerMap: this.containerMap,
-            themeId: this.themeId
+            themeId: this.template.themeId,
+            templateIdentifier: this.template.identifier,
+            shouldEmit: true
         });
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (!changes.layout?.firstChange && changes.layout?.currentValue) {
+            const parsedRows = parseFromDotObjectToGridStack(changes.layout.currentValue.body);
+            const currentTemplate = changes.template?.currentValue;
+            this.store.updateOldRows({
+                newRows: parsedRows,
+                templateIdentifier: currentTemplate?.identifier || this.template.identifier,
+                isAnonymousTemplate: currentTemplate?.anonymous || this.template.anonymous // We createa a custom template for the page
+            });
+        }
     }
 
     ngAfterViewInit() {
@@ -230,7 +251,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 opacity: '1'
             };
             this.cd.detectChanges();
-        }, 250);
+        }, 350);
 
         this.grid = GridStack.init(gridOptions).on('change', (_: Event, nodes: GridStackNode[]) => {
             this.store.moveRow(nodes as DotGridStackWidget[]);

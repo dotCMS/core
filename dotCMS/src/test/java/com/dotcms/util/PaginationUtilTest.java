@@ -1,8 +1,5 @@
 package com.dotcms.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.util.pagination.OrderDirection;
@@ -13,20 +10,19 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class PaginationUtilTest {
 
@@ -60,7 +56,7 @@ public class PaginationUtilTest {
 
         when( req.getRequestURI() ).thenReturn( baseURL.toString() );
 
-        final Map<String, Object> params = map(
+        final Map<String, Object> params = Map.of(
                 Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
                 Paginator.ORDER_BY_PARAM_NAME, orderBy,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, direction
@@ -68,7 +64,7 @@ public class PaginationUtilTest {
 
         when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( items );
 
-        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, new HashMap<>());
 
 
         final Collection entity = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -102,14 +98,14 @@ public class PaginationUtilTest {
 
         when( req.getRequestURI() ).thenReturn( baseURL.toString() );
 
-        final Map<String, Object> params = map(
+        final Map<String, Object> params = Map.of(
                 "type", list("A", "B"),
                 Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
                 Paginator.ORDER_BY_PARAM_NAME, orderBy,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, direction
         );
 
-        final Map<String, Object> extraParams = map(
+        final Map<String, Object> extraParams = Map.of(
                 "type", list("A", "B")
         );
 
@@ -146,7 +142,7 @@ public class PaginationUtilTest {
 
         when( req.getRequestURI() ).thenReturn( baseURL.toString() );
 
-        final Map<String, Object> params = map(
+        final Map<String, Object> params = Map.of(
                 Paginator.DEFAULT_FILTER_PARAM_NAME, "",
                 Paginator.ORDER_BY_PARAM_NAME, orderBy,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, direction
@@ -154,7 +150,7 @@ public class PaginationUtilTest {
 
         when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( items );
 
-        paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+        paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, new HashMap<>());
 
         verify(paginator).getItems(user, perPage, offset, params);
     }
@@ -179,7 +175,7 @@ public class PaginationUtilTest {
 
         when( req.getRequestURI() ).thenReturn( baseURL.toString() );
 
-        final Map<String, Object> params = map(
+        final Map<String, Object> params = Map.of(
                 Paginator.DEFAULT_FILTER_PARAM_NAME, "",
                 Paginator.ORDER_BY_PARAM_NAME, orderBy,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, direction
@@ -187,7 +183,7 @@ public class PaginationUtilTest {
 
         when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( null );
 
-        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, new HashMap<>());
 
         verify(paginator).getItems(user, perPage, offset, params);
 

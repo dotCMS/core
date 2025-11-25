@@ -1,8 +1,5 @@
 package com.dotcms.experiments.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.analytics.metrics.AbstractCondition;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.Metric;
@@ -11,7 +8,6 @@ import com.dotcms.analytics.metrics.Parameter;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -21,11 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 
 public class GoalsDeserializer extends JsonDeserializer<Goals> {
 

@@ -3,23 +3,26 @@
         <div class="toolbar__dot-wrapper">
             <div class="toolbar__button-wrapper">
                 <p-button
+                    (click)="handleMainButtonClick()"
                     [icon]="
                         (dotNavigationService.collapsed$ | async)
                             ? 'pi pi-bars'
                             : 'pi pi-arrow-left'
                     "
-                    (click)="handleMainButtonClick()"
                     styleClass="p-button-rounded p-button-text"></p-button>
             </div>
             <div
-                class="toolbar__logo-wrapper"
                 [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
-                [class.toolbar__logo-wrapper--whitelabel]="logo$ | async">
-                <span
-                    class="toolbar__logo--whitelabel"
-                    *ngIf="logo$ | async as logo; else toolbarLogo"
-                    [ngStyle]="{ 'background-image': logo }"></span>
-                <ng-template #toolbarLogo><span class="toolbar__logo"></span></ng-template>
+                [class.toolbar__logo-wrapper--whitelabel]="logo$ | async"
+                class="toolbar__logo-wrapper">
+                @let logo = logo$ | async;
+                @if (logo) {
+                    <span
+                        [ngStyle]="{ 'background-image': logo }"
+                        class="toolbar__logo--whitelabel"></span>
+                } @else {
+                    <span class="toolbar__logo"></span>
+                }
                 <span class="toolbar__logo-bg"></span>
             </div>
         </div>
@@ -27,15 +30,14 @@
     </div>
     <div class="p-toolbar-group-right">
         <dot-site-selector
-            class="toolbar__site-selector"
-            #siteSelector
-            [archive]="false"
             (switch)="siteChange($event)"
             (hide)="iframeOverlayService.hide()"
             (display)="iframeOverlayService.show()"
+            [archive]="false"
+            class="toolbar__site-selector"
+            #siteSelector
             cssClass="d-secondary"
-            width="200px">
-        </dot-site-selector>
+            width="200px"></dot-site-selector>
         <dot-toolbar-notifications></dot-toolbar-notifications>
         <dot-toolbar-user></dot-toolbar-user>
     </div>

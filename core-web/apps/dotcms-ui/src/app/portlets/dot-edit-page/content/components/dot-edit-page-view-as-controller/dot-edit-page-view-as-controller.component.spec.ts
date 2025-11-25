@@ -16,6 +16,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPersonasService
 } from '@dotcms/data-access';
@@ -27,7 +28,7 @@ import {
     DotPageRenderState,
     DotPersona
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
@@ -42,16 +43,15 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
 
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-
 @Component({
     selector: 'dot-test-host',
-    template: ` <dot-edit-page-view-as-controller
-        [pageState]="pageState"></dot-edit-page-view-as-controller>`
+    template: `
+        <dot-edit-page-view-as-controller
+            [pageState]="pageState"></dot-edit-page-view-as-controller>
+    `
 })
 class DotTestHostComponent {
     @Input()
@@ -125,7 +125,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
                 MockDotDeviceSelectorComponent,
                 MockDotLanguageSelectorComponent
             ],
-            imports: [BrowserAnimationsModule, TooltipModule, DotPipesModule, DotMessagePipe],
+            imports: [BrowserAnimationsModule, TooltipModule, DotSafeHtmlPipe, DotMessagePipe],
             providers: [
                 DotLicenseService,
                 {
@@ -230,18 +230,13 @@ describe('DotEditPageViewAsControllerComponent', () => {
             personaSelector.selected.emit(mockDotPersona);
 
             expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
-            // expect(component.changeViewAs.emit).toHaveBeenCalledWith({
-            //     language: mockDotLanguage,
-            //     persona: mockDotPersona,
-            //     mode: 'PREVIEW'
-            // });
         });
 
         it('should have Device selector with tooltip', () => {
             const deviceSelectorDe = de.query(By.css('dot-device-selector'));
             expect(deviceSelector).not.toBeNull();
             expect(deviceSelectorDe.attributes.appendTo).toBe('body');
-            expect(deviceSelectorDe.attributes['ng-reflect-text']).toBe('Default Device');
+            expect(deviceSelectorDe.attributes['ng-reflect-content']).toBe('Default Device');
             expect(deviceSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
         });
 
@@ -250,11 +245,6 @@ describe('DotEditPageViewAsControllerComponent', () => {
             deviceSelector.selected.emit(mockDotDevices[0]);
 
             expect(component.changeDeviceHandler).toHaveBeenCalledWith(mockDotDevices[0]);
-            // expect(component.changeViewAs.emit).toHaveBeenCalledWith({
-            //     language: mockDotLanguage,
-            //     device: mockDotDevices[0],
-            //     mode: 'PREVIEW'
-            // });
         });
 
         it('should have Language selector', () => {
@@ -276,10 +266,6 @@ describe('DotEditPageViewAsControllerComponent', () => {
             languageSelector.selected.emit(testlanguage);
 
             expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
-            // expect(component.changeViewAs.emit).toHaveBeenCalledWith({
-            //     language: testlanguage,
-            //     mode: 'PREVIEW'
-            // });
         });
 
         it('should propagate the values to the selector components on init', () => {
@@ -291,12 +277,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
                 })
             );
             fixtureHost.detectChanges();
-
-            // expect(languageSelector.value).toEqual(mockDotPersona);
             expect(deviceSelector.value).toEqual(mockDotEditPageViewAs.device);
-
-            // expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
-            // expect(personaSelector.pageId).toEqual(mockDotRenderedPage.page.identifier);
         });
     });
 });

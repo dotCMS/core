@@ -17,10 +17,11 @@ import {
 } from 'rxjs/operators';
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
-import { DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
+import { DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { TemplateBuilderModule } from '@dotcms/template-builder';
 
-import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
+import { UVE_STATUS } from '../shared/enums';
+import { UVEStore } from '../store/dot-uve.store';
 
 export const DEBOUNCE_TIME = 5000;
 
@@ -33,19 +34,15 @@ export const DEBOUNCE_TIME = 5000;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditEmaLayoutComponent implements OnInit, OnDestroy {
-    private readonly store = inject(EditEmaStore);
     private readonly dotRouterService = inject(DotRouterService);
     private readonly dotPageLayoutService = inject(DotPageLayoutService);
     private readonly messageService = inject(MessageService);
     private readonly dotMessageService = inject(DotMessageService);
 
-    readonly layoutProperties$ = this.store.layoutProperties$.pipe(
-        tap((properties) => {
-            this.pageId = properties.pageId;
-        })
-    );
+    protected readonly uveStore = inject(UVEStore);
 
-    private pageId: string;
+    protected readonly $layoutProperties = this.uveStore.$layoutProps;
+
     private lastTemplate: DotTemplateDesigner;
 
     updateTemplate$ = new Subject<DotTemplateDesigner>();
@@ -89,10 +86,10 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
         this.dotPageLayoutService
             // To save a layout and no a template the title should be null
-            .save(this.pageId, { ...template, title: null })
+            .save(this.uveStore.$layoutProps().pageId, { ...template, title: null })
             .pipe(take(1))
             .subscribe(
-                (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
+                () => this.handleSuccessSaveTemplate(),
                 (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err),
                 () => this.dotRouterService.allowRouteDeactivation()
             );
@@ -115,6 +112,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             .pipe(
                 // debounceTime should be before takeUntil to avoid calling the observable after unsubscribe.
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
+                tap(() => this.uveStore.setUveStatus(UVE_STATUS.LOADING)), // Prevent the user to access page properties
                 debounceTime(DEBOUNCE_TIME),
                 takeUntil(this.destroy$),
                 switchMap((layout: DotTemplateDesigner) => {
@@ -126,7 +124,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                     });
 
                     return this.dotPageLayoutService
-                        .save(this.pageId, {
+                        .save(this.uveStore.$layoutProps().pageId, {
                             ...layout,
                             title: null
                         })
@@ -134,7 +132,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                 })
             )
             .subscribe(
-                (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
+                () => this.handleSuccessSaveTemplate(),
                 (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err)
             );
     }
@@ -143,17 +141,16 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * Handle the success save template
      *
      * @private
-     * @param {DotPageRender} _
+     * @template T
      * @memberof EditEmaLayoutComponent
      */
-    private handleSuccessSaveTemplate(page: DotPageRender): void {
+    private handleSuccessSaveTemplate(): void {
         this.messageService.add({
             severity: 'success',
             summary: 'Success',
             detail: this.dotMessageService.get('dot.common.message.saved')
         });
-
-        this.store.updatePageLayout(page.layout);
+        this.uveStore.reload();
     }
 
     /**
@@ -169,6 +166,8 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             summary: 'Error',
             detail: this.dotMessageService.get('dot.common.http.error.400.message')
         });
+
+        this.uveStore.setUveStatus(UVE_STATUS.ERROR);
     }
 
     /**

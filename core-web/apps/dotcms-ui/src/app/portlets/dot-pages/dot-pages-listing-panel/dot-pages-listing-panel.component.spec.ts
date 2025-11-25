@@ -10,7 +10,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { of } from 'rxjs/internal/observable/of';
@@ -189,8 +189,8 @@ describe('DotPagesListingPanelComponent', () => {
         });
 
         it('should set table with params', () => {
-            const elem = de.query(By.css('p-table')).componentInstance;
-            expect(elem.loading).toBe(undefined);
+            const elem: Table = de.query(By.css('p-table')).componentInstance;
+            expect(elem.loading).toBe(false);
             expect(elem.lazy).toBe(true);
             expect(elem.selectionMode).toBe('single');
             expect(elem.sortField).toEqual('modDate');
@@ -230,7 +230,9 @@ describe('DotPagesListingPanelComponent', () => {
 
         it('should send event to filter keyword', () => {
             const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
-            elem.triggerEventHandler('input', { target: { value: 'test' } });
+            elem.nativeElement.focus();
+            elem.nativeElement.value = 'test';
+            elem.triggerEventHandler('input');
 
             expect(store.setKeyword).toHaveBeenCalledWith('test');
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
@@ -239,7 +241,9 @@ describe('DotPagesListingPanelComponent', () => {
 
         it('should send event to filter keyword when cleaning', () => {
             const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
-            elem.triggerEventHandler('input', { target: { value: 'test' } });
+            elem.nativeElement.focus();
+            elem.nativeElement.value = 'test';
+            elem.triggerEventHandler('input');
 
             const elemClean = de.query(
                 By.css('[data-testid="dot-pages-listing-header__keyword-input-clear"]')

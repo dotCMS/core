@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
@@ -10,8 +10,8 @@ import { DotCategoriesCreateEditStore } from './store/dot-categories-create-edit
     providers: [DotCategoriesCreateEditStore]
 })
 export class DotCategoriesCreateEditComponent {
-    vm$ = this.store.vm$;
-    constructor(private store: DotCategoriesCreateEditStore) {}
+    readonly #store = inject(DotCategoriesCreateEditStore);
+    vm$ = this.#store.vm$;
 
     /**
      * The function takes a category object as a parameter, and then calls the updateCategory function
@@ -20,6 +20,6 @@ export class DotCategoriesCreateEditComponent {
      * @memberof DotCategoriesCreateEditComponent
      */
     updateCategory(category: MenuItem) {
-        this.store.updateCategory(category);
+        this.#store.updateCategory(category);
     }
 }

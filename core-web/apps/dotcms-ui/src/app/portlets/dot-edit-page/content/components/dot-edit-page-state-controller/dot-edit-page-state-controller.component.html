@@ -1,46 +1,45 @@
 <ng-container *ngIf="featureFlagEditURLContentMapIsOn; else defaultTabs">
     <p-menu
-        #menu
+        (onHide)="dotTabButtons.resetDropdownById(dotPageMode.EDIT)"
         [model]="menuItems"
         [popup]="true"
-        (onHide)="dotTabButtons.resetDropdownById(dotPageMode.EDIT)"
-        appendTo="body">
-    </p-menu>
+        #menu
+        appendTo="body"></p-menu>
     <dot-tab-buttons
-        #dotTabButtons
-        [activeId]="mode"
-        [options]="options"
         (openMenu)="handleMenuOpen($event)"
         (clickOption)="stateSelectorHandler($event)"
+        [activeId]="mode"
+        [options]="options"
+        #dotTabButtons
         data-testId="dot-tabs-buttons"></dot-tab-buttons>
 </ng-container>
 <ng-template #defaultTabs>
     <p-selectButton
-        class="p-button-tabbed"
+        (onChange)="stateSelectorHandler({ optionId: $event.value })"
         [(ngModel)]="mode"
         [options]="options"
-        (onChange)="stateSelectorHandler({ optionId: $event.value })"
+        class="p-button-tabbed"
         optionValue="value.id"
         data-testId="selectButton"></p-selectButton>
 </ng-template>
 <ng-container *ngIf="!variant">
     <p-inputSwitch
-        #locker
+        (click)="onLockerClick()"
+        (onChange)="lockPageHandler()"
         [(ngModel)]="lock"
         [class.warn]="lockWarn"
         [disabled]="!pageState.page.canLock"
         [pTooltip]="
             pageState.state.lockedByAnotherUser && pageState.page.canEdit
-                ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
+                ? ('editpage.toolbar.page.locked.by.user' | dm: [pageState.page.lockedByName])
                 : null
         "
         [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
-        (click)="onLockerClick()"
-        (onChange)="lockPageHandler()"
+        #locker
         appendTo="target"></p-inputSwitch>
 
     <dot-edit-page-lock-info
-        #pageLockInfo
         [pageState]="pageState"
+        #pageLockInfo
         data-testId="lockInfo"></dot-edit-page-lock-info>
 </ng-container>

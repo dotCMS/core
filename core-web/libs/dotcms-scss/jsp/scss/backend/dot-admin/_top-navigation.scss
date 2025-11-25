@@ -38,7 +38,7 @@ $dropdown-position: 43px;
                 background: #fff;
                 color: #5f5f5f;
                 display: block;
-                font-size: 85%;
+                font-size: $font-size-sm;
                 margin: 0;
                 padding: 3px 10px;
                 vertical-align: middle;
@@ -101,7 +101,7 @@ $dropdown-position: 43px;
 
     .navMenu-title {
         color: #404040;
-        font-size: 93%;
+        font-size: $font-size-md;
         font-weight: 700;
         line-height: 14px;
         margin: 0;
@@ -111,7 +111,7 @@ $dropdown-position: 43px;
 
     .navMenu-subtitle {
         color: #5f5f5f;
-        font-size: 77%;
+        font-size: $font-size-xs;
         margin: 0;
         overflow: hidden;
         padding: 0;

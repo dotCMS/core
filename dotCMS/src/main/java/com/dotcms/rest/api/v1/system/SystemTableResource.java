@@ -12,6 +12,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import org.glassfish.jersey.server.JSONP;
 
@@ -31,6 +32,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 import static com.dotcms.util.DotPreconditions.checkNotNull;
@@ -223,8 +225,34 @@ public class SystemTableResource implements Serializable {
 	public ResponseEntityStringView delete(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
-			@PathParam("key") final String key) throws IllegalAccessException {
-		checkNotEmpty(key, IllegalArgumentException.class, "Key cannot be null or empty");
+			@PathParam("key") final String key)  {
+		return deleteWithKey(request, response, Map.of("key",key));
+	}
+
+	/**
+	 * Deletes a value from the System Table, or returns a 404 if the key doesn't exist.
+	 *
+	 * @param request The current instance of the {@link HttpServletRequest}.
+	 *
+	 * @return The key that was deleted.
+	 *
+	 * @throws IllegalArgumentException If the key is blacklisted.
+	 */
+	@DELETE
+	@Path("/_delete")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public ResponseEntityStringView deleteWithKey(
+			@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			final Map<String,String> keyMap) {
+		if(UtilMethods.isEmpty(()->keyMap.get("key"))){
+			throw new IllegalArgumentException("Key cannot be null or empty");
+		}
+		String key = keyMap.get("key");
+
 		this.init(request, response);
 		this.checkBlackList(key);
 

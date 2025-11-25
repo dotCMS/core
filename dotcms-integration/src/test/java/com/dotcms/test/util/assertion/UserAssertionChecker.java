@@ -1,13 +1,9 @@
 package com.dotcms.test.util.assertion;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.enterprise.publishing.remote.bundler.FileBundlerTestUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
+
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 
 public class UserAssertionChecker implements AssertionChecker<User> {
@@ -15,9 +11,7 @@ public class UserAssertionChecker implements AssertionChecker<User> {
     @Override
     public Map<String, Object> getFileArguments(User asset, File file) {
 
-        return map(
-
-        );
+        return new HashMap<>();
     }
 
     @Override

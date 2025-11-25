@@ -1,0 +1,217 @@
+# Note: The versions of the SDK libraries will be incremented in the NPM registry, 
+# but they will not be updated in the codebase itself through this process. 
+# This simplification avoids automatic pull requests and all the considerations 
+# necessary due to protections on the main branch, as well as the lengthy execution 
+# process that would be required to ultimately publish the libraries.
+# 
+# This is a temporary solution until we determine the most appropriate pattern 
+# to handle the lifecycle of each module that needs to be released individually 
+# (e.g., dotCLI and the SDKs).
+#
+# Additionally, the example projects should point to the 'latest' tag to ensure 
+# that version updates do not impact their functionality due to version inconsistency.
+name: 'SDK Publish NPM Packages'
+description: 'Publish the dotCMS SDK libs on NPM registry.'
+inputs:
+  ref:
+    description: 'Branch to build from'
+    required: false
+    default: 'main'
+  npm-token:
+    description: 'NPM token'
+    required: true
+  npm-package-tag:
+    description: 'Package tag'
+    required: false
+    default: 'alpha'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '19'
+  github-token:
+    description: 'GitHub Token'
+    required: true
+outputs:
+  npm-package-version:
+    description: 'SDK libs - NPM package version'
+    value: ${{ steps.next_version.outputs.next_version }}
+  published:
+    description: 'SDK libs - Published'
+    value: ${{ steps.next_version.outputs.publish }}
+runs:
+  using: "composite"
+  steps:
+    - name: 'Checkout'
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+        token: ${{ inputs.github-token }}
+
+    - name: 'Set up Node.js'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: 'Get current version from NPM'
+      id: current_version
+      run: |
+       echo "::group::Get current version"
+       CURRENT_VERSION=$(npm view @dotcms/client dist-tags --json | jq -r '.alpha')
+       echo "Current version: $CURRENT_VERSION"
+       echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+       echo "::endgroup::"
+      shell: bash
+
+    - name: Calculate next version
+      id: next_version
+      env:
+       CURRENT_VERSION: ${{ steps.current_version.outputs.current_version }}
+      run: |
+       echo "::group::Calculate next version"
+       VERSION_PARTS=(${CURRENT_VERSION//./ })
+       BASE_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
+       ALPHA_PART=${VERSION_PARTS[3]#*-}
+       ALPHA_NUMBER=${ALPHA_PART#*.}
+       NEW_ALPHA_NUMBER=$((ALPHA_NUMBER + 1))
+       NEXT_VERSION="${BASE_VERSION}.${NEW_ALPHA_NUMBER}"
+       echo "Next version: $NEXT_VERSION"
+       echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+       echo "::endgroup::"
+      shell: bash
+
+    - name: 'Printing versions'
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      env:
+       NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
+       CURRENT_VERSION: ${{ steps.current_version.outputs.current_version }}
+      run: |
+        echo "::group::Update versions"
+        echo "Current version: $CURRENT_VERSION"
+        echo "Next version: $NEXT_VERSION"
+        echo "::endgroup::"
+      shell: bash
+
+    - name: 'Bump SDK version and update dependencies'
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      env:
+        NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
+        EXAMPLES_PATH: ${{ github.workspace }}/examples
+      run: |
+        echo "Updating version to $NEXT_VERSION"
+        
+        # Function to update the version in package.json using jq
+        update_version() {
+          local pkg_dir="$1"
+          local new_version="$2"
+          local package_json_path="$pkg_dir/package.json"
+          
+          if [ -f "$package_json_path" ]; then
+            jq --arg new_version "$new_version" '.version = $new_version' "$package_json_path" > tmp.$$.json && mv tmp.$$.json "$package_json_path"
+            echo "Updated version in $package_json_path to $new_version"
+          else
+            echo "::warn::Warning: No package.json found in $pkg_dir"
+          fi
+        }
+        
+        # Function to update peerDependencies in package.json
+        update_peer_dependencies() {
+          local pkg_dir="$1"
+          local new_version="$2"
+          local package_json_path="$pkg_dir/package.json"
+          
+          if [ -f "$package_json_path" ]; then
+            for dep in "${sdk_packages[@]}"; do
+              if jq -e ".peerDependencies[\"@dotcms/$dep\"]" "$package_json_path" >/dev/null; then
+                jq --arg new_version "$new_version" ".peerDependencies[\"@dotcms/$dep\"] = \$new_version" "$package_json_path" > tmp.$$.json && mv tmp.$$.json "$package_json_path"
+                echo "::debug::Updated peerDependency @dotcms/$dep in $package_json_path to $new_version"
+              else
+                echo "::debug::PeerDependency @dotcms/$dep not found in $package_json_path, skipping update."
+              fi
+            done
+          else
+            echo "::warn::Warning: No package.json found in $pkg_dir"
+          fi
+        }
+        
+        # Function to update dependencies in examples package.json
+        update_dependencies_in_examples() {
+          local example_dir="$1"
+          local new_version="$2"
+          local package_json_path="$example_dir/package.json"
+          
+          if [ -f "$package_json_path" ]; then
+            for dep in "${sdk_packages[@]}"; do
+              if jq -e ".dependencies[\"@dotcms/$dep\"]" "$package_json_path" >/dev/null; then
+                jq --arg sdk_name "@dotcms/$dep" --arg new_version "$new_version" \
+                '.dependencies[$sdk_name] = $new_version' \
+                "$package_json_path" > tmp.$$.json && mv tmp.$$.json "$package_json_path"
+                echo "::debug::Updated dependency @dotcms/$dep in $package_json_path to $new_version"
+              else
+                echo "::debug::Dependency @dotcms/$dep not found in $package_json_path, skipping update."
+              fi
+            done
+          else
+            echo "::warn::Warning: No package.json found in $example_dir"
+          fi
+        }
+        
+        # Detect all SDK packages dynamically in the libs/sdk directory
+        sdk_packages=($(find . -maxdepth 1 -type d -exec basename {} \; | grep -v "^\.$"))
+        
+        # Step 1: Update the version in each SDK package
+        for sdk in "${sdk_packages[@]}"; do
+          update_version "$sdk" "$NEXT_VERSION"
+        done
+        
+        # Step 2: Update peerDependencies in each SDK package
+        for sdk in "${sdk_packages[@]}"; do
+          update_peer_dependencies "$sdk" "$NEXT_VERSION"
+        done
+        
+        # Step 3: Update dependencies in example projects
+        example_packages=$(find $EXAMPLES_PATH -name "package.json" -not -path "*/node_modules/*")
+
+        for package_json_path in $example_packages; do
+          example_dir=$(dirname "$package_json_path")
+          update_dependencies_in_examples "$example_dir" "$NEXT_VERSION"
+        done
+      shell: bash
+
+    - name: 'Printing SDK packages'
+      env:
+        SDK_LIBS_PATH: ${{ github.workspace }}/core-web/libs/sdk
+        EXAMPLES_PATH: ${{ github.workspace }}/examples
+      run: |
+        print_packages() {
+          cd $1
+          ls -ls | awk '{ print$10 }' | grep -v '^$' | while read a; do echo -e "${a}:\n" && cat ./${a}/package.json && echo -e "\n"; done
+        }
+        echo "::group::Printing SDK and Example packages"
+        echo "SDK libs:"
+        print_packages "$SDK_LIBS_PATH"
+        echo ""        
+        echo "Examples:"
+        print_packages "$EXAMPLES_PATH"
+        echo "::endgroup::"
+      shell: bash               
+
+    - name: 'Publishing sdk into NPM registry'
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      env:
+        NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
+        NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
+        NPM_TAG: ${{ inputs.npm-package-tag }}
+      run: |
+        echo "::group::Publishing SDK packages"        
+        sdks=$(ls)
+        for sdk in $sdks; do
+          echo "Publishing SDK lib [${sdk}]"
+          cd $sdk && echo "$(pwd)"
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+          npm publish --access public --tag $NPM_TAG
+          npm dist-tag $NEXT_VERSION latest
+          cd ..
+        done
+        echo "::endgroup::"
+      shell: bash      
+      

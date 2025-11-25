@@ -40,6 +40,8 @@ public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
 
             final String templateId = contentlet.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD);
 
+            Logger.debug(this, ()-> "Fetching template: " + templateId);
+
             final Template template = getTemplate(templateId, mode);
 
             return asMap(template, user);

@@ -12,11 +12,11 @@ import com.dotmarketing.startup.StartupTask;
 import com.liferay.util.StringPool;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This upgrade task create the default DotAsset existing dotCMS installs.
@@ -192,11 +192,29 @@ public class Task05210CreateDefaultDotAsset implements StartupTask {
                                                  final boolean indexed, final String velocityVarName,
                                                  final int sortOrder, final String values, final String checkRegex, final String hint,
                                                  final String defaultValue, final boolean fixed, final boolean readOnly, final boolean searchable, final boolean unique) {
-        return map("structureInode", DOTASSET_VARIABLE_INODE, "fieldName", fieldName, "fieldType", fieldType, "fieldRelationType",
-                        fieldRelationType, "fieldContentlet", fieldContentlet, "isRequired", required, "isIndexed", indexed,
-                        "isListed", listed, "velocityVarName", velocityVarName, "sortOrder", sortOrder, "values", values,
-                        "regexCheck", checkRegex, "hint", hint, "defaultValue", defaultValue, "isFixed", fixed, "isReadOnly",
-                        readOnly, "isSearchable", searchable, "isUnique", unique);
+
+        final Map<String, Object> fieldElementsMap = new HashMap<>();
+
+        fieldElementsMap.put("structureInode", DOTASSET_VARIABLE_INODE);
+        fieldElementsMap.put("fieldName", fieldName);
+        fieldElementsMap.put("fieldType", fieldType);
+        fieldElementsMap.put("fieldRelationType", fieldRelationType);
+        fieldElementsMap.put("fieldContentlet", fieldContentlet);
+        fieldElementsMap.put("isRequired", required);
+        fieldElementsMap.put("isIndexed", indexed);
+        fieldElementsMap.put("isListed", listed);
+        fieldElementsMap.put("velocityVarName", velocityVarName);
+        fieldElementsMap.put("sortOrder", sortOrder);
+        fieldElementsMap.put("values", values);
+        fieldElementsMap.put("regexCheck", checkRegex);
+        fieldElementsMap.put("hint", hint);
+        fieldElementsMap.put("defaultValue", defaultValue);
+        fieldElementsMap.put("isFixed", fixed);
+        fieldElementsMap.put("isReadOnly", readOnly);
+        fieldElementsMap.put("isSearchable", searchable);
+        fieldElementsMap.put("isUnique", unique);
+
+        return fieldElementsMap;
     }
 
     @Override

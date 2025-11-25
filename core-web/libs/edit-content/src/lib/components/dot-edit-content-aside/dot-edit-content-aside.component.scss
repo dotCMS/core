@@ -1,34 +1,109 @@
 @use "variables" as *;
 
 :host {
-    padding: 0 $spacing-3;
-    display: block;
+    display: flex;
+    width: 350px;
+    height: 100%;
+    padding-bottom: $spacing-0;
+    flex-direction: column;
+    align-items: flex-start;
+    border-left: 1px solid $color-palette-gray-400;
+    background: $color-palette-gray-100;
+    box-shadow: $shadow-m;
+    position: relative;
+
+    ::ng-deep {
+        .p-tabview-nav-container {
+            border-bottom: 1px solid $color-palette-black-op-10;
+        }
+
+        .p-tabview {
+            .p-tabview-nav {
+                border: none;
+            }
+
+            .p-tabview-nav li .p-tabview-nav-link {
+                padding: 1.2rem $spacing-4 1.3rem;
+            }
+        }
+        .p-tabview-nav-content {
+            flex-grow: 1;
+            max-width: calc(100% - 4rem);
+        }
+    }
 }
 
-.edit-content-aside--header {
+.content-aside {
+    overflow: auto;
+}
+
+.content-aside__close {
+    position: absolute;
+    padding: $spacing-2;
+    top: 0;
+    right: 0;
+    border-left: 1px solid $color-palette-black-op-10;
+
+    button {
+        rect {
+            stroke: $color-palette-primary;
+        }
+
+        path {
+            fill: $color-palette-primary;
+        }
+    }
+}
+
+.content-aside__toolbar {
+    padding: $spacing-2;
     display: flex;
     justify-content: space-between;
-    margin-bottom: $spacing-1;
-
-    strong {
-        display: flex;
-        align-items: center;
-        gap: 0.3em;
-    }
 }
 
-.edit-content-aside--item {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: $spacing-1;
-    grid-auto-rows: $spacing-5;
+.content-aside,
+.content-aside__section {
+    display: block;
+    width: 100%;
 
-    p {
-        color: $color-palette-gray-800;
-        margin: 0;
-    }
+    .content-aside__header {
+        display: flex;
+        height: 48px;
+        padding: 0 $spacing-3;
+        align-items: center;
+        gap: $spacing-1;
+        background: $color-palette-primary-200;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 10;
 
-    dd {
-        margin: 0;
+        .content-aside__icon {
+            display: flex;
+            justify-content: center;
+            gap: $spacing-0;
+
+            span {
+                color: $color-palette-primary-500;
+                font-size: $font-size-xs;
+                font-weight: $font-weight-regular-bold;
+                line-height: $line-height-relative;
+                text-transform: capitalize;
+            }
+
+            i {
+                width: 1rem;
+                height: 1rem;
+                color: $color-palette-primary-500;
+            }
+        }
+
+        h2 {
+            color: $black;
+            font-size: $font-size-md;
+            font-weight: $font-weight-bold;
+            line-height: $line-height;
+            margin: 0;
+        }
     }
 }

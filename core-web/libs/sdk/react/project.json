@@ -6,14 +6,14 @@
     "tags": [],
     "targets": {
         "lint": {
-            "executor": "@nrwl/linter:eslint",
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"],
             "options": {
                 "lintFilePatterns": ["libs/sdk/react/**/*.{ts,tsx,js,jsx}"]
             }
         },
         "build": {
-            "executor": "@nrwl/rollup:rollup",
+            "executor": "@nx/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/sdk/react",
@@ -45,6 +45,11 @@
                     "ci": true,
                     "codeCoverage": true
                 }
+            }
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/react"
             }
         }
     }

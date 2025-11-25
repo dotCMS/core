@@ -238,7 +238,10 @@ public class VanityUrlFilterTest {
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
-        final String testURI = baseURI + "/test redirect 301";
+        final String resource = "/test redirect 301".replaceAll(" ", "%20");
+        final String queryWithFragment = "?param1=value 1&param2=value 2#test-fragment"
+                .replaceAll(" ", "+");
+        final String testURI = baseURI + resource + queryWithFragment;
         final HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), testURI).request();
         final HttpServletResponse response = new MockHttpStatusResponse(new MockHeaderResponse(new MockHttpResponse().response()).response()).response();
 
@@ -246,7 +249,7 @@ public class VanityUrlFilterTest {
         
         filter.doFilter(request, response, null);
 
-        final String expectedLocation = forwardBaseURI + "/test%20redirect%20301";
+        final String expectedLocation = forwardBaseURI + resource + queryWithFragment;
         Assert.assertEquals(expectedLocation, response.getHeader("Location"));
         Assert.assertEquals(301,response.getStatus());
         Assert.assertNotNull(response.getHeader("X-DOT-VanityUrl"));

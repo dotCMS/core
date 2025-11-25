@@ -35,7 +35,8 @@ import {
     DotWizardService,
     DotWorkflowEventHandlerService,
     PushPublishService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -63,7 +64,6 @@ import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-exp
 
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
-import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
 

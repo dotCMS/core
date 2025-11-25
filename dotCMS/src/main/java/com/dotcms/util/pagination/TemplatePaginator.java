@@ -3,9 +3,7 @@ package com.dotcms.util.pagination;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.template.TemplateHelper;
 import com.dotcms.rest.api.v1.template.TemplateView;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -19,8 +17,6 @@ import com.liferay.util.StringPool;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Handle {@link com.dotmarketing.portlets.templates.model.Template} pagination
@@ -52,7 +48,7 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
             archive = (boolean)extraParams.getOrDefault("archive", false);
         }
 
-        final Map<String, Object> params = map("filter", filter);
+        final Map<String, Object> params = Map.of("filter", filter);
 
         String orderByDirection = orderby;
         if (UtilMethods.isSet(direction) && UtilMethods.isSet(orderby)) {
@@ -86,7 +82,7 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
         }
     }
 
-    private final Map<String, String> orderByMapping = CollectionsUtils.map("name", "title", "modDate", "mod_date");
+    private final Map<String, String> orderByMapping = Map.of("name", "title", "modDate", "mod_date");
 
     private String mapOrderBy(final String orderBy) {
         return this.orderByMapping.getOrDefault(orderBy.trim(), orderBy);

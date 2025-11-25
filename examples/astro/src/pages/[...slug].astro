@@ -1,0 +1,30 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Error from '../components/Error.astro';
+import { getPageData } from '@utils/client';
+import { MyPage } from '@react/myPage';
+
+const params = Astro.params;
+
+const { pageAsset, nav, error } = await getPageData(params?.slug, Astro.url.searchParams);
+
+const { vanityUrl } = pageAsset ?? {};
+
+if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
+    return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
+}
+
+const title = pageAsset ? pageAsset.page.title : 'Error';
+---
+
+{
+    (
+        <Layout title={title}>
+            {error ? (
+                <Error error={error} />
+            ) : (
+                <MyPage client:only="react" pageAsset={pageAsset} nav={nav?.children} />
+            )}
+        </Layout>
+    )
+}

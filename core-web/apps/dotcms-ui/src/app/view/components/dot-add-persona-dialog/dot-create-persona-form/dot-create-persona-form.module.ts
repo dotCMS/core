@@ -14,9 +14,9 @@ import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     imports: [
@@ -30,7 +30,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         ButtonModule,
         AutoCompleteModule,
         DotAutocompleteTagsModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],

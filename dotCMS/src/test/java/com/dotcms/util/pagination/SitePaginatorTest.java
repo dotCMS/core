@@ -3,18 +3,16 @@ package com.dotcms.util.pagination;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.liferay.portal.model.User;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.liferay.portal.model.User;
-
-import java.util.Collection;
-import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * test {@link SitePaginator}
@@ -80,8 +78,11 @@ public class SitePaginatorTest {
         when(hostAPI.search( filter, showArchived, true, false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, null));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived);
+        extraParams.put(SitePaginator.LIVE_PARAMETER_NAME, null);
+
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null, extraParams);
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
@@ -102,8 +103,10 @@ public class SitePaginatorTest {
         when(hostAPI.searchByStopped( filter, showStopped,false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.LIVE_PARAMETER_NAME, !showStopped, SitePaginator.ARCHIVED_PARAMETER_NAME, null));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(SitePaginator.ARCHIVED_PARAMETER_NAME, null);
+        extraParams.put(SitePaginator.LIVE_PARAMETER_NAME, !showStopped);
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null, extraParams);
 
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
@@ -127,7 +130,7 @@ public class SitePaginatorTest {
                 .thenReturn( hosts );
 
         final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
+                Map.of(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
 
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
@@ -152,7 +155,7 @@ public class SitePaginatorTest {
 
 
         final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived));
+                Map.of(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived));
 
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
@@ -175,7 +178,7 @@ public class SitePaginatorTest {
                 .thenReturn( hosts );
 
         final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.SYSTEM_PARAMETER_NAME, true));
+                Map.of(SitePaginator.SYSTEM_PARAMETER_NAME, true));
 
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);

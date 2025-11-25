@@ -1,21 +1,18 @@
 <dot-palette-input-filter
-    #inputFilter
-    [goBackBtn]="true"
     (goBack)="backHandler()"
     (filter)="filterContentlets($event)"
-></dot-palette-input-filter>
+    [goBackBtn]="true"
+    #inputFilter></dot-palette-input-filter>
 
-<div class="dot-content-palette__items" *ngIf="items?.length; else Loading">
+<div *ngIf="items?.length; else Loading" class="dot-content-palette__items">
     <div
         *ngFor="let item of items"
         (dragstart)="dragStart(item)"
         draggable="true"
-        data-testId="paletteItem"
-    >
+        data-testId="paletteItem">
         <img
             *ngIf="item?.hasTitleImage === true; else showIcon"
-            src="/dA/{{ item.inode }}/titleImage/500w/50q"
-        />
+            src="/dA/{{ item.inode }}/titleImage/500w/50q" />
         <ng-template #showIcon>
             <dot-contentlet-icon
                 [icon]="
@@ -23,18 +20,16 @@
                         ? item?.contentTypeIcon || item?.icon
                         : item?.__icon__
                 "
-                size="45px"
-            ></dot-contentlet-icon>
+                size="45px"></dot-contentlet-icon>
         </ng-template>
         <p>{{ item.title || item.name }}</p>
     </div>
     <p-paginator
+        (onPageChange)="onPaginate($event)"
         [rows]="itemsPerPage"
         [showFirstLastIcon]="false"
         [totalRecords]="totalRecords"
-        (onPageChange)="onPaginate($event)"
-        pageLinkSize="2"
-    ></p-paginator>
+        pageLinkSize="2"></p-paginator>
 </div>
 
 <ng-template #Loading>
@@ -42,8 +37,8 @@
 </ng-template>
 
 <span
-    class="dot-content-palette__empty"
     *ngIf="totalRecords < 1 && !loading"
-    data-testId="emptyState"
-    >{{ 'No-Results' | dm }}</span
->
+    class="dot-content-palette__empty"
+    data-testId="emptyState">
+    {{ 'No-Results' | dm }}
+</span>

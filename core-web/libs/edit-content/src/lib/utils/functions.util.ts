@@ -141,15 +141,22 @@ export const isValidJson = (value: string): boolean => {
  * @param {DotCMSContentTypeFieldVariable[]} fieldVariables - The array of field variables to be parsed.
  * @return {T} - The parsed object with key-value pairs.
  */
-export const getFieldVariablesParsed = <T extends Record<string, string>>(
+export const getFieldVariablesParsed = <T extends Record<string, string | boolean>>(
     fieldVariables: DotCMSContentTypeFieldVariable[]
 ): T => {
     if (!fieldVariables) {
         return {} as T;
     }
 
-    const result: Record<string, string> = {};
+    const result = {};
     fieldVariables.forEach(({ key, value }) => {
+        // If the value is a boolean string, convert it to a boolean
+        if (value === 'true' || value === 'false') {
+            result[key] = value === 'true';
+
+            return;
+        }
+
         result[key] = value;
     });
 
@@ -164,9 +171,42 @@ export const getFieldVariablesParsed = <T extends Record<string, string>>(
  *       not valid JSON, an empty object will be returned.
  */
 export const stringToJson = (value: string) => {
-    if (value && isValidJson(value)) {
-        return JSON.parse(value);
+    if (!value) {
+        return {};
     }
 
-    return {};
+    return isValidJson(value) ? JSON.parse(value) : {};
+};
+
+/**
+ * Converts a JSON string into a JavaScript object.
+ * Create all paths based in a Path
+ *
+ * @param {string} path - the path
+ * @return {string[]} - An arrray with all posibles pats
+ *
+ * @usageNotes
+ *
+ * ### Example
+ *
+ * ```ts
+ * const path = 'demo.com/level1/level2';
+ * const paths = createPaths(path);
+ * console.log(paths); // ['demo.com/', 'demo.com/level1/', 'demo.com/level1/level2/']
+ * ```
+ */
+export const createPaths = (path: string): string[] => {
+    const split = path.split('/').filter((item) => item !== '');
+
+    return split.reduce((array, item, index) => {
+        const prev = array[index - 1];
+        let path = `${item}/`;
+        if (prev) {
+            path = `${prev}${path}`;
+        }
+
+        array.push(path);
+
+        return array;
+    }, []);
 };

@@ -50,7 +50,7 @@ describe('DotConvertWysiwygToBlockComponent', () => {
         expect(infoContent.innerText).toBe('Info Content');
         expect(header.innerText).toBe('Header');
         expect(content.innerText).toBe('Content');
-        expect(iUnderstand.innerText).toBe('I understand');
+        expect(iUnderstand.innerText.trim()).toBe('I understand');
         expect(buttonConvert.innerText).toBe('Button');
     });
 });

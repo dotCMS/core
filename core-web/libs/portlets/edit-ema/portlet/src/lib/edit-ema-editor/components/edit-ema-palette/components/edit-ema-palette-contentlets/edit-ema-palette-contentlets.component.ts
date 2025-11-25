@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { JsonPipe, NgFor, NgIf } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import {
     CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
@@ -15,7 +15,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { PaginatorModule } from 'primeng/paginator';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
@@ -27,8 +27,6 @@ import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
     selector: 'dot-edit-ema-palette-contentlets',
     standalone: true,
     imports: [
-        NgIf,
-        NgFor,
         ReactiveFormsModule,
         DotIconModule,
         PaginatorModule,
@@ -47,8 +45,6 @@ export class EditEmaPaletteContentletsComponent implements OnInit, OnDestroy {
     @Input() contentlets;
     @Input() paletteStatus: EditEmaPaletteStoreStatus;
 
-    @Output() dragStart = new EventEmitter();
-    @Output() dragEnd = new EventEmitter();
     @Output() paginate = new EventEmitter();
     @Output() showContentTypes = new EventEmitter();
     @Output() search = new EventEmitter<string>();
@@ -73,7 +69,7 @@ export class EditEmaPaletteContentletsComponent implements OnInit, OnDestroy {
      * @param {{ query: string; contentTypeVarName: string }} filter
      * @memberof EditEmaPaletteContentletsComponent
      */
-    onPaginate(event, filter: { query: string; contentTypeVarName: string }) {
+    onPaginate(event: PaginatorState, filter: { query: string; contentTypeVarName: string }) {
         this.paginate.emit({ ...event, ...filter });
     }
 

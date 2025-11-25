@@ -1,7 +1,5 @@
-import { Observable } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
@@ -15,24 +13,43 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 @Component({
     selector: 'dot-edit-content-tag-field',
     standalone: true,
-    imports: [CommonModule, AutoCompleteModule, DotSelectItemDirective, ReactiveFormsModule],
-    templateUrl: './dot-edit-content-tag-field.component.html',
-    styleUrls: ['./dot-edit-content-tag-field.component.scss'],
+    imports: [CommonModule, AutoCompleteModule, ReactiveFormsModule, DotSelectItemDirective],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ]
+    ],
+    template: `
+        <p-autoComplete
+            (completeMethod)="getTags($event)"
+            [formControlName]="$field().variable"
+            [id]="'tag-id-' + $field().variable"
+            [inputId]="$field().variable"
+            [attr.data-testId]="$field().variable"
+            [suggestions]="$options()"
+            [multiple]="true"
+            [unique]="true"
+            [showClear]="true"
+            dotSelectItem />
+    `
 })
 export class DotEditContentTagFieldComponent {
-    @Input() field: DotCMSContentTypeField;
-
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $options = signal<string[] | null>(null);
     private readonly editContentService = inject(DotEditContentService);
     private readonly controlContainer = inject(ControlContainer);
 
-    options$!: Observable<string[]>;
+    /**
+     * Returns the form control for the select field.
+     * @returns {AbstractControl} The form control for the select field.
+     */
+    get formControl() {
+        const field = this.$field();
+
+        return this.controlContainer.control.get(field.variable) as AbstractControl<string>;
+    }
 
     /**
      * Retrieves tags based on the provided query.
@@ -43,14 +60,8 @@ export class DotEditContentTagFieldComponent {
             return;
         }
 
-        this.options$ = this.editContentService.getTags(query);
-    }
-
-    /**
-     * Returns the form control for the select field.
-     * @returns {AbstractControl} The form control for the select field.
-     */
-    get formControl() {
-        return this.controlContainer.control.get(this.field.variable) as AbstractControl<string>;
+        this.editContentService.getTags(query).subscribe((tags) => {
+            this.$options.set(tags);
+        });
     }
 }

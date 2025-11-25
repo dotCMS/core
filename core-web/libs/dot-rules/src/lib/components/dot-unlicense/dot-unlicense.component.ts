@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+
 import { I18nService } from '../../services/system/locale/I18n';
 
 @Component({

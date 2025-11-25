@@ -5,12 +5,15 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -182,6 +185,13 @@ public interface ExperimentsAPI {
     List<Experiment> getRunningExperiments() throws DotDataException;
 
     /**
+     * Return a list of the current RUNNING Experiments on the specific {@link Host}.
+     *
+     * @return
+     */
+    List<Experiment> getRunningExperiments(final Host host) throws DotDataException;
+
+    /**
      * Return a {@link Experiment}'s {@link Rule}
      *
      * @param experiment
@@ -199,7 +209,8 @@ public interface ExperimentsAPI {
      * @see ConfigExperimentUtil#isExperimentEnabled()
      *
      */
-    boolean isAnyExperimentRunning() throws DotDataException;
+    boolean isAnyExperimentRunning(final Host host) throws DotDataException;
+
 
     /**
      * Return the Experiment partial or total result.
@@ -210,8 +221,6 @@ public interface ExperimentsAPI {
      */
     ExperimentResults getResults(Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
-
-    List<Experiment> cacheRunningExperiments() throws DotDataException;
 
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s
@@ -248,5 +257,17 @@ public interface ExperimentsAPI {
      * @throws DotDataException
      */
     Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException;
+
+    /**
+     * Return the collection of experiments that are active on this Page. This includes all the experiments
+     * currently active on the Page. It means all experiments with the status DRAFT, SCHEDULED or
+     * RUNNING Experiment on this Page
+     *
+     * @param pageIdentifier to Filter the Experiments.
+     *
+     * @return
+     * @throws DotDataException
+     */
+    Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException;
 
 }

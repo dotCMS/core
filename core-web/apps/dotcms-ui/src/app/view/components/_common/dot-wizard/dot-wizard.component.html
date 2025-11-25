@@ -1,22 +1,49 @@
-<dot-dialog
-    #dialog
+<p-dialog
+    (visibleChange)="close()"
     [visible]="!!data"
-    [bindEvents]="false"
-    [actions]="dialogActions"
     [header]="data?.title"
-    (hide)="close()"
-    (keydown.escape)="close()"
->
-    <div class="dot-wizard__view" *ngIf="data?.steps?.length">
-        <div
-            class="dot-wizard__container"
-            (keydown.tab)="handleTab($event)"
-            (keydown.enter)="handleEnter($event)"
-            [ngStyle]="{ transform: transform }"
-        >
-            <div class="dot-wizard__step" *ngFor="let step of data.steps">
-                <ng-template dotContainerReference></ng-template>
+    [draggable]="false"
+    [resizable]="false"
+    [maximizable]="false"
+    [modal]="true"
+    appendTo="body"
+    data-testId="dot-wizard">
+    @if (data?.steps?.length) {
+        <div class="dot-wizard__view">
+            <div
+                [ngStyle]="{ transform: transform }"
+                class="dot-wizard__container"
+                (keydown.tab)="handleTab($event)">
+                @for (step of data.steps; track $index) {
+                    <div class="dot-wizard__step">
+                        <ng-template dotContainerReference></ng-template>
+                    </div>
+                }
             </div>
+
+            @if ($dialogActions()) {
+                <footer class="dot-wizard__footer">
+                    @if ($dialogActions().cancel) {
+                        <button
+                            (click)="$dialogActions().cancel?.action()"
+                            [disabled]="$dialogActions().cancel?.disabled"
+                            [label]="$dialogActions().cancel?.label"
+                            class="dialog__button-cancel p-button-outlined"
+                            data-testId="dialog-close-button"
+                            pButton></button>
+                    }
+                    @if ($dialogActions().accept) {
+                        <button
+                            (click)="$dialogActions().accept?.action()"
+                            [disabled]="$dialogActions().accept?.disabled"
+                            [label]="$dialogActions().accept?.label"
+                            [loading]="isSaving"
+                            class="dialog__button-accept"
+                            data-testId="dialog-accept-button"
+                            pButton></button>
+                    }
+                </footer>
+            }
         </div>
-    </div>
-</dot-dialog>
+    }
+</p-dialog>

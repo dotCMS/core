@@ -22,7 +22,7 @@ describe('DotEditContentToolbarComponent', () => {
         spectator = createComponent({
             props: {
                 actions: WORKFLOW_ACTIONS_MOCK
-            }
+            } as unknown
         });
         spectator.detectComponentChanges();
     });
@@ -30,13 +30,13 @@ describe('DotEditContentToolbarComponent', () => {
     it('should dot-workflow-actions component with the correct input', () => {
         const component = spectator.query(DotWorkflowActionsComponent);
         expect(component).toBeTruthy();
-        expect(component.actions).toEqual(WORKFLOW_ACTIONS_MOCK);
-        expect(component.groupAction).toBeTruthy();
-        expect(component.size).toBe('normal');
+        expect(component.actions()).toEqual(WORKFLOW_ACTIONS_MOCK);
+        expect(component.groupActions()).toBeTruthy();
+        expect(component.size()).toBe('normal');
     });
 
     it('should emit the action dot-workflow-actions emits the fired action', () => {
-        const spy = jest.spyOn(spectator.component.actionFired, 'emit');
+        const spy = jest.spyOn(spectator.component.$actionFired, 'emit');
         const component = spectator.query(DotWorkflowActionsComponent);
 
         component.actionFired.emit(WORKFLOW_ACTIONS_MOCK[0]);

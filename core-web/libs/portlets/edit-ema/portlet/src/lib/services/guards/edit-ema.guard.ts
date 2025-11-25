@@ -1,78 +1,34 @@
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { DEFAULT_PERSONA } from 'libs/portlets/edit-ema/portlet/src/lib/shared/consts';
-import { of } from 'rxjs';
-
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Params, Router } from '@angular/router';
 
-import { map, switchMap } from 'rxjs/operators';
-
-import { DotPropertiesService, EmaAppConfigurationService } from '@dotcms/data-access';
-
+import { DEFAULT_PERSONA } from '../../shared/consts';
 import { sanitizeURL } from '../../utils';
 
 type EmaQueryParams = {
     url: string;
     language_id: number;
     'com.dotmarketing.persona.id': string;
+    variantName: string;
 };
 
 export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     const [content] = route.firstChild.url;
 
     const router = inject(Router);
-    const properties = inject(DotPropertiesService);
 
     const { didQueryParamsGetCompleted, newQueryParams } = confirmQueryParams(route.queryParams);
 
-    const url = didQueryParamsGetCompleted ? newQueryParams.url : route.queryParams.url;
+    if (didQueryParamsGetCompleted) {
+        router.navigate([`/edit-page/${content.path}`], {
+            queryParams: {
+                ...route.queryParams,
+                ...newQueryParams
+            },
+            replaceUrl: true
+        });
+    }
 
-    return inject(EmaAppConfigurationService)
-        .get(url)
-        .pipe(
-            switchMap((value) => {
-                if (value) {
-                    if (didQueryParamsGetCompleted) {
-                        router.navigate([`/edit-ema/${content.path}`], {
-                            queryParams: {
-                                ...route.queryParams,
-                                ...newQueryParams
-                            },
-                            replaceUrl: true
-                        });
-
-                        return of(true);
-                    }
-
-                    return of(true);
-                }
-
-                return properties.getFeatureFlag('FEATURE_FLAG_NEW_EDIT_PAGE').pipe(
-                    map((flag) => {
-                        if (!flag) {
-                            //Go to EditPage
-                            router.navigate(['/edit-page/content'], {
-                                queryParams: route.queryParams
-                            });
-
-                            return false;
-                        }
-
-                        if (didQueryParamsGetCompleted) {
-                            router.navigate([`/edit-ema/${content.path}`], {
-                                queryParams: {
-                                    ...route.queryParams,
-                                    ...newQueryParams
-                                },
-                                replaceUrl: true
-                            });
-                        }
-
-                        return true;
-                    })
-                );
-            })
-        );
+    return true;
 };
 
 function confirmQueryParams(queryParams: Params): {
@@ -84,13 +40,14 @@ function confirmQueryParams(queryParams: Params): {
             if (!queryParams[curr.key]) {
                 acc[curr.key] = curr.value;
                 acc.missing = true;
-            } else if (
-                curr.key === 'url' &&
-                queryParams[curr.key] !== 'index' &&
-                /index$/g.test(queryParams[curr.key])
-            ) {
-                acc[curr.key] = sanitizeURL(queryParams[curr.key]);
-                acc.missing = true;
+            } else if (curr.key === 'url') {
+                if (queryParams[curr.key] !== 'index' && queryParams[curr.key].endsWith('/index')) {
+                    acc[curr.key] = sanitizeURL(queryParams[curr.key]);
+                    acc.missing = true;
+                } else if (queryParams[curr.key] === '/') {
+                    acc[curr.key] = 'index';
+                    acc.missing = true;
+                }
             }
 
             return acc;

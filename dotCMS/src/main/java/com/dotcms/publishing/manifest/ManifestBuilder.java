@@ -1,11 +1,7 @@
 package com.dotcms.publishing.manifest;
 
-import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
-import com.dotmarketing.exception.DotRuntimeException;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 
 /**
  * Represent a Manifest Builder
@@ -18,18 +14,20 @@ public interface ManifestBuilder extends Closeable {
     /**
      * Add a INCLUDE register into the Manifest
      * @param manifestItem Asset information
-     * @param reason Reason why the asset was include
+     * @param evaluateReason Reason why the asset was evaluated to be included
      * @param <T> Asset's class
      */
-     <T> void include(final ManifestItem manifestItem, final String reason);
+     <T> void include(final ManifestItem manifestItem, final String evaluateReason);
 
     /**
      * Add a EXCLUDE register into the Manifest
-     * @param manifestItem Asset information
-     * @param reason Reason why the asset was exclude
-     * @param <T> Asset's class
+     *
+     * @param <T>            Asset's class
+     * @param manifestItem   Asset information
+     * @param evaluateReason Reason why the asset was evaluated
+     * @param excludeReason  Reason why the asset was excluded
      */
-     <T> void exclude(final ManifestItem manifestItem, final String reason);
+     <T> void exclude(final ManifestItem manifestItem, String evaluateReason, final String excludeReason);
 
      
     /**

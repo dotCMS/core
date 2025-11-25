@@ -4,8 +4,9 @@ import { ViewContainerRef } from '@angular/core';
 
 import { Extension } from '@tiptap/core';
 
-import { AIImagePromptComponent } from './ai-image-prompt.component';
-import { aiImagePromptPlugin } from './plugins/ai-image-prompt.plugin';
+import { DotAIImagePromptComponent } from '@dotcms/ui';
+
+import { aiImagePromptPlugin } from './ai-image-prompt.plugin';
 
 export interface AIImagePromptOptions {
     pluginKey: PluginKey;
@@ -70,7 +71,7 @@ export const AIImagePromptExtension = (viewContainerRef: ViewContainerRef) => {
         },
 
         addProseMirrorPlugins() {
-            const component = viewContainerRef.createComponent(AIImagePromptComponent);
+            const component = viewContainerRef.createComponent(DotAIImagePromptComponent);
             component.changeDetectorRef.detectChanges();
 
             return [

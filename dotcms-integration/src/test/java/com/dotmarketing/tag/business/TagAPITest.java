@@ -6,7 +6,6 @@ import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -22,15 +21,24 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the functionality of TagAPI class
@@ -137,7 +145,7 @@ public class TagAPITest extends IntegrationTestBase {
 
 		List<Tag> tags = tagAPI.getTagsForUserByUserId(testUser.getUserId());
 		assertNotNull(tags);
-		assertTrue(tags.size() > 0);
+        assertFalse(tags.isEmpty());
 
 		String tagName = "testapi"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
 		Tag createdTag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId, false);
@@ -145,7 +153,7 @@ public class TagAPITest extends IntegrationTestBase {
 
 		tags = tagAPI.getTagsForUserByUserId(testUser.getUserId());
 		assertNotNull(tags);
-		assertTrue(tags.size() > 0);
+        assertFalse(tags.isEmpty());
 		assertTrue(tags.contains(createdTag));
 	}
 
@@ -181,7 +189,7 @@ public class TagAPITest extends IntegrationTestBase {
 		List<Tag> tags = tagAPI.getFilteredTags (tagName, defaultHost.getIdentifier(), true, "tagname", 0, 10 );
 		assertTrue(tags.size() > 1);
 		for(Tag tag : tags){
-			assertTrue(tag.getTagName().indexOf(tagName) != -1);
+			assertTrue(tag.getTagName().contains(tagName));
 		}
 	}
 
@@ -195,7 +203,7 @@ public class TagAPITest extends IntegrationTestBase {
 		Tag newTag = tagAPI.getTagAndCreate ( tagName, testUser.getUserId(), defaultHostId );
 		Tag tag = tagAPI.getTagByNameAndHost(tagName, defaultHostId);
 		assertNotNull(tag);
-		assertTrue(tag.equals(newTag));
+        assertEquals(tag, newTag);
 	}
 
 	/**
@@ -211,7 +219,7 @@ public class TagAPITest extends IntegrationTestBase {
 		Tag tag = tagAPI.getTagByTagId(tagId); 
 
 		assertNotNull(tag);
-		assertTrue(tag.getTagId().equals(tagId));
+        assertEquals(tag.getTagId(), tagId);
 	}
 
 	/**
@@ -259,7 +267,7 @@ public class TagAPITest extends IntegrationTestBase {
 
 		Tag tag = tagAPI.getTagByNameAndHost(tagName, hostAPI.findSystemHost().getIdentifier());
 		assertNotNull(tag);
-		assertTrue(tag.getTagName().equals(tagName));
+        assertEquals(tag.getTagName(), tagName);
 	}
 
 	/**
@@ -277,7 +285,7 @@ public class TagAPITest extends IntegrationTestBase {
 		tagAPI.updateTag(newTag.getTagId(), tagName2 );
 
 		Tag tag = tagAPI.getTagByTagId(newTag.getTagId());
-		assertTrue(tag.getTagName().equals(tagName2));
+        assertEquals(tag.getTagName(), tagName2);
 
 		//testing update tag second implementation ( String tagId, String tagName, boolean updateTagReference, String hostId )
 		String tagName3 ="testapi9"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
@@ -285,8 +293,8 @@ public class TagAPITest extends IntegrationTestBase {
 		tagAPI.updateTag(newTag.getTagId(), tagName3, true, host.getIdentifier() );
 
 		tag = tagAPI.getTagByTagId(newTag.getTagId());
-		assertTrue(tag.getTagName().equals(tagName3));
-		assertTrue(tag.getHostId().equals(host.getIdentifier()));
+        assertEquals(tag.getTagName(), tagName3);
+        assertEquals(tag.getHostId(), host.getIdentifier());
 	}
 
 	/**
@@ -338,7 +346,7 @@ public class TagAPITest extends IntegrationTestBase {
 
 		Contentlet contentAsset=new Contentlet();
 		ContentType contentType = TestDataUtils.getWikiLikeContentType();
-		contentAsset.setStructureInode(contentType.id());
+		contentAsset.setContentTypeId(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -378,7 +386,7 @@ public class TagAPITest extends IntegrationTestBase {
 
 		Contentlet contentAsset=new Contentlet();
 		ContentType contentType = TestDataUtils.getWikiLikeContentType();
-		contentAsset.setStructureInode(contentType.id());
+		contentAsset.setContentTypeId(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi15"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -417,7 +425,7 @@ public class TagAPITest extends IntegrationTestBase {
 	public void getTagInodesByTagId() throws Exception{
 		Contentlet contentAsset=new Contentlet();
 		ContentType contentType = TestDataUtils.getWikiLikeContentType();
-		contentAsset.setStructureInode(contentType.id());
+		contentAsset.setContentTypeId(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi16"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -457,7 +465,7 @@ public class TagAPITest extends IntegrationTestBase {
 
 		Contentlet contentAsset=new Contentlet();
 		ContentType contentType = TestDataUtils.getWikiLikeContentType();
-		contentAsset.setStructureInode(contentType.id());
+		contentAsset.setContentTypeId(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi17"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -479,8 +487,8 @@ public class TagAPITest extends IntegrationTestBase {
 		assertNotNull(tagInode2);
 		assertTrue(UtilMethods.isSet(tagInode.getTagId()));
 		assertTrue(UtilMethods.isSet(tagInode2.getTagId()));
-		assertTrue(tagInode.getTagId().equals(tagInode2.getTagId()));
-		assertTrue(tagInode.getInode().equals(tagInode2.getInode()));
+        assertEquals(tagInode.getTagId(), tagInode2.getTagId());
+        assertEquals(tagInode.getInode(), tagInode2.getInode());
 
 		conAPI.destroy(contentAsset, testUser, false);
 	}
@@ -493,7 +501,7 @@ public class TagAPITest extends IntegrationTestBase {
 	public void deleteTagInode() throws Exception {
 		Contentlet contentAsset=new Contentlet();
 		ContentType contentType = TestDataUtils.getWikiLikeContentType();
-		contentAsset.setStructureInode(contentType.id());
+		contentAsset.setContentTypeId(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi18"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -550,7 +558,7 @@ public class TagAPITest extends IntegrationTestBase {
 
 		Contentlet contentAsset=new Contentlet();
 		ContentType contentType = TestDataUtils.getWikiLikeContentType();
-		contentAsset.setStructureInode(contentType.id());
+		contentAsset.setContentTypeId(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi21"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -591,14 +599,14 @@ public class TagAPITest extends IntegrationTestBase {
 		int tagSize = tags.size();
 		assertTrue(tagSize > 1);
 		for(Tag tag : tags){
-			assertTrue(tag.getTagName().indexOf(tagName) != -1);
+			assertTrue(tag.getTagName().contains(tagName));
 		}
 
 		tagName="testing";
 		tags = tagAPI.getSuggestedTag (tagName, defaultHostId);
-		assertTrue(tags.size() >= 1);
+        assertFalse(tags.isEmpty());
 		for(Tag tag : tags){
-			assertTrue(tag.getTagName().indexOf(tagName) != -1);
+			assertTrue(tag.getTagName().contains(tagName));
 		}
 
 		assertTrue(tags.size() < tagSize);
@@ -616,8 +624,8 @@ public class TagAPITest extends IntegrationTestBase {
 			//Creates a new Host
 			Contentlet host = new Contentlet();
 			Structure st = structureAPI.findByVarName("Host", systemUser);
-			host.setStructureInode(st.getInode());
-			String hostName = "testtagapiHost_" + System.currentTimeMillis();
+			host.setContentTypeId(st.getInode());
+			String hostName = "testtagapiHost" + System.currentTimeMillis() + ".com";
 			host.setProperty(Host.HOST_NAME_KEY, hostName);
 			host.setLanguageId(langAPI.getDefaultLanguage().getId());
 			host.setIndexPolicy(IndexPolicy.FORCE);
@@ -637,15 +645,15 @@ public class TagAPITest extends IntegrationTestBase {
 
 			//Gets the default Host Tags
 			List<Tag> tags = tagAPI.getTagsByHostId(defaultHostId);
-			int defaultHostInitialNumberOfTags = tags.size();
 			assertNotNull(tags);
+			int defaultHostInitialNumberOfTags = tags.size();
 			assertTrue(defaultHostInitialNumberOfTags > 0);
 
 			//Gets the new Host Tags
 			tags = tagAPI.getTagsByHostId(newHost.getIdentifier());
-			int newHostinitialNumberOfTags = tags.size();
 			assertNotNull(tags);
-			assertTrue(newHostinitialNumberOfTags == 0);
+			int newHostinitialNumberOfTags = tags.size();
+            assertEquals(0, newHostinitialNumberOfTags);
 
 			//Move the Tags to the new Host
 			tagAPI.updateTagReferences(defaultHostId, defaultHostId, newHost.getIdentifier());
@@ -665,21 +673,21 @@ public class TagAPITest extends IntegrationTestBase {
 			tagCache.clearCache();
 
 			defaultHostTagsAfterUpdate = tagAPI.getTagsByHostId(defaultHostId);
-			assertTrue(defaultHostTagsAfterUpdate.size() == defaultHostInitialNumberOfTags);
+            assertEquals(defaultHostTagsAfterUpdate.size(), defaultHostInitialNumberOfTags);
 
 			/*here the amount is not 0 because is entering in the condition
 			 * if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)) {
 			 * saveTag(tag.getTagName(), "", hostIdentifier);
 			 */
 			newHostTagsAfterUpdate = tagAPI.getTagsByHostId(newHost.getIdentifier());
-			assertTrue(newHostTagsAfterUpdate.size() == defaultHostInitialNumberOfTags);
+            assertEquals(newHostTagsAfterUpdate.size(), defaultHostInitialNumberOfTags);
 		} finally {
 
 			if (null != newHost) {
 				//delete host
 				hostAPI.archive(newHost,systemUser,false);
 				hostAPI.delete(newHost,systemUser,false);
-				assertTrue(tagAPI.getTagsByHostId(newHost.getIdentifier()).size()==0);
+                assertEquals(0, tagAPI.getTagsByHostId(newHost.getIdentifier()).size());
 			}
 
 		}
@@ -705,7 +713,7 @@ public class TagAPITest extends IntegrationTestBase {
 	public void getTagsByInode() throws Exception{
 		Contentlet contentAsset=new Contentlet();
 		ContentType contentType = TestDataUtils.getWikiLikeContentType();
-		contentAsset.setStructureInode(contentType.id());
+		contentAsset.setContentTypeId(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi22"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -743,7 +751,7 @@ public class TagAPITest extends IntegrationTestBase {
 		String text="test1, test 2, test number three,another\n testing\t to'do\r now"; 
 		List<Tag> tags = tagAPI.getTagsInText (text, testUser.getUserId(), defaultHostId);
 		assertNotNull(tags);
-		assertTrue(tags.size()==7);
+        assertEquals(7, tags.size());
 	}
 
 	/**
@@ -754,7 +762,7 @@ public class TagAPITest extends IntegrationTestBase {
 	public void validatePersonaTags() throws Exception {
 
 		Contentlet persona = new Contentlet();
-		persona.setStructureInode(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
+		persona.setContentTypeId(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
 		persona.setHost(defaultHostId);
 		persona.setLanguageId(langAPI.getDefaultLanguage().getId());
 		String name="testtagapipersona1"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -877,7 +885,7 @@ public class TagAPITest extends IntegrationTestBase {
 		 */
 		Contentlet contentAsset=new Contentlet();
 		ContentType contentType = TestDataUtils.getWikiLikeContentType();
-		contentAsset.setStructureInode(contentType.id());
+		contentAsset.setContentTypeId(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi27"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -890,7 +898,7 @@ public class TagAPITest extends IntegrationTestBase {
 		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
 
 		tagName ="testapi27"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
-		tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId);
+		tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId);
 		tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
 		//Verify the cache -> THE SAVE SHOULD ADD NOTHING TO CACHE, JUST THE LOAD
@@ -970,6 +978,70 @@ public class TagAPITest extends IntegrationTestBase {
 
 		assertEquals(personaTag.getTagName(), fetchedTags.get(0).getTagName());
 		assertEquals(personaTag.getTagId(), fetchedTags.get(0).getTagId());
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#findTopTags(String)}
+	 * Given scenario: Save 200 times a couple tags to highlight on the top ten
+	 * Expected result: The top tags should be not null, not empty and contain the tags saved
+	 */
+	@Test
+	public void findTopTags_should_be_not_null_not_empty_and_contains_one_popular_tags() throws Exception{
+
+		final String tagvalue1 = "mytesttag1";
+
+		final Tag tag1 = Try.of(()->APILocator.getTagAPI().saveTag(tagvalue1, testUser.getUserId(), defaultHostId)).getOrNull();
+		IntStream.range(0, 100).forEach(r -> {
+
+			try {
+				final Contentlet contentAsset = new Contentlet();
+				ContentType contentType = TestDataUtils.getWikiLikeContentType();
+				contentAsset.setContentTypeId(contentType.id());
+				contentAsset.setHost(defaultHostId);
+				contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
+				String name = "testtagapi" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+				contentAsset.setProperty(WIKI_TITLE_VARNAME, name);
+				contentAsset.setProperty(WIKI_URL_VARNAME, name);
+				contentAsset.setProperty(WIKI_BYLINEL_VARNAME, "test");
+				contentAsset.setProperty(WIKI_STORY_VARNAME, "test");
+				contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
+				final Contentlet savedContentAsset = conAPI.checkin(contentAsset, testUser, false);
+				APILocator.getContentletAPI().publish(savedContentAsset, testUser, false);
+				tagAPI.addContentletTagInode(tagvalue1, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		});
+
+		final Set<String> topTagsSet = APILocator.getTagAPI().findTopTags(defaultHostId);
+
+		assertNotNull("The top tags should be not null",topTagsSet);
+		assertFalse("The top tags should be not empty", topTagsSet.isEmpty());
+		assertTrue("The mytesttag1 should be on the top ten", topTagsSet.contains(tagvalue1));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#findTopTags(String)}
+	 * Given scenario: pass site id as a null
+	 * Expected result: Expecting {@link IllegalArgumentException} to be thrown
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void findTopTags_on_null_throw_exception() throws Exception{
+
+			APILocator.getTagAPI().findTopTags(null);
+			fail("should not reach this section");
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#findTopTags(String)}
+	 * Given scenario: pass site id as an empty string
+	 * Expected result: Expecting {@link IllegalArgumentException} to be thrown
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void findTopTags_on_empty_throw_exception() throws Exception{
+
+		APILocator.getTagAPI().findTopTags("");
+		fail("should not reach this section");
 	}
 
 }

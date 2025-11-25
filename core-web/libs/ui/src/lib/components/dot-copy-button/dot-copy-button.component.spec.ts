@@ -15,7 +15,6 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 describe('DotCopyButtonComponent', () => {
-    let component: DotCopyButtonComponent;
     let fixture: ComponentFixture<DotCopyButtonComponent>;
     let de: DebugElement;
     let dotClipboardUtil: DotClipboardUtil;
@@ -36,7 +35,7 @@ describe('DotCopyButtonComponent', () => {
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotCopyButtonComponent);
-        component = fixture.componentInstance;
+
         de = fixture.debugElement;
 
         dotClipboardUtil = de.injector.get(DotClipboardUtil);
@@ -46,13 +45,12 @@ describe('DotCopyButtonComponent', () => {
                 resolve(true);
             });
         });
-
-        component.copy = 'Text to copy';
+        fixture.componentRef.setInput('copy', 'Text to copy');
     });
 
     describe('with label', () => {
         beforeEach(() => {
-            component.label = 'Label';
+            fixture.componentRef.setInput('label', 'Label');
             button = de.query(By.css('button'));
         });
 
@@ -62,7 +60,7 @@ describe('DotCopyButtonComponent', () => {
         });
 
         it('should not show label', () => {
-            component.label = null;
+            fixture.componentRef.setInput('label', null);
             fixture.detectChanges();
             expect(button.nativeElement.textContent.trim()).toBe('');
         });

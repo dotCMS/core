@@ -1,18 +1,21 @@
 // tslint:disable:typedef
-import { Verify } from './Verify';
 import { NgControl } from '@angular/forms';
+
+import { Verify } from './Verify';
 
 // @dynamic
 export class CustomValidators {
     static required() {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
+
             return Verify.empty(v) ? { required: true } : null;
         };
     }
     static isString(allowEmpty = false) {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
+
             return !Verify.isString(v, allowEmpty)
                 ? { isString: { emptyAllowed: allowEmpty } }
                 : null;
@@ -26,6 +29,7 @@ export class CustomValidators {
             if (!Verify.empty(v) && (v.indexOf('"') !== -1 || v.indexOf("'") !== -1)) {
                 failed = true;
             }
+
             return failed ? { noQuotes: true } : null;
         };
     }
@@ -37,6 +41,7 @@ export class CustomValidators {
             if (!Verify.empty(v) && v.indexOf('"') !== -1) {
                 failed = true;
             }
+
             return failed ? { noDoubleQuotes: true } : null;
         };
     }
@@ -44,6 +49,7 @@ export class CustomValidators {
     static maxLength(max) {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
+
             return !Verify.maxLength(v, max)
                 ? { maxLength: { maximumLength: max, actualLength: v ? v.length : 0 } }
                 : null;
@@ -53,6 +59,7 @@ export class CustomValidators {
     static minLength(min) {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
+
             return !Verify.minLength(v, min)
                 ? { minLength: { minimumLength: min, actualLength: v ? v.length : 0 } }
                 : null;
@@ -62,6 +69,7 @@ export class CustomValidators {
     static isNumber() {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
+
             return !Verify.isNumber(v) ? { isNumber: true } : null;
         };
     }
@@ -69,6 +77,7 @@ export class CustomValidators {
     static isInteger() {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
+
             return !Verify.isInteger(v) ? { isInteger: true } : null;
         };
     }
@@ -76,6 +85,7 @@ export class CustomValidators {
     static min(min) {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
+
             return !Verify.min(v, min) ? { min: { minimumValue: min, actualValue: v } } : null;
         };
     }
@@ -83,6 +93,7 @@ export class CustomValidators {
     static max(max) {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
+
             return !Verify.max(v, max) ? { max: { maximumValue: max, actualValue: v } } : null;
         };
     }
@@ -94,6 +105,7 @@ export class CustomValidators {
             if (Verify.isString(v)) {
                 v = [v];
             }
+
             if (minSelections > 0) {
                 if (v == null || v.length < minSelections) {
                     valid = {
@@ -104,6 +116,7 @@ export class CustomValidators {
                     };
                 }
             }
+
             return valid;
         };
     }
@@ -115,6 +128,7 @@ export class CustomValidators {
             if (Verify.isString(v)) {
                 v = [v];
             }
+
             if (v != null && v.length > maxSelections) {
                 valid = valid ? valid : {};
                 valid['maxSelections'] = {
@@ -122,6 +136,7 @@ export class CustomValidators {
                     maxSelectionCount: this.maxSelections
                 };
             }
+
             return valid;
         };
     }

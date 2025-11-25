@@ -67,10 +67,45 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Permissionable"%>
 
+<style>
+	.template-portlet-history-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
 
+	.bringing-back-message {
+		display: flex;
+		align-items: center;
+		align-items: center;
+		gap: 10px;
+		display: none;
+	}
 
-<div class="contentIdentifier">
-	<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=(ident!=null?ident.getId():"") %>
+	.bringing-back-message .loading-indicator {
+		border: 4px solid #f3f3f3;
+		border-top: 4px solid var(--color-palette-primary-500);
+		border-radius: 50%;
+		width: 20px;
+		height: 20px;
+		animation: spin 2s linear infinite;
+		margin: auto;
+	}
+
+	@keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+</style>
+
+<div class="template-portlet-history-header">
+	<div class="contentIdentifier">
+		<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=(ident!=null?ident.getId():"") %>
+	</div>
+	<div data-messageId="bring-back-message" class="bringing-back-message">
+		<div class="loading-indicator"></div>
+		<%= LanguageUtil.get(pageContext, "dot.template.builder.bringing.back.template.version") %>
+	</div>
 </div>
 <div class="history__status">
 	<table class="listingTable">
@@ -114,7 +149,7 @@
 						<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a>
 					<% } %>
 					<% if(!hideBringBack) { %>
-						 - <a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
+						 - <a  href="javascript: bringBackTemplateVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
 					<%}%>
 				<% } %>
 			<% } else { %>

@@ -141,7 +141,9 @@ export class DotContentletIcon {
         return (
             <Host>
                 {/* Icon's size in Card View is 96, lower than that the label won't be displayed  */}
-                {icon === 'insert_drive_file' && parseInt(this.size.replace('px', ''), 10) >= 96 ? <span>{this.ext}</span> : null}
+                {icon === 'insert_drive_file' && parseInt(this.size.replace('px', ''), 10) >= 96 ? (
+                    <span>{this.ext}</span>
+                ) : null}
                 <mwc-icon style={{ '--mdc-icon-size': this.size, color: color || '#444' }}>
                     {icon}
                 </mwc-icon>

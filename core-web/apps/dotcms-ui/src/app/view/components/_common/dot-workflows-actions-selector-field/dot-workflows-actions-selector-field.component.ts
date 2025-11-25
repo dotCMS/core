@@ -56,8 +56,8 @@ export class DotWorkflowsActionsSelectorFieldComponent
             tap((actions: SelectItemGroup[]) => {
                 const actionsIds = this.getActionsIds(actions);
 
-                if (actionsIds.length && !actionsIds.includes(this.value)) {
-                    this.dropdown.clear(null);
+                if (this.shouldClearDropdown(this.dropdown, actionsIds, this.value)) {
+                    this.dropdown.clear();
                 }
             })
         );
@@ -124,5 +124,18 @@ export class DotWorkflowsActionsSelectorFieldComponent
         return actions.reduce((acc: string[], { items }: SelectItemGroup) => {
             return [...acc, ...items.map((item: SelectItem) => item.value)];
         }, []);
+    }
+
+    /**
+     * Determines whether the dropdown should be cleared based on the provided options and the current value.
+     *
+     * @param {Dropdown} dropdown - The dropdown component instance.
+     * @param {string[]} options - Array of available options for the dropdown.
+     * @param {string} value - The current value selected in the dropdown.
+     * @returns {boolean} - Returns `true` if the dropdown should be cleared (i.e., if the dropdown exists, there are available options,
+     *                      and the current value is not in the list of options). Otherwise, returns `false`.
+     */
+    private shouldClearDropdown(dropdown: Dropdown, options: string[], value: string): boolean {
+        return dropdown && options.length && !options.includes(value);
     }
 }

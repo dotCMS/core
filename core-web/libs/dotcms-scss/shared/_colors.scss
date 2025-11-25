@@ -10,7 +10,6 @@ $color-palette-primary-600: var(--color-palette-primary-600);
 $color-palette-primary-700: var(--color-palette-primary-700);
 $color-palette-primary-800: var(--color-palette-primary-800);
 $color-palette-primary-900: var(--color-palette-primary-900);
-$color-palette-primary: $color-palette-primary-500;
 
 $color-palette-primary-op-10: var(--color-palette-primary-op-10);
 $color-palette-primary-op-20: var(--color-palette-primary-op-20);
@@ -22,6 +21,10 @@ $color-palette-primary-op-70: var(--color-palette-primary-op-70);
 $color-palette-primary-op-80: var(--color-palette-primary-op-80);
 $color-palette-primary-op-90: var(--color-palette-primary-op-90);
 
+$color-palette-primary-shade: $color-palette-primary-600;
+$color-palette-primary: $color-palette-primary-500;
+$color-palette-primary-tint: $color-palette-primary-200;
+
 $color-palette-secondary-100: var(--color-palette-secondary-100);
 $color-palette-secondary-200: var(--color-palette-secondary-200);
 $color-palette-secondary-300: var(--color-palette-secondary-300);
@@ -31,7 +34,6 @@ $color-palette-secondary-600: var(--color-palette-secondary-600);
 $color-palette-secondary-700: var(--color-palette-secondary-700);
 $color-palette-secondary-800: var(--color-palette-secondary-800);
 $color-palette-secondary-900: var(--color-palette-secondary-900);
-$color-palette-secondary: $color-palette-secondary-500;
 
 $color-palette-secondary-op-10: var(--color-palette-secondary-op-10);
 $color-palette-secondary-op-20: var(--color-palette-secondary-op-20);
@@ -42,6 +44,10 @@ $color-palette-secondary-op-60: var(--color-palette-secondary-op-60);
 $color-palette-secondary-op-70: var(--color-palette-secondary-op-70);
 $color-palette-secondary-op-80: var(--color-palette-secondary-op-80);
 $color-palette-secondary-op-90: var(--color-palette-secondary-op-90);
+
+$color-palette-secondary-shade: $color-palette-secondary-600;
+$color-palette-secondary: $color-palette-secondary-500;
+$color-palette-secondary-tint: $color-palette-secondary-200;
 
 $color-palette-black-op-10: var(--color-palette-black-op-10);
 $color-palette-black-op-20: var(--color-palette-black-op-20);
@@ -63,6 +69,7 @@ $color-palette-white-op-70: var(--color-palette-white-op-70);
 $color-palette-white-op-80: var(--color-palette-white-op-80);
 $color-palette-white-op-90: var(--color-palette-white-op-90);
 
+// Gray sass variables
 $color-palette-gray-100: #fafafb;
 $color-palette-gray-200: #f3f3f4;
 $color-palette-gray-300: #ebecef;
@@ -72,9 +79,14 @@ $color-palette-gray-600: #8d92a5;
 $color-palette-gray-700: #6c7389;
 $color-palette-gray-800: #515667;
 $color-palette-gray-900: #3d404d;
-$color-palette-gray: #afb3c0;
 
+$color-palette-gray-shade: $color-palette-gray-300;
+$color-palette-gray: $color-palette-gray-500;
+$color-palette-gray-tint: rgba($color-palette-gray, 0.1);
+
+$color-palette-gray-op-08: rgba($color-palette-gray, 0.8);
 $color-palette-gray-op-10: rgba($color-palette-gray, 0.1);
+$color-palette-gray-op-15: rgba($color-palette-gray, 0.15);
 $color-palette-gray-op-20: rgba($color-palette-gray, 0.2);
 $color-palette-gray-op-30: rgba($color-palette-gray, 0.3);
 $color-palette-gray-op-40: rgba($color-palette-gray, 0.4);
@@ -84,35 +96,100 @@ $color-palette-gray-op-70: rgba($color-palette-gray, 0.7);
 $color-palette-gray-op-80: rgba($color-palette-gray, 0.8);
 $color-palette-gray-op-90: rgba($color-palette-gray, 0.9);
 
-$color-alert-yellow: #ffb444;
-$color-alert-yellow-light: #fff8ec;
-$color-alert-green: #3ed97a;
-$color-alert-green-light: #f5fdf8;
-$color-alert-red: #f65446;
-$color-alert-red-light: #fff6f6;
-$color-alert-fuchsia: hsla(288, 77%, 55%, 0.08);
-
-$color-accessible-text-red: #d82b2e;
-$color-accessible-text-red-bg: $color-alert-red-light;
-$color-accessible-text-red-op-10: rgba($color-accessible-text-red, 0.1);
-$color-accessible-text-red-op-20: rgba($color-accessible-text-red, 0.2);
-
-$color-accessible-text-green: #0b6948;
-$color-accessible-text-green-bg: $color-alert-green-light;
-
-$color-accessible-text-purple: $color-palette-secondary-600;
-$color-accessible-text-purple-bg: $color-palette-secondary-100;
-
-$color-accessible-text-blue: $color-palette-primary-600;
-$color-accessible-text-blue-bg: $color-palette-primary-op-10;
-
-$color-accessible-text-yellow: #bc5b0d; // TODO: why?
-$color-accessible-text-yellow-bg: $color-alert-yellow-light;
-
 $color-accessible-text-gray: $color-palette-gray-600;
-$color-accessible-text-gray-bg: $color-palette-gray-100;
+$color-accessible-text-gray-bg: $color-palette-gray-op-10;
+$color-alert-gray: $color-palette-gray;
+$color-alert-gray-light: $color-palette-gray-tint;
 
-$color-accessible-text-fuchsia: hsla(288, 77%, 48%, 1);
+// Yellow sass variables
+$color-palette-yellow-shade: #bd5001;
+$color-palette-yellow: #ffb444;
+$color-palette-yellow-tint: #fff8ec;
+
+$color-palette-yellow-op-08: rgba($color-palette-yellow, 0.8);
+$color-palette-yellow-op-10: rgba($color-palette-yellow, 0.1);
+$color-palette-yellow-op-15: rgba($color-palette-yellow, 0.15);
+$color-palette-yellow-op-20: rgba($color-palette-yellow, 0.2);
+
+$color-accessible-text-yellow: $color-palette-yellow-shade;
+$color-accessible-text-yellow-bg: $color-palette-yellow-op-08;
+$color-alert-yellow: $color-palette-yellow;
+$color-alert-yellow-light: $color-palette-yellow-tint;
+
+// Red sass variables
+$color-palette-red-shade: #d82b2e;
+$color-palette-red: #f65446;
+$color-palette-red-tint: #fff6f6;
+
+$color-palette-red-op-08: rgba($color-palette-red, 0.8);
+$color-palette-red-op-10: rgba($color-palette-red, 0.1);
+$color-palette-red-op-15: rgba($color-palette-red, 0.15);
+$color-palette-red-op-20: rgba($color-palette-red, 0.2);
+
+$color-accessible-text-red: $color-palette-red-shade;
+$color-accessible-text-red-bg: $color-palette-red-op-08;
+$color-alert-red: $color-palette-red;
+$color-alert-red-light: $color-palette-red-tint;
+
+// Fuchsia sass variables
+$color-palette-fuchsia-shade: #c336e5;
+$color-palette-fuchsia: #c336e5;
+$color-palette-fuchsia-tint: #f9ebfc;
+
+$color-palette-fuchsia-op-08: rgba($color-palette-fuchsia, 0.8);
+$color-palette-fuchsia-op-10: rgba($color-palette-fuchsia, 0.1);
+$color-palette-fuchsia-op-15: rgba($color-palette-fuchsia, 0.15);
+$color-palette-fuchsia-op-20: rgba($color-palette-fuchsia, 0.2);
+
+$color-accessible-text-fuchsia: $color-palette-fuchsia-shade;
+$color-accessible-text-fuchsia-bg: $color-palette-fuchsia-op-08;
+$color-alert-fuchsia: $color-palette-fuchsia;
+$color-alert-fuchsia-light: $color-palette-fuchsia-tint;
+
+// Green sass variables
+$color-palette-green-shade: #0b6948;
+$color-palette-green: #3ed97a;
+$color-palette-green-tint: #f5fdf8;
+
+$color-palette-green-op-08: rgba($color-palette-green, 0.8);
+$color-palette-green-op-10: rgba($color-palette-green, 0.1);
+$color-palette-green-op-15: rgba($color-palette-green, 0.15);
+$color-palette-green-op-20: rgba($color-palette-green, 0.2);
+
+$color-accessible-text-green: $color-palette-green-shade;
+$color-accessible-text-green-bg: $color-palette-green-op-08;
+$color-alert-green: $color-palette-green;
+$color-alert-green-light: $color-palette-green-tint;
+
+// Purple sass variables
+$color-palette-purple-shade: $color-palette-secondary-700;
+$color-palette-purple: $color-palette-secondary-500;
+$color-palette-purple-tint: $color-palette-secondary-100;
+
+$color-palette-purple-op-08: rgba($color-palette-purple, 0.8);
+$color-palette-purple-op-10: rgba($color-palette-purple, 0.1);
+$color-palette-purple-op-15: rgba($color-palette-purple, 0.15);
+$color-palette-purple-op-20: rgba($color-palette-purple, 0.2);
+
+$color-accessible-text-purple: $color-palette-purple-shade;
+$color-accessible-text-purple-bg: $color-palette-purple-op-08;
+$color-alert-purple: $color-palette-purple;
+$color-alert-purple-light: $color-palette-purple-tint;
+
+// Blue sass variables
+$color-palette-blue-shade: $color-palette-primary-600;
+$color-palette-blue: $color-palette-primary-500;
+$color-palette-blue-tint: $color-palette-primary-200;
+
+$color-palette-blue-op-08: rgba($color-palette-blue, 0.8);
+$color-palette-blue-op-10: rgba($color-palette-blue, 0.1);
+$color-palette-blue-op-15: rgba($color-palette-blue, 0.15);
+$color-palette-blue-op-20: rgba($color-palette-blue, 0.2);
+
+$color-accessible-text-blue: $color-palette-blue-shade;
+$color-accessible-text-blue-bg: $color-palette-blue-op-08;
+$color-alert-blue: $color-palette-blue;
+$color-alert-blue-light: $color-palette-blue-tint;
 
 // LEGACY COLORS
 $brand-background: var(--color-palette-primary-800);
@@ -148,6 +225,7 @@ $success: $color-accessible-text-green;
     --color-palette-primary-700: hsl(var(--color-primary-h) var(--color-primary-s) 36%);
     --color-palette-primary-800: hsl(var(--color-primary-h) var(--color-primary-s) 27%);
     --color-palette-primary-900: hsl(var(--color-primary-h) var(--color-primary-s) 21%);
+
     --color-palette-primary-op-10: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.1);
     --color-palette-primary-op-20: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.2);
     --color-palette-primary-op-30: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.3);
@@ -157,6 +235,11 @@ $success: $color-accessible-text-green;
     --color-palette-primary-op-70: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.7);
     --color-palette-primary-op-80: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.8);
     --color-palette-primary-op-90: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.9);
+
+    --color-palette-primary-shade: var(--color-palette-primary-600);
+    --color-palette-primary: var(--color-palette-primary-500);
+    --color-palette-primary-tint: var(--color-palette-primary-200);
+
     --color-palette-secondary-100: hsl(var(--color-secondary-h) var(--color-secondary-s) 98%);
     --color-palette-secondary-200: hsl(var(--color-secondary-h) var(--color-secondary-s) 94%);
     --color-palette-secondary-300: hsl(var(--color-secondary-h) var(--color-secondary-s) 84%);
@@ -166,6 +249,7 @@ $success: $color-accessible-text-green;
     --color-palette-secondary-700: hsl(var(--color-secondary-h) var(--color-secondary-s) 42%);
     --color-palette-secondary-800: hsl(var(--color-secondary-h) var(--color-secondary-s) 30%);
     --color-palette-secondary-900: hsl(var(--color-secondary-h) var(--color-secondary-s) 22%);
+
     --color-palette-secondary-op-10: hsla(
         var(--color-secondary-h),
         var(--color-secondary-s),
@@ -220,6 +304,10 @@ $success: $color-accessible-text-green;
         60%,
         0.9
     );
+
+    --color-palette-secondary-shade: var(--color-palette-secondary-600);
+    --color-palette-secondary: var(--color-palette-secondary-500);
+    --color-palette-secondary-tint: var(--color-palette-secondary-200);
 
     /* COLOR BLACK OPACITY */
     --color-palette-black-op-10: hsla(

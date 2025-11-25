@@ -1,6 +1,4 @@
-import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-
-import { OverlayPanel } from 'primeng/overlaypanel';
+import { Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
@@ -10,6 +8,7 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { INotification } from '@models/notifications';
 
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/dot-toolbar-announcements.component';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -18,9 +17,11 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
     templateUrl: 'dot-toolbar-notifications.component.html'
 })
 export class DotToolbarNotificationsComponent implements OnInit {
+    readonly #announcementsStore = inject(AnnouncementsStore);
+
     @ViewChild(DotDropdownComponent, { static: true }) dropdown: DotDropdownComponent;
 
-    @ViewChild('toolbarAnnouncements', { static: true }) toolbarAnnouncements: OverlayPanel;
+    @ViewChild('toolbarAnnouncements') toolbarAnnouncements: DotToolbarAnnouncementsComponent;
     existsMoreToLoad = false;
     notifications: INotification[] = [];
     notificationsUnreadCount = 0;
@@ -31,14 +32,13 @@ export class DotToolbarNotificationsComponent implements OnInit {
     private isNotificationsMarkedAsRead = false;
     private showNotifications = false;
 
-    showUnreadAnnouncement = this.announcementsStore.showUnreadAnnouncement;
+    showUnreadAnnouncement = this.#announcementsStore.showUnreadAnnouncement;
 
     constructor(
         public iframeOverlayService: IframeOverlayService,
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
-        private notificationService: NotificationsService,
-        private announcementsStore: AnnouncementsStore
+        private notificationService: NotificationsService
     ) {}
 
     ngOnInit(): void {
@@ -46,7 +46,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
         this.subscribeToNotifications();
 
         this.loginService.watchUser(this.getNotifications.bind(this));
-        this.announcementsStore.load();
+        this.#announcementsStore.load();
     }
 
     dismissAllNotifications(): void {
@@ -133,12 +133,12 @@ export class DotToolbarNotificationsComponent implements OnInit {
             });
     }
 
-    onActiveAnnouncements(): void {
+    onActiveAnnouncements(event: CustomEvent): void {
         this.activeAnnouncements = true;
+        this.toolbarAnnouncements.toggleDialog(event);
     }
-
     markAnnocumentsAsRead(): void {
         this.activeAnnouncements = false;
-        this.announcementsStore.markAnnouncementsAsRead();
+        this.#announcementsStore.markAnnouncementsAsRead();
     }
 }

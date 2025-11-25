@@ -9,46 +9,51 @@ import { PageContext } from '../../contexts/PageContext';
 const MockChildComponent = () => {
     const context = React.useContext(PageContext);
 
-    return <div data-testid="mockChild">{JSON.stringify(context?.page.title)}</div>;
+    return <div data-testid="mockChild">{JSON.stringify(context?.pageAsset.page.title)}</div>;
 };
 
 describe('PageProvider', () => {
     const mockEntity = {
-        page: {
-            title: 'Test Page',
-            identifier: 'test-page-1'
+        pageAsset: {
+            page: {
+                title: 'Test Page',
+                identifier: 'test-page-1'
+            }
+            // ... add other context properties as needed
         }
-        // ... add other context properties as needed
     };
 
     it('provides the context to its children', () => {
         render(
-            <PageProvider entity={mockEntity}>
+            <PageProvider pageContext={mockEntity}>
                 <MockChildComponent />
             </PageProvider>
         );
-        expect(screen.getByTestId('mockChild')).toHaveTextContent(mockEntity.page.title);
+        expect(screen.getByTestId('mockChild')).toHaveTextContent(mockEntity.pageAsset.page.title);
     });
 
     it('updates context when entity changes', () => {
         const { rerender } = render(
-            <PageProvider entity={mockEntity}>
+            <PageProvider pageContext={mockEntity}>
                 <MockChildComponent />
             </PageProvider>
         );
         // Change the context
         const newEntity = {
             ...mockEntity,
-            page: {
-                ...mockEntity.page,
-                title: 'Updated Test Page'
+            pageAsset: {
+                ...mockEntity.pageAsset,
+                page: {
+                    ...mockEntity.pageAsset.page,
+                    title: 'Updated Test Page'
+                }
             }
         };
         rerender(
-            <PageProvider entity={newEntity}>
+            <PageProvider pageContext={newEntity}>
                 <MockChildComponent />
             </PageProvider>
         );
-        expect(screen.getByTestId('mockChild')).toHaveTextContent(newEntity.page.title);
+        expect(screen.getByTestId('mockChild')).toHaveTextContent(newEntity.pageAsset.page.title);
     });
 });

@@ -1,59 +1,54 @@
-<form
-    class="url-mode__form"
-    *ngIf="vm$ | async as vm"
-    [formGroup]="form"
-    (ngSubmit)="onSubmit()"
-    data-testId="form">
-    <div class="url-mode__input-container">
-        <label for="url-input">{{ 'dot.binary.field.action.import.from.url' | dm }}</label>
-        <input
-            id="url-input"
-            (focus)="handleFocus()"
-            type="text"
-            autocomplete="off"
-            formControlName="url"
-            pInputText
-            placeholder="https://www.dotcms.com/image.png"
-            aria-label="URL input field"
-            data-testId="url-input" />
-        <div class="error-messsage__container">
-            <dot-field-validation-message
-                *ngIf="!vm.error; else serverError"
-                [message]="'dot.binary.field.action.import.from.url.error.message' | dm"
-                [field]="form.get('url')"
-                data-testId="error-message"></dot-field-validation-message>
-            <ng-template #serverError>
-                <small class="p-invalid" data-testId="error-msg">
-                    {{ vm.error | dm : [acceptTypes] }}
-                </small>
-            </ng-template>
+@if (vm$ | async; as vm) {
+    <form (ngSubmit)="onSubmit()" [formGroup]="form" class="url-mode__form" data-testId="form">
+        <div class="url-mode__input-container">
+            <label for="url-input">{{ 'dot.binary.field.action.import.from.url' | dm }}</label>
+            <input
+                (focus)="handleFocus()"
+                id="url-input"
+                type="text"
+                autocomplete="off"
+                formControlName="url"
+                pInputText
+                placeholder="https://www.dotcms.com/image.png"
+                aria-label="URL input field"
+                data-testId="url-input" />
+            <div class="error-messsage__container">
+                @if (!vm.error) {
+                    <dot-field-validation-message
+                        [message]="'dot.binary.field.action.import.from.url.error.message' | dm"
+                        [field]="form.get('url')"
+                        data-testId="error-message"></dot-field-validation-message>
+                } @else {
+                    <small class="p-invalid" data-testId="error-msg">
+                        {{ vm.error | dm: [acceptTypes] }}
+                    </small>
+                }
+            </div>
         </div>
-    </div>
-    <div class="url-mode__actions">
-        <p-button
-            [label]="'dot.common.cancel' | dm"
-            (click)="cancelUpload()"
-            styleClass="p-button-outlined"
-            type="button"
-            aria-label="Cancel button"
-            data-testId="cancel-button"></p-button>
-
-        <div [style]="{ width: '6.85rem' }">
+        <div class="url-mode__actions">
             <p-button
-                *ngIf="!vm.isLoading; else loadingButton"
-                [label]="'dot.common.import' | dm"
-                [icon]="'pi pi-download'"
-                type="submit"
-                aria-label="Import button"
-                data-testId="import-button"></p-button>
-
-            <ng-template #loadingButton>
-                <p-button
-                    [icon]="'pi pi-spin pi-spinner'"
-                    type="button"
-                    aria-label="Loading button"
-                    data-testId="loading-button"></p-button>
-            </ng-template>
+                (click)="cancelUpload()"
+                [label]="'dot.common.cancel' | dm"
+                styleClass="p-button-outlined"
+                type="button"
+                aria-label="Cancel button"
+                data-testId="cancel-button"></p-button>
+            <div [style]="{ width: '6.85rem' }">
+                @if (!vm.isLoading) {
+                    <p-button
+                        [label]="'dot.common.import' | dm"
+                        [icon]="'pi pi-download'"
+                        type="submit"
+                        aria-label="Import button"
+                        data-testId="import-button"></p-button>
+                } @else {
+                    <p-button
+                        [icon]="'pi pi-spin pi-spinner'"
+                        type="button"
+                        aria-label="Loading button"
+                        data-testId="loading-button"></p-button>
+                }
+            </div>
         </div>
-    </div>
-</form>
+    </form>
+}

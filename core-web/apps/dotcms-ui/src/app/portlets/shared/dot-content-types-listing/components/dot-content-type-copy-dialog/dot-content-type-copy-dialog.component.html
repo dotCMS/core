@@ -1,67 +1,62 @@
 <dot-dialog
-    class="no-overflow"
+    (hide)="closeDialog()"
     [actions]="dialogActions$ | async"
     [header]="dialogTitle"
     [isSaving]="isSaving$ | async"
     [visible]="isVisibleDialog"
-    (hide)="closeDialog()"
-    width="600px"
->
-    <form class="p-fluid" #formEl="ngForm" [formGroup]="form" novalidate>
+    class="no-overflow"
+    width="600px">
+    <form [formGroup]="form" class="p-fluid" #formEl="ngForm" novalidate>
         <div class="field form__group--validation">
             <label dotFieldRequired for="content-type-form-name">{{ inputNameWithType }}</label>
             <input
-                id="content-type-form-name"
                 [tabindex]="1"
+                id="content-type-form-name"
                 dotAutofocus
                 formControlName="name"
                 name="name"
                 pInputText
-                type="text"
-            />
+                type="text" />
             <dot-field-validation-message
                 [field]="nameControl"
-                [message]="'dot.common.message.field.required' | dm : [inputNameWithType]"
-            ></dot-field-validation-message>
+                [message]="
+                    'dot.common.message.field.required' | dm: [inputNameWithType]
+                "></dot-field-validation-message>
         </div>
 
         <div class="field form__group--validation">
-            <label for="content-type-form-variable-name"
-                >{{ 'contenttypes.form.label.variable_name' | dm }}
+            <label for="content-type-form-variable-name">
+                {{ 'contenttypes.form.label.variable_name' | dm }}
             </label>
             <input
-                id="content-type-form-variable-name"
                 [tabindex]="2"
+                id="content-type-form-variable-name"
                 formControlName="variable"
                 name="variable"
                 pInputText
                 placeholder="{{ 'contentType.form.variable.placeholder' | dm }}"
-                type="text"
-            />
+                type="text" />
             <dot-field-validation-message
-                [field]="this.variableControl"
-            ></dot-field-validation-message>
+                [field]="this.variableControl"></dot-field-validation-message>
         </div>
 
         <div class="field">
             <label for="content-type-form-icon">{{ 'contenttypes.form.label.icon' | dm }}</label>
             <dot-md-icon-selector
-                id="content-type-form-icon"
                 [tabindex]="3"
-                formControlName="icon"
-            ></dot-md-icon-selector>
+                id="content-type-form-icon"
+                formControlName="icon"></dot-md-icon-selector>
         </div>
 
         <div class="field">
-            <label for="content-type-form-host">{{
-                'contenttypes.form.field.host_folder.label' | dm
-            }}</label>
+            <label for="content-type-form-host">
+                {{ 'contenttypes.form.field.host_folder.label' | dm }}
+            </label>
             <dot-site-selector-field
-                id="content-type-form-host"
                 [system]="true"
                 [tabindex]="4"
-                formControlName="host"
-            ></dot-site-selector-field>
+                id="content-type-form-host"
+                formControlName="host"></dot-site-selector-field>
         </div>
     </form>
 </dot-dialog>

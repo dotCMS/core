@@ -1,16 +1,5 @@
 package com.dotcms.contenttype.test;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -40,9 +29,6 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.RESTParams;
 import com.dotcms.util.CollectionsUtils;
@@ -67,6 +53,9 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -76,6 +65,32 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -92,31 +107,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class ContentResourceTest extends IntegrationTestBase {
@@ -391,7 +392,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         Contentlet parent = contentletDataGen.languageId(language).next();
         parent = contentletAPI.checkin(parent,
-                CollectionsUtils.map(relationship1, CollectionsUtils.list(child1), relationship2,
+                Map.of(relationship1, CollectionsUtils.list(child1), relationship2,
                         CollectionsUtils.list(child2, child3)), user, false);
 
         final ContentResource contentResource = new ContentResource();
@@ -571,7 +572,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             Contentlet parent = parentDataGen.languageId(language).next();
             parent = contentletAPI.checkin(parent,
-                    CollectionsUtils.map(parentRelationship, CollectionsUtils.list(child)), user,
+                    Map.of(parentRelationship, CollectionsUtils.list(child)), user,
                     false);
 
             if (testCase.limitedUser) {
@@ -671,13 +672,13 @@ public class ContentResourceTest extends IntegrationTestBase {
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             Contentlet parent1 = parentDataGen.languageId(language).next();
             parent1 = contentletAPI.checkin(parent1,
-                    CollectionsUtils.map(relationship1, CollectionsUtils.list(child1, child2),
+                    Map.of(relationship1, CollectionsUtils.list(child1, child2),
                             relationship2, CollectionsUtils.list(anotherChild)), user,
                     false);
 
             Contentlet parent2 = parentDataGen.languageId(language).next();
             parent2 = contentletAPI.checkin(parent2,
-                    CollectionsUtils.map(relationship1, CollectionsUtils.list(child1, child2)), user,
+                    Map.of(relationship1, CollectionsUtils.list(child1, child2)), user,
                     false);
 
             final StringBuilder pullRelatedQuery = new StringBuilder();
@@ -1288,8 +1289,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
             assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
-            assertEquals("Unable to set string value as a Long",
-                    ((HashMap)endpointResponse1.getEntity()).get("message"));
+            assertEquals("Unable to set string value as a Long for the field: numeric",
+                    ((Map)endpointResponse1.getEntity()).get("message"));
 
         }finally {
             if(null != contentType){
@@ -1581,9 +1582,9 @@ public class ContentResourceTest extends IntegrationTestBase {
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
         final Contentlet grandChild = contentletDataGen.languageId(1).setProperty(textField.name(),"grandChild").nextPersisted();
         Contentlet child = contentletDataGen.languageId(1).setProperty(textField.name(),"child").next();
-        child = contentletAPI.checkin(child,CollectionsUtils.map(relationship,CollectionsUtils.list(grandChild)),user,false);
+        child = contentletAPI.checkin(child,Map.of(relationship,CollectionsUtils.list(grandChild)),user,false);
         Contentlet parent = contentletDataGen.languageId(1).setProperty(textField.name(),"parent").next();
-        parent = contentletAPI.checkin(parent,CollectionsUtils.map(relationship,CollectionsUtils.list(child)),user,false);
+        parent = contentletAPI.checkin(parent,Map.of(relationship,CollectionsUtils.list(child)),user,false);
 
         final ContentResource contentResource = new ContentResource();
         final HttpServletRequest request = createHttpRequest(null, null);

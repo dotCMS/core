@@ -1,10 +1,12 @@
-import { CoreWebService } from './core-web.service';
-import { Injectable } from '@angular/core';
-import { LoginService } from './login.service';
 import { Observable } from 'rxjs';
-import { DotRouterService } from './dot-router.service';
 import { Subject } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { CoreWebService } from './core-web.service';
+import { DotRouterService } from './dot-router.service';
 import { DotcmsEventsService } from './dotcms-events.service';
+import { LoginService } from './login.service';
 
 @Injectable()
 export class RoutingService {
@@ -51,6 +53,7 @@ export class RoutingService {
 
     get firstPortlet(): string {
         const porlets = this.portlets.entries().next().value;
+
         return porlets ? porlets[0] : null;
     }
 
@@ -81,6 +84,7 @@ export class RoutingService {
         if (id.indexOf('?') >= 0) {
             id = id.substr(0, id.indexOf('?'));
         }
+
         this._currentPortletId = id;
         this._currentPortlet$.next(id);
     }
@@ -108,6 +112,7 @@ export class RoutingService {
                     }
                 }
             }
+
             this._menusChange$.next(this.menus);
         }
     }
@@ -138,6 +143,7 @@ export class RoutingService {
 
     private getPortletId(url: string): string {
         const urlSplit = url.split('/');
+
         return urlSplit[urlSplit.length - 1];
     }
 }

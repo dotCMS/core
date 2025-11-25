@@ -157,19 +157,16 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
             triggersData.put(nextTriggerName, nextExecutionData);
             jobProperties.put(TRIGGER_JOB_DETAIL, triggersData);
 
-            final Calendar calendar = Calendar.getInstance();
-            final String cronString = new SimpleDateFormat("ss mm H d M ? yyyy")
-                    .format(calendar.getTime());
-            final ScheduledTask task = new CronScheduledTask(jobName,
+            final ScheduledTask task = new SimpleScheduledTask(jobName,
                     groupName, description,
-                    jobClass.getCanonicalName(), false,
+                    jobClass.getCanonicalName(),false,
                     nextTriggerName, triggerGroup, new Date(), null,
-                    SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, jobProperties,
-                    cronString);
+                    SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, false, jobProperties,0,0);
+
             task.setDurability(true); //must be durable to preserve the detail across triggers.
 
             QuartzUtils.scheduleTask(task);
-            Logger.info(DotStatefulJob.class, String.format("New Task for job `%s` scheduled for execution `%s`.", jobName, cronString));
+            Logger.info(DotStatefulJob.class, String.format("New Task for job `%s` scheduled`.", jobName));
 
         }
     }

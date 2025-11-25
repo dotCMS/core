@@ -11,7 +11,11 @@ import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     BayesianStatusResponse,
     ComponentStatus,
@@ -21,7 +25,6 @@ import {
     DotExperimentVariantDetail,
     ReportSummaryLegendByBayesianStatus
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     getExperimentMock,
     getExperimentResultsMock,

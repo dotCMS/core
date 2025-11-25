@@ -1,7 +1,7 @@
 <ul class="dot-notifications-list">
-    <dot-notifications-item
-        *ngFor="let notification of notifications"
-        [data]="notification"
-        (clear)="onClearNotification($event)"
-    ></dot-notifications-item>
+    @for (notification of notifications; track notification) {
+        <dot-notifications-item
+            (clear)="onClearNotification($event)"
+            [data]="notification"></dot-notifications-item>
+    }
 </ul>

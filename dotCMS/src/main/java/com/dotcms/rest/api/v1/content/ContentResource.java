@@ -12,13 +12,15 @@ import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.workflow.helper.WorkflowHelper;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -33,11 +35,11 @@ import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
@@ -46,11 +48,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.glassfish.jersey.server.JSONP;
-
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -65,13 +72,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * Version 1 of the Content resource, to interact and retrieve contentlets
@@ -83,6 +84,10 @@ public class ContentResource {
     private final WebResource    webResource;
     private final ContentletAPI  contentletAPI;
     private final IdentifierAPI  identifierAPI;
+
+    private final Lazy<Boolean> isDefaultContentToDefaultLanguageEnabled = Lazy.of(
+            () -> Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false));
+
 
     public ContentResource() {
 
@@ -265,27 +270,30 @@ public class ContentResource {
     public Response getContent(@Context HttpServletRequest request,
                                @Context final HttpServletResponse response,
                                @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
-                               @DefaultValue("-1") @QueryParam("language") final String language) throws DotDataException, DotSecurityException {
+                               @DefaultValue("") @QueryParam("language") final String language,
+                               @DefaultValue("-1") @QueryParam("depth") final int depth
 
-        final InitDataObject initDataObject =
+
+    ) {
+
+        final User user =
                 new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
-                .init();
+                .init().getUser();
 
         Logger.debug(this, () -> "Finding the contentlet: " + inodeOrIdentifier);
 
-        final Tuple2<String, String> idOrInode = this.getIdentifierOrInode(inodeOrIdentifier);
-        final String id       = idOrInode._1();
-        final String inode    = idOrInode._2();
+        final LanguageWebAPI languageWebAPI = WebAPILocator.getLanguageWebAPI();
+        final LongSupplier sessionLanguageSupplier = ()-> languageWebAPI.getLanguage(request).getId();
         final PageMode mode   = PageMode.get(request);
-        final long languageId = LanguageUtil.getLanguageId(language);
-        Contentlet contentlet = this.getContentlet(inode, id, languageId,
-                ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                initDataObject, mode);
-        final int depth = ConversionUtils.toInt(request.getParameter(WebKeys.HTMLPAGE_DEPTH), -1);
+        final long testLangId = LanguageUtil.getLanguageId(language);
+        final long languageId = testLangId <=0 ? sessionLanguageSupplier.getAsLong() : testLangId;
+
+        Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
+
         if (-1 != depth) {
-            ContentUtils.addRelationships(contentlet, initDataObject.getUser(), mode,
+            ContentUtils.addRelationships(contentlet, user, mode,
                     languageId, depth, request, response);
         }
         contentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
@@ -301,33 +309,32 @@ public class ContentResource {
                                    @DefaultValue("-1") @QueryParam("language") final String language)
             throws DotDataException, JSONException, DotSecurityException {
 
-        final InitDataObject initDataObject =
+        final User user =
                 new WebResource.InitBuilder(this.webResource)
                         .requestAndResponse(request, response)
                         .requiredAnonAccess(AnonymousAccess.READ)
-                        .init();
+                        .init().getUser();
 
-        Logger.debug(this, () -> "Can lock Contentlet: " + inodeOrIdentifier);
-
-        final Tuple2<String, String> idOrInode = this.getIdentifierOrInode(inodeOrIdentifier);
-        final String id       = idOrInode._1();
-        final String inode    = idOrInode._2();
         final PageMode mode   = PageMode.get(request);
-        final long languageId = LanguageUtil.getLanguageId(language);
+        final long testLangId = LanguageUtil.getLanguageId(language);
+        final long languageId = testLangId <=0 ? WebAPILocator.getLanguageWebAPI().getLanguage(request).getId() : testLangId;
+
+        final Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
+
 
         final Map<String, Object> resultMap = new HashMap<>();
-        final Contentlet contentlet = this.getContentlet(inode, id, languageId,
-                ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                initDataObject, mode);
 
-        final boolean canLock = Try.of(()->this.contentletAPI.canLock(
-                contentlet, initDataObject.getUser())).getOrElse(false);
+        if(UtilMethods.isEmpty(contentlet::getIdentifier)) {
+            throw new DoesNotExistException(getDoesNotExistMessage(inodeOrIdentifier, languageId));
+        }
+
+        final boolean canLock = Try.of(()->this.contentletAPI.canLock( contentlet, user)).getOrElse(false);
 
         resultMap.put("canLock", canLock);
         resultMap.put("locked", contentlet.isLocked());
 
         final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(id, contentlet.getLanguageId());
+                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
 
         if (contentlet.isLocked() && cvi.isPresent()) {
             resultMap.put("lockedBy", cvi.get().getLockedBy());
@@ -338,69 +345,80 @@ public class ContentResource {
         resultMap.put("inode", contentlet.getInode());
         resultMap.put("id",    contentlet.getIdentifier());
 
-        return Response.ok(new ResponseEntityView(resultMap)).build();
+        return Response.ok(new ResponseEntityView<>(resultMap)).build();
     }
 
-    private Tuple2<String, String> getIdentifierOrInode (final String inodeOrIdentifier) throws DotDataException {
+    /**
+     * Given an inode or identifier, this method will return the contentlet object for the given language
+     * @param inodeOrIdentifier the inode or identifier to test
+     * @param languageId the language id
+     * @return the contentlet object
+     */
+    private static String getDoesNotExistMessage(final String inodeOrIdentifier, final long languageId){
+        return String.format("The contentlet %s and language %d does not exist", inodeOrIdentifier, languageId);
+    }
 
-        String inode = null;
-        String id    = null;
-        //Check if is an inode
-        final String type = Try.of(() -> InodeUtils.getAssetTypeFromDB(inodeOrIdentifier)).getOrNull();
+    /**
+     * Given an inode or identifier, this method will return the contentlet object for the given language
+     * If no contentlet is found, it will return the contentlet for the default language if FallBack is enabled
+     * @param inodeOrIdentifier the inode or identifier to test
+     * @param mode the page mode used to determine if we are
+     * @param languageId the language id
+     * @param user the user
+     * @return the contentlet object
+     */
+    private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user) {
+        // This property is used to determine if we should map the contentlet to the default language
+        final boolean mapToDefault = isDefaultContentToDefaultLanguageEnabled.get();
+        // default language supplier, we only get the language id if we need it
+        LongSupplier defaultLang = () -> APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        //Attempt to resolve the contentlet for the given language
+        Optional<Contentlet> optional = resolveContentlet(inodeOrIdentifier, mode, languageId, user);
+        //If the contentlet is not found, and we are allowed to map to the default language..
+        if(optional.isEmpty() && mapToDefault && languageId != defaultLang.getAsLong()){
+            //Attempt to resolve the contentlet for the default language
+             optional = resolveContentlet(inodeOrIdentifier, mode, defaultLang.getAsLong(), user);
+        }
+        //If we found the contentlet, return it
+        if (optional.isPresent()) {
+            return optional.get();
+        }
+        //If we didn't find the contentlet, throw an exception
+        throw new DoesNotExistException(getDoesNotExistMessage(inodeOrIdentifier,languageId));
+    }
 
-        //Could mean 2 things: it's an identifier or uuid does not exists
-        if (null == type) {
-            final Identifier identifier = this.identifierAPI.find(inodeOrIdentifier);
+    /**
+     * Given an inode or identifier, this method will return the contentlet object
+     * internally relies on the shorty api to resolve the type of identifier we are dealing with
+     * Therefore it's lighter on the system than the findContentletByIdentifier method
+     * @param inodeOrIdentifier the inode or identifier to test
+     * @param mode the page mode used to determine if we are
+     * @param languageId the language id
+     * @param user the user
+     * @return the contentlet object
+     */
+    private Optional<Contentlet> resolveContentlet (final String inodeOrIdentifier, PageMode mode, long languageId, User user) {
 
-            if (null == identifier || UtilMethods.isNotSet(identifier.getId())) {
-                throw new DoesNotExistException(
-                        "The contentlet " + inodeOrIdentifier + " does not exists");
-            }
+        final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
-            id    = identifier.getId();
-        } else {
-
-            inode = inodeOrIdentifier;  // look for by inode
+        if (shortyId.isEmpty()) {
+            throw new DoesNotExistException(getDoesNotExistMessage(inodeOrIdentifier, languageId));
         }
 
-        return Tuple.of(id, inode);
-    }
+        String testInode = inodeOrIdentifier;
 
-    private Contentlet getContentlet(final String inode,
-                                     final String identifier,
-                                     final long language,
-                                     final Supplier<Long> sessionLanguage,
-                                     final InitDataObject initDataObject,
-                                     final PageMode pageMode) throws DotDataException, DotSecurityException {
-
-        Contentlet contentlet = null;
-        PageMode mode = pageMode;
-
-        if(UtilMethods.isSet(inode)) {
-
-            Logger.debug(this, ()-> "Looking for content by inode: " + inode);
-
-            contentlet = this.contentletAPI.find
-                    (inode, initDataObject.getUser(), mode.respectAnonPerms);
-        } else if (UtilMethods.isSet(identifier)) {
-
-            Logger.debug(this, ()-> "Looking for content by identifier: " + identifier
-                    + " and language id: " + language);
-
-            mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
-            final Optional<Contentlet> contentletOpt =  language <= 0?
-                    WorkflowHelper.getInstance().getContentletByIdentifier(identifier, mode, initDataObject.getUser(), sessionLanguage):
-                    this.contentletAPI.findContentletByIdentifierOrFallback
-                            (identifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
-
-            if (contentletOpt.isPresent()) {
-                contentlet = contentletOpt.get();
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        if(ShortType.IDENTIFIER == shortyId.get().type) {
+            Optional<ContentletVersionInfo> cvi = versionableAPI.getContentletVersionInfo(shortyId.get().longId, languageId);
+            if (cvi.isPresent()) {
+                testInode =  mode.showLive ? cvi.get().getLiveInode() : cvi.get().getWorkingInode();
             }
         }
-        DotPreconditions.notNull(contentlet, () -> String.format("Contentlet with ID '%s' was not found", identifier)
-                , DoesNotExistException.class);
-        return contentlet;
+
+        final String finalInode = testInode;
+        return Optional.ofNullable(Try.of(() -> contentletAPI.find(finalInode, user, mode.respectAnonPerms)).getOrNull());
     }
+
 
     /**
      * Will return a Contentlet objects. If you are building large pulls and depending on the types

@@ -29,8 +29,11 @@ const cardinalities: DotRelationshipCardinality[] = [
 
 @Component({
     selector: 'dot-host-component',
-    template: `<dot-cardinality-selector [value]="cardinalityIndex" [disabled]="disabled">
-    </dot-cardinality-selector>`
+    template: `
+        <dot-cardinality-selector
+            [value]="cardinalityIndex"
+            [disabled]="disabled"></dot-cardinality-selector>
+    `
 })
 class HostTestComponent {
     @Input()

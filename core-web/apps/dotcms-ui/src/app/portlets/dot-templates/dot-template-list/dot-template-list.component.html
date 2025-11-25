@@ -1,14 +1,14 @@
 <dot-listing-data-table
-    #listing
+    (rowWasClicked)="editTemplate($event)"
+    (selectedItems)="updateSelectedTemplates($event)"
+    (contextMenuSelect)="setContextMenu($event)"
     [actionHeaderOptions]="actionHeaderOptions"
     [columns]="tableColumns"
     [actions]="[]"
     [checkbox]="true"
     [mapItems]="mapTableItems"
     [contextMenu]="true"
-    (rowWasClicked)="editTemplate($event)"
-    (selectedItems)="updateSelectedTemplates($event)"
-    (contextMenuSelect)="setContextMenu($event)"
+    #listing
     sortField="modDate"
     sortOrder="DESC"
     url="v1/templates"
@@ -16,32 +16,31 @@
     <div class="template-listing__header-options">
         <div>
             <p-checkbox
+                (onChange)="handleArchivedFilter($event.checked)"
                 [label]="'Show-Archived' | dm"
                 [binary]="true"
-                (onChange)="handleArchivedFilter($event.checked)"
                 data-testid="archiveCheckbox"></p-checkbox>
             <button
-                class="p-button-outlined"
+                (click)="actionsMenu.toggle($event)"
                 [disabled]="!this.selectedTemplates?.length"
                 [label]="'Actions' | dm"
-                (click)="actionsMenu.toggle($event)"
+                class="p-button-outlined"
                 type="button"
                 pButton
                 icon="pi pi-ellipsis-v"
-                attr.data-testid="bulkActions"></button>
+                data-testid="bulkActions"></button>
         </div>
-        <p-menu #actionsMenu [popup]="true" [model]="templateBulkActions" appendTo="body"></p-menu>
+        <p-menu [popup]="true" [model]="templateBulkActions" #actionsMenu appendTo="body"></p-menu>
     </div>
 
     <dot-empty-state
+        (buttonClick)="handleButtonClick()"
         [rows]="10"
         [colsTextWidth]="[60, 50, 60, 80]"
         [title]="'message.template.empty.title' | dm"
         [content]="'message.template.empty.content' | dm"
         [buttonLabel]="'message.template.empty.button.label' | dm"
-        (buttonClick)="handleButtonClick()"
-        icon="web">
-    </dot-empty-state>
+        icon="web"></dot-empty-state>
 
     <ng-template #rowTemplate let-rowData="rowData">
         <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
@@ -51,22 +50,21 @@
             <dot-state-icon
                 [labels]="setStateLabels()"
                 [state]="getTemplateState(rowData)"
-                size="14px">
-            </dot-state-icon>
+                size="14px"></dot-state-icon>
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }" data-testId="theme-cell">
-            <ng-container *ngIf="rowData.themeInfo?.inode === 'SYSTEM_THEME'; else linkTemplate">
+            @if (rowData.themeInfo?.inode === 'SYSTEM_THEME') {
                 {{ rowData.themeInfo?.title }}
-            </ng-container>
-            <ng-template #linkTemplate>
-                <a
-                    *ngIf="rowData.themeInfo"
-                    (click)="goToFolder($event, rowData.themeInfo?.path)"
-                    data-testId="theme-folder-link"
-                    target="_self"
-                    >{{ rowData.themeInfo?.title }}</a
-                >
-            </ng-template>
+            } @else {
+                @if (rowData.themeInfo) {
+                    <a
+                        (click)="goToFolder($event, rowData.themeInfo?.path)"
+                        data-testId="theme-folder-link"
+                        target="_self">
+                        {{ rowData.themeInfo?.title }}
+                    </a>
+                }
+            }
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
             {{ rowData.friendlyName }}
@@ -74,19 +72,20 @@
         <td [ngStyle]="{ 'text-align': tableColumns[4].textAlign }">
             {{ rowData.modDate | dotRelativeDate }}
         </td>
-        <td style="width: 5%; height: 3.85rem">
-            <dot-action-menu-button
-                class="listing-datatable__action-button"
-                *ngIf="!rowData.disableInteraction"
-                [attr.data-testid]="rowData.identifier"
-                [actions]="setTemplateActions(rowData)"
-                [item]="rowData">
-            </dot-action-menu-button>
+        <td style="width: 5%">
+            @if (!rowData.disableInteraction) {
+                <dot-action-menu-button
+                    [attr.data-testid]="rowData.identifier"
+                    [actions]="setTemplateActions(rowData)"
+                    [item]="rowData"
+                    class="listing-datatable__action-button"></dot-action-menu-button>
+            }
         </td>
     </ng-template>
 </dot-listing-data-table>
 
-<dot-add-to-bundle
-    *ngIf="addToBundleIdentifier"
-    [assetIdentifier]="addToBundleIdentifier"
-    (cancel)="addToBundleIdentifier = null"></dot-add-to-bundle>
+@if (addToBundleIdentifier) {
+    <dot-add-to-bundle
+        (cancel)="addToBundleIdentifier = null"
+        [assetIdentifier]="addToBundleIdentifier"></dot-add-to-bundle>
+}

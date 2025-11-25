@@ -193,7 +193,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                             onStart,
                             onHide,
                             onDestroy
-                        } as RenderProps)
+                        }) as RenderProps
                 })
             ];
         }

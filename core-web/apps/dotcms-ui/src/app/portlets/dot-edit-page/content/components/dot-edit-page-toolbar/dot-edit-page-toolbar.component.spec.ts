@@ -33,7 +33,8 @@ import {
     DotSessionStorageService,
     DotGlobalMessageService,
     DotIframeService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -56,7 +57,7 @@ import {
     ESContent,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -70,14 +71,12 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { dotVariantDataMock } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component.spec';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -163,7 +162,7 @@ describe('DotEditPageToolbarComponent', () => {
                 DotEditPageStateControllerModule,
                 DotEditPageInfoModule,
                 DotEditPageWorkflowsActionsModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotWizardModule,
                 TooltipModule,

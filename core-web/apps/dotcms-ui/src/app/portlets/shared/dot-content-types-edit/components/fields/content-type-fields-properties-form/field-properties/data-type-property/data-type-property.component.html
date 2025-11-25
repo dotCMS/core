@@ -1,17 +1,15 @@
-<div class="field" *ngIf="radioInputs" [formGroup]="group">
-    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>{{
-        'contenttypes.field.properties.data_type.label' | dm
-    }}</label>
+<div *ngIf="radioInputs" [formGroup]="group" class="field">
+    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
+        {{ 'contenttypes.field.properties.data_type.label' | dm }}
+    </label>
 
     <div class="formgroup-inline">
-        <div class="field-checkbox" *ngFor="let radio of radioInputs">
+        <div *ngFor="let radio of radioInputs" class="field-checkbox">
             <p-radioButton
                 [label]="radio.text | dm"
                 [name]="property.name"
                 [value]="radio.value"
-                [formControlName]="property.name"
-            >
-            </p-radioButton>
+                [formControlName]="property.name"></p-radioButton>
         </div>
     </div>
 </div>

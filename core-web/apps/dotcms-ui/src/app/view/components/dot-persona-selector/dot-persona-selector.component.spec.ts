@@ -51,9 +51,9 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
     selector: 'dot-host-component',
     template: `
         <dot-persona-selector
-            [disabled]="disabled"
             (selected)="selectedPersonaHandler($event)"
-            (delete)="deletePersonaHandler($event)"></dot-persona-selector>
+            (delete)="deletePersonaHandler($event)"
+            [disabled]="disabled"></dot-persona-selector>
     `
 })
 class HostTestComponent {
@@ -183,7 +183,7 @@ describe('DotPersonaSelectorComponent', () => {
     it('should set dot-persona-selected-item with right attributes', () => {
         const personaSelectedItemDe = de.query(By.css('dot-persona-selected-item'));
         expect(personaSelectedItemDe.attributes.appendTo).toBe('target');
-        expect(personaSelectedItemDe.attributes['ng-reflect-text']).toBe('Default Visitor');
+        expect(personaSelectedItemDe.attributes['ng-reflect-content']).toBe('Default Visitor');
         expect(personaSelectedItemDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
     });
 

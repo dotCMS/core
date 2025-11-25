@@ -17,9 +17,7 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
-import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
@@ -29,7 +27,6 @@ import { IFrameModule } from '@components/_common/iframe';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
@@ -38,15 +35,18 @@ import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.modu
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
 import {
+    DotAddToBundleComponent,
     DotApiLinkComponent,
     DotAutofocusDirective,
     DotCopyButtonComponent,
+    DotDialogModule,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotIconModule,
-    DotMessagePipe
+    DotMenuComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import {
     ContentTypeFieldsAddRowModule,
     ContentTypeFieldsDropZoneComponent,
@@ -119,7 +119,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         CommonModule,
         ContentTypeFieldsAddRowModule,
         DialogModule,
-        DotAddToBundleModule,
+        DotAddToBundleComponent,
         DotApiLinkComponent,
         DotAutofocusDirective,
         DotBaseTypeSelectorModule,
@@ -128,7 +128,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotCopyLinkModule,
         DotDialogModule,
         DotDirectivesModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotSecondaryToolbarModule,
         DotFieldHelperModule,
         DotFieldValidationMessageComponent,
@@ -136,7 +136,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         TooltipModule,
         DotIconModule,
         DotMaxlengthModule,
-        DotMenuModule,
+        DotMenuComponent,
         DotPageSelectorModule,
         DotRelationshipsModule,
         DotTextareaContentModule,
@@ -162,7 +162,6 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotAddToMenuModule,
         DotFieldRequiredDirective,
         DotCopyButtonComponent,
-
         OverlayPanelModule,
         DotMessagePipe
     ],

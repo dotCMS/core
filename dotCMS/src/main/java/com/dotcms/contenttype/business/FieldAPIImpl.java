@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -82,8 +84,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.lang.StringUtils;
-
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -91,9 +91,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
-import static com.dotcms.util.CollectionsUtils.list;
+import org.apache.commons.lang.StringUtils;
 
 
 public class FieldAPIImpl implements FieldAPI {
@@ -147,144 +145,251 @@ public class FieldAPIImpl implements FieldAPI {
         return save(field, user, true);
   }
 
-  @WrapInTransaction
-  @Override
-  public Field save(final Field field, final User user, final boolean reorder)
-          throws DotDataException, DotSecurityException {
+    @WrapInTransaction
+    @Override
+    public Field save(final Field field, final User user, final boolean reorder)
+            throws DotDataException, DotSecurityException {
 
-      if(!UtilMethods.isSet(field.contentTypeId())){
-          Logger.error(this, "ContentTypeId needs to be set to save the Field");
-          throw new DotDataValidationException("ContentTypeId needs to be set to save the Field");
-      }
+        if (!UtilMethods.isSet(field.contentTypeId())) {
+            Logger.error(this, "ContentTypeId needs to be set to save the Field");
+            throw new DotDataValidationException("ContentTypeId needs to be set to save the Field");
+        }
 
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-		ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
-		permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+        ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        ContentType type = contentTypeAPI.find(field.contentTypeId());
+        permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
-	    Field oldField = null;
-	    boolean useFriendlyNameOldVarName = false;
-	    if (UtilMethods.isSet(field.id())) {
-	    	try {
-	    		oldField = fieldFactory.byId(field.id());
-	        final Field newFieldCopy = FieldBuilder.builder(field).modDate(oldField.modDate()).build();
-	        if(newFieldCopy.equals(oldField)) {
-	          Logger.info(this, "No changes made to field: " + field.variable() + ", returning");
-	          return field;
-	        }
-                if(!oldField.variable().equals(field.variable())){
+        // Search for the field in the database to see if it already exists
+        var existingFieldOptional = fieldFactory.resolveExistingField(field);
 
-                    //TODO: Remove this condition for future releases.
-                    // It has been done to keep backward compatibility -> Issue: https://github.com/dotCMS/core/issues/17239
-                    if (oldField.variable().equalsIgnoreCase(field.variable()) && oldField
-                            .variable().equals(PAGE_FRIENDLY_NAME_FIELD_VAR)) {
-                        useFriendlyNameOldVarName = true;
-                    } else {
-                        throw new DotDataValidationException(
-                                "Field variable can not be modified, please use the following: "
-                                        + oldField.variable());
-                    }
-                }
+        // Validating if there are actually changes to save
+        if (existingFieldOptional.isPresent()) {
 
-                if(!oldField.contentTypeId().equals(field.contentTypeId()) ){
-                  throw new DotDataValidationException("Field content type can not be modified, "
-                      + "please use the following: " + oldField.contentTypeId());
-                }
+            final var existingField = existingFieldOptional.get();
 
-                if (reorder && oldField.sortOrder() != field.sortOrder()){
-	    		    if (oldField.sortOrder() > field.sortOrder()) {
-                        fieldFactory.moveSortOrderForward(type.id(), field.sortOrder(), oldField.sortOrder());
-                    } else {
-                        fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder(), field.sortOrder());
-                    }
-                }
-
-                if (oldField instanceof RelationshipField && null != oldField.relationType()
-                        && null != field.relationType() && !oldField.relationType()
-                        .equals(field.relationType())) {
-                    Logger.error(this,
-                            "Related content type cannot be modified. A new relationship field should be created instead");
-                    throw new DotDataException(
-                            "Related content type cannot be modified. A new relationship field should be created instead");
-                }
-
-            } catch(NotFoundInDbException e) {
-	    		//Do nothing as Starter comes with id but field is unexisting yet
-	    	}
-	    }else {
-	        //This validation should only be for new fields, since the field velocity var name(variable) can not be modified
-            if(UtilMethods.isSet(field.variable()) && !field.variable().matches("^[A-Za-z][0-9A-Za-z]*")) {
-                final String errorMessage = "Field velocity var name "+ field.variable() +" contains characters not allowed, here is a suggestion of the variable: " + com.dotmarketing.util.StringUtils.camelCaseLower(field.variable());
-                Logger.error(this, errorMessage);
-                throw new DotDataValidationException(errorMessage);
-            }
-
-            if (reorder) {
-                fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
+            final Field newFieldCopy = FieldBuilder.builder(field).
+                    modDate(existingField.modDate()).build();
+            if (newFieldCopy.equals(existingField)) {
+                Logger.debug(this, "No changes made to field: " + field.variable() + ", returning");
+                return field;
             }
         }
 
-        if (field instanceof RelationshipField && !(((RelationshipField)field).skipRelationshipCreation())) {
-	        validateRelationshipField(field);
-        }
+        // Validating the field data and applying reordering if necessary
+        validateAndReorder(type.id(), reorder, field, existingFieldOptional.orElse(null));
 
-      //TODO: Remove this condition for future releases.
-      // It has been done to keep backward compatibility -> Issue: https://github.com/dotCMS/core/issues/17239
-      Field result = fieldFactory
-              .save(useFriendlyNameOldVarName ? FieldBuilder.builder(field).variable(oldField.variable())
-                      .build() : field);
+        // ---
+        // Saving the field
+        Field result = fieldFactory.save(field, existingFieldOptional.orElse(null));
 
-        //if RelationshipField, Relationship record must be added/updated
-        if (field instanceof RelationshipField && !(((RelationshipField)field).skipRelationshipCreation())) {
-            Optional<Relationship> relationship = getRelationshipForField(result, contentTypeAPI,
-                  type, user);
+        // And its relationships
+        result = processRelationships(result, user, contentTypeAPI, type);
 
-            if (relationship.isPresent()) {
-              relationshipAPI.save(relationship.get());
-              Logger.info(this,
-                      "The relationship has been saved successfully for field " + field.name());
-            }
+        // Update Content Type mod_date to detect the changes done on the field
+        contentTypeAPI.updateModDate(type);
 
-            //update field reference (in case it might have been modified)
-            result = fieldFactory.byId(result.id());
-       }
-      //update Content Type mod_date to detect the changes done on the field
-		contentTypeAPI.updateModDate(type);
-		
-		Structure structure = new StructureTransformer(type).asStructure();
+        // ---
+        // Handling cache invalidations and indexing
+        Structure structure = new StructureTransformer(type).asStructure();
 
         CacheLocator.getContentTypeCache().remove(structure);
         new ContentTypeLoader().invalidate(structure);
 
-      if(oldField!=null){
-          if(oldField.indexed() != field.indexed()){
-              contentletAPI.refresh(structure);
-          } else if (field instanceof ConstantField) {
-              if(!StringUtils.equals(oldField.values(), field.values()) ){
-                  new ContentletLoader().invalidate(structure);
-                  contentletAPI.refresh(structure);
-              }
-          }
+        if (existingFieldOptional.isPresent()) {
 
-          ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action",
-                  String.format("User %s/%s modified field %s to %s Structure.", user.getUserId(), user.getFirstName(),
-                          field.name(), structure.getName()));
-      } else {
-          //If saving a new indexed field, it should try to set an ES mapping for the field
-          if (result.indexed()) {
-              addESMappingForField(structure, result);
-          }
-          ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
-                  String.format("User %s/%s added field %s to %s Structure.", user.getUserId(), user.getFirstName(), field.name(),
-                          structure.getName()));
-      }
+            final var oldField = existingFieldOptional.get();
 
-      Field finalResult = result;
-      HibernateUtil.addCommitListener(()-> {
-          localSystemEventsAPI.notify(new FieldSavedEvent(finalResult));
-      });
+            if (oldField.indexed() != field.indexed()) {
+                contentletAPI.refresh(structure);
+            } else if (field instanceof ConstantField
+                    && (!StringUtils.equals(oldField.values(), field.values()))) {
+                new ContentletLoader().invalidate(structure);
+                contentletAPI.refresh(structure);
+            }
 
-      return result;
-  }
+            ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action",
+                    String.format(
+                            "User %s/%s modified field '%s' to Content Type '%s'",
+                            user.getUserId(), user.getFirstName(),
+                            field.name(), structure.getVelocityVarName()
+                    )
+            );
+        } else {
+
+            //If saving a new indexed field, it should try to set an ES mapping for the field
+            if (result.indexed()) {
+                addESMappingForField(structure, result);
+            }
+            ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
+                    String.format(
+                            "User %s/%s added field '%s' to Content Type '%s'",
+                            user.getUserId(), user.getFirstName(), field.name(),
+                            structure.getVelocityVarName()
+                    )
+            );
+        }
+
+        Field finalResult = result;
+        HibernateUtil.addCommitListener(() ->
+                localSystemEventsAPI.notify(new FieldSavedEvent(finalResult))
+        );
+
+        return result;
+    }
+
+    /**
+     * Processes relationships for the given field. If the field is a {@link RelationshipField}, it
+     * ensures that the relationship record is added or updated.
+     *
+     * @param field          the field for which relationships are processed
+     * @param user           the user performing the operation
+     * @param contentTypeAPI the ContentTypeAPI instance for accessing content type operations
+     * @param type           the content type to which the field belongs
+     * @return the field with updated relationship information
+     * @throws DotDataException     if a data access error occurs
+     * @throws DotSecurityException if a security violation occurs
+     */
+    private Field processRelationships(final Field field, final User user,
+            final ContentTypeAPI contentTypeAPI, final ContentType type)
+            throws DotDataException, DotSecurityException {
+
+        //if RelationshipField, Relationship record must be added/updated
+        if (field instanceof RelationshipField
+                && !(((RelationshipField) field).skipRelationshipCreation())) {
+
+            Optional<Relationship> relationship = getRelationshipForField(
+                    field, contentTypeAPI, type, user
+            );
+
+            if (relationship.isPresent()) {
+                relationshipAPI.save(relationship.get());
+                Logger.info(
+                        this,
+                        "The relationship has been saved successfully for field " + field.name()
+                );
+            }
+
+            //update field reference (in case it might have been modified)
+            return fieldFactory.byId(field.id());
+        }
+
+        return field;
+    }
+
+    /**
+     * Validates and reorders the field if necessary. If the field is new, it validates the variable
+     * name. For existing fields, it ensures the content type and relationship types are
+     * consistent.
+     *
+     * @param contentTypeId the ID of the content type to which the field belongs
+     * @param reorder       flag indicating if the fields should be reordered
+     * @param field         the field to be validated and potentially reordered
+     * @param oldField      the existing field from the database, if it exists
+     * @throws DotDataException if a data access error occurs
+     */
+    private void validateAndReorder(final String contentTypeId, final boolean reorder,
+            final Field field, final Field oldField) throws DotDataException {
+
+        if (null != oldField) {
+
+            validateExistingField(field, oldField);
+
+            if (reorder) {
+                reorderFields(contentTypeId, field, oldField);
+            }
+
+        } else {
+
+            //This validation should only be for new fields, since the field velocity var name(variable) can not be modified
+            validateVariableName(field);
+
+            if (reorder) {
+                fieldFactory.moveSortOrderForward(contentTypeId, field.sortOrder());
+            }
+        }
+
+        if (field instanceof RelationshipField
+                && !(((RelationshipField) field).skipRelationshipCreation())) {
+            validateRelationshipField(field);
+        }
+    }
+
+    /**
+     * Validates that an existing field's content type and relationship type cannot be modified.
+     *
+     * @param field    the field to be validated
+     * @param oldField the existing field from the database
+     * @throws DotDataException           if a data access error occurs
+     * @throws DotDataValidationException if the validation fails
+     */
+    private void validateExistingField(final Field field, final Field oldField)
+            throws DotDataException {
+
+        if (!oldField.contentTypeId().equals(field.contentTypeId())) {
+            throw new DotDataValidationException(
+                    String.format("Content type property in fields can not be "
+                            + "modified, use [%s] instead", oldField.contentTypeId())
+            );
+        }
+
+        if (oldField instanceof RelationshipField && null != oldField.relationType()
+                && null != field.relationType()
+                && !oldField.relationType().equals(field.relationType())) {
+
+            final var errorMessage = "Related content type cannot be modified. A new "
+                    + "relationship field should be created instead";
+            Logger.error(this, errorMessage);
+            throw new DotDataException(errorMessage);
+        }
+    }
+
+    /**
+     * Validates the variable name of a new field. The variable name must follow specific naming
+     * conventions.
+     *
+     * @param field the field to be validated
+     * @throws DotDataValidationException if the variable name is invalid
+     */
+    private void validateVariableName(final Field field) throws DotDataValidationException {
+
+        if (UtilMethods.isSet(field.variable()) && !field.variable()
+                .matches("^[A-Za-z][0-9A-Za-z]*")) {
+
+            final String errorMessage = "Field velocity var name " + field.variable()
+                    + " contains characters not allowed, here is a suggestion of the variable: "
+                    + com.dotmarketing.util.StringUtils.camelCaseLower(field.variable());
+            Logger.error(this, errorMessage);
+            throw new DotDataValidationException(errorMessage);
+        }
+    }
+
+    /**
+     * Reorders the fields of a content type if the sort order of the field has changed.
+     *
+     * @param contentTypeId the ID of the content type to which the field belongs
+     * @param field         the field to be reordered
+     * @param oldField      the existing field from the database
+     * @throws DotDataException if a data access error occurs
+     */
+    private void reorderFields(final String contentTypeId, final Field field, final Field oldField)
+            throws DotDataException {
+
+        if (oldField.sortOrder() != field.sortOrder()) {
+            if (oldField.sortOrder() > field.sortOrder()) {
+                fieldFactory.moveSortOrderForward(
+                        contentTypeId,
+                        field.sortOrder(),
+                        oldField.sortOrder()
+                );
+            } else {
+                fieldFactory.moveSortOrderBackward(
+                        contentTypeId,
+                        oldField.sortOrder(),
+                        field.sortOrder()
+                );
+            }
+        }
+    }
 
     /**
      * This method tries to set an ES mapping for the field.
@@ -297,7 +402,7 @@ public class FieldAPIImpl implements FieldAPI {
             if (indiciesInfo != null){
                 if (UtilMethods.isSet(indiciesInfo.getLive())) {
                     ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getLive());
-                    Logger.info(this.getClass(), String.format(
+                    Logger.debug(this.getClass(), () -> String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()
                                     .removeClusterIdFromName(indiciesInfo.getLive())));
@@ -305,7 +410,7 @@ public class FieldAPIImpl implements FieldAPI {
 
                 if (UtilMethods.isSet(indiciesInfo.getWorking())) {
                     ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getWorking());
-                    Logger.info(this.getClass(), String.format(
+                    Logger.debug(this.getClass(), () -> String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()
                                     .removeClusterIdFromName(indiciesInfo.getWorking())));
@@ -908,7 +1013,7 @@ public class FieldAPIImpl implements FieldAPI {
     @Override
     public boolean isFullScreenField(final com.dotcms.contenttype.model.field.Field field) {
 
-        if(!Config.getBooleanProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, false)){
+        if(!Config.getBooleanProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, true)){
             return false;
         }
 

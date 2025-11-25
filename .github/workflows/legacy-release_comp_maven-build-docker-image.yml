@@ -1,0 +1,302 @@
+name: Maven Build Docker Image
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Ref to checkout'
+        required: true
+        type: string
+      docker_platforms:
+        description: 'Docker platforms to build the image on'
+        required: false
+        type: string
+        default: 'linux/amd64'
+      docker_context_cache_key:
+        description: 'Cache key for the docker context'
+        required: false
+        type: string
+      docker_registry:
+        description: 'Docker registry to push the image to (DOCKER.IO, GHCR.IO, BOTH)'
+        required: false
+        type: string
+        default: 'DOCKER.IO'
+      force_snapshot:
+        description: 'Force snapshot'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      docker_io_username:
+        description: 'Docker.io username'
+        required: false
+      docker_io_token:
+        description: 'Docker.io token'
+        required: false
+      ghcr_io_username:
+        description: 'GHCR.io username'
+        required: false
+      ghcr_io_token:
+        description: 'GHCR.io token'
+        required: false
+    outputs:
+      tags:
+        value: ${{ jobs.build-push-image.outputs.tags }}
+      version:
+        value: ${{ jobs.build-push-image.outputs.version }}
+      formatted_tags:
+        value: ${{ jobs.build-push-image.outputs.formatted_tags }}
+jobs:
+  build-push-image:
+    name: Build/Push Image
+    runs-on: ubuntu-latest
+    env:
+      JAVA_VERSION: 11
+      JAVA_DISTRO: temurin
+      JVM_TEST_MAVEN_OPTS: '-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
+      DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      formatted_tags: ${{ steps.format-tags.outputs.formatted_tags }}
+      version: ${{ steps.set-common-vars.outputs.version }}
+    if: success()
+    steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+
+      - name: Get SDKMan Version
+        id: get-sdkman-version
+        shell: bash
+        run: |
+          if [ -f .sdkmanrc ]; then
+            SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
+            echo "using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+            echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_OUTPUT
+          else
+            echo "No .sdkmanrc file found"
+            exit 1
+          fi
+
+      - name: Restore Docker Context
+        id: restore-docker-context
+        uses: actions/cache/restore@v3
+        with:
+          path: ${{ env.DOCKER_BUILD_CONTEXT }}/context
+          key: ${{ inputs.docker_context_cache_key }}
+        if: inputs.docker_context_cache_key != ''
+
+      - name: Build Status
+        id: build-status
+        run: |
+          rebuild=false
+          if [[ -z "${{ inputs.docker_context_cache_key }}" || ! -d ${DOCKER_BUILD_CONTEXT}/context ]]; then
+            rebuild=true
+          fi
+          
+          echo "rebuild=${rebuild}" >> $GITHUB_OUTPUT
+
+      - name: Prepare Runner
+        uses: ./.github/actions/core-cicd/prepare-runner
+        with:
+          cleanup-runner: true
+          require-java: ${{ steps.build-status.outputs.rebuild == 'true' || 'false'}}
+
+      - name: Build Core
+        run: |
+          mkdir -p ${DOCKER_BUILD_CONTEXT}/context
+          ./mvnw -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
+            -Dprod=true \
+            -Ddocker.buildArchiveOnly=${DOCKER_BUILD_CONTEXT} \
+            -DskipTests=true \
+            -DskipITs=true \
+            clean install \
+            --file pom.xml \
+            --show-version
+          rc=$?
+          if [[ $rc != 0 ]]; then
+            echo "Build failed with exit code $rc"
+            exit $rc
+          fi
+        if: steps.build-status.outputs.rebuild == 'true'
+
+      - name: Setup Context
+        id: setup-docker-context
+        run: |
+          mkdir -p ${DOCKER_BUILD_CONTEXT}/context
+          tar -xvf ${DOCKER_BUILD_CONTEXT}/docker-build.tar -C ${DOCKER_BUILD_CONTEXT}/context
+        if: success() && steps.build-status.outputs.rebuild == 'true'
+
+      - name: Set Common Vars
+        id: set-common-vars
+        run: |
+          build_properties_path=${DOCKER_BUILD_CONTEXT}/context/maven/dotserver/tomcat-*/webapps/ROOT/WEB-INF/classes/build.properties
+          build_properties=''
+          if ! ls ${build_properties_path} 1> /dev/null 2>&1; then
+            echo 'Could not find build.properties, aborting'
+            exit 1
+          else
+            build_properties=$(eval find "$build_properties_path" -print)
+          fi
+          
+          echo 'Build properties:'
+          cat ${build_properties}
+          
+          version=$(cat ${build_properties} | grep version | cut -d'=' -f2)
+          build_hash=$(cat ${build_properties} | grep revision | cut -d'=' -f2)
+          if [[ ! ${build_hash} =~ ^[0-9a-f]{7}$ ]]; then
+            build_hash=$(git log -1 --pretty=%h)
+            build_hash=${build_hash::7}
+          fi
+          
+          build_id=${{ inputs.ref }}
+          is_trunk=false
+          if [[ "${build_id}" == 'main' || ${build_id} =~ ^v[0-9]{2}.[0-9]{2}.[0-9]{2}_lts$ ]]; then
+            is_trunk=true
+          fi
+          
+          is_lts=false
+          if [[ ${version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts(_v[0-9]{2})?$ ]]; then
+            is_lts=true
+          fi
+          
+          is_snapshot=false
+          is_release=false
+          is_latest=false
+          is_custom=false
+          is_trunk_snapshot=false
+          
+          if [[ ${version} =~ ^[0-9]{1}.[0-9]{1}.[0-9]{1}-SNAPSHOT$ ]]; then
+            version=${build_id}
+            is_snapshot=true
+            if [[ "${is_trunk}" == 'true' ]]; then
+              is_trunk_snapshot=true
+            fi
+          elif [[ ${version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}$ ]]; then
+            is_release=true
+            is_latest=true
+          elif [[ ${version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts$ ]]; then
+            is_snapshot=true
+            version=${build_id}
+          elif [[ ${version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts_v[0-9]{2}$ ]]; then
+            is_release=true
+          else
+            is_custom=true
+            version=${build_id}
+          fi
+          
+          if [[ "${{ inputs.force_snapshot }}" == 'true' ]]; then
+            is_snapshot=true
+            is_release=false
+            is_latest=false
+          fi
+          
+          echo "version=${version}"
+          echo "build_hash=${build_hash}"
+          echo "build_id=${build_id}"
+          echo "is_trunk=${is_trunk}"
+          echo "is_lts=${is_lts}"
+          echo "is_snapshot=${is_snapshot}"
+          echo "is_trunk_snapshot=${is_trunk_snapshot}"
+          echo "is_release=${is_release}"
+          echo "is_latest=${is_latest}"
+          echo "is_custom=${is_custom}"
+          
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "build_hash=${build_hash}" >> $GITHUB_OUTPUT
+          echo "build_id=${build_id}" >> $GITHUB_OUTPUT
+          echo "is_trunk=${is_trunk}" >> $GITHUB_OUTPUT
+          echo "is_lts=${is_lts}" >> $GITHUB_OUTPUT
+          echo "is_snapshot=${is_snapshot}" >> $GITHUB_OUTPUT
+          echo "is_trunk_snapshot=${is_trunk_snapshot}" >> $GITHUB_OUTPUT
+          echo "is_release=${is_release}" >> $GITHUB_OUTPUT
+          echo "is_latest=${is_latest}" >> $GITHUB_OUTPUT
+          echo "is_custom=${is_custom}" >> $GITHUB_OUTPUT
+        if: success()
+
+      - name: Docker.io login
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.docker_io_username }}
+          password: ${{ secrets.docker_io_token }}
+        if: inputs.docker_registry == 'DOCKER.IO' || inputs.docker_registry == 'BOTH'
+
+      - name: GHCR.io login
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.ghcr_io_username }}
+          password: ${{ secrets.ghcr_io_token }}
+        if: inputs.docker_registry == 'GHCR.IO' || inputs.docker_registry == 'BOTH'
+
+      - name: Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            dotcms/dotcms
+          tags: |
+            type=raw,value=${{ steps.set-common-vars.outputs.version }}_{{sha}},enable=true
+            type=raw,value=${{ steps.set-common-vars.outputs.version }}_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_snapshot }}
+            type=raw,value=${{ steps.set-common-vars.outputs.version }}_latest_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_trunk_snapshot }}
+            type=raw,value=${{ steps.set-common-vars.outputs.version }},enable=${{ steps.set-common-vars.outputs.is_release }}
+            type=raw,value=latest,enable=${{ steps.set-common-vars.outputs.is_latest }}
+            type=raw,value={{sha}},enable=${{ steps.set-common-vars.outputs.is_custom }}
+        if: success()
+
+      - name: Debug Docker Metadata
+        run: |
+          echo "${{ fromJSON(steps.meta.outputs.json) }}"
+        if: success()
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.0.0
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: ${{ inputs.docker_platforms }}
+        if: success()
+
+      - name: Docker Setup Buildx
+        id: docker-setup-buildx
+        uses: docker/setup-buildx-action@v3.0.0
+        with:
+          version: latest
+          platforms: ${{ inputs.docker_platforms }}
+          driver-opts: |
+            image=moby/buildkit:v0.12.2
+        if: success()
+
+      - name: Build/Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.DOCKER_BUILD_CONTEXT }}/context
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ inputs.docker_platforms }}
+          pull: true
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
+        if: success()
+
+      - name: Format Tags
+        id: format-tags
+        run: |
+          tags=''
+          tags_arr=( ${{ steps.meta.outputs.tags }} )
+
+          for tag in "${tags_arr[@]}"
+          do
+          [[ -n "${tags}" ]] && tags="${tags}, "
+          tags="${tags}\`${tag}\`"
+          done
+
+          echo "formatted_tags=${tags}" >> $GITHUB_OUTPUT

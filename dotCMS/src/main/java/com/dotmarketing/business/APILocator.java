@@ -1,9 +1,12 @@
 package com.dotmarketing.business;
 
+import com.dotcms.ai.api.DotAIAPI;
+import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.AnalyticsAPIImpl;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.BayesianAPIImpl;
+import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -12,6 +15,7 @@ import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserAPIImpl;
 import com.dotcms.business.SystemAPI;
 import com.dotcms.business.SystemAPIImpl;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -45,6 +49,8 @@ import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
+import com.dotcms.enterprise.achecker.ACheckerAPI;
+import com.dotcms.enterprise.achecker.impl.ACheckerAPIImpl;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
@@ -56,6 +62,7 @@ import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPIImpl;
 import com.dotcms.graphql.business.GraphqlAPI;
 import com.dotcms.graphql.business.GraphqlAPIImpl;
+import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -267,6 +274,25 @@ public class APILocator extends Locator<APIIndex> {
      */
 	public static SecurityLoggerServiceAPI getSecurityLogger() {
 		return (SecurityLoggerServiceAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link DotAIAPI} class.
+	 *
+	 * @return The {@link DotAIAPI} class.
+	 */
+	public static DotAIAPI getDotAIAPI() {
+
+		return  (DotAIAPI)getInstance(APIIndex.ARTIFICIAL_INTELLIGENCE_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link JobQueueManagerAPI} class.
+	 *
+	 * @return The {@link JobQueueManagerAPI} class.
+	 */
+	public static JobQueueManagerAPI getJobQueueManagerAPI() {
+		return (JobQueueManagerAPI) getInstance(APIIndex.JOB_QUEUE_MANAGER_API);
 	}
 
 	/**
@@ -1150,6 +1176,24 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
+	 * Returns a singleton instance of the {@link ACheckerAPI} class.
+	 *
+	 * @return The {@link ACheckerAPI} instance.
+	 */
+	public static ACheckerAPI getACheckerAPI() {
+		return (ACheckerAPI) getInstance(APIIndex.ACHECKER_API);
+	}
+
+	/**
+	 * Returns a singleton instance of the {@link ContentAnalyticsAPI} class.
+	 *
+	 * @return The {@link ContentAnalyticsAPI} instance.
+	 */
+	public static ContentAnalyticsAPI getContentAnalyticsAPI() {
+		return (ContentAnalyticsAPI) getInstance(APIIndex.CONTENT_ANALYTICS_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1297,13 +1341,16 @@ enum APIIndex
 	DETERMINISTIC_IDENTIFIER_API,
 	CONTENTLET_JSON_API,
 	STORY_BLOCK_API,
+	ARTIFICIAL_INTELLIGENCE_API,
 	VARIANT_API,
 	EXPERIMENTS_API,
 	BAYESIAN_API,
 	ANALYTICS_API,
 	CONTENT_TYPE_DESTROY_API,
-
-	SYSTEM_API;
+	SYSTEM_API,
+	ACHECKER_API,
+	CONTENT_ANALYTICS_API,
+	JOB_QUEUE_MANAGER_API;
 
 	Object create() {
 		switch(this) {
@@ -1394,6 +1441,10 @@ enum APIIndex
 			case ANALYTICS_API: return new AnalyticsAPIImpl();
 			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 			case SYSTEM_API: return new SystemAPIImpl();
+			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
+			case ACHECKER_API: return new ACheckerAPIImpl();
+			case CONTENT_ANALYTICS_API: CDIUtils.getBean(ContentAnalyticsAPI.class).orElseThrow(() -> new DotRuntimeException("Content Analytics API not found"));
+			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBean(JobQueueManagerAPI.class).orElseThrow(() -> new DotRuntimeException("JobQueueManagerAPI not found"));
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

@@ -4,9 +4,11 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -18,6 +20,7 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,10 +28,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.liferay.util.StringPool.SPACE;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
- * Handle {@link ContentType} pagination
+ * This implementation of the {@link PaginatorOrdered} class handles the retrieval of paginated
+ * results for {@link ContentType} objects in a high number of features in dotCMS.
  *
  * @author Freddy Rodriguez
  * @since Jun 27th, 2017
@@ -39,6 +43,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     public  static final String TYPE_PARAMETER_NAME  = "type";
     public static final String TYPES_PARAMETER_NAME  = "types";
     public static final String HOST_PARAMETER_ID = "host";
+    public static final String SITES_PARAMETER_NAME = "sites";
 
     private final ContentTypeAPI contentTypeAPI;
     private final WorkflowAPI    workflowAPI;
@@ -54,49 +59,45 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     }
 
     /**
-     * Returns the total amount of Contentlets living in a Site that belong to a specific Base Content Type.
+     * Returns the total amount of the specified Base Content Types living in a list of Site.
      *
      * @param condition Condition that the base Content Type needs to meet.
      * @param type      The Base Content Type to search for.
-     * @param siteId    The ID of the Site where the total amount of Contentlets will be determined.
+     * @param siteIds   One or more IDs of the Sites where the total amount of Content Types will be
+     *                  determined.
      *
-     * @return The total amount of Contentlet of a given Base Type in a Site.
+     * @return The total amount of Base Types living in the specified list of Site.
      */
-    private long getTotalRecords(final String condition, final BaseContentType type, final String siteId) {
-        return Sneaky.sneak(() ->this.contentTypeAPI.count(condition, type, siteId));
+    private long getTotalRecords(final String condition, final BaseContentType type, final List<String> siteIds) {
+        return Sneaky.sneak(() ->this.contentTypeAPI.countForSites(condition, type, siteIds));
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset, final String orderBy,
             final OrderDirection direction, final Map<String, Object> extraParams) {
-        final String typeName =  UtilMethods.isSet(extraParams) && extraParams.containsKey(TYPE_PARAMETER_NAME) ?
-                extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", "") : "ANY";
-        final List<String> contentTypeList = UtilMethods.isSet(extraParams) && extraParams.containsKey(TYPES_PARAMETER_NAME) ?
-                (List<String>) extraParams.get(TYPES_PARAMETER_NAME) : null;
-        final String siteId = UtilMethods.isSet(extraParams) && extraParams.containsKey(HOST_PARAMETER_ID) ?
-                extraParams.get(HOST_PARAMETER_ID).toString() : null;
-
-        String orderByString =
-                UtilMethods.isSet(orderBy) ? orderBy : "mod_date " + OrderDirection.DESC.name().toLowerCase();
-        orderByString = orderByString.trim().toLowerCase().endsWith(SPACE + OrderDirection.ASC.name().toLowerCase()) ||
-                orderByString.trim().toLowerCase().endsWith(SPACE + OrderDirection.DESC.name().toLowerCase())
-                ? orderByString
-                : orderByString + SPACE + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase() :
-                OrderDirection.ASC.name().toLowerCase());
+        final List<String> contentTypeList = Try.of(() -> (List<String>) extraParams.get(TYPES_PARAMETER_NAME)).getOrNull();
+        final List<String> siteList = Try.of(() -> (List<String>) extraParams.get(SITES_PARAMETER_NAME)).getOrNull();
+        final String typeName = Try.of(() -> extraParams.get(TYPE_PARAMETER_NAME).toString().replace("[",BLANK).replace("]", BLANK))
+                .getOrElse(BaseContentType.ANY.name());
+        final BaseContentType type = BaseContentType.getBaseContentType(typeName);
+        final String orderByParam = SQLUtil.getOrderByAndDirectionSql(orderBy, direction);
         try {
             List<ContentType> contentTypes;
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
             if (UtilMethods.isSet(contentTypeList)) {
                 final Optional<List<ContentType>> optionalTypeList =
-                        this.contentTypeAPI.find(contentTypeList, filter, offset, limit, orderByString);
-                contentTypes = optionalTypeList.orElseGet(() -> new ArrayList<>());
+                        this.contentTypeAPI.find(contentTypeList, filter, offset, limit, orderByParam);
+                contentTypes = optionalTypeList.orElseGet(ArrayList::new);
                 result.setTotalResults(contentTypeList.size());
+            } else if (UtilMethods.isSet(siteList)) {
+                contentTypes = this.contentTypeAPI.search(siteList, filter, type, orderByParam,
+                        limit, offset);
+                result.setTotalResults(this.getTotalRecords(BLANK, type, siteList));
             } else {
-                final BaseContentType type = BaseContentType.getBaseContentType(typeName);
-                contentTypes = type != null ?
-                        this.contentTypeAPI.search(filter, type, orderByString, limit, offset, siteId) :
-                        this.contentTypeAPI.search(filter, orderByString, limit, offset, siteId);
-                result.setTotalResults(this.getTotalRecords(filter, type, siteId));
+                final String siteId = Try.of(() -> extraParams.get(HOST_PARAMETER_ID).toString()).getOrElse(BLANK);
+                contentTypes = this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId);
+                result.setTotalResults(this.getTotalRecords(filter, type, List.of(siteId)));
             }
             final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
             setEntriesAttribute(user, contentTypesTransform,
@@ -105,8 +106,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             result.addAll(contentTypesTransform);
             return result;
         } catch (final DotDataException | DotSecurityException e) {
-            final String errorMsg =
-                    String.format("An error occurred when retrieving paginated Content Types: %s", e.getMessage());
+            final String errorMsg = String.format("An error occurred when retrieving paginated Content Types: " +
+                    "%s", ExceptionUtil.getErrorMessage(e));
             Logger.error(this, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }

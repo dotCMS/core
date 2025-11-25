@@ -296,7 +296,7 @@ describe('dot-checkbox', () => {
                 expect(await optionElements[1].getProperty('checked')).toBe(true);
             });
 
-            it('should render options with no option selected (component\'s default behaviour)', async () => {
+            it("should render options with no option selected (component's default behaviour)", async () => {
                 element.setProperty('options', 'a|1,b|2,c|3');
                 await page.waitForChanges();
                 const optionElements = await getOptions(page);

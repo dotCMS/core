@@ -1,21 +1,10 @@
 package com.dotcms.junit;
 
-import com.dotcms.aspects.DotAspectException;
-import com.dotcms.business.bytebuddy.ByteBuddyFactory;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.internal.DataConverter;
 import com.tngtech.java.junit.dataprovider.internal.TestGenerator;
 import com.tngtech.java.junit.dataprovider.internal.TestValidator;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-import org.apache.commons.logging.Log;
 import org.junit.Ignore;
 import org.junit.rules.RunRules;
 import org.junit.runner.Description;
@@ -23,8 +12,9 @@ import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
-public class CustomDataProviderRunner extends DataProviderRunner {
+import java.util.List;
 
+public class CustomDataProviderRunner extends DataProviderRunner {
 
     public CustomDataProviderRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
@@ -41,13 +31,12 @@ public class CustomDataProviderRunner extends DataProviderRunner {
             runLeaf(runRules, description, notifier);
         }
     }
+
     @Override
     protected void initializeHelpers() {
         dataConverter = new DataConverter();
         testGenerator = new TestGenerator(dataConverter) {
-
-
-                @Override
+            @Override
             public List<FrameworkMethod> generateExplodedTestMethodsFor(FrameworkMethod testMethod,
                     FrameworkMethod dataProviderMethod) {
 
@@ -71,4 +60,5 @@ public class CustomDataProviderRunner extends DataProviderRunner {
         };
         testValidator = new TestValidator(dataConverter);
     }
+
 }

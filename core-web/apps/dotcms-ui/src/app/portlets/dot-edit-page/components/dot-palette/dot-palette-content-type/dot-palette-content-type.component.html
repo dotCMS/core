@@ -1,27 +1,27 @@
 <dot-palette-input-filter
-    #filterInput
     (filter)="filterContentTypes($event)"
-></dot-palette-input-filter>
-<div class="dot-content-palette__items" *ngIf="items?.length && !loading">
+    #filterInput></dot-palette-input-filter>
+<div *ngIf="items?.length && !loading" class="dot-content-palette__items">
     <div
         *ngFor="let item of items"
-        draggable="true"
-        data-testId="paletteItem"
         (dragstart)="dragStart(item)"
         (click)="showContentTypesList(item.variable)"
-    >
-        <dot-icon size="30" [name]="item.icon"></dot-icon>
+        draggable="true"
+        data-testId="paletteItem">
+        <dot-icon [name]="item.icon" size="30"></dot-icon>
         <p>{{ item.name }}</p>
         <dot-icon name="keyboard_arrow_right" class="arrow"></dot-icon>
     </div>
 </div>
 
-<dot-spinner *ngIf="loading && viewContentlet === 'contentlet:out'" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+<dot-spinner
+    *ngIf="loading && viewContentlet === 'contentlet:out'"
+    [size]="'40px'"
+    [borderSize]="'8px'"></dot-spinner>
 
 <span
     *ngIf="!items?.length && !loading"
     data-testId="emptyState"
-    class="dot-content-palette__empty"
->
+    class="dot-content-palette__empty">
     {{ 'No-Results' | dm }}
 </span>

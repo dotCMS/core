@@ -10,9 +10,12 @@ import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-t
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
+import { EditContentPayload } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
+    CONSTANT_FIELD_MOCK,
     CONTENT_FORM_DATA_MOCK,
+    HIDDEN_FIELD_MOCK,
     JUST_FIELDS_MOCKS,
     LAYOUT_FIELDS_VALUES_MOCK,
     LAYOUT_MOCK,
@@ -154,6 +157,44 @@ describe('DotFormComponent', () => {
             JUST_FIELDS_MOCKS.forEach((field, index) => {
                 expect(fields[index].field).toEqual(field);
             });
+        });
+    });
+
+    describe('with  Constant field', () => {
+        const data: EditContentPayload = { ...CONTENT_FORM_DATA_MOCK };
+
+        data.contentType.fields = [
+            ...data.contentType.fields,
+            CONSTANT_FIELD_MOCK,
+            HIDDEN_FIELD_MOCK
+        ];
+        data.contentlet = {
+            ...data.contentlet,
+            constant: 'constant-value',
+            hidden: 'hidden-value'
+        };
+
+        data.contentType.layout[0].columns[0].fields.push(CONSTANT_FIELD_MOCK);
+        data.contentType.layout[0].columns[0].fields.push(HIDDEN_FIELD_MOCK);
+
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    formData: data
+                }
+            });
+        });
+
+        it('should not include constant / hidden fields in the form or render it', () => {
+            expect(spectator.component.form.value).toEqual({
+                name1: 'Placeholder',
+                text2: null,
+                text3: null,
+                someTag: ['some', 'tags', 'separated', 'by', 'comma'],
+                date: new Date(MOCK_DATE)
+            });
+
+            expect(spectator.queryAll(DotEditContentFieldComponent).length).toEqual(5);
         });
     });
 

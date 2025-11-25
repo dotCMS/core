@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\"Answer this question.*Is AI the future.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "chatcmpl-9Gw6oD0Cr5QTyGKN8Sij8nDw15P12",
+      "object": "chat.completion",
+      "created": 1713823646,
+      "model": "gpt-3.5-turbo-16k-0613",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "AI is poised to fundamentally transform every aspect of human life, from healthcare and education to transportation and entertainment. With its ability to analyze vast amounts of data, AI can uncover patterns and insights that humans might overlook, revolutionizing decision-making processes. Moreover, AI-driven automation promises increased efficiency and productivity across industries, while advancements in natural language processing and machine learning enable more seamless human-machine interactions. As AI continues to evolve, it holds the potential to tackle some of the world's most pressing challenges, from climate change to disease eradication, ultimately reshaping the future of society in profound and unpredictable ways."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 44,
+        "completion_tokens": 242,
+        "total_tokens": 286
+      },
+      "system_fingerprint": null,
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}

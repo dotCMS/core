@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 
 import { NgGridPlaceholder } from './../components/NgGridPlaceholder';
-import { NgGridItem } from './../directives/NgGridItem';
 import { NgGrid } from './../directives/NgGrid';
+import { NgGridItem } from './../directives/NgGridItem';
 
 @NgModule({
     declarations: [NgGrid, NgGridItem, NgGridPlaceholder],

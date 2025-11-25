@@ -1,0 +1,281 @@
+# CICD Reports Workflow
+#
+# This workflow is responsible for generating and sending reports about the CI/CD process,
+# including test results and build status. It's designed to run after the main PR or merge
+# group checks have completed.
+#
+# Key features:
+# - Generates test reports from JUnit XML files
+# - Aggregates workflow data from previous runs
+# - Prepares and sends detailed Slack notifications
+# - Can be triggered by completed workflows or called directly
+#
+# Security Note:
+# This workflow is separate from the main PR workflow to enhance security.
+# By isolating the reporting logic:
+# 1. It limits access to sensitive Slack tokens only to this workflow.
+# 2. It prevents potential exposure of secrets in PR builds from forks.
+# 3. It allows for more granular permissions and secret management.
+# This separation ensures that even if a PR workflow is compromised, 
+# it doesn't have access to notification capabilities or sensitive tokens.
+
+name: CICD Reports
+run-name: Reports - ${{ github.event.workflow_run.name }}
+
+on:
+  workflow_run:
+    workflows: ['PR Check','Merge Group Check', "-1 PR Check", "-2 Merge Group Check"]
+    types: [completed]
+  workflow_call:
+    inputs:
+      run-id:
+        description: 'The run id of the build to report on'
+        type: string
+        default: "${{ github.run_id }}"
+      slack-only-on-failure:
+        description: 'Indicates if the slack notification should only be sent on failure'
+        type: boolean
+        default: true
+    secrets:
+      SLACK_BOT_TOKEN:
+        description: 'Slack Bot Token'
+        required: false
+
+permissions:
+  checks: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      # Log GitHub context for debugging
+      - name: Log GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      # Checkout the repository
+      - uses: actions/checkout@v4
+
+      # Download workflow data from previous run
+      - name: Download Workflow Data
+        id: data-download
+        uses: dawidd6/action-download-artifact@v3.1.4
+        with:
+          name: 'workflow-data'
+          run_id: ${{ github.event.workflow_run.id || inputs.run-id }}
+          if_no_artifact_found: warn
+
+      # Download build reports from previous run
+      - name: Download build reports
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v3.1.4
+        with:
+          name: build-reports-test-.*
+          name_is_regexp: true
+          path: /tmp/build-reports-test
+          run_id: ${{ github.event.workflow_run.id || inputs.run-id }}
+          if_no_artifact_found: warn
+
+      # Generate test report
+      - uses: phoenix-actions/test-reporting@v14
+        id: test-reporter
+        if: steps.data-download.outputs.found_artifact == 'true'
+        continue-on-error: true
+        with:
+          output-to: 'checks'
+          name: 'Test Report'
+          path: '/tmp/build-reports-test/**/target/**/TEST-*.xml'
+          reporter: java-junit
+          fail-on-error: true
+          list-tests: 'failed'
+
+      # Process workflow data
+      - name: Get Workflow Data
+        id: workflow-data
+        run: |
+          if [[ ! -e "workflow-data.json" ]]
+          then
+            echo "::warn title=Artifact 'workflow-data' missing::Expected artifact 'workflow-data' does not exist for pull_request event."
+          else
+            jq . workflow-data.json
+            json=$(jq -c '.' workflow-data.json)
+            trigger_event_name=$(echo $json | jq -r '.trigger_event_name // "null"')
+            status=$(echo $json | jq -r '.aggregate_status // "null"')
+            pr_number=$(echo $json | jq -r '.pr_number // "null"')
+            pr_author=$(echo $json | jq -r '.pr_author // "null"')
+            run_id=$(echo $json | jq -r '.run_id // "null"')
+            first_fail_step=$(echo $json | jq -r '.first_fail_step // "None"')
+            first_fail_module=$(echo $json | jq -r '.first_fail_module // "None"')
+            first_fail_error=$(echo $json | jq -r '.first_fail_error // "None"')
+            pr_title=$(echo $json | jq -r '.pr_title // "null"')
+            branch=$(echo $json | jq -r '.branch // "null"')
+            head_sha=$(echo $json | jq -r '.head_sha // "null"')
+            head_author=$(echo $json | jq -r '.head_author // "null"')
+            head_name=$(echo $json | jq -r '.head_name // "null"')
+            source_repository=$(echo $json | jq -r '.source_repository // "null"')
+            action_run_url="https://github.com/$source_repository/actions/runs/$run_id"
+            pr_number_url="https://github.com/$source_repository/pull/$pr_number"
+            branch_url="https://github.com/$source_repository/tree/$branch"
+            commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
+            test_results_url="https://github.com/$source_repository/pull/${pr_number}/checks"
+            if [[ -z "${{ steps.test-reporter.outputs.conclusion }}" ]]; then
+              test_conclusion="Not Run"
+              test_passed=0
+              test_failed=0
+              test_skipped=0
+              test_elapsed=0
+            else
+              test_conclusion=${{ steps.test-reporter.outputs.conclusion }}
+              test_passed=${{ steps.test-reporter.outputs.passed }}
+              test_failed=${{ steps.test-reporter.outputs.failed }}
+              test_skipped=${{ steps.test-reporter.outputs.skipped }}
+              test_elapsed=${{ steps.test-reporter.outputs.time }}
+              test_results_url=${{ steps.test-reporter.outputs.runHtmlUrl }}
+            fi
+          
+          
+            if [[ "$status" == "SUCCESS" ]]; then
+              echo "status_icon=✅" >> $GITHUB_OUTPUT
+            elif [[ "$status" == "CANCELLED" ]]; then
+              echo "status_icon=🚫" >> $GITHUB_OUTPUT
+            else
+              echo "status_icon=❌" >> $GITHUB_OUTPUT
+            fi
+          
+            if [[ "$trigger_event_name" == "pull_request" ]]; then
+              echo "report_type=PR" >> $GITHUB_OUTPUT
+            elif [[ "$trigger_event_name" == "merge_group" ]]; then
+              echo "report_type=Merge Queue" >> $GITHUB_OUTPUT
+            elif [[ "$trigger_event_name" == "push" ]]; then
+              echo "report_type=Branch Merge" >> $GITHUB_OUTPUT
+            else 
+               echo "report_type=$trigger_event_name" >> $GITHUB_OUTPUT
+            fi
+          
+
+            echo "json=$json" >> $GITHUB_OUTPUT
+            echo "trigger_event_name=$trigger_event_name" >> $GITHUB_OUTPUT
+            echo "has_json=true" >> $GITHUB_OUTPUT
+            echo "status=$status" >> $GITHUB_OUTPUT
+            echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+            echo "pr_author=$pr_author" >> $GITHUB_OUTPUT
+            echo "run_id=$run_id" >> $GITHUB_OUTPUT
+            echo "first_fail_step=$first_fail_step" >> $GITHUB_OUTPUT
+            echo "first_fail_module=$first_fail_module" >> $GITHUB_OUTPUT
+            echo "first_fail_error=$first_fail_error" >> $GITHUB_OUTPUT
+            echo "pr_title=$pr_title" >> $GITHUB_OUTPUT
+            echo "branch=$branch" >> $GITHUB_OUTPUT
+            echo "head_sha=$head_sha" >> $GITHUB_OUTPUT
+            echo "head_author=$head_author" >> $GITHUB_OUTPUT
+            echo "head_name=$head_name" >> $GITHUB_OUTPUT
+            echo "source_repository=$source_repository" >> $GITHUB_OUTPUT
+            echo "action_run_url=$action_run_url" >> $GITHUB_OUTPUT
+            echo "pr_number_url=$pr_number_url" >> $GITHUB_OUTPUT
+            echo "branch_url=$branch_url" >> $GITHUB_OUTPUT
+            echo "commit_id_url=$commit_id_url" >> $GITHUB_OUTPUT
+            echo "test_results_url=$test_results_url" >> $GITHUB_OUTPUT
+            echo "test_conclusion=$test_conclusion" >> $GITHUB_OUTPUT
+            echo "test_passed=$test_passed" >> $GITHUB_OUTPUT
+            echo "test_failed=$test_failed" >> $GITHUB_OUTPUT
+            echo "test_skipped=$test_skipped" >> $GITHUB_OUTPUT
+            echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
+          
+          fi
+      # Prepare Slack message payload
+      - name: Prepare Slack Message Payload
+        id: prepare-slack-message
+        run: |
+          payload=$(cat <<EOF
+          {
+              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }}",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Action Run ID:* <${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}> \n*Failure Step:* ${{ steps.workflow-data.outputs.first_fail_step }} \n*Failure Module:* ${{ steps.workflow-data.outputs.first_fail_module }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Failure Message:* ${{ steps.workflow-data.outputs.first_fail_error }}"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*${{ steps.workflow-data.outputs.report_type }} Details:* \nAuthor: ${{ steps.workflow-data.outputs.pr_author }} \nName: <${{ steps.workflow-data.outputs.pr_number_url || steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.pr_title || steps.workflow-data.outputs.branch }}> \nNumber: #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }} \nBranch: <${{ steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.branch }}>"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Commit Details:* \nID: <${{ steps.workflow-data.outputs.commit_id_url }} | #${{ steps.workflow-data.outputs.head_sha }}> \nAuthor: ${{ steps.workflow-data.outputs.head_author }} \nName: ${{ steps.workflow-data.outputs.head_name }}"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🧪 Test Results = ${{ steps.workflow-data.outputs.test_conclusion }}",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Passed:* ${{ steps.workflow-data.outputs.test_passed }} \n*Failed:* ${{ steps.workflow-data.outputs.test_failed }} \n*Skipped:* ${{ steps.workflow-data.outputs.test_skipped }} \n*Elapsed Time:* ${{ steps.workflow-data.outputs.test_elapsed }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🔍 <${{ steps.workflow-data.outputs.test_results_url }} | View Test Results>"
+                  }
+                }
+              ]
+          }
+          EOF
+          )
+          echo "payload=$(echo $payload | jq -c .)" >> $GITHUB_OUTPUT
+          echo "payload=$payload"
+      # Send Slack notification
+      - name: Post to Slack
+        if: steps.workflow-data.outputs.has_json == 'true' && github.repository == 'dotcms/core' && ( steps.workflow-data.outputs.status == 'FAILURE' || ( github.event_name == 'workflow_call' && inputs.slack-only-on-failure == false ) )
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: ${{ vars.SLACK_REPORT_CHANNEL }}
+          payload: ${{ steps.prepare-slack-message.outputs.payload }}
+          json: true
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+        # Check can be removed if we have resolved root cause
+        # We cannot use a local github action for this as it is run before we checkout the repo
+        # secrets.GITHUB_TOKEN is not available in composite workflows so it needs to be passed in.
+      - name: Check API Rate Limit
+        shell: bash
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/rate_limit || true

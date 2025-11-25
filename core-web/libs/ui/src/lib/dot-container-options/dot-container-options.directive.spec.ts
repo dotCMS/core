@@ -1,9 +1,9 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
 
-import { By } from '@angular/platform-browser';
+import { Component } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -14,7 +14,16 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotContainerOptionsDirective } from './dot-container-options.directive';
-import { MockContainersDropdownComponent } from './mock-containers-dropdown.component';
+
+@Component({
+    selector: `dot-containers-dropdown-mock`,
+    imports: [DropdownModule, DotContainerOptionsDirective],
+    template: `
+        <p-dropdown dotContainerOptions />
+    `,
+    standalone: true
+})
+class MockContainersDropdownComponent {}
 
 const sortedContainersMock = containersMock
     .map((container) => ({
@@ -50,38 +59,33 @@ describe('ContainerOptionsDirective', () => {
 
     const createHost = createHostFactory({
         component: MockContainersDropdownComponent,
-        imports: [BrowserAnimationsModule, DotContainerOptionsDirective, DropdownModule],
+        imports: [BrowserAnimationsModule],
         providers: [
-            {
-                provide: DotContainersService,
-                useValue: new DotContainersServiceMock()
-            },
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
+            },
+            {
+                provide: DotContainersService,
+                useValue: new DotContainersServiceMock()
             }
         ]
     });
 
     beforeEach(() => {
-        spectator = createHost(`<dot-containers-dropdown-mock></dot-containers-dropdown-mock>`);
+        spectator = createHost(`<dot-containers-dropdown-mock />`);
         spectator.detectChanges();
         mockMatchMedia();
     });
 
-    it('should set the group property of the dropdown to true', () => {
-        // get the dropdown component
-        const dropdown = spectator.debugElement.query(By.css('p-dropdown'));
-        // Get the dropdown component instance
-        const dropdownInstance = dropdown.componentInstance;
-
-        expect(dropdownInstance.group).toBeTruthy();
+    it('should set the group property of the dropdown to true', async () => {
+        await spectator.fixture.whenStable();
+        const dropdown = spectator.query(Dropdown);
+        expect(dropdown.group).toBeTruthy();
     });
 
     it('should group containers by host', () => {
-        const dropdown = spectator.debugElement.query(By.css('p-dropdown'));
-        const dropdownInstance = dropdown.componentInstance;
-
-        expect(dropdownInstance.options).toEqual(getGroupByHostContainersMock());
+        const dropdown = spectator.query(Dropdown);
+        expect(dropdown.options).toEqual(getGroupByHostContainersMock());
     });
 });

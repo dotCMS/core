@@ -31,7 +31,7 @@ import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotPropertiesService, DotAiService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -42,7 +42,6 @@ import {
 
 import {
     ActionsMenu,
-    AIContentActionsExtension,
     AIContentPromptExtension,
     AIImagePromptExtension,
     AssetUploader,
@@ -64,11 +63,9 @@ import {
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
-    DotAiService,
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
-    removeLoadingNodes,
     RestoreDefaultDOMAttrs,
     SetDocAttrStep
 } from '../../shared';
@@ -86,6 +83,8 @@ import {
     ]
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
+    readonly #injector = inject(Injector);
+
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
 
@@ -108,7 +107,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
-        ['dotContent', ContentletBlock(this.injector)],
+        ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
         ['table', DotTableExtension()],
@@ -120,7 +119,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private isAIPluginInstalled$: Observable<boolean>;
 
     constructor(
-        private readonly injector: Injector,
         private readonly viewContainerRef: ViewContainerRef,
         private readonly dotMarketingConfigService: DotMarketingConfigService,
         private readonly dotAiService: DotAiService
@@ -447,21 +445,20 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
-            DotFloatingButton(this.injector, this.viewContainerRef),
+            DotFloatingButton(this.#injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
             TableRow,
             FreezeScroll,
             CharacterCount,
-            AssetUploader(this.injector, this.viewContainerRef)
+            AssetUploader(this.#injector, this.viewContainerRef)
         ];
 
         if (isAIPluginInstalled) {
             extensions.push(
                 AIContentPromptExtension(this.viewContainerRef),
-                AIImagePromptExtension(this.viewContainerRef),
-                AIContentActionsExtension(this.viewContainerRef)
+                AIImagePromptExtension(this.viewContainerRef)
             );
         }
 
@@ -485,19 +482,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     private setEditorJSONContent(content: Content) {
-        //TODO: remove this when the AI content is generated exclusively in popups and not in the editor directly.
-        const filterContent = removeLoadingNodes(
-            content
-                ? Array.isArray(content)
-                    ? [...content]
-                    : [...(content as JSONContent).content]
-                : []
-        );
-
         this.content =
             this.allowedBlocks?.length > 1
-                ? removeInvalidNodes(filterContent, this.allowedBlocks)
-                : filterContent;
+                ? removeInvalidNodes(content, this.allowedBlocks)
+                : content;
     }
 
     private setEditorContent(content: Content) {

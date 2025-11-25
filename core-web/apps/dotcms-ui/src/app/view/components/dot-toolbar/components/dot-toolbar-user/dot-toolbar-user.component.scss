@@ -1,10 +1,6 @@
 @use "variables" as *;
 @import "mixins";
 
-:host {
-    display: block;
-}
-
 p-avatar {
     cursor: pointer;
     padding: $spacing-2 0;
@@ -24,22 +20,29 @@ p-avatar {
     .toolbar-user__user-name {
         margin: 0;
         white-space: nowrap;
-        font-size: $font-size-lg;
+        font-size: $font-size-lmd;
         color: $black;
     }
 }
 
+::ng-deep {
+    .toolbar-user__menu.p-menu {
+        margin-top: $spacing-0;
+        &.p-menu-overlay {
+            width: 17rem;
+        }
+    }
+}
+
 :host::ng-deep {
+    display: block;
+
     .p-menu {
         margin-top: $spacing-0;
     }
 
     .p-menu .p-menu-separator {
         margin: $spacing-1;
-    }
-
-    .p-menu.p-menu-overlay {
-        min-width: 17rem;
     }
 
     .toolbar-user__logout .p-menuitem-link .p-menuitem-text {

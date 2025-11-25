@@ -16,12 +16,14 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPersonasService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotDevice, DotLanguage, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
+import { DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
@@ -35,16 +37,15 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageViewAsControllerSeoComponent } from './dot-edit-page-view-as-controller-seo.component';
 
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
-
 @Component({
     selector: 'dot-test-host',
-    template: `<dot-edit-page-view-as-controller-seo
-        [pageState]="pageState"></dot-edit-page-view-as-controller-seo>`
+    template: `
+        <dot-edit-page-view-as-controller-seo
+            [pageState]="pageState"></dot-edit-page-view-as-controller-seo>
+    `
 })
 class DotTestHostComponent {
     @Input()
@@ -120,7 +121,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                 DotEditPageViewAsControllerSeoComponent,
                 BrowserAnimationsModule,
                 TooltipModule,
-                DotPipesModule
+                DotSafeHtmlPipe
             ],
             providers: [
                 DotSessionStorageService,

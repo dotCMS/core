@@ -1,0 +1,32 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+
+    ::ng-deep {
+        p-table {
+            flex-grow: 1;
+            padding-bottom: $spacing-3;
+
+            .dotTable.p-datatable.p-component {
+                height: 100%;
+
+                .p-datatable-wrapper {
+                    height: 100%;
+                }
+            }
+        }
+    }
+}
+
+.locales-list__header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: $spacing-1;
+}
+
+.locales-list__search {
+    width: 405px;
+}

@@ -40,6 +40,7 @@ public class DotJSONDataFetcher implements DataFetcher<Object> {
 
             final String fieldValue = (String) contentlet.get(WIDGET_CODE_FIELD_VAR);
 
+            Logger.debug(this, ()-> "Fetching widget code JSON for contentlet: " + contentlet.getIdentifier());
             if(render) {
                 final Object renderedValue = parseAsJSON(request, response, fieldValue,
                         contentlet, WIDGET_CODE_FIELD_VAR);

@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/i",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.prompt == 'Image of a robot painting the sixteen chapel')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "created": 1718057627,
+      "data": [
+        {
+          "revised_prompt": "A futuristic scenario depicting a robot with an intricate mechanical design and sleek silver finish. The robot is captured in the act of painting, its metallic fingers holding a brush deftly. The scene is set in a large, rectangular room with high, arching ceilings covered in a vibrant array of frescoes that have the breathtaking detail and depth of those found in renaissance chapels. The designs are a diverse mix, portraying various instances of human and biblical history, each image depicted in a beautiful harmony of colors, shapes, and narratives.",
+          "url": "http://wm:8080/s/robot-painting"
+        }
+      ]
+    }
+  }
+}

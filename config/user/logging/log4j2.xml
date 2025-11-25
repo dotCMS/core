@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration monitorInterval="10">
+    <Properties>
+        <Property name="DEFAULT_CONSOLE_PATTERN">%d{HH:mm:ss.SSS} hello5 [%X] %highlight{%-5level} [%tn] %c{1.}.%M(%F:%L) - %m%n%ex{filters(${stack.filter})}</Property>
+        <Property name="DOTCMS_LOGGING_INCLUDE_LOCATION">false</Property>
+    </Properties>
+    <Loggers>
+        <Logger name="com.dotcms" level="info" additivity="true">
+        </Logger>
+    </Loggers>
+
+    <Loggers>
+        <Logger name="com.dotcms.concurrent.DotConcurrentFactory" level="info" additivity="true">
+        </Logger>
+    </Loggers>
+    <Loggers>
+        <Logger name="com.dotmarketing.filters.ThreadNameFilter" level="warn" additivity="true">
+        </Logger>
+    </Loggers>
+
+
+</Configuration>

@@ -1258,26 +1258,6 @@ public class WorkflowHelper {
 
     } // findSchemesByContentType.
 
-    @WrapInTransaction
-    public void saveSchemesByContentType(final String contentTypeId, final User user, final Set<String> workflowIds) {
-
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-
-        try {
-
-            Logger.debug(this, () -> String.format("Saving the schemes: %s by content type: %s",
-                    String.join(",", workflowIds), contentTypeId));
-
-            this.workflowAPI.saveSchemeIdsForContentType(contentTypeAPI.find(contentTypeId), workflowIds);
-        } catch (DotDataException | DotSecurityException e) {
-
-            Logger.error(this, e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
-            throw new DotWorkflowException(e.getMessage(), e);
-        }
-
-    }
-
     public List<WorkflowScheme> findSchemes() {
         return findSchemes(false);
     }

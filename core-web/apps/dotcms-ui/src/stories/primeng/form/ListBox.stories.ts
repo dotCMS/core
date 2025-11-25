@@ -1,18 +1,36 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { ListboxModule } from 'primeng/listbox';
+import { ListboxModule, Listbox } from 'primeng/listbox';
 
-export default {
+type City = {
+    label: string;
+    value: {
+        id: number;
+        name: string;
+        code: string;
+    };
+};
+
+type Args = Listbox & { cities: City[]; selectedCity: City[] };
+
+const ListBoxTemplate = `<p-listbox [options]="cities" [(ngModel)]="selectedCity" />`;
+
+const meta: Meta<Args> = {
     title: 'PrimeNG/Form/ListBox',
+    component: Listbox,
     parameters: {
         docs: {
             description: {
                 component:
                     'Listbox is used to select one or more values from a list of items: https://primeng.org/listbox'
+            },
+            source: {
+                code: ListBoxTemplate
             }
-        }
+        },
+        iframeHeight: 800
     },
     decorators: [
         moduleMetadata({
@@ -29,36 +47,14 @@ export default {
             { label: 'Paris', value: { id: 5, name: 'Paris', code: 'PRS' } }
         ],
         selectedCity: []
-    }
-} as Meta;
-
-type City = {
-    label: string;
-    value: {
-        id: number;
-        name: string;
-        code: string;
-    };
-};
-
-const ListBoxTemplate = `<p-listbox [options]="cities" [(ngModel)]="selectedCity"></p-listbox>`;
-
-const Template: (props: City[]) => { template: string; props: City[] } = (props: City[]) => {
-    const template = ListBoxTemplate;
-
-    return {
-        props,
-        template
-    };
-};
-
-export const Basic: Story = Template.bind({});
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: ListBoxTemplate
-        }
     },
-    iframeHeight: 800
+    render: (args) => ({
+        props: args,
+        template: ListBoxTemplate
+    })
 };
+export default meta;
+
+type Story = StoryObj;
+
+export const Basic: Story = {};

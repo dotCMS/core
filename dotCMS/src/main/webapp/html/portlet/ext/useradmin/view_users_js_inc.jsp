@@ -1391,6 +1391,9 @@
 		    var xhrArgs = {
 		        url : "/api/v1/apitoken/" + keyId + "/revoke" ,
 		        handleAs : "json",
+				headers: {
+					'Content-Type': 'application/json',
+				},
 		        load : function(data){
 		        	loadApiKeys()
 		        },

@@ -1,5 +1,3 @@
-import { of } from 'rxjs';
-
 import {
     AfterContentInit,
     Component,
@@ -9,33 +7,24 @@ import {
     EventEmitter,
     Input,
     Output,
-    TemplateRef,
     ViewChild
 } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import { DotGlobalMessageComponent } from '@components/_common/dot-global-message/dot-global-message.component';
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import {
-    DotEventsService,
-    DotMessageService,
-    DotPropertiesService,
-    DotRouterService
-} from '@dotcms/data-access';
-import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
+import { DotEventsService, DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { DotLayout, DotTemplate, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
-import {
-    AUTOSAVE_DEBOUNCE_TIME,
-    DotTemplateBuilderComponent
-} from './dot-template-builder.component';
+import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 
 import {
     DotTemplateItem,
@@ -46,33 +35,15 @@ import {
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dotcms-template-builder-lib',
-    template: ` <ng-content select="[toolbar-left]"></ng-content>
-        <ng-content select="[toolbar-actions-right]"></ng-content>`
+    template: `
+        <ng-content select="[toolbar-left]"></ng-content>
+        <ng-content select="[toolbar-actions-right]"></ng-content>
+    `
 })
 class TemplateBuilderMockComponent {
     @Input() layout: DotLayout;
-    @Input() themeId: string;
+    @Input() template: Partial<DotTemplate>;
     @Output() templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
-}
-
-@Component({
-    selector: 'dot-edit-layout-designer',
-    template: ``
-})
-class DotEditLayoutDesignerMockComponent {
-    @Input() theme: string;
-
-    @Input() layout;
-
-    @Input() disablePublish: boolean;
-
-    @Output() cancel: EventEmitter<MouseEvent> = new EventEmitter();
-
-    @Output() save: EventEmitter<Event> = new EventEmitter();
-
-    @Output() updateTemplate: EventEmitter<Event> = new EventEmitter();
-
-    @Output() saveAndPublish: EventEmitter<Event> = new EventEmitter();
 }
 
 @Component({
@@ -120,12 +91,12 @@ export class TabViewMockComponent {
 })
 export class TabPanelMockComponent implements AfterContentInit {
     @Input() header: string;
-    @ContentChild(TemplateRef) container;
+    @ContentChild(PrimeTemplate) container;
     contentTemplate;
 
     ngAfterContentInit() {
-        if (this.container.elementRef.nativeElement.textContent === 'container') {
-            this.contentTemplate = this.container;
+        if (this.container.name === 'content') {
+            this.contentTemplate = this.container.template;
         }
     }
 }
@@ -149,15 +120,11 @@ describe('DotTemplateBuilderComponent', () => {
     let component: DotTemplateBuilderComponent;
     let fixture: ComponentFixture<DotTemplateBuilderComponent>;
     let de: DebugElement;
-    let dotTestHostComponent: DotTestHostComponent;
-    let hostFixture: ComponentFixture<DotTestHostComponent>;
-    let dotPropertiesService: DotPropertiesService;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [
                 DotTemplateBuilderComponent,
-                DotEditLayoutDesignerMockComponent,
                 DotTemplateAdvancedMockComponent,
                 IframeMockComponent,
                 TabViewMockComponent,
@@ -182,12 +149,6 @@ describe('DotTemplateBuilderComponent', () => {
                         code: 'Code'
                     })
                 },
-                {
-                    provide: DotPropertiesService,
-                    useValue: {
-                        getFeatureFlag: () => of(false)
-                    }
-                },
                 DotEventsService,
                 {
                     provide: DotRouterService,
@@ -202,7 +163,6 @@ describe('DotTemplateBuilderComponent', () => {
         de = fixture.debugElement;
         component = fixture.componentInstance;
 
-        dotPropertiesService = TestBed.inject(DotPropertiesService);
         spyOn(component.save, 'emit');
         spyOn(component.updateTemplate, 'emit');
         spyOn(component.cancel, 'emit');
@@ -219,45 +179,9 @@ describe('DotTemplateBuilderComponent', () => {
             expect(panel.componentInstance.header).toBe('Design');
         });
 
-        it('should show dot-edit-layout-designer and pass attr', () => {
-            const builder = de.query(By.css('dot-edit-layout-designer')).componentInstance;
-            expect(builder.theme).toBe('123');
-            expect(builder.disablePublish).toBe(true);
-            expect(builder.layout).toEqual({
-                header: true,
-                footer: true,
-                body: {
-                    rows: []
-                },
-                sidebar: null,
-                title: '',
-                width: null
-            });
-        });
-
         it('should not show <dot-template-advanced>', () => {
             const advanced = de.query(By.css('dot-template-advanced'));
             expect(advanced).toBeNull();
-        });
-
-        it('should emit save events from dot-edit-layout-designer', () => {
-            const builder = de.query(By.css('dot-edit-layout-designer'));
-
-            builder.triggerEventHandler('save', EMPTY_TEMPLATE_DESIGN);
-            builder.triggerEventHandler('updateTemplate', EMPTY_TEMPLATE_DESIGN);
-
-            expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
-            expect(component.updateTemplate.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
-        });
-
-        it('should emit save event from dot-edit-layout-designer automatically on template updates', () => {
-            fakeAsync(() => {
-                spyOn(component.save, 'emit');
-                const builder = de.query(By.css('dot-edit-layout-designer'));
-                builder.triggerEventHandler('save', EMPTY_TEMPLATE_DESIGN);
-                tick(AUTOSAVE_DEBOUNCE_TIME);
-                expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
-            });
         });
     });
 
@@ -268,7 +192,6 @@ describe('DotTemplateBuilderComponent', () => {
                 theme: '123',
                 live: true
             };
-            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
             fixture.detectChanges();
         });
 
@@ -282,18 +205,23 @@ describe('DotTemplateBuilderComponent', () => {
 
         it('should set the themeId @Input correctly', () => {
             const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
-            expect(templateBuilder.componentInstance.themeId).toBe('123');
+            expect(templateBuilder.componentInstance.template.themeId).toBe('123');
         });
 
-        it('should emit events from new-template-builder when the layout is changed', () => {
+        it('should trigger onTemplateItemChange new-template-builder when the layout is changed', () => {
             const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
             const template = {
                 layout: EMPTY_TEMPLATE_DESIGN.layout,
-                themeId: '123'
-            } as DotTemplateDesigner;
+                theme: '123',
+                friendlyName: 'test',
+                identifier: '123',
+                title: 'test'
+            } as DotTemplateItem;
+
+            spyOn(component, 'onTemplateItemChange');
 
             templateBuilder.triggerEventHandler('templateChange', template);
-            expect(component.updateTemplate.emit).toHaveBeenCalled();
+            expect(component.onTemplateItemChange).toHaveBeenCalledWith(template);
         });
 
         it('should add style classes if new template builder feature flag is on', () => {
@@ -316,7 +244,7 @@ describe('DotTemplateBuilderComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should have tab title "Design"', () => {
+        it('should have tab title "Code"', () => {
             const panel = de.query(By.css('[data-testId="builder"]'));
             expect(panel.componentInstance.header).toBe('Code');
         });
@@ -325,11 +253,6 @@ describe('DotTemplateBuilderComponent', () => {
             const builder = de.query(By.css('dot-template-advanced')).componentInstance;
             expect(builder.body).toBe('');
             expect(builder.didTemplateChanged).toBe(false);
-        });
-
-        it('should not show <dot-edit-layout-designer>', () => {
-            const designer = de.query(By.css('dot-edit-layout-designer'));
-            expect(designer).toBeNull();
         });
 
         it('should emit events from dot-template-advanced', () => {
@@ -370,42 +293,6 @@ describe('DotTemplateBuilderComponent', () => {
                     '/html/templates/push_history.jsp?templateId=123&popup=true'
                 );
             });
-        });
-
-        it('should reload iframe when changes in the template happens', () => {
-            hostFixture = TestBed.createComponent(DotTestHostComponent);
-            dotTestHostComponent = hostFixture.componentInstance;
-            dotTestHostComponent.item = {
-                ...EMPTY_TEMPLATE_DESIGN,
-                theme: '123'
-            };
-            hostFixture.detectChanges();
-            const builder = hostFixture.debugElement.query(
-                By.css('dot-edit-layout-designer')
-            ).componentInstance;
-            dotTestHostComponent.builder.historyIframe = {
-                iframeElement: {
-                    nativeElement: {
-                        contentWindow: {
-                            location: {
-                                reload: jasmine.createSpy('reload')
-                            }
-                        }
-                    }
-                }
-            } as IframeComponent;
-            dotTestHostComponent.item = {
-                ...EMPTY_TEMPLATE_DESIGN,
-                theme: 'dotcms-123'
-            };
-
-            builder.updateTemplate.emit(dotTestHostComponent.item);
-
-            hostFixture.detectChanges();
-            expect(
-                dotTestHostComponent.builder.historyIframe.iframeElement.nativeElement.contentWindow
-                    .location.reload
-            ).toHaveBeenCalledTimes(1);
         });
 
         it('should handle custom event', () => {

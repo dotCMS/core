@@ -1,10 +1,11 @@
 package com.dotcms.api.client.pull.language;
 
 import com.dotcms.api.client.pull.GeneralPullHandler;
+import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 
 @Dependent
 public class LanguagePullHandler extends GeneralPullHandler<Language> {
@@ -30,19 +31,14 @@ public class LanguagePullHandler extends GeneralPullHandler<Language> {
 
     @Override
     public String fileName(final Language language) {
-        return language.isoCode();
+        return NamingUtils.languageFileName(language);
     }
 
     @Override
     public String shortFormat(final Language language, final PullOptions pullOptions) {
 
         return String.format(
-                "language: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] code: [@|bold,underline,green %s|@] country:[@|bold,yellow %s|@] countryCode: [@|bold,yellow %s|@] isoCode: [@|bold,yellow %s|@]",
-                language.language().orElse(""),
-                language.id().isPresent() ? language.id().get() : "",
-                language.languageCode().orElse(""),
-                language.country().orElse(""),
-                language.countryCode().orElse(""),
+                "isoCode: [@|bold,yellow %s|@]",
                 language.isoCode()
         );
     }

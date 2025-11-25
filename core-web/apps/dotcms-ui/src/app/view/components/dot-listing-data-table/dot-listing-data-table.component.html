@@ -1,17 +1,22 @@
 <dot-action-header [options]="actionHeaderOptions">
     <ng-container [ngTemplateOutlet]="beforeSearchTemplate"></ng-container>
     <input
-        #gf
-        [(ngModel)]="filter"
-        (input)="dataTable.filterGlobal($event.target.value, 'contains')"
         (keydown.arrowdown)="focusFirstRow()"
+        [(ngModel)]="filter"
+        #gf
+        (input)="dataTable.filterGlobal(gf.value, 'contains')"
         pInputText
         placeholder="{{ 'Type-to-filter' | dm }}"
         type="text" />
     <ng-content></ng-content>
 </dot-action-header>
 <p-table
-    #dataTable
+    (onContextMenuSelect)="contextMenuSelect.emit($event.data)"
+    (onFilter)="handleFilter()"
+    (onHeaderCheckboxToggle)="handleRowCheck()"
+    (onLazyLoad)="loadDataPaginationEvent($event)"
+    (onRowSelect)="handleRowCheck()"
+    (onRowUnselect)="handleRowCheck()"
     [(selection)]="selected"
     [columns]="columns"
     [contextMenu]="contextMenu ? cm : null"
@@ -26,26 +31,27 @@
     [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
     [totalRecords]="totalRecords"
     [value]="items"
-    (onContextMenuSelect)="contextMenuSelect.emit($event.data)"
-    (onFilter)="handleFilter()"
-    (onHeaderCheckboxToggle)="handleRowCheck()"
-    (onLazyLoad)="loadDataPaginationEvent($event)"
-    (onRowSelect)="handleRowCheck()"
-    (onRowUnselect)="handleRowCheck()"
+    #dataTable
     loadingIcon="pi pi-spin pi-spinner">
     <ng-template let-columns pTemplate="header">
-        <tr *ngIf="items?.length" data-testClass="testHeadTableRow">
-            <th *ngIf="checkbox" style="width: 5%">
-                <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-            </th>
-            <ng-container
-                [ngTemplateOutletContext]="{ columns: columns }"
-                [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate"></ng-container>
-        </tr>
+        @if (items?.length) {
+            <tr data-testClass="testHeadTableRow">
+                @if (checkbox) {
+                    <th scope="col" style="width: 5%">
+                        <p-tableHeaderCheckbox />
+                    </th>
+                }
+                <ng-container
+                    [ngTemplateOutletContext]="{ columns: columns }"
+                    [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate"></ng-container>
+            </tr>
+        }
     </ng-template>
 
     <ng-template let-columns="columns" let-rowData pTemplate="body">
         <tr
+            (click)="handleRowClick(rowData)"
+            (keyup.enter)="handleRowClick(rowData)"
             [ngClass]="{ 'disabled-row': rowData?.owner === 'system' }"
             [pSelectableRowDisabled]="rowData?.owner === 'system'"
             [pContextMenuRowDisabled]="rowData.disableInteraction"
@@ -53,79 +59,89 @@
             [pContextMenuRow]="rowData"
             [pSelectableRow]="rowData"
             [attr.data-testId]="rowData?.variable ? 'row-' + rowData.variable : null"
-            (click)="handleRowClick(rowData)"
-            (keyup.enter)="handleRowClick(rowData)"
             data-testClass="testTableRow">
-            <td *ngIf="checkbox">
-                <p-tableCheckbox
-                    *ngIf="!rowData.disableInteraction"
-                    [value]="rowData"
-                    [attr.test-id]="rowData.friendlyName"
-                    (click)="$event.stopPropagation()"></p-tableCheckbox>
-            </td>
+            @if (checkbox) {
+                <td>
+                    @if (!rowData.disableInteraction) {
+                        <p-tableCheckbox
+                            (click)="$event.stopPropagation()"
+                            [value]="rowData"
+                            [attr.test-id]="rowData.friendlyName" />
+                    }
+                </td>
+            }
             <ng-container
                 [ngTemplateOutletContext]="{ rowData: rowData }"
                 [ngTemplateOutlet]="rowTemplate || defaultRowTemplate"></ng-container>
         </tr>
     </ng-template>
     <ng-template pTemplate="emptymessage">
-        <div
-            class="listing-datatable__empty"
-            *ngIf="isContentFiltered; else emptyState"
-            data-testId="listing-datatable__empty">
-            {{ 'No-Results-Found' | dm }}
-        </div>
-        <ng-template #emptyState>
+        @if (isContentFiltered) {
+            <div class="listing-datatable__empty" data-testId="listing-datatable__empty">
+                {{ 'No-Results-Found' | dm }}
+            </div>
+        } @else {
             <ng-content select="dot-empty-state"></ng-content>
-        </ng-template>
+        }
     </ng-template>
 </p-table>
-<p-contextMenu #cm [model]="contextMenuItems" appendTo="body"></p-contextMenu>
+<p-contextMenu [model]="contextMenuItems" #cm appendTo="body"></p-contextMenu>
 <ng-template #defaultHeaderTemplate let-columns="columns" pTemplate="header">
-    <th
-        *ngFor="let col of columns"
-        [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
-        [pSortableColumnDisabled]="!col.sortable"
-        [pSortableColumn]="col.fieldName">
-        {{ col.header }}
-        <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
-    </th>
+    @for (col of columns; track col) {
+        <th
+            [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
+            [pSortableColumnDisabled]="!col.sortable"
+            [pSortableColumn]="col.fieldName">
+            {{ col.header }}
+            @if (col.sortable) {
+                <p-sortIcon [field]="col.fieldName" />
+            }
+        </th>
+    }
     <th style="width: 5%"></th>
 </ng-template>
 
 <ng-template #defaultRowTemplate let-rowData="rowData">
-    <td
-        *ngFor="let col of columns"
-        [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
-        [attr.data-testId]="col.fieldName">
-        <div class="listing-datatable__column-icon" *ngIf="col.icon">
-            <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
-            <span>{{ col.textContent || rowData[col.fieldName] }}</span>
-        </div>
-        <span *ngIf="!col.icon && col.fieldName !== 'nEntries' && col.format !== 'date'">
-            {{ rowData[col.fieldName] }}
-        </span>
-        <span *ngIf="!col.icon && col.fieldName !== 'nEntries' && col.format === 'date'">
-            {{ rowData[col.fieldName] | dotRelativeDate }}
-        </span>
-        <a
-            *ngIf="col.fieldName === 'nEntries' && !rowData?.system"
-            [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
-            [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
-            (click)="$event.stopPropagation()">
-            {{
-                col.textContent
-                    ? (col.textContent | dotStringFormat : [rowData[col.fieldName]])
-                    : rowData[col.fieldName]
-            }}
-        </a>
-    </td>
+    @for (col of columns; track col) {
+        <td
+            [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
+            [attr.data-testId]="col.fieldName">
+            @if (col.icon) {
+                <div class="listing-datatable__column-icon">
+                    <dot-icon name="{{ col.icon(rowData) }}" />
+                    <span>{{ col.textContent || rowData[col.fieldName] }}</span>
+                </div>
+            }
+            @if (!col.icon && col.fieldName !== 'nEntries' && col.format !== 'date') {
+                <span>
+                    {{ rowData[col.fieldName] }}
+                </span>
+            }
+            @if (!col.icon && col.fieldName !== 'nEntries' && col.format === 'date') {
+                <span>
+                    {{ rowData[col.fieldName] | dotRelativeDate }}
+                </span>
+            }
+            @if (col.fieldName === 'nEntries' && !rowData?.system) {
+                <a
+                    (click)="$event.stopPropagation()"
+                    [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
+                    [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'">
+                    {{
+                        col.textContent
+                            ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
+                            : rowData[col.fieldName]
+                    }}
+                </a>
+            }
+        </td>
+    }
     <td class="listing-datatable__action-column" style="width: 5%">
-        <dot-action-menu-button
-            class="listing-datatable__action-button"
-            *ngIf="actions"
-            [actions]="actions"
-            [item]="rowData">
-        </dot-action-menu-button>
+        @if (actions) {
+            <dot-action-menu-button
+                [actions]="actions"
+                [item]="rowData"
+                class="listing-datatable__action-button" />
+        }
     </td>
 </ng-template>

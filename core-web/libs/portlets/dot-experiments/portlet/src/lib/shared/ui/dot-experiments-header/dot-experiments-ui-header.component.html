@@ -1,7 +1,7 @@
 <div class="wrapper flex flex-row align-items-center gap-2">
     <button
-        class="p-button-rounded p-button-text"
         (click)="goBack.emit(true)"
+        class="p-button-rounded p-button-text"
         data-testId="goback-link"
         icon="pi pi-arrow-left"
         pButton></button>
@@ -20,7 +20,7 @@
                         ? ' ' +
                           ('dot.common.until' | dm) +
                           ' ' +
-                          (experiment?.scheduling.endDate | date : runningUntilDateFormat)
+                          (experiment?.scheduling.endDate | date: runningUntilDateFormat)
                         : '')
                 "
                 data-testId="status-tag"

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createFakeEvent } from '@ngneat/spectator';
 import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -17,10 +18,6 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
@@ -28,12 +25,12 @@ import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
-    DotSiteBrowserService,
-    DotFormatDateService
+    DotSiteBrowserService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -53,7 +50,12 @@ import {
     DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -470,8 +472,8 @@ describe('DotTemplateListComponent', () => {
                 MenuModule,
                 ButtonModule,
                 DotActionButtonModule,
-                DotActionMenuButtonModule,
-                DotAddToBundleModule,
+                DotActionMenuButtonComponent,
+                DotAddToBundleComponent,
                 HttpClientTestingModule,
                 DynamicDialogModule,
                 BrowserAnimationsModule
@@ -554,7 +556,8 @@ describe('DotTemplateListComponent', () => {
             expect(
                 links.every(
                     (link, i) =>
-                        link.nativeElement.textContent === templatesWithoutSystem[i].themeInfo.title
+                        link.nativeElement.textContent.trim() ===
+                        templatesWithoutSystem[i].themeInfo.title
                 )
             ).toBe(true);
         });
@@ -872,7 +875,7 @@ describe('DotTemplateListComponent', () => {
 
             it('should execute Publish action', () => {
                 spyOn(dotTemplatesService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
-                menu.model[0].command();
+                menu.model[0].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.publish).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -880,14 +883,14 @@ describe('DotTemplateListComponent', () => {
                 checkNotificationAndReLoadOfPage('Templates published');
             });
             it('should execute Push Publish action', () => {
-                menu.model[1].command();
+                menu.model[1].command({ originalEvent: createFakeEvent('click') });
                 expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                     assetIdentifier: '123Published,123Locked',
                     title: 'Push Publish'
                 });
             });
             it('should execute Add To Bundle action', () => {
-                menu.model[2].command();
+                menu.model[2].command({ originalEvent: createFakeEvent('click') });
                 fixture.detectChanges();
                 const addToBundleDialog: DotAddToBundleComponent = fixture.debugElement.query(
                     By.css('dot-add-to-bundle')
@@ -898,7 +901,7 @@ describe('DotTemplateListComponent', () => {
                 spyOn(dotTemplatesService, 'unPublish').and.returnValue(
                     of(mockBulkResponseSuccess)
                 );
-                menu.model[3].command();
+                menu.model[3].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.unPublish).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -907,7 +910,7 @@ describe('DotTemplateListComponent', () => {
             });
             it('should execute Archive action', () => {
                 spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseSuccess));
-                menu.model[4].command();
+                menu.model[4].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.archive).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -918,7 +921,7 @@ describe('DotTemplateListComponent', () => {
                 spyOn(dotTemplatesService, 'unArchive').and.returnValue(
                     of(mockBulkResponseSuccess)
                 );
-                menu.model[5].command();
+                menu.model[5].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.unArchive).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -930,7 +933,7 @@ describe('DotTemplateListComponent', () => {
                 spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
                     conf.accept();
                 });
-                menu.model[6].command();
+                menu.model[6].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.delete).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -950,26 +953,26 @@ describe('DotTemplateListComponent', () => {
             describe('error', () => {
                 it('should fire exception on publish', () => {
                     spyOn(dotTemplatesService, 'publish').and.returnValue(of(mockBulkResponseFail));
-                    menu.model[0].command();
+                    menu.model[0].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Templates published');
                 });
                 it('should fire exception on unPublish', () => {
                     spyOn(dotTemplatesService, 'unPublish').and.returnValue(
                         of(mockBulkResponseFail)
                     );
-                    menu.model[3].command();
+                    menu.model[3].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template unpublished');
                 });
                 it('should fire exception on archive', () => {
                     spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseFail));
-                    menu.model[4].command();
+                    menu.model[4].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template archived');
                 });
                 it('should fire exception on unArchive', () => {
                     spyOn(dotTemplatesService, 'unArchive').and.returnValue(
                         of(mockBulkResponseFail)
                     );
-                    menu.model[5].command();
+                    menu.model[5].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template unarchived');
                 });
                 it('should fire exception on delete', () => {
@@ -977,7 +980,7 @@ describe('DotTemplateListComponent', () => {
                     spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
                         conf.accept();
                     });
-                    menu.model[6].command();
+                    menu.model[6].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template deleted');
                 });
             });

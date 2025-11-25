@@ -8,7 +8,7 @@ import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -183,6 +183,25 @@ class FilesPullCommandIT extends CommandTest {
             final int status = commandLine.execute(FilesCommand.NAME,
                     FilesPull.NAME, path, "--workspace", tempFolder.toString(),
                     "--includeEmptyFolders");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    @Test
+    void Test_Command_Files_Pull_Authenticate_With_Token() throws IOException {
+
+        final String token = requestToken();
+        // Create a temporal folder for the pull
+        var tempFolder = createTempFolder();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String path = String.format("//%s/", "default");
+            final int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path,"--token", token,
+                    "--workspace", tempFolder.toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);

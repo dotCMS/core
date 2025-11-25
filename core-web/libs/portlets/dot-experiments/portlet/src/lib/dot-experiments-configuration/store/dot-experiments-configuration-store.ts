@@ -10,12 +10,17 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedConditionOperatorsByTypeOfGoal,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DotEnvironment,
     DotExperiment,
     DotExperimentStatus,
     DotPageRenderState,
@@ -31,8 +36,6 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
 
 import {
     checkIfExperimentDescriptionIsSaving,
@@ -973,6 +976,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
         const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
+
         super({
             ...initialState,
             hasEnterpriseLicense,
@@ -1010,8 +1014,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment?.status !== DotExperimentStatus.DRAFT
             ? EXP_CONFIG_ERROR_LABEL_CANT_EDIT
             : dotPageRenderState.state.lockedByAnotherUser
-            ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
-            : null;
+              ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
+              : null;
     }
 
     private getMenuItems(

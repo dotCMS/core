@@ -15,7 +15,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -48,7 +48,7 @@ public class WorkflowToolTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         long english = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        long spaninsh = new LanguageDataGen().nextPersisted().getId();
+        long spaninsh = new UniqueLanguageDataGen().nextPersisted().getId();
 
         ContentType contentType = TestDataUtils.getEmployeeLikeContentType();
         Contentlet employeeContent = TestDataUtils.getEmployeeContent(true,1,contentType.id());

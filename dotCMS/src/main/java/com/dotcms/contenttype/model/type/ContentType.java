@@ -42,6 +42,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.util.function.Function;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.immutables.value.Value;
@@ -286,6 +287,27 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     return ImmutableMap.copyOf(fmap);
   }
+
+    /**
+     * Alternative method to get a map of fields using a custom key generator, useful when you want
+     * to use an alternative to the field variable as the key.
+     * <p>
+     * Calling the regular fieldMap() method with fields that have null variables will throw a
+     * NullPointerException.
+     *
+     * @param keyGenerator A function that generates a key for the field
+     * @return A map of fields with the generated key as the key
+     */
+    @JsonIgnore
+    @Value.Lazy
+    public Map<String, Field> fieldMap(Function<Field, String> keyGenerator) {
+        Map<String, Field> fmap = new HashMap<>();
+        for (Field f : this.fields()) {
+            fmap.put(keyGenerator.apply(f), f);
+        }
+        return Map.copyOf(fmap);
+    }
+
   private List<Field> innerFields = null;
 
   public void constructWithFields(List<Field> fields) {

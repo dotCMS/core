@@ -20,6 +20,11 @@
                     "apps/dotcms-ui/src/assets",
                     {
                         "glob": "**/*",
+                        "input": "node_modules/tinymce",
+                        "output": "/tinymce/"
+                    },
+                    {
+                        "glob": "**/*",
                         "input": "node_modules/monaco-editor",
                         "output": "assets/monaco-editor/"
                     },
@@ -100,6 +105,7 @@
             "dependsOn": ["^build"]
         },
         "serve": {
+            "dependsOn": ["dotcms-webcomponents:build"],
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",

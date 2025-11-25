@@ -9,16 +9,16 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { PushPublishService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import {
+    DotDialogModule,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     declarations: [DotPushPublishFormComponent],
@@ -34,7 +34,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DropdownModule,
         DotFieldValidationMessageComponent,
         SelectButtonModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],

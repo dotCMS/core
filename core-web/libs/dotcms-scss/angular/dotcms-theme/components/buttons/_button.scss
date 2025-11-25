@@ -48,22 +48,9 @@
     }
 }
 
-// Shared disabled styles
-.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
-    @extend #button-disabled;
-
-    &.p-button-outlined {
-        @extend #button-disabled-outlined;
-    }
-
-    &.p-button-text {
-        @extend #button-disabled-text;
-    }
-}
-
 // Severity for basic button
 .p-button:enabled,
-// Used for file upload button
+    // Used for file upload button
 .p-button.p-fileupload-choose {
     @extend #main-primary-severity;
 
@@ -77,6 +64,11 @@
     &.p-button-link.p-button-secondary {
         @extend #outlined-secondary-severity;
         border: transparent;
+    }
+
+    &.p-button-tertiary {
+        color: $color-palette-primary;
+        @extend #main-tertiary-severity;
     }
 }
 
@@ -96,6 +88,14 @@
             @extend #outlined-secondary-severity-sm;
         }
     }
+
+    &.p-button-tertiary {
+        @extend #outlined-tertiary-severity;
+
+        &.p-button-sm {
+            @extend #outlined-tertiary-severity-sm;
+        }
+    }
 }
 
 // Severity for text button
@@ -107,8 +107,28 @@ a.p-button.p-button-text {
         @extend #text-secondary-severity;
     }
 
+    &.p-button-tertiary {
+        @extend #text-tertiary-severity;
+    }
+
     &.p-button-danger {
         @extend #text-danger-severity;
+    }
+}
+
+// Shared disabled styles
+.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
+.p-button.p-button-secondary:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
+.p-button.p-button-tertiary:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+    // Default
+    @extend #button-disabled;
+
+    &.p-button-outlined {
+        @extend #button-disabled-outlined;
+    }
+
+    &.p-button-text {
+        @extend #button-disabled-text;
     }
 }
 
@@ -136,4 +156,33 @@ a.p-button.p-button-text {
 
 .p-button-rounded {
     border-radius: 50%;
+}
+
+.p-buttonset {
+    .p-button {
+        margin: 0;
+
+        &:not(:last-child) {
+            border-right: 0 none;
+        }
+
+        &:not(:first-of-type):not(:last-of-type) {
+            border-radius: 0;
+        }
+
+        &:first-of-type {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        &:last-of-type {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        &:focus {
+            position: relative;
+            z-index: 1;
+        }
+    }
 }

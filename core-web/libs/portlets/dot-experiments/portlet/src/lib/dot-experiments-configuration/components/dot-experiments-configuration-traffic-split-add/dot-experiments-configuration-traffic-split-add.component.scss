@@ -10,16 +10,13 @@
 
     label {
         font-weight: $font-weight-bold;
-        margin-bottom: $spacing-3;
-        font-size: $font-size-lg;
+        font-size: $font-size-lmd;
     }
 
-    p-radioButton {
-        display: block;
-    }
-
-    p-radioButton:first-of-type {
-        margin-bottom: $spacing-3;
+    .experiment-traffic-split__radio {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-3;
     }
 
     .experiment-traffic-split__variants {
@@ -33,7 +30,7 @@
             min-height: 2.7rem;
 
             &.experiment-traffic-split__variants-header {
-                font-size: $font-size-lg;
+                font-size: $font-size-lmd;
                 color: $color-palette-gray-700;
                 text-transform: uppercase;
                 font-weight: $font-weight-bold;

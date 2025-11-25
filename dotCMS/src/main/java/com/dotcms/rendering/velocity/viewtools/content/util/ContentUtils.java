@@ -3,7 +3,7 @@ package com.dotcms.rendering.velocity.viewtools.content.util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
+import com.dotcms.content.elasticsearch.util.PaginationUtil;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
@@ -24,13 +24,11 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -40,6 +38,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * The purpose of this class is to abstract the methods called from the ContentTool Viewtool
@@ -346,25 +346,21 @@ public class ContentUtils {
 		 * @return Returns empty List if no results are found
 		 * 
 		 */
-		public static PaginatedContentList<Contentlet> pullPerPage(String query, int currentPage, int contentsPerPage, String sort, User user, String tmDate){
-			PaginatedArrayList<Contentlet> cmaps = pullPagenated(query, contentsPerPage, contentsPerPage * (currentPage - 1), sort, user, tmDate);
-			PaginatedContentList<Contentlet> ret = new PaginatedContentList<>();
-			
-			if(cmaps.size()>0){
-				long minIndex = (currentPage - 1) * contentsPerPage;
-		        long totalCount = cmaps.getTotalResults();
-		        long maxIndex = contentsPerPage * currentPage;
-		        if((minIndex + contentsPerPage) >= totalCount){
-		        	maxIndex = totalCount;
-		        }
-				ret.addAll(cmaps);
-				ret.setTotalResults(cmaps.getTotalResults());
-				ret.setTotalPages((long)Math.ceil(((double)cmaps.getTotalResults())/((double)contentsPerPage)));
-				ret.setNextPage(maxIndex < totalCount);
-				ret.setPreviousPage(minIndex > 0);
-				cmaps = null;
-			}
-			return ret;
+		public static PaginatedContentList<Contentlet> pullPerPage(final String query,
+				final int page, final int contentsPerPage, final String sort, final User user,
+				final String tmDate) {
+
+            // Calculate the offset
+			final int currentPage = Math.max(page, 1);
+            var offset = contentsPerPage * (currentPage - 1);
+
+            PaginatedArrayList<Contentlet> cmaps = pullPagenated(
+                    query, contentsPerPage, offset, sort, user, tmDate
+            );
+
+            return PaginationUtil.paginatedArrayListToPaginatedContentList(
+                    cmaps, contentsPerPage, offset
+            );
 		}
 		
 		/**

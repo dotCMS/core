@@ -108,6 +108,16 @@ node_modules/
 /core-web/target
 /core-web/~/dotcms/*
 
+# Yarn
+/core-web/.yarn/*
+/core-web/.pnp.*
+/core-web/.pnp**
+!/core-web/.yarn/cache
+!/core-web/.yarn/releases
+!/core-web/.yarn/plugins
+!/core-web/.yarn/sdks
+!/core-web/.yarn/versions
+
 # misc
 /core-web/.nx
 /core-web/.angular/cache
@@ -146,3 +156,26 @@ pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
 release.properties
+.flattened-pom.xml
+
+/dependencies.txt
+/updates.txt
+
+environments/**/user*.properties
+dotlicense/license.dat
+
+# Prevent acidental commits of files that shouldn't be committed
+dotCMS/src/main/webapp/dotAdmin
+dotCMS/src/main/webapp/dotcms-webcomponents
+dotCMS/src/main/webapp/dotcms-binary-field-builder
+dotCMS/src/main/webapp/dotcms-block-editor
+dotCMS/src/main/webapp/WEB-INF/classes
+# allow build to cache files that are not removed on clean e.g. spotless index
+.cache
+# prevent old files from other branches getting into the source
+dotCMS/settings.gradle
+dotCMS/dependencies.gradle
+
+!/examples/nextjs/.npmrc
+
+.nx/

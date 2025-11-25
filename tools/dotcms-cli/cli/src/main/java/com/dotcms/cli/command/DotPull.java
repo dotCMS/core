@@ -10,7 +10,7 @@ import java.util.Optional;
  * Furthermore, it can provide the name of a custom mixin it uses, which is useful for custom
  * command line configurations where specific logic may be associated with certain mixin names.
  */
-public interface DotPull {
+public interface DotPull extends DotCommand {
 
 
     /**

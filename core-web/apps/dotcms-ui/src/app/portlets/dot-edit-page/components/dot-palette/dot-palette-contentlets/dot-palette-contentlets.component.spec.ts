@@ -12,9 +12,8 @@ import { PaginatorModule } from 'primeng/paginator';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe, DotSpinnerModule } from '@dotcms/ui';
 import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPaletteContentletsComponent } from './dot-palette-contentlets.component';
 
@@ -65,8 +64,7 @@ export const contentletProductDataMock = {
         <dot-palette-contentlets
             [items]="items"
             [loading]="loading"
-            [totalRecords]="totalRecords"
-        ></dot-palette-contentlets>
+            [totalRecords]="totalRecords"></dot-palette-contentlets>
     `
 })
 class TestHostComponent {
@@ -108,7 +106,7 @@ describe('DotPaletteContentletsComponent', () => {
                 DotContentletIconMockComponent
             ],
             imports: [
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotSpinnerModule,
                 DotIconModule,
@@ -185,7 +183,7 @@ describe('DotPaletteContentletsComponent', () => {
         expect(paginatorContainer.componentInstance.rows).toBe(25);
         expect(paginatorContainer.componentInstance.totalRecords).toBe(30);
         expect(paginatorContainer.componentInstance.showFirstLastIcon).toBe(false);
-        expect(paginatorContainer.componentInstance.pageLinkSize).toBe('2');
+        expect(paginatorContainer.componentInstance.pageLinkSize).toBe(2);
 
         paginatorContainer.componentInstance.onPageChange.emit({ first: 25 });
 

@@ -11,6 +11,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.*" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="com.dotmarketing.portlets.contentlet.util.ActionletUtil" %>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -157,14 +158,26 @@
 
         // Load action classes into array
         actionClassAdmin.actionClasses = [];
-        <%for(WorkflowActionClass subaction : subActions){ %>
-        actionClassAdmin.actionClasses.push({id:"<%=subaction.getId()%>",name:"<%=subaction.getName()%>"});
-        <%} %>
+        <%
 
+        boolean hasOnlyBatch = false;
+        for(WorkflowActionClass subaction : subActions) {
+
+            boolean isOnlyBatch = ActionletUtil.isOnlyBatch(subaction.getClazz());
+			hasOnlyBatch |= isOnlyBatch;
+        %>
+        actionClassAdmin.actionClasses.push({id:"<%=subaction.getId()%>",name:"<%=subaction.getName()%>", isOnlyBatch:<%=isOnlyBatch%>});
+        <%}
+		if (hasOnlyBatch) {
+        %>
+
+		setTimeout(() => {
+			actionClassAdmin.disableShowOnEditing();
+		}, "2000");
+
+		<%} %>
         // Refresh action classes table
         actionClassAdmin.refreshActionClasses();
-
-
 
 
     });
@@ -389,7 +402,7 @@
                             onChange="actionClassAdmin.addSelectedToActionClasses()">
 								<option value=""></option>
 								<%for(WorkFlowActionlet a : wapi.findActionlets()){%>
-								<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName() %></option>
+								<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName()%></option>
 								<%} %>
 							</select>
 							<button dojoType="dijit.form.Button"

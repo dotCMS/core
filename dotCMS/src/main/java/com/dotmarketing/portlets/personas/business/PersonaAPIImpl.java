@@ -473,7 +473,13 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
     final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
         APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndRoles);
 
-    return UtilMethods.isSet(contentlet) ? fromContentlet(contentlet) : null;
+
+    if(contentlet != null) {
+      return fromContentlet(contentlet);
+    }
+
+
+    return findPersonaByTag(identifier, user, respectFrontEndRoles).orElseGet(()->null);
   }
 
   @Override
@@ -502,11 +508,15 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
   public Optional<Persona> findPersonaByTag(final String personaTag, final User user, final boolean respectFrontEndRoles)
       throws DotSecurityException, DotDataException {
 
+    if(UtilMethods.isEmpty(personaTag)){
+      return Optional.empty();
+    }
+
     final StringBuilder query = new StringBuilder(" +baseType:").append(BaseContentType.PERSONA.getType())
         .append(" +").append(PERSONA_KEY_TAG).append(":").append(personaTag);
 
     final List<Contentlet> contentlets =
-        APILocator.getContentletAPI().search(query.toString(), -1, 0, StringPool.BLANK, user, respectFrontEndRoles);
+        APILocator.getContentletAPI().search(query.toString(), 1, 0, StringPool.BLANK, user, respectFrontEndRoles);
     final Optional<Contentlet> persona = null != contentlets ? contentlets.stream().findFirst() : Optional.empty();
     return persona.isPresent() ? Optional.ofNullable(fromContentlet(persona.get())) : Optional.empty();
   }

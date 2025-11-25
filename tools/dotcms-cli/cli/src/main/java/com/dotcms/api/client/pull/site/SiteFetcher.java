@@ -12,10 +12,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.context.ManagedExecutor;
 
 @Dependent
@@ -31,7 +31,7 @@ public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
 
     @ActivateRequestContext
     @Override
-    public List<SiteView> fetch(Map<String, Object> customOptions) {
+    public List<SiteView> fetch(boolean failFast, Map<String, Object> customOptions) {
 
         // Fetching the all the existing sites
         final List<Site> allSites = allSites();
@@ -43,7 +43,7 @@ public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
         var task = new HttpRequestTask(this, executor);
         task.setTaskParams(allSites);
 
-        return task.compute();
+        return task.compute().join();
     }
 
     /**
@@ -82,7 +82,8 @@ public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
 
     @ActivateRequestContext
     @Override
-    public SiteView fetchByKey(String siteNameOrId, Map<String, Object> customOptions)
+    public SiteView fetchByKey(String siteNameOrId, boolean failFast,
+            Map<String, Object> customOptions)
             throws NotFoundException {
 
         final var siteAPI = clientFactory.getClient(SiteAPI.class);

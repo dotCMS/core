@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dotcms-bom</artifactId>
         <groupId>com.dotcms</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,8 +13,10 @@
     <packaging>pom</packaging>
 
     <properties>
-        <log4j.version>2.20.0</log4j.version>
-        <slf4j.version>2.0.7</slf4j.version>
+        <maven.deploy.skip>false</maven.deploy.skip>
+        <flatten.mode>bom</flatten.mode>
+        <log4j.version>2.23.1</log4j.version>
+        <slf4j.version>2.0.9</slf4j.version>
     </properties>
 
     <dependencyManagement>
@@ -25,30 +27,42 @@
              Do not include incompatible artifacts e.g. -->
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
+                <artifactId>log4j-api</artifactId>
                 <version>${log4j.version}</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
                 <!-- Support log4j1.2.x API in Log4j2 -->
                 <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-1.2-api</artifactId>
+                <artifactId>log4j-iostreams</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
                 <version>${log4j.version}</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
                 <!-- Support Java Commons Logging API in Log4j2 -->
                 <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${log4j.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <!-- Support Java Commons Logging API in Log4j2 -->
+                <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-jcl</artifactId>
                 <version>${log4j.version}</version>
-                <scope>compile</scope>
+                <scope>runtime</scope>
             </dependency>
             <dependency>
                 <!-- Support SLF4j2 API in Log4j2 -->
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-slf4j2-impl</artifactId>
                 <version>${log4j.version}</version>
-                <scope>compile</scope>
+                <scope>runtime</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -59,16 +73,16 @@
             <dependency>
                 <!-- Servlet container initialization of Log4j2 -->
                 <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-web</artifactId>
+                <artifactId>log4j-appserver</artifactId>
                 <version>${log4j.version}</version>
-                <scope>compile</scope>
+                <scope>runtime</scope>
             </dependency>
             <dependency>
                 <!-- Async support for Log4J 2.x -->
                 <groupId>com.lmax</groupId>
                 <artifactId>disruptor</artifactId>
                 <version>3.3.4</version>
-                <scope>compile</scope>
+                <scope>runtime</scope>
             </dependency>
 
         </dependencies>

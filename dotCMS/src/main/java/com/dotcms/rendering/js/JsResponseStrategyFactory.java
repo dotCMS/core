@@ -104,7 +104,7 @@ public class JsResponseStrategyFactory {
 
         if (result instanceof Map) {
 
-            final Map map = Map.class.cast(result);
+            final Map<?,?> map = Map.class.cast(result); // note: we do not know what could it be, so we have to handle as a generic Map.
             if (map.containsKey("output")) {
                 return map.get("output").toString();
             }

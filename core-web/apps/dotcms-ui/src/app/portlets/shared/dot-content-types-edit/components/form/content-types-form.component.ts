@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 
 import {
@@ -21,7 +20,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { SelectItem } from 'primeng/api';
 
-import { filter, take, takeUntil } from 'rxjs/operators';
+import { filter, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import {
@@ -34,6 +33,7 @@ import {
     DotCMSWorkflow,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { isEqual } from '@dotcms/utils';
 import { FieldUtil } from '@dotcms/utils-testing';
 
 /**
@@ -64,7 +64,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     dateVarOptions: SelectItem[] = [];
     form: UntypedFormGroup;
     nameFieldLabel: string;
-    workflowsSelected$: Observable<string[]>;
+    workflowsSelected$: Observable<DotCMSWorkflow[]>;
     newContentEditorEnabled: boolean;
 
     private originalValue: DotCMSContentType;
@@ -207,7 +207,9 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         this.setOriginalValue();
         this.setDateVarFieldsState();
         this.setSystemWorkflow();
-        this.workflowsSelected$ = this.form.get('workflows').valueChanges;
+        this.workflowsSelected$ = this.form
+            .get('workflows')
+            .valueChanges.pipe(startWith(this.form.get('workflows').value));
     }
 
     private getActionIdentifier(actionMap: DotCMSSystemActionMappings): string {
@@ -269,7 +271,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private isFormValueUpdated(): boolean {
-        return !_.isEqual(this.form.value, this.originalValue);
+        return !isEqual(this.form.value, this.originalValue);
     }
 
     private isNewDateVarFields(newOptions: SelectItem[]): boolean {

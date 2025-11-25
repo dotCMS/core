@@ -24,11 +24,10 @@ import { TreeTableModule } from 'primeng/treetable';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotPushPublishDialogModule } from '@components/_common/dot-push-publish-dialog';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayModule } from '@components/dot-message-display/dot-message-display.module';
 import { DotToolbarModule } from '@components/dot-toolbar/dot-toolbar.module';
-import { DotFieldValidationMessageComponent, DotIconModule } from '@dotcms/ui';
+import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
+import { DotDialogModule, DotFieldValidationMessageComponent, DotIconModule } from '@dotcms/ui';
 
 import { DotActionButtonModule } from './view/components/_common/dot-action-button/dot-action-button.module';
 import { DotGenerateSecurePasswordModule } from './view/components/_common/dot-generate-secure-password/dot-generate-secure-password.module';

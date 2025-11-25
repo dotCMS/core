@@ -15,6 +15,7 @@ import {
     HostListener,
     inject,
     Input,
+    OnChanges,
     OnInit,
     Output,
     signal,
@@ -42,7 +43,7 @@ import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-v
 
 const DEFAULT_FILE_TYPE = 'text';
 @Component({
-    selector: 'dot-dot-binary-field-editor',
+    selector: 'dot-binary-field-editor',
     standalone: true,
     imports: [
         CommonModule,
@@ -58,7 +59,7 @@ const DEFAULT_FILE_TYPE = 'text';
     styleUrls: ['./dot-binary-field-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldEditorComponent implements OnInit {
+export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
     @Input() fileName = '';
     @Input() fileContent = '';
     @Input() allowFileNameEdit = true;
@@ -129,6 +130,13 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         );
     }
 
+    ngOnChanges(): void {
+        this.setFormValues();
+        if (window.monaco) {
+            this.setEditorLanguage(this.fileName);
+        }
+    }
+
     onEditorInit() {
         this.editor = this.editorRef.editor;
         if (this.fileName) {
@@ -172,12 +180,37 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         });
     }
 
-    private setEditorLanguage(fileName: string = '') {
-        const fileExtension = fileName?.includes('.') ? fileName.split('.').pop() : '';
-        const { id, mimetypes, extensions } = this.getLanguage(fileExtension) || {};
-        this.mimeType = mimetypes?.[0];
-        this.extension = extensions?.[0];
+    private setEditorLanguage(fileName = '') {
+        const fileExtension = this.extractFileExtension(fileName);
 
+        if (fileExtension === 'vtl') {
+            this.setVelocityLanguage();
+        } else {
+            this.updateLanguageForFileExtension(fileExtension);
+        }
+
+        this.validateFileType(fileExtension);
+        this.cd.detectChanges();
+    }
+
+    private extractFileExtension(fileName: string) {
+        return fileName?.includes('.') ? fileName.split('.').pop() : '';
+    }
+
+    private setVelocityLanguage() {
+        this.mimeType = 'text/x-velocity';
+        this.extension = 'vtl';
+        this.updateEditorLanguage('html'); //Force html highlighting for .vtl files
+    }
+
+    private updateLanguageForFileExtension(fileExtension: string) {
+        const { id, mimetypes, extensions } = this.getLanguage(fileExtension) || {};
+        this.mimeType = mimetypes?.[0] || 'plain/text';
+        this.extension = extensions?.[0] || 'txt';
+        this.updateEditorLanguage(id);
+    }
+
+    private validateFileType(fileExtension: string) {
         const isValidType = this.dotBinaryFieldValidatorService.isValidType({
             extension: this.extension,
             mimeType: this.mimeType
@@ -186,9 +219,6 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         if (fileExtension && !isValidType) {
             this.name.setErrors({ invalidExtension: this.invalidFileMessage });
         }
-
-        this.updateEditorLanguage(id);
-        this.cd.detectChanges();
     }
 
     private getLanguage(fileExtension: string) {
@@ -198,7 +228,7 @@ export class DotBinaryFieldEditorComponent implements OnInit {
             .find((language) => language.extensions?.includes(`.${fileExtension}`));
     }
 
-    private updateEditorLanguage(languageId: string = 'text') {
+    private updateEditorLanguage(languageId = 'text') {
         this.languageType.set(languageId);
     }
 

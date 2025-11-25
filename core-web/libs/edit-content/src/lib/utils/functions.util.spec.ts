@@ -3,7 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 
 import * as functionsUtil from './functions.util';
-import { getFieldVariablesParsed, isValidJson, stringToJson } from './functions.util';
+import { getFieldVariablesParsed, isValidJson, stringToJson, createPaths } from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
@@ -542,6 +542,53 @@ describe('Utils Functions', () => {
             const fieldVariables: DotCMSContentTypeFieldVariable[] | undefined = undefined;
             const result = getFieldVariablesParsed(fieldVariables);
             expect(result).toEqual({});
+        });
+    });
+
+    describe('createPaths function', () => {
+        it('with the root path', () => {
+            const path = 'nico.demo.ts';
+            const paths = createPaths(path);
+            expect(paths).toStrictEqual(['nico.demo.ts/']);
+        });
+
+        it('with a single level', () => {
+            const path = 'nico.demo.ts/demo';
+            const paths = createPaths(path);
+            expect(paths).toStrictEqual(['nico.demo.ts/', 'nico.demo.ts/demo/']);
+        });
+
+        it('with a single level ending in slash', () => {
+            const path = 'nico.demo.ts/demo/';
+            const paths = createPaths(path);
+            expect(paths).toStrictEqual(['nico.demo.ts/', 'nico.demo.ts/demo/']);
+        });
+
+        it('with two levels ', () => {
+            const path = 'nico.demo.ts/demo/demo2';
+            const paths = createPaths(path);
+            expect(paths).toStrictEqual([
+                'nico.demo.ts/',
+                'nico.demo.ts/demo/',
+                'nico.demo.ts/demo/demo2/'
+            ]);
+        });
+
+        it('with three levels', () => {
+            const path = 'nico.demo.ts/demo/demo2/demo3';
+            const paths = createPaths(path);
+            expect(paths).toStrictEqual([
+                'nico.demo.ts/',
+                'nico.demo.ts/demo/',
+                'nico.demo.ts/demo/demo2/',
+                'nico.demo.ts/demo/demo2/demo3/'
+            ]);
+        });
+
+        it('with an empty path', () => {
+            const path = '';
+            const paths = createPaths(path);
+            expect(paths).toStrictEqual([]);
         });
     });
 });

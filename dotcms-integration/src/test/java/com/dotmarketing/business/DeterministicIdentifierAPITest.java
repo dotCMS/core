@@ -26,9 +26,11 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -42,8 +44,10 @@ import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -71,6 +75,53 @@ public class DeterministicIdentifierAPITest {
 
     private final DeterministicIdentifierAPIImpl defaultGenerator = new DeterministicIdentifierAPIImpl();
 
+
+    /**
+     * Given Scenario: We have a fileAsset with missing physical file
+     * Expected behavior: The method must return an empty optional and the generation of an identifier still must be possible
+     * The whole purpose of this test is to ensure that the method is robust enough to handle missing files
+     * and demonstrate that we won't get a NPE
+     * But the returned id must be a valid UUID and not a deterministic one
+     * @throws IOException if the file cannot be created
+     * @throws DotDataException if the data cannot be persisted
+     * @throws DotSecurityException if the data cannot be persisted
+     */
+    @Test
+    public void TestNullBinary() throws IOException, DotDataException, DotSecurityException {
+
+        final int english = 1;
+        final String hostName = String.format("my.host%s.com", System.currentTimeMillis());
+        final Host site = new SiteDataGen().name(hostName).nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+        java.io.File file = java.io.File.createTempFile("file", ".txt");
+        FileUtil.write(file, "helloworld");
+
+        //Now let's create a fileAsset with a missing binary
+        final Contentlet fileAsset = new FileAssetDataGen(folder, file).languageId(english).nextPersisted();
+        fileAsset.setIdentifier(null);
+        fileAsset.setInode(null);
+        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, null);
+
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+            //We just introduced a failure by removing the binary
+            final Optional<String> resolved = defaultGenerator.resolveAssetName(fileAsset);
+            assertTrue(resolved.isEmpty());
+
+            //But we should still be able to get
+            final String generatedId = defaultGenerator.generateDeterministicIdBestEffort(fileAsset, folder);
+            assertTrue(UUIDUtil.isUUID(generatedId));
+
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+
+    }
+
     /**
      * Given scenario: We have created contentlets having turned off the deterministic id generation therefore it all comes with random ids
      * Meaning that any deterministic id request does not exist in the database
@@ -92,9 +143,15 @@ public class DeterministicIdentifierAPITest {
             //We check the asset type is what we expect
             assertEquals(testCase.expectedType,
                     defaultGenerator.resolveAssetType(testCase.versionable));
+
+            final Optional<String> resolved = defaultGenerator.resolveAssetName(
+                    testCase.versionable);
+
+            assertTrue(resolved.isPresent());
+
             //We also check the asset name is what we expect too
             assertEquals(testCase.expectedName,
-                    defaultGenerator.resolveAssetName(testCase.versionable));
+                    resolved.get());
             //While the identifier isnt in the database we should continue to get the same (That's why we call it consistent)
             final String generatedId1 = defaultGenerator
                     .generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
@@ -358,14 +415,13 @@ public class DeterministicIdentifierAPITest {
 
         prepareIfNecessary();
         //Propose a set of test languages
-        final List<LanguageTestCase> testCases = Stream
-                .of(new LanguageTestCase("es", "US", "United States", "Language:es:US", 4913155),
-                    new LanguageTestCase("ep", "", "", "Language:ep:", 5292269),
-                    new LanguageTestCase("sg", "SAG", "", "Language:sg:SAG", 4713118),
-                    new LanguageTestCase("en", "NZ", "New Zealand", "Language:en:NZ", 5382528))
-                .collect(Collectors.toList());
 
-        return testCases.toArray();
+        return Stream
+                .of(new LanguageTestCase("es", "US", "United States", "Language:es:US", 4913155),
+                        new LanguageTestCase("ep", "", "", "Language:ep:", 5292269),
+                        new LanguageTestCase("sg", "SAG", "", "Language:sg:SAG", 4713118),
+                        new LanguageTestCase("en", "NZ", "New Zealand", "Language:en:NZ", 5382528))
+                .toArray();
     }
 
     static class LanguageTestCase {

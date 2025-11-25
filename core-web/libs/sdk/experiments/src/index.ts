@@ -1,1 +1,1 @@
-export { DotSdkExperiment } from './lib/sdk-experiments';
+export * from './lib/components/withExperiments';

@@ -1,32 +1,9 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-
-export default {
-    title: 'PrimeNG/Overlay/Dialog',
-    parameters: {
-        docs: {
-            description: {
-                component:
-                    'Dialog is a container to display content in an overlay window: https://primefaces.org/primeng/showcase/#/dialog'
-            }
-        }
-    },
-    decorators: [
-        moduleMetadata({
-            imports: [DialogModule, ButtonModule, BrowserAnimationsModule]
-        })
-    ],
-    args: {
-        displayBasic: false,
-        showBasicDialog(): void {
-            this.displayBasic = true;
-        }
-    }
-} as Meta;
 
 const DialogTemplate = `
   <p-button (click)="showBasicDialog()" icon="pi pi-external-link" label="Show"></p-button>
@@ -42,34 +19,44 @@ const DialogTemplate = `
   </p-dialog>
 `;
 
-type Args = {
-    displayBasic: boolean;
-    showBasicDialog: () => void;
+const meta: Meta = {
+    title: 'PrimeNG/Overlay/Dialog',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Dialog is a container to display content in an overlay window: https://primefaces.org/primeng/showcase/#/dialog'
+            },
+            source: {
+                code: DialogTemplate
+            },
+            iframeHeight: 300
+        }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [DialogModule, ButtonModule, BrowserAnimationsModule]
+        })
+    ],
+    args: {
+        displayBasic: false,
+        showBasicDialog(): void {
+            this.displayBasic = true;
+        }
+    },
+    argTypes: {
+        displayBasic: {
+            name: 'displayBasic',
+            description: 'display the modal'
+        }
+    },
+    render: (args) => ({
+        props: args,
+        template: DialogTemplate
+    })
 };
+export default meta;
 
-const Template: Story<Args> = (props: Args) => {
-    const template = DialogTemplate;
+type Story = StoryObj;
 
-    return {
-        props,
-        template
-    };
-};
-
-export const Basic: Story = Template.bind({});
-
-Basic.argTypes = {
-    displayBasic: {
-        name: 'displayBasic',
-        description: 'display the modal'
-    }
-};
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: DialogTemplate
-        },
-        iframeHeight: 300
-    }
-};
+export const Basic: Story = {};

@@ -1,0 +1,21 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@types/node": "^22.5.4",
+    "dotenv": "^16.4.5"
+  },
+  "dependencies": {
+    "jsdom": "^25.0.1",
+    "xml2js": "^0.6.2"
+  },
+  "scripts": {
+    "start": "PLAYWRIGHT_JUNIT_SUITE_ID=nodee2etestsuite PLAYWRIGHT_JUNIT_SUITE_NAME='E2E Node Test Suite' PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' yarn playwright test",
+    "start-local": "CURRENT_ENV=local yarn run start",
+    "start-ci": "CURRENT_ENV=ci yarn run start",
+    "post-testing": "PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' node index.js"
+  }
+}

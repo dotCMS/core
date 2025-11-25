@@ -37,9 +37,9 @@ export class DotPortletToolbarComponent {
      * @param {MouseEvent} $event
      * @memberof DotPortletToolbarComponent
      */
-    onPrimaryClick($event: MouseEvent): void {
+    onPrimaryClick($event: Event): void {
         try {
-            this.actions.primary[0].command($event);
+            this.actions.primary[0].command({ originalEvent: $event });
         } catch (error) {
             console.error(error);
         }

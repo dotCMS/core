@@ -9,7 +9,7 @@
     pointer-events: none;
     user-select: none;
     position: absolute;
-    height: 3px;
+    z-index: 2;
 }
 
 [data-type="container"] {

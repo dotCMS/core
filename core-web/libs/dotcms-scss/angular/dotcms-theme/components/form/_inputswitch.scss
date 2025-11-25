@@ -8,7 +8,11 @@
 
 .p-inputswitch .p-inputswitch-slider {
     background: $input-bg-color;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
+    transition:
+        background-color 0.2s,
+        border-color 0.2s,
+        color 0.2s,
+        box-shadow 0.2s,
         background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
     border-radius: $spacing-1;
 }
@@ -22,8 +26,10 @@
     border-radius: 50%;
     transition-duration: 0.2s;
     transition-property: box-shadow transform;
-    box-shadow: 0px 3px 1px -2px $color-palette-black-op-20,
-        0px 2px 2px 0px $color-palette-black-op-10, 0px 1px 5px 0px $color-palette-black-op-10;
+    box-shadow:
+        0px 3px 1px -2px $color-palette-black-op-20,
+        0px 2px 2px 0px $color-palette-black-op-10,
+        0px 1px 5px 0px $color-palette-black-op-10;
 }
 
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider:before {
@@ -50,25 +56,36 @@
 }
 
 .p-inputswitch:not(.p-disabled):hover .p-inputswitch-slider:before {
-    box-shadow: 0px 3px 1px -2px $color-palette-black-op-20,
-        0px 2px 2px 0px $color-palette-black-op-10, 0px 1px 5px 0px $color-palette-black-op-10,
+    box-shadow:
+        0px 3px 1px -2px $color-palette-black-op-20,
+        0px 2px 2px 0px $color-palette-black-op-10,
+        0px 1px 5px 0px $color-palette-black-op-10,
         0 0 1px 10px rgba(0, 0, 0, 0.04);
 }
 
 .p-inputswitch.p-inputswitch-focus .p-inputswitch-slider:before,
 .p-inputswitch.p-inputswitch-focus:not(.p-disabled):hover .p-inputswitch-slider:before {
-    box-shadow: 0 0 1px 10px $color-palette-black-op-10, 0px 3px 1px -2px $color-palette-black-op-20,
-        0px 2px 2px 0px $color-palette-black-op-10, 0px 1px 5px 0px $color-palette-black-op-10;
+    box-shadow:
+        0 0 1px 10px $color-palette-black-op-10,
+        0px 3px 1px -2px $color-palette-black-op-20,
+        0px 2px 2px 0px $color-palette-black-op-10,
+        0px 1px 5px 0px $color-palette-black-op-10;
 }
 
 .p-inputswitch.p-inputswitch-checked:not(.p-disabled):hover .p-inputswitch-slider:before {
-    box-shadow: 0 0 1px 10px rgba(63, 81, 181, 0.04), 0px 3px 1px -2px $color-palette-black-op-20,
-        0px 2px 2px 0px $color-palette-black-op-10, 0px 1px 5px 0px $color-palette-black-op-10;
+    box-shadow:
+        0 0 1px 10px rgba(63, 81, 181, 0.04),
+        0px 3px 1px -2px $color-palette-black-op-20,
+        0px 2px 2px 0px $color-palette-black-op-10,
+        0px 1px 5px 0px $color-palette-black-op-10;
 }
 
 .p-inputswitch.p-inputswitch-checked.p-inputswitch-focus .p-inputswitch-slider:before,
 .p-inputswitch.p-inputswitch-checked.p-inputswitch-focus:not(.p-disabled):hover
     .p-inputswitch-slider:before {
-    box-shadow: 0 0 1px 10px rgba(63, 81, 181, 0.12), 0px 3px 1px -2px $color-palette-black-op-20,
-        0px 2px 2px 0px $color-palette-black-op-10, 0px 1px 5px 0px $color-palette-black-op-10;
+    box-shadow:
+        0 0 1px 10px rgba(63, 81, 181, 0.12),
+        0px 3px 1px -2px $color-palette-black-op-20,
+        0px 2px 2px 0px $color-palette-black-op-10,
+        0px 1px 5px 0px $color-palette-black-op-10;
 }

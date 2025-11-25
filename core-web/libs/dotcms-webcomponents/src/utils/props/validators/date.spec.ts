@@ -1,9 +1,4 @@
-import {
-    dotValidateDate,
-    dotValidateTime,
-    dotParseDate,
-    isValidDateSlot
-} from './date';
+import { dotValidateDate, dotValidateTime, dotParseDate, isValidDateSlot } from './date';
 import { DotDateSlot } from '../../../models';
 
 const dateSlot: DotDateSlot = { time: '10:10:10', date: '2019-10-10' };
@@ -75,6 +70,5 @@ describe('Date Validators', () => {
         it('should return false with null values', () => {
             expect(isValidDateSlot(null, null)).toEqual(false);
         });
-
     });
 });

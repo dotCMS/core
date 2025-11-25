@@ -3,6 +3,7 @@ import { Subject } from 'rxjs';
 import {
     Component,
     ElementRef,
+    inject,
     OnDestroy,
     QueryList,
     ViewChild,
@@ -24,9 +25,9 @@ import {
     DotContentState,
     CONTAINER_SOURCE,
     DotMessageSeverity,
-    DotMessageType
+    DotMessageType,
+    DotActionMenuItem
 } from '@dotcms/dotcms-models';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
 
 @Component({
@@ -41,15 +42,16 @@ export class ContainerListComponent implements OnDestroy {
     @ViewChildren('tableRow')
     tableRows: QueryList<ElementRef<HTMLTableRowElement>>;
 
-    vm$ = this.store.vm$;
-    notify$ = this.store.notify$;
+    readonly #store = inject(DotContainerListStore);
+
+    vm$ = this.#store.vm$;
+    notify$ = this.#store.notify$;
 
     selectedContainers: DotContainer[] = [];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private store: DotContainerListStore,
         private dotMessageService: DotMessageService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dialogService: DialogService,
@@ -62,7 +64,7 @@ export class ContainerListComponent implements OnDestroy {
 
         this.siteService.switchSite$
             .pipe(skip(1)) // Skip initialization
-            .subscribe(({ identifier }) => this.store.getContainersByHost(identifier));
+            .subscribe(({ identifier }) => this.#store.getContainersByHost(identifier));
     }
 
     ngOnDestroy(): void {
@@ -76,7 +78,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     changeContentTypeSelector(value: string) {
-        this.store.getContainersByContentType(value);
+        this.#store.getContainersByContentType(value);
     }
 
     /**
@@ -95,7 +97,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     handleRowClick(container: DotContainer) {
-        this.store.editContainer(container);
+        this.#store.editContainer(container);
     }
 
     /**
@@ -105,7 +107,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     handleArchivedFilter(checked: boolean): void {
-        this.store.getContainersByArchiveState(checked);
+        this.#store.getContainersByArchiveState(checked);
     }
 
     /**
@@ -115,7 +117,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     handleQueryFilter(query: string): void {
-        this.store.getContainersByQuery(query);
+        this.#store.getContainersByQuery(query);
     }
 
     /**
@@ -125,7 +127,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof DotContainerListComponent
      */
     loadDataPaginationEvent({ first }: { first: number }): void {
-        this.store.getContainersWithOffset(first);
+        this.#store.getContainersWithOffset(first);
     }
 
     /**
@@ -134,11 +136,11 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     resetBundleIdentifier(): void {
-        this.store.updateBundleIdentifier(null);
+        this.#store.updateBundleIdentifier(null);
     }
 
     setContainerActions(container: DotContainer): DotActionMenuItem[] {
-        return this.store.getContainerActions(container);
+        return this.#store.getContainerActions(container);
     }
 
     /**
@@ -176,7 +178,7 @@ export class ContainerListComponent implements OnDestroy {
                 container.identifier !== 'SYSTEM_CONTAINER' &&
                 container.source !== CONTAINER_SOURCE.FILE
         );
-        this.store.updateSelectedContainers(filterContainers);
+        this.#store.updateSelectedContainers(filterContainers);
     }
 
     private notifyResult(
@@ -194,8 +196,8 @@ export class ContainerListComponent implements OnDestroy {
             this.showToastNotification(message);
         }
 
-        this.store.clearSelectedContainers();
-        this.store.loadCurrentContainersPage();
+        this.#store.clearSelectedContainers();
+        this.#store.loadCurrentContainersPage();
     }
 
     private showToastNotification(message: string): void {

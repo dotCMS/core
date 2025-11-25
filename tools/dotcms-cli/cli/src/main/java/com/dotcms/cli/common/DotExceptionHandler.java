@@ -20,7 +20,7 @@ public class DotExceptionHandler implements IExecutionExceptionHandler {
         boolean isShowErrors = false;
         final Object object = commandLine.getCommand();
         //This takes the parseResult and unwraps the subcommands to get the command that was executed
-        final Optional<CommandsChain> chain = SubcommandProcessor.process(parseResult);
+        final Optional<CommandsChain> chain = new SubcommandProcessor().process(parseResult);
         if (chain.isPresent()) {
             final CommandsChain commandsChain = chain.get();
             commandName = commandsChain.command();
@@ -32,7 +32,7 @@ public class DotExceptionHandler implements IExecutionExceptionHandler {
         if (object instanceof DotCommand) {
             final DotCommand command = (DotCommand) object;
             final OutputOptionMixin output = command.getOutput();
-            return output.handleCommandException(ex, message, isShowErrors);
+            return output.handleCommandException(ex, message, isShowErrors, true);
         } else {
             final OutputOptionMixin output = Arc.container().instance(OutputOptionMixin.class).get();
             if(null != output){

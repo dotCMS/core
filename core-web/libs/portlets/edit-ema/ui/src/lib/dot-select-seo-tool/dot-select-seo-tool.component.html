@@ -1,0 +1,28 @@
+<ng-container *ngIf="socialMedia; else deviceBlock">
+    <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
+        <i
+            [ngClass]="socialMediaIconClass"
+            class="dot-select-seo-tool__icon"
+            data-testId="select-seo-tool-icon"></i>
+        <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
+            {{ socialMediaTiles[socialMedia]?.label }}
+        </h5>
+        <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">
+            {{ socialMediaTiles[socialMedia]?.description | dm }}
+        </span>
+    </div>
+</ng-container>
+<ng-template #deviceBlock>
+    <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
+        <i
+            [ngClass]="device?.icon"
+            class="dot-select-seo-tool__icon"
+            data-testId="select-seo-tool-icon"></i>
+        <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
+            {{ device?.name }}
+        </h5>
+        <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">
+            {{ device?.cssHeight | number }} x {{ device?.cssWidth | number }}
+        </span>
+    </div>
+</ng-template>

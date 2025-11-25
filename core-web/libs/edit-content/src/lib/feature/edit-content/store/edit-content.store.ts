@@ -18,10 +18,16 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
+export const SIDEBAR_LOCAL_STORAGE_KEY = 'dot-edit-content-form-sidebar';
+
 interface EditContentState {
     actions: DotCMSWorkflowAction[];
     contentType: DotCMSContentType;
     contentlet: DotCMSContentlet;
+    loading: boolean;
+    layout: {
+        showSidebar: boolean;
+    };
 }
 
 /**
@@ -43,11 +49,15 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly location = inject(Location);
 
-    readonly vm$ = this.select(({ actions, contentType, contentlet }) => ({
+    readonly vm$ = this.select(({ actions, contentType, contentlet, loading, layout }) => ({
         actions,
         contentType,
-        contentlet
+        contentlet,
+        loading,
+        layout
     }));
+
+    readonly layout$ = this.select(({ layout }) => layout);
 
     /**
      * Update the state
@@ -57,6 +67,33 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     readonly updateState = this.updater((state, newState: EditContentState) => ({
         ...state,
         ...newState
+    }));
+
+    /**
+     * Update the sidebar state and save it in local storage.
+     *
+     * @memberof DotEditContentStore
+     */
+    readonly updateSidebarState = this.updater((state, showSidebar: boolean) => {
+        localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, String(showSidebar));
+
+        return {
+            ...state,
+            layout: {
+                ...state.layout,
+                showSidebar
+            }
+        };
+    });
+
+    /**
+     * Update the loading state
+     *
+     * @memberof DotEditContentStore
+     */
+    readonly updateLoading = this.updater((state, loading: boolean) => ({
+        ...state,
+        loading
     }));
 
     /**
@@ -70,7 +107,8 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     }>((state, { contentlet, actions }) => ({
         ...state,
         contentlet,
-        actions
+        actions,
+        loading: false
     }));
 
     /**
@@ -81,6 +119,7 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     readonly fireWorkflowActionEffect = this.effect(
         (data$: Observable<DotFireActionOptions<{ [key: string]: string | object }>>) => {
             return data$.pipe(
+                tap(() => this.updateLoading(true)),
                 switchMap((options) => {
                     return this.fireWorkflowAction(options).pipe(
                         tapResponse(
@@ -102,6 +141,7 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
                                 });
                             },
                             ({ error }) => {
+                                this.updateLoading(false);
                                 this.messageService.add({
                                     severity: 'error',
                                     summary: this.dotMessageService.get('dot.common.message.error'),

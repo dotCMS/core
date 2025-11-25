@@ -5,7 +5,7 @@ import { UntypedFormBuilder } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { FileUploadModule } from 'primeng/fileupload';
+import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 
 import { DotAutocompleteTagsComponent } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
 import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
@@ -146,11 +146,12 @@ describe('DotCreatePersonaFormComponent', () => {
 
         it('should set the p-fileUpload with the correctly attributes', () => {
             const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
+            const componentInstance: FileUpload = fileUpload.componentInstance;
 
-            expect(fileUpload.componentInstance.url).toEqual('/api/v1/temp');
-            expect(fileUpload.componentInstance.accept).toEqual('image/*,.webp');
-            expect(fileUpload.componentInstance.auto).toEqual('true');
-            expect(fileUpload.componentInstance.mode).toEqual('basic');
+            expect(componentInstance.url).toEqual('/api/v1/temp');
+            expect(componentInstance.accept).toEqual('image/*,.webp');
+            expect(componentInstance.auto).toEqual(true);
+            expect(componentInstance.mode).toEqual('basic');
         });
 
         it('should emit isValid to false when the file upload starts', () => {

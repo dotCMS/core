@@ -1,7 +1,5 @@
 import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator';
 
-import { By } from '@angular/platform-browser';
-
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 
 import { DotSelectItemDirective } from './dot-select-item.directive';
@@ -10,19 +8,19 @@ describe('DotSelectItemDirective', () => {
     let spectator: SpectatorDirective<DotSelectItemDirective>;
     let autoComplete: AutoComplete;
     let onKeyUpMock: jasmine.Spy;
-    let selectItem: jasmine.Spy;
+    let onOptionSelect: jasmine.Spy;
 
     const createDirective = createDirectiveFactory({
         directive: DotSelectItemDirective,
-        template: `<p-autoComplete dotSelectItem></p-autoComplete>`,
+        template: `<p-autoComplete dotSelectItem [suggestions]="[]" />`,
         imports: [AutoCompleteModule]
     });
 
     beforeEach(() => {
         spectator = createDirective();
-        autoComplete = spectator.debugElement.query(By.css('p-autoComplete')).componentInstance;
+        autoComplete = spectator.query(AutoComplete);
         onKeyUpMock = spyOn(spectator.directive, 'onKeyUp').and.callThrough();
-        selectItem = spyOn(autoComplete, 'selectItem');
+        onOptionSelect = spyOn(autoComplete, 'onOptionSelect').and.callThrough();
     });
 
     it('should call onKeyUp from the directive', () => {
@@ -44,7 +42,7 @@ describe('DotSelectItemDirective', () => {
 
         spectator.triggerEventHandler('p-autoComplete[dotSelectItem]', 'onKeyUp', event);
 
-        expect(selectItem).toHaveBeenCalledOnceWith(event.target.value);
+        expect(onOptionSelect).toHaveBeenCalledOnceWith(event, event.target.value);
     });
 
     it('should not call autoComplete selectItem when key is not "Enter"', () => {
@@ -55,6 +53,6 @@ describe('DotSelectItemDirective', () => {
 
         spectator.triggerEventHandler('p-autoComplete[dotSelectItem]', 'onKeyUp', event);
 
-        expect(selectItem).not.toHaveBeenCalled();
+        expect(onOptionSelect).not.toHaveBeenCalled();
     });
 });

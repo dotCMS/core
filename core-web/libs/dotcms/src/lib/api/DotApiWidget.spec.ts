@@ -1,6 +1,7 @@
+import { DotApiWidget } from './DotApiWidget';
+
 import { DotCMSError } from '../models';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotApiWidget } from './DotApiWidget';
 
 describe('DotApiWidget', () => {
     let httpClient: DotCMSHttpClient;

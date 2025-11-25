@@ -1,0 +1,1002 @@
+{
+	"info": {
+		"_postman_id": "ec804d51-d4b4-485a-8efb-2d077df5c8a8",
+		"name": "Content Report Resource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
+	},
+	"item": [
+		{
+			"name": "Site Report",
+			"item": [
+				{
+					"name": "Create Test Data",
+					"item": [
+						{
+							"name": "Create Test Content Type One",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Test Content Type One created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    pm.expect(jsonData.entity[0].name).equals(\"Test Type One - ContentReport\", \"The Test Content Type One's name doesn't match the expected one\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"defaultType\": false,\n    \"icon\": null,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"\",\n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"name\": \"Test Type One - ContentReport\",\n    \"metadata\": {\n        \"edit_mode\": true\n    },\n    \"systemActionMappings\": {\n        \"NEW\": \"\"\n    },\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content Type Two",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Test Content Type Two created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    pm.expect(jsonData.entity[0].name).equals(\"Test Type Two - ContentReport\", \"The Test Content Type Two's name doesn't match the expected one\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"defaultType\": false,\n    \"icon\": null,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"\",\n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"name\": \"Test Type Two - ContentReport\",\n    \"metadata\": {\n        \"edit_mode\": true\n    },\n    \"systemActionMappings\": {\n        \"NEW\": \"\"\n    },\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Creates two test Content Types under the Default Site in order to generate data for the Content Report of the Default Site."
+				},
+				{
+					"name": "Generate Report - Default Site With Key",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there at least 2 Content Types living under the Default Site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.be.gte(2, \"There must be at least 2 Content Types living under the Default Site\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(10, \"The 'perPage' parameter must be 10\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(2, \"The 'totalEntries' parameter must be at least 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/site/default",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"site",
+								"default"
+							]
+						},
+						"description": "Generates a report using the Site Key."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Report - Default Site With ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there at least 2 Content Types living under the Default Site\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.be.gte(2, \"There must be at least 2 Content Types living under the Default Site\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(10, \"The 'perPage' parameter must be 10\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(2, \"The 'totalEntries' parameter must be at least 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/site/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"site",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+							]
+						},
+						"description": "Generates a report using the Site ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Report - System Host",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there at least 10 Content Types living under System Host\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).to.be.gte(10, \"There must be at least 10 Content Types living under System Host\");",
+									"});",
+									"",
+									"pm.test(\"Checking that the is greater or equal than zero\", function () {",
+									"    let length = pm.response.json().entity;",
+									"    for (let i = 0; i < length; i++) {",
+									"        pm.expect(entity[i].entries).to.not.equal(-1, \"Count for Content Type \" + entity[i].contentTypeName + \" must not be -1\");",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(50, \"The 'perPage' parameter must be 50\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(10, \"The 'totalEntries' parameter must be at least 10\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/site/SYSTEM_HOST?per_page=50",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"site",
+								"SYSTEM_HOST"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "50"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Paginated Report - System Host",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there 5 Content Types in the result JSON\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).equals(5, \"There must be 5 Content Types living under System Host\");",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.currentPage).equals(2, \"The 'currentPage' parameter must be 2\");",
+									"    pm.expect(pagination.perPage).equals(5, \"The 'perPage' parameter must be 5\");",
+									"    pm.expect(pagination.totalEntries).to.be.gte(10, \"The 'totalEntries' parameter must be at least 10\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/site/SYSTEM_HOST?page=2&per_page=5&direction=DESC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"site",
+								"SYSTEM_HOST"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "2"
+								},
+								{
+									"key": "per_page",
+									"value": "5"
+								},
+								{
+									"key": "direction",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Generates a Content Report for the Default Site and System Host."
+		},
+		{
+			"name": "Folder Report",
+			"item": [
+				{
+					"name": "Create Test Data",
+					"item": [
+						{
+							"name": "Create Test Folder",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNumber = Math.floor(Math.random() * 100) + 1;",
+											"pm.collectionVariables.set(\"testFolderPath\", \"folder-report/middle-folder/test-folder-\" + randomNumber);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking that expected Folder information is present\", function () {",
+											"    const entity = pm.response.json().entity[0];",
+											"    pm.expect(entity.identifier).to.not.equal(undefined, \"The Folder's Identifier must be present\");",
+											"    pm.collectionVariables.set(\"testFolderId\", entity.identifier);",
+											"});",
+											"",
+											"pm.test(\"Checking that errors are present\", function () {",
+											"    pm.expect(pm.response.json().errors.length).equals(0, \"No errors must be returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "[\"/{{testFolderPath}}\"]",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"folder",
+										"createfolders",
+										"default"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Page Under Folder",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Test Page created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNumber = Math.floor(Math.random() * 100) + 1;",
+											"pm.collectionVariables.set(\"testPageTitle\", \"My Test Page \" + randomNumber);",
+											"pm.collectionVariables.set(\"testPageUrl\", \"my-test-page-\" + randomNumber);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"{{testPageTitle}}\",\n        \"url\":\"{{testPageUrl}}\",\n        \"hostFolder\":\"{{testFolderId}}\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"{{testPageTitle}}\",\n        \"cachettl\":0\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content Under Folder",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Test Page created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNumber = Math.floor(Math.random() * 100) + 1;",
+											"pm.collectionVariables.set(\"testPageTitle\", \"My Test Page \" + randomNumber);",
+											"pm.collectionVariables.set(\"testPageUrl\", \"my-test-page-\" + randomNumber);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"My Test Content under the test Folder\",\n        \"contentHost\": \"{{testFolderId}}\",\n        \"body\": {\n            \"type\": \"doc\",\n            \"attrs\": {\n                \"charCount\": 15,\n                \"wordCount\": 2,\n                \"readingTime\": 1\n            },\n            \"content\": [\n                {\n                    \"type\": \"paragraph\",\n                    \"attrs\": {\n                        \"textAlign\": \"left\"\n                    },\n                    \"content\": [\n                        {\n                            \"type\": \"text\",\n                            \"text\": \"Test Contentlet\"\n                        }\n                    ]\n                }\n            ]\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Generate Report With Folder ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are only 2 Content Types living under the Test Folder\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).equals(2, \"There must be only 2 Content Types living under the Test Folder\");",
+									"    pm.expect(entity[0].entries).equals(1, \"There must be only 1 contentlet of Type \" + entity[0].contentTypeName);",
+									"    pm.expect(entity[1].entries).equals(1, \"There must be only 1 contentlet of Type \" + entity[1].contentTypeName);",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(10, \"The 'perPage' parameter must be 10\");",
+									"    pm.expect(pagination.totalEntries).equals(2, \"The 'totalEntries' parameter must be 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/folder/{{testFolderId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"folder",
+								"{{testFolderId}}"
+							]
+						},
+						"description": "Generates a report using the Folder ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Report With Folder Path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that there are only 2 Content Types living under the Test Folder\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.length).equals(2, \"There must be only 2 Content Types living under the Test Folder\");",
+									"    pm.expect(entity[0].entries).equals(1, \"There must be only 1 contentlet of Type \" + entity[0].contentTypeName);",
+									"    pm.expect(entity[1].entries).equals(1, \"There must be only 1 contentlet of Type \" + entity[1].contentTypeName);",
+									"});",
+									"",
+									"pm.test(\"Checking that pagination information matches the specified parameters\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.perPage).equals(10, \"The 'perPage' parameter must be 10\");",
+									"    pm.expect(pagination.totalEntries).equals(2, \"The 'totalEntries' parameter must be 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/folder/{{testFolderPath}}?site=default",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"folder",
+								"{{testFolderPath}}"
+							],
+							"query": [
+								{
+									"key": "site",
+									"value": "default"
+								}
+							]
+						},
+						"description": "Generates a report using the Folder path, which requires specifying the Site ID/Key as well."
+					},
+					"response": []
+				}
+			],
+			"description": "Genrates a Content Report for a test Folder, containing a few Content Types."
+		},
+		{
+			"name": "404",
+			"item": [
+				{
+					"name": "Site does not exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/site/doesnotexist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"site",
+								"doesnotexist"
+							]
+						},
+						"description": "Generates a report using the Site Key."
+					},
+					"response": []
+				},
+				{
+					"name": "Folder does not exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/folder/12345",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"folder",
+								"12345"
+							]
+						},
+						"description": "Generates a report using the Folder ID."
+					},
+					"response": []
+				},
+				{
+					"name": "On folder site does not exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contentreport/folder/{{testFolderId}}?site=doesnotexist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contentreport",
+								"folder",
+								"{{testFolderId}}"
+							],
+							"query": [
+								{
+									"key": "site",
+									"value": "doesnotexist"
+								}
+							]
+						},
+						"description": "Generates a report using the Folder ID."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = 'admin@dotcms.com';",
+					"        const password = 'admin';",
+					"        const basicAuth = btoa(`${username}:${password}`);",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

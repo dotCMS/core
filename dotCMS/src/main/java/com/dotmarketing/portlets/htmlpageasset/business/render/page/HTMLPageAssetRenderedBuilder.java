@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
@@ -21,6 +22,7 @@ import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -63,6 +65,8 @@ public class HTMLPageAssetRenderedBuilder {
     private String pageUrlMapper;
     private boolean live;
     private boolean parseJSON;
+    private Experiment runningExperiment;
+    private VanityURLView vanityUrl;
 
     /**
      * Creates an instance of this Builder, along with all the required dotCMS APIs.
@@ -114,6 +118,11 @@ public class HTMLPageAssetRenderedBuilder {
         return this;
     }
 
+    public HTMLPageAssetRenderedBuilder setVanityUrl(final VanityURLView vanityUrl) {
+        this.vanityUrl = vanityUrl;
+        return this;
+    }
+
     /**
      * Generates the metadata of the specified HTML Page. All the internal data structures that make up the page will be
      * retrieved from the content repository and will be returned to the User in the form of a {@link PageView} object.
@@ -155,19 +164,19 @@ public class HTMLPageAssetRenderedBuilder {
         final Optional<Contentlet> urlContentletOpt = this.findUrlContentlet (request);
 
         if (!rendered) {
-
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             final PageView.Builder pageViewBuilder = new PageView.Builder().site(site).template(template).containers(containers)
                     .page(this.htmlPageAsset).layout(layout).canCreateTemplate(canCreateTemplates)
                     .canEditTemplate(canEditTemplate).viewAs(
                             this.htmlPageAssetRenderedAPI.getViewAsStatus(request,
                                     mode, this.htmlPageAsset, user))
-                    .pageUrlMapper(pageUrlMapper).live(live);
+                    .pageUrlMapper(pageUrlMapper).live(live)
+                    .runningExperiment(runningExperiment)
+                    .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
 
             return pageViewBuilder.build();
         } else {
-
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
             velocityContext.put("parseJSON", parseJSON);
@@ -177,7 +186,7 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
-            final String pageHTML = this.getPageHTML();
+            final String pageHTML = this.getPageHTML(mode);
 
             final HTMLPageAssetRendered.RenderedBuilder pageViewBuilder = new HTMLPageAssetRendered.RenderedBuilder().html(pageHTML);
             pageViewBuilder.site(site).template(template).containers(containers)
@@ -185,7 +194,9 @@ public class HTMLPageAssetRenderedBuilder {
                     .canEditTemplate(canEditTemplate).viewAs(
                     this.htmlPageAssetRenderedAPI.getViewAsStatus(request,
                             mode, this.htmlPageAsset, user))
-                    .pageUrlMapper(pageUrlMapper).live(live);
+                    .pageUrlMapper(pageUrlMapper).live(live)
+                    .runningExperiment(runningExperiment)
+                    .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
 
             return pageViewBuilder.build();
@@ -209,12 +220,6 @@ public class HTMLPageAssetRenderedBuilder {
         return Optional.ofNullable(contentlet);
     }
 
-    public String getPageHTML() throws DotSecurityException {
-
-        final PageMode mode = PageMode.get(request);
-
-        return getPageHTML(mode);
-    }
 
     @CloseDBIfOpened
     public String getPageHTML(final PageMode pageMode) throws DotSecurityException {
@@ -248,4 +253,7 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
+    public void setRunningExperiment(Experiment experiment) {
+        this.runningExperiment = experiment;
+    }
 }

@@ -4,17 +4,15 @@
      Also there is a problem here, when the field is invalid this multiselect should have the invalid class
 -->
 <p-multiSelect
+    (onChange)="valueChange($event, selectedEnvironments)"
     [(ngModel)]="selectedEnvironments"
     [options]="pushEnvironments"
     [defaultLabel]="'contenttypes.content.push_publish.select_environment' | dm"
-    (onChange)="valueChange($event, selectedEnvironments)"
     appendTo="body"
-    optionLabel="name"
->
-</p-multiSelect>
+    optionLabel="name"></p-multiSelect>
 
-<ul class="environment-selector__list" *ngIf="showList">
-    <li class="environment-selector__list-item" *ngFor="let environment of selectedEnvironments">
+<ul *ngIf="showList" class="environment-selector__list">
+    <li *ngFor="let environment of selectedEnvironments" class="environment-selector__list-item">
         <button (click)="removeEnvironmentItem(environment)" pButton icon="pi pi-trash"></button>
         {{ environment.name }}
     </li>

@@ -1,0 +1,889 @@
+{
+	"info": {
+		"_postman_id": "a4249121-11a9-4a38-877e-4ec21a7d08b8",
+		"name": "User Resource",
+		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3028555"
+	},
+	"item": [
+		{
+			"name": "Users Validations",
+			"item": [
+				{
+					"name": "Get Users Include Anon and Default User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json().entity;",
+									"",
+									"pm.test(\"Contains anonymous\", function () {",
+									"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+									"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"anonymous\")).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Contains default\", function () {",
+									"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+									"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Check pagination data\", function () {",
+									"    var paginationData = pm.response.json().pagination;",
+									"    pm.expect(paginationData.currentPage).to.equal(1);",
+									"    pm.expect(paginationData.perPage).to.equal(100);",
+									"    pm.expect(paginationData.totalEntries).to.gte(2);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?per_page=100&includeanonymous=true&includedefault=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "includeanonymous",
+									"value": "true"
+								},
+								{
+									"key": "includedefault",
+									"value": "true"
+								}
+							]
+						},
+						"description": "### GET /api/v1/users/filter\n\nThis endpoint retrieves a list of users based on specified filters.\n\n#### Request\n\n- Method: GET\n- URL: `{{serverURL}}/api/v1/users/filter`\n- Query Parameters:\n    - per_page (optional): The number of users to be included per page.\n    - includeanonymous (optional): Indicates whether to include anonymous users in the response.\n    - includedefault (optional): Indicates whether to include default users in the response.\n\n#### Response\n\nThe response is in JSON format and follows the schema below:\n\n``` json\n{\n  \"entity\": [\n    {\n      \"active\": true,\n      \"actualCompanyId\": \"\",\n      \"additionalInfo\": {},\n      \"admin\": true,\n      \"backendUser\": true,\n      \"birthday\": 0,\n      \"comments\": null,\n      \"companyId\": \"\",\n      \"createDate\": 0,\n      \"deleteDate\": null,\n      \"deleteInProgress\": true,\n      \"emailAddress\": \"\",\n      \"emailaddress\": \"\",\n      \"failedLoginAttempts\": 0,\n      \"female\": true,\n      \"firstName\": \"\",\n      \"frontendUser\": true,\n      \"fullName\": \"\",\n      \"gravitar\": \"\",\n      \"hasConsoleAccess\": true,\n      \"id\": \"\",\n      \"languageId\": \"\",\n      \"lastLoginDate\": null,\n      \"lastLoginIP\": null,\n      \"lastName\": \"\",\n      \"male\": true,\n      \"middleName\": \"\",\n      \"modificationDate\": 0,\n      \"name\": \"\",\n      \"nickname\": null,\n      \"passwordExpirationDate\": null,\n      \"passwordExpired\": true,\n      \"passwordReset\": true,\n      \"timeZoneId\": \"\",\n      \"type\": \"\",\n      \"userId\": \"\"\n    }\n  ],\n  \"errors\": [],\n  \"i18nMessagesMap\": {},\n  \"messages\": [],\n  \"pagination\": {\n    \"currentPage\": 0,\n    \"perPage\": 0,\n    \"totalEntries\": 0\n  },\n  \"permissions\": []\n}\n\n ```"
+					},
+					"response": []
+				},
+				{
+					"name": "Get LoginAsData Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json().entity;",
+									"",
+									"pm.test('Must not contains Admin', () => {",
+									"    _.any(jsonData, (item) => {",
+									"        pm.expect(item.firstName).to.not.be.eql('Admin')",
+									"    })",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/loginAsData?per_page=40",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"loginAsData"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "40"
+								}
+							]
+						},
+						"description": "\n### GET /api/v1/users/loginAsData\n\nThis endpoint retrieves user data with the option to specify the number of entries per page.\n\n#### Request\n\n- Method: GET\n- URL: `{{serverURL}}/api/v1/users/loginAsData?per_page=40`\n\n#### Response\n\nThe response is a JSON object with the following schema:\n\n```json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"active\": { \"type\": \"boolean\" },\n          \"actualCompanyId\": { \"type\": \"string\" },\n          \"additionalInfo\": { \"type\": \"object\" },\n          \"admin\": { \"type\": \"boolean\" },\n          \"backendUser\": { \"type\": \"boolean\" },\n          \"birthday\": { \"type\": \"null\" },\n          \"comments\": { \"type\": \"null\" },\n          \"companyId\": { \"type\": \"string\" },\n          \"createDate\": { \"type\": \"number\" },\n          \"deleteDate\": { \"type\": \"null\" },\n          \"deleteInProgress\": { \"type\": \"boolean\" },\n          \"emailAddress\": { \"type\": \"string\" },\n          \"emailaddress\": { \"type\": \"string\" },\n          \"failedLoginAttempts\": { \"type\": \"number\" },\n          \"female\": { \"type\": \"boolean\" },\n          \"firstName\": { \"type\": \"string\" },\n          \"frontendUser\": { \"type\": \"boolean\" },\n          \"fullName\": { \"type\": \"string\" },\n          \"gravitar\": { \"type\": \"string\" },\n          \"hasConsoleAccess\": { \"type\": \"boolean\" },\n          \"id\": { \"type\": \"string\" },\n          \"languageId\": { \"type\": \"string\" },\n          \"lastLoginDate\": { \"type\": \"number\" },\n          \"lastLoginIP\": { \"type\": \"string\" },\n          \"lastName\": { \"type\": \"string\" },\n          \"male\": { \"type\": \"boolean\" },\n          \"middleName\": { \"type\": \"null\" },\n          \"modificationDate\": { \"type\": \"number\" },\n          \"name\": { \"type\": \"string\" },\n          \"nickname\": { \"type\": \"null\" },\n          \"passwordExpirationDate\": { \"type\": \"null\" },\n          \"passwordExpired\": { \"type\": \"boolean\" },\n          \"passwordReset\": { \"type\": \"boolean\" },\n          \"requestPassword\": { \"type\": \"boolean\" },\n          \"timeZoneId\": { \"type\": \"string\" },\n          \"type\": { \"type\": \"string\" },\n          \"userId\": { \"type\": \"string\" }\n        }\n      }\n    },\n    \"errors\": { \"type\": \"array\" },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\" },\n    \"pagination\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"currentPage\": { \"type\": \"number\" },\n        \"perPage\": { \"type\": \"number\" },\n        \"totalEntries\": { \"type\": \"number\" }\n      }\n    },\n    \"permissions\": { \"type\": \"array\" }\n  }\n}\n```\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users Include Anon and Exclude Default User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json().entity;",
+									"",
+									"pm.test(\"Contains anonymous\", function () {",
+									"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+									"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"anonymous\")).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Does not contain default\", function () {",
+									"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+									"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?per_page=100&includeanonymous=true&includedefault=false",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "includeanonymous",
+									"value": "true"
+								},
+								{
+									"key": "includedefault",
+									"value": "false"
+								}
+							]
+						},
+						"description": "### GET /api/v1/users/filter\n\nThis endpoint retrieves a list of users based on specified filter criteria.\n\n#### Request\n\n- Method: GET\n- URL: `{{serverURL}}/api/v1/users/filter`\n- Query Parameters:\n    - per_page (integer, optional): Number of users per page.\n    - includeanonymous (boolean, optional): Flag to include anonymous users.\n    - includedefault (boolean, optional): Flag to include default users.\n\n#### Response\n\nThe response is in JSON format and follows the schema below:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"active\": { \"type\": \"boolean\" },\n          \"actualCompanyId\": { \"type\": \"string\" },\n          \"additionalInfo\": { \"type\": \"object\" },\n          \"admin\": { \"type\": \"boolean\" },\n          \"backendUser\": { \"type\": \"boolean\" },\n          \"birthday\": { \"type\": [\"string\", \"null\"] },\n          \"comments\": { \"type\": [\"string\", \"null\"] },\n          \"companyId\": { \"type\": \"string\" },\n          \"createDate\": { \"type\": \"number\" },\n          \"deleteDate\": { \"type\": [\"number\", \"null\"] },\n          \"deleteInProgress\": { \"type\": \"boolean\" },\n          \"emailAddress\": { \"type\": \"string\" },\n          \"failedLoginAttempts\": { \"type\": \"integer\" },\n          \"female\": { \"type\": \"boolean\" },\n          \"firstName\": { \"type\": \"string\" },\n          \"frontendUser\": { \"type\": \"boolean\" },\n          \"fullName\": { \"type\": \"string\" },\n          \"gravitar\": { \"type\": \"string\" },\n          \"hasConsoleAccess\": { \"type\": \"boolean\" },\n          \"id\": { \"type\": \"string\" },\n          \"languageId\": { \"type\": \"string\" },\n          \"lastLoginDate\": { \"type\": \"number\" },\n          \"lastLoginIP\": { \"type\": \"string\" },\n          \"lastName\": { \"type\": \"string\" },\n          \"male\": { \"type\": \"boolean\" },\n          \"middleName\": { \"type\": [\"string\", \"null\"] },\n          \"modificationDate\": { \"type\": \"number\" },\n          \"name\": { \"type\": \"string\" },\n          \"nickname\": { \"type\": [\"string\", \"null\"] },\n          \"passwordExpirationDate\": { \"type\": [\"string\", \"null\"] },\n          \"passwordExpired\": { \"type\": \"boolean\" },\n          \"passwordReset\": { \"type\": \"boolean\" },\n          \"timeZoneId\": { \"type\": \"string\" },\n          \"type\": { \"type\": \"string\" },\n          \"userId\": { \"type\": \"string\" }\n        },\n        \"required\": [\n          \"active\",\n          \"admin\",\n          \"backendUser\",\n          \"companyId\",\n          \"createDate\",\n          \"deleteInProgress\",\n          \"emailAddress\",\n          \"failedLoginAttempts\",\n          \"female\",\n          \"firstName\",\n          \"frontendUser\",\n          \"fullName\",\n          \"gravitar\",\n          \"hasConsoleAccess\",\n          \"id\",\n          \"languageId\",\n          \"lastLoginDate\",\n          \"lastLoginIP\",\n          \"lastName\",\n          \"male\",\n          \"modificationDate\",\n          \"name\",\n          \"passwordExpired\",\n          \"passwordReset\",\n          \"timeZoneId\",\n          \"type\",\n          \"userId\"\n        ]\n      }\n    },\n    \"errors\": { \"type\": \"array\" },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\" },\n    \"pagination\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"currentPage\": { \"type\": \"integer\" },\n        \"perPage\": { \"type\": \"integer\" },\n        \"totalEntries\": { \"type\": \"integer\" }\n      }\n    },\n    \"permissions\": { \"type\": \"array\" }\n  },\n  \"required\": [\"entity\", \"errors\", \"i18nMessagesMap\", \"messages\", \"pagination\", \"permissions\"]\n}\n\n ```"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users Exclude Anon and Default User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json().entity;",
+									"",
+									"pm.test(\"Does not contain anonymous\", function () {",
+									"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+									"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"anonymous\")).to.be.false;",
+									"});",
+									"",
+									"pm.test(\"Does not contain default\", function () {",
+									"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+									"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?per_page=100&includeanonymous=false&includedefault=false",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "includeanonymous",
+									"value": "false"
+								},
+								{
+									"key": "includedefault",
+									"value": "false"
+								}
+							]
+						},
+						"description": "### API Request Description\n\nThis endpoint makes an HTTP GET request to retrieve a list of users with filtering options. The request includes query parameters for pagination, and filtering options to exclude anonymous and default users.\n\n### Request Body\n\nThis request does not contain a request body.\n\n### Response Body\n\nThe response is in JSON format and represents an array of user entities. Each user entity contains various attributes such as active status, company ID, admin status, user details, login information, and permissions. Additionally, the response includes error messages, internationalization messages, pagination details, and permissions.\n\n### JSON Schema\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"active\": { \"type\": \"boolean\" },\n          \"actualCompanyId\": { \"type\": \"string\" },\n          \"additionalInfo\": { \"type\": \"object\" },\n          \"admin\": { \"type\": \"boolean\" },\n          \"backendUser\": { \"type\": \"boolean\" },\n          \"birthday\": { \"type\": [\"string\", \"null\"] },\n          \"comments\": { \"type\": [\"string\", \"null\"] },\n          \"companyId\": { \"type\": \"string\" },\n          \"createDate\": { \"type\": \"number\" },\n          \"deleteDate\": { \"type\": [\"number\", \"null\"] },\n          \"deleteInProgress\": { \"type\": \"boolean\" },\n          \"emailAddress\": { \"type\": \"string\" },\n          \"emailaddress\": { \"type\": \"string\" },\n          \"failedLoginAttempts\": { \"type\": \"number\" },\n          \"female\": { \"type\": \"boolean\" },\n          \"firstName\": { \"type\": \"string\" },\n          \"frontendUser\": { \"type\": \"boolean\" },\n          \"fullName\": { \"type\": \"string\" },\n          \"gravitar\": { \"type\": \"string\" },\n          \"hasConsoleAccess\": { \"type\": \"boolean\" },\n          \"id\": { \"type\": \"string\" },\n          \"languageId\": { \"type\": \"string\" },\n          \"lastLoginDate\": { \"type\": \"number\" },\n          \"lastLoginIP\": { \"type\": \"string\" },\n          \"lastName\": { \"type\": \"string\" },\n          \"male\": { \"type\": \"boolean\" },\n          \"middleName\": { \"type\": [\"string\", \"null\"] },\n          \"modificationDate\": { \"type\": \"number\" },\n          \"name\": { \"type\": \"string\" },\n          \"nickname\": { \"type\": [\"string\", \"null\"] },\n          \"passwordExpirationDate\": { \"type\": [\"number\", \"null\"] },\n          \"passwordExpired\": { \"type\": \"boolean\" },\n          \"passwordReset\": { \"type\": \"boolean\" },\n          \"timeZoneId\": { \"type\": \"string\" },\n          \"type\": { \"type\": \"string\" },\n          \"userId\": { \"type\": \"string\" }\n        },\n        \"required\": [\n          \"active\",\n          \"admin\",\n          \"backendUser\",\n          \"companyId\",\n          \"createDate\",\n          \"deleteInProgress\",\n          \"emailAddress\",\n          \"emailaddress\",\n          \"failedLoginAttempts\",\n          \"female\",\n          \"firstName\",\n          \"frontendUser\",\n          \"fullName\",\n          \"gravitar\",\n          \"hasConsoleAccess\",\n          \"id\",\n          \"languageId\",\n          \"lastLoginDate\",\n          \"lastLoginIP\",\n          \"lastName\",\n          \"male\",\n          \"modificationDate\",\n          \"name\",\n          \"passwordExpired\",\n          \"passwordReset\",\n          \"timeZoneId\",\n          \"type\",\n          \"userId\"\n        ]\n      }\n    },\n    \"errors\": { \"type\": \"array\" },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\" },\n    \"pagination\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"currentPage\": { \"type\": \"number\" },\n        \"perPage\": { \"type\": \"number\" },\n        \"totalEntries\": { \"type\": \"number\" }\n      },\n      \"required\": [\"currentPage\", \"perPage\", \"totalEntries\"]\n    },\n    \"permissions\": { \"type\": \"array\" }\n  },\n  \"required\": [\"entity\", \"errors\", \"i18nMessagesMap\", \"messages\", \"pagination\", \"permissions\"]\n}\n\n ```"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users Check Total Value",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json().entity;",
+									"console.log(jsonData);",
+									"console.log('Length = ' + jsonData.length);",
+									"",
+									"pm.test(\"Total User Count\", function () {",
+									"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							]
+						},
+						"description": "\nThe API returns a JSON response with the following schema:\n\n```json\n{\n    \"entity\": [\n        {\n            \"active\": \"boolean\",\n            \"actualCompanyId\": \"string\",\n            \"additionalInfo\": \"object\",\n            \"admin\": \"boolean\",\n            \"backendUser\": \"boolean\",\n            \"birthday\": \"null\",\n            \"comments\": \"null\",\n            \"companyId\": \"string\",\n            \"createDate\": \"number\",\n            \"deleteDate\": \"null\",\n            \"deleteInProgress\": \"boolean\",\n            \"emailAddress\": \"string\",\n            \"emailaddress\": \"string\",\n            \"failedLoginAttempts\": \"number\",\n            \"female\": \"boolean\",\n            \"firstName\": \"string\",\n            \"frontendUser\": \"boolean\",\n            \"fullName\": \"string\",\n            \"gravitar\": \"string\",\n            \"hasConsoleAccess\": \"boolean\",\n            \"id\": \"string\",\n            \"languageId\": \"string\",\n            \"lastLoginDate\": \"number\",\n            \"lastLoginIP\": \"string\",\n            \"lastName\": \"string\",\n            \"male\": \"boolean\",\n            \"middleName\": \"null\",\n            \"modificationDate\": \"number\",\n            \"name\": \"string\",\n            \"nickname\": \"null\",\n            \"passwordExpirationDate\": \"null\",\n            \"passwordExpired\": \"boolean\",\n            \"passwordReset\": \"boolean\",\n            \"timeZoneId\": \"string\",\n            \"type\": \"string\",\n            \"userId\": \"string\"\n        }\n    ],\n    \"errors\": [],\n    \"i18nMessagesMap\": {},\n    \"messages\": [],\n    \"pagination\": {\n        \"currentPage\": \"number\",\n        \"perPage\": \"number\",\n        \"totalEntries\": \"number\"\n    },\n    \"permissions\": []\n}\n```\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Current",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(jsonData.email).to.eq(\"admin@dotcms.com\");",
+									"    pm.expect(jsonData.loginAs).to.eq(true);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/current",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"current"
+							]
+						},
+						"description": "### Retrieve Current User Information\n\nThis endpoint makes an HTTP GET request to `{{serverURL}}/api/v1/users/current` to retrieve the current user's information.\n\n#### Request\n\nNo request body is required for this request.\n\n#### Response\n\nThe response is in JSON format with the following schema:\n\n``` json\n{\n    \"admin\": boolean,\n    \"email\": string,\n    \"givenName\": string,\n    \"loginAs\": boolean,\n    \"roleId\": string,\n    \"surname\": string,\n    \"userId\": string\n}\n\n ```\n\n- `admin`: Indicates if the user is an admin (boolean).\n- `email`: User's email address (string).\n- `givenName`: User's given name (string).\n- `loginAs`: Indicates if the user is logged in (boolean).\n- `roleId`: User's role ID (string).\n- `surname`: User's surname (string).\n- `userId`: User's ID (string).\n    \n\nThe expected result is that the `loginAs` field should be `true`."
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "CreateUserOnFrench",
+			"item": [
+				{
+					"name": "CreateFrench",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Errors array should be empty\", function () {",
+									"    var responseData = pm.response.json();",
+									"    pm.expect(responseData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"frenchLanguageId\", jsonData.entity.id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"languageCode\":\"fr\",\n    \"countryCode\":\"fr\",\n    \"language\":\"French\",\n    \"country\":\"French\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						},
+						"description": "### Add Language\n\nThis endpoint allows you to add a new language with its corresponding country using the HTTP POST method.\n\n#### Request Body\n\n- `languageCode` (string, required): The code for the language.\n- `countryCode` (string, required): The code for the country.\n- `language` (string, required): The name of the language.\n- `country` (string, required): The name of the country.\n    \n\n#### Response\n\nUpon a successful execution, the server will respond with a status code of 200 and a JSON object containing the following fields:\n\n- `entity`: An object containing the added language and country details, including their codes and IDs.\n- `errors`: An array of any errors encountered during the request.\n- `i18nMessagesMap`: An empty object for internationalization messages.\n- `messages`: An array of messages related to the request.\n- `pagination`: Null, as there is no pagination for this response.\n- `permissions`: An array of permissions related to the request."
+					},
+					"response": []
+				},
+				{
+					"name": "CreateUserFrench",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User FE creation sucessfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"french@dotcms.com\");",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"FrenchUser\");",
+									"    pm.expect(jsonData.entity.user[\"languageId\"]).to.eql(\"fr_FR\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\":\"userid-french-12345678\",\n    \"active\":true,\n    \"firstName\":\"FrenchUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"French\",\n    \"nickName\":\"French\",\n    \"email\":\"french@dotcms.com\",\n    \"male\":true,\n    \"languageId\":\"fr_FR\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"description": "### Create User\n\nThis endpoint allows you to create a new user.\n\n#### Request Body\n\n- `userId` (string, optional): The unique identifier for the user.\n- `active` (boolean, required): Indicates if the user is active.\n- `firstName` (string, optional): The first name of the user.\n- `middleName` (string, optional): The middle name of the user.\n- `lastName` (string, optional): The last name of the user.\n- `nickName` (string, optional): The nickname of the user.\n- `email` (string, optional): The email address of the user.\n- `male` (boolean, required): Indicates the gender of the user.\n- `languageId` (string, optional): The language identifier for the user.\n- `password` (array, required): The password for the user.\n- `roles` (array, required): The roles assigned to the user.\n    \n\n#### Response Body (JSON Schema)\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"user\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"active\": { \"type\": \"boolean\" },\n            \"actualCompanyId\": { \"type\": \"string\" },\n            \"additionalInfo\": { \"type\": \"null\" },\n            \"admin\": { \"type\": \"boolean\" },\n            \"backendUser\": { \"type\": \"boolean\" },\n            \"birthday\": { \"type\": \"null\" },\n            \"comments\": { \"type\": \"null\" },\n            \"companyId\": { \"type\": \"string\" },\n            \"createDate\": { \"type\": \"number\" },\n            \"deleteDate\": { \"type\": \"null\" },\n            \"deleteInProgress\": { \"type\": \"boolean\" },\n            \"emailAddress\": { \"type\": \"string\" },\n            \"emailaddress\": { \"type\": \"string\" },\n            \"failedLoginAttempts\": { \"type\": \"number\" },\n            \"female\": { \"type\": \"boolean\" },\n            \"firstName\": { \"type\": \"string\" },\n            \"frontendUser\": { \"type\": \"boolean\" },\n            \"fullName\": { \"type\": \"string\" },\n            \"gravitar\": { \"type\": \"string\" },\n            \"hasConsoleAccess\": { \"type\": \"boolean\" },\n            \"id\": { \"type\": \"string\" },\n            \"languageId\": { \"type\": \"string\" },\n            \"lastLoginDate\": { \"type\": \"null\" },\n            \"lastLoginIP\": { \"type\": \"null\" },\n            \"lastName\": { \"type\": \"string\" },\n            \"male\": { \"type\": \"boolean\" },\n            \"middleName\": { \"type\": \"string\" },\n            \"modificationDate\": { \"type\": \"number\" },\n            \"name\": { \"type\": \"string\" },\n            \"nickname\": { \"type\": \"string\" },\n            \"passwordExpirationDate\": { \"type\": \"null\" },\n            \"passwordExpired\": { \"type\": \"boolean\" },\n            \"passwordReset\": { \"type\": \"boolean\" },\n            \"timeZoneId\": { \"type\": \"string\" },\n            \"type\": { \"type\": \"string\" },\n            \"userId\": { \"type\": \"string\" }\n          }\n        },\n        \"userID\": { \"type\": \"string\" }\n      }\n    },\n    \"errors\": { \"type\": \"array\" },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\" },\n    \"pagination\": { \"type\": \"null\" },\n    \"permissions\": { \"type\": \"array\" }\n  }\n}\n\n ```"
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Success request 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "ValidateFiledsLimit",
+			"item": [
+				{
+					"name": "First Name Limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Clear error message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Length of First Name provided exceeds the maximum limit 100\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"MaxtLengtOnName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"lastName\":\"Spanish\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"description": "This call validates if you are able to are able to create a user with more than 100 chars in the user name filed  \n  \nPOST /api/v1/users\n\nThis endpoint is used to create a new user.\n\n#### Request\n\nThe request should be sent as a JSON object in the request body with the following parameters:\n\n- `active` (boolean, required): Indicates if the user is active.\n- `firstName` (string, optional): The first name of the user.\n- `lastName` (string, optional): The last name of the user.\n- `email` (string, optional): The email address of the user.\n- `password` (array, required): An array containing the password of the user.\n    \n\n#### Response\n\nUpon sending the request, the server will respond with a status code of 400 and a JSON object with the following schema:\n\n``` json\n{\n    \"type\": \"object\",\n    \"properties\": {\n        \"message\": {\n            \"type\": \"string\"\n        }\n    }\n}\n\n ```\n\nThe `message` property in the response contains a description of the error encountered during the request."
+					},
+					"response": []
+				},
+				{
+					"name": "Middle Name Limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Clear error message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Length of Middle Name provided exceeds the maximum limit 100\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"MaxtLengtOnMiddleName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"lastName\":\"test1\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"description": "This call validates if you are able to are able to create a user with more than 100 chars in the Middle name filed"
+					},
+					"response": []
+				},
+				{
+					"name": "Last Name Limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Clear error message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Length of Last Name provided exceeds the maximum limit 100\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"lastName\":\"MaxtLengtOnLastName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"description": "This call validates if you are able to are able to create a user with more than 100 chars in the last name filed"
+					},
+					"response": []
+				},
+				{
+					"name": "Nick Name Limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Clear error message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Length of Nick Name provided exceeds the maximum limit 100\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"test1\",\n    \"lastName\":\"test1\",\n    \"nickName\":\"MaxtLengtOnNickName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"description": "This call validates if you are able to are able to create a user with more than 100 chars in the Nick name filed"
+					},
+					"response": []
+				},
+				{
+					"name": "Birthday Limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Clear error message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Length of Birthday provided exceeds the maximum limit 100\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"test1\",\n    \"lastName\":\"test1\",\n    \"nickName\":\"test1\",\n    \"birthday\":\"MaxtLengtOnBirthday-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Email Max Characters Limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Clear error message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Length of Email Address provided exceeds the maximum limit 100\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"Name1\",\n    \"lastName\":\"Last1\",\n    \"email\":\"MaxtLengtOnEmail-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"description": "This call validates if you are able to are able to create a user with more than 100 chars in the email filed"
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"",
+					"if (!pm.environment.get('jwt')) {",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = 'admin@dotcms.com';",
+					"        const password = 'admin';",
+					"        const basicAuth = btoa(`${username}:${password}`);",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"/**",
+					" * Traverses the provided JSON data looking for a specific attribute and value. If it exists, returns 'true'.",
+					" */",
+					"containsAttrAndValue = (json, keyname, value) => {",
+					"",
+					"    var isUserPresent = false;",
+					"    json.every((userData) => {",
+					"        console.log('DATA = ' + userData[keyname]);",
+					"        if (userData[keyname] === value) {",
+					"            isUserPresent = true;",
+					"            return false;",
+					"        }",
+					"        return true;",
+					"    });",
+					"    return isUserPresent;",
+					"",
+					"};",
+					"",
+					"pm.collectionVariables.set(\"containsAttrAndValue\", containsAttrAndValue.toString());",
+					"",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "containsAttrAndValue",
+			"value": ""
+		},
+		{
+			"key": "frenchLanguageId",
+			"value": ""
+		}
+	]
+}

@@ -1,17 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
-import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.COMMA;
-import static com.liferay.util.StringPool.PERIOD;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -42,6 +30,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotCorruptedDataException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -76,6 +65,19 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsResponse;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentType;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -97,18 +99,21 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.indices.GetFieldMappingsRequest;
-import org.elasticsearch.client.indices.GetFieldMappingsResponse;
-import org.elasticsearch.client.indices.GetMappingsRequest;
-import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.client.indices.PutMappingRequest;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentType;
+
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
+import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COMMA;
+import static com.liferay.util.StringPool.PERIOD;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -382,6 +387,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.MOD_DATE + TEXT, datetimeFormat.format(contentlet.getModDate()));
 			contentletMap.put(ESMappingConstants.OWNER, contentlet.getOwner()==null ? "0" : contentlet.getOwner());
 			contentletMap.put(ESMappingConstants.MOD_USER, contentlet.getModUser());
+			contentletMap.put(CREATION_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getCreateDate()));
+			contentletMap.put(CREATION_DATE + TEXT, datetimeFormat.format(contentIdentifier.getCreateDate()));
 			contentletMap.put(ESMappingConstants.LIVE, contentlet.isLive());
 			contentletMap.put(ESMappingConstants.LIVE + TEXT, Boolean.toString(contentlet.isLive()));
 			contentletMap.put(ESMappingConstants.WORKING, contentlet.isWorking());
@@ -396,7 +403,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.IDENTIFIER, contentIdentifier.getId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, contentIdentifier.getHostId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, contentSite.getHostname());
-			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, contentFolder!=null && InodeUtils.isSet(contentFolder.getInode()) ? contentFolder.getInode() : contentlet.getFolder());
+			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, InodeUtils.isSet(contentFolder.getInode()) ? contentFolder.getInode() : contentlet.getFolder());
 			contentletMap.put(ESMappingConstants.PARENT_PATH, contentIdentifier.getParentPath());
 			contentletMap.put(ESMappingConstants.PATH, contentIdentifier.getPath());
 			// makes shorties searchable regardless of length
@@ -417,7 +424,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					contentlet.getDateProperty(expireDateVar) : null;
 			loadDateTimeFieldValue(contentletMap,
 					ESMappingConstants.EXPIRE_DATE, expireDate);
-
+			if (contentlet.isLive()) {
+				contentletMap.put(SYS_PUBLISH_USER, contentlet.getModUser());
+			}
 			loadDateTimeFieldValue(contentletMap,
 					ESMappingConstants.SYS_PUBLISH_DATE, versionInfo.get().getPublishDate());
 
@@ -431,7 +440,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			} catch (final Exception e) {
 				Logger.warn(this.getClass(), "Cannot get URLMap for Content Type: " + contentType.name() + " and " +
-						"contentlet.id : " + ((contentIdentifier != null) ? contentIdentifier.getId() : contentlet) +
+						"contentlet.id : " + contentIdentifier.getId() +
 						" , reason: " + e.getMessage());
 			}
 
@@ -480,6 +489,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
+				checkNotEmpty(contentlet.getContentType().variable(),
+						DotCorruptedDataException.class, "Contentlet '%s' " +
+								"points to a Content Type with an empty Velocity Var Name", contentlet.getIdentifier());
 				mapLowered.put(contentlet.getContentType().variable().toLowerCase() + ".url", contentIdentifier.getAssetName());
 				mapLowered.put(contentlet.getContentType().variable().toLowerCase() + ".url_dotraw", contentIdentifier.getAssetName());
 				sw.append(contentIdentifier.getAssetName());

@@ -1,82 +1,112 @@
 <label
     [attr.data-testId]="'label-' + field.variable"
-    [for]="field.variable"
     [checkIsRequiredControl]="field.variable"
-    dotFieldRequired
-    >{{ field.name }}</label
->
+    [for]="field.variable"
+    dotFieldRequired>
+    {{ field.name }}
+</label>
 
-<ng-container [ngSwitch]="field.fieldType">
-    <dot-edit-content-select-field
-        *ngSwitchCase="fieldTypes.SELECT"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-radio-field
-        *ngSwitchCase="fieldTypes.RADIO"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-text-field
-        *ngSwitchCase="fieldTypes.TEXT"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-text-area
-        *ngSwitchCase="fieldTypes.TEXTAREA"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-checkbox-field
-        *ngSwitchCase="fieldTypes.CHECKBOX"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-multi-select-field
-        *ngSwitchCase="fieldTypes.MULTI_SELECT"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-calendar-field
-        *ngSwitchCase="calendarTypes.includes(field.fieldType) ? field.fieldType : ''"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable">
-    </dot-edit-content-calendar-field>
-
-    <dot-edit-content-tag-field
-        *ngSwitchCase="fieldTypes.TAG"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-json-field
-        *ngSwitchCase="fieldTypes.JSON"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-binary-field
-        *ngSwitchCase="fieldTypes.BINARY"
-        [formControlName]="field.variable"
-        [contentlet]="contentlet"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-custom-field
-        *ngSwitchCase="fieldTypes.CUSTOM_FIELD"
-        [field]="field"
-        [contentType]="contentType"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-block-editor
-        *ngSwitchCase="fieldTypes.BLOCK_EDITOR"
-        [formControlName]="field.variable"
-        [contentlet]="contentlet"
-        [field]="field"
-        [attr.data-testId]="'field-' + field.variable" />
-
-    <dot-edit-content-key-value
-        *ngSwitchCase="fieldTypes.KEY_VALUE"
-        [formControlName]="field.variable"
-        [attr.data-testId]="'field-' + field.variable" />
-</ng-container>
-
-<small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
+@switch (field.fieldType) {
+    @case (fieldTypes.SELECT) {
+        <dot-edit-content-select-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.RADIO) {
+        <dot-edit-content-radio-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.TEXT) {
+        <dot-edit-content-text-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.TEXTAREA) {
+        <dot-edit-content-text-area
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.CHECKBOX) {
+        <dot-edit-content-checkbox-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.MULTI_SELECT) {
+        <dot-edit-content-multi-select-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (calendarTypes.includes(field.fieldType) ? field.fieldType : '') {
+        <dot-edit-content-calendar-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.TAG) {
+        <dot-edit-content-tag-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.JSON) {
+        <dot-edit-content-json-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.BINARY) {
+        <dot-edit-content-binary-field
+            [formControlName]="field.variable"
+            [contentlet]="contentlet"
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.CUSTOM_FIELD) {
+        <dot-edit-content-custom-field
+            [field]="field"
+            [contentType]="contentType"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.BLOCK_EDITOR) {
+        <dot-block-editor
+            [formControlName]="field.variable"
+            [contentlet]="contentlet"
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.KEY_VALUE) {
+        <dot-edit-content-key-value
+            [formControlName]="field.variable"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.WYSIWYG) {
+        <dot-edit-content-wysiwyg-field
+            [field]="field"
+            [contentlet]="contentlet"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.HOST_FOLDER) {
+        <dot-edit-content-host-folder-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.CATEGORY) {
+        <dot-edit-content-category-field
+            [attr.data-testId]="'field-' + field.variable"
+            [contentlet]="contentlet"
+            [field]="field" />
+    }
+    @case (fieldTypes.FILE) {
+        <dot-edit-content-file-field
+            [formControlName]="field.variable"
+            [attr.data-testId]="'field-' + field.variable"
+            [field]="field" />
+    }
+    @case (fieldTypes.IMAGE) {
+        <dot-edit-content-file-field
+            [formControlName]="field.variable"
+            [attr.data-testId]="'field-' + field.variable"
+            [field]="field" />
+    }
+}
+@if (field.hint) {
+    <small [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
+}

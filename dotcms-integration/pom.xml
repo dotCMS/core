@@ -4,31 +4,22 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-build-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
     <packaging>jar</packaging>
     <artifactId>dotcms-integration</artifactId>
-
-    <version>1.0.0-SNAPSHOT</version>
     <properties>
+        <license.use>true</license.use>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
 
         <version.spotless.plugin>2.37.0</version.spotless.plugin>
-        <jackson.version>2.13.4</jackson.version>
         <batik.version>1.16</batik.version>
-        <glowroot.version>0.13.1</glowroot.version>
+        <glowroot.version>0.14.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
         <assembly-directory>${basedir}/target/dist</assembly-directory>
-        <skipDockerEnv>false</skipDockerEnv>
-        <starter.filename>starter.zip</starter.filename>
-        <starter.path>${project.build.directory}/starter</starter.path>
-        <starter.full.path>${starter.path}/${starter.filename}</starter.full.path>
-
-
         <clean.docker.volumes>true</clean.docker.volumes>
-
         <!-- Tomcat -->
         <enableDebug>true</enableDebug>
         <debugPort>8000</debugPort>
@@ -41,7 +32,7 @@
 
         <docker.base.image>tomcat:9.0.74-jdk11</docker.base.image>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
-
+        <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
 
         <felix.base.dir>${project.build.directory}/core-war/WEB-INF/felix</felix.base.dir>
         <felix.system.base.dir>${project.build.directory}/core-war/WEB-INF/felix-system</felix.system.base.dir>
@@ -70,18 +61,22 @@
         <test.felix.system.undeployed.folder>felix/system/undeployed</test.felix.system.undeployed.folder>
         <cleanup.before.tests>true</cleanup.before.tests>
         <test.db.host>localhost</test.db.host>
-        <test.db.port>5437</test.db.port>
+        <!--suppress UnresolvedMavenProperty -->
         <test.db.db>dotcms${surefire.forkNumber}</test.db.db>
+        <db.port>5437</db.port>
+        <es.port>9207</es.port>
+        <test.db.port>${db.port}</test.db.port>
         <test.db.url>jdbc:postgresql://${test.db.host}:${test.db.port}/${test.db.db}?autosave=conservative</test.db.url>
+        <!--suppress UnresolvedMavenProperty -->
         <test.db.username>postgres${surefire.forkNumber}</test.db.username>
         <test.db.password>postgres</test.db.password>
         <test.es.scheme>http</test.es.scheme>
         <test.es.host>localhost</test.es.host>
-        <test.es.port>9207</test.es.port>
-        <test.es.endpoints>${test.es.scheme}://${test.es.host}:${test.es.port}</test.es.endpoints>
-        <it.debug.port>5005</it.debug.port>
-        <it.debug.suspend>n</it.debug.suspend>
+        <test.es.port>${es.port}</test.es.port>
+        <test.es.endpoints>${test.es.scheme}://${test.es.host}:${es.port}</test.es.endpoints>
         <maven.failsafe.debugArgs/>
+        <coreit.test.skip>true</coreit.test.skip>
+        <docker.filter>database,opensearch</docker.filter>
     </properties>
     <dependencies>
         <dependency>
@@ -169,18 +164,80 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.tngtech.junit.dataprovider</groupId>
             <artifactId>junit4-dataprovider</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-junit5</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.weld.se</groupId>
+                    <artifactId>weld-se-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.weld.se</groupId>
+            <artifactId>weld-se-shaded</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -198,19 +255,17 @@
     </dependencyManagement>
 
     <build>
-
         <plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>unpack-webapp</id>
-                        <phase>prepare-package</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
+                        <phase>prepare-package</phase>
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
@@ -229,21 +284,20 @@
                     </execution>
                     <execution>
                         <id>copy-test-starter</id>
-                        <phase>generate-test-resources</phase>
                         <goals>
                             <goal>copy</goal>
                         </goals>
+                        <phase>generate-test-resources</phase>
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>starter</artifactId>
-                                    <!-- <version>empty_20210903</version>-->
-                                    <version>${starter.version}</version>
+                                    <version>${starter.run.version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${starter.path}</outputDirectory>
-                                    <destFileName>${starter.filename}</destFileName>
+                                    <outputDirectory>${starter.download.folder}</outputDirectory>
+                                    <destFileName>${starter.run.filename}</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -253,16 +307,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${version.compiler.plugin}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>copy-resource-one</id>
-                        <phase>prepare-package</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
+                        <phase>prepare-package</phase>
                         <configuration>
                             <outputDirectory>target/test-classes</outputDirectory>
                             <resources>
@@ -280,13 +335,18 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+                <configuration>
+                    <skip>${coreit.test.skip}</skip>
+                </configuration>
                 <executions>
                     <execution>
                         <id>cleanup-it-test-data</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
                         <phase>pre-integration-test</phase>
-
                         <configuration>
-                            <skip>${skipITs}</skip>
+                            <skip>${coreit.test.skip}</skip>
                             <target>
                                 <ant antfile="${basedir}/ant-tasks.xml">
                                     <target name="pre-integration"/>
@@ -294,34 +354,26 @@
                                 </ant>
                             </target>
                         </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
-
-
-           <plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                  <skip>true</skip>
+                    <skip>true</skip>
                 </configuration>
             </plugin>
-
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <argLine>${maven.failsafe.debugArgs}</argLine>
+                    <skip>${coreit.test.skip}</skip>
+                    <argLine>${debug.args}</argLine>
                     <forkCount>${it.test.forkcount}</forkCount>
                     <reuseForks>true</reuseForks>
                     <rerunFailingTestsCount>3</rerunFailingTestsCount>
                     <!--<skipAfterFailureCount>2</skipAfterFailureCount>-->
-                    <environmentVariables>
-                   </environmentVariables>
                     <systemPropertyVariables>
                         <!-- Following is a hack to make Intellij pick up the fork number in systemProperites
                             for tests correctly
@@ -329,28 +381,35 @@
                             When maven runs this surefire.forkNumber overrides this property value.  In intellij
                             it updates this property that sets surefire.forkNumber=failsafe.forkNumber in other properties.
                         -->
+                        <!--suppress UnresolvedMavenProperty -->
                         <surefire.forkNumber>${failsafe.forkNumber}</surefire.forkNumber>
                         <user.timezone>UTC</user.timezone>
                         <integrationTestCoverageAgent>${integrationTestCoverageAgent}</integrationTestCoverageAgent>
                         <!--
                             <DOT_CACHE_BINDPORT>78${surefire.forkNumber}1</DOT_CACHE_BINDPORT>
                         -->
-
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOTCMS_LOGGING_HOME>${it.test.fork-folder}${surefire.forkNumber}/${test.logs.folder}</DOTCMS_LOGGING_HOME>
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOTCMS_FORK_NUMBER>f${surefire.forkNumber}</DOTCMS_FORK_NUMBER>
-
-
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOT_ORG_OSGI_FRAMEWORK_STORAGE>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.cache.folder}</DOT_ORG_OSGI_FRAMEWORK_STORAGE>
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOT_SYSTEM_ORG_OSGI_FRAMEWORK_STORAGE>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.system.cache.folder}</DOT_SYSTEM_ORG_OSGI_FRAMEWORK_STORAGE>
                         <DOT_FELIX_BASE_DIR>${felix.base.dir}</DOT_FELIX_BASE_DIR>
                         <DOT_SYSTEM_FELIX_BASE_DIR>${felix.system.base.dir}</DOT_SYSTEM_FELIX_BASE_DIR>
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOT_FELIX_FILEINSTALL_DIR>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.load.folder}</DOT_FELIX_FILEINSTALL_DIR>
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOT_FELIX_UNDEPLOYED_DIR>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.undeployed.folder}</DOT_FELIX_UNDEPLOYED_DIR>
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOT_SYSTEM_FELIX_FILEINSTALL_DIR>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.system.load.folder}</DOT_SYSTEM_FELIX_FILEINSTALL_DIR>
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOT_SYSTEM_FELIX_UNDEPLOYED_DIR>${it.test.fork-folder}${surefire.forkNumber}/${test.felix.system.undeployed.folder}</DOT_SYSTEM_FELIX_UNDEPLOYED_DIR>
-
                         <DOT_TEST_WEBAPP_ROOT>${test.webapp.root}</DOT_TEST_WEBAPP_ROOT>
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOT_ASSET_REAL_PATH>${it.test.fork-folder}${surefire.forkNumber}/${test.assets.folder}</DOT_ASSET_REAL_PATH>
+                        <!--suppress UnresolvedMavenProperty -->
                         <DOT_DYNAMIC_CONTENT_PATH>${it.test.fork-folder}${surefire.forkNumber}/${test.dynamic.folder}</DOT_DYNAMIC_CONTENT_PATH>
                         <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
                         <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
@@ -359,163 +418,137 @@
                         <DOT_DB_USERNAME>${test.db.username}</DOT_DB_USERNAME>
                         <DOT_DB_PASSWORD>${test.db.password}</DOT_DB_PASSWORD>
                         <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
-
                         <!-- from cicd/docker/dotcms-compose.yml -->
                         <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                         <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                         <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
                         <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
-
                         <DOT_ES_ENDPOINTS>${test.es.endpoints}</DOT_ES_ENDPOINTS>
-                        <DOT_STARTER_DATA_LOAD>${starter.full.path}</DOT_STARTER_DATA_LOAD>
+                        <DOT_STARTER_DATA_LOAD>${starter.run.path}</DOT_STARTER_DATA_LOAD>
                         <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
                         <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
                         <DOT_DARTSASS_COMPILER_LOCATION>${test.webapp.root}/WEB-INF/bin</DOT_DARTSASS_COMPILER_LOCATION>
+                        <DOT_AI_EMBEDDINGS_API_URL>http://localhost:50505/e</DOT_AI_EMBEDDINGS_API_URL>
+                        <DOT_AI_MODELS_API_URL>http://localhost:50505/m</DOT_AI_MODELS_API_URL>
+                        <!--suppress UnresolvedMavenProperty -->
                         <java.io.tmpdir>${it.test.fork-folder}${surefire.forkNumber}/${test.temp.folder}</java.io.tmpdir>
+                        <!--suppress UnresolvedMavenProperty -->
                         <workingDirectory>${it.test.fork-folder}${surefire.forkNumber}/${test.working.folder}</workingDirectory>
                         <buildDirectory>${project.build.directory}</buildDirectory>
-
                     </systemPropertyVariables>
+                    <includes>
+                        <include>**/MainSuite1*.java</include>
+                        <include>**/MainSuite2*.java</include>
+                        <include>**/Junit5Suite*.java</include>
+                    </includes>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>default</id>
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
-                        <configuration>
-                            <includes>
-                                <include>**/MainSuite1*.java</include>
-                                <include>**/MainSuite2*.java</include>
-                                <!--<include>**/QuickSuite.java</include>-->
-                            </includes>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
-
-
-
             <plugin>
-                <groupId>com.dkanejs.maven.plugins</groupId>
-                <artifactId>docker-compose-maven-plugin</artifactId>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
-                    <!--  <envFile>${project.basedir}/.env</envFile>-->
-                    <services>
-                        <service>db-test</service>
-                        <service>elasticsearch-test</service>
-                    </services>
-                    <removeVolumes>false</removeVolumes>
-                    <projectName>cargo-it</projectName>
-                    <removeImages>true</removeImages>
-                    <removeImagesType>local</removeImagesType>
-                    <skip>${skipDockerEnv}</skip>
-                    <composeFile>${project.basedir}/docker-compose.yml</composeFile>
-                    <detachedMode>true</detachedMode>
-                    <removeVolumes>true</removeVolumes>
-                    <envFile>${project.basedir}/it-test.env</envFile>
+                    <skip>${coreit.test.skip}</skip>
+                    <filter>database,opensearch</filter>
+                    <!-- We do not start up dotcms only services -->
+                    <imagesMap>
+                        <database>
+                            <run>
+                                <volumes>
+                                    <bind combine.children="append">
+                                        <volume>${project.basedir}/src/docker-compose/it-test/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh</volume>
+                                    </bind>
+                                </volumes>
+                            </run>
+                        </database>
+                    </imagesMap>
                 </configuration>
-
                 <executions>
                     <execution>
-                        <id>up</id>
-                        <phase>pre-integration-test</phase>
+                        <id>docker-pre-stop</id>
                         <goals>
-                            <goal>down</goal>
-                            <goal>up</goal>
+                            <goal>stop</goal>
                         </goals>
+                        <phase>pre-integration-test</phase>
                         <configuration>
-                            <skip>${skipITs}</skip>
-                            <removeVolumes>${clean.docker.volumes}</removeVolumes>
-                            <ignorePullFailures>true</ignorePullFailures>
-                            <detachedMode>true</detachedMode>
-                            <services>
-                                <service>db-test</service>
-                                <service>elasticsearch-test</service>
-                            </services>
+                            <skip>${coreit.test.skip}</skip>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>down</id>
-                        <phase>verify</phase>
+                        <id>docker-pre-remove-volumes</id>
                         <goals>
-                            <goal>down</goal>
+                            <goal>volume-remove</goal>
                         </goals>
+                        <phase>pre-integration-test</phase>
                         <configuration>
-                            <skip>${skipITs}</skip>
-                            <!--We clean docker volumes before but not after as we may need to debug -->
-                            <!--<removeVolumes>${clean.docker.volumes}</removeVolumes>-->
-                            <services>
-                                <service>db-test</service>
-                                <service>elasticsearch-test</service>
-                            </services>
+                            <skip>${coreit.test.skip}</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>docker-start</id>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                        <phase>pre-integration-test</phase>
+                        <configuration>
+                            <skip>${coreit.test.skip}</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>docker-stop</id>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                        <phase>post-integration-test</phase>
+                        <configuration>
+                            <skip>${coreit.test.skip}</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>docker-post-remove-volumes</id>
+                        <goals>
+                            <goal>volume-remove</goal>
+                        </goals>
+                        <phase>post-integration-test</phase>
+                        <configuration>
+                            <skip>${coreit.test.skip}</skip>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
-
-
         </plugins>
     </build>
+
     <profiles>
         <profile>
-            <id>external-testdb</id>
+            <id>quick-test</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>it.test.type</name>
+                    <value>quick</value>
+                </property>
             </activation>
-            <properties>
-                <skipDockerEnv>true</skipDockerEnv>
-                <it.test.forkcount>1</it.test.forkcount>
-                <surefire.forkNumber>1</surefire.forkNumber>
-                <!--suppress UnresolvedMavenProperty -->
-                <test.db.host>${env.TEST_DB_HOST}</test.db.host>
-                <!--suppress UnresolvedMavenProperty -->
-                <test.db.port>${env.TEST_DB_PORT}</test.db.port>
-                <test.db.db>dotcms</test.db.db>
-                <test.db.url>jdbc:postgresql://${test.db.host}:${test.db.port}/${test.db.db}?autosave=conservative</test.db.url>
-                <test.db.username>postgres${surefire.forkNumber}</test.db.username>
-                <test.db.password>postgres</test.db.password>
-                <test.es.scheme>https</test.es.scheme>
-                <test.es.host>localhost</test.es.host>
-                <test.es.port>9207</test.es.port>
-                <test.es.endpoints>${test.es.scheme}://${test.es.host}:${test.es.port}</test.es.endpoints>
-            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <includes>
+                                <include>**/QuickSuite.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
-
-
-        <profile>
-            <id>debug-it</id>
-            <properties>
-                <maven.failsafe.debugArgs>-agentlib:jdwp=transport=dt_socket,address=localhost:${it.debug.port},server=y,suspend=${it.debug.suspend}</maven.failsafe.debugArgs>
-                <it.test.forkcount>1</it.test.forkcount>
-            </properties>
-        </profile>
-
     </profiles>
-    <repositories>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
-
 </project>
-

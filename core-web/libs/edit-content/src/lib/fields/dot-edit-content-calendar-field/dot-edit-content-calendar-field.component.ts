@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
@@ -11,7 +10,7 @@ import { CALENDAR_OPTIONS_PER_TYPE } from './utils';
 @Component({
     selector: 'dot-edit-content-calendar-field',
     standalone: true,
-    imports: [CommonModule, CalendarModule, ReactiveFormsModule],
+    imports: [CalendarModule, ReactiveFormsModule],
     templateUrl: 'dot-edit-content-calendar-field.component.html',
     styleUrls: ['./dot-edit-content-calendar-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

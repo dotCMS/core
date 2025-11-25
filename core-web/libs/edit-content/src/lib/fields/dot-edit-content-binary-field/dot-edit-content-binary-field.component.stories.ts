@@ -1,5 +1,5 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -24,9 +24,11 @@ import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
-import { CONTENTLET, CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, TEMP_FILES_MOCK } from './utils/mock';
+import { CONTENTLET, CONTENTTYPE_FIELDS_MESSAGE_MOCK, TEMP_FILES_MOCK } from './utils/mock';
 
-export default {
+import { BINARY_FIELD_MOCK } from '../../utils/mocks';
+
+const meta: Meta<DotEditContentBinaryFieldComponent> = {
     title: 'Library / Edit Content / Binary Field',
     component: DotEditContentBinaryFieldComponent,
     decorators: [
@@ -79,7 +81,7 @@ export default {
     ],
     args: {
         contentlet: CONTENTLET,
-        field: FIELD
+        field: BINARY_FIELD_MOCK
     },
     argTypes: {
         contentlet: {
@@ -88,21 +90,18 @@ export default {
             description: 'Contentlet Object'
         },
         field: {
-            defaultValue: FIELD,
-            control: 'Object',
+            defaultValue: BINARY_FIELD_MOCK,
+            control: 'object',
             description: 'Content Type Field Object'
         }
-    }
-} as Meta<DotEditContentBinaryFieldComponent>;
+    },
+    render: (args) => ({
+        props: args,
+        template: `<dot-edit-content-binary-field [contentlet]="contentlet" [field]="field" />`
+    })
+};
+export default meta;
 
-const Template: Story<DotEditContentBinaryFieldComponent> = (
-    args: DotEditContentBinaryFieldComponent
-) => ({
-    props: args,
-    template: `<dot-edit-content-binary-field
-        [contentlet]="contentlet"
-        [field]="field"
-    ></dot-edit-content-binary-field>`
-});
+type Story = StoryObj<DotEditContentBinaryFieldComponent>;
 
-export const Primary = Template.bind({});
+export const Primary: Story = {};

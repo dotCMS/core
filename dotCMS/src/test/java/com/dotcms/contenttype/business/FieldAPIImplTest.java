@@ -24,9 +24,8 @@ import java.net.ConnectException;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
@@ -76,7 +75,7 @@ public class FieldAPIImplTest {
 
         final ContentType contentType = mock(ContentType.class);
         final ContentTypeInternationalization contentTypeInternationalization = mock(ContentTypeInternationalization.class);
-        final Map<String, Object> fieldMap = map(
+        final Map<String, Object> fieldMap = Map.of(
                 "attribute_1", "value_1",
                 "attribute_2", "value_2",
                 "attribute_3", "value_3",
@@ -138,7 +137,7 @@ public class FieldAPIImplTest {
 
         final ContentType contentType = mock(ContentType.class);
         final ContentTypeInternationalization contentTypeInternationalization = mock(ContentTypeInternationalization.class);
-        final Map<String, Object> fieldMap = map(
+        final Map<String, Object> fieldMap = Map.of(
                 "attribute_1", "value_1",
                 "attribute_2", "value_2",
                 "attribute_3", "value_3",
@@ -153,7 +152,7 @@ public class FieldAPIImplTest {
         final DotRuntimeException dotRuntimeException = new DotRuntimeException(connectException);
 
         when(
-                this.languageVariableAPI.getLanguageVariable(anyString(), anyLong(), anyObject(), anyBoolean(), anyBoolean())
+                languageVariableAPI.getLanguageVariable(anyString(), anyLong(), any(), anyBoolean(), anyBoolean())
         ).thenThrow(dotRuntimeException);
 
 

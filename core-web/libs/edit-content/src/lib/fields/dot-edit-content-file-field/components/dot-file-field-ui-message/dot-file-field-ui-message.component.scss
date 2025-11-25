@@ -1,0 +1,37 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: $spacing-3;
+    height: 100%;
+    padding: $spacing-3;
+}
+
+.icon-container {
+    border-radius: 50%;
+    padding: $spacing-3;
+
+    .icon {
+        font-size: $font-size-xxl;
+        width: auto;
+    }
+
+    &.info {
+        color: $color-palette-primary-500;
+        background: $color-palette-primary-200;
+    }
+
+    &.error {
+        color: $color-alert-yellow;
+        background: $color-alert-yellow-light;
+    }
+}
+
+.text {
+    text-align: center;
+    line-height: 140%;
+    font-size: $font-size-default;
+}

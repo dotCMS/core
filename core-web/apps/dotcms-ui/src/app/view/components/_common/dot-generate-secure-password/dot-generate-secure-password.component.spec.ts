@@ -7,12 +7,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotClipboardUtil,
+    DotDialogComponent,
+    DotDialogModule,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-password.component';
 
@@ -47,7 +50,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
                 BrowserAnimationsModule,
                 ButtonModule,
                 DotDialogModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             providers: [
@@ -97,10 +100,10 @@ describe('DotGenerateSecurePasswordComponent', () => {
                 By.css('.dot-generate-secure-password__reveal-link')
             );
             revealButton.nativeElement.click();
-            expect(revealButton.nativeElement.text).toBe('Reveal');
+            expect(revealButton.nativeElement.text).toContain('Reveal');
             fixture.detectChanges();
             expect(comp.typeInput).toBe('text');
-            expect(revealButton.nativeElement.text).toBe('hide');
+            expect(revealButton.nativeElement.text).toContain('hide');
         });
 
         it('should reset on close', () => {
@@ -112,7 +115,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
             expect(comp.typeInput).toBe('password');
             expect(comp.value).toBe('');
             expect(comp.dialogShow).toBe(false);
-            expect(revealButton.nativeElement.text).toBe('Reveal');
+            expect(revealButton.nativeElement.text.trim()).toBe('Reveal');
         });
     });
 

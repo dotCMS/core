@@ -55,7 +55,10 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     actions: DotPortletToolbarActions;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private fb: UntypedFormBuilder, private dotMessageService: DotMessageService) {}
+    constructor(
+        private fb: UntypedFormBuilder,
+        private dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit(): void {
         this.form = this.fb.group({ body: this.body });

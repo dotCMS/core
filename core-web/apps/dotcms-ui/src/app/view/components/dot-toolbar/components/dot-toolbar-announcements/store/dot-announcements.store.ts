@@ -1,13 +1,13 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { EMPTY } from 'rxjs';
+import { EMPTY, combineLatest } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, Signal, inject } from '@angular/core';
 
-import { catchError, pluck, tap } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { LocalStoreService, SiteService } from '@dotcms/dotcms-js';
+import { LocalStoreService, Site, SiteService } from '@dotcms/dotcms-js';
 
 export type Announcement = {
     title: string;
@@ -29,6 +29,7 @@ export interface DotAnnouncementsState {
     announcements: Announcement[];
     showUnreadAnnouncement: boolean;
     utmParameters?: string;
+    currentSite: Site;
 }
 
 export enum TypesIcons {
@@ -52,21 +53,30 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         super({
             announcements: [],
             showUnreadAnnouncement: false,
-            utmParameters: ''
+            utmParameters: '',
+            currentSite: null
         });
     }
 
     readonly load = () =>
         this.effect(() => {
-            return this.http.get<Announcement[]>(this.announcementsUrl).pipe(
-                pluck('entity'),
-                tap((announcements: Announcement[]) => {
-                    const modifiedAnnouncements = this.updateWithUtmAndReadStatus(announcements);
+            const announcements$ = this.http
+                .get<Announcement[]>(this.announcementsUrl)
+                .pipe(map((response) => response['entity']));
+
+            return combineLatest([announcements$, this.siteService.getCurrentSite()]).pipe(
+                tap(([announcements, currentSite]) => {
+                    const modifiedAnnouncements = this.updateWithUtmAndReadStatus(
+                        announcements,
+                        currentSite
+                    );
+                    const utmParameters = this.generateUtmQueryString(currentSite);
 
                     this.setState({
                         announcements: modifiedAnnouncements,
                         showUnreadAnnouncement: this.hasUnreadAnnouncements(announcements),
-                        utmParameters: this.generateUtmQueryString()
+                        utmParameters,
+                        currentSite
                     });
                 }),
                 catchError(() => EMPTY)
@@ -81,60 +91,56 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         (state) => state.showUnreadAnnouncement
     );
 
-    readonly selectKnowledgeCenterLinks: Signal<AnnouncementLink[]> = this.selectSignal((state) => {
-        return [
-            {
-                id: '1',
-                url: `https://www.dotcms.com/announcement-menu-documentation?${state.utmParameters}`,
-                label: this.dotMessageService.get('announcements.knowledge.center.documentation')
-            },
-            {
-                url: `https://www.dotcms.com/announcement-menu-user-forum?${state.utmParameters}`,
-                id: '2',
-                label: this.dotMessageService.get('announcements.knowledge.center.forum')
-            },
-            {
-                url: `https://www.dotcms.com/announcement-menu-online-training?${state.utmParameters}`,
-                id: '3',
-                label: this.dotMessageService.get('announcements.knowledge.center.training')
-            },
-            {
-                id: '4',
-                label: this.dotMessageService.get('announcements.knowledge.center.blog'),
-                url: `https://www.dotcms.com/announcement-menu-dotcms-blog?${state.utmParameters}`
-            },
-            {
-                url: `https://www.dotcms.com/announcement-menu-github-repository?${state.utmParameters}`,
-                id: '5',
-                label: this.dotMessageService.get('announcements.knowledge.center.github')
-            }
-        ];
-    });
+    readonly selectKnowledgeCenterLinks: Signal<AnnouncementLink[]> = this.selectSignal((state) => [
+        {
+            id: '1',
+            url: `https://www.dotcms.com/announcement-menu-documentation?${state.utmParameters}`,
+            label: this.dotMessageService.get('announcements.knowledge.center.documentation')
+        },
+        {
+            url: `https://www.dotcms.com/announcement-menu-user-forum?${state.utmParameters}`,
+            id: '2',
+            label: this.dotMessageService.get('announcements.knowledge.center.forum')
+        },
+        {
+            url: `https://www.dotcms.com/announcement-menu-online-training?${state.utmParameters}`,
+            id: '3',
+            label: this.dotMessageService.get('announcements.knowledge.center.training')
+        },
+        {
+            id: '4',
+            label: this.dotMessageService.get('announcements.knowledge.center.blog'),
+            url: `https://www.dotcms.com/announcement-menu-dotcms-blog?${state.utmParameters}`
+        },
+        {
+            url: `https://www.dotcms.com/announcement-menu-github-repository?${state.utmParameters}`,
+            id: '5',
+            label: this.dotMessageService.get('announcements.knowledge.center.github')
+        }
+    ]);
 
-    readonly selectContactLinks: Signal<AnnouncementLink[]> = this.selectSignal((state) => {
-        return [
-            {
-                label: this.dotMessageService.get('announcements.contact.customer.support'),
-                url: `https://www.dotcms.com/announcement-menu-customer-support?${state.utmParameters}`,
-                id: '1'
-            },
-            {
-                id: '2',
-                label: this.dotMessageService.get('announcements.contact.professional.services'),
-                url: `https://www.dotcms.com/announcement-menu-professional-services?${state.utmParameters}`
-            },
-            {
-                label: this.dotMessageService.get('announcements.contact.request.feature'),
-                url: `https://www.dotcms.com/announcement-menu-request-a-feature?${state.utmParameters}`,
-                id: '3'
-            },
-            {
-                id: '4',
-                label: this.dotMessageService.get('announcements.contact.report.bug'),
-                url: `https://www.dotcms.com/announcement-menu-report-a-bug?${state.utmParameters}`
-            }
-        ];
-    });
+    readonly selectContactLinks: Signal<AnnouncementLink[]> = this.selectSignal((state) => [
+        {
+            label: this.dotMessageService.get('announcements.contact.customer.support'),
+            url: `https://www.dotcms.com/announcement-menu-customer-support?${state.utmParameters}`,
+            id: '1'
+        },
+        {
+            id: '2',
+            label: this.dotMessageService.get('announcements.contact.professional.services'),
+            url: `https://www.dotcms.com/announcement-menu-professional-services?${state.utmParameters}`
+        },
+        {
+            label: this.dotMessageService.get('announcements.contact.request.feature'),
+            url: `https://www.dotcms.com/announcement-menu-request-a-feature?${state.utmParameters}`,
+            id: '3'
+        },
+        {
+            id: '4',
+            label: this.dotMessageService.get('announcements.contact.report.bug'),
+            url: `https://www.dotcms.com/announcement-menu-report-a-bug?${state.utmParameters}`
+        }
+    ]);
 
     readonly selectLinkToDotCms: Signal<string> = this.selectSignal((state) => {
         return `https://www.dotcms.com/announcement-menu-show-all?${state.utmParameters}`;
@@ -155,28 +161,24 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         return {
             ...state,
             showUnreadAnnouncement: this.hasUnreadAnnouncements(state.announcements),
-            announcements: this.updateWithUtmAndReadStatus(state.announcements)
+            announcements: this.updateWithUtmAndReadStatus(state.announcements, state.currentSite)
         };
     });
 
-    readonly refreshUtmParameters = this.updater((state) => {
-        return {
-            ...state,
-            utmParameters: this.generateUtmQueryString()
-        };
-    });
-
-    private generateUtmQueryString(): string {
-        return `utm_source=platform&utm_medium=announcement&utm_campaign=${this.siteService.currentSite.hostname}`;
+    private generateUtmQueryString(currentSite: Site): string {
+        return `utm_source=platform&utm_medium=announcement&utm_campaign=${currentSite.hostname}`;
     }
 
-    private updateWithUtmAndReadStatus(announcements: Announcement[]): Announcement[] {
+    private updateWithUtmAndReadStatus(
+        announcements: Announcement[],
+        currentSite: Site
+    ): Announcement[] {
         const storedAnnouncements = this.getStoredAnnouncements();
 
         const modifiedAnnouncements = announcements.map((announcement) => {
             return {
                 ...announcement,
-                url: `${announcement.url}?${this.generateUtmQueryString()}`,
+                url: `${announcement.url}?${this.generateUtmQueryString(currentSite)}`,
                 hasBeenRead: storedAnnouncements.includes(announcement.inode)
             };
         });

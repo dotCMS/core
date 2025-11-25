@@ -6,7 +6,6 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.links.model.Link;
 
 import java.io.File;
@@ -14,7 +13,6 @@ import java.util.Collection;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Link}
@@ -27,7 +25,7 @@ public class LinkAssertionChecker implements AssertionChecker<Link> {
 
             final VersionInfo info =APILocator.getVersionableAPI().getVersionInfo(asset.getIdentifier());
 
-            return map(
+            return Map.of(
                     "id", asset.getIdentifier(),
                     "asset_name", identifier.getAssetName(),
                     "parent_path", identifier.getParentPath(),

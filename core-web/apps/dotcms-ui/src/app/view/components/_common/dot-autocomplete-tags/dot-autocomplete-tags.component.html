@@ -1,21 +1,16 @@
 <p-autoComplete
-    #autoComplete
-    [(ngModel)]="value"
-    [suggestions]="filteredOptions"
-    field="label"
-    dataKey="label"
-    [multiple]="true"
-    [placeholder]="placeholder"
     (onKeyUp)="checkForTag($event)"
     (completeMethod)="filterTags($event)"
     (keydown.enter)="$event.stopPropagation()"
     (onSelect)="addItem()"
     (onUnselect)="removeItem($event)"
+    [(ngModel)]="value"
+    [suggestions]="filteredOptions"
+    [multiple]="true"
+    [placeholder]="placeholder"
     [disabled]="disabled"
+    #autoComplete
+    optionLabel="label"
+    dataKey="label"
     inputStyleClass="ui-inputtext "
-    appendTo="body"
->
-</p-autoComplete>
-<span class="autocomplete-helper" *ngIf="inputReference?.value?.trim()">
-    {{ 'dot.common.press' | dm }}<dot-icon name="subdirectory_arrow_left" size="12"></dot-icon>
-</span>
+    appendTo="body" />

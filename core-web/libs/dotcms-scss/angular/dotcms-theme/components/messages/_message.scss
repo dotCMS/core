@@ -52,7 +52,7 @@
 }
 
 .p-message {
-    margin: $spacing-2 0;
+    margin: 0;
     border-radius: $border-radius-xs;
 }
 .p-message .p-message-wrapper {
@@ -63,7 +63,10 @@
     height: $spacing-5;
     border-radius: 50%;
     background: transparent;
-    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    transition:
+        background-color 0.2s,
+        color 0.2s,
+        box-shadow 0.2s;
 }
 .p-message .p-message-close:hover {
     background: $color-palette-white-op-30;
@@ -86,17 +89,31 @@
     color: #01579b;
 }
 .p-message.p-message-success {
-    background: #c8e6c9;
+    background: rgba(245, 253, 248, 1);
     border: solid transparent;
     border-width: 0 0 0 0;
-    color: #1b5e20;
+    color: $black;
+
+    .pi {
+        color: rgba(62, 217, 122, 1);
+    }
+}
+.p-message.p-message-success {
+    border: solid rgba(62, 217, 122, 1);
+    border-width: 0 0 0 0;
 }
 .p-message.p-message-success .p-message-icon {
-    color: #1b5e20;
+    color: rgba(62, 217, 122, 1);
 }
 .p-message.p-message-success .p-message-close {
-    color: #1b5e20;
+    color: rgba(62, 217, 122, 1);
 }
+.p-messages.p-message-border-y:has(.p-message.p-message-success) {
+    border: 0 solid rgba(62, 217, 122, 1);
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+}
+
 .p-message.p-message-warn {
     background: #ffecb3;
     border: solid transparent;
@@ -126,7 +143,7 @@
     font-weight: $font-weight-semi-bold;
 }
 .p-message .p-message-icon {
-    font-size: $font-size-xl;
+    font-size: $font-size-lg;
     margin-right: $spacing-1;
 }
 .p-message .p-message-summary {

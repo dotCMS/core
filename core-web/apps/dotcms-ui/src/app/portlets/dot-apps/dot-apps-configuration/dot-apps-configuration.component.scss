@@ -39,12 +39,12 @@
 }
 
 .dot-apps-configuration__add-configurations-title {
-    font-size: $font-size-xxl;
+    font-size: $font-size-xl;
     font-weight: bold;
 }
 
 .dot-apps-configuration__add-configurations-description {
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
     margin-bottom: $spacing-9;
     margin-top: $spacing-4;
 }
@@ -54,4 +54,5 @@
     box-shadow: $shadow-m;
     overflow-y: auto;
     width: 100%;
+    font-size: $font-size-md;
 }

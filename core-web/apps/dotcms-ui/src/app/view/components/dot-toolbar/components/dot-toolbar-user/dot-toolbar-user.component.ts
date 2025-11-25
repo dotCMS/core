@@ -1,11 +1,18 @@
-import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnInit,
+    inject,
+    signal,
+    viewChild
+} from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
-import { MenuModule } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 
 import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
@@ -24,18 +31,28 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
         AvatarModule,
         DotLoginAsModule,
         DotMyAccountModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         MenuModule,
-        AsyncPipe,
-        NgIf
+        AsyncPipe
     ]
 })
 export class DotToolbarUserComponent implements OnInit {
-    vm$ = this.store.vm$;
+    readonly store = inject(DotToolbarUserStore);
 
-    constructor(private store: DotToolbarUserStore) {}
+    vm$ = this.store.vm$;
+    $menu = viewChild<Menu>('menu');
+    $showMask = signal<boolean>(false);
 
     ngOnInit(): void {
         this.store.init();
+    }
+
+    toggleMenu(event: Event): void {
+        this.$menu().toggle(event);
+        this.$showMask.update((value) => !value);
+    }
+
+    hideMask(): void {
+        this.$showMask.update(() => false);
     }
 }

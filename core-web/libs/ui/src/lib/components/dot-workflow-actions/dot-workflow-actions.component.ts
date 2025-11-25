@@ -2,10 +2,9 @@ import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
-    Input,
+    input,
     OnChanges,
-    Output,
+    output,
     signal
 } from '@angular/core';
 
@@ -25,6 +24,11 @@ const InplaceButtonSizePrimeNg: Record<ButtonSize, string> = {
     large: 'p-button-lg'
 };
 
+interface WorkflowActionsGroup {
+    mainAction: MenuItem;
+    subActions: MenuItem[];
+}
+
 @Component({
     selector: 'dot-workflow-actions',
     standalone: true,
@@ -34,71 +38,121 @@ const InplaceButtonSizePrimeNg: Record<ButtonSize, string> = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotWorkflowActionsComponent implements OnChanges {
-    @Input({ required: true }) actions: DotCMSWorkflowAction[];
-    @Input() loading: boolean = false;
-    @Input() groupAction: boolean = false;
-    @Input() size: ButtonSize = 'normal';
-    @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
+    /**
+     * List of actions to display
+     *
+     * @type {DotCMSWorkflowAction[]}
+     * @memberof DotWorkflowActionsComponent
+     */
+    actions = input.required<DotCMSWorkflowAction[]>();
+    /**
+     * Show a loading button spinner
+     *
+     * @memberof DotWorkflowActionsComponent
+     */
+    loading = input<boolean>(false);
+    /**
+     * Group the actions by separator
+     *
+     * @memberof DotWorkflowActionsComponent
+     */
+    groupActions = input<boolean>(false);
+    /**
+     * Button size
+     *
+     * @type {ButtonSize}
+     * @memberof DotWorkflowActionsComponent
+     */
+    size = input<ButtonSize>('normal');
+    /**
+     * Emits when an action is selected
+     *
+     * @memberof DotWorkflowActionsComponent
+     */
+    actionFired = output<DotCMSWorkflowAction>();
 
-    protected groupedActions = signal<MenuItem[][]>([]);
-    protected sizeClass: string;
+    protected $groupedActions = signal<WorkflowActionsGroup[]>([]);
+    protected sizeClass!: string;
 
     ngOnChanges(): void {
-        this.groupedActions.set(
-            this.groupAction ? this.groupActions(this.actions) : this.formatActions(this.actions)
-        );
-        this.sizeClass = InplaceButtonSizePrimeNg[this.size];
+        this.sizeClass = InplaceButtonSizePrimeNg[this.size()];
+
+        if (!this.actions().length) {
+            this.$groupedActions.set([]);
+
+            return;
+        }
+
+        this.setActions();
     }
 
     /**
-     * Group actions by separator
+     * Set the actions to display
      *
      * @private
-     * @param {DotCMSWorkflowAction[]} [actions=[]]
-     * @return {*}  {MenuItem[][]}
      * @memberof DotWorkflowActionsComponent
      */
-    private groupActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
+    private setActions(): void {
+        const groups = this.createGroups(this.actions());
+        const actions = groups.map((group) => {
+            const [first, ...rest] = group;
+            const mainAction = this.createActions(first);
+            const subActions = rest.map((action) => this.createActions(action));
+
+            return { mainAction, subActions };
+        });
+
+        this.$groupedActions.set(actions);
+    }
+
+    /**
+     * Create the groups of actions
+     * Each group is create when a separator is found
+     *
+     * @private
+     * @param {DotCMSWorkflowAction[]} actions
+     * @return {*}  {DotCMSWorkflowAction[][]}
+     * @memberof DotWorkflowActionsComponent
+     */
+    private createGroups(actions: DotCMSWorkflowAction[]): DotCMSWorkflowAction[][] {
+        if (!this.groupActions()) {
+            // Remove the separator from the actions and return the actions grouped
+            const formatActions = actions.filter(
+                (action) => action?.metadata?.subtype !== DotCMSActionSubtype.SEPARATOR
+            );
+
+            return [formatActions].filter((group) => !!group.length);
+        }
+
+        // Create a new group every time we find a separator
         return actions
-            ?.reduce(
+            .reduce<DotCMSWorkflowAction[][]>(
                 (acc, action) => {
                     if (action?.metadata?.subtype === DotCMSActionSubtype.SEPARATOR) {
                         acc.push([]);
                     } else {
-                        acc[acc.length - 1].push({
-                            label: action.name,
-                            command: () => this.actionFired.emit(action)
-                        });
+                        acc[acc.length - 1].push(action);
                     }
 
                     return acc;
                 },
                 [[]]
             )
-            .filter((group) => group.length);
+            .filter((group) => !!group.length);
     }
 
     /**
-     * Remove the separator from the actions and return the actions grouped
-     * in a single group.
+     * Create the action menu item
      *
      * @private
-     * @param {DotCMSWorkflowAction[]} [actions=[]]
-     * @return {*}  {MenuItem[][]}
+     * @param {DotCMSWorkflowAction} action
+     * @return {*}  {MenuItem}
      * @memberof DotWorkflowActionsComponent
      */
-    private formatActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
-        const formatedActions = actions?.reduce((acc, action) => {
-            if (action?.metadata?.subtype !== DotCMSActionSubtype.SEPARATOR) {
-                acc.push({
-                    label: action.name,
-                    command: () => this.actionFired.emit(action)
-                });
-            }
-
-            return acc;
-        }, []);
-
-        return [formatedActions].filter((group) => group.length);
+    private createActions(action: DotCMSWorkflowAction): MenuItem {
+        return {
+            label: action.name,
+            command: () => this.actionFired.emit(action)
+        };
     }
 }

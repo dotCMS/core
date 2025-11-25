@@ -1,12 +1,12 @@
 <tr class="dot-key-value-input">
     <td>
         <input
-            class="field-key-input"
-            #keyCell
-            [formControl]="form.get('key')"
-            [placeholder]="'keyValue.key_input.placeholder' | dm"
             (keydown.escape)="onCancel($event)"
             (keydown.enter)="handleKeyInputEnter($event)"
+            [formControl]="form.get('key')"
+            [placeholder]="'keyValue.key_input.placeholder' | dm"
+            class="field-key-input"
+            #keyCell
             data-testId="key-input"
             pInputText
             type="text"
@@ -14,36 +14,36 @@
     </td>
     <td>
         <input
-            class="field-value-input"
-            #valueCell
+            (keydown.escape)="onCancel($event)"
+            (keydown.enter)="saveButton?.click()"
             [formControl]="form.get('value')"
             [type]="form.get('hidden').value ? 'password' : 'text'"
             [placeholder]="'keyValue.value_input.placeholder' | dm"
-            (keydown.escape)="onCancel($event)"
-            (keydown.enter)="saveButton?.click()"
+            class="field-value-input"
+            #valueCell
             data-testId="value-input"
             pInputText
             autocomplete="false" />
     </td>
-    @if( showHiddenField ) {
-    <td class="dot-key-value-input__variables-hidden">
-        <p-inputSwitch [formControl]="form.get('hidden')" />
-    </td>
+    @if (showHiddenField) {
+        <td class="dot-key-value-input__variables-hidden">
+            <p-inputSwitch [formControl]="form.get('hidden')" />
+        </td>
     }
     <td class="dot-key-value-input__variables-actions">
         <button
-            class="dot-key-value-input__variables-actions-edit-cancel p-button-outlined"
-            [label]="'Cancel' | dm"
             (click)="onCancel($event)"
+            [label]="'Cancel' | dm"
+            class="dot-key-value-input__variables-actions-edit-cancel p-button-outlined"
             data-testId="cancel-button"
             type="button"
             pButton></button>
         <button
-            class="dot-key-value-input__variables-actions-edit-save"
-            #saveButton
+            (click)="saveVariable()"
             [label]="'Save' | dm"
             [disabled]="form.invalid"
-            (click)="saveVariable()"
+            class="dot-key-value-input__variables-actions-edit-save"
+            #saveButton
             data-testId="save-button"
             type="button"
             pButton></button>

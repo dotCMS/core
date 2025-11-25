@@ -1,39 +1,31 @@
-<p-tabView
-    [styleClass]="(featureFlagIsOn$ | async) && 'dot-template-builder__new-template-builder'">
+<p-tabView styleClass="dot-template-builder__new-template-builder">
     <p-tabPanel
         [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
         data-testId="builder">
-        <ng-container *ngIf="item.type === 'advanced'; else elseBlock">
-            <dot-template-advanced
-                [didTemplateChanged]="didTemplateChanged"
-                [body]="item.body"
-                (updateTemplate)="updateTemplate.emit($event)"
-                (save)="save.emit($event)"
-                (cancel)="cancel.emit()"></dot-template-advanced>
-        </ng-container>
-        <ng-template #elseBlock>
-            <ng-template #enabledComponent>
-                <dotcms-template-builder-lib
-                    [layout]="item.layout"
-                    [themeId]="item.theme"
-                    [containerMap]="item.containers"
-                    (templateChange)="onTemplateItemChange($event)"
-                    data-testId="new-template-builder">
-                    <dot-global-message toolbar-left></dot-global-message>
-                </dotcms-template-builder-lib>
-            </ng-template>
-            <ng-template #disabledComponent>
-                <dot-edit-layout-designer
-                    [theme]="item.theme"
-                    [disablePublish]="item.live"
-                    [layout]="item.layout"
-                    (saveAndPublish)="saveAndPublish.emit($event)"
-                    (updateTemplate)="onTemplateItemChange($event)"
-                    (save)="save.emit($event)"></dot-edit-layout-designer>
-            </ng-template>
-            <ng-container
-                *dotShowHideFeature="featureFlag; alternate: disabledComponent"
-                [ngTemplateOutlet]="enabledComponent"></ng-container>
+        <ng-template pTemplate="content">
+            @switch (item.type) {
+                @case ('advanced') {
+                    <dot-template-advanced
+                        (updateTemplate)="updateTemplate.emit($event)"
+                        (save)="save.emit($event)"
+                        (cancel)="cancel.emit()"
+                        [didTemplateChanged]="didTemplateChanged"
+                        [body]="item.body"></dot-template-advanced>
+                }
+                @case ('design') {
+                    <dotcms-template-builder-lib
+                        (templateChange)="onTemplateItemChange($event)"
+                        [layout]="item.layout"
+                        [template]="{
+                            themeId: item.theme ?? item.themeId,
+                            identifier: item.identifier
+                        }"
+                        [containerMap]="item.containers"
+                        data-testId="new-template-builder">
+                        <dot-global-message toolbar-left></dot-global-message>
+                    </dotcms-template-builder-lib>
+                }
+            }
         </ng-template>
     </p-tabPanel>
     <p-tabPanel [header]="'Permissions' | dm">
@@ -47,9 +39,9 @@
         <ng-template pTemplate="content">
             <dot-portlet-box>
                 <dot-iframe
-                    #historyIframe
-                    [src]="historyUrl"
                     (custom)="custom.emit($event)"
+                    [src]="historyUrl"
+                    #historyIframe
                     data-testId="historyIframe"></dot-iframe>
             </dot-portlet-box>
         </ng-template>

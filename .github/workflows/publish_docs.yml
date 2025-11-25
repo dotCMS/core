@@ -1,9 +1,10 @@
+# TODO: Add to the main cicd process to be activated by cicd_3-trunk.yml
 name: Publish Docs & Storybook
 on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - main
 jobs:
   publish:
     runs-on: ubuntu-latest

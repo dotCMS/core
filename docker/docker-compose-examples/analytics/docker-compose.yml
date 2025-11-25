@@ -112,7 +112,7 @@ services:
 
   cube:
     container_name: cube
-    image: cubejs/cube:latest
+    image: cubejs/cube:v0.35.12
     ports:
       - ${CUBE_HOST_PORT:-4001}:4000
     environment:

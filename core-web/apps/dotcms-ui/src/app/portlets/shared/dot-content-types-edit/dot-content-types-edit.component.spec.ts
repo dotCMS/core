@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import * as _ from 'lodash';
+import { createFakeEvent } from '@ngneat/spectator';
 import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -16,7 +15,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotAlertConfirmService,
@@ -34,7 +32,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotDialogModule, DotIconModule } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
@@ -516,11 +514,11 @@ describe('DotContentTypesEditComponent', () => {
             const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
             spyOn(dotEventsService, 'notify');
 
-            comp.contentTypeActions[0].command();
+            comp.contentTypeActions[0].command({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[0].label).toBe('Add rows');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
 
-            comp.contentTypeActions[1].command();
+            comp.contentTypeActions[1].command({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[1].label).toBe('Add tab');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
         });
@@ -536,7 +534,7 @@ describe('DotContentTypesEditComponent', () => {
         });
 
         it('should update fields attribute when a field is edit', () => {
-            const layout: DotCMSContentTypeLayoutRow[] = _.cloneDeep(currentLayoutInServer);
+            const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
             const fieldToUpdate: DotCMSContentTypeField = layout[0].columns[0].fields[0];
             fieldToUpdate.name = 'Updated field';
 
@@ -552,7 +550,7 @@ describe('DotContentTypesEditComponent', () => {
         });
 
         it('should update fields on dropzone event', () => {
-            const layout: DotCMSContentTypeLayoutRow[] = _.cloneDeep(currentLayoutInServer);
+            const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
             const fieldToUpdate: DotCMSContentTypeField = layout[0].columns[0].fields[0];
 
             spyOn(fieldService, 'updateField').and.returnValue(of(layout));
@@ -644,7 +642,7 @@ describe('DotContentTypesEditComponent', () => {
             ];
 
             const fieldsReturnByServer: DotCMSContentTypeLayoutRow[] =
-                _.cloneDeep(currentLayoutInServer);
+                structuredClone(currentLayoutInServer);
             newFieldsAdded.concat(fieldsReturnByServer[0].columns[0].fields);
             fieldsReturnByServer[0].columns[0].fields = newFieldsAdded;
 
@@ -671,7 +669,7 @@ describe('DotContentTypesEditComponent', () => {
                 }
             );
 
-            const layout: DotCMSContentTypeLayoutRow[] = _.cloneDeep(currentLayoutInServer);
+            const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
             layout[0].columns[0].fields = fieldsReturnByServer;
             layout[0].divider.id = new Date().getMilliseconds().toString();
             layout[0].columns[0].columnDivider.id = new Date().getMilliseconds().toString();
@@ -731,7 +729,7 @@ describe('DotContentTypesEditComponent', () => {
         });
 
         it('should remove fields on dropzone event', () => {
-            const layout: DotCMSContentTypeLayoutRow[] = _.cloneDeep(currentLayoutInServer);
+            const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
             layout[0].columns[0].fields = layout[0].columns[0].fields.slice(-1);
 
             spyOn<any>(fieldService, 'deleteFields').and.returnValue(of({ fields: layout }));

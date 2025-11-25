@@ -1,54 +1,42 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
+import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { Chips, ChipsModule } from 'primeng/chips';
 
-export default {
+const meta: Meta = {
     title: 'PrimeNG/Form/Chips',
     component: Chips,
+    decorators: [
+        moduleMetadata({
+            imports: [ChipsModule, BrowserAnimationsModule, FormsModule]
+        })
+    ],
     parameters: {
         docs: {
             description: {
                 component:
-                    'Chips is used to enter multiple values on an input field: https://primeng.org/checkbox'
+                    'Chips is used to enter multiple values on an input field: https://primeng.org/chips'
             }
         }
     },
-    decorators: [
-        moduleMetadata({
-            imports: [ChipsModule, BrowserAnimationsModule]
-        })
-    ],
-    args: {
-        values: ['first']
-    }
-} as Meta;
-
-const ChipsTemplate = `<p-chips [(ngModel)]="values" ></p-chips>`;
-
-const Template: Story<Chips> = (props: Chips) => {
-    const template = ChipsTemplate;
-
-    return {
-        props,
-        template
-    };
-};
-
-export const Basic: Story = Template.bind({});
-
-Basic.argTypes = {
-    values: {
-        name: 'values',
-        description: 'Array of strings, each representing a chip.'
-    }
-};
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: ChipsTemplate
+    argTypes: {
+        values: {
+            name: 'values',
+            description: 'Array of strings, each representing a chip.'
         }
-    }
+    },
+    args: {
+        values: ['one', 'two']
+    },
+    render: (args) => ({
+        props: args,
+        template: `<p-chips [(ngModel)]="values" />`
+    })
 };
+export default meta;
+
+type Story = StoryObj<Chips>;
+
+export const Default: Story = {};

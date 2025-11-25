@@ -4,17 +4,17 @@ import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.contenttype.model.type.ContentType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.function.Function;
-import javax.enterprise.context.Dependent;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import jakarta.enterprise.context.Dependent;
 import org.eclipse.microprofile.context.ManagedExecutor;
 
 /**
  * Represents a task that performs HTTP requests concurrently.
  */
 @Dependent
-public class HttpRequestTask extends TaskProcessor {
+public class HttpRequestTask extends
+        TaskProcessor<List<ContentType>, CompletableFuture<List<ContentType>>> {
 
     private final ContentTypeFetcher contentTypeFetcher;
 
@@ -41,12 +41,13 @@ public class HttpRequestTask extends TaskProcessor {
      *
      * @param contentTypes List of ContentType objects to process.
      */
+    @Override
     public void setTaskParams(final List<ContentType> contentTypes) {
         this.contentTypes = contentTypes;
     }
 
     /**
-     * Processes a list of ContentType objects, either sequantially or in parallel, depending on the
+     * Processes a list of ContentType objects, either sequentially or in parallel, depending on the
      * list size. If the size of the list is under a predefined threshold, items are processed
      * individually in order. For larger lists, the work is divided into separate concurrent tasks,
      * which are processed in parallel.
@@ -56,48 +57,30 @@ public class HttpRequestTask extends TaskProcessor {
      *
      * @return A List of fully fetched ContentType objects.
      */
-    public List<ContentType> compute() {
-
-        CompletionService<List<ContentType>> completionService =
-                new ExecutorCompletionService<>(executor);
+    @Override
+    public CompletableFuture<List<ContentType>> compute() {
 
         if (contentTypes.size() <= THRESHOLD) {
 
             // If the list is small enough, process sequentially
-            List<ContentType> contentTypeViews = new ArrayList<>();
-            for (ContentType contentType : contentTypes) {
-                contentTypeViews.add(
-                        contentTypeFetcher.fetchByKey(contentType.variable(), null)
-                );
-            }
+            return CompletableFuture.supplyAsync(() -> contentTypes.stream()
+                    .map(contentType ->
+                            contentTypeFetcher.fetchByKey(contentType.variable(), false, null)
+                    ).collect(Collectors.toList()), executor);
 
-            return contentTypeViews;
-
-        } else {
-
-            // If the list is large, split it into smaller tasks
-            int toProcessCount = splitTasks(contentTypes, completionService);
-
-            // Wait for all tasks to complete and gather the results
-            final var foundContentTypes = new ArrayList<ContentType>();
-            Function<List<ContentType>, Void> processFunction = taskResult -> {
-                foundContentTypes.addAll(taskResult);
-                return null;
-            };
-            processTasks(toProcessCount, completionService, processFunction);
-            return foundContentTypes;
         }
+
+        // If the list is large, split it into smaller tasks
+        return splitTasks(contentTypes);
     }
 
     /**
      * Splits a list of ContentType objects into separate tasks.
      *
      * @param contentTypes      List of ContentType objects to process.
-     * @param completionService The CompletionService to submit tasks to.
-     * @return The number of tasks to process.
+     * @return A CompletableFuture representing the combined results of the separate tasks.
      */
-    private int splitTasks(final List<ContentType> contentTypes,
-            final CompletionService<List<ContentType>> completionService) {
+    private CompletableFuture<List<ContentType>> splitTasks(final List<ContentType> contentTypes) {
 
         int mid = contentTypes.size() / 2;
         var subList1 = contentTypes.subList(0, mid);
@@ -105,14 +88,17 @@ public class HttpRequestTask extends TaskProcessor {
 
         var task1 = new HttpRequestTask(contentTypeFetcher, executor);
         task1.setTaskParams(subList1);
+        var futureTask1 = task1.compute();
 
         var task2 = new HttpRequestTask(contentTypeFetcher, executor);
         task2.setTaskParams(subList2);
+        var futureTask2 = task2.compute();
 
-        completionService.submit(task1::compute);
-        completionService.submit(task2::compute);
-
-        return 2;
+        return futureTask1.thenCombine(futureTask2, (list1, list2) -> {
+            var combinedList = new ArrayList<>(list1);
+            combinedList.addAll(list2);
+            return combinedList;
+        });
     }
 
 }

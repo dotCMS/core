@@ -1,9 +1,9 @@
 <!-- Block Editor Settings -->
-<form class="wrapper" [formGroup]="form">
-    <div class="field" *ngFor="let setting of settings">
-        <label [checkIsRequiredControl]="setting.key" [for]="setting.key" dotFieldRequired>{{
-            setting.label
-        }}</label>
+<form [formGroup]="form" class="wrapper">
+    <div *ngFor="let setting of settings" class="field">
+        <label [checkIsRequiredControl]="setting.key" [for]="setting.key" dotFieldRequired>
+            {{ setting.label }}
+        </label>
         <p-multiSelect
             [id]="setting.key"
             [placeholder]="setting.placeholder"
@@ -13,8 +13,6 @@
             appendTo="body"
             display="chip"
             optionLabel="label"
-            optionValue="code"
-        >
-        </p-multiSelect>
+            optionValue="code"></p-multiSelect>
     </div>
 </form>

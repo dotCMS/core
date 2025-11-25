@@ -3,10 +3,14 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+
 import java.util.Objects;
 
 /**
- * Context for render a {@link HTMLPageAsset}
+ * Provides the data context for rendering an {@link HTMLPageAsset}.
+ *
+ * @author Freddy Rodriguez
+ * @since Feb 22nd, 2019
  */
 public class PageContext {
 
@@ -16,6 +20,7 @@ public class PageContext {
     private final HTMLPageAsset page;
     private final boolean graphQL;
     private final boolean parseJSON;
+    private final VanityURLView vanityUrl;
 
     public PageContext(
             final User user,
@@ -33,7 +38,7 @@ public class PageContext {
             final HTMLPageAsset page,
             final boolean graphQL) {
 
-        this(user, pageUri, pageMode, page, graphQL, false);
+        this(user, pageUri, pageMode, page, graphQL, false, null);
     }
 
     public PageContext(
@@ -42,7 +47,8 @@ public class PageContext {
             final PageMode pageMode,
             final HTMLPageAsset page,
             final boolean graphQL,
-            final boolean parseJSON) {
+            final boolean parseJSON,
+            final VanityURLView vanityUrl) {
 
         this.user = user;
         this.pageUri = pageUri;
@@ -50,6 +56,7 @@ public class PageContext {
         this.page = page;
         this.graphQL = graphQL;
         this.parseJSON = parseJSON;
+        this.vanityUrl = vanityUrl;
     }
 
 
@@ -93,5 +100,28 @@ public class PageContext {
 
     public boolean isParseJSON() {
         return parseJSON;
+    }
+
+    /**
+     * If the page URL matches a Vanity URL, this method returns the associated Vanity URL
+     * object.
+     *
+     * @return The {@link VanityURLView} object representing the Vanity URL.
+     */
+    public VanityURLView getVanityUrl() {
+        return vanityUrl;
+    }
+
+    //Create a toString method
+    @Override
+    public String toString() {
+        return "PageContext{" +
+                "user=" + user +
+                ", pageUri='" + pageUri + '\'' +
+                ", pageMode=" + pageMode +
+                ", page=" + page +
+                ", graphQL=" + graphQL +
+                ", parseJSON=" + parseJSON +
+                '}';
     }
 }

@@ -1,5 +1,6 @@
 import { describe } from '@jest/globals';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -10,9 +11,11 @@ import { By } from '@angular/platform-browser';
 
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
+    DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotKeyValueComponent } from '@dotcms/ui';
 
@@ -20,8 +23,12 @@ import { DotEditContentFieldComponent } from './dot-edit-content-field.component
 
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
+import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
 import { DotEditContentCustomFieldComponent } from '../../fields/dot-edit-content-custom-field/dot-edit-content-custom-field.component';
+import { DotEditContentFileFieldComponent } from '../../fields/dot-edit-content-file-field/dot-edit-content-file-field.component';
+import { DotFileFieldUploadService } from '../../fields/dot-edit-content-file-field/services/upload-file/upload-file.service';
+import { DotEditContentHostFolderFieldComponent } from '../../fields/dot-edit-content-host-folder-field/dot-edit-content-host-folder-field.component';
 import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-json-field/dot-edit-content-json-field.component';
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
@@ -30,13 +37,15 @@ import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-conten
 import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-tag-field/dot-edit-content-tag-field.component';
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
+import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
     BINARY_FIELD_CONTENTLET,
     createFormGroupDirectiveMock,
     DOT_MESSAGE_SERVICE_MOCK,
-    FIELDS_MOCK
+    FIELDS_MOCK,
+    TREE_SELECT_MOCK
 } from '../../utils/mocks';
 
 interface DotEditFieldTestBed {
@@ -63,12 +72,38 @@ declare module '@tiptap/core' {
 const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTestBed> = {
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
+    [FIELD_TYPES.FILE]: {
+        component: DotEditContentFileFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            }
+        ]
+    },
+    [FIELD_TYPES.IMAGE]: {
+        component: DotEditContentFileFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            }
+        ]
+    },
     [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
     [FIELD_TYPES.SELECT]: DotEditContentSelectFieldComponent,
     [FIELD_TYPES.RADIO]: DotEditContentRadioFieldComponent,
     [FIELD_TYPES.DATE]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
+    [FIELD_TYPES.HOST_FOLDER]: {
+        component: DotEditContentHostFolderFieldComponent,
+        providers: [
+            mockProvider(DotEditContentService, {
+                getSitesTreePath: jest.fn().mockReturnValue(of(TREE_SELECT_MOCK))
+            })
+        ]
+    },
     [FIELD_TYPES.TAG]: {
         component: DotEditContentTagFieldComponent,
         providers: [{ provide: DotEditContentService, useValue: { getTags: () => of([]) } }]
@@ -122,6 +157,29 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         component: DotEditContentKeyValueComponent,
         declarations: [MockComponent(DotKeyValueComponent)],
         providers: [mockProvider(DotMessageDisplayService)]
+    },
+    [FIELD_TYPES.WYSIWYG]: {
+        component: DotEditContentWYSIWYGFieldComponent,
+        providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            },
+            {
+                provide: DotWorkflowActionsFireService,
+                useValue: {}
+            }
+        ],
+        declarations: [MockComponent(EditorComponent)]
+    },
+    [FIELD_TYPES.CATEGORY]: {
+        component: DotEditContentCategoryFieldComponent
+    },
+    [FIELD_TYPES.CONSTANT]: {
+        component: null // this field is not being rendered for now.
+    },
+    [FIELD_TYPES.HIDDEN]: {
+        component: null // this field is not being rendered for now.
     }
 };
 
@@ -135,7 +193,11 @@ describe('FIELD_TYPES and FIELDS_MOCK', () => {
     });
 });
 
-describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fieldMock) => {
+const FIELDS_TO_BE_RENDER = FIELDS_MOCK.filter(
+    (field) => field.fieldType !== FIELD_TYPES.CONSTANT && field.fieldType !== FIELD_TYPES.HIDDEN
+);
+
+describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields', (fieldMock) => {
     const fieldTestBed = FIELD_TYPES_COMPONENTS[fieldMock.fieldType];
     let spectator: Spectator<DotEditContentFieldComponent>;
 
@@ -149,7 +211,7 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                 useValue: createFormGroupDirectiveMock()
             }
         ],
-        providers: [FormGroupDirective]
+        providers: [FormGroupDirective, mockProvider(DotHttpErrorManagerService)]
     });
 
     beforeEach(async () => {

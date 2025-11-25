@@ -1,11 +1,9 @@
-<div class="field" [formGroup]="group">
-    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>{{
-        'contenttypes.field.properties.default_value.label' | dm
-    }}</label>
+<div [formGroup]="group" class="field">
+    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
+        {{ 'contenttypes.field.properties.default_value.label' | dm }}
+    </label>
     <input [id]="property.name" [formControlName]="property.name" pInputText type="text" />
     <dot-field-validation-message
         [field]="group.controls[property.name]"
-        [message]="this.errorLabel"
-    >
-    </dot-field-validation-message>
+        [message]="this.errorLabel"></dot-field-validation-message>
 </div>

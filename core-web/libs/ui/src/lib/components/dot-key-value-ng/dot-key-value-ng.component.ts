@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -29,7 +28,6 @@ export interface DotKeyValue {
     templateUrl: './dot-key-value-ng.component.html',
     standalone: true,
     imports: [
-        CommonModule,
         TableModule,
         DotKeyValueTableInputRowComponent,
         DotKeyValueTableRowComponent,

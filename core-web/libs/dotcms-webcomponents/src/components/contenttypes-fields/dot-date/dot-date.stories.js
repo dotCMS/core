@@ -29,6 +29,6 @@ const Template = (args) => {
     }
 
     return date;
-}
+};
 
 export const Date = Template.bind({});

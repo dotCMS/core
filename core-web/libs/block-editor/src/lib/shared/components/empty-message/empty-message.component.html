@@ -1,11 +1,11 @@
 <p [innerHTML]="title"></p>
 
-<button
-    *ngIf="showBackBtn"
-    pButton
-    class="p-button-outlined"
-    label="Back"
-    type="submit"
-    (mousedown)="back.emit()"
-    [style]="{ padding: '.75rem 2rem', borderRadius: '2px' }"
-></button>
+@if (showBackBtn) {
+    <button
+        (mousedown)="back.emit()"
+        [style]="{ padding: '.75rem 2rem', borderRadius: '2px' }"
+        pButton
+        class="p-button-outlined"
+        label="Back"
+        type="submit"></button>
+}

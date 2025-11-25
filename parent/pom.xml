@@ -5,22 +5,92 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.dotcms</groupId>
     <artifactId>dotcms-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}${sha1}${changelist}</version>
     <packaging>pom</packaging>
     <description>DotCMS</description>
     <properties>
+        <!-- See https://maven.apache.org/maven-ci-friendly.html -->
+        <revision>1.0.0</revision>
+        <changelist>-SNAPSHOT</changelist>
+        <sha1/>
+        <flatten.mode>oss</flatten.mode>
+        <flatten.skip>false</flatten.skip>
+        <!-- default load from .sdkmanrc file -->
+        <!--suppress UnresolvedMavenProperty -->
+        <sdkman.java.version>${ext.java}</sdkman.java.version>
+        <!-- allows for override version of base for docker container separate from build -->
+        <runtime.docker.sdkman.java.version>${sdkman.java.version}</runtime.docker.sdkman.java.version>
+
+        <!-- this is the version of source we support in source must be same or less that running version
+         run version is set by .sdkmanrc file in project root should update only after downstream plugins and projects
+         support new version default in environments/environment.properties and can be changed for local developer in
+        environments/dev/user-dev.properties -->
+        <!--suppress UnresolvedMavenProperty -->
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
+        <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
+        <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
+        <java.module.args>
+            --add-modules java.se
+            --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
+            --add-opens java.base/java.lang=ALL-UNNAMED
+            --add-opens java.base/java.nio=ALL-UNNAMED
+            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens java.management/sun.management=ALL-UNNAMED
+            --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
+            --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
+            --add-opens java.base/java.lang.ref=ALL-UNNAMED
+            --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+            --add-opens java.base/java.net=ALL-UNNAMED
+            --add-opens java.base/java.nio=ALL-UNNAMED
+            --add-opens java.base/java.nio.charset=ALL-UNNAMED
+            --add-opens java.base/java.time=ALL-UNNAMED
+            --add-opens java.base/java.time.zone=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
+            --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens java.base/java.util.concurrent.locks=ALL-UNNAMED
+            --add-opens java.base/java.util.regex=ALL-UNNAMED
+            --add-opens java.base/javax.crypto.spec=ALL-UNNAMED
+            --add-opens java.management/javax.management=ALL-UNNAMED
+            --add-opens java.base/sun.nio.cs=ALL-UNNAMED
+            --add-opens java.base/sun.util.calendar=ALL-UNNAMED
+            --add-opens java.base/sun.util.locale=ALL-UNNAMED
+        </java.module.args>
+
+        <maven.deploy.skip>false</maven.deploy.skip>
         <tomcat.version>9.0.85</tomcat.version>
+        <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
+        <!--suppress UnresolvedMavenProperty -->
+        <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>
+        <!--suppress UnresolvedMavenProperty -->
+        <docker.image.search>${ext.docker.image.search}</docker.image.search>
+        <!--suppress UnresolvedMavenProperty -->
+        <docker.image.postgres>${ext.docker.image.postgres}</docker.image.postgres>
+        <!--suppress UnresolvedMavenProperty -->
+        <context.name>${ext.default.context.name}</context.name>
+        <docker.properties.prefix>ext.docker.${context.module}.${context.name}.dotcms</docker.properties.prefix>
+        <docker.skip>false</docker.skip>
+        <docker.jacoco.skip>true</docker.jacoco.skip>
+        <!-- starter -->
+        <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
+        <starter.deploy.version>empty_20240719</starter.deploy.version>
+        <starter.deploy.filename>starter.zip</starter.deploy.filename>
+        <starter.run.version>${starter.deploy.version}</starter.run.version>
+        <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>
+        <starter.run.path>${starter.download.folder}/${starter.run.filename}</starter.run.path>
         <dependency-check-maven.version>8.3.1</dependency-check-maven.version>
         <surefire-report-maven.version>3.1.0</surefire-report-maven.version>
         <project-info-reports.version>3.4.5</project-info-reports.version>
-        <elasticsearch.version>7.10.2</elasticsearch.version>
         <gib.fetchBaseBranch>true</gib.fetchBaseBranch>
-        <gib.referenceBranch>refs/remotes/origin/master</gib.referenceBranch>
+        <gib.referenceBranch>refs/remotes/origin/main</gib.referenceBranch>
         <gitflow-incremental-builder.version>4.4.1</gitflow-incremental-builder.version>
         <insecure.repositories>WARN</insecure.repositories>
         <!-- jandex maven plugin version -->
         <jandex-maven-plugin.version>1.2.3</jandex-maven-plugin.version>
-        <java.version>11</java.version>
+
         <javadoc.additional.params>-Xdoclint:none --allow-script-in-comments</javadoc.additional.params>
         <jdk.min.version>${maven.compiler.argument.source}</jdk.min.version>
         <maven.compiler.argument.source>${maven.compiler.source}</maven.compiler.argument.source>
@@ -28,11 +98,7 @@
         <maven.compiler.argument.testSource>${maven.compiler.testSource}</maven.compiler.argument.testSource>
         <maven.compiler.argument.testTarget>${maven.compiler.testTarget}</maven.compiler.argument.testTarget>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
-        <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
+
         <maven.min.version>3.8.1</maven.min.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -47,18 +113,18 @@
         <version.assembly.plugin>3.6.0</version.assembly.plugin>
         <version.buildhelper.plugin>3.4.0</version.buildhelper.plugin>
         <version.buildnumber.plugin>3.1.0</version.buildnumber.plugin>
-        <version.cargo.plugin>1.10.7</version.cargo.plugin>
+        <version.cargo.plugin>1.10.12</version.cargo.plugin>
         <version.checkstyle>10.11.0</version.checkstyle>
         <version.checkstyle.plugin>3.3.0</version.checkstyle.plugin>
-        <version.clean.plugin>3.2.0</version.clean.plugin>
+        <version.clean.plugin>3.3.2</version.clean.plugin>
         <version.compiler.plugin>3.11.0</version.compiler.plugin>
         <version.dependency.plugin>3.6.0</version.dependency.plugin>
         <version.deploy.plugin>3.1.1</version.deploy.plugin>
         <version.docker-compose.plugin>4.0.0</version.docker-compose.plugin>
         <!-- version.* properties are defined in jboss-parent and are overridden/updated here: -->
-        <version.enforcer.plugin>3.0.0</version.enforcer.plugin>
+        <version.enforcer.plugin>3.5.0</version.enforcer.plugin>
         <version.exec.plugin>3.0.0</version.exec.plugin>
-        <version.surefire.plugin>3.1.0</version.surefire.plugin>
+        <version.surefire.plugin>3.2.5</version.surefire.plugin>
         <version.failsafe.plugin>${version.surefire.plugin}</version.failsafe.plugin>
         <version.findbugs.plugin>3.0.5</version.findbugs.plugin>
         <version.gpg.plugin>3.1.0</version.gpg.plugin>
@@ -67,62 +133,276 @@
         <version.jar.plugin>3.3.0</version.jar.plugin>
         <version.javadoc.plugin>3.5.0</version.javadoc.plugin>
         <version.jxr.plugin>3.3.0</version.jxr.plugin>
-        <version.jococo.plugin>0.8.10</version.jococo.plugin>
+        <version.jococo.plugin>0.8.11</version.jococo.plugin>
         <version.javancss.plugin>2.1</version.javancss.plugin>
         <version.license.plugin>1.20</version.license.plugin>
         <version.pir.plugin>3.4.0</version.pir.plugin>
         <version.rar.plugin>2.4</version.rar.plugin>
         <version.release.plugin>2.5.3</version.release.plugin>
         <version.resources.plugin>3.3.1</version.resources.plugin>
-        <version.rewrite-maven-plugin>4.46.0</version.rewrite-maven-plugin>
+        <version.rewrite-maven-plugin>5.21.0</version.rewrite-maven-plugin>
         <version.shade.plugin>3.2.1</version.shade.plugin>
         <version.site.plugin>4.0.0-M8</version.site.plugin>
         <version.sonar.plugin>3.10.0.2594</version.sonar.plugin>
         <version.source.plugin>3.1.0</version.source.plugin>
-
+        <version.frontend.plugin>1.12.1</version.frontend.plugin>
+        <version.properties.plugin>1.2.1</version.properties.plugin>
+        <version.flatten.plugin>1.6.0</version.flatten.plugin>
         <version.versions.plugin>2.8.1</version.versions.plugin>
         <version.maven.plugin.plugin>3.8.1</version.maven.plugin.plugin>
         <version.war.plugin>3.2.3</version.war.plugin>
         <version.docker-maven.plugin>0.43.4</version.docker-maven.plugin>
         <test.working.dir>${project.build.directory}/testdata</test.working.dir>
         <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
-
-        <starter.version>empty_20240201</starter.version>
-        <!--<starter.version>empty_20230509</starter.version>-->
-
         <sonar.projectKey>core-maven:${project.groupId}:${project.artifactId}</sonar.projectKey>
         <sonar.projectName>core-maven</sonar.projectName>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/jacoco-results/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/reports/target/site/jacoco-aggregate</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/reports/target/**/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <!--<sonar.java.checkstyle.reportPaths>target/checkstyle-result.xml</sonar.java.checkstyle.reportPaths>
+        <sonar.java.pmd.reportPaths>target/pmd.xml,target/cpd.xml</sonar.java.pmd.reportPaths> -->
+        <sonar.exclusions>.idea/**</sonar.exclusions>
+
 
         <surefireArgline/>
         <integrationTestCoverageAgent/>
         <argLine/>
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
-
-        <immutables.version>2.9.0</immutables.version>
+        <surefire.fork.count>1</surefire.fork.count>
+        <immutables.version>2.10.1</immutables.version>
+        <docker.platforms/>
+        <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
+        <docker.version.tag>${project.version}</docker.version.tag>
+        <dotcms.image.name>${docker.output.image.name}:${docker.version.tag}</dotcms.image.name>
+        <!-- Flexible naming convention for docker volumes -->
+        <context.parent>dotbuild</context.parent>
+        <context.module>${project.artifactId}</context.module>
+        <docker.run.context>${context.parent}_${context.module}_${context.name}</docker.run.context>
+        <docker.data.local.volume>${docker.run.context}_data-local</docker.data.local.volume>
+        <docker.data.local.volume.internal>/data/local</docker.data.local.volume.internal>
+        <docker.data.shared.volume>${docker.run.context}_data-shared</docker.data.shared.volume>
+        <docker.data.shared.volume.internal>/data/shared</docker.data.shared.volume.internal>
+        <docker.container.name.pattern>${docker.run.context}_%a</docker.container.name.pattern>
+        <license.user.path>${user.home}/.dotcms/license/license.dat</license.user.path>
+        <license.use>false</license.use>
+        <dotcms.startup.timeout>300000</dotcms.startup.timeout>
+        <docker.license.volume.internal>/data/local/dotsecure/license/license.dat</docker.license.volume.internal>
+        <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
+        <docker.db.volume>${docker.run.context}_db</docker.db.volume>
+        <docker.es.volume>${docker.run.context}_es</docker.es.volume>
+        <docker.skip.clean.before>false</docker.skip.clean.before>
+        <docker.skip.clean.after>false</docker.skip.clean.after>
+        <debug.suspend.flag>n</debug.suspend.flag>
+        <debug.port>5005</debug.port>
+        <!-- Default debug port -->
+        <debug.args.default>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${debug.suspend.flag},address=*:${debug.port}</debug.args.default>
+        <debug.args/>
+        <docker.debug.args/>
+        <docker.debug.args.default>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${debug.suspend.flag},address=*:${debug.port}</docker.debug.args.default>
+        <disable.custom.properties>false</disable.custom.properties>
+        <config.environment>dev</config.environment>
+        <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
+        <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
+        <spotless.skip>true</spotless.skip>
     </properties>
 
     <build>
+
+        <extensions>
+            <extension>
+                <groupId>io.quarkus.bot</groupId>
+                <artifactId>build-reporter-maven-extension</artifactId>
+                <version>3.1.0</version>
+            </extension>
+        </extensions>
+
         <pluginManagement>
+
             <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${version.flatten.plugin}</version>
+                    <configuration>
+                        <updatePomFile>true</updatePomFile>
+                        <flattenMode>${flatten.mode}</flattenMode>
+                        <skip>${flatten.skip}</skip>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>flatten.clean</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>properties-maven-plugin</artifactId>
+                    <version>${version.properties.plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <version>${version.frontend.plugin}</version>
+                </plugin>
                 <plugin>
                     <groupId>io.fabric8</groupId>
                     <artifactId>docker-maven-plugin</artifactId>
                     <version>${version.docker-maven.plugin}</version>
-                </plugin>
-                <plugin>
-                    <groupId>com.dkanejs.maven.plugins</groupId>
-                    <artifactId>docker-compose-maven-plugin</artifactId>
-                    <version>${version.docker-compose.plugin}</version>
+                    <configuration>
+                        <skip>${docker.skip}</skip>
+                        <containerNamePattern>${docker.container.name.pattern}</containerNamePattern>
+                        <volumes>
+                            <volume>
+                                <name>${docker.db.volume}</name>
+                                <driver>local</driver>
+                            </volume>
+                            <volume>
+                                <name>${docker.es.volume}</name>
+                                <driver>local</driver>
+                            </volume>
+                            <volume>
+                                <name>${docker.data.local.volume}</name>
+                                <driver>local</driver>
+                            </volume>
+                            <volume>
+                                <name>${docker.data.shared.volume}</name>
+                                <driver>local</driver>
+                            </volume>
+                        </volumes>
+                        <imagesMap>
+                            <database>
+                                <name>${docker.image.postgres}</name>
+                                <run>
+                                    <cmd>postgres -c max_connections=1024 -c shared_buffers=256MB</cmd>
+                                    <ports>
+                                        <port>db.port:5432</port>
+                                    </ports>
+                                    <volumes>
+                                        <bind>
+                                            <volume>${docker.db.volume}:/var/lib/postgresql/data</volume>
+                                        </bind>
+                                    </volumes>
+                                    <env>
+                                        <POSTGRES_USER>postgres</POSTGRES_USER>
+                                        <POSTGRES_PASSWORD>postgres</POSTGRES_PASSWORD>
+                                        <POSTGRES_DB>dotcms</POSTGRES_DB>
+                                    </env>
+                                    <wait>
+                                        <time>60000</time>
+                                        <log>listening on IPv4 address "0.0.0.0", port 5432</log>
+                                    </wait>
+                                    <log>
+                                        <prefix>[DB]</prefix>
+                                        <color>magenta</color>
+                                    </log>
+                                </run>
+                            </database>
+                            <opensearch>
+                                <name>${docker.image.search}</name>
+                                <run>
+                                    <env>
+                                        <cluster.name>elastic-cluster</cluster.name>
+                                        <discovery.type>single-node</discovery.type>
+                                        <bootstrap.system_call_filter>false</bootstrap.system_call_filter>
+                                        <bootstrap.memory_lock>true</bootstrap.memory_lock>
+                                        <DISABLE_SECURITY_PLUGIN>true</DISABLE_SECURITY_PLUGIN>
+                                    </env>
+                                    <ports>
+                                        <port>es.port:9200</port>
+                                    </ports>
+                                    <volumes>
+                                        <bind>
+                                            <volume>${docker.es.volume}:/usr/share/elasticsearch/data</volume>
+                                        </bind>
+                                    </volumes>
+                                    <ulimits>
+                                        <ulimit>
+                                            <name>memlock</name>
+                                            <hard>-1</hard>
+                                            <soft>-1</soft>
+                                        </ulimit>
+                                    </ulimits>
+                                    <wait>
+                                        <http>
+                                            <!--suppress UnresolvedMavenProperty -->
+                                            <url>http://${docker.host.address}:${es.port}</url>
+                                        </http>
+                                        <time>120000</time>
+                                        <shutdown>5000</shutdown>
+                                    </wait>
+                                    <log>
+                                        <prefix>[ES]</prefix>
+                                        <color>cyan</color>
+                                    </log>
+                                </run>
+                            </opensearch>
+                            <dotcms>
+                                <name>${dotcms.image.name}</name>
+                                <external>
+                                    <type>properties</type>
+                                    <prefix>${docker.properties.prefix}</prefix>
+                                    <mode>override</mode>
+                                </external>
+                                <run>
+                                    <ports combine.children="append">
+                                        <port>tomcat.port:8080</port>
+                                    </ports>
+                                    <env>
+                                        <CMS_JAVA_OPTS>${docker.debug.args}</CMS_JAVA_OPTS>
+                                        <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                                        <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
+                                        <DOT_DB_BASE_URL>jdbc:postgresql://db:5432/dotcms?autosave=conservative</DOT_DB_BASE_URL>
+                                        <!-- Why is this without DOT_ -->
+                                        <DB_BASE_URL>jdbc:postgresql://db:5432/dotcms?autosave=conservative</DB_BASE_URL>
+                                        <DB_USERNAME>postgres</DB_USERNAME>
+                                        <DB_PASSWORD>postgres</DB_PASSWORD>
+                                        <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
+                                        <DOT_STARTER_DATA_LOAD>${docker.starter.volume.internal}/starter.zip</DOT_STARTER_DATA_LOAD>
+                                        <file.encoding>UTF-8</file.encoding>
+                                        <DOT_ES_ENDPOINTS>http://es:9200</DOT_ES_ENDPOINTS>
+                                        <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                                    </env>
+                                    <volumes>
+                                        <bind combine.children="append">
+                                            <volume>${docker.data.local.volume}:${docker.data.local.volume.internal}</volume>
+                                            <volume>${docker.data.shared.volume}:${docker.data.shared.volume.internal}</volume>
+                                            <volume>${starter.download.folder}:${docker.starter.volume.internal}</volume>
+                                        </bind>
+                                    </volumes>
+                                    <wait>
+                                        <log>Server startup in</log>
+                                        <time>${dotcms.startup.timeout}</time>
+                                    </wait>
+                                    <links>
+                                        <link>database:db</link>
+                                        <link>opensearch:es</link>
+                                    </links>
+                                    <log>
+                                        <prefix>[DOTCMS]</prefix>
+                                        <color>cyan</color>
+                                    </log>
+                                </run>
+                            </dotcms>
+                        </imagesMap>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
+                    <version>${dependency-check-maven.version}</version>
                     <configuration>
                         <cveUrlModified>https://dotcms-cve-data.b-cdn.net/feeds/json/cve/1.1/nvdcve-1.1-modified.json.gz</cveUrlModified>
                         <cveUrlBase>https://dotcms-cve-data.b-cdn.net/feeds/json/cve/1.1/nvdcve-1.1-%d.json.gz</cveUrlBase>
@@ -140,20 +420,63 @@
                     <version>${project-info-reports.version}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.openrewrite.maven</groupId>
+                    <artifactId>rewrite-maven-plugin</artifactId>
+                    <version>${version.rewrite-maven-plugin}</version>
+                    <configuration>
+                        <configLocation>${maven.multiModuleProjectDirectory}/rewrite.yml</configLocation>
+                        <activeRecipes>
+                            <recipe>dotcms.java.cleanup.Java11BaseCleanup</recipe>
+                        </activeRecipes>
+                        <exclusions>
+                            <exclude>**/*.json</exclude>
+                            <exclude>**/*.gz</exclude>
+                            <exclude>**/*.pdf</exclude>
+                            <exclude>**/*.mov</exclude>
+                            <exclude>**/*.log</exclude>
+                            <exclude>**/*.zip</exclude>
+                            <exclude>**/*.mmdb</exclude>
+                            <exclude>**/*.jar</exclude>
+                            <exclude>**/tika-plugin/**</exclude>
+                            <exclude>dist-output/**</exclude>
+                            <exclude>**/.angular/**</exclude>
+                            <exclude>installs/**</exclude>
+                            <exclude>dist/**</exclude>
+                            <exclude>.nx/**</exclude>
+                            <exclude>dotcms-plugins-core/**</exclude>
+                            <exclusion>docker/docker-compose-examples/**</exclusion>
+                        </exclusions>
+                        <failOnDryRunResults>false</failOnDryRunResults>
+                        <skipMavenParsing>false</skipMavenParsing>
+                        <runPerSubmodule>true</runPerSubmodule>
+                        <pomCacheDirectory>${maven.multiModuleProjectDirectory}/.cache/.rewrite-cache</pomCacheDirectory>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-migrate-java</artifactId>
+                            <version>2.7.1</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>2.37.0</version>
                     <configuration>
-                        <skip>${skipFormat}</skip>
+                        <upToDateChecking>
+                            <enabled>true</enabled>
+                            <indexFile>${project.basedir}/.cache/spotless.index</indexFile>
+                            <!-- optional, default is ${project.build.directory}/spotless-index -->
+                        </upToDateChecking>
+                        <skip>${spotless.skip}</skip>
                         <!-- These are the defaults, you can override if you want -->
                         <!-- optional: limit format enforcement to just the files changed by this feature branch -->
-                        <!-- <ratchetFrom>origin/main</ratchetFrom>-->
                         <formats>
                             <!-- you can define as many formats as you want, each is independent -->
                             <format>
                                 <!-- define the files to apply to -->
                                 <includes>
-                                    <include>*.md</include>
                                     <include>.gitignore</include>
                                 </includes>
                                 <!-- define the steps to apply to those files -->
@@ -170,7 +493,7 @@
                         <pom>
                             <!-- These are the defaults, you can override if you want -->
                             <includes>
-                                <include>pom.xml</include>
+                                <include>**/pom.xml</include>
                             </includes>
                             <sortPom>
                                 <encoding>UTF-8</encoding>
@@ -197,9 +520,9 @@
                                 <!-- Sort dependencies: https://github.com/Ekryd/sortpom/wiki/SortDependencies-->
                                 <sortDependencyExclusions/>
                                 <!-- Sort dependency exclusions: https://github.com/Ekryd/sortpom/wiki/SortDependencies-->
-                                <sortPlugins>groupId,artifactId</sortPlugins>
+                                <sortPlugins/>
                                 <!-- Sort plugins: https://github.com/Ekryd/sortpom/wiki/SortPlugins -->
-                                <sortProperties>true</sortProperties>
+                                <sortProperties>false</sortProperties>
                                 <!-- Sort properties -->
                                 <sortModules>false</sortModules>
                                 <!-- Sort modules -->
@@ -207,75 +530,52 @@
                                 <!-- Sort plugin executions -->
                             </sortPom>
                         </pom>
+                        <!-- <typescript>
+                            <includes>
+                                <include>core-web/apps/**/*.ts</include>
+                                <include>core-web/apps/**/*.tsx</include>
+                                &lt;!&ndash; <include>**/*.js</include>&ndash;&gt;
+                                <include>core-web/apps/**/*.jsx</include>
+                                <include>core-web/libs/**/*.ts</include>
+                                <include>core-web/libs/**/*.tsx</include>
+                                &lt;!&ndash; <include>**/*.js</include>&ndash;&gt;
+                                <include>core-web/libs/**/*.jsx</include>
+                            </includes>
+                            &lt;!&ndash;<tsfmt/>&ndash;&gt;
+                            <prettier>
+                                <prettierVersion>2.7.1</prettierVersion>
+                                <configFile>${maven.multiModuleProjectDirectory}/.prettierrc</configFile>
+                            </prettier>
+                            &lt;!&ndash; <eslint>
+                                <devDependencyProperties>
+                                    <property>
+                                        <name>eslint</name>
+                                        <value>8.48.0</value>
+                                    </property>
+                                    <property>
+                                        <name>eslint-plugin-storybook</name>
+                                        <value>0.6.15</value>
+                                    </property>
+                                    <property>
+                                        <name>@nx/eslint-plugin</name>
+                                        <value>17.2.8</value>
+                                    </property>
+                                    <property>
+                                        <name>@typescript-eslint/eslint-plugin</name>
+                                        <value>6.9.1</value>
+                                    </property>
+                                    <property>
+                                        <name>@typescript-eslint/parser</name>
+                                        <value>6.9.1</value>
+                                    </property>
+                                </devDependencyProperties>
+
+                                <configFile>${maven.multiModuleProjectDirectory}/core-web/.eslintrc.json</configFile>
+
+                                <tsconfigFile>${maven.multiModuleProjectDirectory}/core-web/tsconfig.base.json</tsconfigFile>
+                            </eslint>&ndash;&gt;
+                        </typescript>-->
                     </configuration>
-                    <executions>
-                        <execution>
-                            <id>check-format</id>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                            <phase>validate</phase>
-                            <configuration>
-                                <skip>${skipFormat}</skip>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>apply-format</id>
-                            <goals>
-                                <goal>apply</goal>
-                            </goals>
-                            <phase>validate</phase>
-                            <configuration>
-                                <skip>${skipApplyFormat}</skip>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.openrewrite.maven</groupId>
-                    <artifactId>rewrite-maven-plugin</artifactId>
-                    <version>${version.rewrite-maven-plugin}</version>
-                    <configuration>
-                        <configLocation>${maven.multiModuleProjectDirectory}/rewrite.yml</configLocation>
-                        <activeRecipes>
-                            <recipe>dotcms.java.cleanup.Java11BaseCleanup</recipe>
-                        </activeRecipes>
-                        <exclusions>
-                            <exclude>**/*.json</exclude>
-                            <exclude>**/*.gz</exclude>
-                            <exclude>**/*.log</exclude>
-                            <exclude>**/*.zip</exclude>
-                            <exclude>**/*.mmdb</exclude>
-                            <exclude>**/*.jar</exclude>
-                            <exclude>**/tika-plugin/**</exclude>
-                            <exclude>dist-output/**</exclude>
-                            <exclude>**/.angular/**</exclude>
-                            <exclude>core-web/installs/**</exclude>
-                            <exclude>core-web/dist/**</exclude>
-                            <exclude>dotcms-plugins-core/**</exclude>
-                            <exclusion>docker/docker-compose-examples/**</exclusion>
-                        </exclusions>
-                        <failOnDryRunResults>false</failOnDryRunResults>
-                        <skipMavenParsing>false</skipMavenParsing>
-                        <runPerSubmodule>true</runPerSubmodule>
-                    </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.openrewrite.recipe</groupId>
-                            <artifactId>rewrite-testing-frameworks</artifactId>
-                            <version>1.37.0</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.openrewrite.recipe</groupId>
-                            <artifactId>rewrite-migrate-java</artifactId>
-                            <version>1.21.1</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.openrewrite.recipe</groupId>
-                            <artifactId>rewrite-logging-frameworks</artifactId>
-                            <version>1.20.1</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -352,6 +652,9 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>${version.resources.plugin}</version>
+                    <configuration>
+                        <propertiesEncoding>UTF-8</propertiesEncoding>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -359,14 +662,12 @@
                     <version>${version.compiler.plugin}</version>
                     <configuration>
                         <fork>true</fork>
-                        <release>${java.version}</release>
+                        <release>${maven.compiler.release}</release>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
-                        <source>${maven.compiler.argument.source}</source>
-                        <target>${maven.compiler.argument.target}</target>
                         <testSource>${maven.compiler.argument.testSource}</testSource>
                         <testTarget>${maven.compiler.argument.testTarget}</testTarget>
                     </configuration>
@@ -401,13 +702,9 @@
                          files and hence the coverage report.
                         -->
                         <argLine>@{argLine} -Xmx1024m
-                            --add-modules java.se
-                            --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
-                            --add-opens java.base/java.lang=ALL-UNNAMED
-                            --add-opens java.base/java.nio=ALL-UNNAMED
-                            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-                            --add-opens java.management/sun.management=ALL-UNNAMED
-                            --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED</argLine>
+                            ${java.module.args}
+                        </argLine>
+
                         <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
@@ -448,6 +745,7 @@
                                 <Scm-Connection>${project.scm.connection}</Scm-Connection>
                                 <Scm-Url>${project.scm.url}</Scm-Url>
                                 <Scm-Revision>${buildNumber}</Scm-Revision>
+                                <!--suppress UnresolvedMavenProperty -->
                                 <SCM-Build>${scmBranch}</SCM-Build>
                             </manifestEntries>
                         </archive>
@@ -552,20 +850,14 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.surefire.plugin}</version>
                     <configuration>
-
+                        <forkCount>${surefire.fork.count}</forkCount>
+                        <reuseForks>true</reuseForks>
                         <argLine>@{argLine} -Xmx1024m
-                            --add-modules java.se
-                            --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
-                            --add-opens java.base/java.lang=ALL-UNNAMED
-                            --add-opens java.base/java.nio=ALL-UNNAMED
-                            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-                            --add-opens java.management/sun.management=ALL-UNNAMED
-                            --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED</argLine>
+                            ${java.module.args}
+                        </argLine>
 
-                        <systemPropertyVariables>
-
-                        </systemPropertyVariables>
-                        <trimStackTrace>false</trimStackTrace>
+                        <systemPropertyVariables/>
+                        <trimStackTrace>true</trimStackTrace>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -625,7 +917,7 @@
                     <version>${version.license.plugin}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
                     <version>${version.sonar.plugin}</version>
                 </plugin>
@@ -669,8 +961,62 @@
         </pluginManagement>
         <plugins>
             <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>load-properties-defaults</id>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <override>true</override>
+                            <useDefaultValues>true</useDefaultValues>
+                            <files>
+                                <file>${environment.properties.defaults}</file>
+                                <file>${maven.multiModuleProjectDirectory}/.sdkmanrc</file>
+                            </files>
+                            <keyPrefix>ext.</keyPrefix>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>load-environment-properties</id>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <override>true</override>
+                            <useDefaultValues>true</useDefaultValues>
+                            <keyPrefix>ext.</keyPrefix>
+                            <files>
+                                <file>${environment.properties.folder}/${mvn.environment.name}/${mvn.environment.name}.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>load-user-properties</id>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <override>true</override>
+                            <useDefaultValues>true</useDefaultValues>
+                            <keyPrefix>ext.</keyPrefix>
+                            <files>
+                                <file>${environment.properties.folder}/${mvn.environment.name}/user-${mvn.environment.name}.properties</file>
+                            </files>
+                            <!-- user properties is optional -->
+                            <quiet>true</quiet>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -759,25 +1105,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>org.openrewrite.maven</groupId>
-                <artifactId>rewrite-maven-plugin</artifactId>
-
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>dryRunNoFork</goal>
-                        </goals>
-                        <phase>verify</phase>
-                        <configuration>
-                            <rewriteSkip>${skipRewriteDryRun}</rewriteSkip>
-                        </configuration>
-                    </execution>
-                </executions>
-
-            </plugin>
-
             <!--  Set properties containing the scm revision  -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -802,61 +1129,17 @@
                             <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
                             <revisionOnScmFailure>UNKNOWN</revisionOnScmFailure>
                             <shortRevisionLength>7</shortRevisionLength>
-
                         </configuration>
                     </execution>
                     <execution>
-                        <phase>generate-resources</phase>
                         <goals>
                             <goal>create-metadata</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <configuration>
-                    <inclNoLocationClasses>true</inclNoLocationClasses>
-                    <excludes>
-                        <exclude>jdk/internal/**</exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                        <configuration>
-                            <append>true</append>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>default-prepare-agent-integration</id>
-                        <goals>
-                            <goal>prepare-agent-integration</goal>
-                        </goals>
-                        <configuration>
-                            <inclNoLocationClasses>true</inclNoLocationClasses>
-                            <append>true</append>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>after-it-test-execution</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-it-test-coverage-report</outputDirectory>
-                        </configuration>
+                        <phase>generate-resources</phase>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
-
     </build>
     <url>https://github.com/dotCMS</url>
     <licenses>
@@ -885,23 +1168,579 @@
         <system>GitHub</system>
         <url>https://github.com/dotCMS/core/issues/</url>
     </issueManagement>
+
+    <profiles>
+        <profile>
+            <id>prod</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <!-- Placeholder currently overridden in core-web -->
+            </properties>
+        </profile>
+        <profile>
+            <id>jprofiler</id>
+            <properties>
+                <docker.debug.args>-agentpath:/jprofiler/bin/linux-aarch64/libjprofilerti.so=port=8849,nowait</docker.debug.args>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${version.docker-maven.plugin}</version>
+                        <configuration>
+                            <skip>${docker.jacoco.skip}</skip>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>8849:8849</port>
+                                        </ports>
+                                        <volumes>
+                                            <bind combine.children="append">
+                                                <volume>/Users/stevebolton/Downloads/jprofiler14:/jprofiler</volume>
+                                            </bind>
+                                        </volumes>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>use-license</id>
+            <activation>
+                <file>
+                    <exists>${license.user.path}</exists>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${version.docker-maven.plugin}</version>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <volumes>
+                                            <bind combine.children="append">
+                                                <volume>${license.user.path}:${docker.license.volume.internal}</volume>
+                                            </bind>
+                                        </volumes>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>rewrite</id>
+            <activation>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openrewrite.maven</groupId>
+                        <artifactId>rewrite-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>rewrite</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>process-sources</phase>
+                                <configuration/>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>format</id>
+            <activation>
+            </activation>
+            <build>
+                <defaultGoal>generate-resources</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>com.diffplug.spotless</groupId>
+                        <artifactId>spotless-maven-plugin</artifactId>
+                        <version>2.37.0</version>
+                        <executions>
+                            <execution>
+                                <id>apply-format</id>
+                                <goals>
+                                    <goal>apply</goal>
+                                </goals>
+                                <phase>process-sources</phase>
+                                <configuration/>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>validate</id>
+            <build>
+                <defaultGoal>generate-resources</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>com.diffplug.spotless</groupId>
+                        <artifactId>spotless-maven-plugin</artifactId>
+                        <version>2.37.0</version>
+                        <executions>
+                            <execution>
+                                <id>check-format</id>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <phase>validate</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>debug-suspend</id>
+            <!-- Adjust the debug.suspend.flag if debug.suspend is specifically set to true -->
+            <activation>
+                <property>
+                    <name>debug.suspend</name>
+                </property>
+            </activation>
+            <properties>
+                <debug.suspend.flag>y</debug.suspend.flag>
+                <debug.args>${debug.args.default}</debug.args>
+                <docker.debug.args>${docker.debug.args.default}</docker.debug.args>
+                <dotcms.startup.timeout>7200000</dotcms.startup.timeout>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>debug.port:${debug.port}</port>
+                                        </ports>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>debug</id>
+            <activation>
+                <property>
+                    <name>debug.enable</name>
+                </property>
+            </activation>
+            <properties>
+                <debug.args>${debug.args.default}</debug.args>
+                <docker.debug.args>${docker.debug.args.default}</docker.debug.args>
+                <dotcms.startup.timeout>7200000</dotcms.startup.timeout>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>debug.port:${debug.port}</port>
+                                        </ports>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>debug-suspend-e2e-docker</id>
+            <!-- Adjust the debug.suspend.flag if debug.suspend is specifically set to true -->
+            <activation>
+                <property>
+                    <name>debug.suspend.e2e.docker</name>
+                </property>
+            </activation>
+            <properties>
+                <debug.suspend.flag>y</debug.suspend.flag>
+                <docker.debug.args>${docker.debug.args.default}</docker.debug.args>
+                <dotcms.startup.timeout>7200000</dotcms.startup.timeout>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>debug.port:${debug.port}</port>
+                                        </ports>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>debug-suspend-e2e-tests</id>
+            <!-- Adjust the debug.suspend.flag if debug.suspend is specifically set to true -->
+            <activation>
+                <property>
+                    <name>debug.suspend.e2e.tests</name>
+                </property>
+            </activation>
+            <properties>
+                <debug.suspend.flag>y</debug.suspend.flag>
+                <debug.args>${debug.args.default}</debug.args>
+                <dotcms.startup.timeout>7200000</dotcms.startup.timeout>
+            </properties>
+        </profile>
+        <profile>
+            <id>docker-start</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <docker.follow>true</docker.follow>
+            </properties>
+            <build>
+                <defaultGoal>validate</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>docker-pre-stop-runner</id>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <skip>false</skip>
+                                    <allContainers>true</allContainers>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>docker-start-runner</id>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <skip>false</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <target>
+                                        <!-- Here is where you define your Ant tasks -->
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <echo message="DotCMS started on     : http://localhost:${tomcat.port}/dotAdmin"/>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <echo message="Postgres started on   : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <echo message="OpenSearch started on : http://localhost:${es.port}"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>docker-stop</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties/>
+            <build>
+                <defaultGoal>validate</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <target>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <echo message="container name pattern = ${docker.container.name.pattern}"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>docker-stop</id>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration/>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>docker-clean-volumes</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties/>
+            <build>
+                <defaultGoal>validate</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration/>
+                        <executions>
+                            <execution>
+                                <id>docker-stop-runner</id>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration/>
+                            </execution>
+                            <execution>
+                                <id>docker-remove-volumes</id>
+                                <goals>
+                                    <goal>volume-remove</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>coverage</id>
+            <properties>
+                <docker.debug.args>-javaagent:/jacoco-agent/org.jacoco.agent-runtime.jar=append=true,output=tcpserver,address=*,excludes=jdk/internal/**,inclnolocationclasses=true</docker.debug.args>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>org.jacoco.agent</artifactId>
+                    <version>${version.jococo.plugin}</version>
+                    <scope>test</scope>
+                    <classifier>runtime</classifier>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <configuration>
+                            <inclNoLocationClasses>true</inclNoLocationClasses>
+                            <excludes>
+                                <exclude>jdk/internal/**</exclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.surefire.tests}</skip>
+                                    <append>true</append>
+                                    <destFile>${project.build.directory}/jacoco-report/jacoco.exec</destFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>default-prepare-agent-integration</id>
+                                <goals>
+                                    <goal>prepare-agent-integration</goal>
+                                </goals>
+                                <configuration>
+                                    <inclNoLocationClasses>true</inclNoLocationClasses>
+                                    <append>true</append>
+                                    <destFile>${project.build.directory}/jacoco-report/jacoco-it.exec</destFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>post-integration-test-dump</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>dump</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${docker.jacoco.skip}</skip>
+                                    <destFile>${project.build.directory}/jacoco-report/jacoco-it.exec</destFile>
+                                    <!--suppress UnresolvedMavenProperty -->
+                                    <port>6300</port>
+                                    <dump>true</dump>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-jacoco</id>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <skip>${docker.jacoco.skip}</skip>
+                                    <includeArtifactIds>org.jacoco.agent</includeArtifactIds>
+                                    <includeClassifiers>runtime</includeClassifiers>
+                                    <outputDirectory>${project.build.directory}/jacoco-agent</outputDirectory>
+                                    <stripVersion>true</stripVersion>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${version.docker-maven.plugin}</version>
+                        <configuration>
+                            <skip>${docker.jacoco.skip}</skip>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>6300:6300</port>
+                                        </ports>
+                                        <volumes>
+                                            <bind combine.children="append">
+                                                <volume>${project.build.directory}/jacoco-agent:/jacoco-agent</volume>
+                                            </bind>
+                                        </volumes>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>security-check</id>
+            <build>
+                <defaultGoal>dependency-check:check</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <configuration>
+                            <!-- fail on every finding -->
+                            <failBuildOnCVSS>0</failBuildOnCVSS>
+
+                            <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+
+                            <!-- limit to maven project running without prev. install -->
+                            <centralAnalyzerEnabled>true</centralAnalyzerEnabled>
+
+                            <archiveAnalyzerEnabled>false</archiveAnalyzerEnabled>
+                            <jarAnalyzerEnabled>false</jarAnalyzerEnabled>
+                            <nexusAnalyzerEnabled>false</nexusAnalyzerEnabled>
+                            <opensslAnalyzerEnabled>false</opensslAnalyzerEnabled>
+                            <nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
+                            <nodeAuditAnalyzerEnabled>false</nodeAuditAnalyzerEnabled>
+                            <enableRetired>false</enableRetired>
+                            <retireJsAnalyzerEnabled>false</retireJsAnalyzerEnabled>
+                            <retireJsAnalyzerEnabled>false</retireJsAnalyzerEnabled>
+                            <nuspecAnalyzerEnabled>false</nuspecAnalyzerEnabled>
+                            <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                            <enableExperimental>false</enableExperimental>
+
+                            <!-- plugins will be checked by dependabot -->
+                            <versionCheckEnabled>false</versionCheckEnabled>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
     <repositories>
         <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
             <releases>
                 <enabled>true</enabled>
             </releases>
-            <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release/</url>
-        </repository>
-        <repository>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
+            <id>dotcms-libs</id>
+            <url>https://repo.dotcms.com/artifactory/libs-release</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>dotcms-libs-snapshot-local</id>
+            <name>IDotCMS libs Snapshots</name>
+            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
         </repository>
     </repositories>
     <pluginRepositories>
@@ -917,194 +1756,17 @@
                 <enabled>true</enabled>
             </snapshots>
             <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </pluginRepository>
-        <pluginRepository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
+            <url>https://repo.dotcms.com/artifactory/libs-snapshot</url>
         </pluginRepository>
     </pluginRepositories>
-
-    <profiles>
-        <profile>
-            <id>release</id>
-            <modules/>
-            <build>
-                <plugins>
-                    <plugin>
-                        <!--
-                        ## IMPORTANT ##
-                        In your ~/.m2/settings.xml you need to add and edit the following profile:
-                        <profile>
-                            <id>release</id>
-                            <properties>
-                                <gpg.useagent>false</gpg.useagent>
-                                <gpg.executable>/usr/local/Cellar/gnupg@1.4/1.4.23_1/bin/gpg1</gpg.executable> <- use gpg1 on Mac OS X
-                                <gpg.homedir>~/.gnupg</gpg.homedir>  <- Update to your own directory
-                                <gpg.passphrase>******</gpg.passphrase> <- Add your passphrase
-                            </properties>
-                        </profile>
-                         -->
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${version.gpg.plugin}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                                <phase>verify</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${version.javadoc.plugin}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>${version.source.plugin}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>quick-build</id>
-            <activation>
-                <property>
-                    <name>quickly</name>
-                </property>
-            </activation>
-            <properties>
-                <enforcer.skip>true</enforcer.skip>
-                <skipDocs>true</skipDocs>
-                <skipFormat>true</skipFormat>
-                <skipITs>true</skipITs>
-            </properties>
-            <build>
-                <defaultGoal>clean install</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>quick-build-docs</id>
-            <activation>
-                <property>
-                    <name>quicklyDocs</name>
-                </property>
-            </activation>
-            <properties>
-                <enforcer.skip>true</enforcer.skip>
-                <skipFormat>true</skipFormat>
-                <skipITs>true</skipITs>
-                <skipTests>true</skipTests>
-            </properties>
-            <build>
-                <defaultGoal>clean install</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>apply-format</id>
-            <activation>
-                <property>
-                    <name>applyFormat</name>
-                </property>
-            </activation>
-            <properties>
-                <enforcer.skip>true</enforcer.skip>
-                <skipApplyFormat>false</skipApplyFormat>
-                <skipFormat>true</skipFormat>
-                <skipITs>true</skipITs>
-                <skipTests>true</skipTests>
-            </properties>
-            <build>
-                <defaultGoal>verify</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>incremental</id>
-            <activation>
-                <property>
-                    <name>incremental</name>
-                </property>
-            </activation>
-            <properties>
-                <gib.referenceBranch>main</gib.referenceBranch>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>io.github.gitflow-incremental-builder</groupId>
-                        <artifactId>gitflow-incremental-builder</artifactId>
-                        <version>${gitflow-incremental-builder.version}</version>
-                        <extensions>true</extensions>
-                        <!-- https://github.com/gitflow-incremental-builder/gitflow-incremental-builder#configuration
-                             General recap: Anything that is directly set in <configuration> cannot be redefined via '-D...'!
-                             See also: https://github.com/gitflow-incremental-builder/gitflow-incremental-builder/issues/213 -->
-                        <configuration>
-                            <argsForUpstreamModules>skipITs invoker.skip no-format</argsForUpstreamModules>
-                            <!-- pointless to attempt incremental build if something like mvnw was changed
-                                 (and also potentially wrong, given that independent-projects might not be built) -->
-                            <skipIfPathMatches>\.github[/\\].*|\.mvn[/\\].*|mvnw.*</skipIfPathMatches>
-                            <!-- Note: *Upstream* is only relevant in case of:
-                                 -am or
-                                 -Dgib.buildUpstream=always|true or
-                                 -Dgib.buildAll=true or
-                                 -Dgib.forceBuildModules=... -->
-                            <skipTestsForUpstreamModules>true</skipTestsForUpstreamModules>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>rewrite-run</id>
-            <activation>
-                <property>
-                    <name>rewriteRun</name>
-                </property>
-            </activation>
-            <properties>
-                <enforcer.skip>true</enforcer.skip>
-                <skipFormat>true</skipFormat>
-                <skipITs>true</skipITs>
-                <skipTests>true</skipTests>
-                <skipRewriteDryRun>false</skipRewriteDryRun>
-            </properties>
-            <build>
-                <defaultGoal>rewrite:run</defaultGoal>
-            </build>
-        </profile>
-    </profiles>
     <distributionManagement>
         <repository>
-            <id>dotcms-libs</id>
+            <id>dotcms-libs-local</id>
             <name>DotCMS libs Release</name>
             <url>https://repo.dotcms.com/artifactory/libs-release-local</url>
         </repository>
         <snapshotRepository>
-            <id>dotcms-libs-snapshot</id>
+            <id>dotcms-libs-snapshot-local</id>
             <name>IDotCMS libs Snapshots</name>
             <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
         </snapshotRepository>

@@ -10,14 +10,15 @@ import { AvatarModule } from 'primeng/avatar';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotApp } from '@dotcms/dotcms-models';
-import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 
 @Component({
-    template: `<dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>`
+    template: `
+        <dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>
+    `
 })
 class TestHostComponent {
     app: DotApp;
@@ -54,7 +55,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
             imports: [
                 CommonModule,
                 DotCopyLinkModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotAvatarDirective,
                 AvatarModule

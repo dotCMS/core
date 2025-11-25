@@ -11,6 +11,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.liferay.portal.model.User" %>
 <%@ page import="java.util.List" %>
+<%@page import="com.dotmarketing.util.Config"%>
 
 
 <%
@@ -110,9 +111,14 @@
             <%
                 }
             %>
+            <%
+                String newContentEditorEnabled = Config.getStringProperty("CONTENT_EDITOR2_ENABLED");
+                if (newContentEditorEnabled != null && newContentEditorEnabled.equalsIgnoreCase("true")) {
+            %>
             <div class="btn-flat btn-primary showPointer" onclick="addSeparator('<%=scheme.getId()%>', '<%=step.getId()%>');">
                 <i class="fa fa-plus" aria-hidden="true"></i> Divider
             </div>
+            <% } %>
             <div class="btn-flat btn-primary showPointer" onclick="actionAdmin.addOrAssociatedAction('<%=scheme.getId()%>', '<%=step.getId()%>', 'step-action-<%=step.getId()%>');">
                 <i class="fa fa-plus" aria-hidden="true"></i> Add
             </div>

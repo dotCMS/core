@@ -1,22 +1,18 @@
 <form
-    [formGroup]="form"
     (ngSubmit)="saveFieldProperties()"
+    [formGroup]="form"
     class="content-type-fields__properties-form p-fluid"
-    novalidate
->
+    novalidate>
     <div *ngFor="let property of fieldProperties" #properties>
         <ng-container
-            dotDynamicFieldProperty
             [propertyName]="property"
             [field]="formFieldData"
             [group]="form"
-        >
-        </ng-container>
+            dotDynamicFieldProperty></ng-container>
     </div>
     <dot-relationship-tree
         *ngIf="formFieldData?.relationships"
         [contentType]="contentType"
         [isParentField]="formFieldData.relationships.isParentField"
-        [velocityVar]="formFieldData.relationships.velocityVar"
-    ></dot-relationship-tree>
+        [velocityVar]="formFieldData.relationships.velocityVar"></dot-relationship-tree>
 </form>

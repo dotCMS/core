@@ -31,7 +31,7 @@ public class ActivityLogger {
 	}
 	
 	private static String getHostName(String hostNameOrId){
-		if (!UtilMethods.isSet(hostNameOrId)) {
+		if (!UtilMethods.isSet(hostNameOrId) || "SYSTEM_HOST".equals(hostNameOrId)) {
 			return "system";
 		}
 		Host h = new Host();

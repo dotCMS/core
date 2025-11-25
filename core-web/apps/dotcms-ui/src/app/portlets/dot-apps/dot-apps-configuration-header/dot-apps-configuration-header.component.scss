@@ -31,7 +31,7 @@
     color: $black;
     cursor: pointer;
     display: inline-block;
-    font-size: $font-size-xxl;
+    font-size: $font-size-xl;
     font-weight: bold;
     margin: 0;
 }
@@ -39,7 +39,7 @@
 .dot-apps-configuration__service-key {
     color: $color-palette-gray-700;
     display: inline-block;
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
     margin-left: $spacing-3;
     display: flex;
     align-items: center;
@@ -71,7 +71,7 @@
     .dot-apps-configuration__description__link_show-more {
         background-color: $white;
         cursor: pointer;
-        font-size: $font-size-lg;
+        font-size: $font-size-lmd;
         padding-left: $spacing-1;
         position: absolute;
         bottom: 0;

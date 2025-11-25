@@ -1,10 +1,5 @@
 package com.dotmarketing.portlets.folders.business;
 
-import static com.dotmarketing.business.APILocator.getPermissionAPI;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -32,6 +27,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.Permissionable;
@@ -40,6 +36,7 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -65,6 +62,7 @@ import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -82,6 +80,15 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+
+/**
+ *
+ */
 public class FolderAPIImpl implements FolderAPI  {
 
 	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
@@ -621,7 +628,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		final boolean isNew = folder.getInode() == null;
 		//if the folder was renamed, we will need to create a new identifier
-		if (!folder.getName().equals(existingID.getAssetName())){
+		if (!folder.getName().equalsIgnoreCase(existingID.getAssetName())){
 			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
 		} else{
 			folder.setModDate(new Date());
@@ -1249,6 +1256,43 @@ public class FolderAPIImpl implements FolderAPI  {
 			throws DotDataException {
 		Logger.debug(this, () -> "Updating references for user " + userId);
 		folderFactory.updateUserReferences(userId, replacementUserId);
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public List<Map<String, Object>> getContentReport(final Folder folder, final String orderBy,
+													  final String orderDirection, final int limit,
+													  final int offset, final User user) throws DotDataException {
+		checkNotNull(folder, "'folder' parameter cannot be null");
+		final List<Map<String, Object>> contentReport =
+				this.folderFactory.getContentReport(folder.getPath(), folder.getHostId(),
+						SQLUtil.sanitizeParameter(orderBy), SQLUtil.sanitizeCondition(orderDirection),
+						limit, offset);
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		return contentReport.stream().map(entry -> {
+
+			final String contentTypeVarName =
+					entry.get(IdentifierFactory.ASSET_SUBTYPE).toString();
+			final String contentTypeName =
+					Try.of(() -> contentTypeAPI.find(contentTypeVarName).name()).getOrElse(contentTypeVarName);
+			final Map<String, Object> map = new HashMap<>();
+			map.put("contentTypeName", contentTypeName);
+			map.put("entries", entry.get("total"));
+			return map;
+
+		}).collect(Collectors.toList());
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public int getContentTypeCount(final Folder folder, final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+		checkNotNull(folder, "'folder' parameter cannot be null");
+		checkNotNull(user, "'user' parameter cannot be null");
+		if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+			final String errorMsg = String.format("User '%s' does not have permission to read Folder '%s'", user.getUserId(), folder.getPath());
+			throw new DotSecurityException(errorMsg);
+		}
+		return this.folderFactory.getContentTypeCount(folder.getPath(), folder.getHostId());
 	}
 
 }

@@ -3,25 +3,22 @@
         <dot-portlet-toolbar [title]="vm.working.title">
             <ng-container *ngIf="vm.working.title" left>
                 <button
-                    class="p-button-text"
-                    [label]="'templates.edit' | dm"
                     (click)="editTemplateProps()"
+                    [label]="'templates.edit' | dm"
+                    class="p-button-text"
                     data-testId="editTemplateButton"
                     pButton
                     icon="pi pi-pencil"></button>
                 <dot-api-link [href]="vm.apiLink"></dot-api-link>
             </ng-container>
         </dot-portlet-toolbar>
-        <!-- The observable returns a boolen, therefore we can not use  *ngIf="obs$ | async as obs" to subscribe to it -->
-        <ng-container *ngIf="{ value: didTemplateChanged$ | async } as didTemplateChanged">
-            <dot-template-builder
-                [didTemplateChanged]="didTemplateChanged.value"
-                [item]="vm.working"
-                (updateTemplate)="updateWorkingTemplate($event)"
-                (saveAndPublish)="saveAndPublishTemplate($event)"
-                (save)="saveTemplate($event)"
-                (cancel)="cancelTemplate()"
-                (custom)="onCustomEvent($event)"></dot-template-builder>
-        </ng-container>
+        <dot-template-builder
+            (updateTemplate)="updateWorkingTemplate($event)"
+            (saveAndPublish)="saveAndPublishTemplate($event)"
+            (save)="saveTemplate($event)"
+            (cancel)="cancelTemplate()"
+            (custom)="onCustomEvent($event)"
+            [didTemplateChanged]="vm.didTemplateChanged"
+            [item]="vm.working"></dot-template-builder>
     </dot-portlet-base>
 </ng-container>

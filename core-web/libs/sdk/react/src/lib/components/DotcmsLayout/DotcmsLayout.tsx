@@ -1,5 +1,8 @@
-import { usePageEditor } from '../../hooks/usePageEditor';
-import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
+import { DotCMSPageEditorConfig } from '@dotcms/client';
+
+import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
+import { DotCMSPageContext } from '../../models';
+import { PageProvider } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
 
 /**
@@ -8,20 +11,22 @@ import { Row } from '../Row/Row';
  *
  * @typedef {Object} DotcmsPageProps
  *
- * @property {PageProviderContext} entity - The context for a DotCMS page.
+ * @property {DotCMSPageContext} entity - The context for a DotCMS page.
  * @readonly
  */
 export type DotcmsPageProps = {
     /**
-     * `entity` is a readonly property of the `DotcmsPageProps` type.
+     * `pageContext` is a readonly property of the `DotcmsPageProps` type.
      * It represents the context for a DotCMS page and is of type `PageProviderContext`.
      *
-     * @property {PageProviderContext} entity
+     * @property {PageProviderContext} pageContext
      * @memberof DotcmsPageProps
-     * @type {PageProviderContext}
+     * @type {DotCMSPageContext}
      * @readonly
      */
-    readonly entity: PageProviderContext;
+    readonly pageContext: DotCMSPageContext;
+
+    readonly config: DotCMSPageEditorConfig;
 };
 
 /**
@@ -32,23 +37,13 @@ export type DotcmsPageProps = {
  * @param {DotcmsPageProps} props - The properties for the DotCMS page.
  * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
  */
-export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
-    const { entity } = props;
-
-    const { rowsRef, isInsideEditor } = usePageEditor({});
-
-    const addRowRef = (el: HTMLDivElement) => {
-        if (el && !rowsRef.current.includes(el)) {
-            rowsRef.current.push(el);
-        }
-    };
-
-    entity.isInsideEditor = isInsideEditor;
+export function DotcmsLayout(dotPageProps: DotcmsPageProps): JSX.Element {
+    const pageContext = useDotcmsEditor(dotPageProps);
 
     return (
-        <PageProvider entity={entity}>
-            {entity.layout.body.rows.map((row, index) => (
-                <Row ref={addRowRef} key={index} row={row} />
+        <PageProvider pageContext={pageContext}>
+            {pageContext.pageAsset?.layout?.body.rows.map((row, index) => (
+                <Row key={index} row={row} />
             ))}
         </PageProvider>
     );

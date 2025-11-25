@@ -1,7 +1,5 @@
 package com.dotcms.jitsu;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.http.CircuitBreakerUrl;
@@ -20,8 +18,11 @@ import org.apache.http.HttpStatus;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * POSTs events to established endpoint in EVENT_LOG_POSTING_URL config property using the token set in
@@ -33,7 +34,7 @@ public class EventLogRunnable implements Runnable {
         HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
     private final AnalyticsApp analyticsApp;
-    private final EventsPayload eventPayload;
+    private final Supplier<EventsPayload> eventPayload;
 
     @VisibleForTesting
     public EventLogRunnable(final Host host) {
@@ -53,7 +54,27 @@ public class EventLogRunnable implements Runnable {
                 "Analytics key is missing, cannot log event without a key to identify data with");
         }
 
-        this.eventPayload = eventPayload;
+        this.eventPayload = ()->eventPayload;
+    }
+
+    public EventLogRunnable(final Host site, final Supplier<List<Map<String, Serializable>>> payloadSupplier) {
+        analyticsApp = AnalyticsHelper.get().appFromHost(site);
+
+        if (StringUtils.isBlank(analyticsApp.getAnalyticsProperties().analyticsWriteUrl())) {
+            throw new IllegalStateException("Event log URL is missing, cannot log event to an unknown URL");
+        }
+
+        if (StringUtils.isBlank(analyticsApp.getAnalyticsProperties().analyticsKey())) {
+            throw new IllegalStateException(
+                    "Analytics key is missing, cannot log event without a key to identify data with");
+        }
+
+        this.eventPayload = ()-> convertToEventPayload(payloadSupplier.get());
+    }
+
+    private EventsPayload convertToEventPayload(final List<Map<String, Serializable>> listStringSerializableMap) {
+
+        return new AnalyticsEventsPayload(listStringSerializableMap);
     }
 
     @Override
@@ -62,7 +83,7 @@ public class EventLogRunnable implements Runnable {
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
         final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
 
-        for (EventPayload payload : eventPayload.payloads()) {
+        for (EventPayload payload : eventPayload.get().payloads()) {
 
             sendEvent(builder, payload).ifPresent(response -> {
                 if (response.getStatusCode() != HttpStatus.SC_OK) {
@@ -77,7 +98,6 @@ public class EventLogRunnable implements Runnable {
                 }
             });
         }
-
     }
 
 
@@ -85,7 +105,7 @@ public class EventLogRunnable implements Runnable {
         return  CircuitBreakerUrl.builder()
             .setMethod(Method.POST)
             .setUrl(url)
-            .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
+            .setParams(Map.of("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
             .setTimeout(4000)
             .setHeaders(POSTING_HEADERS)
             .setThrowWhenNot2xx(false);

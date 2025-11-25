@@ -1,28 +1,36 @@
-<form class="p-fluid" *ngIf="form" [formGroup]="form">
-    <ng-container *ngIf="areMultipleTabs; else singleForm">
-        <p-tabView [scrollable]="true" data-testId="edit-content-multiple-tabs">
-            <p-tabPanel *ngFor="let tab of tabs" [header]="tab.title">
-                <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tab }" />
-            </p-tabPanel>
-        </p-tabView>
-    </ng-container>
-
-    <ng-template #singleForm>
-        <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tabs[0] }" />
-    </ng-template>
-
-    <ng-template #tabTemplate let-tab="tab">
-        <div class="form__layout">
-            <div class="row" *ngFor="let row of tab.layout" data-testId="row">
-                <div class="column" *ngFor="let column of row.columns" data-testId="column">
-                    <dot-edit-content-field
-                        *ngFor="let field of column.fields"
-                        [field]="field"
-                        [contentlet]="formData.contentlet"
-                        [contentType]="formData.contentType.variable"
-                        data-testId="field" />
-                </div>
+@if (form) {
+    <form [formGroup]="form" class="p-fluid">
+        @if (areMultipleTabs) {
+            <p-tabView [scrollable]="true" data-testId="edit-content-multiple-tabs">
+                @for (tab of tabs; track tab) {
+                    <p-tabPanel [header]="tab.title">
+                        <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tab }" />
+                    </p-tabPanel>
+                }
+            </p-tabView>
+        } @else {
+            <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tabs[0] }" />
+        }
+        <ng-template #tabTemplate let-tab="tab">
+            <div class="form__layout">
+                @for (row of tab.layout; track row) {
+                    <div class="row" data-testId="row">
+                        @for (column of row.columns; track column) {
+                            <div class="column" data-testId="column">
+                                @for (field of column.fields; track field) {
+                                    @if (!isFilteredType(field)) {
+                                        <dot-edit-content-field
+                                            [contentType]="formData.contentType.variable"
+                                            [contentlet]="formData.contentlet"
+                                            [field]="field"
+                                            data-testId="field" />
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                }
             </div>
-        </div>
-    </ng-template>
-</form>
+        </ng-template>
+    </form>
+}

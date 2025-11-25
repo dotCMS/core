@@ -1,5 +1,5 @@
 <div class="grid grid-nogutter justify-content-between md:gap-2 xl:gap-3 wrapper">
-    <div class="flex align-items-center justify-content-center gap-3" *ngIf="suggestedWinner">
+    <div *ngIf="suggestedWinner" class="flex align-items-center justify-content-center gap-3">
         <ng-container *ngIf="suggestedWinner.icon === 'dot-trophy'; else defaultLegendIconTpl">
             <img
                 alt="winner icon"
@@ -7,27 +7,25 @@
                 src="assets/icon/trophy.svg" />
         </ng-container>
         <span
-            class="flex-grow-1"
             [innerHTML]="suggestedWinner.legend | dm"
+            class="flex-grow-1"
             data-TestId="suggested-winner-legend"></span>
     </div>
-    <div class="flex align-items-center justify-content-center gap-3" *ngIf="goals">
+    <div *ngIf="goals" class="flex align-items-center justify-content-center gap-3">
         <i class="pi pi-flag"></i>
         <div class="flex-grow-1">
-            <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }} </span>
+            <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }}</span>
             <span data-TestId="goal-label">{{ goals.primary.name }}</span>
         </div>
     </div>
-    <div class="flex align-items-center justify-content-center gap-3" *ngIf="scheduling">
+    <div *ngIf="scheduling" class="flex align-items-center justify-content-center gap-3">
         <i class="pi pi-calendar"></i>
         <div class="flex-grow-1">
-            <span data-TestId="schedule-start-date">{{
-                scheduling.startDate | date : 'longDate'
-            }}</span>
+            <span data-TestId="schedule-start-date">
+                {{ scheduling.startDate | date: 'longDate' }}
+            </span>
             -
-            <span data-TestId="schedule-end-date">{{
-                scheduling.endDate | date : 'longDate'
-            }}</span>
+            <span data-TestId="schedule-end-date">{{ scheduling.endDate | date: 'longDate' }}</span>
         </div>
     </div>
     <div class="flex align-items-center justify-content-center gap-3">
@@ -39,9 +37,9 @@
     </div>
     <div class="flex align-items-center justify-content-center gap-3">
         <button
-            class="p-button-outlined"
-            [label]="'Refresh' | dm"
             (click)="updateResults.emit()"
+            [label]="'Refresh' | dm"
+            class="p-button-outlined"
             data-testId="reload-button"
             icon="pi pi-refresh"
             pButton></button>
@@ -49,5 +47,5 @@
 </div>
 
 <ng-template #defaultLegendIconTpl>
-    <i class="pi" [ngClass]="suggestedWinner.icon" data-TestId="suggested-winner-icon"></i>
+    <i [ngClass]="suggestedWinner.icon" class="pi" data-TestId="suggested-winner-icon"></i>
 </ng-template>

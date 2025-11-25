@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { forkJoin, Subject } from 'rxjs';
 
 import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
@@ -19,16 +18,16 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
+    DotActionMenuItem,
     DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotCopyContentTypeDialogFormFields,
+    DotEnvironment,
     StructureTypeView
 } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions } from '@models/action-header';
 import { ButtonModel } from '@models/action-header/button.model';
 import { DataTableColumn } from '@models/data-table';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 import { DotContentTypeStore } from './dot-content-type.store';
 
@@ -159,7 +158,10 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     }
 
     private setFilterByContentType(contentType: string) {
-        this.filterBy = _.startCase(_.toLower(contentType));
+        const lowerCased = contentType.toLowerCase();
+
+        this.filterBy = lowerCased.charAt(0).toUpperCase() + lowerCased.slice(1);
+
         this.paginatorExtraParams = { type: this.filterBy };
         this.actionHeaderOptions.primary.command = ($event) => {
             this.createContentType(null, $event);
@@ -173,8 +175,8 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             {
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
-                    command: (item) => this.removeConfirmation(item),
-                    icon: 'delete'
+                    command: (item: DotCMSContentType) => this.removeConfirmation(item),
+                    icon: 'pi pi-trash'
                 },
                 shouldShow: (item) => !item.fixed && !item.defaultType
             }
@@ -208,7 +210,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                    command: (item) => this.pushPublishContentType(item)
+                    command: (item: DotCMSContentType) => this.pushPublishContentType(item)
                 }
             });
         }
@@ -238,7 +240,9 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.copy'),
-                    command: (item: DotCMSContentType) => this.showCloneContentTypeDialog(item)
+                    command: (item: DotCMSContentType) => {
+                        this.showCloneContentTypeDialog(item);
+                    }
                 }
             });
         }

@@ -3,13 +3,11 @@
     *ngIf="url"
     [copy]="baseUrl + url"
     [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
-    [label]="'editpage.header.copy' | dm"
-></dot-copy-button>
+    [label]="'editpage.header.copy' | dm"></dot-copy-button>
 <dot-api-link *ngIf="innerApiLink" [href]="innerApiLink"></dot-api-link>
 
 <dot-link
     *ngIf="innerApiLink"
     [href]="previewUrl"
     label="editpage.preview"
-    icon="pi-eye"
-></dot-link>
+    icon="pi-eye"></dot-link>

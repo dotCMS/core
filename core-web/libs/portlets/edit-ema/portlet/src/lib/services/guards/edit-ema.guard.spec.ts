@@ -1,17 +1,15 @@
-import { Observable, of } from 'rxjs';
+import { it, describe, expect } from '@jest/globals';
+import { Observable } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotPropertiesService, EmaAppConfigurationService } from '@dotcms/data-access';
-
 import { editEmaGuard } from './edit-ema.guard';
 
 describe('EditEmaGuard', () => {
-    let emaAppConfigurationService: EmaAppConfigurationService;
     let router: Router;
-    let properties: DotPropertiesService;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const state: RouterStateSnapshot = {} as any;
 
@@ -20,84 +18,82 @@ describe('EditEmaGuard', () => {
             imports: [RouterTestingModule],
             providers: [
                 {
-                    provide: EmaAppConfigurationService,
-                    useValue: {
-                        get: jest.fn()
-                    }
-                },
-                {
                     provide: Router,
                     useValue: {
                         navigate: jest.fn(),
                         createUrlTree: jest.fn().mockReturnValue('this.is.a.url.tree.mock')
                     }
-                },
-                {
-                    provide: DotPropertiesService,
-                    useValue: {
-                        getFeatureFlag: jest.fn().mockReturnValue(of(true))
-                    }
                 }
             ]
         });
 
-        emaAppConfigurationService = TestBed.inject(EmaAppConfigurationService);
         router = TestBed.inject(Router);
-        properties = TestBed.inject(DotPropertiesService);
     });
 
-    it('should navigate to "edit-ema" when app is Headless', (done) => {
-        jest.spyOn(emaAppConfigurationService, 'get').mockReturnValue(
-            of({
-                pattern: 'some-pattern',
-                url: 'https://example.com',
-                options: {
-                    authenticationToken: '12345',
-                    additionalOption1: 'value1',
-                    additionalOption2: 'value2'
-                }
-            })
-        );
-
+    it('should just return true when queryParams are complete', () => {
         const route: ActivatedRouteSnapshot = {
             firstChild: {
                 url: [{ path: 'content' }]
             },
-            queryParams: { url: '/some-url' }
+            queryParams: {
+                url: '/some-url',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                language_id: 1
+            }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
-        const result = TestBed.runInInjectionContext(
-            () => editEmaGuard(route, state) as Observable<boolean>
+        const didEnteredPortlet = TestBed.runInInjectionContext(
+            () => editEmaGuard(route, state) as boolean
         );
 
-        result.subscribe((canActivate) => {
-            expect(router.navigate).toHaveBeenCalledWith(['/edit-ema/content'], {
-                queryParams: {
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                    language_id: 1,
-                    url: '/some-url'
-                },
-                replaceUrl: true
-            });
-            expect(canActivate).toBe(true);
-            done();
-        });
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(didEnteredPortlet).toBe(true);
     });
 
-    it('should navigate to "edit-ema" and sanitize url', (done) => {
-        jest.spyOn(emaAppConfigurationService, 'get').mockReturnValue(
-            of({
-                pattern: 'some-pattern',
-                url: 'https://example.com',
-                options: {
-                    authenticationToken: '12345',
-                    additionalOption1: 'value1',
-                    additionalOption2: 'value2'
-                }
-            })
+    it('should just return true when the url has an "index" in the url', () => {
+        const route: ActivatedRouteSnapshot = {
+            firstChild: {
+                url: [{ path: 'content' }]
+            },
+            queryParams: {
+                url: '/im-just-a-cool-index-index',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                language_id: 1
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+
+        const didEnteredPortlet = TestBed.runInInjectionContext(
+            () => editEmaGuard(route, state) as boolean
         );
 
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(didEnteredPortlet).toBe(true);
+    });
+
+    it('should just return true when the url has an "index-something" in the url', () => {
+        const route: ActivatedRouteSnapshot = {
+            firstChild: {
+                url: [{ path: 'content' }]
+            },
+            queryParams: {
+                url: '/im-just-a-cool-index-index/index-something',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                language_id: 1
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+
+        const didEnteredPortlet = TestBed.runInInjectionContext(
+            () => editEmaGuard(route, state) as boolean
+        );
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(didEnteredPortlet).toBe(true);
+    });
+
+    it('should navigate to "edit-page" and sanitize url', () => {
         const route: ActivatedRouteSnapshot = {
             firstChild: {
                 url: [{ path: 'content' }]
@@ -106,112 +102,36 @@ describe('EditEmaGuard', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
-        const result = TestBed.runInInjectionContext(
-            () => editEmaGuard(route, state) as Observable<boolean>
-        );
+        TestBed.runInInjectionContext(() => editEmaGuard(route, state) as Observable<boolean>);
 
-        result.subscribe((canActivate) => {
-            expect(router.navigate).toHaveBeenCalledWith(['/edit-ema/content'], {
-                queryParams: {
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                    language_id: 1,
-                    url: 'some-url/with-index'
-                },
-                replaceUrl: true
-            });
-            expect(canActivate).toBe(true);
-            done();
-        });
-    });
-
-    it('should not update the queryParams on navigate', (done) => {
-        jest.spyOn(emaAppConfigurationService, 'get').mockReturnValue(
-            of({
-                pattern: 'some-pattern',
-                url: 'https://example.com',
-                options: {
-                    authenticationToken: '12345',
-                    additionalOption1: 'value1',
-                    additionalOption2: 'value2'
-                }
-            })
-        );
-
-        const route: ActivatedRouteSnapshot = {
-            firstChild: {
-                url: [{ path: 'content' }]
-            },
+        expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
             queryParams: {
-                'com.dotmarketing.persona.id': 'some.persona',
-                language_id: 2,
-                url: '/some-url'
-            }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any;
-
-        const result = TestBed.runInInjectionContext(
-            () => editEmaGuard(route, state) as Observable<boolean>
-        );
-
-        result.subscribe((canActivate) => {
-            expect(router.navigate).not.toHaveBeenCalled();
-            expect(canActivate).toBe(true);
-            done();
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                language_id: 1,
+                url: 'some-url/with-index'
+            },
+            replaceUrl: true
         });
     });
 
-    it('should navigate to "edit-page" when app is VTL and feature flag is disabled', (done) => {
-        jest.spyOn(emaAppConfigurationService, 'get').mockReturnValue(of(null)); // Is VTL
-        jest.spyOn(properties, 'getFeatureFlag').mockReturnValue(of(false));
-
+    it('should navigate to "edit-page" and sanitize url when the url is "/"', () => {
         const route: ActivatedRouteSnapshot = {
             firstChild: {
                 url: [{ path: 'content' }]
             },
-            queryParams: { url: '/some-url' }
+            queryParams: { url: '/' }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
-        const result = TestBed.runInInjectionContext(
-            () => editEmaGuard(route, state) as Observable<boolean>
-        );
+        TestBed.runInInjectionContext(() => editEmaGuard(route, state) as Observable<boolean>);
 
-        result.subscribe((canActivate) => {
-            expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-                queryParams: { url: '/some-url' }
-            });
-            expect(canActivate).toBe(false);
-            done();
-        });
-    });
-
-    it('should navigate to "edit-ema" when app is VTL and feature flag is enabled', (done) => {
-        jest.spyOn(emaAppConfigurationService, 'get').mockReturnValue(of(null)); // Is VTL
-        jest.spyOn(properties, 'getFeatureFlag').mockReturnValue(of(true));
-
-        const route: ActivatedRouteSnapshot = {
-            firstChild: {
-                url: [{ path: 'content' }]
+        expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
+            queryParams: {
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                language_id: 1,
+                url: 'index'
             },
-            queryParams: { url: '/some-url' }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any;
-
-        const result = TestBed.runInInjectionContext(
-            () => editEmaGuard(route, state) as Observable<boolean>
-        );
-
-        result.subscribe((canActivate) => {
-            expect(router.navigate).toHaveBeenCalledWith(['/edit-ema/content'], {
-                queryParams: {
-                    url: '/some-url',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                    language_id: 1
-                },
-                replaceUrl: true
-            });
-            expect(canActivate).toBe(true);
-            done();
+            replaceUrl: true
         });
     });
 });

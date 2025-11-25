@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.messages[?(@.content == 'Short text about Club Atletico Boca Juniors')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "chatcmpl-9Gw6oD0Cr5QTyGKN8Sij8nDw15P1J",
+      "object": "chat.completion",
+      "created": 1713823646,
+      "model": "gpt-3.5-turbo-16k-0613",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Club Atletico Boca Juniors, commonly referred to as Boca Juniors, is one of the most renowned and successful professional football clubs in Argentina. Established in 1905, Boca Juniors has a rich history and a strong fan base that extends beyond the borders of Buenos Aires.\n\nBased in the iconic La Boca neighborhood of Buenos Aires, Boca Juniors prides itself on its passionate and dedicated supporters, known as \"Xeneizes,\" who create an electric atmosphere inside the famous Bombonera stadium. The team is known for its distinctive blue and gold colors, which represent the club's identity and heritage.\n\nBoca Juniors has an impressive record of domestic and international success, having won multiple league titles and international tournaments, including the prestigious Copa Libertadores. The club has produced several legendary players who have left an indelible mark on the world of football, such as Diego Maradona and Juan Roman Riquelme.\n\nWith a history filled with glory and a fanatical fan base, Boca Juniors continues to be one of the most influential and successful football clubs in South America. Their commitment to excellence both on and off the field has cemented their status as a symbol of Argentine football pride."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 44,
+        "completion_tokens": 242,
+        "total_tokens": 286
+      },
+      "system_fingerprint": null,
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}

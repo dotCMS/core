@@ -1,10 +1,13 @@
-import { ReflectiveInjector } from '@angular/core';
-import { StringUtils } from '../string-utils.service';
-import { LoggerService } from '../logger.service';
-import { LongPollingProtocol } from './long-polling-protocol';
-import { CoreWebService } from '../core-web.service';
 import { Observable, of, throwError } from 'rxjs';
+
+import { ReflectiveInjector } from '@angular/core';
+
+import { LongPollingProtocol } from './long-polling-protocol';
 import { ResponseView } from './response-view';
+
+import { CoreWebService } from '../core-web.service';
+import { LoggerService } from '../logger.service';
+import { StringUtils } from '../string-utils.service';
 
 class CoreWebServiceMock {
     public requestView(): Observable<ResponseView> {
@@ -44,6 +47,7 @@ describe('LongPollingProtocol', () => {
 
         spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
             longPollingProtocol.close();
+
             return of({
                 entity: {
                     message: 'message'
@@ -64,6 +68,7 @@ describe('LongPollingProtocol', () => {
 
         spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
             longPollingProtocol.close();
+
             return of({
                 entity: {
                     message: 'message'

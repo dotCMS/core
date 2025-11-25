@@ -10,11 +10,13 @@
         <Executor
             name="tomcatConnectorThreadPool"
             namePrefix="ConnectorThreadPool-"
-            maxThreads="300"
+            maxThreads="${CMS_CONNECTOR_THREADS:-600}"
             minSpareThreads="25"
         />
 
-        <!-- HTTP Connector -->
+        <!-- HTTP Connector, no proxy
+         client <-HTTP-> dotCMS:8080
+        -->
         <Connector
             executor="tomcatConnectorThreadPool"
             port="8080"
@@ -25,17 +27,62 @@
             URIEncoding="UTF-8"
             bindOnInit="true"
             scheme="http"
-            compression="on"
+            compression="${CMS_COMPRESSION:on}"
             compressionMinSize="128"
-            compressibleMimeType="text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript"
+            compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE:-$default.compressible.mimetypes}"
+            noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
+            useSendfile="false"
+            />
+
+        <!-- HTTP Connector from upstream proxy
+             client <-HTTP-> proxy:80 <-HTTP-> dotCMS:8081
+        -->
+        <Connector
+            port="8081"
+            proxyPort="80"
+            scheme="http"
+            redirectPort="443"
+            executor="tomcatConnectorThreadPool"
+            protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+            connectionTimeout="3000"
+            enableLookups="false"
+            URIEncoding="UTF-8"
+            bindOnInit="true"
+            compression="${CMS_COMPRESSION:on}"
+            compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE:-$default.compressible.mimetypes}"
+            noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
+            compressionMinSize="128"
+            useSendfile="false"
+        />
+
+        <!-- HTTPS (SSL) Connector from upstream proxy
+             client <-HTTPS-> proxy:443 <-HTTP-> dotCMS:8082
+         -->
+        <Connector
+            port="8082"
+            proxyPort="443"
+            scheme="https"
+            redirectPort="443"
+            executor="tomcatConnectorThreadPool"
+            protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+            connectionTimeout="3000"
+            enableLookups="false"
+            URIEncoding="UTF-8"
+            bindOnInit="true"
+            secure="true"
+            compression="${CMS_COMPRESSION}"
+            compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE:-$default.compressible.mimetype}"
+            noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
+            compressionMinSize="128"
             useSendfile="false"
         />
 
 
 
         <!-- HTTPS (SSL) Connector
-          To use APR and native openssl for https, add:
-          sslImplementationName="org.apache.tomcat.util.net.openssl.OpenSSLImplementation"
+             client <-HTTPS-> proxy:443 <-HTTPS-> dotCMS:8443
+             To use APR and native openssl for https, add:
+             sslImplementationName="org.apache.tomcat.util.net.openssl.OpenSSLImplementation"
         -->
         <Connector
             executor="tomcatConnectorThreadPool"
@@ -49,29 +96,46 @@
             scheme="https"
             proxyPort="443"
             secure="true"
-            compression="on"
+            compression="${CMS_COMPRESSION:on}"
             compressionMinSize="128"
-            compressibleMimeType="text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript"
+            compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE:-$default.compressible.mimetype}"
+            noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
             useSendfile="false"
             SSLEnabled="true"
             SSLCertificateFile="conf/local.dotcms.site.pem"
+            keystorePass="dotcms"
         />
 
+`
         <Engine name="Catalina" defaultHost="localhost">
 
             <Host name="localhost"  appBase="webapps">
-                <!-- The remote IP valve picks up the X-FORWARDED-FOR header and uses it as the source ip -->
-                <Valve className="org.apache.catalina.valves.RemoteIpValve" remoteIpHeader="x-forwarded-for" proxiesHeader="x-forwarded-by" protocolHeader="x-forwarded-proto" />
+                <!-- The remote IP valve picks up the X-FORWARDED-FOR header (by default) and uses it as the source ip
+                     remoteIpHeader and internalProxies may need to change when behind some WAF or proxy servers
+                -->
+                <Valve className="org.apache.catalina.valves.RemoteIpValve"
+                    remoteIpHeader="${CMS_REMOTEIP_REMOTEIPHEADER:-x-forwarded-for}"
+                    internalProxies="${CMS_REMOTEIP_INTERNALPROXIES:-10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}|169\\.254\\.\\d{1,3}\\.\\d{1,3}|127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.1[6-9]{1}\\.\\d{1,3}\\.\\d{1,3}|172\\.2[0-9]{1}\\.\\d{1,3}\\.\\d{1,3}|172\\.3[0-1]{1}\\.\\d{1,3}\\.\\d{1,3}|0:0:0:0:0:0:0:1}"
+                />
 
                 <!-- Do not show server details up on BadRequest -->
-                <Valve className="org.apache.catalina.valves.ErrorReportValve" showReport="false" showServerInfo="false"/>
+                <Valve className="org.apache.catalina.valves.ErrorReportValve"
+                    showReport="false"
+                    showServerInfo="false"
+                />
 
-                <!-- Access log processes all example.
-                     Documentation at: /docs/config/valve.html
-                     Note: The pattern used is equivalent to using pattern="common" -->
-                <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
-                    prefix="dotcms_access" suffix=".log"
-                    pattern="%h %l %u %t %r %H %v%U%q %s %b %{Referer}i %{User-Agent}i" />
+                <!-- Access log processes all example.  Documentation at: /docs/config/valve.html -->
+                <Valve
+                    className="org.apache.catalina.valves.AccessLogValve"
+                    directory="${CMS_ACCESSLOG_DIRECTORY:-logs}"
+                    prefix="dotcms_access"
+                    suffix=".log"
+                    pattern="${CMS_ACCESSLOG_PATTERN:-$default.accesslog.pattern}"
+                    fileDateFormat="${CMS_ACCESSLOG_FILEDATEFORMAT:-.yyyy-MM-dd}"
+                    maxDays="${CMS_ACCESSLOG_MAXDAYS:--1}"
+                    renameOnRotate="${CMS_ACCESSLOG_RENAMEONROTATE:-false}"
+                    rotatable="${CMS_ACCESSLOG_ROTATABLE:-true}"
+                />
 
             </Host>
         </Engine>

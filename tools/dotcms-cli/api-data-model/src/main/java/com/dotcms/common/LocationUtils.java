@@ -71,14 +71,36 @@ public class LocationUtils {
     }
 
     /**
-     * Encodes the given path by replacing spaces with URL-encoded spaces.
+     * Encodes a URL path by URL encoding each path segment.
      *
-     * @param path the path to be encoded
-     * @return the encoded path
+     * @param path the URL path to encode
+     * @return the encoded URL path
      */
     public static String encodePath(final String path) {
-        return path.replaceAll(" ",
-                URLEncoder.encode(" ", StandardCharsets.UTF_8));
+
+        var url = path;
+        boolean startsWithDoubleSlash = url.startsWith("//");
+
+        // If it starts with double slash, remove them
+        if (startsWithDoubleSlash) {
+            url = url.substring(2);
+        }
+
+        // Split the URL into individual parts/segments based on "/" separator
+        String[] parts = url.split("/");
+
+        StringBuilder encodedUrlBuilder = new StringBuilder();
+        for (String part : parts) {
+            String encodedPart = URLEncoder.encode(part, StandardCharsets.UTF_8);
+            encodedUrlBuilder.append('/').append(encodedPart);
+        }
+
+        // If the original URL started with a double slash, we add a slash back at the beginning
+        if (startsWithDoubleSlash) {
+            encodedUrlBuilder.insert(0, "/");
+        }
+
+        return encodedUrlBuilder.toString();
     }
 
 }

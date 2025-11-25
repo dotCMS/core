@@ -13,7 +13,7 @@
     position: absolute;
     top: 4px;
     right: 30px;
-    font-size: 85%;
+    font-size: $font-size-sm;
     color: #ddd;
 }
 #admin-site-tools-div a {
@@ -88,7 +88,9 @@
     z-index: -1;
 }
 .tailerBody {
-    font-family: Andale Mono, monospace;
+    font-family:
+        Andale Mono,
+        monospace;
     font-size: 9pt;
     white-space: nowrap;
 }
@@ -97,7 +99,7 @@
     right: 30px;
     top: 34px;
     width: 225px;
-    font-size: 85%;
+    font-size: $font-size-sm;
     border: 1px solid $color-palette-gray-400;
     border-top: 0;
     background: #fff;
@@ -108,7 +110,7 @@
 }
 .account-flyout h3 {
     margin: 20px 0 0 0;
-    font-size: 12px;
+    font-size: $font-size-xs;
     font-weight: bold;
     padding: 0 15px;
 }
@@ -141,7 +143,7 @@
     border-top: 1px solid #dfdfdf;
 }
 .copyright {
-    font-size: 10px;
+    font-size: $font-size-xs;
     color: #555;
     text-align: center;
 }
@@ -176,7 +178,7 @@
     opacity: 0.7;
     color: #ddd;
     line-height: 14px;
-    font-size: 11px;
+    font-size: $font-size-xs;
     box-shadow: 0px 0px 5px $color-palette-black-op-50;
 
     border-top-left-radius: 8px;
@@ -193,7 +195,7 @@
 .changeHost {
     cursor: pointer;
     float: right;
-    font-size: 85%;
+    font-size: $font-size-sm;
     line-height: 15px;
     margin: 6px 10px 0 0;
     padding: 0;
@@ -229,6 +231,7 @@ $table-border: 1px solid $color-palette-gray-200;
     tr {
         transition: background-color $field-animation-speed;
 
+        height: 2.4375rem;
         .selected {
             background-color: #e0e9f6;
         }
@@ -236,13 +239,14 @@ $table-border: 1px solid $color-palette-gray-200;
 
     th,
     td {
-        padding: 10px $spacing-1;
         border-bottom: $table-border;
         vertical-align: middle;
-
+        height: 2.5rem !important;
+        padding: $spacing-1;
         .listingThumbDiv {
-            height: 60px;
-            width: 80px;
+            height: 2.9375rem;
+
+            width: 4.5rem;
             position: relative;
             border-radius: $border-radius-sm;
             overflow: hidden;
@@ -265,7 +269,6 @@ $table-border: 1px solid $color-palette-gray-200;
 
 .listingTable {
     @extend #listing-table;
-
     // Some listing tables have inner tabled to inline some elements
     table,
     table tr,
@@ -411,7 +414,7 @@ tr.active {
 .excelDownload {
     text-align: right;
     padding: 5px 10px;
-    font-size: 85%;
+    font-size: $font-size-sm;
 }
 .excelDownload a {
     text-decoration: none;
@@ -421,7 +424,7 @@ tr.active {
 .lockedAgo {
     display: block;
     color: #999;
-    font-size: 11px;
+    font-size: $font-size-xs;
     font-style: italic;
     line-height: 14px;
 }
@@ -447,7 +450,7 @@ tr.active {
 .contentHint {
     display: block;
     color: #999;
-    font-size: 11px;
+    font-size: $font-size-xs;
     font-weight: normal;
     line-height: 14px;
     white-space: normal;
@@ -574,19 +577,19 @@ tr.active {
     overflow: auto;
 }
 .tagsBox a {
-    font-size: 93%;
+    font-size: $font-size-md;
     color: #999;
 }
 .tagsCaption {
     display: block;
     color: #999;
     line-height: 140%;
-    font-size: 80%;
+    font-size: $font-size-sm;
     margin: 3px 0 0 5px;
 }
 .suggestHeading {
     padding: 7px 10px;
-    font-size: 12px;
+    font-size: $font-size-xs;
     font-weight: bold;
     color: #555;
     background: url($skin-sprite) repeat-x scroll 0 -325px transparent;
@@ -1208,7 +1211,7 @@ table.sTypeTable.sTypeItem {
     margin: 15px 10px 20px 10px;
 }
 .siteOverview span {
-    font-size: 300%;
+    font-size: $icon-xl;
     display: block;
     padding: 8px;
 }
@@ -1226,7 +1229,7 @@ table.dojoxLegendNode td {
 #pieChartLegend td.dojoxLegendText {
     text-align: left;
     vertical-align: top;
-    font-size: 85%;
+    font-size: $font-size-sm;
     line-height: 131%;
 }
 #lineWrapper {
@@ -1248,7 +1251,7 @@ table.dojoxLegendNode td {
     border-radius: 10px;
     color: #fff;
     text-align: center;
-    font-size: 131%;
+    font-size: $font-size-lg;
 }
 .noPie {
     background: url($pie-bg) no-repeat center top;
@@ -1408,7 +1411,7 @@ table.dojoxLegendNode td {
     border-spacing: 6px 0px;
 }
 .dojoxColorPickerOptional input {
-    font-size: 11px;
+    font-size: $font-size-xs;
     border: 1px solid #a7a7a7;
     width: 25px;
     padding: 1px 3px 1px 3px;
@@ -1416,7 +1419,7 @@ table.dojoxLegendNode td {
 }
 .dojoxColorPickerHex input {
     width: 55px;
-    font-size: 11px;
+    font-size: $font-size-xs;
 }
 /* Image Picker */
 

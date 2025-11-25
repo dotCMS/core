@@ -919,13 +919,13 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
         let newW = resizeRight
             ? mousePos.left - itemPos.left + 1
             : resizeLeft
-            ? endCorner.left - mousePos.left + 1
-            : itemDims.width;
+              ? endCorner.left - mousePos.left + 1
+              : itemDims.width;
         let newH = resizeBottom
             ? mousePos.top - itemPos.top + 1
             : resizeTop
-            ? endCorner.top - mousePos.top + 1
-            : itemDims.height;
+              ? endCorner.top - mousePos.top + 1
+              : itemDims.height;
 
         if (newW < this.minWidth) newW = this.minWidth;
         if (newH < this.minHeight) newH = this.minHeight;
@@ -1451,7 +1451,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     private _getItemsInHorizontalPath(
         pos: NgGridItemPosition,
         dims: NgGridItemSize,
-        startColumn: number = 0
+        startColumn = 0
     ): NgGridItem[] {
         const itemsInPath: NgGridItem[] = [];
         const topRow: number = pos.row + dims.y - 1;
@@ -1479,7 +1479,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     private _getItemsInVerticalPath(
         pos: NgGridItemPosition,
         dims: NgGridItemSize,
-        startRow: number = 0
+        startRow = 0
     ): NgGridItem[] {
         const itemsInPath: NgGridItem[] = [];
         const rightCol: number = pos.col + dims.x - 1;
@@ -1507,7 +1507,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     private _isWithinBoundsX(
         pos: NgGridItemPosition,
         dims: NgGridItemSize,
-        allowExcessiveItems: boolean = false
+        allowExcessiveItems = false
     ) {
         return (
             this._maxCols === 0 ||
@@ -1537,7 +1537,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     private _isWithinBoundsY(
         pos: NgGridItemPosition,
         dims: NgGridItemSize,
-        allowExcessiveItems: boolean = false
+        allowExcessiveItems = false
     ) {
         return (
             this._maxRows === 0 ||
@@ -1567,7 +1567,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     private _isWithinBounds(
         pos: NgGridItemPosition,
         dims: NgGridItemSize,
-        allowExcessiveItems: boolean = false
+        allowExcessiveItems = false
     ) {
         return (
             this._isWithinBoundsX(pos, dims, allowExcessiveItems) &&

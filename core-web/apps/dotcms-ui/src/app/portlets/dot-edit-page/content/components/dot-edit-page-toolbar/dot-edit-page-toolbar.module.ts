@@ -14,8 +14,7 @@ import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 
@@ -38,7 +37,7 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
         FormsModule,
         ToolbarModule,
         TooltipModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotGlobalMessageModule,
         DotFavoritePageComponent,
         DotEditPageNavDirective,

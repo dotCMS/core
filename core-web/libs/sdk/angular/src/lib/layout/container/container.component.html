@@ -1,0 +1,26 @@
+@if ($isInsideEditor()) {
+    @if ($contentlets().length) {
+        @for (contentlet of $contentlets(); track $index) {
+            <dotcms-contentlet-wrapper
+                [contentlet]="contentlet"
+                [container]="$dotContainerAsString()">
+                <ng-container
+                    *ngComponentOutlet="
+                        (componentsMap[contentlet.contentType] || componentsMap['CustomNoComponent']
+                            | async) || NoComponent;
+                        inputs: { contentlet }
+                    " />
+            </dotcms-contentlet-wrapper>
+        }
+    } @else {
+        This container is empty.
+    }
+} @else {
+    @for (contentlet of $contentlets(); track $index) {
+        <ng-container
+            *ngComponentOutlet="
+                componentsMap[contentlet.contentType] | async;
+                inputs: { contentlet }
+            " />
+    }
+}

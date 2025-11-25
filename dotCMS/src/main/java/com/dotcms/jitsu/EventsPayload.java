@@ -14,7 +14,7 @@ import java.util.Map;
  * @see EventLogRunnable
  */
 public class EventsPayload {
-    private JSONObject jsonObject;
+    protected JSONObject jsonObject;
     final List<LiteExperiment> shortExperiments = new ArrayList<>();
 
     public EventsPayload(final Map<String, Object> payload) {

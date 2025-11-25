@@ -1,25 +1,32 @@
-<ng-container *ngIf="shellProperties$ | async as sp">
-    <ng-container *ngIf="sp.canRead; else error">
-        <router-outlet (activate)="onActivateRoute($event)"></router-outlet>
-        <dot-edit-ema-navigation-bar
-            [items]="sp.items"
-            data-testId="ema-nav-bar"></dot-edit-ema-navigation-bar>
-        <p-toast position="top-center" data-testId="ema-toast"></p-toast>
-        <dot-page-tools-seo
-            #pageTools
-            [currentPageUrlParams]="sp.seoProperties"></dot-page-tools-seo>
-    </ng-container>
-
-    <ng-template #error>
-        <ng-container [ngSwitch]="sp.error">
-            <dot-info-page *ngSwitchCase="403" [info]="EMA_INFO_PAGES.ACCESS_DENIED" />
-            <dot-info-page *ngSwitchCase="404" [info]="EMA_INFO_PAGES.NOT_FOUND" />
-            <dot-not-license *ngSwitchCase="401" />
-        </ng-container>
-    </ng-template>
-</ng-container>
+@if ($shellProps()?.canRead) {
+    <router-outlet></router-outlet>
+    <dot-edit-ema-navigation-bar
+        [items]="$shellProps().items"
+        (action)="handleItemAction($event)"
+        data-testId="ema-nav-bar"></dot-edit-ema-navigation-bar>
+    <p-toast position="top-center" data-testId="ema-toast"></p-toast>
+    <dot-page-tools-seo
+        [currentPageUrlParams]="$shellProps().seoParams"
+        #pageTools></dot-page-tools-seo>
+} @else {
+    @if ($shellProps().error?.code === 401) {
+        <dot-not-license />
+    } @else if ($shellProps()?.error?.pageInfo) {
+        <dot-info-page [info]="$shellProps().error.pageInfo" />
+    }
+}
 
 <dot-edit-ema-dialog
-    #dialog
     (action)="handleNgEvent($event)"
+    (reloadFromDialog)="reloadFromDialog()"
+    #dialog
     data-testId="ema-dialog"></dot-edit-ema-dialog>
+<p-confirmDialog
+    [style]="{
+        width: '400px'
+    }"
+    key="shell-confirm-dialog"
+    rejectIcon="hidden"
+    acceptIcon="hidden"
+    rejectButtonStyleClass="p-button-outlined"
+    data-testId="confirm-dialog"></p-confirmDialog>

@@ -1,6 +1,5 @@
 <dot-contentlet-wrapper
-    [url]="url$ | async"
-    [header]="header$ | async"
     (shutdown)="shutdown.emit($event)"
     (custom)="custom.emit($event)"
-></dot-contentlet-wrapper>
+    [url]="url$ | async"
+    [header]="header$ | async"></dot-contentlet-wrapper>

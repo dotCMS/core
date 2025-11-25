@@ -4,10 +4,12 @@ import com.dotcms.exception.NotAllowedException;
 import com.dotmarketing.util.SecurityLogger;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.ext.Provider;
 
 /**
  * Mapper for {@link NotAllowedException}
  */
+@Provider
 public class NotAllowedExceptionMapper
         implements javax.ws.rs.ext.ExceptionMapper<NotAllowedException> {
 

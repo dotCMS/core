@@ -1,16 +1,12 @@
 <dot-layout-properties-item
-    class="property-item__sidebar-left"
-    #propertyItemLeft
+    (switch)="setValue($event, 'left')"
     [ngModel]="value.location === 'left'"
     [label]="'editpage.layout.properties.sidebar.left' | dm"
-    (switch)="setValue($event, 'left')"
->
-</dot-layout-properties-item>
+    class="property-item__sidebar-left"
+    #propertyItemLeft></dot-layout-properties-item>
 <dot-layout-properties-item
-    class="property-item__sidebar-right"
-    #propertyItemRight
+    (switch)="setValue($event, 'right')"
     [ngModel]="value.location === 'right'"
     [label]="'editpage.layout.properties.sidebar.right' | dm"
-    (switch)="setValue($event, 'right')"
->
-</dot-layout-properties-item>
+    class="property-item__sidebar-right"
+    #propertyItemRight></dot-layout-properties-item>

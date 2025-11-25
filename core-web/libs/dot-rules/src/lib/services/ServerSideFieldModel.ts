@@ -1,8 +1,10 @@
-import { CwModel } from './util/CwModel';
-import { ParameterDefinition } from './util/CwInputModel';
-import { ParameterModel } from './Rule';
 import { UntypedFormControl, Validators, ValidatorFn } from '@angular/forms';
+
 import { LoggerService } from '@dotcms/dotcms-js';
+
+import { ParameterModel } from './Rule';
+import { ParameterDefinition } from './util/CwInputModel';
+import { CwModel } from './util/CwModel';
 import { CustomValidators } from './validation/CustomValidators';
 
 export class ServerSideFieldModel extends CwModel {
@@ -16,11 +18,12 @@ export class ServerSideFieldModel extends CwModel {
         const param = model.parameters[paramName];
         const paramDef = model.parameterDefs[paramName];
         const vFn: Function[] = <ValidatorFn[]>paramDef.inputType.dataType.validators();
-        vFn.push(CustomValidators.noDoubleQuotes());
+
         const control = new UntypedFormControl(
             model.getParameterValue(param.key),
             Validators.compose(<ValidatorFn[]>vFn)
         );
+
         return control;
     }
 
@@ -68,8 +71,10 @@ export class ServerSideFieldModel extends CwModel {
                 'Valid parameters: ',
                 Object.keys(this.parameterDefs)
             );
+
             return;
         }
+
         this.parameters[key] = { key: key, priority: priority, value: value };
     }
 
@@ -78,6 +83,7 @@ export class ServerSideFieldModel extends CwModel {
         if (this.parameters[key] !== undefined) {
             v = this.parameters[key];
         }
+
         return v;
     }
 
@@ -86,6 +92,7 @@ export class ServerSideFieldModel extends CwModel {
         if (this.parameters[key] !== undefined) {
             v = this.parameters[key].value;
         }
+
         return v;
     }
 
@@ -94,6 +101,7 @@ export class ServerSideFieldModel extends CwModel {
         if (this.parameterDefs[key] !== undefined) {
             v = this.parameterDefs[key];
         }
+
         return v;
     }
 
@@ -109,6 +117,7 @@ export class ServerSideFieldModel extends CwModel {
                 } catch (e) {
                     this.loggerService.error(e);
                 }
+
                 if (
                     paramDef.inputType.name === 'comparison' &&
                     paramDef.inputType['options'][value].rightHandArgCount === 0
@@ -117,7 +126,9 @@ export class ServerSideFieldModel extends CwModel {
                 }
             });
         }
+
         valid = valid && this._type && this._type.key && this._type.key !== 'NoSelection';
+
         return valid;
     }
 }

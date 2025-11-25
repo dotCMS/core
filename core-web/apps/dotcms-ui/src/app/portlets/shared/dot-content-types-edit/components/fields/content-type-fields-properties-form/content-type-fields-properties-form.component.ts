@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { Subject } from 'rxjs';
 
 import {
@@ -17,6 +16,7 @@ import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/
 import { takeUntil } from 'rxjs/operators';
 
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { isEqual } from '@dotcms/utils';
 
 import { FieldPropertyService } from '../service';
 
@@ -142,7 +142,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     }
 
     private isFormValueUpdated(): boolean {
-        return !_.isEqual(this.form.value, this.originalValue);
+        return !isEqual(this.form.value, this.originalValue);
     }
 
     private isPropertyDisabled(property: string): boolean {

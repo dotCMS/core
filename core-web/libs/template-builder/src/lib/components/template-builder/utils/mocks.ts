@@ -785,6 +785,75 @@ export const ROWS_MOCK = [
     }
 ];
 
+export const ROWS_MINIMAL_MOCK: DotGridStackWidget[] = [
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 0,
+        subGridOpts: {
+            children: [
+                {
+                    w: 7,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: '59c16004-8fac-4627-a013-04086bf6d0e3',
+                    styleClass: ['banner-tall'],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/banner/',
+                            uuid: '1'
+                        }
+                    ]
+                }
+            ]
+        },
+        id: 'a9b994e9-3bb8-4f47-91ce-5d0f0afed894',
+        styleClass: ['p-0', 'banner-tall']
+    },
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 1,
+        subGridOpts: {
+            children: [
+                {
+                    w: 7,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: 'd15fc2a1-e5c9-48bf-abcd-aea213d48bea',
+                    styleClass: ['mt-70', 'booking-form'],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/banner/',
+                            uuid: '2'
+                        }
+                    ]
+                },
+                {
+                    w: 3,
+                    h: 1,
+                    y: 0,
+                    x: 9,
+                    id: '8dea0760-3f1f-4f06-b14b-34fcdd86e4c1',
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: '//demo.dotcms.com/application/containers/banner/',
+                            uuid: '3'
+                        }
+                    ]
+                }
+            ]
+        },
+        id: '74a97ec0-a406-458e-be83-b32b3e33f689',
+        styleClass: []
+    }
+];
+
 export const BOX_MOCK = {
     w: 3,
     h: 1,
@@ -833,5 +902,7 @@ export const INITIAL_STATE_MOCK: DotTemplateBuilderState = {
     },
     resizingRowID: '',
     containerMap: {},
-    themeId: '123'
+    themeId: '123',
+    shouldEmit: true,
+    templateIdentifier: '111'
 };

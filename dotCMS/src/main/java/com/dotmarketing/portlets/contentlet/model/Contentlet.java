@@ -12,6 +12,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.storage.FileMetadataAPI;
@@ -113,9 +114,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String ARCHIVED_KEY = "archived";
 	public static final String LIVE_KEY = "live";
 	public static final String WORKING_KEY = "working";
+	public static final String CREATION_DATE_KEY = "creationDate";
 	public static final String MOD_DATE_KEY = "modDate";
 	public static final String MOD_USER_KEY = "modUser";
+	public static final String MOD_USER_NAME_KEY = "modUserName";
 	public static final String OWNER_KEY = "owner";
+	public static final String OWNER_NAME_KEY = "ownerName";
+	public static final String PUBLISH_DATE_KEY = "publishDate";
+	public static final String PUBLISH_USER_KEY = "publishUser";
+	public static final String PUBLISH_USER_NAME_KEY = "publishUserName";
 	public static final String HOST_KEY = "host";
 	public static final String FOLDER_KEY = "folder";
 	public static final String SORT_ORDER_KEY = "sortOrder";
@@ -164,6 +171,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
   public static final String AUTO_ASSIGN_WORKFLOW = "AUTO_ASSIGN_WORKFLOW";
   public static final String TEMPLATE_MAPPINGS = "TEMPLATE_MAPPINGS";
+  public static final String IS_COPY = "_is_being_copied";
 
   public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
   public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
@@ -1755,6 +1763,17 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean isKeyValue() throws DotDataException, DotSecurityException {
         return getContentType().baseType() == BaseContentType.KEY_VALUE;
     }
+
+	/**
+	 * Determines whether this object belongs to a Language Variable Content Type or not.
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public boolean isLanguageVariable() throws DotDataException, DotSecurityException {
+		return isKeyValue() && LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME.equals(getContentType().variable());
+	}
+
 	@JsonIgnore
 	private ContentletAPI getContentletAPI() {
 		if(contentletAPI==null) {

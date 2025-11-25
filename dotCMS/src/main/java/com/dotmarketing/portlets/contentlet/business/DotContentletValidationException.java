@@ -1,17 +1,20 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringPool;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Relationship;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.SPACE;
+
 /**
  * Used for throwing contentlet validation problems
  * @author Jason Tesser
@@ -30,8 +33,8 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	public final static String VALIDATION_FAILED_BAD_CARDINALITY = "badCar";
 
 	private static final long serialVersionUID = 1L;
-	private Map<String, List<Field>> notValidFields = new HashMap<>();
-	private Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships = new HashMap<>();
+	private final Map<String, List<Field>> notValidFields = new HashMap<>();
+	private final Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships = new HashMap<>();
 
 	/**
 	 * Used for throwing contentlet validation problems
@@ -219,59 +222,66 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		return toString(true);
 	}
 
-	public String toString(boolean parentException) {
+	/**
+	 * Returns a string representation of the list of errors found during the validation of a
+	 * new or existing Contentlet.
+	 *
+	 * @param parentException If the parent exception error message must be included as well, set
+	 *                        this to {@code true}.
+	 *
+	 * @return The list of validation errors, if any.
+	 */
+	public String toString(final boolean parentException) {
 		final StringBuilder builder = new StringBuilder();
 		if (parentException) {
-			builder.append(super.toString()).append("\n");
+			builder.append(super.toString());
 		}
 		//Print the Field errors
 		Set<String> keys = notValidFields.keySet();
-		if (keys.size() > 0) {
-			builder.append("List of non valid fields\n");
-			for (String key : keys) {
-				builder.append(key.toUpperCase()).append(": ");
-				List<Field> fields = notValidFields.get(key);
+		if (!keys.isEmpty()) {
+			builder.append("Fields: ");
+			for (final String key : keys) {
+				builder.append("[").append(key.toUpperCase()).append("]").append(": ");
+				final List<Field> fields = notValidFields.get(key);
 
 				for (int i = 0; i < fields.size(); i++) {
-					Field field = fields.get(i);
-
+					final Field field = fields.get(i);
 					if (i > 0) {
 						builder.append(", ");
 					}
-
-					builder.append(field.getVelocityVarName()).append("/")
-							.append(field.getFieldName());
+					builder.append(field.getFieldName()).append(" (")
+							.append(field.getVelocityVarName()).append(")");
 				}
-				builder.append("\n");
+				builder.append(SPACE);
 			}
 		}
 		//Print the Relationship errors
 		keys = notValidRelationships.keySet();
-		if (keys.size() > 0) {
-			builder.append("List of non valid relationships\n");
-			for (String key : keys) {
-				builder.append(key.toUpperCase()).append(": ");
-				Map<Relationship, List<Contentlet>> relationshipContentlets = notValidRelationships
-						.get(key);
-				for (Entry<Relationship, List<Contentlet>> relationship : relationshipContentlets
-						.entrySet()) {
-					builder.append(relationship.getKey().getRelationTypeValue()).append(", ");
+		if (!keys.isEmpty()) {
+			builder.append(UtilMethods.isSet(notValidFields.keySet()) ? " / " : BLANK).append("Relationships: ");
+			int i = 0;
+			for (final String key : keys) {
+				builder.append("[").append(key.toUpperCase()).append("]").append(": ");
+				final Map<Relationship, List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);
+				for (final Entry<Relationship, List<Contentlet>> relationship : relationshipContentlets.entrySet()) {
+					builder.append(relationship.getKey().getRelationTypeValue());
 				}
-				builder.append("\n");
+				if (i > 0) {
+					builder.append(", ");
+				}
+				builder.append(SPACE);
+				i++;
 			}
 		}
-		builder.append("\n");
-		return builder.toString();
+		return builder.toString().trim();
 	}
 
 	@Override
 	public String getMessage() {
-		final String toString = toString(false);
-
-		if (UtilMethods.isSet(toString)) {
-			return super.getMessage() + "\n" + toString;
-		} else {
-			return super.getMessage();
-		}
+		final String toString = this.toString(false);
+		return UtilMethods.isSet(toString)
+				? super.getMessage() + " - " + toString
+				: super.getMessage();
 	}
+
 }

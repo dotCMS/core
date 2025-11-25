@@ -1,24 +1,23 @@
 <dot-dialog
-    [header]="'login-as' | dm"
-    [(visible)]="visible"
-    [actions]="dialogActions"
     (hide)="close()"
->
+    [(visible)]="visible"
+    [header]="'login-as' | dm"
+    [actions]="dialogActions">
     <div class="login-as">
         <!--TODO: manage errors on required fields and errors messages -->
-        <p class="login-as__error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+        @if (errorMessage) {
+            <p class="login-as__error-message">{{ errorMessage }}</p>
+        }
         <form
-            [formGroup]="form"
             (ngSubmit)="doLoginAs()"
+            [formGroup]="form"
             id="login-as-form"
             #formEl="ngForm"
             novalidate
-            class="p-fluid"
-        >
+            class="p-fluid">
             <div class="field">
                 <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
                 <dot-searchable-dropdown
-                    #searchableDropdown
                     (switch)="userSelectedHandler($event)"
                     (filterChange)="handleFilterChange($event)"
                     (pageChange)="handlePageChange($event)"
@@ -26,25 +25,25 @@
                     [pageLinkSize]="paginationService.maxLinksPage"
                     [rows]="paginationService.paginationPerPage"
                     [totalRecords]="paginationService.totalRecords"
+                    #searchableDropdown
                     placeholder="{{ 'loginas.select.loginas.user' | dm }}"
                     formControlName="loginAsUser"
                     labelPropertyName="fullName"
-                    overlayWidth="300px"
-                >
-                </dot-searchable-dropdown>
+                    overlayWidth="300px" />
             </div>
-            <div class="field" *ngIf="needPassword">
-                <input
-                    pPassword
-                    #password
-                    [feedback]="false"
-                    formControlName="password"
-                    id="dot-login-as-password"
-                    type="password"
-                    placeholder="{{ 'loginas.input.loginas.password' | dm }}"
-                    floatingPlaceholder="false"
-                />
-            </div>
+            @if (needPassword) {
+                <div class="field">
+                    <input
+                        [feedback]="false"
+                        pPassword
+                        #password
+                        formControlName="password"
+                        id="dot-login-as-password"
+                        type="password"
+                        placeholder="{{ 'loginas.input.loginas.password' | dm }}"
+                        floatingPlaceholder="false" />
+                </div>
+            }
         </form>
     </div>
 </dot-dialog>

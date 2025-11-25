@@ -135,9 +135,9 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
 
         it('should set action as an empty array and loading to true', () => {
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
-            expect(dotWorkflowActionsComponent.actions).toEqual([]);
-            expect(dotWorkflowActionsComponent.loading).toBeTruthy();
-            expect(dotWorkflowActionsComponent.size).toBe('small');
+            expect(dotWorkflowActionsComponent.actions()).toEqual([]);
+            expect(dotWorkflowActionsComponent.loading()).toBeTruthy();
+            expect(dotWorkflowActionsComponent.size()).toBe('small');
         });
     });
 
@@ -155,7 +155,7 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
 
             expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledWith('123');
-            expect(dotWorkflowActionsComponent.actions).toEqual(mockWorkflowsActions);
+            expect(dotWorkflowActionsComponent.actions()).toEqual(mockWorkflowsActions);
         });
 
         it('should fire workflow actions when it does not have inputs', () => {

@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { fromEvent } from 'rxjs';
 
 import {
@@ -22,7 +21,7 @@ import {
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { PrimeTemplate } from 'primeng/api';
-import { DataView } from 'primeng/dataview';
+import { DataView, DataViewLazyLoadEvent } from 'primeng/dataview';
 import { OverlayPanel } from 'primeng/overlaypanel';
 
 import { debounceTime, tap } from 'rxjs/operators';
@@ -51,7 +50,7 @@ export class SearchableDropdownComponent
     @Input()
     data: Record<string, unknown>[];
 
-    @Input() action: (action: unknown) => void;
+    @Input() action: (event: Event) => void;
 
     @Input()
     labelPropertyName: string | string[];
@@ -143,7 +142,7 @@ export class SearchableDropdownComponent
     value: unknown;
     overlayPanelMinHeight: string;
     options: unknown[];
-    label: string;
+    label: string | null = null;
     externalSelectTemplate: TemplateRef<unknown>;
 
     selectedOptionIndex = 0;
@@ -201,7 +200,7 @@ export class SearchableDropdownComponent
     ngAfterContentInit() {
         this.totalRecords = this.totalRecords || this.data?.length;
         this.templates.forEach((item: PrimeTemplate) => {
-            if (item.getType() === 'listItem') {
+            if (item.getType() === 'list') {
                 this.externalItemListTemplate = item.template;
             } else if (item.getType() === 'select') {
                 this.externalSelectTemplate = item.template;
@@ -261,13 +260,17 @@ export class SearchableDropdownComponent
      * @param {PaginationEvent} event
      * @memberof SearchableDropdownComponent
      */
-    paginate(event: PaginationEvent): void {
-        const paginationEvent = Object.assign({}, event);
+    paginate(event: DataViewLazyLoadEvent): void {
+        const paginationEvent = {
+            first: event.first,
+            rows: event.rows,
+            filter: ''
+        };
         if (this.searchInput) {
             paginationEvent.filter = this.searchInput.nativeElement.value;
         }
 
-        this.pageChange.emit(paginationEvent);
+        this.pageChange.emit(paginationEvent as PaginationEvent);
     }
 
     /**
@@ -399,7 +402,7 @@ export class SearchableDropdownComponent
 
     private setOptions(change: SimpleChanges): void {
         if (change.data && change.data.currentValue) {
-            this.options = _.cloneDeep(change.data.currentValue).map((item) => {
+            this.options = structuredClone(change.data.currentValue).map((item) => {
                 item.label = this.getItemLabel(item);
 
                 return item;
@@ -423,7 +426,7 @@ export class SearchableDropdownComponent
         this.setLabel();
     }
 
-    private getValueLabelPropertyName(): string {
+    public getValueLabelPropertyName(): string {
         return Array.isArray(this.labelPropertyName)
             ? this.labelPropertyName[0]
             : this.labelPropertyName;

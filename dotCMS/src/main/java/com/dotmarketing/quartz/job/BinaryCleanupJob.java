@@ -90,7 +90,7 @@ public class BinaryCleanupJob implements StatefulJob {
    * Deletes from /assets/bundles
    */
   void cleanUpOldBundles() {
-      final int days = Config.getIntProperty(CLEANUP_BUNDLES_OLDER_THAN_DAYS, 3);
+      final int days = Config.getIntProperty(CLEANUP_BUNDLES_OLDER_THAN_DAYS, 4);
       if (days < 1) {
         return;
       }

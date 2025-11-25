@@ -69,7 +69,7 @@ describe('ForgotPasswordComponent', () => {
         const submitButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
         expect(header.nativeElement.innerHTML).toEqual('Forgot Password');
-        expect(inputLabel.nativeElement.innerHTML).toEqual('Email Address');
+        expect(inputLabel.nativeElement.innerHTML).toContain('Email Address');
         expect(cancelButton.nativeElement.innerHTML).toContain('Cancel');
         expect(submitButton.nativeElement.innerHTML).toContain('Recover Password');
     });

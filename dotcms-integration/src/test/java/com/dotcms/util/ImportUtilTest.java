@@ -1,18 +1,26 @@
 package com.dotcms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -20,10 +28,9 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotmarketing.portlets.categories.model.Category;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -35,15 +42,20 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
@@ -64,19 +76,34 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.commons.io.FileUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
-import java.util.*;
-import javax.servlet.http.HttpServletRequest;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -109,6 +136,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static PermissionAPI permissionAPI;
     private static final String TITLE_FIELD_NAME = "testTitle";
     private static final String BODY_FIELD_NAME = "testBody";
+    private static final String SITE_FIELD_NAME = "testHost";
     private static final String STEP_BY_USING_ACTION1 = "StepByUsingAction1";
     private static final String STEP_BY_USING_ACTION2 = "StepByUsingAction2";
     private static final String STEP_BY_USING_ACTION3 = "StepByUsingAction3";
@@ -1644,7 +1672,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+                    Map.of(relationship, CollectionsUtils.list(childContentlet)),
                     user, false);
 
             //Creating csv to update parent
@@ -1716,7 +1744,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+                    Map.of(relationship, CollectionsUtils.list(childContentlet)),
                     user, false);
 
             //Creating csv to update parent
@@ -1788,7 +1816,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+                    Map.of(relationship, CollectionsUtils.list(childContentlet)),
                     user, false);
 
             //Creating csv to update parent
@@ -1952,6 +1980,194 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile}
+     * Case: Import file with legacy folder inode in the line (folder inode is different from the
+     * folder identifier)
+     * @throws DotSecurityException when there is a security exception
+     * @throws DotDataException when there is a dotCMS data exception
+     * @throws IOException when there is an IO exception
+     */
+    @Test
+    public void importFile_success_when_lineContainsLegacyFolderInode()
+            throws DotSecurityException, DotDataException, IOException {
+
+
+        ContentType contentType = null;
+
+        try {
+            long time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeTestingWithOldFolderInode_" + time;
+            final String contentTypeVarName = "velocityVarNameTestingWithOldFolderInode_" + time;
+
+            // create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            new FieldDataGen().contentTypeId(contentType.id())
+                    .velocityVarName(SITE_FIELD_NAME)
+                    .type(HostFolderField.class).nextPersisted();
+
+            // create test folder with inode different from identifier
+            final Folder folder = new FolderDataGen()
+                    .name("import-folder-inode-test_" + time)
+                    .site(defaultSite).next();
+            final Identifier folderIdentifier = APILocator.getIdentifierAPI()
+                    .createNew(folder, defaultSite);
+            folder.setIdentifier(folderIdentifier.getId());
+            folder.setInode(UUIDGenerator.generateUuid());
+            APILocator.getFolderAPI().save(folder, user, false);
+            final String folderInode = folder.getInode();
+
+            // create test csv
+            final Reader reader = createTempFile(
+                    TITLE_FIELD_NAME + "," + BODY_FIELD_NAME + "," + SITE_FIELD_NAME
+                            + "\r\n" +
+                            "Folder inode test,Testing folder inode," + folderInode);
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+
+            final String[] csvHeaders = csvreader.getHeaders();
+
+            // import content
+            final Map<String, List<String>> results = ImportUtil.importFile(
+                    0L, defaultSite.getIdentifier(), contentType.inode(),
+                            new String[]{contentType.fieldMap().get(TITLE_FIELD_NAME).inode()},
+                    false, false, user, defaultLanguage.getId(),
+                            csvHeaders, csvreader, -1, -1,
+                            reader, null, getHttpRequest());
+            // validations
+            validate(results, false, false, false);
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertEquals(1, savedData.size());
+            final Contentlet contentlet = savedData.get(0);
+            assertEquals(folderInode, contentlet.getFolder());
+
+        } finally {
+            try {
+                if (contentType != null) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile}
+     * Case: Import file including a page with URL field set to a valid URL
+     * @throws DotSecurityException when there is a security exception
+     * @throws DotDataException when there is a dotCMS data exception
+     * @throws IOException when there is an IO exception
+     */
+    @Test
+    public void importFile_PagesWithURL_success()
+            throws DotSecurityException, DotDataException, IOException {
+
+        Host site = null;
+        Template template = null;
+        ContentType pageType = null;
+        Folder parentFolder = null;
+        try {
+            site = new SiteDataGen().nextPersisted();
+
+            // create test template
+            template = new TemplateDataGen()
+                    .site(APILocator.systemHost())
+                    .nextPersisted();
+            final String templateId = template.getIdentifier();
+
+            long time = System.currentTimeMillis();
+            final String pageTypeName = "TestPageTypeWithURL_" + time;
+            final String pageTypeVarName = "velocityVarNameTestPageTypeWithURL_" + time;
+
+            // create test page type
+            pageType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.HTMLPAGE)
+                    .host(APILocator.systemHost())
+                    .name(pageTypeName)
+                    .velocityVarName(pageTypeVarName)
+                    .nextPersisted();
+
+            // create test folder
+            final String parentFolderName = "test-base-folder_" + time;
+            parentFolder = new FolderDataGen()
+                    .name(parentFolderName)
+                    .site(site)
+                    .nextPersisted();
+            final Folder subFolder = new FolderDataGen()
+                    .name("test-sub-folder")
+                    .parent(parentFolder)
+                    .nextPersisted();
+
+            final String testPageURL = StringPool.FORWARD_SLASH
+                    + parentFolderName + "/test-sub-folder/test-page-1";
+            final Reader reader = createTempFile(
+                    HTMLPageAssetAPI.TITLE_FIELD
+                            + "," + HTMLPageAssetAPI.URL_FIELD
+                            + ",hostFolder"
+                            + "," + HTMLPageAssetAPI.TEMPLATE_FIELD
+                            + "," + HTMLPageAssetAPI.FRIENDLY_NAME_FIELD
+                            + "," + HTMLPageAssetAPI.SORT_ORDER_FIELD
+                            + "," + HTMLPageAssetAPI.CACHE_TTL_FIELD
+                            + "\r\n" +
+                            "Test Page 1," + testPageURL + ","
+                                + site.getIdentifier() + "," + templateId
+                                + ",Test Page 1,0,300\r\n");
+
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+
+            final String[] csvHeaders = csvreader.getHeaders();
+
+            final Map<String, List<String>> results = ImportUtil
+                    .importFile(0L, defaultSite.getInode(), pageType.inode(),
+                            new String[]{}, false, false,
+                            user, defaultLanguage.getId(), csvHeaders, csvreader,
+                            -1, -1,
+                            reader, null, getHttpRequest());
+
+            Logger.info(ImportUtilTest.class, "page errors: " + results.get("errors"));
+            validate(results, false, false, true);
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(pageType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertEquals(1, savedData.size());
+
+            final Contentlet contentlet = savedData.get(0);
+            final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+            assertNotNull(identifier);
+            assertEquals(testPageURL, identifier.getURI());
+
+        } finally {
+            try {
+                if (parentFolder != null) {
+                    FolderDataGen.remove(parentFolder);
+                }
+
+                if (pageType != null) {
+                    contentTypeApi.delete(pageType);
+                }
+
+                if (template != null) {
+                    TemplateDataGen.remove(template);
+                }
+
+                if (null != site) {
+                    APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+                    APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+                }
+
+            } catch (Exception e) {
+                Logger.error("Error deleting test page type", e);
+            }
+
         }
     }
 
@@ -2158,7 +2374,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
                     "test1" + time + ", " +
                     "test1" + time + ", " +
-                    "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+                    "https://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif");
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -2240,7 +2456,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     "https://raw.githubusercontent.com/dotCMS/core/throws/dotCMS/404.jpg" + "\r\n" +
                     "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
                     "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
-                    "test://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+                    "test://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif");
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -2406,5 +2622,71 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertNotNull(savedData);
         assertTrue(savedData.size() == 1);
         assertFalse(APILocator.getCategoryAPI().getParents(savedData.get(0),user,false).isEmpty());
+    }
+
+
+    /**
+     * Method to test: This test tries the {@link ImportUtil#importFile}
+     * Given Scenario: A Content type which has a binary field, the binary field is required. Will try to preview the import of a CSV with a URL pointing to a valid image.
+     * ExpectedResult: The importer should return without errors, so content will be ready to be imported.
+     */
+    @Test
+    public void importFile_importBinaryFieldUsingURLWithRequiredBinaryField_success()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        CsvReader csvreader;
+        long time;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeBinaryField" + time;
+            final String contentTypeVarName = "contentTypeBinaryField" + time;
+
+            //create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            final com.dotcms.contenttype.model.field.Field binaryField = FieldBuilder.builder(BinaryField.class).name(BINARY_FIELD_NAME)
+                    .contentTypeId(contentType.id()).variable(BINARY_FIELD_NAME).sortOrder(1).required(true)
+                    .build();
+            fieldAPI.save(binaryField,user);
+
+            //Creating csv
+            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
+                    "test1" + time + ", " +
+                    "test1" + time + ", " +
+                    "https://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                    new String[]{titleField.id()}, true, false,
+                                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                                    -1, reader,
+                                    saveAsDraftAction.getId(), getHttpRequest());
+
+            //Validations
+            validate(results, true, false, false);
+
+            assertEquals(results.get("warnings").size(), 0);
+            assertEquals(results.get("errors").size(), 0);
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

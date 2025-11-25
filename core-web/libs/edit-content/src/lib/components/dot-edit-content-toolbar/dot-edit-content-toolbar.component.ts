@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -14,6 +14,6 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentToolbarComponent {
-    @Input() actions: DotCMSWorkflowAction[];
-    @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
+    $actions = input.required<DotCMSWorkflowAction[]>({ alias: 'actions' });
+    $actionFired = output<DotCMSWorkflowAction>({ alias: 'actionFired' });
 }

@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import static com.dotcms.experiments.business.ExperimentsCache.CACHED_EXPERIMENTS_KEY;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ARCHIVED;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
@@ -24,6 +25,7 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.MetricsUtil;
+import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
@@ -31,7 +33,6 @@ import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
-import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.*;
@@ -112,7 +113,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private static final int VARIANTS_NUMBER_MAX = 3;
     private static final List<Status> RESULTS_QUERY_VALID_STATUSES = List.of(RUNNING, ENDED);
 
-    final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
+    final ExperimentsFactory factory;
     final ExperimentsCache experimentsCache = CacheLocator.getExperimentsCache();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -135,15 +136,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @VisibleForTesting
     public ExperimentsAPIImpl(final AnalyticsHelper analyticsHelper) {
+        this(analyticsHelper, FactoryLocator.getExperimentsFactory());
+    }
+
+    @VisibleForTesting
+    public ExperimentsAPIImpl(final AnalyticsHelper analyticsHelper, final ExperimentsFactory experimentsFactory) {
         this.analyticsHelper = analyticsHelper;
 
         APILocator.getLocalSystemEventsAPI().subscribe(ContentletDeletedEvent.class,
                 (EventSubscriber<ContentletDeletedEvent>) event ->
                         checkAndDeleteExperiment(event.getContentlet(), event.getUser()));
+
+        this.factory = experimentsFactory;
     }
 
     public ExperimentsAPIImpl() {
-        this(AnalyticsHelper.get());
+        this(AnalyticsHelper.get(), FactoryLocator.getExperimentsFactory());
     }
 
     @Override
@@ -764,7 +772,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 : persistedExperiment;
 
         final Experiment running = save(experimentToSave, user);
-        cacheRunningExperiments();
+        cleanRunningExperimentsCache();
         publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
@@ -839,7 +847,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     .withScheduling(endedScheduling);
             final Experiment saved = save(ended, user);
 
-            cacheRunningExperiments();
+            archivedAllVariants(saved);
+
+            cleanRunningExperimentsCache();
 
             SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been ended by User" +
                     " ID '%s'", saved.name(), saved.id(), user.getUserId()));
@@ -849,6 +859,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final String message = "You don't have permission to end the Experiment Id: " + experimentId;
             Logger.error(this, message + "\n" + e.getMessage());
             throw new DotSecurityException(message, e);
+        }
+    }
+
+    private void archivedAllVariants(Experiment saved) throws DotDataException {
+        for (ExperimentVariant variant : saved.trafficProportion().variants()) {
+
+            if (!variant.id().equals(DEFAULT_VARIANT.name())) {
+                variantAPI.archive(variant.id());
+            }
         }
     }
 
@@ -1105,12 +1124,25 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public List<Experiment> getRunningExperiments() throws DotDataException {
-        final List<Experiment> cached = experimentsCache.getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
+        final List<Experiment> cached = experimentsCache.getList(CACHED_EXPERIMENTS_KEY);
         if (Objects.nonNull(cached)) {
             return cached;
         }
 
         return cacheRunningExperiments();
+    }
+
+    @Override
+    public List<Experiment> getRunningExperiments(final Host host) throws DotDataException {
+        return getRunningExperiments().stream().filter(experiment -> {
+            try {
+                final HTMLPageAsset  htmlPageAsset = getHtmlPageAsset(experiment);
+                return host.getIdentifier().equals(htmlPageAsset.getHost());
+            } catch (DotStateException | DotDataException e) {
+                return false;
+            }
+
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -1123,9 +1155,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public boolean isAnyExperimentRunning() throws DotDataException {
+    public boolean isAnyExperimentRunning(final Host host) throws DotDataException {
         return ConfigExperimentUtil.INSTANCE.isExperimentEnabled() &&
-                !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
+                !APILocator.getExperimentsAPI().getRunningExperiments(host).isEmpty();
     }
 
     /**
@@ -1231,14 +1263,30 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return Long.parseLong(resultSetItem.get(successesAttributeName).orElseThrow().toString());
     }
 
+    /**
+     * Get the Running Experiment from Database and put them on the cache
+     *
+     * @return
+     * @throws DotDataException
+     */
     @CloseDBIfOpened
-    @Override
-    public List<Experiment> cacheRunningExperiments() throws DotDataException {
+    private List<Experiment> cacheRunningExperiments() throws DotDataException {
         final List<Experiment> experiments = FactoryLocator
             .getExperimentsFactory()
             .list(ExperimentFilter.builder().statuses(set(Status.RUNNING)).build());
-        experimentsCache.putList(ExperimentsCache.CACHED_EXPERIMENTS_KEY, experiments);
+        experimentsCache.putList(CACHED_EXPERIMENTS_KEY, experiments);
         return experiments;
+    }
+
+    /**
+     * Clean the Running Experiment List up from cache
+     *
+     * @return
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    private void cleanRunningExperimentsCache() throws DotDataException {
+        experimentsCache.removeList(CACHED_EXPERIMENTS_KEY);
     }
 
     /**
@@ -1424,6 +1472,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .withScheduling(Scheduling.builder().build());
 
         final Experiment afterSave = save(experimentCanceled, user);
+
+        cleanRunningExperimentsCache();
 
         SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been canceled by User" +
                 " ID '%s'", afterSave.name(), afterSave.id(), user.getUserId()));
@@ -1612,5 +1662,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     contentlet.getIdentifier());
             throw new DotRuntimeException(message, e);
         }
+    }
+
+    /**
+     * Default implementation for {@link ExperimentsAPI#listActive(String)}}
+     *
+     * @param pageIdentifier to Filter the Experiments.
+     *
+     * @return
+     * @throws DotDataException
+     */
+    public final Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException {
+        return factory.listActive(pageIdentifier);
     }
 }

@@ -1,5 +1,4 @@
 import autoScroll from 'dom-autoscroller';
-import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { Subject } from 'rxjs';
 
@@ -19,13 +18,13 @@ import {
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotDialogActions
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { FieldUtil } from '@dotcms/utils-testing';
@@ -224,7 +223,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.layout && changes.layout.currentValue) {
-            this.fieldRows = _.cloneDeep(changes.layout.currentValue);
+            this.fieldRows = structuredClone(changes.layout.currentValue);
         }
     }
 
@@ -369,7 +368,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     cancelLastDragAndDrop(): void {
-        this.fieldRows = _.cloneDeep(this.layout);
+        this.fieldRows = structuredClone(this.layout);
     }
 
     /**
@@ -428,15 +427,15 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.dialogActions = controls;
     }
 
-    private setDroppedField(droppedField: DotCMSContentTypeField): void {
-        this.currentField = droppedField;
-        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
-    }
-
     protected toggleDialog(): void {
         this.dialogActions = this.defaultDialogActions;
         this.activeTab = this.OVERVIEW_TAB_INDEX;
         this.displayDialog = !this.displayDialog;
+    }
+
+    private setDroppedField(droppedField: DotCMSContentTypeField): void {
+        this.currentField = droppedField;
+        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
     }
 
     private emitSaveFields(layout: DotCMSContentTypeLayoutRow[]): void {

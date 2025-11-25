@@ -1,7 +1,7 @@
 import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { AutoComplete } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteUnselectEvent } from 'primeng/autocomplete';
 
 import { take } from 'rxjs/operators';
 
@@ -94,9 +94,11 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
      *
      * @memberof DotAutocompleteTagsComponent
      */
-    removeItem(tag: DotTag): void {
+    removeItem(event: AutoCompleteUnselectEvent): void {
         this.propagateChange(this.getStringifyLabels());
-        this.lastDeletedTag = tag;
+        if (event?.value) {
+            this.lastDeletedTag = event.value;
+        }
     }
     /**
      * Set the function to be called when the control receives a change event.

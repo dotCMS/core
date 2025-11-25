@@ -16,11 +16,10 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { catchError, take } from 'rxjs/operators';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { shakeAnimation } from './animations';
-
-import { DotUploadFileService } from '../../../../shared';
 
 export enum STATUS {
     SELECT = 'SELECT',

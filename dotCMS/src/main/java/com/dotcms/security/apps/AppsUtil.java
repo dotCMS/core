@@ -1,11 +1,13 @@
 package com.dotcms.security.apps;
 
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.apps.Input;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
@@ -14,6 +16,7 @@ import com.google.common.io.ByteStreams;
 import com.liferay.util.Base64;
 import com.liferay.util.Encryptor;
 import com.liferay.util.EncryptorException;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.io.input.CharSequenceInputStream;
 import org.apache.commons.lang3.ArrayUtils;
@@ -26,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -55,9 +58,12 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  */
 public class AppsUtil {
 
-    public static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
+    private static final String APP_PARAM_ENV_VAR_TEMPLATE = "APP_%s_PARAM_%s";
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+    public static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
 
+    private AppsUtil() {
+    }
 
     /**
      * One single method takes care of building the internal-key
@@ -110,10 +116,30 @@ public class AppsUtil {
     static AppSecrets readJson(final char[] chars) throws DotDataException {
         try {
             final byte [] bytes = charsToBytesUTF(chars);
-            return mapper.readValue(bytes, AppSecrets.class);
+            final AppSecrets appSecrets = mapper.readValue(bytes, AppSecrets.class);
+            appSecrets.getSecrets().entrySet().forEach(secret -> updateEnvValue(secret, appSecrets));
+            return appSecrets;
         } catch (IOException e) {
             throw new DotDataException(e);
         }
+    }
+
+    /**
+     * Given a map of secrets this will update the envVarValue of each secret.
+     *
+     * @param secret secret entry
+     * @param appSecrets app secrets to iterate against
+     */
+    private static void updateEnvValue(final Entry<String, Secret> secret, final AppSecrets appSecrets) {
+        secret.getValue().setEnvVarValue(
+                Optional.ofNullable(
+                        discoverEnvVarValue(
+                                () -> guessEnvVar(
+                                        appSecrets.getKey(),
+                                        secret.getKey()),
+                                secret.getValue().getEnvVar()))
+                        .map(String::toCharArray)
+                        .orElse(null));
     }
 
     /**
@@ -341,7 +367,7 @@ public class AppsUtil {
     private static AppsSecretsImportExport readObject(final Path importFile)
             throws IOException, ClassNotFoundException {
         try(InputStream inputStream = Files.newInputStream(importFile)){
-            return (AppsSecretsImportExport)new ObjectInputStream(inputStream).readObject();
+            return (AppsSecretsImportExport) new VersionOverrideObjectInputStream(inputStream).readObject();
         }
     }
 
@@ -394,7 +420,7 @@ public class AppsUtil {
     /**
      * Map of optionals. Common portable format
      */
-    public static  Map<String, Optional<char[]>> mapForValidation(final AppSecrets appSecrets) {
+    public static Map<String, Optional<char[]>> mapForValidation(final AppSecrets appSecrets) {
         return appSecrets.getSecrets().entrySet().stream()
                 .collect(Collectors
                         .toMap(Entry::getKey,
@@ -410,16 +436,19 @@ public class AppsUtil {
      * Validate the incoming params and match them with the params described by the respective appDescriptor yml.
      * This method takes a Map of Optional<char[]> As this is a middle ground object representation
      * that can be mapped from a saved  AppSecrets or an incoming SecretForm
-     * if the param isn't included in the map it means it wasn't sent..
+     * if the param isn't included in the map it means it wasn't sent.
      * if the param was sent empty that would be represented as an empty optional.
      * I'm using optional since null values on map triggers warnings
+     *
      * @param params
      * @param appDescriptor
+     * @param appSecretsOptional
      */
     public static void validateForSave(final Map<String, Optional<char[]>> params,
-            final AppDescriptor appDescriptor) {
+                                       final AppDescriptor appDescriptor,
+                                       final Optional<AppSecrets> appSecretsOptional) {
 
-        //Param/Property names are case sensitive.
+        //Param/Property names are case-sensitive.
         final Map<String, ParamDescriptor> appDescriptorParams = appDescriptor.getParams();
 
         for (final Entry<String, ParamDescriptor> descriptorParam : appDescriptorParams.entrySet()) {
@@ -431,7 +460,9 @@ public class AppsUtil {
                 final Optional<char[]> optionalChars = params.get(describedParamName);
                 input = optionalChars.orElse(null);
             }
-            if (descriptorParam.getValue().isRequired() && (input == null || isNotSet(input))) {
+
+            if (isRequired(descriptorParam, appSecretsOptional, describedParamName)
+                    && (input == null || isNotSet(input))) {
                 throw new IllegalArgumentException(
                         String.format(
                                 "Param `%s` is marked required in the descriptor but does not come with a value.",
@@ -511,6 +542,166 @@ public class AppsUtil {
             Logger.warn(AppsUtil.class, String.format("App ID '%s' for Site '%s' was not found", appConfigId, site));
         }
         return appSecrets;
+    }
+
+    /**
+     * Creates a dynamic secret based on a given {@link Input}.
+     * It will try to resolve an env-var value and set it in the secret.
+     *
+     * @param key the key of the App
+     * @param paramName the name of the parameter
+     * @param inputParam the input parameter
+     * @return an Optional with the Secret object
+     */
+    public static Optional<Secret> dynamicSecret(final String key,
+                                                 final String paramName,
+                                                 final Input inputParam) {
+        return Optional
+                .ofNullable(inputParam)
+                .map(dp -> Secret.builder()
+                        .withValue(inputParam.getValue())
+                        .withHidden(inputParam.isHidden())
+                        .withType(Type.STRING)
+                        .withEnvVar(null)
+                        .withEnvShow(true)
+                        .withEnvValue(discoverEnvVarValue(key, paramName, null))
+                        .build());
+    }
+
+    /**
+     * Creates a non-dynamic secret based on a given {@link ParamDescriptor}.
+     * It will try to resolve an env-var value and set it in the secret.
+     *
+     * @param key the key of the App
+     * @param paramName the name of the parameter
+     * @param value the value of the parameter
+     * @param paramDescriptor the parameter descriptor
+     * @return an Optional with the Secret object
+     */
+    public static Optional<Secret> paramSecret(final String key,
+                                               final String paramName,
+                                               final char[] value,
+                                               final ParamDescriptor paramDescriptor) {
+        return Optional
+                .ofNullable(paramDescriptor)
+                .map(dp -> secretFromDescribedParam(key, paramName, value, paramDescriptor));
+    }
+
+    /**
+     * Creates a non-dynamic hidden secret based on a given {@link ParamDescriptor} and the actual previously
+     * resolved  {@link AppSecrets}.
+     * It will try to resolve an env-var value and set it in the secret.
+     *
+     * @param key the key of the App
+     * @param paramName the name of the parameter
+     * @param describedParam the parameter descriptor
+     * @param appSecrets the actual resolved AppSecrets
+     * @return an Optional with the Secret object
+     */
+    public static Optional<Secret> hiddenSecret(final String key,
+                                                final String paramName,
+                                                final ParamDescriptor describedParam,
+                                                final AppSecrets appSecrets) {
+        return Optional
+                .ofNullable(appSecrets)
+                .map(AppSecrets::getSecrets)
+                .map(secrets -> secrets.get(paramName))
+                .map(secret -> secretFromDescribedParam(key, paramName, secret.getValue(), describedParam));
+    }
+
+    /**
+     * Discovers the environment variable value based on the given application and parameter names.
+     *
+     * @param appName the name of the App
+     * @param appParamName the name of the parameter
+     * @param envVar the environment variable name
+     * @return the environment variable value
+     */
+    public static String discoverEnvVarValue(final String appName, final String appParamName, final String envVar) {
+        return discoverEnvVarValue(() -> guessEnvVar(appName, appParamName), envVar);
+    }
+
+    /**
+     * Creates a secret based on a given {@link ParamDescriptor}.
+     *
+     * @param key the key of the App
+     * @param paramName the name of the parameter
+     * @param value the value of the parameter
+     * @param paramDescriptor the parameter descriptor
+     * @return a secret object
+     */
+    private static Secret secretFromDescribedParam(final String key,
+                                                   final String paramName,
+                                                   final char[] value,
+                                                   final ParamDescriptor paramDescriptor) {
+        return Optional.ofNullable(paramDescriptor)
+                .map(pd -> Secret.builder()
+                        .withValue(value)
+                        .withHidden(pd.isHidden())
+                        .withType(pd.getType())
+                        .withEnvVar(pd.getEnvVar())
+                        .withEnvShow(pd.getEnvShow())
+                        .withEnvValue(discoverEnvVarValue(key, paramName, pd.getEnvVar()))
+                        .build())
+                .orElse(null);
+    }
+
+    /**
+     * Guesses the environment variable name based on the key and the parameter name.
+     *
+     * @param key the key of the App
+     * @param paramName the name of the parameter
+     * @return the environment variable name
+     */
+    private static String guessEnvVar(final String key, final String paramName) {
+        final String normalizedKey =
+                StringUtils.joinOneCharElements(
+                    StringUtils.convertCamelToSnake(key
+                                    .replace("-config", StringPool.BLANK)
+                                    .replaceAll(StringPool.DASH, StringPool.UNDERLINE))
+                            .replace("dot_", StringPool.BLANK)
+                            .toUpperCase());
+        final String normalizedParam =
+                StringUtils.joinOneCharElements(StringUtils.convertCamelToSnake(paramName).toUpperCase());
+        return String.format(APP_PARAM_ENV_VAR_TEMPLATE, normalizedKey, normalizedParam);
+    }
+
+    /**
+     * Discovers the environment variable value based on the given environment variable name.
+     *
+     * @param envVarSupplier the environment variable supplier to return the guessed environment variable name
+     * @param envVar the environment variable name
+     * @return the environment variable value
+     */
+    private static String discoverEnvVarValue(final Supplier<String> envVarSupplier, final String envVar) {
+        return Optional
+                .ofNullable(envVarSupplier.get())
+                .map(supplied -> Config.getStringProperty(supplied, null))
+                .or(() -> Optional.ofNullable(envVar).map(ev -> Config.getStringProperty(ev, null)))
+                .or(() -> Optional.ofNullable(envVar).map(System::getenv))
+                .orElse(null);
+    }
+
+    /**
+     * Returns the Secrets of a specific App for a given Site in dotCMS.
+     * This is done by evaluating searching for a secret with the given param name and if found evaluates that
+     * it is required, editable and has no value set.
+     * If the secret is not found then just evaluate the required flag.
+     *
+     * @param descriptorParam descriptor param
+     * @param appSecretsOptional app secrets
+     * @param paramName param name
+     * @return true if the param is required otherwise false
+     */
+    private static boolean isRequired(final Entry<String, ParamDescriptor> descriptorParam,
+                                      final Optional<AppSecrets> appSecretsOptional,
+                                      final String paramName) {
+        final Optional<Secret> secret =
+                appSecretsOptional.map(appSecrets -> appSecrets.getSecrets().get(paramName));
+        return secret.map(value -> descriptorParam.getValue().isRequired()
+                        && value.isEditable()
+                        && Objects.nonNull(value.getValue()))
+                .orElseGet(() -> descriptorParam.getValue().isRequired());
     }
 
 }

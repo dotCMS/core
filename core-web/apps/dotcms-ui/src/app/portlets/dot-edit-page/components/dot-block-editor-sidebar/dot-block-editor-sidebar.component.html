@@ -1,35 +1,34 @@
 <p-sidebar
-    #sidebar
+    (onHide)="sidebar.destroyModal(); closeSidebar()"
     [blockScroll]="true"
     [closeOnEscape]="false"
     [dismissible]="false"
     [showCloseIcon]="false"
     [visible]="!!blockEditorInput"
-    (onHide)="sidebar.destroyModal(); closeSidebar()"
+    #sidebar
     data-testid="sidebar"
     position="right">
-    <div class="container" *ngIf="blockEditorInput">
+    <div *ngIf="blockEditorInput" class="container">
         <dot-block-editor
-            #blockEditor
             [contentletIdentifier]="blockEditorInput.contentletIdentifier"
             [field]="blockEditorInput.field"
             [languageId]="blockEditorInput.languageId"
             [showVideoThumbnail]="showVideoThumbnail"
-            [value]="blockEditorInput.content">
-        </dot-block-editor>
+            [value]="blockEditorInput.content"
+            #blockEditor></dot-block-editor>
         <footer>
             <button
-                class="p-button-outlined"
-                [label]="'Cancel' | dm"
                 (click)="closeSidebar()"
+                [label]="'Cancel' | dm"
+                class="p-button-outlined"
                 data-testid="cancelBtn"
                 pButton
                 type="button"></button>
             <button
+                (click)="saveEditorChanges()"
                 [disabled]="saving"
                 [label]="'Update' | dm"
                 [loading]="saving"
-                (click)="saveEditorChanges()"
                 data-testid="updateBtn"
                 pButton
                 type="button"></button>

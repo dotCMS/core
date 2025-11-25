@@ -1,29 +1,26 @@
 <dot-form-dialog
-    [saveButtonDisabled]="(isFormValid$ | async) === false"
     (cancel)="onCancel()"
     (save)="onSave()"
-    data-testId="dialogForm"
->
-    <form class="p-fluid" *ngIf="form" [formGroup]="form" data-testId="form">
+    [saveButtonDisabled]="(isFormValid$ | async) === false"
+    data-testId="dialogForm">
+    <form *ngIf="form" [formGroup]="form" class="p-fluid" data-testId="form">
         <div class="field" data-testId="titleField">
-            <label for="title" dotFieldRequired>{{
-                'templates.properties.form.label.title' | dm
-            }}</label>
+            <label for="title" dotFieldRequired>
+                {{ 'templates.properties.form.label.title' | dm }}
+            </label>
             <input
                 id="title"
                 pInputText
                 formControlName="title"
                 autofocus
-                data-testId="templatePropsTitleField"
-            />
+                data-testId="templatePropsTitleField" />
             <dot-field-validation-message
-                [field]="form.get('title')"
-            ></dot-field-validation-message>
+                [field]="form.get('title')"></dot-field-validation-message>
         </div>
         <div class="field" data-testId="descriptionField">
-            <label for="description">{{
-                'templates.properties.form.label.description' | dm
-            }}</label>
+            <label for="description">
+                {{ 'templates.properties.form.label.description' | dm }}
+            </label>
             <textarea id="description" pInputTextarea formControlName="friendlyName"></textarea>
         </div>
         <ng-container *ngIf="form.get('theme')">
@@ -32,8 +29,7 @@
                 <dot-theme-selector-dropdown
                     id="theme"
                     formControlName="theme"
-                    data-testId="templatePropsThemeField"
-                ></dot-theme-selector-dropdown>
+                    data-testId="templatePropsThemeField"></dot-theme-selector-dropdown>
             </div>
         </ng-container>
         <div class="field" data-testId="thumbnailField">

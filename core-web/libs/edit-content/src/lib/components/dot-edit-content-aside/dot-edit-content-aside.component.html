@@ -1,73 +1,71 @@
-<ng-container *ngIf="workflow$ | async as workflow">
-    <div class="edit-content-aside--header">
-        <strong>
-            <i class="pi pi-sitemap"></i>
-            {{ 'Workflow' | dm }}
-        </strong>
+<aside class="content-aside">
+    <p-tabView>
+        <p-tabPanel [header]="'Info' | dm">
+            <section class="content-aside__section">
+                <div class="content-aside__header">
+                    <h2>{{ 'Information' | dm }}</h2>
+                </div>
+                <dot-content-aside-information
+                    [contentlet]="$contentlet()"
+                    [contentType]="$contentType()"
+                    [loading]="$loading()"
+                    data-testId="information" />
+            </section>
 
-        <dot-link [label]="'History' | dm" href="" icon="pi-history"></dot-link>
+            <section class="content-aside__section">
+                <div class="content-aside__header">
+                    <h2>{{ 'Workflow' | dm }}</h2>
+                    <div class="content-aside__icon">
+                        <i class="pi pi-history" aria-hidden="true"></i>
+                        <span>{{ 'show-all' | dm }}</span>
+                    </div>
+                </div>
+                <dot-content-aside-workflow
+                    [inode]="$contentlet()?.inode"
+                    [contentType]="$contentType()"
+                    data-testId="workflow" />
+            </section>
+        </p-tabPanel>
+        <!--        <p-tabPanel [header]="'History' | dm" >-->
+
+        <!--        </p-tabPanel>-->
+        <!--        <p-tabPanel [header]="'Settings' | dm">-->
+
+        <!--        </p-tabPanel>-->
+    </p-tabView>
+    <div class="content-aside__close">
+        <button
+            class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
+            (click)="$toggle.emit(!$collapsed())"
+            data-testId="toggle-button">
+            <svg
+                width="16"
+                height="16"
+                viewBox="0 0 20 20"
+                version="1.1"
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:xlink="http://www.w3.org/1999/xlink">
+                <g id="Canvas" fill="none">
+                    <g id="icon">
+                        <g id="Rectangle 2">
+                            <rect
+                                x="1"
+                                y="1"
+                                width="18"
+                                height="18"
+                                rx="1"
+                                stroke-width="2"
+                                stroke="#444444" />
+                        </g>
+                        <g id="Rectangle 2.1">
+                            <path
+                                d="M 0 0L 2 0L 2 20L 0 20L 0 0Z"
+                                transform="matrix(1 1.74846e-07 -1.74846e-07 1 12 0)"
+                                fill="#444444" />
+                        </g>
+                    </g>
+                </g>
+            </svg>
+        </button>
     </div>
-
-    <dl class="edit-content-aside--item">
-        <dt>{{ 'Assignee' | dm }}</dt>
-        <dd class="font-bold" data-testId="workflow-assigned">
-            {{ workflow.task?.assignedTo }}
-        </dd>
-
-        <dt>{{ 'Step' | dm }}</dt>
-        <dd class="font-bold" data-testId="workflow-step">
-            <p-chip [label]="workflow?.step?.name ?? 'New'" styleClass="p-chip-sm p-chip-rounded" />
-        </dd>
-
-        <dt>{{ 'Workflow' | dm }}</dt>
-        <dd class="font-bold" data-testId="workflow-name">
-            {{ workflow.scheme?.name }}
-        </dd>
-    </dl>
-</ng-container>
-
-<div class="edit-content-aside--header">
-    <strong>
-        <i class="pi pi-info-circle"></i>
-        {{ 'Information' | dm }}</strong
-    >
-    <dot-copy-button
-        *ngIf="contentLet?.inode"
-        [copy]="contentLet?.inode"
-        [attr.data-testId]="'inode'"
-        [label]="contentLet?.inode | slice : 0 : 8"></dot-copy-button>
-
-    <dot-api-link
-        *ngIf="contentLet?.stInode"
-        [href]="'api/v1/contenttype/id/' + contentLet?.stInode"></dot-api-link>
-</div>
-
-<dl class="edit-content-aside--item">
-    <dt>{{ 'Content State' | dm }}</dt>
-
-    <dd>
-        <p-chip
-            *ngIf="contentLet | contentletStatus as status"
-            [styleClass]="'p-chip-sm ' + status.classes"
-            [label]="status.label" />
-    </dd>
-
-    <dt>{{ 'Modified by' | dm }}</dt>
-    <dd class="font-bold" data-testId="modified-by">
-        <ng-container *ngIf="contentLet">
-            {{ contentLet?.modUserName }}
-        </ng-container>
-    </dd>
-
-    <dt>{{ 'Last modified' | dm }}</dt>
-    <dd class="font-bold" data-testId="last-modified">
-        <ng-container *ngIf="contentLet">
-            {{ contentLet?.modDate | dotRelativeDate }}
-        </ng-container>
-    </dd>
-
-    <dt>{{ 'Content Type' | dm }}</dt>
-    <a [routerLink]="'/content-types-angular/edit/' + contentType" data-testId="content-type">{{
-        contentType
-    }}</a>
-</dl>
+</aside>

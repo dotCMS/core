@@ -5,7 +5,7 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
         value: '',
@@ -21,7 +21,6 @@ export default {
         step: ''
     }
 };
-
 
 const Template = (args) => {
     const time = document.createElement('dot-time');

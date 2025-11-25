@@ -11,9 +11,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 /**
@@ -92,6 +92,7 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
             var localContent = map(localFile, comparator.type());
 
             var matchingServerContent = comparator.findMatchingServerContent(
+                    localFile,
                     localContent,
                     serverContents
             );
@@ -161,8 +162,10 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
 
         for (T serverContent : serverContents) {
 
-            var local = comparator.localContains(serverContent, localContents);
-            if (local.isEmpty()) {
+            var localMatch = comparator.existMatchingLocalContent(
+                    serverContent, localFiles, localContents
+            );
+            if (!localMatch) {
                 removals.add(
                         PushAnalysisResult.<T>builder().
                                 action(PushAction.REMOVE).

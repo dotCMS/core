@@ -1,12 +1,13 @@
 # dotCMS Development Docker Image
 ### All in one docker image including Postgres and Opensearch
-This image, intended for development, runs Ubuntu 22.04 and contains dotCMS, Postgres 15 and Opensearch 1.x. All dotCMS, db and es index data is stored in the `/data` directory, which should be mapped in if you want your environment to persist.  The beauty of this image that it can be used to CLONE an existing dotCMS instance.  
+This image, intended for development, runs Ubuntu 22.04 and contains dotCMS, Postgres 16 and Opensearch 1.x. All dotCMS, db and es index data is stored in the `/data` directory, which should be mapped in if you want your environment to persist.  The beauty of this image that it can be used to CLONE an existing dotCMS instance.  
 
 
 ## Running the image
 This image takes all the normal dotCMS docker config switches - keep in mind that the DB and ES come pre-wired, so no need to change those.  This image also takes the following env variables:
 
 - `DOTCMS_SOURCE_ENVIRONMENT` : the url for the environment you wish to clone, e.g. https://demo.dotcms.com .
+- `DOTCMS_CLONE_TYPE` : either `dump` or `starter`, defaults to `dump`.  Set this to dump to take a database dump and asset backup (recommended for large sites).  Set this to `starter` to force the target environment to generate a starter to download.
 - `DOTCMS_API_TOKEN` : A valid dotCMS API Token from an admin user in the source environment.
 - `DOTCMS_USERNAME_PASSWORD` :  The username:password for an admin user in the source environment.
 - `DOTCMS_DEBUG` :  Run dotCMS in debug mode and listen for a remote debugger on port 8000, defaults to `false`.
@@ -19,38 +20,63 @@ When running this image, if you specify a source environment and a valid means t
 
 
 
+All of these examples expect you to login via https on port 8443.  There is a valid certificate if you are running locally using:
+
+https://local.dotcms.site:8443/dotAdmin
+
 #### Clone demo with a dotCMS API Token
+This pulls down the assets and a SQL dump that is then imported into the new dotCMS instance.  You will need to login with the same credentials that are used in the target environment.
 ```
 export TOK=XXXXXXX_YOUR_DOTCMS_TOKEN.eXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 docker run --rm \
+--pull always \
 -p 8000:8000 \
 -p 8443:8443 \
 -v $PWD/data:/data \
 -e DOTCMS_SOURCE_ENVIRONMENT=https://demo.dotcms.com \
 -e DOTCMS_API_TOKEN=$TOK \
- dotcms/dotcms-dev:latest
+ dotcms/dotcms-dev:nightly
 ```
 
 #### Clone demo with UserID/Password
+This pulls down the assets and a SQL dump that is then imported into the new dotCMS instance.  You will need to login with the same credentials that are used in the target environment.
 ```
 docker run --rm \
+--pull always \
 -p 8443:8443 \
 -v $PWD/data:/data \
 -e DOTCMS_SOURCE_ENVIRONMENT=https://demo.dotcms.com \
 -e DOTCMS_USERNAME_PASSWORD="admin@dotcms.com:admin" \
- dotcms/dotcms-dev:latest
+ dotcms/dotcms-dev:nightly
 ```
 
-#### Run normal startup with Postgres port exposed, running debug
+
+#### Clone demo using a starter.zip 
+This asks the source server to generate a starter.zip, which can be time-consuming to generate AND to import initially.  
+```
+docker run --rm \
+--pull always \
+-p 8443:8443 \
+-v $PWD/data:/data \
+-e DOTCMS_SOURCE_ENVIRONMENT=https://demo.dotcms.com \
+-e DOTCMS_USERNAME_PASSWORD="admin@dotcms.com:admin" \
+-e DOTCMS_CLONE_TYPE=starter \
+dotcms/dotcms-dev:nightly
+```
+
+
+#### DEV DEBUG - with Postgres port exposed.  
+In this case dotCMS java waits to start up until a debugger is connected to it on port 8000.
 ```
 docker run --rm  \
+--pull always \
 -p 8443:8443 \
 -p 5432:5432 \
 -p 8000:8000 \
 -v $PWD/data:/data \
 -e DOTCMS_DEBUG=true \
- dotcms/dotcms-dev:latest
+ dotcms/dotcms-dev:nightly
 ```
 
 
@@ -75,6 +101,14 @@ wget --header="$AUTH_HEADER" -t 1 -O dotcms_db.sql.gz $DOTCMS_SOURCE_ENVIRONMENT
 
 ```
 
+#### Example wget to download a new starter.zip
+```
+wget --header="$AUTH_HEADER" -t 1 -O starter.zip $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadStarterWithAssets?oldAssets=false
+
+```
+
+
+
 #### Starting from a clean slate
 Your development instance can be deleted and reset by deleting the ./data directory that is mapped in. 
 
@@ -86,12 +120,23 @@ By default, this image is built from the `dotcms/dotcms:latest` tagged version o
 `--build-arg DOTCMS_DOCKER_TAG=latest` or `--build-arg DOTCMS_DOCKER_TAG=23.07`
 
 ```
-docker build --pull --build-arg DOTCMS_DOCKER_TAG=latest  . -t dotcms/dotcms-dev
+docker build --pull --build-arg DOTCMS_DOCKER_TAG=latest --progress=plain --load . -t dotcms/dotcms-dev:testing
 ```
 or
 ```
-docker buildx build --build-arg DOTCMS_DOCKER_TAG=master_latest_SNAPSHOT --platform linux/amd64,linux/arm64 --pull --push -t dotcms/dotcms-dev:master_latest_SNAPSHOT .
+docker buildx build --build-arg DOTCMS_DOCKER_TAG=trunk --platform linux/amd64,linux/arm64 --pull --push -t dotcms/dotcms-dev:testing .
 ```
+
+then
+```
+
+docker run --rm \
+-p 8000:8000 \
+-p 8443:8443 \
+-v $PWD/data:/data 
+dotcms/dotcms-dev:testing
+```
+
 
 ### Included Database and Elasticsearch
 
@@ -104,7 +149,7 @@ Running https on
 - data stored in /data/opensearch 
 
 
-#### Postgres 15
+#### Postgres 16
 Running on port 5432 and using the dotCMS defaults:
 - db: dotcms
 - user: dotcmsdbuser

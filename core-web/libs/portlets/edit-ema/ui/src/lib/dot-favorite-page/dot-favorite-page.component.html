@@ -1,11 +1,11 @@
 <dot-form-dialog
     *ngIf="vm$ | async as vm"
-    [saveButtonDisabled]="(isFormValid$ | async) === false"
-    [saveButtonLoading]="vm.loading"
     (cancel)="onCancel()"
     (save)="onSave()"
+    [saveButtonDisabled]="(isFormValid$ | async) === false"
+    [saveButtonLoading]="vm.loading"
     data-testId="dialogForm">
-    <form class="p-fluid" *ngIf="form" [formGroup]="form" data-testId="form">
+    <form *ngIf="form" [formGroup]="form" class="p-fluid" data-testId="form">
         <div class="fields-col">
             <dot-pages-favorite-page-empty-skeleton
                 *ngIf="
@@ -32,10 +32,10 @@
                                 [src]="vm.formState.thumbnail + '?' + timeStamp" />
                         </div>
                         <button
-                            class="p-button-outlined favorite-dialog__image-reload"
                             *ngIf="vm.pageRenderedHtml !== ''"
-                            [label]="'favoritePage.dialog.reload.image.button' | dm"
                             (click)="renderThumbnail()"
+                            [label]="'favoritePage.dialog.reload.image.button' | dm"
+                            class="p-button-outlined favorite-dialog__image-reload"
                             data-testid="dotFavoriteDialogReloadThumbnailButton"
                             pButton></button>
                     </ng-template>
@@ -78,10 +78,10 @@
     </form>
 
     <button
-        class="p-button-danger p-button-outlined dot-favorite-dialog-footer__delete-button"
+        (click)="onDelete(vm.formState?.inode)"
         [disabled]="!vm.formState?.inode"
         [label]="'favoritePage.dialog.delete.button' | dm"
-        (click)="onDelete(vm.formState?.inode)"
+        class="p-button-danger p-button-outlined dot-favorite-dialog-footer__delete-button"
         icon="pi pi-trash"
         footerActions
         data-testid="dotFavoriteDialogDeleteButton"

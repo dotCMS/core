@@ -24,17 +24,15 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
+    DotDropdownDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
-    DotTrimInputDirective
-} from '@dotcms/ui';
-import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
-import {
     DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    DotTrimInputDirective,
+    DotValidators,
     SIDEBAR_SIZES
-} from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
-import { DotValidators } from '@shared/validators/dotValidators';
+} from '@dotcms/ui';
 
 import { DotExperimentsOptionsModule } from '../../../shared/ui/dot-experiment-options/dot-experiments-options.module';
 import { DotExperimentsGoalConfigurationReachPageComponent } from '../../../shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';

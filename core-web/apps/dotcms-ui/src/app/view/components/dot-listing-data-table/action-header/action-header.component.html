@@ -1,32 +1,30 @@
-<div class="action-header" [class.selected]="selectedItems.length">
-    <ng-container *ngIf="options && options.primary">
+<div [class.selected]="selectedItems.length" class="action-header">
+    @if (options && options.primary) {
         <dot-action-button
-            class="action-header__primary-button"
-            [model]="options.primary.model"
             (press)="handlePrimaryAction()"
-        ></dot-action-button>
-    </ng-container>
-    <div class="action-header__container" [style.overflow]="dynamicOverflow">
+            [model]="options.primary.model"
+            class="action-header__primary-button"></dot-action-button>
+    }
+    <div [style.overflow]="dynamicOverflow" class="action-header__container">
         <div class="action-header__global-search">
             <ng-content></ng-content>
         </div>
-        <div
-            class="action-header__group-actions"
-            *ngIf="(options && options.secondary) || selectedItems.length"
-        >
-            <span class="action-header__selected-items-counter"
-                >{{ selectedItems.length }} {{ 'selected' | dm }}</span
-            >
-            <ng-container *ngIf="options && options.secondary">
-                <p-splitButton
-                    class="action-header__secondary-button"
-                    *ngFor="let action of options.secondary"
-                    secondary
-                    label="{{ action.label }}"
-                    class="inverted"
-                    [model]="action.model"
-                ></p-splitButton>
-            </ng-container>
-        </div>
+        @if ((options && options.secondary) || selectedItems.length) {
+            <div class="action-header__group-actions">
+                <span class="action-header__selected-items-counter">
+                    {{ selectedItems.length }} {{ 'selected' | dm }}
+                </span>
+                @if (options && options.secondary) {
+                    @for (action of options.secondary; track action) {
+                        <p-splitButton
+                            [model]="action.model"
+                            class="action-header__secondary-button"
+                            secondary
+                            label="{{ action.label }}"
+                            class="inverted" />
+                    }
+                }
+            </div>
+        }
     </div>
 </div>

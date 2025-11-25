@@ -1,21 +1,26 @@
-@for(action of groupedActions(); track $index; let first = $first) { @if(action.length > 1) {
-<p-splitButton
-    [disabled]="loading"
-    [styleClass]="sizeClass + (!first ? ' p-button-outlined' : '')"
-    [model]="action | slice : 1"
-    [label]="action[0].label"
-    (onClick)="action[0].command()" />
-} @else {
-<p-button
-    [loading]="loading"
-    [styleClass]="sizeClass + (!first ? ' p-button-outlined' : '')"
-    [label]="action[0].label"
-    (onClick)="action[0].command()" />
-} } @empty {
-<p-button
-    [loading]="loading"
-    [disabled]="!loading"
-    [styleClass]="sizeClass"
-    [label]="(loading ? 'Loading' : 'edit.ema.page.no.workflow.action') | dm"
-    data-testId="empty-button" />
+@for (action of $groupedActions(); track $index) {
+    @let mainAction = action.mainAction;
+    @let subActions = action.subActions;
+    @if (subActions.length) {
+        <p-splitButton
+            (onClick)="mainAction?.command({ originalEvent: $event })"
+            [disabled]="loading()"
+            [styleClass]="sizeClass"
+            [model]="subActions"
+            [outlined]="!$first"
+            [label]="mainAction.label" />
+    } @else {
+        <p-button
+            (onClick)="mainAction?.command({ originalEvent: $event })"
+            [loading]="loading()"
+            [styleClass]="sizeClass + (!$first ? ' p-button-outlined' : '')"
+            [label]="mainAction.label" />
+    }
+} @empty {
+    <p-button
+        [loading]="loading()"
+        [disabled]="!loading()"
+        [styleClass]="sizeClass"
+        [label]="(loading() ? 'Loading' : 'edit.ema.page.no.workflow.action') | dm"
+        data-testId="empty-button" />
 }

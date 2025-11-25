@@ -60,7 +60,7 @@ describe('DotTempFileThumbnailComponent', () => {
         });
 
         it('should set thumbnailType to video when contentType is video/*', () => {
-            const videoElement = spectator.query(byTestId('thumbail-video'));
+            const videoElement = spectator.query(byTestId('thumbnail-video'));
             const sourceElement = videoElement.querySelector('source');
 
             expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.video);
@@ -90,7 +90,7 @@ describe('DotTempFileThumbnailComponent', () => {
         });
 
         it('should set thumbnailType to image when contentType is image/*', () => {
-            const imageElement = spectator.query(byTestId('thumbail-image'));
+            const imageElement = spectator.query(byTestId('thumbnail-image'));
 
             expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.image);
             expect(spectator.component.src).toBe('/dA/123-456/500w/50q/image.png');
@@ -101,18 +101,19 @@ describe('DotTempFileThumbnailComponent', () => {
         });
     });
 
-    describe('icon', () => {
+    describe('pdf', () => {
         beforeEach(async () => {
             spectator = createComponent({
                 props: {
                     tempFile: {
                         ...TEMP_FILE_MOCK,
-                        thumbnailUrl: '',
+                        fileName: 'file.pdf',
+                        thumbnailUrl: '/dA/123-456/500w/50q/file.pdf',
                         referenceUrl: '/dA/123-456',
                         metadata: {
                             ...METADATA_MOCK,
                             name: 'file.pdf',
-                            contentType: 'unknown',
+                            contentType: 'application/pdf',
                             isImage: false
                         }
                     }
@@ -122,12 +123,13 @@ describe('DotTempFileThumbnailComponent', () => {
             await spectator.fixture.whenStable();
         });
 
-        it('should set thumbnailType to video when contentType is video/*', () => {
-            const iconElement = spectator.query(byTestId('thumbail-icon'));
+        it('should set thumbnailType to pdf when the extension is pdf', () => {
+            const pdfElement = spectator.query(byTestId('thumbnail-pdf'));
 
-            expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.icon);
-            expect(iconElement.getAttribute('class')).toBe('pi pi-file-pdf');
-            expect(iconElement).toBeTruthy();
+            expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.pdf);
+            expect(spectator.component.src).toBe('/dA/123-456/500w/50q/file.pdf');
+            expect(pdfElement.getAttribute('src')).toBe('/dA/123-456/500w/50q/file.pdf');
+            expect(pdfElement).toBeTruthy();
         });
     });
 });

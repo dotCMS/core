@@ -1,18 +1,5 @@
 package com.dotcms.content.business.json;
 
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLED_WYSIWYG_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LANGUAGEID_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_DATE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.SORT_ORDER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.STRUCTURE_INODE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
-import static com.dotmarketing.util.UtilMethods.isSet;
-
 import com.dotcms.content.model.Contentlet;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.FieldValueBuilder;
@@ -34,6 +21,7 @@ import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.PermissionTabField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -60,6 +48,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+
 import java.io.File;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -71,6 +60,18 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLED_WYSIWYG_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.LANGUAGEID_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_DATE_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.SORT_ORDER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.STRUCTURE_INODE_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
+import static com.dotmarketing.util.UtilMethods.isSet;
 
 /**
  * This is class takes care of translating a contentlet from it's regular mutable representation
@@ -313,7 +314,9 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             if(value instanceof Date){
                 value = new Timestamp(((Date) value).getTime());
             }
-
+            if (field instanceof StoryBlockField) {
+                map.put(field.variable() + "_raw", value);
+            }
             map.put(field.variable(), value);
         }
         return map;

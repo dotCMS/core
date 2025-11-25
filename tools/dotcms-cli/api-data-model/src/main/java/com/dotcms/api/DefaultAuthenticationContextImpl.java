@@ -9,15 +9,16 @@ import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
+import com.dotcms.model.user.User;
 import io.quarkus.arc.All;
 import io.quarkus.arc.DefaultBean;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -65,7 +66,12 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
                 final CredentialsBean credentials = serviceBean.credentials();
                 if (null != credentials) {
                     this.user = credentials.user();
-                    this.token = credentials.token();
+                    final Optional<char[]> chars = credentials.loadToken();
+                    if(chars.isPresent()){
+                      this.token = chars.get();
+                    } else {
+                        logger.warn("No token found for user " + user);
+                    }
                 }
             });
         }catch (IOException e){
@@ -114,6 +120,14 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
         saveCredentials(user, responseEntityView.entity().token());
     }
 
+    @Override
+    public void login(char[] token) throws IOException {
+        authenticationParam.setToken(token);
+        final UserAPI userAPI = clientFactory.getClient(UserAPI.class);
+        final User current = userAPI.getCurrent();
+        saveCredentials(current.userId(), token);
+    }
+
     private void saveCredentials(final String user, final char[] token) {
         try {
             final Optional<ServiceBean> selected = serviceManager.selected();
@@ -138,8 +152,8 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
                 .filter(serviceBean -> serviceKey.equals(serviceBean.name())).findFirst();
         if (optional.isPresent()) {
             final ServiceBean bean = optional.get();
-            if (bean.credentials() != null  && user.equals(bean.credentials().user())  && null != bean.credentials().token()) {
-                return Optional.of(bean.credentials().token());
+            if (bean.credentials() != null  && user.equals(bean.credentials().user()) ) {
+                return bean.credentials().loadToken();
             }
         }
         return Optional.empty();

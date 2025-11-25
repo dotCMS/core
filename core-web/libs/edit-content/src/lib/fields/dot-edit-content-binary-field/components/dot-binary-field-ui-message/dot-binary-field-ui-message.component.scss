@@ -14,9 +14,14 @@
     border-radius: 50%;
     padding: $spacing-3;
 
+    .icon {
+        font-size: $font-size-xxl;
+        width: auto;
+    }
+
     &.info {
-        color: $color-palette-secondary-500;
-        background: $color-palette-secondary-200;
+        color: $color-palette-primary-500;
+        background: $color-palette-primary-200;
     }
 
     &.error {

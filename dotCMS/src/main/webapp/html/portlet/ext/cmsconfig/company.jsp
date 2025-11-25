@@ -409,167 +409,169 @@
                         <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
                            dijit.byId("pColorPicker").show();
                         </script>
-                     </button>
+                        </button>
+                     </div>
+                  </dd>
+               </dl>
+               <dl>
+                  <dt><%= LanguageUtil.get(pageContext, "secondary.color") %></dt>
+                  <dd style="position:relative;">
+                     <div id="sColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
+                     <div class="inline-form">
+                        <input id="sColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getStreet() %>" style="width: 250px">
+                        <button id="sButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
+                           <%= LanguageUtil.get(pageContext, "color.picker") %>
+                           <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
+                              dijit.byId("sColorPicker").show();
+                           </script>
+                        </button>
+                     </div>
+                  </dd>
+               </dl>
+               <dl>
+                  <dt><%= LanguageUtil.get(pageContext, "background.image") %></dt>
+                  <dd>
+                     <div class="inline-form">
+                        <input id="bgURL" dojoType="dijit.form.TextBox" name="companyHomeUrl" size="25" type="text" value="<%= company.getHomeURL() %>" style="width: 250px">
+                        <button id="buttonTwo" dojoType="dijit.form.Button" type="button" iconClass="bgIcon">
+                           <%= LanguageUtil.get(pageContext, "backgrounds") %>
+                           <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
+                              dijit.byId("bgPicker").show();
+                           </script>
+                        </button>
+                     </div>
+                  </dd>
+               </dl>
+               <dl>
+                  <dt>&nbsp;</dt>
+                  <dd>
+                     <div id="imageBlock" style="width:250px; height:170px; border:1px solid #b3b3b3;background-repeat:no-repeat; background-size:100% 100%;"></div>
+                  </dd>
+               </dl>
+               <div id="bgColorPicker" data-dojo-type="dijit.Dialog" title="Background Color Picker">
+                  <div id="bgPickerLive" dojoType="dojox.widget.ColorPicker"
+                     webSafe="false"
+                     liveUpdate="true"
+                     value="<%= company.getSize() %>"
+                     onChange="bgColorStyler(arguments[0])">
                   </div>
-               </dd>
-            </dl>
-            <dl>
-               <dt><%= LanguageUtil.get(pageContext, "secondary.color") %></dt>
-               <dd style="position:relative;">
-                  <div id="sColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
-                  <div class="inline-form">
-                     <input id="sColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getStreet() %>" style="width: 250px">
-                     <button id="sButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
-                        <%= LanguageUtil.get(pageContext, "color.picker") %>
-                        <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
-                           dijit.byId("sColorPicker").show();
-                        </script>
-                     </button>
+               </div>
+               <div id="pColorPicker" data-dojo-type="dijit.Dialog" title="Primary Color Picker">
+                  <div id="pPickerLive" dojoType="dojox.widget.ColorPicker"
+                     webSafe="false"
+                     liveUpdate="true"
+                     value="<%= company.getType() %>"
+                     onChange="PrimaryColorStyler(arguments[0])">
                   </div>
-               </dd>
-            </dl>
-            <dl>
-               <dt><%= LanguageUtil.get(pageContext, "background.image") %></dt>
-               <dd>
-                  <div class="inline-form">
-                     <input id="bgURL" dojoType="dijit.form.TextBox" name="companyHomeUrl" size="25" type="text" value="<%= company.getHomeURL() %>" style="width: 250px">
-                     <button id="buttonTwo" dojoType="dijit.form.Button" type="button" iconClass="bgIcon">
-                        <%= LanguageUtil.get(pageContext, "backgrounds") %>
-                        <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
-                           dijit.byId("bgPicker").show();
-                        </script>
-                     </button>
+               </div>
+               <div id="sColorPicker" data-dojo-type="dijit.Dialog" title="Secondary Color Picker">
+                  <div id="sPickerLive" dojoType="dojox.widget.ColorPicker"
+                     webSafe="false"
+                     liveUpdate="true"
+                     value="<%= company.getStreet() %>"
+                     onChange="SecondaryColorStyler(arguments[0])">
                   </div>
-               </dd>
-            </dl>
-            <dl>
-               <dt>&nbsp;</dt>
-               <dd>
-                  <div id="imageBlock" style="width:250px; height:170px; border:1px solid #b3b3b3;background-repeat:no-repeat; background-size:100% 100%;"></div>
-               </dd>
-            </dl>
-            <div id="bgColorPicker" data-dojo-type="dijit.Dialog" title="Background Color Picker">
-               <div id="bgPickerLive" dojoType="dojox.widget.ColorPicker"
-                  webSafe="false"
-                  liveUpdate="true"
-                  value="<%= company.getSize() %>"
-                  onChange="bgColorStyler(arguments[0])">
+               </div>
+               <div id="bgPicker" data-dojo-type="dijit.Dialog" title="Backgrounds">
+                  <table class="bgThumbnail">
+                     <tr>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-1.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-1-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-2.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-2-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-3.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-3-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-4.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-4-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                     </tr>
+                     <tr>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-5.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-5-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-6.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-6-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-7.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-7-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-8.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-8-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                     </tr>
+                     <tr>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-9.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-9-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-10.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-10-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                        <td>
+                           <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-11.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-11-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                        <td>
+                           <div><a href="#" onclick="imgSwap(''); dijit.byId('bgPicker').hide();"> <img src="/html/images/backgrounds/bg-no-sm.jpg" width="75" height="47"></a></div>
+                        </td>
+                     </tr>
+                  </table>
                </div>
             </div>
-            <div id="pColorPicker" data-dojo-type="dijit.Dialog" title="Primary Color Picker">
-               <div id="pPickerLive" dojoType="dojox.widget.ColorPicker"
-                  webSafe="false"
-                  liveUpdate="true"
-                  value="<%= company.getType() %>"
-                  onChange="PrimaryColorStyler(arguments[0])">
+            <div class="logo-upload__container">
+               <div class="form__group">
+               <h3 class="drop-zone__label"><%= LanguageUtil.get(pageContext, "loginlogo.label") %></h3>
+               <div class="logo">
+                  <button class="logo__delete">&times;</button>
+                  <div class="logo__container">
+                     <% if(screenLogoIsSet) { %>
+                        <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
+                     <% } else { %>
+                        <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+                     <% } %>
+                  </div>
                </div>
-            </div>
-            <div id="sColorPicker" data-dojo-type="dijit.Dialog" title="Secondary Color Picker">
-               <div id="sPickerLive" dojoType="dojox.widget.ColorPicker"
-                  webSafe="false"
-                  liveUpdate="true"
-                  value="<%= company.getStreet() %>"
-                  onChange="SecondaryColorStyler(arguments[0])">
+               <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+               <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( screenLogoIsSet ? screenLogo : "" ) %>">
+               <p class="hint"><%= LanguageUtil.get(pageContext, "login-logo.hint") %></p>
                </div>
-            </div>
-            <div id="bgPicker" data-dojo-type="dijit.Dialog" title="Backgrounds">
-               <table class="bgThumbnail">
-                  <tr>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-1.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-1-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-2.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-2-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-3.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-3-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-4.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-4-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                  </tr>
-                  <tr>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-5.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-5-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-6.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-6-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-7.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-7-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-8.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-8-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                  </tr>
-                  <tr>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-9.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-9-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-10.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-10-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                     <td>
-                        <div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-11.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-11-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                     <td>
-                        <div><a href="#" onclick="imgSwap(''); dijit.byId('bgPicker').hide();"> <img src="/html/images/backgrounds/bg-no-sm.jpg" width="75" height="47"></a></div>
-                     </td>
-                  </tr>
-               </table>
-            </div>
-         </div>
-         <div class="logo-upload__container">
-            <div class="form__group">
-            <h3 class="drop-zone__label"><%= LanguageUtil.get(pageContext, "loginlogo.label") %></h3>
-            <div class="logo">
-               <button class="logo__delete">&times;</button>
-               <div class="logo__container">
-                  <% if(screenLogoIsSet) { %>
-                     <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
-                  <% } else { %>
-                     <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
-                  <% } %>
-               </div>
-            </div>
-            <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-            <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( screenLogoIsSet ? screenLogo : "" ) %>">
-            <p class="hint"><%= LanguageUtil.get(pageContext, "login-logo.hint") %></p>
-            </div>
-            <br />
-            <% if ( enterprise ) { %>
-            <div class="form__group">
-               <label for="topNav_logo">
-               <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" <%= ( navLogoIsSet ? "checked" : "" ) %> />
-                  <%= LanguageUtil.get(pageContext, "navlogo-checkbox.label") %>
-               </label>
                <br />
-               <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo-checkbox.hint") %></p>
-               <div id="topNav__drop-zone" style="display: none;">
-                  <h3 class="drop-zone__label"><%= LanguageUtil.get(pageContext, "navlogo.label") %></h3>
-                  <div class="logo" <%= ( navLogoIsSet ? "style='display: flex;'" : "style='display: none;'" ) %>>
-                     <button class="logo__delete">&times;</button>
-                      <%
-                        if(navLogoIsSet)  {
-                     %>            
-                       <div class="logo__container">
-                           <img class="logo__image" src="<%= navLogo %>"/>
-                        </div>
-                     <%
-                        } else {
-                     %>
-                        <div class="logo__container" style="display: none;"></div>
-                     <%
-                        }
-                     %>
+               <% if ( enterprise ) { %>
+               <div class="form__group">
+                  <label for="topNav_logo">
+                  <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" <%= ( navLogoIsSet ? "checked" : "" ) %> />
+                     <%= LanguageUtil.get(pageContext, "navlogo-checkbox.label") %>
+                  </label>
+                  <br />
+                  <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo-checkbox.hint") %></p>
+                  <div id="topNav__drop-zone" style="display: none;">
+                     <h3 class="drop-zone__label"><%= LanguageUtil.get(pageContext, "navlogo.label") %></h3>
+                     <div class="logo" <%= ( navLogoIsSet ? "style='display: flex;'" : "style='display: none;'" ) %>>
+                        <button class="logo__delete">&times;</button>
+                         <%
+                           if(navLogoIsSet)  {
+                        %>            
+                          <div class="logo__container">
+                              <img class="logo__image" src="<%= navLogo %>"/>
+                           </div>
+                        <%
+                           } else {
+                        %>
+                           <div class="logo__container" style="display: none;"></div>
+                        <%
+                           }
+                        %>
+                     </div>
+                     <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true" <%= ( navLogoIsSet ? "style='display: none;'" : "style='display: block;'" ) %>></dot-asset-drop-zone>
+                     <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="<%= ( navLogoIsSet ? navLogo : "" ) %>">	
+                     <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo.hint") %></p>
                   </div>
-                  <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true" <%= ( navLogoIsSet ? "style='display: none;'" : "style='display: block;'" ) %>></dot-asset-drop-zone>
-                  <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="<%= ( navLogoIsSet ? navLogo : "" ) %>">	
-                  <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo.hint") %></p>
                </div>
+               <% } %>
             </div>
-            <% } %>
          </div>
+         
       </td>
    </tr>
 </table>

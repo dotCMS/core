@@ -14,7 +14,10 @@ export class DotcmsEventsService {
     private subjects = [];
     private messagesSub: Subscription;
 
-    constructor(private dotEventsSocket: DotEventsSocket, private loggerService: LoggerService) {}
+    constructor(
+        private dotEventsSocket: DotEventsSocket,
+        private loggerService: LoggerService
+    ) {}
 
     /**
      * Close the socket

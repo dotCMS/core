@@ -3,7 +3,7 @@ package com.dotcms.cli.common;
 import io.quarkus.arc.DefaultBean;
 import java.io.Console;
 import java.util.Optional;
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 import picocli.CommandLine.Help;
 
 @DefaultBean
@@ -91,6 +91,29 @@ public class PromptImpl implements Prompt {
             }
         }
     }
+
+    /**
+     * Reads a password from the user.
+     *
+     * @param prompt The prompt message displayed to the user.
+     * @param args   Additional format arguments for the prompt message.
+     * @return The password entered by the user as a char[].
+     */
+    public char[] readPassword(String prompt, String... args) {
+        try {
+            Optional<Console> console = Optional.ofNullable(System.console());
+            var response = console
+                    .map(c -> c.readPassword(withColor(prompt), args))
+                    .orElse(null);
+            if (response == null || response.length == 0) {
+                return new char[0];
+            }
+            return response;
+        } catch (Exception ignore) {
+            return new char[0];
+        }
+    }
+
 
     /**
      * Add color to the text

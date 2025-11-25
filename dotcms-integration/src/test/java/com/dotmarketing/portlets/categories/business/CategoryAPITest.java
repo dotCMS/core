@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -7,6 +8,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.*;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -21,6 +23,7 @@ import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -30,6 +33,8 @@ import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchedCategory;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -45,6 +50,8 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import net.bytebuddy.utility.RandomString;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -91,7 +98,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         int count = 10;//TODO: A -1 or 0 wont work in order to request all que records
         String filter = null;
         String sort = null;
-
+        
         //Test the category API
         PaginatedCategories categories = categoryAPI.findTopLevelCategories(user, false, start, count, filter, sort);
 
@@ -1536,5 +1543,156 @@ public class CategoryAPITest extends IntegrationTestBase {
         newCategory.setKey(categoryName);
 
         categoryAPI.save(null, newCategory, limitedUser, false);
+    }
+
+    /**
+     * Method to test: {@link CategoryAPIImpl#findAll(CategorySearchCriteria, User, boolean)}
+     * When: Call the API method
+     * Should: it should
+     * - Use the {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)} to search the {@link Category}
+     * - Use the {@link PermissionAPI#filterCollection(List, int, boolean, User)} method to check permission
+     */
+    @Test
+    public void getAllCategoriesFiltered() throws DotDataException, DotSecurityException {
+        final String inode = new RandomString().nextString();
+        final String filter = new RandomString().nextString();
+        final String orderBy = "category_key";
+
+        final CategorySearchCriteria searchingCriteria = new CategorySearchCriteria.Builder()
+                        .rootInode(inode)
+                        .direction(OrderDirection.DESC)
+                        .orderBy(orderBy)
+                        .filter(filter)
+                        .limit(10)
+                        .build();
+
+        final User user = mock();
+
+        final HierarchedCategory category1 = mock(HierarchedCategory.class);
+        final HierarchedCategory category2 = mock(HierarchedCategory.class);
+        final HierarchedCategory category3 = mock(HierarchedCategory.class);
+
+        final List<HierarchedCategory> categoriesAfterSearch = list(category1, category2, category3);
+        final List<HierarchedCategory> categoriesAfterPermission = list(category1, category2);
+
+        final CategoryFactory categoryFactory = mock();
+        when(categoryFactory.findAll(searchingCriteria)).thenReturn(categoriesAfterSearch);
+
+        final PermissionAPI permissionAPI = mock();
+        when(permissionAPI.filterCollection(categoriesAfterSearch, PermissionAPI.PERMISSION_READ, false, user))
+                .thenReturn(categoriesAfterPermission);
+
+        final CategoryAPI categoryAPI = new CategoryAPIImpl(categoryFactory, permissionAPI);
+        PaginatedCategories paginatedCategories = categoryAPI.findAll(searchingCriteria, user, false);
+
+        assertEquals(categoriesAfterPermission.size(), (int) paginatedCategories.getTotalCount());
+        assertTrue(categoriesAfterPermission.containsAll(paginatedCategories.getCategories()));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPIImpl#findAll(CategorySearchCriteria, User, boolean)}
+     * When: Create 9 Category, call the two times:
+     * first: limit =5, offset =0
+     * second: limit =5, offset =5
+     *
+     * Should: Return All the Categories with the 2 called
+     */
+    @Test
+    public void getAllCategoriesFilteredWithPagination() throws DotDataException, DotSecurityException {
+        final String inode = new RandomString().nextString();
+        final String filter = new RandomString().nextString();
+        final String orderBy = "category_key";
+
+        final CategorySearchCriteria searchingCriteria_1 =
+                new CategorySearchCriteria.Builder()
+                        .rootInode(inode)
+                        .direction(OrderDirection.DESC)
+                        .orderBy(orderBy)
+                        .filter(filter)
+                        .limit(5)
+                        .offset(0)
+                        .build();
+
+        final CategorySearchCriteria searchingCriteria_2 = new CategorySearchCriteria.Builder()
+                        .rootInode(inode)
+                        .direction(OrderDirection.DESC)
+                        .orderBy(orderBy)
+                        .filter(filter)
+                        .limit(5)
+                        .offset(5)
+                        .build();
+
+        final HierarchedCategory category1 = mock(HierarchedCategory.class);
+        final HierarchedCategory category2 = mock(HierarchedCategory.class);
+        final HierarchedCategory category3 = mock(HierarchedCategory.class);
+        final HierarchedCategory category4 = mock(HierarchedCategory.class);
+        final HierarchedCategory category5 = mock(HierarchedCategory.class);
+        final HierarchedCategory category6 = mock(HierarchedCategory.class);
+        final HierarchedCategory category7 = mock(HierarchedCategory.class);
+        final HierarchedCategory category8 = mock(HierarchedCategory.class);
+        final HierarchedCategory category9 = mock(HierarchedCategory.class);
+
+        final User user = mock();
+
+        final List<HierarchedCategory> categories = list(category1, category2, category3, category4, category5, category6,
+                category7, category8, category9);
+
+        final CategoryFactory categoryFactory = mock();
+        when(categoryFactory.findAll(searchingCriteria_1)).thenReturn(categories);
+        when(categoryFactory.findAll(searchingCriteria_2)).thenReturn(categories);
+
+        final PermissionAPI permissionAPI = mock();
+        when(permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_READ, false, user))
+                .thenReturn(categories);
+
+
+
+        final CategoryAPI categoryAPI = new CategoryAPIImpl(categoryFactory, permissionAPI);
+        PaginatedCategories firstPage = categoryAPI.findAll(searchingCriteria_1, user, false);
+
+        assertEquals(9, (int) firstPage.getTotalCount());
+        assertEquals(5, firstPage.getCategories().size());
+        assertTrue(list(category1, category2, category3, category4, category5).containsAll(firstPage.getCategories()));
+
+
+        PaginatedCategories secondPage = categoryAPI.findAll(searchingCriteria_2, user, false);
+
+        assertEquals(9, (int) secondPage.getTotalCount());
+        assertEquals(4, secondPage.getCategories().size());
+        assertTrue(list(category6, category7, category8, category9).containsAll(secondPage.getCategories()));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPIImpl#findAll(CategorySearchCriteria, User, boolean)}
+     * When: Call the API method
+     * Should: it should
+     * - Use the {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)} to search the {@link Category}
+     * - Use the {@link PermissionAPI#filterCollection(List, int, boolean, User)} method to check permission
+     */
+    @Test
+    public void findHierarchy() throws DotDataException, DotSecurityException {
+        final String inode = new RandomString().nextString();
+
+        final HierarchyShortCategory category1 = mock(HierarchyShortCategory.class);
+        when(category1.getInode()).thenReturn(inode);
+
+        final HierarchyShortCategory category2 = mock(HierarchyShortCategory.class);
+        final HierarchyShortCategory category3 = mock(HierarchyShortCategory.class);
+
+        final List<HierarchyShortCategory> categoriesAExpected = list(category2, category3);
+
+        final List<String> inodes = list(category1.getInode());
+        final CategoryFactory categoryFactory = mock();
+        when(categoryFactory.findHierarchy(inodes)).thenReturn(categoriesAExpected);
+
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+
+        final CategoryAPI categoryAPI = new CategoryAPIImpl(categoryFactory, permissionAPI);
+        final List<HierarchyShortCategory> hierarchy = categoryAPI.findHierarchy(inodes);
+
+        assertEquals(categoriesAExpected.size(), hierarchy.size());
+        assertTrue(categoriesAExpected.containsAll(hierarchy));
+
+        verify(categoryFactory).findHierarchy(inodes);
     }
 }

@@ -1,0 +1,6383 @@
+{
+	"info": {
+		"_postman_id": "fe25a98c-df2c-47e3-9b53-c3b430dd4da2",
+		"name": "Category",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30436704"
+	},
+	"item": [
+		{
+			"name": "Delete",
+			"item": [
+				{
+					"name": "Create Parent Category without children",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Parent category name\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"deleteParentCategoryId\", jsonData.entity.inode);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Parent category key\",\n    \"categoryName\" : \"Parent category name\",\n    \"keywords\":\"This is a parent category\",\n    \"categoryVelocityVarName\" : \"ParentCategoryKey\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Parent Category without children",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Category Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Category Check\", function () {",
+									"    pm.expect(jsonData.entity.fails.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{deleteParentCategoryId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Parent Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Parent category name\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"deleteParentCategoryId\", jsonData.entity.inode);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Parent category key\",\n    \"categoryName\" : \"Parent category name\",\n    \"keywords\":\"This is a parent category\",\n    \"categoryVelocityVarName\" : \"ParentCategoryKey\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Child Category 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 1 category name\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Child 1 category key\",\n    \"categoryName\" : \"Child 1 category name\",\n    \"keywords\":\"This is a child 1 category\",\n    \"categoryVelocityVarName\" : \"Child1CategoryKey\",\n    \"parent\" : \"{{deleteParentCategoryId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Child Category 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 2 category name\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Child 2 category key\",\n    \"categoryName\" : \"Child 2 category name\",\n    \"keywords\":\"This is a child 2 category\",\n    \"categoryVelocityVarName\" : \"Child2CategoryKey\",\n    \"parent\" : \"{{deleteParentCategoryId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Parent Category with children",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Category Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Category Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{deleteParentCategoryId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category Failed - NotFound",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Category Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Category Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"NOTFOUNDCONTAINER\",\"12345678-abcd-1234-abcd-123456789abc\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Update - Sort order",
+			"item": [
+				{
+					"name": "Create top level category 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Top level category 1\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"categoryToSortId1\", jsonData.entity.inode);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Top level category 1 key\",\n    \"categoryName\" : \"Top level category 1\",\n    \"keywords\":\"This is a test category\",\n    \"categoryVelocityVarName\" : \"TLC1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create top level category 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Top level category 2\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"categoryToSortId2\", jsonData.entity.inode);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Top level category 2 key\",\n    \"categoryName\" : \"Top level category 2\",\n    \"keywords\":\"This is a test category\",\n    \"categoryVelocityVarName\" : \"TLC2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update top level category failed - InvalidData",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Empty categories data message\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"The body must send a collection of category inode and sortOrder\");  ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filter\" : \"\",\n    \"page\" : 0,\n    \"perPage\" : 10,\n    \"direction\" : \"ASC\",\n    \"parentInode\" : \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/_sort",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"_sort"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update top level category failed - NotFound",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Not found categories data message\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"Category with Id: 12345678-abcd-1234-abcd-123456789abc does not exist\");  ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filter\" : \"\",\n    \"page\" : 0,\n    \"perPage\" : 10,\n    \"direction\" : \"ASC\",\n    \"parentInode\" : \"\",\n     \"categoryData\" : {\"12345678-abcd-1234-abcd-123456789abc\" : 1 }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/_sort",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"_sort"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update top level category for sort order - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Update Category Check\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filter\" : \"\",\n    \"page\" : 0,\n    \"perPage\" : 10,\n    \"direction\" : \"ASC\",\n    \"parentInode\" : \"\",\n    \"categoryData\" : {\"{{categoryToSortId1}}\" : 1,\n                    \"{{categoryToSortId2}}\" : 2 }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/_sort",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"_sort"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Parent Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Parent category name\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"parentCategoryId\", jsonData.entity.inode);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Parent category key\",\n    \"categoryName\" : \"Parent category name\",\n    \"keywords\":\"This is a parent category\",\n    \"categoryVelocityVarName\" : \"ParentCategoryKey\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Child Category 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 1 category name\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"categoryToSortId1\", jsonData.entity.inode);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Child 1 category key\",\n    \"categoryName\" : \"Child 1 category name\",\n    \"keywords\":\"This is a child 1 category\",\n    \"categoryVelocityVarName\" : \"Child1CategoryKey\",\n    \"parent\" : \"{{parentCategoryId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Child Category 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 2 category name\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"categoryToSortId2\", jsonData.entity.inode);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Child 2 category key\",\n    \"categoryName\" : \"Child 2 category name\",\n    \"keywords\":\"This is a child 2 category\",\n    \"categoryVelocityVarName\" : \"Child2CategoryKey\",\n    \"parent\" : \"{{parentCategoryId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update category failed - InvalidData",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Empty categories data message\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"The body must send a collection of category inode and sortOrder\");  ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filter\" : \"\",\n    \"page\" : 0,\n    \"perPage\" : 10,\n    \"direction\" : \"ASC\",\n    \"parentInode\" : \"{{parentCategoryId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/_sort",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"_sort"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update category failed - NotFound",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Not found categories data message\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"Category with Id: NOTFOUNDCONTAINER does not exist\");  ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filter\" : \"\",\n    \"page\" : 0,\n    \"perPage\" : 10,\n    \"direction\" : \"ASC\",\n    \"parentInode\" : \"{{parentCategoryId}}\",\n    \"categoryData\" : {\"NOTFOUNDCONTAINER\" : 1 }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/_sort",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"_sort"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update children categories for sort order - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Update Category Check\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filter\" : \"\",\n    \"page\" : 0,\n    \"perPage\" : 10,\n    \"direction\" : \"ASC\",\n    \"parentInode\" : \"{{parentCategoryId}}\",\n    \"categoryData\" : {\"{{categoryToSortId1}}\" : 1,\n                    \"{{categoryToSortId2}}\" : 2 }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/_sort",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"_sort"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Import",
+			"item": [
+				{
+					"name": "Import - merge - success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "filter",
+									"value": "",
+									"type": "default"
+								},
+								{
+									"key": "exportType",
+									"value": "merge",
+									"type": "default"
+								},
+								{
+									"key": "contextInode",
+									"value": "",
+									"type": "default"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/home/hmb-g8/Desktop/categories_10_6_2022.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"_import"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Import - replace - success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "filter",
+									"value": "",
+									"type": "default"
+								},
+								{
+									"key": "exportType",
+									"value": "replace",
+									"type": "default"
+								},
+								{
+									"key": "contextInode",
+									"value": "",
+									"type": "default"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/home/hmb-g8/Desktop/categories_10_6_2022.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"_import"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Export",
+			"item": [
+				{
+					"name": "export",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/_export?contextInode=&filter=",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"_export"
+							],
+							"query": [
+								{
+									"key": "contextInode",
+									"value": ""
+								},
+								{
+									"key": "filter",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sorting - top level",
+			"item": [
+				{
+					"name": "Create New Category - sortOrder 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"SO1\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"SO1 key\",\n    \"categoryName\" : \"SO1\",\n    \"keywords\":\"This is a SO1 category\",\n    \"categoryVelocityVarName\" : \"SO1Key\",\n    \"sortOrder\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Category - sortOrder 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"SO2\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"SO2 key\",\n    \"categoryName\" : \"SO2\",\n    \"keywords\":\"This is a SO2 category\",\n    \"categoryVelocityVarName\" : \"SO2Key\",\n    \"sortOrder\" : 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Category - sortOrder 3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"SO3\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"SO3 key\",\n    \"categoryName\" : \"SO3\",\n    \"keywords\":\"This is a SO3 category\",\n    \"categoryVelocityVarName\" : \"SO3Key\",\n    \"sortOrder\" : 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sorting top level | Get categories by category_name asc - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"let isAscending = true;",
+									"if(jsonData.entity.length > 0){",
+									"pm.test('category_name are in asc sorted order', () => {   ",
+									"let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);       ",
+									"    }",
+									"",
+									"    for (let i = 0; i < data.length; i++)",
+									"    { ",
+									"        if(i >= 1 && data[i-1] > data[i]){",
+									"            isAscending = false;",
+									"            break;",
+									"        }",
+									"    }",
+									"",
+									"pm.expect(isAscending).to.be.true;",
+									"});",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=category_name&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": ""
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "per_page",
+									"value": "5"
+								},
+								{
+									"key": "orderby",
+									"value": "category_name"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sorting top level | Get categories by category_name desc - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"let isDescending = true;",
+									"if(jsonData.entity.length > 0){",
+									"pm.test('category_name are in desc sorted order', () => {   ",
+									"let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);       ",
+									"    }",
+									"",
+									"    for (let i = 0; i < data.length; i++)",
+									"    { ",
+									"        if(i >= 1 && data[i-1] < data[i]){",
+									"            isDescending = false;",
+									"            break;",
+									"        }",
+									"    }",
+									"",
+									"pm.expect(isDescending).to.be.true;",
+									"});",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=category_name&direction=DESC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": ""
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "per_page",
+									"value": "5"
+								},
+								{
+									"key": "orderby",
+									"value": "category_name"
+								},
+								{
+									"key": "direction",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sorting top level | Get categories by sortOrder asc - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"let isAscending = true;",
+									"if(jsonData.entity.length > 0){",
+									"pm.test('sort_order are in asc sorted order', () => {   ",
+									"let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['sortOrder']);       ",
+									"    }",
+									"",
+									"    for (let i = 0; i < data.length; i++)",
+									"    { ",
+									"        if(i >= 1 && data[i-1] > data[i]){",
+									"            isAscending = false;",
+									"            break;",
+									"        }",
+									"    }",
+									"",
+									"pm.expect(isAscending).to.be.true;",
+									"});",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=10&orderby=sort_order&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": ""
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								},
+								{
+									"key": "orderby",
+									"value": "sort_order"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sorting top level | Get categories by sortOrder desc - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"let isDescending = true;",
+									"if(jsonData.entity.length > 0){",
+									"pm.test('sort_order are in desc sorted order', () => {   ",
+									"let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['sortOrder']);       ",
+									"    }",
+									"",
+									"    for (let i = 0; i < data.length; i++)",
+									"    { ",
+									"        if(i >= 1 && data[i-1] < data[i]){",
+									"            isDescending = false;",
+									"            break;",
+									"        }",
+									"    }",
+									"",
+									"pm.expect(isDescending).to.be.true;",
+									"});",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=sort_order&direction=DESC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": ""
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "per_page",
+									"value": "5"
+								},
+								{
+									"key": "orderby",
+									"value": "sort_order"
+								},
+								{
+									"key": "direction",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sorting top level | Get categories by modDate asc - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"let isAscending = true;",
+									"if(jsonData.entity.length > 0){",
+									"pm.test('modDate are in asc sorted order', () => {   ",
+									"let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['modDate']);       ",
+									"    }",
+									"",
+									"    for (let i = 0; i < data.length; i++)",
+									"    { ",
+									"        if(i >= 1 && data[i-1] > data[i]){",
+									"            isAscending = false;",
+									"            break;",
+									"        }",
+									"    }",
+									"",
+									"pm.expect(isAscending).to.be.true;",
+									"});",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=10&orderby=modDate&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": ""
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								},
+								{
+									"key": "orderby",
+									"value": "modDate"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sorting top level | Get categories by modDate desc - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"let isDescending = true;",
+									"if(jsonData.entity.length > 0){",
+									"pm.test('modDate are in desc sorted order', () => {   ",
+									"let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['modDate']);       ",
+									"    }",
+									"",
+									"    for (let i = 0; i < data.length; i++)",
+									"    { ",
+									"        if(i >= 1 && data[i-1] < data[i]){",
+									"            isDescending = false;",
+									"            break;",
+									"        }",
+									"    }",
+									"",
+									"pm.expect(isDescending).to.be.true;",
+									"});",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=modDate&direction=DESC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": ""
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "per_page",
+									"value": "5"
+								},
+								{
+									"key": "orderby",
+									"value": "modDate"
+								},
+								{
+									"key": "direction",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Getting Category Children",
+			"item": [
+				{
+					"name": "Create Top Level category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"PostmanTest Top level Category\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"topCategoryInode\", jsonData.entity.inode);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"PostmanTest TOP_LEVEL\",\n    \"categoryName\" : \"PostmanTest Top level Category\",\n    \"categoryVelocityVarName\" : \"PostmanTest_childrenTopLevel\",\n    \"sortOrder\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create First child Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"PostmanTest Child 1\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"child1Inode\", jsonData.entity.inode);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"PostmanTest Child 1\",\n    \"categoryName\" : \"PostmanTest Child 1\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"PostmanTest_ChildTestKey_1\",\n    \"parent\" : \"{{topCategoryInode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Second child Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"PostmanTest Child 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"PostmanTest Child 2\",\n    \"categoryName\" : \"PostmanTest Child 2\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"PostmanTest_ChildTestKey_2\",\n    \"parent\" : \"{{topCategoryInode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Third child Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 3\");",
+									"});",
+									"",
+									"",
+									"pm.collectionVariables.set(\"child3Inode\", jsonData.entity.inode);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Child 3\",\n    \"categoryName\" : \"Child 3\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"ChildTestKey_3\",\n    \"parent\" : \"{{topCategoryInode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Grandchild Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"PostmanTest Grandchild 1\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"PostmanTest ChiGrandchildld 1\",\n    \"categoryName\" : \"PostmanTest Grandchild 1\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"PostmanTest_GrandcßhildTestKey_1\",\n    \"parent\" : \"{{child3Inode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Grandchild Category 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Grandchild 2\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"CGrandchild_2\",\n    \"categoryName\" : \"Grandchild 2\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"GrandcßhildTestKey_2\",\n    \"parent\" : \"{{child1Inode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Second Top Level category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Second  TOP_LEVEL\",\n    \"categoryName\" : \"Top level Category\",\n    \"categoryVelocityVarName\" : \"second_childrenTopLevel\",\n    \"sortOrder\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories by filter AND looking on the entire tree",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.expect(3).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);   ",
+									"",
+									"        if (i === 0) {",
+									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
+									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect(1).to.have.equals(jsonData.entity[i].childrenCount);",
+									"        } else if (i === 1) {",
+									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
+									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect(0).to.have.equals(jsonData.entity[i].childrenCount);",
+									"        } else if (i === 2) {",
+									"            pm.expect('PostmanTest Grandchild 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
+									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect('Child 3').to.have.equals(jsonData.entity[i].parentList[1].name);",
+									"            pm.expect(0).to.have.equals(jsonData.entity[i].childrenCount);",
+									"        }    ",
+									"    }",
+									"",
+									"    data.includes(\"PostmanTest Child 1\");",
+									"    data.includes(\"PostmanTest Child 2\");",
+									"    data.includes(\"PostmanTest Grandchild 1\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&allLevels=true&inode={{topCategoryInode}}&per_page=7000&direction=ASC&parentList=true&showChildrenCount=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"children"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "PostmanTest"
+								},
+								{
+									"key": "allLevels",
+									"value": "true"
+								},
+								{
+									"key": "inode",
+									"value": "{{topCategoryInode}}"
+								},
+								{
+									"key": "per_page",
+									"value": "7000"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								},
+								{
+									"key": "parentList",
+									"value": "true"
+								},
+								{
+									"key": "showChildrenCount",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories by filter AND looking on the entire tree (Enabled showChildrenCount)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.expect(3).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);   ",
+									"",
+									"        if (i === 0) {",
+									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.undefined;",
+									"        } else if (i === 1) {",
+									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.undefined;",
+									"        } else if (i === 2) {",
+									"            pm.expect('PostmanTest Grandchild 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.undefined;",
+									"        }  ",
+									"    }",
+									"",
+									"    data.includes(\"PostmanTest Child 1\");",
+									"    data.includes(\"PostmanTest Child 2\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&allLevels=true&inode={{topCategoryInode}}&showChildrenCount=true&per_page=7000&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"children"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "PostmanTest"
+								},
+								{
+									"key": "allLevels",
+									"value": "true"
+								},
+								{
+									"key": "inode",
+									"value": "{{topCategoryInode}}"
+								},
+								{
+									"key": "showChildrenCount",
+									"value": "true"
+								},
+								{
+									"key": "per_page",
+									"value": "7000"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories by filter AND looking on one level(Enabled showChildrenCount)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.expect(2).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);   ",
+									"",
+									"        if (i === 0) {",
+									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.undefined;",
+									"        } else if (i === 1) {",
+									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.undefined;",
+									"        }",
+									"    }",
+									"",
+									"    data.includes(\"PostmanTest Child 1\");",
+									"    data.includes(\"PostmanTest Child 2\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&allLevels=false&inode={{topCategoryInode}}&showChildrenCount=true&per_page=7000&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"children"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "PostmanTest"
+								},
+								{
+									"key": "allLevels",
+									"value": "false"
+								},
+								{
+									"key": "inode",
+									"value": "{{topCategoryInode}}"
+								},
+								{
+									"key": "showChildrenCount",
+									"value": "true"
+								},
+								{
+									"key": "per_page",
+									"value": "7000"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories by filter AND looking just in children",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.expect(2).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);       ",
+									"    }",
+									"",
+									"    data.includes(\"PostmanTest Child 1\");",
+									"    data.includes(\"PostmanTest Child 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&inode={{topCategoryInode}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"children"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "PostmanTest"
+								},
+								{
+									"key": "inode",
+									"value": "{{topCategoryInode}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Getting Category Hierarchy",
+			"item": [
+				{
+					"name": "Create Top Level category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Hierarchy Top level Category\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"topCategoryInodeHierarchy\", jsonData.entity.inode);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Hierarchy_TOP_LEVEL\",\n    \"categoryName\" : \"Hierarchy Top level Category\",\n    \"categoryVelocityVarName\" : \"hierarchy_childrenTopLevel\",\n    \"sortOrder\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create First child Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Hierarchy Child 1\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Hierarchy Child 1\",\n    \"categoryName\" : \"Hierarchy Child 1\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"Hierarchy_ChildTestKey_1\",\n    \"parent\" : \"{{topCategoryInodeHierarchy}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Second child Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Hierarchy Child 2\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"child2CategoryInodeHierarchy\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"child2CategoryKeyHierarchy\", jsonData.entity.key);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Hierarchy_Child_2_key\",\n    \"categoryName\" : \"Hierarchy Child 2\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"Hierarchy_ChildTestKey_2\",\n    \"parent\" : \"{{topCategoryInodeHierarchy}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Third child Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Hierarchy Child 3\");",
+									"});",
+									"",
+									"",
+									"pm.collectionVariables.set(\"child3CategoryInodeHierarchy\", jsonData.entity.inode);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Hierarchy_Child_3\",\n    \"categoryName\" : \"Hierarchy Child 3\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"Hierarchy_ChildTestKey_3\",\n    \"parent\" : \"{{topCategoryInodeHierarchy}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Grandchild Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Hierarchy Grandchild 1\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"grantChildCategoryInodeHierarchy\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"grantChildCategoryKeyHierarchy\", jsonData.entity.key);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Hierarchy_Grandchild_1_key\",\n    \"categoryName\" : \"Hierarchy Grandchild 1\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"Hierarchy_GrandcßhildTestKey_1\",\n    \"parent\" : \"{{child3CategoryInodeHierarchy}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Second Top Level category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Hierarchy Second  TOP_LEVEL\",\n    \"categoryName\" : \"Hierarchy Second Top level Category\",\n    \"categoryVelocityVarName\" : \"hierarchy_second_childrenTopLevel\",\n    \"sortOrder\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories hierarchy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"var child2CategoryInodeHierarchy = pm.collectionVariables.get(\"child2CategoryInodeHierarchy\"); ",
+									"var grantChildCategoryInodeHierarchy = pm.collectionVariables.get(\"grantChildCategoryInodeHierarchy\"); ;",
+									"",
+									"pm.expect(2).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"",
+									"        if (jsonData.entity[i]['inode'] === child2CategoryInodeHierarchy) {",
+									"            pm.expect('Hierarchy Child 2').to.have.equals(jsonData.entity[i].name);",
+									"            pm.expect('Hierarchy_Child_2_key').to.have.equals(jsonData.entity[i].key);",
+									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
+									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
+									"        } else if (jsonData.entity[i]['inode'] === grantChildCategoryInodeHierarchy) {",
+									"            pm.expect('Hierarchy Grandchild 1').to.have.equals(jsonData.entity[i].name);",
+									"            pm.expect('Hierarchy_Grandchild_1_key').to.have.equals(jsonData.entity[i].key);",
+									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
+									"",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
+									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
+									"",
+									"            pm.expect(\"Hierarchy Child 3\").to.have.equals(jsonData.entity[i].parentList[1].name);",
+									"            pm.expect(pm.collectionVariables.get(\"child3CategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[1].inode);",
+									"            pm.expect(\"Hierarchy_Child_3\").to.have.equals(jsonData.entity[i].parentList[1].key);",
+									"        } else  {",
+									"            pm.expect(true).to.be.equals(false);",
+									"        }     ",
+									"    }",
+									"",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"keys\": [\"{{grantChildCategoryKeyHierarchy}}\", \"{{child2CategoryKeyHierarchy}}\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/hierarchy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"hierarchy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories hierarchy with no valid category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"var child2CategoryInodeHierarchy = pm.collectionVariables.get(\"child2CategoryInodeHierarchy\"); ",
+									"var grantChildCategoryInodeHierarchy = pm.collectionVariables.get(\"grantChildCategoryInodeHierarchy\"); ;",
+									"",
+									"pm.expect(2).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"",
+									"        if (jsonData.entity[i]['inode'] === child2CategoryInodeHierarchy) {",
+									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
+									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
+									"        } else if (jsonData.entity[i]['inode'] === grantChildCategoryInodeHierarchy) {",
+									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
+									"",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
+									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
+									"",
+									"            pm.expect(\"Hierarchy Child 3\").to.have.equals(jsonData.entity[i].parentList[1].name);",
+									"            pm.expect(pm.collectionVariables.get(\"child3CategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[1].inode);",
+									"            pm.expect(\"Hierarchy_Child_3\").to.have.equals(jsonData.entity[i].parentList[1].key);",
+									"        } else  {",
+									"            pm.expect(true).to.be.equals(false);",
+									"        }     ",
+									"    }",
+									"",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"keys\": [\"{{grantChildCategoryKeyHierarchy}}\", \"{{child2CategoryKeyHierarchy}}\", \"not_valid_category\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/hierarchy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"hierarchy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories hierarchy with empty array of inodes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.expect(0).to.have.equals(jsonData.entity.length);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"keys\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/hierarchy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"hierarchy"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Create New Category without parent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Category\");",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"categoryINodeId\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"categoryINodeIdToUpdate\", jsonData.entity.inode);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"Test key\",\n    \"categoryName\" : \"Test Category\",\n    \"keywords\":\"This is a test category\",\n    \"categoryVelocityVarName\" : \"TestKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Category with parent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child Test Category\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"Child test key\",\n    \"categoryName\" : \"Child Test Category\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"ChildTestKey\",\n    \"parent\" : \"{{categoryINodeId}}\"\n}\n\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Category without name BadRequest",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Category name required message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.eq(\"The category name is required\");  ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"Child test key\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"ChildTestKey\",\n    \"parent\" : \"{{categoryINodeId}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get children categories by inode (aka Parent id) - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=category_name&direction=ASC&inode={{categoryINodeId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get children categories without inode - BadRequest",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch successfully with error message\", function () {",
+							"      pm.expect(jsonData.message).to.eq(\"The inode is required\");  ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=&direction=&inode=",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": ""
+						},
+						{
+							"key": "direction",
+							"value": ""
+						},
+						{
+							"key": "inode",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Category without parent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Updated name\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"inode\" : \"{{categoryINodeIdToUpdate}}\",\n    \"key\":\"Updated key\",\n    \"categoryName\" : \"Updated name\",\n    \"keywords\":\"Updated keywords\",\n    \"categoryVelocityVarName\" : \"TestKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Category without inode",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Category inode required message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.eq(\"The inode is required\");  ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"Updated key\",\n    \"categoryName\" : \"Updated name\",\n    \"keywords\":\"Updated keywords\",\n    \"categoryVelocityVarName\" : \"TestKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Category invalid inode - NotFound",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							"pm.test(\"Category inode required message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.eq(\"Category with inode: 12345678-abcd-1234-abcd-123456789abc does not exist\");  ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"inode\" : \"12345678-abcd-1234-abcd-123456789abc\",\n    \"key\":\"Updated key\",\n    \"categoryName\" : \"Updated name\",\n    \"keywords\":\"Updated keywords\",\n    \"categoryVelocityVarName\" : \"TestKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Top level | Get categories - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=category_name&direction=ASC&showChildrenCount=true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "showChildrenCount",
+							"value": "true"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Top level | Get categories with showChildrenCount=true - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch childrenCount successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"    ",
+							"    for(var i=0; i < jsonData.entity.length; i++){",
+							"        pm.expect(jsonData.entity[i]).to.have.property('childrenCount');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=category_name&direction=ASC&showChildrenCount=true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "showChildrenCount",
+							"value": "true"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Top level | Get categories with showChildrenCount=false - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch childrenCount successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"    ",
+							"    for(var i=0; i < jsonData.entity.length; i++){",
+							"        pm.expect(jsonData.entity[i]).to.not.have.property('childrenCount');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=category_name&direction=ASC&showChildrenCount=false",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "showChildrenCount",
+							"value": "false"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sorting children | Create new parent category - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Parent Category\");",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"categoryINodeId\", jsonData.entity.inode);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"Parent Category key\",\n    \"categoryName\" : \"Parent Category\",\n    \"keywords\":\"This is a Parent Category\",\n    \"categoryVelocityVarName\" : \"ParentCategoryKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sorting children | Create child 1 category - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 1 Category\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"Child 1 key\",\n    \"categoryName\" : \"Child 1 Category\",\n    \"keywords\":\"This is a child 1 category\",\n    \"categoryVelocityVarName\" : \"Child1Key\",\n    \"parent\" : \"{{categoryINodeId}}\"\n}\n\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sorting children | Create child 2 category - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 2 Category\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"Child 2 key\",\n    \"categoryName\" : \"Child 2 Category\",\n    \"keywords\":\"This is a child 2 category\",\n    \"categoryVelocityVarName\" : \"Child2Key\",\n    \"parent\" : \"{{categoryINodeId}}\"\n}\n\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sorting children | Get categories by category_name asc - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"});",
+							"",
+							"let isAscending = true;",
+							"if(jsonData.entity.length > 0){",
+							"pm.test('category_name are in asc sorted order', () => {   ",
+							"let data = [];",
+							"",
+							"    for (let i = 0; i < jsonData.entity.length; i++)",
+							"    { ",
+							"        data.push(jsonData.entity[i]['categoryName']);       ",
+							"    }",
+							"",
+							"    for (let i = 0; i < data.length; i++)",
+							"    { ",
+							"        if(i >= 1 && data[i-1] > data[i]){",
+							"            isAscending = false;",
+							"            break;",
+							"        }",
+							"    }",
+							"",
+							"pm.expect(isAscending).to.be.true;",
+							"});",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=category_name&direction=ASC&inode={{categoryINodeId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sorting children | Get categories by category_name desc - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"});",
+							"",
+							"let isDescending = true;",
+							"if(jsonData.entity.length > 0){",
+							"pm.test('category_name are in desc sorted order', () => {   ",
+							"let data = [];",
+							"",
+							"    for (let i = 0; i < jsonData.entity.length; i++)",
+							"    { ",
+							"        data.push(jsonData.entity[i]['categoryName']);       ",
+							"    }",
+							"",
+							"    for (let i = 0; i < data.length; i++)",
+							"    { ",
+							"        if(i >= 1 && data[i-1] < data[i]){",
+							"            isDescending = false;",
+							"            break;",
+							"        }",
+							"    }",
+							"",
+							"pm.expect(isDescending).to.be.true;",
+							"});",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=category_name&direction=DESC&inode={{categoryINodeId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "DESC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sorting children | Get categories by sortOrder asc - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"});",
+							"",
+							"",
+							"let isAscending = true;",
+							"if(jsonData.entity.length > 0){",
+							"pm.test('sort_order are in asc sorted order', () => {   ",
+							"let data = [];",
+							"",
+							"    for (let i = 0; i < jsonData.entity.length; i++)",
+							"    { ",
+							"        data.push(jsonData.entity[i]['sortOrder']);       ",
+							"    }",
+							"",
+							"    for (let i = 0; i < data.length; i++)",
+							"    { ",
+							"        if(i >= 1 && data[i-1] > data[i]){",
+							"            isAscending = false;",
+							"            break;",
+							"        }",
+							"    }",
+							"",
+							"pm.expect(isAscending).to.be.true;",
+							"});",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=sort_order&direction=ASC&inode={{categoryINodeId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "sort_order"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sorting children | Get categories by sortOrder desc - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"});",
+							"",
+							"let isDescending = true;",
+							"if(jsonData.entity.length > 0){",
+							"pm.test('sort_order are in desc sorted order', () => {   ",
+							"let data = [];",
+							"",
+							"    for (let i = 0; i < jsonData.entity.length; i++)",
+							"    { ",
+							"        data.push(jsonData.entity[i]['sortOrder']);       ",
+							"    }",
+							"",
+							"    for (let i = 0; i < data.length; i++)",
+							"    { ",
+							"        if(i >= 1 && data[i-1] < data[i]){",
+							"            isDescending = false;",
+							"            break;",
+							"        }",
+							"    }",
+							"",
+							"pm.expect(isDescending).to.be.true;",
+							"});",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=sort_order&direction=DESC&inode={{categoryINodeId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "sort_order"
+						},
+						{
+							"key": "direction",
+							"value": "DESC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sorting children | Get categories by categoryVelocityVarName asc - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"});",
+							"",
+							"let isAscending = true;",
+							"if(jsonData.entity.length > 0){",
+							"pm.test('category_velocity_var_name are in asc sorted order', () => {   ",
+							"let data = [];",
+							"",
+							"    for (let i = 0; i < jsonData.entity.length; i++)",
+							"    { ",
+							"        data.push(jsonData.entity[i]['categoryVelocityVarName']);       ",
+							"    }",
+							"",
+							"    for (let i = 0; i < data.length; i++)",
+							"    { ",
+							"        if(i >= 1 && data[i-1] > data[i]){",
+							"            isAscending = false;",
+							"            break;",
+							"        }",
+							"    }",
+							"",
+							"pm.expect(isAscending).to.be.true;",
+							"});",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=category_velocity_var_name&direction=ASC&inode={{categoryINodeId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "category_velocity_var_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sorting children | Get categories by categoryVelocityVarName desc - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"});",
+							"",
+							"let isDescending = true;",
+							"if(jsonData.entity.length > 0){",
+							"pm.test('category_velocity_var_name are in desc sorted order', () => {   ",
+							"let data = [];",
+							"",
+							"    for (let i = 0; i < jsonData.entity.length; i++)",
+							"    { ",
+							"        data.push(jsonData.entity[i]['categoryVelocityVarName']);       ",
+							"    }",
+							"",
+							"    for (let i = 0; i < data.length; i++)",
+							"    { ",
+							"        if(i >= 1 && data[i-1] < data[i]){",
+							"            isDescending = false;",
+							"            break;",
+							"        }",
+							"    }",
+							"",
+							"pm.expect(isDescending).to.be.true;",
+							"});",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=category_velocity_var_name&direction=DESC&inode={{categoryINodeId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "orderby",
+							"value": "category_velocity_var_name"
+						},
+						{
+							"key": "direction",
+							"value": "DESC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Category to get it by Id or Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test category for getById\");",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"categoryInode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"categoryKey\", jsonData.entity.key);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"Test category for getById key\",\n    \"categoryName\" : \"Test category for getById\",\n    \"keywords\":\"This is a test category for getById\",\n    \"categoryVelocityVarName\" : \"TestCategoryForGetByIdKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get category by inode - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Comparing input parameter with retrived inode\", function () {",
+							"    pm.expect(jsonData.entity.inode).to.eql(pm.collectionVariables.get(('categoryInode')));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/{{categoryInode}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"{{categoryInode}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get category by inode - NotFound",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							"pm.test(\"Category inode required message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.eq(\"Category with idOrKey: 12345678-abcd-1234-abcd-123456789abc does not exist\");  ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/12345678-abcd-1234-abcd-123456789abc",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"12345678-abcd-1234-abcd-123456789abc"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get category by key - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Comparing input parameter with retrived key\", function () {",
+							"    pm.expect(jsonData.entity.key).to.eql(pm.collectionVariables.get(('categoryKey')));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/{{categoryKey}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"{{categoryKey}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get category by key - NotFound",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							"pm.test(\"Category inode required message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.eq(\"Category with idOrKey: InvalidKey does not exist\");  ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/InvalidKey",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"InvalidKey"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get children categories by inode - showChildrenCount true - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch childrenCount successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"    ",
+							"    for(var i=0; i < jsonData.entity.length; i++){",
+							"        pm.expect(jsonData.entity[i]).to.have.property('childrenCount');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&inode={{categoryINodeId}}&showChildrenCount=true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "ordeby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						},
+						{
+							"key": "showChildrenCount",
+							"value": "true"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get children categories by inode - showChildrenCount false - Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Fetch childrenCount successfully without errors\", function () {",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"    ",
+							"    for(var i=0; i < jsonData.entity.length; i++){",
+							"        pm.expect(jsonData.entity[i]).to.not.have.property('childrenCount');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&inode={{categoryINodeId}}&showChildrenCount=false",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"children"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "5"
+						},
+						{
+							"key": "ordeby",
+							"value": "category_name"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "inode",
+							"value": "{{categoryINodeId}}"
+						},
+						{
+							"key": "showChildrenCount",
+							"value": "false"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"// If we are unable to get the JWT we need to generate a new one",
+					"   if (!pm.environment.get('jwt')) {",
+					"       const username = pm.environment.get(\"user\");",
+					"       const password = pm.environment.get(\"password\");",
+					"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"",
+					"       const requestOptions = {",
+					"           url: apiUrl,",
+					"           method: \"POST\",",
+					"           header: {",
+					"               \"accept\": \"*/*\",",
+					"               \"content-type\": \"application/json\",",
+					"               \"Authorization\": `Basic ${basicAuth}`",
+					"           },",
+					"           body: {",
+					"               mode: \"raw\",",
+					"               raw: JSON.stringify({",
+					"                   \"expirationSeconds\": 7200,",
+					"                   \"userId\": \"dotcms.org.1\",",
+					"                   \"network\": \"0.0.0.0/0\",",
+					"                   \"claims\": {\"label\": \"postman-tests\"}",
+					"               })",
+					"           }",
+					"       };",
+					"",
+					"",
+					"       pm.sendRequest(requestOptions, function (err, response) {",
+					"           if (err) {",
+					"               console.log(err);",
+					"           } else {",
+					"               const jwt = response.json().entity.jwt;",
+					"               pm.environment.set('jwt', jwt);",
+					"               console.log(jwt);",
+					"           }",
+					"       });",
+					"   }"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "templateIdToEdit",
+			"value": ""
+		},
+		{
+			"key": "inode",
+			"value": ""
+		},
+		{
+			"key": "categoryINodeId",
+			"value": ""
+		},
+		{
+			"key": "categoryINodeIdToUpdate",
+			"value": ""
+		},
+		{
+			"key": "deleteParentCategoryId",
+			"value": ""
+		},
+		{
+			"key": "categoryToSortId1",
+			"value": ""
+		},
+		{
+			"key": "categoryToSortId2",
+			"value": ""
+		},
+		{
+			"key": "parentCategoryId",
+			"value": ""
+		},
+		{
+			"key": "parentCategoryToSortId",
+			"value": ""
+		},
+		{
+			"key": "categoryInode",
+			"value": ""
+		},
+		{
+			"key": "categoryKey",
+			"value": ""
+		},
+		{
+			"key": "topCategoryInode",
+			"value": ""
+		},
+		{
+			"key": "child3Inode",
+			"value": ""
+		},
+		{
+			"key": "topCategoryInodeHierarchy",
+			"value": ""
+		},
+		{
+			"key": "child2CategoryInodeHierarchy",
+			"value": ""
+		},
+		{
+			"key": "child3CategoryInodeHierarchy",
+			"value": ""
+		},
+		{
+			"key": "grantChildCategoryInodeHierarchy",
+			"value": ""
+		},
+		{
+			"key": "child2CategoryKeyHierarchy",
+			"value": ""
+		},
+		{
+			"key": "grantChildCategoryKeyHierarchy",
+			"value": ""
+		},
+		{
+			"key": "child1Inode",
+			"value": ""
+		}
+	]
+}

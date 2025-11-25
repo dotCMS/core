@@ -1,17 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html dir="ltr" lang="en">
     <head>
         <meta charset="utf-8" />
         <meta
             name="viewport"
-            content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"
-        />
+            content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
         <title>Dot-Fields</title>
         <link
             rel="stylesheet"
             type="text/css"
-            href="//cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
-        />
+            href="//cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" />
         <style>
             body {
                 font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -40,8 +38,7 @@
                 required="true"
                 type="text"
                 validation-message="Value doesn't match"
-                value="Default value"
-            ></dot-textfield>
+                value="Default value"></dot-textfield>
 
             <dot-textarea
                 disabled="false"
@@ -52,8 +49,7 @@
                 required-message="This field is required"
                 required="true"
                 validation-message="Value doesn't match format"
-                value=""
-            ></dot-textarea>
+                value=""></dot-textarea>
 
             <dot-checkbox
                 disabled="false"
@@ -63,8 +59,7 @@
                 options="Pizza|pizza,Burguer|burguer,Sushi|sushi"
                 required-message="Select a food"
                 required="true"
-                value="pizza"
-            ></dot-checkbox>
+                value="pizza"></dot-checkbox>
 
             <dot-multi-select
                 disabled="false"
@@ -74,8 +69,7 @@
                 required-message="You have to select a city"
                 required="true"
                 size="2"
-                value="mia"
-            ></dot-multi-select>
+                value="mia"></dot-multi-select>
 
             <dot-key-value
                 disabled="false"
@@ -87,8 +81,7 @@
                 required="true"
                 save-btn-label="Push"
                 value-placeholder="Valor"
-                value="some|value"
-            ></dot-key-value>
+                value="some|value"></dot-key-value>
 
             <dot-select
                 disabled="false"
@@ -98,8 +91,7 @@
                 options="Apple|apple,Google|google,Amazon|amazon"
                 required-message="Select at least one option"
                 required="true"
-                value=""
-            ></dot-select>
+                value=""></dot-select>
 
             <dot-radio
                 disabled="false"
@@ -109,8 +101,7 @@
                 options="Morning|morning,Afternoon|afternoon,Night|night"
                 required-message="Pick one"
                 required="true"
-                value=""
-            ></dot-radio>
+                value=""></dot-radio>
 
             <dot-date
                 disabled="false"
@@ -123,8 +114,7 @@
                 required="true"
                 step="2"
                 validation-message="Hey pick the right date"
-                value="2015-10-25"
-            ></dot-date>
+                value="2015-10-25"></dot-date>
 
             <dot-time
                 disabled="false"
@@ -137,8 +127,7 @@
                 required="true"
                 step="10"
                 validation-message="Time out of range"
-                value="20:30:30"
-            ></dot-time>
+                value="20:30:30"></dot-time>
 
             <dot-date-time
                 disabled="false"
@@ -151,8 +140,7 @@
                 required="true"
                 step="2,10"
                 validation-message="Value out of range"
-                value="2019-01-20 11:10:00"
-            ></dot-date-time>
+                value="2019-01-20 11:10:00"></dot-date-time>
 
             <dot-date-range
                 disabled="false"
@@ -166,8 +154,7 @@
                 presets=""
                 required-message="Please select a range"
                 required="true"
-                value="2019-11-25,2019-11-27"
-            ></dot-date-range>
+                value="2019-11-25,2019-11-27"></dot-date-range>
 
             <dot-tags
                 disabled="false"
@@ -177,15 +164,13 @@
                 placeholder="Start typing"
                 required-message="Please add tags"
                 required="true"
-                value="tag1,tag2"
-            ></dot-tags>
+                value="tag1,tag2"></dot-tags>
 
             <dot-binary-file
                 name="binaryPDF"
                 label="Only PDF"
                 accept=".pdf"
-                required="true"
-            ></dot-binary-file>
+                required="true"></dot-binary-file>
 
             <div>
                 <dot-binary-file-preview></dot-binary-file-preview>

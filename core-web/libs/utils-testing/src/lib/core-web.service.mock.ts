@@ -1,7 +1,5 @@
-import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { map, filter } from 'rxjs/operators';
-import { ResponseView } from '@dotcms/dotcms-js';
+
 import {
     HttpClient,
     HttpRequest,
@@ -11,7 +9,11 @@ import {
     HttpParams,
     HttpHeaders
 } from '@angular/common/http';
-import { DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
+import { Injectable } from '@angular/core';
+
+import { map, filter } from 'rxjs/operators';
+
+import { ResponseView, DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 
 @Injectable()
 export class CoreWebServiceMock {

@@ -1,18 +1,18 @@
-import readme from "./readme.md";
+import readme from './readme.md';
 
 export default {
     title: 'Components',
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
         value: 'code',
         options: [
             {
                 label: 'Code',
-                icon: 'code',
+                icon: 'code'
             },
 
             {
@@ -22,16 +22,13 @@ export default {
             },
             {
                 label: 'Help',
-                icon: 'help',
-            },
-
+                icon: 'help'
+            }
         ]
     }
 };
 
-
 const Template = (args) => {
-
     const dotSelectButton = document.createElement('dot-select-button');
 
     for (const item in args) {
@@ -39,6 +36,6 @@ const Template = (args) => {
     }
 
     return dotSelectButton;
-}
+};
 
 export const SelectButton = Template.bind({});

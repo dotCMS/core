@@ -2,7 +2,7 @@ import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -23,7 +23,8 @@ import {
     DotPropertiesService,
     DotRouterService,
     DotSessionStorageService,
-    DotGlobalMessageService
+    DotGlobalMessageService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
@@ -50,7 +51,6 @@ import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -194,7 +194,7 @@ browse from the page internal links
                 takeUntil(this.destroy$),
                 filter((event) => event instanceof NavigationEnd)
             )
-            .subscribe((_event: NavigationStart) => {
+            .subscribe(() => {
                 this.getExperimentResolverData();
             });
 

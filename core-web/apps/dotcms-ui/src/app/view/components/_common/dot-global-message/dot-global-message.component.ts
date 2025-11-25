@@ -35,7 +35,10 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     };
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private dotEventsService: DotEventsService, private cd: ChangeDetectorRef) {}
+    constructor(
+        private dotEventsService: DotEventsService,
+        private cd: ChangeDetectorRef
+    ) {}
 
     ngOnDestroy(): void {
         this.destroy$.next(true);

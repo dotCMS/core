@@ -8,10 +8,8 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { DotPushPublishDialogComponent } from '@components/_common/dot-push-publish-dialog/dot-push-publish-dialog.component';
 import { DotPushPublishFormModule } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPushPublishFiltersService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotDialogModule, DotFieldValidationMessageComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 
@@ -29,7 +27,7 @@ import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/d
         DropdownModule,
         DotFieldValidationMessageComponent,
         SelectButtonModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotPushPublishFormModule
     ]
 })

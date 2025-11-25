@@ -13,6 +13,7 @@ This jsp gets called in the edit content screen (edit_content_js_inc.jsp) to pai
 	<% Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id, false, lang, user, false);%>
 	<%if(contentlet !=null && UtilMethods.isSet(contentlet.getIdentifier())){ %>
 		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);%>
+		<% request.setAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT, contentlet);%>
 		<% APILocator.getPermissionAPI().checkPermission(contentlet, PermissionLevel.EDIT_PERMISSIONS, user);%>
 		
 		<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>

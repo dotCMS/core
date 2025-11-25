@@ -6,11 +6,8 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotClipboardUtil, DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testing';
-
-import { DotWorkflowActionsComponent } from './dot-workflow-actions.component';
-
-import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const WORKFLOW_ACTIONS_SEPARATOR_MOCK: DotCMSWorkflowAction = {
     assignable: true,
@@ -75,7 +72,8 @@ describe('DotWorkflowActionsComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
-            }
+            },
+            DotClipboardUtil
         ],
         detectChanges: false
     });
@@ -84,12 +82,12 @@ describe('DotWorkflowActionsComponent', () => {
         spectator = createComponent({
             props: {
                 actions: WORKFLOW_ACTIONS_MOCK,
-                groupAction: true,
+                groupActions: true,
                 loading: false,
                 size: 'normal'
             }
         });
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
     });
 
     describe('without actions', () => {
@@ -125,6 +123,7 @@ describe('DotWorkflowActionsComponent', () => {
     describe('group action', () => {
         it('should render an extra split button for each `SEPARATOR` Action', () => {
             const splitButtons = spectator.queryAll(SplitButton);
+            spectator.detectComponentChanges();
             expect(splitButtons.length).toBe(2);
         });
 
@@ -147,7 +146,7 @@ describe('DotWorkflowActionsComponent', () => {
 
     describe('not group action', () => {
         beforeEach(() => {
-            spectator.setInput('groupAction', false);
+            spectator.setInput('groupActions', false);
             spectator.detectComponentChanges();
         });
 
@@ -203,7 +202,7 @@ describe('DotWorkflowActionsComponent', () => {
         it('should have default size', () => {
             const { button, splitButton } = getComponents(spectator);
             expect(button.styleClass.trim()).toBe('');
-            expect(splitButton.styleClass.trim()).toBe('p-button-outlined');
+            expect(splitButton.styleClass.trim()).toBe('');
         });
 
         it('should set style class p-button-sm', () => {
@@ -212,7 +211,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             const { button, splitButton } = getComponents(spectator);
 
-            expect(splitButton.styleClass.trim()).toBe('p-button-sm p-button-outlined');
+            expect(splitButton.styleClass.trim()).toBe('p-button-sm');
             expect(button.styleClass.trim()).toBe('p-button-sm');
         });
 
@@ -223,7 +222,7 @@ describe('DotWorkflowActionsComponent', () => {
             const { button, splitButton } = getComponents(spectator);
 
             expect(button.styleClass.trim()).toBe('p-button-lg');
-            expect(splitButton.styleClass.trim()).toBe('p-button-lg p-button-outlined');
+            expect(splitButton.styleClass.trim()).toBe('p-button-lg');
         });
     });
 });

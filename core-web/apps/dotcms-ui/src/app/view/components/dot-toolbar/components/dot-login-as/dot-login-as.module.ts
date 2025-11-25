@@ -5,9 +5,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { PasswordModule } from 'primeng/password';
 
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotDialogModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotLoginAsComponent } from './dot-login-as.component';
 
@@ -18,7 +16,7 @@ import { DotLoginAsComponent } from './dot-login-as.component';
         PasswordModule,
         ReactiveFormsModule,
         SearchableDropDownModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     exports: [DotLoginAsComponent],

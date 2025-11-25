@@ -34,7 +34,9 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -275,114 +277,157 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return doesUserHavePermission(permissionable, permissionType, userIn, respectFrontendRoles, null);
 	}
 
+
 	@CloseDBIfOpened
 	@Override
 	public boolean doesUserHavePermission(final Permissionable permissionable,
-										  final int permissionType,
-										  final User userIn,
-										  final boolean respectFrontendRoles,
-										  final Contentlet contentlet) throws DotDataException {
-	    final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-        if (user.getUserId().equals(APILocator.systemUser().getUserId())){
-            return true;
-        }
-        
-        if (user.isAdmin()) {
-            return true;
-        }
-        
-        if (permissionable == null) {
-            Logger.warn(this, "Permissionable object is null");
-            throw new NullPointerException("Permissionable object is null");
-        }
-        
-        if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
-            Logger.debug(
-				this.getClass(),
-				"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
-            Logger.debug(
-				this.getClass(),
-				"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
-            return false;
-        }
+			final int permissionType,
+			final User userIn,
+			final boolean respectFrontendRoles,
+			final Contentlet contentlet) throws DotDataException {
 
-        // short circuit for UserProxy
-        if (permissionable instanceof UserProxy) {
-            return userPermissions((UserProxy) permissionable, user);
-        }
 
-		// Folders do not have PUBLISH, use EDIT instead
-		final int expecterPermissionType = (PermissionableType
-			.FOLDERS
-			.getCanonicalName()
-			.equals(permissionable.getPermissionType()) ||
-				permissionable instanceof Identifier && ((Identifier) permissionable).getAssetType().equals("folder"))
-				&& permissionType == PERMISSION_PUBLISH
-			? PERMISSION_EDIT
-			: permissionType;
 
-		Role adminRole;
-		Role anonRole;
-		Role frontEndUserRole;
-		Role cmsOwnerRole;
-		try {
-			adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
-			anonRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-			frontEndUserRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
-			cmsOwnerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
-		} catch (DotDataException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
-
-		if (APILocator.getRoleAPI().doesUserHaveRole(user, adminRole)) {
+		final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+		if (user.getUserId().equals(APILocator.systemUser().getUserId()) || user.isAdmin()){
 			return true;
 		}
 
-		final List<Permission> perms = getPermissions(permissionable, true);
+
+		if (permissionable == null) {
+			Logger.warn(this, "Permissionable object is null");
+			throw new NullPointerException("Permissionable object is null");
+		}
+
+		if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			return false;
+		}
+
+		Optional<Boolean> cachedPermission = CacheLocator.getPermissionCache().doesUserHavePermission(permissionable, String.valueOf(permissionType), user, respectFrontendRoles, contentlet);
+		if (cachedPermission.isPresent() ) {
+			return cachedPermission.get();
+		}
+
+		boolean hasPermission = doesUserHavePermissionInternal(permissionable, permissionType, user, respectFrontendRoles, contentlet);
+
+		CacheLocator.getPermissionCache().putUserHavePermission(permissionable, String.valueOf(permissionType), user, respectFrontendRoles, contentlet, hasPermission);
+		return hasPermission;
+
+	}
+
+	private final Lazy<Role> anonRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrElseThrow(DotRuntimeException::new));
+	private final Lazy<Role> adminRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAdminRole()).getOrElseThrow(DotRuntimeException::new));
+	private final Lazy<Role> ownerRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSOwnerRole()).getOrElseThrow(DotRuntimeException::new));
+
+
+
+	@CloseDBIfOpened
+	public boolean doesUserHavePermissionInternal(final Permissionable permissionable,
+										  final int permissionType,
+										  @NotNull final User userIn,
+										  final boolean respectFrontendRoles,
+										  final Contentlet contentlet) throws DotDataException {
+
+		final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+		if (user.getUserId().equals(APILocator.systemUser().getUserId())){
+			return true;
+		}
+
+		if (user.isAdmin()) {
+			return true;
+		}
+
+		if (permissionable == null) {
+			Logger.warn(this, "Permissionable object is null");
+			throw new NullPointerException("Permissionable object is null");
+		}
+
+		if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			return false;
+		}
+
+		// short circuit for UserProxy
+		if (permissionable instanceof UserProxy) {
+			return userPermissions((UserProxy) permissionable, user);
+		}
+
+		// Folders do not have PUBLISH, use EDIT instead
+		final int expecterPermissionType = (PermissionableType
+				.FOLDERS
+				.getCanonicalName()
+				.equals(permissionable.getPermissionType()) ||
+				permissionable instanceof Identifier && ((Identifier) permissionable).getAssetType().equals("folder"))
+				&& permissionType == PERMISSION_PUBLISH
+				? PERMISSION_EDIT
+				: permissionType;
+
+
+		if (APILocator.getRoleAPI().doesUserHaveRole(user, adminRole.get())) {
+			return true;
+		}
+
+		final List<Permission> perms = getPermissions(permissionable, true)
+				.stream()
+				.filter(p-> p.matchesPermission(expecterPermissionType))
+				.collect(Collectors.toList());
 		final boolean isContentlet = permissionable instanceof Contentlet;
 		for(final Permission p : perms){
-			if (p.matchesPermission(expecterPermissionType)) {
-				if (respectFrontendRoles) {
-					//anonymous role should not be able to access non-live contentlet
-					if (p.getRoleId().equals(anonRole.getId()) && (!isContentlet || isLiveContentlet(permissionable))) {
-						return true;
-						//if logged in site user has permission
-					}
-                }
-				// if owner and owner has required permission return true
-				try {
-					if (p.getRoleId().equals(cmsOwnerRole.getId())
+			if (respectFrontendRoles) {
+				//anonymous role should not be able to access non-live contentlet
+				if (p.getRoleId().equals(anonRole.get().getId()) && (!isContentlet || isLiveContentlet(permissionable))) {
+					return true;
+					//if logged in site user has permission
+				}
+			}
+			// if owner and owner has required permission return true
+			try {
+				if (p.getRoleId().equals(ownerRole.get().getId())
 						&& permissionable.getOwner() != null
 						&& permissionable.getOwner().equals(user.getUserId())
 						&& checkRelatedPermissions(permissionable.permissionDependencies(expecterPermissionType), user)) {
-						return true;
-					}
-				} catch (DotDataException e1) {
-					Logger.error(this, e1.getMessage(), e1);
-					throw new DotRuntimeException(e1.getMessage(), e1);
-				}
-
-				if (permissionable instanceof WorkflowAction
-					&& workflowActionHasPermission(expecterPermissionType, p, user, contentlet)) {
 					return true;
 				}
+			} catch (DotDataException e1) {
+				Logger.error(this, e1.getMessage(), e1);
+				throw new DotRuntimeException(e1.getMessage(), e1);
+			}
+
+			if (permissionable instanceof WorkflowAction
+					&& workflowActionHasPermission(expecterPermissionType, p, user, contentlet)) {
+				return true;
 			}
 		}
 
-        // front end users cannot read content that is not live
-        if (!user.isBackendUser()
-			&& isContentlet
-			&& !isLiveContentlet(permissionable)
-			&& expecterPermissionType == PERMISSION_READ) {
-            Logger.warn(this, String.format("User '%s' cannot verify READ permissions on Contentlet '%s' because it " +
-                    "is not live.", user.getUserId(), permissionable.getPermissionId()));
-            return false;
-        }
+		// front end users cannot read content that is not live
+		if (!user.isBackendUser()
+				&& isContentlet
+				&& !isLiveContentlet(permissionable)
+				&& expecterPermissionType == PERMISSION_READ) {
+			Logger.warn(this, String.format("User '%s' cannot verify READ permissions on Contentlet '%s' because it " +
+					"is not live.", user.getUserId(), permissionable.getPermissionId()));
+			return false;
+		}
 
 		final Set<String> userRoleIds = filterUserRoles(user, respectFrontendRoles).stream().map(Role::getId).collect(Collectors.toSet());
-        
+
 		return doRolesHavePermission(userRoleIds, getPermissions(permissionable, true), expecterPermissionType);
+
+
+
+
+
 	}
 
 	/**
@@ -443,14 +488,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@WrapInTransaction
 	@Override
 	public void setDefaultCMSAnonymousPermissions(Permissionable permissionable) throws DotDataException{
-		Role cmsAnonymousRole;
-		try {
-			cmsAnonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-		} catch (DotDataException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
-
+		Role cmsAnonymousRole= anonRole.get();
 
 		Permission cmsAnonymousPermission = new Permission();
 		cmsAnonymousPermission.setRoleId(cmsAnonymousRole.getId());
@@ -617,12 +655,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 */
 	@WrapInTransaction
 	private void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles, boolean createEvent) throws DotDataException, DotSecurityException {
-		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
 
-			if(!checkIfContentletTypeHasEditPermissions(permissionable, user)) {
-				throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
-			}
-		}
+
+		checkCopyPermissions(permissionable, user);
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
@@ -660,6 +695,18 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 		}
 
+	}
+
+	private void checkCopyPermissions(Permissionable permissionable, User user) throws DotDataException, DotSecurityException {
+
+		if (!isCopy(permissionable)){
+			if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
+
+				if (!checkIfContentletTypeHasEditPermissions(permissionable, user)) {
+					throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
+				}
+			}
+		}
 	}
 
 	/**
@@ -1895,6 +1942,15 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		return false;
+	}
+
+	public boolean isCopy(Permissionable permissionable){
+		boolean isCopy = false;
+		if (permissionable instanceof Contentlet){
+			Contentlet contentlet = (Contentlet) permissionable;
+			isCopy = contentlet.getBoolProperty(Contentlet.IS_COPY);
+		}
+		return isCopy;
 	}
 
 }

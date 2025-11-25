@@ -1,129 +1,124 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
-import { ParameterDefinition } from '../../services/util/CwInputModel';
-import { CwDropdownInputModel } from '../../services/util/CwInputModel';
-import { CwComponent } from '../../services/util/CwComponent';
+
+import { of } from 'rxjs/internal/observable/of';
+
+import { LoggerService } from '@dotcms/dotcms-js';
+
+import { ConditionModel, ParameterModel } from '../../services/Rule';
 import { ServerSideFieldModel } from '../../services/ServerSideFieldModel';
 import { I18nService } from '../../services/system/locale/I18n';
+import { CwComponent } from '../../services/util/CwComponent';
+import { ParameterDefinition } from '../../services/util/CwInputModel';
+import { CwDropdownInputModel } from '../../services/util/CwInputModel';
 import { CwRestDropdownInputModel } from '../../services/util/CwInputModel';
 import { Verify } from '../../services/validation/Verify';
-import { ConditionModel, ParameterModel } from '../../services/Rule';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { of } from 'rxjs/internal/observable/of';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-serverside-condition',
-    template: `<form>
-        <div flex layout="row" class="cw-condition-component-body">
-            <ng-template ngFor let-input [ngForOf]="_inputs">
-                <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">
-                    &nbsp;
-                </div>
-                <cw-input-dropdown
-                    *ngIf="input.type == 'dropdown'"
-                    flex
-                    class="cw-input"
-                    (touch)="onBlur(input)"
-                    [allowAdditions]="input.allowAdditions"
-                    [class.cw-comparator-selector]="input.name == 'comparison'"
-                    [class.cw-last]="islast"
-                    [formControl]="input.control"
-                    [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                    [required]="input.required"
-                    [value]="input.value"
-                    [placeholder]="input.placeholder | async"
-                    [options]="input.options"
-                >
-                </cw-input-dropdown>
-
-                <div
-                    flex
-                    layout-fill
-                    layout="column"
-                    class="cw-input"
-                    [class.cw-last]="islast"
-                    *ngIf="input.type == 'restDropdown'"
-                >
-                    <cw-input-rest-dropdown
-                        flex
-                        class="cw-input"
-                        [value]="input.value"
-                        [formControl]="input.control"
-                        [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                        placeholder="{{ input.placeholder | async }}"
-                        [minSelections]="input.minSelections"
-                        [maxSelections]="input.maxSelections"
-                        optionUrl="{{ input.optionUrl }}"
-                        optionValueField="{{ input.optionValueField }}"
-                        optionLabelField="{{ input.optionLabelField }}"
-                        [required]="input.required"
-                        [allowAdditions]="input.allowAdditions"
-                        [class.cw-comparator-selector]="input.name == 'comparison'"
-                        [class.cw-last]="islast"
+    template: `
+        <form>
+            <div flex layout="row" class="cw-condition-component-body">
+                <ng-template [ngForOf]="_inputs" ngFor let-input>
+                    <div *ngIf="input.type === 'spacer'" flex class="cw-input cw-input-placeholder">
+                        &nbsp;
+                    </div>
+                    <cw-input-dropdown
+                        *ngIf="input.type === 'dropdown'"
                         (touch)="onBlur(input)"
-                        #rdInput="ngForm"
-                    >
-                    </cw-input-rest-dropdown>
-                    <div
-                        flex="50"
-                        *ngIf="
-                            rdInput.touched &&
-                            !rdInput.valid &&
-                            (input.argIndex == null || input.argIndex < _rhArgCount)
-                        "
-                        class="name cw-warn basic label"
-                    >
-                        {{ getErrorMessage(input) }}
-                    </div>
-                </div>
-
-                <div
-                    flex
-                    layout-fill
-                    layout="column"
-                    class="cw-input"
-                    [class.cw-last]="islast"
-                    *ngIf="input.type == 'text' || input.type == 'number'"
-                >
-                    <input
-                        pInputText
-                        [placeholder]="input.placeholder | async"
+                        [allowAdditions]="input.allowAdditions"
+                        [class.cw-comparator-selector]="input.name === 'comparison'"
+                        [class.cw-last]="islast"
                         [formControl]="input.control"
-                        [type]="input.type"
                         [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                        (blur)="onBlur(input)"
-                        #fInput="ngForm"
-                    />
-                    <div
-                        flex="50"
-                        *ngIf="
-                            fInput.touched &&
-                            !fInput.valid &&
-                            (input.argIndex == null || input.argIndex < _rhArgCount)
-                        "
-                        class="name cw-warn basic label"
-                    >
-                        {{ getErrorMessage(input) }}
-                    </div>
-                </div>
+                        [required]="input.required"
+                        [value]="input.value"
+                        [placeholder]="input.placeholder | async"
+                        [options]="input.options"
+                        flex
+                        class="cw-input"></cw-input-dropdown>
 
-                <cw-input-date
-                    *ngIf="input.type == 'datetime'"
-                    flex
-                    layout-fill
-                    class="cw-input"
-                    [formControl]="input.control"
-                    [class.cw-last]="islast"
-                    [placeholder]="input.placeholder | async"
-                    [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                    [value]="input.value"
-                    (blur)="onBlur(input)"
-                    #gInput="ngForm"
-                ></cw-input-date>
-            </ng-template>
-        </div>
-    </form>`
+                    <div
+                        *ngIf="input.type === 'restDropdown'"
+                        [class.cw-last]="islast"
+                        flex
+                        layout-fill
+                        layout="column"
+                        class="cw-input">
+                        <cw-input-rest-dropdown
+                            (touch)="onBlur(input)"
+                            [value]="input.value"
+                            [formControl]="input.control"
+                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                            [minSelections]="input.minSelections"
+                            [maxSelections]="input.maxSelections"
+                            [required]="input.required"
+                            [allowAdditions]="input.allowAdditions"
+                            [class.cw-comparator-selector]="input.name === 'comparison'"
+                            [class.cw-last]="islast"
+                            flex
+                            class="cw-input"
+                            placeholder="{{ input.placeholder | async }}"
+                            optionUrl="{{ input.optionUrl }}"
+                            optionValueField="{{ input.optionValueField }}"
+                            optionLabelField="{{ input.optionLabelField }}"
+                            #rdInput="ngForm"></cw-input-rest-dropdown>
+                        <div
+                            *ngIf="
+                                rdInput.touched &&
+                                !rdInput.valid &&
+                                (input.argIndex == null || input.argIndex < _rhArgCount)
+                            "
+                            flex="50"
+                            class="name cw-warn basic label">
+                            {{ getErrorMessage(input) }}
+                        </div>
+                    </div>
+
+                    <div
+                        *ngIf="input.type === 'text' || input.type === 'number'"
+                        [class.cw-last]="islast"
+                        flex
+                        layout-fill
+                        layout="column"
+                        class="cw-input">
+                        <input
+                            (blur)="onBlur(input)"
+                            [placeholder]="input.placeholder | async"
+                            [formControl]="input.control"
+                            [type]="input.type"
+                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                            pInputText
+                            #fInput="ngForm" />
+                        <div
+                            *ngIf="
+                                fInput.touched &&
+                                !fInput.valid &&
+                                (input.argIndex == null || input.argIndex < _rhArgCount)
+                            "
+                            flex="50"
+                            class="name cw-warn basic label">
+                            {{ getErrorMessage(input) }}
+                        </div>
+                    </div>
+
+                    <cw-input-date
+                        *ngIf="input.type === 'datetime'"
+                        (blur)="onBlur(input)"
+                        [formControl]="input.control"
+                        [class.cw-last]="islast"
+                        [placeholder]="input.placeholder | async"
+                        [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                        [value]="input.value"
+                        flex
+                        layout-fill
+                        class="cw-input"
+                        #gInput="ngForm"></cw-input-date>
+                </ng-template>
+            </div>
+        </form>
+    `
 })
 export class ServersideCondition {
     @Input() componentInstance: ServerSideFieldModel;
@@ -142,7 +137,11 @@ export class ServersideCondition {
         required: 'Required'
     };
 
-    constructor(_fb: UntypedFormBuilder, resources: I18nService, private loggerService: LoggerService) {
+    constructor(
+        _fb: UntypedFormBuilder,
+        resources: I18nService,
+        private loggerService: LoggerService
+    ) {
         this._resources = resources;
         this._inputs = [];
     }
@@ -154,6 +153,7 @@ export class ServersideCondition {
                 ? selectedComparison.rightHandArgCount
                 : 1;
         }
+
         return argCount;
     }
 
@@ -171,6 +171,7 @@ export class ServersideCondition {
             this._rhArgCount = null;
             paramDefs = this.componentInstance.type.parameters;
         }
+
         if (paramDefs) {
             let prevPriority = 0;
             this._inputs = [];
@@ -229,6 +230,7 @@ export class ServersideCondition {
                 // tslint:disable-next-line:no-debugger
             }
         });
+
         return message;
     }
 
@@ -261,7 +263,9 @@ export class ServersideCondition {
         } else if (type === 'dropdown') {
             input = this.getDropdownInput(param, paramDef, i18nBaseKey);
         }
+
         input.type = type;
+
         return input;
     }
 
@@ -269,6 +273,7 @@ export class ServersideCondition {
         const rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key;
         const placeholderKey = rsrcKey + '.placeholder';
         const control = ServerSideFieldModel.createNgControl(this.componentInstance, param.key);
+
         return {
             control: control,
             name: param.key,
@@ -300,6 +305,7 @@ export class ServersideCondition {
             currentValue = currentValue.replace(/["']/g, '');
             this.componentInstance.setParameter(param.key, currentValue);
         }
+
         const control = ServerSideFieldModel.createNgControl(this.componentInstance, param.key);
         const input: any = {
             allowAdditions: inputType.allowAdditions,
@@ -317,6 +323,7 @@ export class ServersideCondition {
         if (!input.value) {
             input.value = inputType.selected != null ? inputType.selected : '';
         }
+
         return input;
     }
 
@@ -344,6 +351,7 @@ export class ServersideCondition {
             if (needsCustomAttribute && key === currentValue) {
                 needsCustomAttribute = false;
             }
+
             let labelKey = rsrcKey + '.' + option.i18nKey;
             // hack for country - @todo ggranum: kill 'name' on locale?
             if (param.key === 'country') {
@@ -364,6 +372,7 @@ export class ServersideCondition {
                 value: currentValue
             });
         }
+
         const input: any = {
             allowAdditions: inputType.allowAdditions,
             control: ServerSideFieldModel.createNgControl(this.componentInstance, param.key),
@@ -378,6 +387,7 @@ export class ServersideCondition {
         if (!input.value) {
             input.value = inputType.selected != null ? inputType.selected : '';
         }
+
         return input;
     }
 

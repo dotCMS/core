@@ -10,7 +10,6 @@ import { FileUploadModule } from 'primeng/fileupload';
 
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotCreatePersonaFormModule } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotHttpErrorManagerService,
@@ -19,7 +18,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotDialogModule, DotMessagePipe } from '@dotcms/ui';
 import {
     DotMessageDisplayServiceMock,
     LoginServiceMock,

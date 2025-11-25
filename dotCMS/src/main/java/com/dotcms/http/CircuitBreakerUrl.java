@@ -20,7 +20,6 @@ import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -35,6 +34,9 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -65,6 +67,13 @@ import java.util.concurrent.RejectedExecutionException;
  */
 public class CircuitBreakerUrl {
 
+    private static final Lazy<Integer> circuitBreakerMaxConnTotal =
+            Lazy.of(() -> Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL", 100));
+    private static final Lazy<Boolean> allowAccessToPrivateSubnets =
+            Lazy.of(() -> Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+    private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl =
+            new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
+
     private final String proxyUrl;
     private final long timeoutMs;
     private final CircuitBreaker circuitBreaker;
@@ -76,11 +85,12 @@ public class CircuitBreakerUrl {
     private final boolean allowRedirects;
     private final boolean throwWhenNot2xx;
 
-    private static final Lazy<Integer> circuitBreakerMaxConnTotal = Lazy.of(()->Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL",100));
-    private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
-    private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl = new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
+    public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[] {});
 
-    public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[]{});
+    public enum Method {
+        GET, POST, PUT, DELETE, PATCH
+    }
+
     /**
      * 
      * @param proxyUrl
@@ -118,13 +128,12 @@ public class CircuitBreakerUrl {
           timeoutMs,
           circuitBreaker,
           new HttpGet(proxyUrl),
-          ImmutableMap.of(),
-          ImmutableMap.of(),
+          Map.of(),
+          Map.of(),
           verbose,
           null);
     }
-    
-    
+
     @VisibleForTesting
     public CircuitBreakerUrl(final String proxyUrl,
                              final long timeoutMs,
@@ -135,23 +144,8 @@ public class CircuitBreakerUrl {
                              final boolean verbose,
                              final String rawData) {
         this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true);
-        
     }
     
-    /**
-     * Full featured constructor
-     * 
-     * @param proxyUrl
-     * @param timeoutMs
-     * @param circuitBreaker
-     * @param request
-     * @param params
-     * @param headers
-     * @param verbose
-     * @param rawData
-     * @param allowRedirects
-     * @param throwWhenNot2xx
-     */
     @VisibleForTesting
     public CircuitBreakerUrl(final String proxyUrl,
                              final long timeoutMs,
@@ -207,9 +201,10 @@ public class CircuitBreakerUrl {
                 Logger.warn(
                     this,
                     String.format(
-                        "Invalid response detected when consuming [%s] with http status [%d] and response:\n%s",
+                        "Invalid response detected when consuming [%s] with http status [%d] and response:%s%s",
                         this.proxyUrl,
                         this.response,
+                        System.lineSeparator(),
                         output));
             }
             return output;
@@ -234,7 +229,7 @@ public class CircuitBreakerUrl {
 
                     @Override
                     public void setWriteListener(WriteListener writeListener) {
-
+                        // no-op
                     }
                 };
             }
@@ -305,42 +300,18 @@ public class CircuitBreakerUrl {
         }
     }
 
+    public int response() {
+        return this.response;
+    }
+
     public static boolean isWithin2xx(final int response) {
         return response >= 200 && response <= 299;
     }
 
-    private void copyHeaders(final HttpResponse innerResponse, final HttpServletResponse response) {
-        final Header contentTypeHeader = innerResponse.getFirstHeader("Content-Type");
-
-        if (UtilMethods.isSet(contentTypeHeader)) {
-            response.setHeader(contentTypeHeader.getName(), contentTypeHeader.getValue());
-        }
-
-        final Header contentLengthHeader = innerResponse.getFirstHeader("Content-Length");
-
-        if (UtilMethods.isSet(contentLengthHeader)) {
-            response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
-        }
-    }
-
-    public int response() {
-      return this.response;
-    }
-
-    public static CircuitBreakerUrlBuilder builder() {
-        return new CircuitBreakerUrlBuilder();
-    }
-
-
-    @Override
-    public String toString() {
-        return "CircuitBreakerUrl [proxyUrl=" + proxyUrl + ", timeoutMs=" + timeoutMs + ", circuitBreaker=" + circuitBreaker + "]";
-    }
-
     public <T extends Serializable> T doObject(final Class<T> clazz) {
         return Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), clazz))
-            .onFailure(e -> Logger.warnAndDebug(CircuitBreakerUrl.class, e))
-            .getOrElse((T) null);
+                .onFailure(e -> Logger.warnAndDebug(CircuitBreakerUrl.class, e))
+                .getOrElse((T) null);
     }
 
     public <T extends Serializable> Response<T> doResponse(final Class<T> clazz) {
@@ -364,9 +335,54 @@ public class CircuitBreakerUrl {
         return responseHeaders;
     }
 
-    public enum Method {
-        GET, POST, PUT, DELETE, PATCH;
+    @Override
+    public String toString() {
+        return "CircuitBreakerUrl [proxyUrl=" + proxyUrl + ", timeoutMs=" + timeoutMs + ", circuitBreaker=" + circuitBreaker + "]";
+    }
 
+    private void copyHeaders(final HttpResponse innerResponse, final HttpServletResponse response) {
+        final Header contentTypeHeader = innerResponse.getFirstHeader("Content-Type");
+
+        if (UtilMethods.isSet(contentTypeHeader)) {
+            response.setHeader(contentTypeHeader.getName(), contentTypeHeader.getValue());
+        }
+
+        final Header contentLengthHeader = innerResponse.getFirstHeader("Content-Length");
+
+        if (UtilMethods.isSet(contentLengthHeader)) {
+            response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
+        }
+    }
+
+    public static Map<String, String> authHeaders(final String token) {
+        return ImmutableMap.<String, String>builder()
+                .put(HttpHeaders.AUTHORIZATION, token)
+                .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+                .build();
+    }
+
+    /**
+     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
+     *
+     * @param statusCode http status code
+     * @return true if the response http status is considered tobe successful, otherwise false
+     */
+    public static boolean isSuccessResponse(final int statusCode) {
+        return javax.ws.rs.core.Response.Status.Family.familyOf(statusCode) == javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
+    }
+
+    /**
+     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
+     *
+     * @param response http response representation
+     * @return true if the response http status is considered tobe successful, otherwise false
+     */
+    public static boolean isSuccessResponse(@NotNull final CircuitBreakerUrl.Response<?> response) {
+        return isSuccessResponse(response.getStatusCode());
+    }
+
+    public static CircuitBreakerUrlBuilder builder() {
+        return new CircuitBreakerUrlBuilder();
     }
 
     public static class CircuitBreakerConnectionControl {
@@ -381,7 +397,6 @@ public class CircuitBreakerUrl {
         public void check(final String proxyUrl) {
 
             if (threadIdConnectionCountSet.size() >= maxConnTotal) {
-
                 Logger.info(this, "The maximum number of connections has been reached, size: " +
                         threadIdConnectionCountSet.size() + ", url: " + proxyUrl);
                 throw new RejectedExecutionException("The maximum number of connections has been reached.");
@@ -389,14 +404,13 @@ public class CircuitBreakerUrl {
         }
 
         public void start(final long id) {
-
             threadIdConnectionCountSet.add(id);
         }
 
         public void end(final long id) {
-
             threadIdConnectionCountSet.remove(id);
         }
+
     }
 
     public static class Response<T extends Serializable> implements Serializable {
@@ -447,6 +461,7 @@ public class CircuitBreakerUrl {
                 ", statusCode=" + statusCode +
                 '}';
         }
+
     }
 
 }

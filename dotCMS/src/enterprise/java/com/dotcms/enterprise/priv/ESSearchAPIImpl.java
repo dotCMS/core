@@ -51,7 +51,6 @@ import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.priv.util.SearchSourceBuilderUtil;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -66,10 +65,6 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -77,6 +72,11 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
@@ -198,12 +198,11 @@ public class ESSearchAPIImpl implements ESSeachAPI {
         try {
             if (pullParents) {
                 criteriaMap.put("_source", "identifier");
-                criteriaMap.put("query", new JSONObject().put("match", CollectionsUtils
-                        .map(relationshipName.toLowerCase(), contentlet.getIdentifier())));
+                criteriaMap.put("query", new JSONObject().put("match",
+                        Map.of(relationshipName.toLowerCase(), contentlet.getIdentifier())));
             } else {
                 criteriaMap.put("_source", relationshipName.toLowerCase());
-                criteriaMap.put("query", new JSONObject().put("match", CollectionsUtils
-                        .map("inode", contentlet.getInode())));
+                criteriaMap.put("query", new JSONObject().put("match", Map.of("inode", contentlet.getInode())));
             }
             completeQueryJSON = new JSONObject(criteriaMap.toString());
         } catch (JSONException e) {

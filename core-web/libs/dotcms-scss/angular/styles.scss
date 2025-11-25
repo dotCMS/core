@@ -59,7 +59,6 @@ body {
 html {
     color: $black;
     font-family: $font-default;
-    font-size: $font-size-default;
 }
 
 body {
@@ -85,6 +84,10 @@ a {
         text-transform: uppercase;
         cursor: pointer;
     }
+}
+
+button {
+    font-family: $font-default;
 }
 
 /*
@@ -114,4 +117,16 @@ code {
     padding: $spacing-0 $spacing-1;
     font-family: $font-code;
     line-break: anywhere;
+}
+
+.dot-mask {
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    pointer-events: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }

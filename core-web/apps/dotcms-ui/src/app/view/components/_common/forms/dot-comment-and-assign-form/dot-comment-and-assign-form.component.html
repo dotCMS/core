@@ -1,40 +1,34 @@
 <form
-    class="p-fluid"
     *ngIf="form"
-    [formGroup]="form"
     (ngSubmit)="emitValues()"
     (keyup.enter)="emitValues()"
-    novalidate
->
-    <div class="field" *ngIf="data['assignable']">
+    [formGroup]="form"
+    class="p-fluid"
+    novalidate>
+    <div *ngIf="data['assignable']" class="field">
         <label for="dotRoles">{{ 'assignee.form.assignee' | dm }}</label>
         <p-dropdown
-            id="dotRoles"
             [options]="dotRoles"
             [style]="{ width: '100%' }"
+            id="dotRoles"
             formControlName="assign"
-            appendTo="body"
-        >
-        </p-dropdown>
+            appendTo="body"></p-dropdown>
     </div>
-    <div class="field" *ngIf="data['commentable']">
+    <div *ngIf="data['commentable']" class="field">
         <label for="comment">{{ 'comment.form.comments' | dm }}</label>
         <textarea
-            id="comment"
-            [style]="{ width: '100%' }"
             (keydown.enter)="$event.stopPropagation()"
+            [style]="{ width: '100%' }"
+            id="comment"
             pInputTextarea
-            formControlName="comments"
-        >
-        </textarea>
+            formControlName="comments"></textarea>
     </div>
 
-    <div class="field" *ngIf="data['moveable']">
+    <div *ngIf="data['moveable']" class="field">
         <label dotFieldRequired for="move">{{ 'Move' | dm }}</label>
         <dot-page-selector
-            id="move"
             [folderSearch]="true"
-            formControlName="pathToMove"
-        ></dot-page-selector>
+            id="move"
+            formControlName="pathToMove"></dot-page-selector>
     </div>
 </form>

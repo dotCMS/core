@@ -59,8 +59,7 @@
             <AppenderRef ref="Error" />
             <AppenderRef ref="File"/>
         </logger>
-        <logger name="com.dotmarketing.common.reindex.ReindexThread
-" level="INFO" additivity="false">
+        <logger name="com.dotmarketing.common.reindex.ReindexThread" level="INFO" additivity="false">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="Error" />
             <AppenderRef ref="File"/>

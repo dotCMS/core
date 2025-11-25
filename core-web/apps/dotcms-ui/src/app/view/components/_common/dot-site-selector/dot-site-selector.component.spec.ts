@@ -48,7 +48,9 @@ const sites: Site[] = [
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-site-selector [id]="id" [cssClass]="cssClass"></dot-site-selector> `
+    template: `
+        <dot-site-selector [id]="id" [cssClass]="cssClass"></dot-site-selector>
+    `
 })
 class TestHostComponent {
     @Input() id: string;
@@ -248,7 +250,7 @@ describe('SiteSelectorComponent', () => {
         spyOn(siteService, 'getSiteById').and.returnValue(observableOf(mockSites[1]));
         spyOn(paginatorService, 'getCurrentPage').and.returnValue(observableOf(mockSites));
         fixtureHost.detectChanges();
-        expect(comp.currentSite).toEqual(siteService.currentSite);
+        expect(comp.$currentSite()).toEqual(siteService.currentSite);
     });
 
     it('should set site based on passed id', () => {
@@ -260,7 +262,7 @@ describe('SiteSelectorComponent', () => {
         fixtureHost.detectChanges();
         componentHost.id = mockSites[1].identifier;
         fixtureHost.detectChanges();
-        expect(comp.currentSite).toEqual(mockSites[1]);
+        expect(comp.$currentSite()).toEqual(mockSites[1]);
     });
 
     describe('sitesCurrentPage', () => {
@@ -283,7 +285,7 @@ describe('SiteSelectorComponent', () => {
             comp.handleSitesRefresh(sites[2]);
             tick(2500);
             expect(paginatorService.getCurrentPage).toHaveBeenCalledTimes(1);
-            expect(comp.sitesCurrentPage).toEqual(sites.slice(0, 2));
+            expect(comp.$sitesCurrentPage()).toEqual(sites.slice(0, 2));
         }));
 
         it('should update until site is present after add', fakeAsync(() => {
@@ -293,7 +295,7 @@ describe('SiteSelectorComponent', () => {
             );
             comp.handleSitesRefresh(sites[0]);
             tick(3500);
-            expect(comp.sitesCurrentPage).toEqual(subSites);
+            expect(comp.$sitesCurrentPage()).toEqual(subSites);
         }));
     });
 

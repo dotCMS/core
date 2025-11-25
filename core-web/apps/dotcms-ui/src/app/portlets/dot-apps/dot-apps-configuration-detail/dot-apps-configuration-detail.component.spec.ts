@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { MarkdownModule } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
 
@@ -14,9 +13,8 @@ import { ButtonModule } from 'primeng/button';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
@@ -48,7 +46,10 @@ const sites = [
                 label: 'Name:',
                 required: true,
                 type: 'STRING',
-                value: 'John'
+                value: 'John',
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
             },
             {
                 dynamic: false,
@@ -58,7 +59,10 @@ const sites = [
                 label: 'Password:',
                 required: true,
                 type: 'STRING',
-                value: '****'
+                value: '****',
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
             },
             {
                 dynamic: false,
@@ -68,7 +72,10 @@ const sites = [
                 label: 'Enabled:',
                 required: false,
                 type: 'BOOL',
-                value: 'true'
+                value: 'true',
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
             }
         ]
     }
@@ -149,7 +156,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 CommonModule,
                 DotCopyButtonComponent,
                 DotAppsConfigurationHeaderModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 MarkdownModule.forRoot()
             ],
@@ -295,7 +302,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
     describe('With dynamic variables', () => {
         beforeEach(() => {
-            const sitesDynamic = _.cloneDeep(sites);
+            const sitesDynamic = structuredClone(sites);
             sitesDynamic[0].secrets = [
                 ...sites[0].secrets,
                 {
@@ -306,7 +313,10 @@ describe('DotAppsConfigurationDetailComponent', () => {
                     label: '',
                     required: false,
                     type: 'STRING',
-                    value: 'test'
+                    value: 'test',
+                    hasEnvVar: false,
+                    envShow: true,
+                    hasEnvVarValue: false
                 }
             ];
             const mockRoute = { data: {} };

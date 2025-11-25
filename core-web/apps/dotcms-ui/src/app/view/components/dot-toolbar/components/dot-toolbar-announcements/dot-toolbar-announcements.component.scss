@@ -1,11 +1,7 @@
 @use "variables" as *;
 
-:host {
-    max-height: 100vh;
-    overflow: auto;
-    display: block;
-    padding: $spacing-4;
-    width: 26rem;
+.announcements__main-container {
+    width: 24rem;
 }
 
 .announcements__list {
@@ -60,7 +56,7 @@
     margin: 0;
     padding-bottom: $spacing-1;
     border-bottom: 1px solid $color-palette-gray-300;
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
 }
 
 .announcements__content {
@@ -80,7 +76,7 @@
     background-color: var(--color-palette-secondary-200);
     color: var(--color-palette-secondary-500);
     border-radius: 50%;
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
 }
 
 .announcements__label {
@@ -105,6 +101,7 @@
 .announcements__url {
     text-decoration: none;
     color: $black;
+    width: 100%;
 }
 
 .announcements__badge {
@@ -123,9 +120,8 @@
 ::ng-deep {
     .toolbar-announcements__container {
         &.p-overlaypanel {
-            .p-overlaypanel-content {
-                padding: 0;
-            }
+            max-height: 80vh;
+            overflow: auto;
         }
     }
 }

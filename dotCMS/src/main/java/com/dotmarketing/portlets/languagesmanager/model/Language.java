@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.languagesmanager.model;
 
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang.StringUtils;
@@ -11,6 +12,8 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
+
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This class represents a language in the system.
@@ -55,19 +58,19 @@ public class Language implements Serializable, ManifestItem {
     public Language() {
         super();
         this.id = 0;
-        this.languageCode = "";
-        this.countryCode = "";
-        this.language = "";
-        this.country = "";
+        this.languageCode = BLANK;
+        this.countryCode = BLANK;
+        this.language = BLANK;
+        this.country = BLANK;
     }
 
     public Language(long id) {
         super();
         this.id = id;
-        this.languageCode = "";
-        this.countryCode = "";
-        this.language = "";
-        this.country = "";
+        this.languageCode = BLANK;
+        this.countryCode = BLANK;
+        this.language = BLANK;
+        this.country = BLANK;
     }
 
     /**
@@ -203,12 +206,12 @@ public class Language implements Serializable, ManifestItem {
      */
     public Map<String, Object> toMap() {
         return Map.of(
-                "id", this.id,
-                "languageCode", this.languageCode,
-                "countryCode", this.countryCode,
-                "language", this.language,
-                "country", this.country,
-                "isoCode", this.isoCode);
+                "id", CollectionsUtils.orElseGet(this.id, 0L),
+                "languageCode", CollectionsUtils.orElseGet(this.languageCode, BLANK),
+                "countryCode", CollectionsUtils.orElseGet(this.countryCode, BLANK),
+                "language", CollectionsUtils.orElseGet(this.language, BLANK),
+                "country", CollectionsUtils.orElseGet(this.country, BLANK),
+                "isoCode", CollectionsUtils.orElseGet(this.isoCode, BLANK));
     }
 
 }

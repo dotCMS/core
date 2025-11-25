@@ -48,7 +48,11 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowService,
     DotGlobalMessageService,
-    DotIframeService
+    DotIframeService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService,
+    DotExperimentsService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -74,7 +78,7 @@ import {
     DotPageRenderState,
     PageModelChangeEventType
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotCopyContentModalService } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
@@ -99,14 +103,10 @@ import {
     EDIT_BLOCK_EDITOR_CUSTOM_EVENT
 } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
-import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
-import { DotSeoMetaTagsUtilService } from './services/html/dot-seo-meta-tags-util.service';
-import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 

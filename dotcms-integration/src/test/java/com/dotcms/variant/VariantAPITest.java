@@ -1,14 +1,5 @@
 package com.dotcms.variant;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -33,7 +24,6 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -41,27 +31,34 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PipedOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 public class VariantAPITest {
@@ -242,7 +239,7 @@ public class VariantAPITest {
 
         ContentletDataGen.publish(defaultContentlet);
 
-        ContentletDataGen.update(defaultContentlet, map(textField.variable(), "WORKING"));
+        ContentletDataGen.update(defaultContentlet, Map.of(textField.variable(), "WORKING"));
         final Contentlet defaultContentletWorking = APILocator.getContentletAPI().findContentletByIdentifier(
                 defaultContentlet.getIdentifier(), false, defaultContentlet.getLanguageId(),
                 VariantAPI.DEFAULT_VARIANT.name(), APILocator.getUserAPI().getSystemUser(), false);
@@ -251,10 +248,10 @@ public class VariantAPITest {
         assertFalse(defaultContentletWorking.getInode().equals(defaultContentlet.getInode()));
 
         final Contentlet variantContentlet = ContentletDataGen.createNewVersion(defaultContentlet, variant,
-                map(textField.variable(), "VARIANT"));
+                Map.of(textField.variable(), "VARIANT"));
 
         ContentletDataGen.publish(variantContentlet);
-        ContentletDataGen.update(variantContentlet, map(textField.variable(), "WORKING"));
+        ContentletDataGen.update(variantContentlet, Map.of(textField.variable(), "WORKING"));
 
 
         final Identifier identifier = APILocator.getIdentifierAPI()
@@ -489,10 +486,10 @@ public class VariantAPITest {
 
         final Variant variant = new VariantDataGen().nextPersisted();
 
-        ContentletDataGen.createNewVersion(contentlet1, variant, map(
+        ContentletDataGen.createNewVersion(contentlet1, variant, Map.of(
                 titleField.variable(), "contentlet1_variant"
         ));
-        ContentletDataGen.createNewVersion(contentlet2, variant, map(
+        ContentletDataGen.createNewVersion(contentlet2, variant, Map.of(
                 titleField.variable(), "contentlet2_variant"
         ));
 
@@ -540,11 +537,11 @@ public class VariantAPITest {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet1_variant"
                 ));
         final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet2_variant"
                 ));
 
@@ -554,10 +551,10 @@ public class VariantAPITest {
         APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
         APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
 
-        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
-        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
-        ContentletDataGen.update(contentlet1Variant, map("title", "WORKING contentlet1_variant"));
-        ContentletDataGen.update(contentlet2Variant, map("title", "WORKING contentlet2_variant"));
+        ContentletDataGen.update(contentlet1, Map.of("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, Map.of("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1Variant, Map.of("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2Variant, Map.of("title", "WORKING contentlet2_variant"));
 
         APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
 
@@ -652,19 +649,19 @@ public class VariantAPITest {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet1_variant"
                 ));
         final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet2_variant"
                 ));
 
         APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
         APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
 
-        ContentletDataGen.update(contentlet1Variant, map("title", "WORKING contentlet1_variant"));
-        ContentletDataGen.update(contentlet2Variant, map("title", "WORKING contentlet2_variant"));
+        ContentletDataGen.update(contentlet1Variant, Map.of("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2Variant, Map.of("title", "WORKING contentlet2_variant"));
 
         APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
 
@@ -722,21 +719,21 @@ public class VariantAPITest {
         final Variant variant_2 = new VariantDataGen().nextPersisted();
 
         final Contentlet contentlet1Variant1 = ContentletDataGen.createNewVersion(contentlet1,
-                variant_1, map(
+                variant_1, Map.of(
                         titleField.variable(), "LIVE contentlet1_variant_1"
                 ));
         final Contentlet contentlet2Variant1 = ContentletDataGen.createNewVersion(contentlet2,
-                variant_1, map(
+                variant_1, Map.of(
                         titleField.variable(), "LIVE contentlet2_variant_1"
                 ));
 
 
         final Contentlet contentlet1Variant2 = ContentletDataGen.createNewVersion(contentlet1,
-                variant_2, map(
+                variant_2, Map.of(
                         titleField.variable(), "LIVE contentlet1_variant_2"
                 ));
         final Contentlet contentlet2Variant2 = ContentletDataGen.createNewVersion(contentlet2,
-                variant_2, map(
+                variant_2, Map.of(
                         titleField.variable(), "LIVE contentlet2_variant_2"
                 ));
 
@@ -749,12 +746,12 @@ public class VariantAPITest {
         APILocator.getContentletAPI().publish(contentlet1Variant2, APILocator.systemUser(), false);
         APILocator.getContentletAPI().publish(contentlet2Variant2, APILocator.systemUser(), false);
 
-        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
-        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
-        ContentletDataGen.update(contentlet1Variant1, map("title", "WORKING contentlet1_variant_1"));
-        ContentletDataGen.update(contentlet2Variant1, map("title", "WORKING contentlet2_variant_1"));
-        ContentletDataGen.update(contentlet1Variant2, map("title", "WORKING contentlet1_variant_2"));
-        ContentletDataGen.update(contentlet2Variant2, map("title", "WORKING contentlet2_variant_2"));
+        ContentletDataGen.update(contentlet1, Map.of("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, Map.of("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1Variant1, Map.of("title", "WORKING contentlet1_variant_1"));
+        ContentletDataGen.update(contentlet2Variant1, Map.of("title", "WORKING contentlet2_variant_1"));
+        ContentletDataGen.update(contentlet1Variant2, Map.of("title", "WORKING contentlet1_variant_2"));
+        ContentletDataGen.update(contentlet2Variant2, Map.of("title", "WORKING contentlet2_variant_2"));
 
         APILocator.getVariantAPI().promote(variant_1, APILocator.systemUser());
 
@@ -821,8 +818,8 @@ public class VariantAPITest {
         APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
         APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
 
-        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1_variant"));
-        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2_variant"));
+        ContentletDataGen.update(contentlet1, Map.of("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2, Map.of("title", "WORKING contentlet2_variant"));
 
         APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
 
@@ -880,8 +877,8 @@ public class VariantAPITest {
         APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
         APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
 
-        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
-        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1, Map.of("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, Map.of("title", "WORKING contentlet2"));
 
         APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
 
@@ -938,11 +935,11 @@ public class VariantAPITest {
 
 
         ContentletDataGen.createNewVersion(contentlet1,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet1_variant_2"
                 ));
         ContentletDataGen.createNewVersion(contentlet2,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet2_variant_2"
                 ));
 
@@ -1047,24 +1044,24 @@ public class VariantAPITest {
                 .nextPersisted();
 
         ContentletDataGen.createNewVersion(contentlet1, VariantAPI.DEFAULT_VARIANT, language_2,
-                map(titleField.variable(), "contentlet1 Language_2"));
+                Map.of(titleField.variable(), "contentlet1 Language_2"));
 
         ContentletDataGen.createNewVersion(contentlet1, variant, language_1,
-                map(titleField.variable(), "contentlet1_variant Language_1"));
+                Map.of(titleField.variable(), "contentlet1_variant Language_1"));
 
         ContentletDataGen.createNewVersion(contentlet1, variant, language_3,
-                map(titleField.variable(), "contentlet1_variant Language_3"));
+                Map.of(titleField.variable(), "contentlet1_variant Language_3"));
 
 
         ContentletDataGen.createNewVersion(contentlet2, VariantAPI.DEFAULT_VARIANT, language_2,
-                map(titleField.variable(), "contentlet2 Language_2"));
+                Map.of(titleField.variable(), "contentlet2 Language_2"));
 
         ContentletDataGen.createNewVersion(contentlet2, variant, language_1,
-                map(titleField.variable(), "contentlet2_variant Language_1"
+                Map.of(titleField.variable(), "contentlet2_variant Language_1"
                 ));
 
         ContentletDataGen.createNewVersion(contentlet2, variant, language_3,
-                map(titleField.variable(), "contentlet2_variant Language_3"
+                Map.of(titleField.variable(), "contentlet2_variant Language_3"
         ));
 
         APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
@@ -1143,11 +1140,11 @@ public class VariantAPITest {
                 .nextPersisted();
 
         final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet1_variant"
                 ));
         final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet2_variant"
                 ));
 
@@ -1157,17 +1154,17 @@ public class VariantAPITest {
         APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
         APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
 
-        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
-        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
-        ContentletDataGen.update(contentlet1Variant, map("title", "WORKING contentlet1_variant"));
-        ContentletDataGen.update(contentlet2Variant, map("title", "WORKING contentlet2_variant"));
+        ContentletDataGen.update(contentlet1, Map.of("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, Map.of("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1Variant, Map.of("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2Variant, Map.of("title", "WORKING contentlet2_variant"));
 
         final Host host = new SiteDataGen().nextPersisted();
         final Container container = new ContainerDataGen().nextPersisted();
         final Template template = new TemplateDataGen().withContainer(container.getIdentifier()).nextPersisted();
 
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
-        ContentletDataGen.createNewVersion(htmlPageAsset, variant, map());
+        ContentletDataGen.createNewVersion(htmlPageAsset, variant, new HashMap<>());
 
         new MultiTreeDataGen()
                 .setContainer(container)
@@ -1266,11 +1263,11 @@ public class VariantAPITest {
                 .nextPersisted();
 
         final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet1_variant"
                 ));
         final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
-                variant, map(
+                variant, Map.of(
                         titleField.variable(), "LIVE contentlet2_variant"
                 ));
 
@@ -1280,10 +1277,10 @@ public class VariantAPITest {
         APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
         APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
 
-        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
-        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
-        ContentletDataGen.update(contentlet1Variant, map("title", "WORKING contentlet1_variant"));
-        ContentletDataGen.update(contentlet2Variant, map("title", "WORKING contentlet2_variant"));
+        ContentletDataGen.update(contentlet1, Map.of("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, Map.of("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1Variant, Map.of("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2Variant, Map.of("title", "WORKING contentlet2_variant"));
 
         final Host host = new SiteDataGen().nextPersisted();
         final Container container = new ContainerDataGen().nextPersisted();

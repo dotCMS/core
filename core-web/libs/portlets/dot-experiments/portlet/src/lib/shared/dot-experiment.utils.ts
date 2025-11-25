@@ -211,7 +211,7 @@ export const getBayesianDatasets = (
 const generateProbabilityDensityData = (
     alpha: number,
     beta: number,
-    step: number = 0.01
+    step = 0.01
 ): { x: number; y: number }[] => {
     // Create a beta distribution object using the alpha and beta parameters.
     const betaDist = new jStat.beta(alpha, beta);

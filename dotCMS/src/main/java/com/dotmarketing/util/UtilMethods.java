@@ -24,6 +24,16 @@ import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.beans.PropertyDescriptor;
 import java.io.BufferedReader;
 import java.io.File;
@@ -62,16 +72,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.imageio.ImageIO;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
+import java.util.Set;
 
 /**
  * Provides several widely used routines that handle, verify or format many data structures, such as
@@ -142,6 +143,8 @@ public class UtilMethods {
     static HashMap<String, String> daysOfWeek = null;
 
     private static final String UTILMETHODS_DEFAULT_ENCODING = "UTF-8";
+
+    private static final Set<String> VECTOR_EXTENSIONS = Set.of("svg", "eps", "ai", "dxf");
 
     public static final java.util.Date pidmsToDate(String d) {
         java.text.ParsePosition pos = new java.text.ParsePosition(0);
@@ -234,11 +237,25 @@ public class UtilMethods {
         }
     }
 
-    public static final boolean isImage(String x) {
-        if (x == null)
+    /**
+     * Takes the file name and attempts to determine whether it belongs to an image or not based on
+     * its extension.
+     *
+     * @param fileName The name of the file to check.
+     *
+     * @return If the file is an image, returns {@code true}.
+     */
+    public static boolean isImage(final String fileName) {
+        if (UtilMethods.isEmpty(fileName)) {
             return false;
-
-        return ImageIO.getImageReadersByFormatName(getFileExtension(x)).hasNext();
+        }
+        final String imageName = fileName.toLowerCase();
+        for (final String ext : FileUtil.IMAGE_EXTENSIONS.get()) {
+            if (imageName.endsWith(ext)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static final String getMonthFromNow() {
@@ -1358,6 +1375,12 @@ public class UtilMethods {
 
 
         return "";
+    }
+
+    public static String escapeHTMLCodeFromJSON(String json) {
+        json = json.replace("&#58;",":")
+                .replace("&#44;",",");
+        return json;
     }
 
 
@@ -3645,4 +3668,38 @@ public class UtilMethods {
     public static <T> T isSetOrGet(final T toEvaluate, final T defaultValue){
         return UtilMethods.isSet(toEvaluate) ? toEvaluate : defaultValue;
     }
+
+
+    /**
+     * Finds if the length of the given value is valid
+     *
+     * @param value
+     * @param maxLength
+     * @param <T>
+     * @return
+     */
+    public static <T extends CharSequence> boolean exceedsMaxLength(final T value, final int maxLength) {
+        return value != null && value.length() > maxLength;
+    }
+
+    /**
+     * Extracts the user id from a User object or returns null if the object is null
+     *
+     * @param user User object
+     * @return User id or null
+     */
+    public static String extractUserIdOrNull(final User user) {
+        return Optional.ofNullable(user).map(User::getUserId).orElse(null);
+    }
+
+    /**
+     * Determines whether the given file extension corresponds to a vector image format.
+     *
+     * @param fileExtension The extension of the file to be checked.
+     * @return true if the file extension indicates a vector image format; false otherwise.
+     */
+    public static boolean isVectorImage(String fileExtension) {
+        return VECTOR_EXTENSIONS.contains(fileExtension);
+    }
+
 }

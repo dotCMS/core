@@ -1,14 +1,13 @@
 <div class="dot-empty-container__notice">
     <span *ngIf="icon" class="material-icons" data-testid="material-icons">{{ icon }}</span>
-    <h3 class="dot-empty-container__title" data-testid="title" *ngIf="title">{{ title }}</h3>
-    <p class="dot-empty-container__content" data-testid="content" *ngIf="content">{{ content }}</p>
+    <h3 *ngIf="title" class="dot-empty-container__title" data-testid="title">{{ title }}</h3>
+    <p *ngIf="content" class="dot-empty-container__content" data-testid="content">{{ content }}</p>
     <button
+        (click)="handleClick($event)"
         pButton
         type="button"
         data-testid="button"
-        (click)="handleClick($event)"
-        label="{{ buttonLabel }}"
-    ></button>
+        label="{{ buttonLabel }}"></button>
 </div>
 <table class="dot-empty-state" data-testid="dot-empty-state">
     <tbody>
@@ -19,9 +18,8 @@
             <td
                 *ngFor="let width of colsTextWidth"
                 [ngStyle]="{ width: columnWidth }"
-                data-testid="dummy-text-td"
-            >
-                <span class="dot-dummy-text" [ngStyle]="{ width: width + '%' }"></span>
+                data-testid="dummy-text-td">
+                <span [ngStyle]="{ width: width + '%' }" class="dot-dummy-text"></span>
             </td>
         </tr>
     </tbody>

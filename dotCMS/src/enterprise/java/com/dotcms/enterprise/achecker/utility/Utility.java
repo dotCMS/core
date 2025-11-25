@@ -62,10 +62,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.XMLConstants;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Element;
@@ -241,7 +239,8 @@ public class Utility {
 
 	public static String getPlainNodeContent(Node node) {
 		try {
-			Transformer transformer = TransformerFactory.newInstance().newTransformer();
+			Transformer transformer = getTransformer();
+
 			StreamResult result = new StreamResult(new StringWriter());
 			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 			DOMSource source = new DOMSource(node);
@@ -255,7 +254,8 @@ public class Utility {
 
 	public static String getNodeContent(Node node) {
 		try {
-			Transformer transformer = TransformerFactory.newInstance().newTransformer();
+			Transformer transformer = getTransformer();
+
 			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 			//initialize StreamResult with File object to save to file
@@ -269,6 +269,15 @@ public class Utility {
 			Logger.error(Utility.class, e1.getMessage(),e1);
 		}
 		return null;
+	}
+
+	public static Transformer getTransformer() throws TransformerConfigurationException {
+			TransformerFactory transformerFactory = TransformerFactory.newInstance();
+			transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+			transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+
+			return transformerFactory.newTransformer();
+
 	}
 	
 	public static String joinList(String separator, List<?> list) {

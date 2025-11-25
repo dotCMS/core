@@ -2,7 +2,7 @@
     border-left: none;
 }
 
-.cw-rule-actions :host ::ng-deep p-autocomplete span.p-autocomplete-multiple{
+.cw-rule-actions :host ::ng-deep p-autocomplete span.p-autocomplete-multiple {
     display: flex;
 }
 

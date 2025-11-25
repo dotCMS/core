@@ -1,0 +1,344 @@
+# Release - CLI Workflow
+#
+# This workflow is responsible for releasing the CLI (Command Line Interface) tool.
+# It can be triggered automatically when a new release is created or manually via workflow dispatch.
+#
+# Note: this process will change when we migrate the core release process
+# It is a basis for that change but we will probably extract the commit of the version into
+# the .mvn/maven.config file into a separate manual "promotion" stes and then rely on the commit
+# to a github environment specific branch to trigger the build, test, deploy and release phases.
+#
+# Key features:
+# - Supports automatic releases and manual triggers
+# - Performs pre-checks and version management
+# - Builds and packages the CLI tool
+# - Publishes the CLI as an NPM package
+# - Sends Slack notifications upon successful release
+# - Cleans up temporary branches after release
+
+name: Release - CLI
+run-name: dotCLI Release ${{ inputs.version }} - dry-run=${{ inputs.dry-run }}
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        default: '1.0.0-SNAPSHOT'
+        required: false
+      dry-run:
+        description: 'Dry run'
+        default: 'false'
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ARTIFACT_RUN_ID: ${{ github.run_id }}
+  MVN_PACKAGE_TYPE: 'uber-jar'
+  NPM_PACKAGE_SCOPE: '@dotcms'
+  NPM_PACKAGE_NAME: 'dotcli'
+  MVN_PACKAGE_NAME: 'dotcms-cli'
+  NODE_VERSION: 19
+
+jobs:
+  # Initialize the release process
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+
+  # Perform pre-release checks and setup
+  precheck:
+    if: ${{ ( github.event_name == 'release' && !contains(github.event.release.tag_name, 'LTS')) || github.event_name == 'workflow_dispatch' }}
+    name: 'Pre-check'
+    runs-on: ubuntu-latest
+    outputs:
+      RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
+      HEAD: ${{ steps.version.outputs.HEAD }}
+      AUXILIARY_BRANCH: ${{ steps.version.outputs.AUXILIARY_BRANCH }}
+    steps:
+      # Log GitHub context for debugging
+      - name: 'Log GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "::group::Github Context"
+          echo "$GITHUB_CONTEXT"
+          if [[ "$GITHUB_EVENT_NAME" == 'release' ]]; then
+            TAG_NAME=${{ github.event.release.tag_name }}
+            RELEASE_VERSION=${TAG_NAME:1}
+          else
+            RELEASE_VERSION=${{ github.event.inputs.version }}
+          fi
+
+          echo "::notice:: Event name: $GITHUB_EVENT_NAME"
+          echo "::notice:: Release version: $RELEASE_VERSION"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+          echo "::endgroup::"
+
+      # Checkout the repository
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      # Setup git configuration
+      - name: 'Setup git config'
+        run: |
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
+
+      # Set release version and create auxiliary branch
+      - name: 'Set release version'
+        id: version
+        run: |
+          RELEASE_VERSION=$RELEASE_VERSION
+          HEAD=${{ github.ref_name }}
+          
+          # Create a release branch for versioning updates
+          AUXILIARY_BRANCH=version-update-${RELEASE_VERSION}-${{ github.run_id }}
+          git checkout -b $AUXILIARY_BRANCH
+          
+          # set version in .mvn/maven.config
+          echo "-Dprod=true" > .mvn/maven.config
+          echo "-Drevision=${RELEASE_VERSION}" >> .mvn/maven.config
+          echo "-Dchangelist=" >> .mvn/maven.config
+          
+          # Commit version changes
+          git add .mvn/maven.config
+          git status
+          git commit --allow-empty -a -m "🏁 Publishing dotCLI release version [${RELEASE_VERSION}]"
+          git push origin $AUXILIARY_BRANCH
+
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
+          echo "AUXILIARY_BRANCH=$AUXILIARY_BRANCH" >> "$GITHUB_OUTPUT"
+
+  # Build the release
+  build:
+    name: Release Build
+    needs: [ initialize, precheck ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
+      validate: false
+      version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+      generate-docker: false
+    permissions:
+      contents: read
+      packages: write
+
+  # Build CLI artifacts
+  build-cli:
+    name: Release CLI Build
+    needs: [ initialize, precheck, build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
+    with:
+      buildNativeImage: true
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+      branch: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
+
+  # Perform the release
+  release:
+    needs: [ precheck, build-cli ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Check out repository'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
+      - name: 'Create artifacts directory'
+        run: |
+          mkdir -p ${{ github.workspace }}/artifacts
+          echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
+
+      - name: 'Download all build artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}/artifacts
+          pattern: cli-artifacts-*
+      - uses: ./.github/actions/core-cicd/maven-job
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+          JRELEASER_DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
+        with:
+          cleanup-runner: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          stage-name: "JReleaser"
+          maven-args: "-Prelease validate -DartifactsDir=artifacts -Dm2Dir=$HOME/.m2/repository -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE"
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+
+  # Publish NPM package
+  publish-npm-package:
+    name: "Publish NPM Package"
+    if: success()  # Run only if explicitly indicated and successful
+    needs: [ precheck, build, build-cli, release ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.precheck.outputs.HEAD }}
+
+      - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      - name: 'Set up Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 'Install Jinja2'
+        run: pip install jinja2-cli
+
+      - name: 'Download all build artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}/artifacts
+          pattern: cli-artifacts-*
+          merge-multiple: true
+
+      # Determines the NPM package version and tag
+      # Distinguishes between snapshots and releases
+      - name: 'Dynamic configuration of NPM package Version and Tag'
+        env:
+          RELEASE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+        run: |
+          MVN_PACKAGE_VERSION=$(echo ${{ env.RELEASE_VERSION }} | tr '[:lower:]' '[:upper:]')
+          PACKAGE_FULL_NAME=${{ env.NPM_PACKAGE_SCOPE }}/${{ env.NPM_PACKAGE_NAME }}
+
+          # Check if the npm package exists
+          if ! npm view $PACKAGE_FULL_NAME &> /dev/null; then
+            echo "::error::The package $PACKAGE_FULL_NAME does not exist on npm."
+            exit 1
+          fi
+
+          # Check if the package is a snapshot
+          REGEX="([0-9]+\.[0-9]+\.[0-9]+)-SNAPSHOT"
+
+          if [[ $MVN_PACKAGE_VERSION =~ $REGEX ]]; then
+            echo "::debug::Snapshot version found."
+
+            NPM_PACKAGE_VERSION_TAG="rc"
+            MVN_BASE_VERSION="${BASH_REMATCH[1]}"
+
+            # Use regular expression to extract version components
+            if [[ $MVN_BASE_VERSION =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+              MAJOR=$(echo "${BASH_REMATCH[1]}" | sed "s/\b0\+\([1-9]\)/\1/g")
+              MINOR=$(echo "${BASH_REMATCH[2]}" | sed "s/\b0\+\([1-9]\)/\1/g")
+              PATCH=$(echo "${BASH_REMATCH[3]}" | sed "s/\b0\+\([1-9]\)/\1/g")
+              VERSION_NPM_FORMAT="${MAJOR}.${MINOR}.${PATCH}"
+
+              echo "::debug::VERSION_NPM_FORMAT: ${VERSION_NPM_FORMAT}"
+            else
+              echo "::error::Invalid Maven version format: $MVN_BASE_VERSION"
+              exit 1
+            fi
+
+            echo "VERSION_NPM_FORMAT: ${VERSION_NPM_FORMAT}"
+            # Get last RC versions
+            LATEST_RC_VERSIONS=$(npm view $PACKAGE_FULL_NAME versions --json)
+            echo "LATEST_RC_VERSIONS: ${LATEST_RC_VERSIONS}"
+
+            # Extract max RC version
+            MAX_RC_VERSION=$(echo $LATEST_RC_VERSIONS | jq -r --arg filter $VERSION_NPM_FORMAT-rc 'map(.| select(. | contains($filter)) | sub($filter; "") | tonumber ) | max')
+            echo "MAX_RC_VERSION: ${MAX_RC_VERSION}"
+          
+            if [[ $MAX_RC_VERSION != null ]]; then
+              RC_SUFFIX="-rc$(( $MAX_RC_VERSION + 1 ))"
+            else
+              RC_SUFFIX="-rc1"
+            fi;
+
+            NPM_PACKAGE_VERSION=${MVN_BASE_VERSION}${RC_SUFFIX}
+          else
+            echo "::debug::Release version found."
+            NPM_PACKAGE_VERSION_TAG="latest"
+            NPM_PACKAGE_VERSION=${MVN_PACKAGE_VERSION}
+          fi;
+          echo "::debug::NPM_PACKAGE_VERSION: $NPM_PACKAGE_VERSION"
+          echo "::debug::NPM_PACKAGE_VERSION_TAG: $NPM_PACKAGE_VERSION_TAG"
+
+          echo "NPM_PACKAGE_VERSION=$NPM_PACKAGE_VERSION" >> $GITHUB_ENV
+          echo "NPM_PACKAGE_VERSION_TAG=$NPM_PACKAGE_VERSION_TAG" >> $GITHUB_ENV
+
+      # Sets up the NPM package
+      # Creates the bin folder with the binaries
+      # Adds the postinstall.js script
+      # Generates the package.json file with Jinja2
+      - name: 'NPM Package setup'
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
+        env:
+          MVN_PACKAGE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+        run: |
+          echo "::group::NPM Package setup"
+          echo "Adding bin folder with all the binaries"
+          mkdir -p bin
+          find ${{ github.workspace }}/artifacts/ -name "*.zip" -exec unzip -d bin {} \;
+
+          echo "Adding wrapper script"
+          mv src/postinstall.js.seed src/postinstall.js
+
+          echo "Adding README.md file"
+          cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
+
+          echo "Adding package.json file"
+          jinja2 package.j2 -D packageName=${MVN_PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} -D packageVersion=${MVN_PACKAGE_VERSION} --format json -o package.json
+          rm -f package.j2
+
+          cat package.json
+          cat src/postinstall.js
+          echo "::endgroup::"
+
+      - name: 'NPM Package tree'
+        run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
+
+      - name: 'Publish to NPM registry'
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+          npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
+
+      - name: Slack Notification
+        continue-on-error: true
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+          SLACK_TITLE: "Important news!"
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of *dotCLI* `${{ needs.precheck.outputs.RELEASE_VERSION }}` :package: is available on the `NPM` registry!"
+          SLACK_USERNAME: dotBot
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
+
+  # Clean up temporary branches
+  clean-up:
+    name: "Clean Up"
+    if: ${{ needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
+    needs: [ precheck, build, build-cli, release, publish-npm-package ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.precheck.outputs.HEAD }}
+
+      - name: 'Delete release auxiliary branch - ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}'
+        run: |
+          git push origin --delete ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}

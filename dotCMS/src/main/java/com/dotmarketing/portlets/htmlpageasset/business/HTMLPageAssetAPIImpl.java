@@ -8,6 +8,7 @@ import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -71,6 +72,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Implementation class for the {@link HTMLPageAssetAPI} interface.
+ *
+ * @author Jorge Urdaneta
+ * @since Aug 28th, 2014
+ */
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     public static final Lazy<String> CMS_INDEX_PAGE = Lazy.of(() -> Config.getStringProperty(
@@ -245,51 +252,57 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @CloseDBIfOpened
     @Override
-    public IHTMLPage getPageByPath(String uri, Host host, Long languageId, Boolean live) throws DotDataException, DotSecurityException {
+    public IHTMLPage getPageByPath(final String uri, final Host site, final Long languageId, final Boolean live) {
+        Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath URI: " + uri + " Site: " + site + " LanguageId: " + languageId + " Live: " + live);
         Identifier id;
         if(!UtilMethods.isSet(uri)){
             return null;
         }
-
-        if (CMSUrlUtil.getInstance().isFolder(uri, host)) {
-            id = this.getIndexPageIdentifier(uri, host);
+        final String errorMsg = "Unable to find '%s' HTML Page with URI '%s' in language '%s' in Site '%s' [%s]: %s";
+        if (CMSUrlUtil.getInstance().isFolder(uri, site)) {
+            id = this.getIndexPageIdentifier(uri, site);
         } else {
             try {
-                id = identifierAPI.find(host, uri);
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find URI: " + uri);
+                id = this.identifierAPI.find(site, uri);
+            } catch (final Exception e) {
+                Logger.error(this, String.format(errorMsg, live ? "live" : "working",
+                        uri, languageId, site, site.getIdentifier(),
+                        ExceptionUtil.getErrorMessage(e)), e);
                 return null;
             }
         }
-
+        Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath Identifier: " + (id== null? "Not Found" : id.toString()));
         if (id == null || id.getId() == null) {
             return null;
         }
 
-        if ("contentlet".equals(id.getAssetType())) {
+        if (Identifier.ASSET_TYPE_CONTENTLET.equals(id.getAssetType())) {
             try {
                 final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+                Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath currentVariantId: " + currentVariantId);
                 Optional<ContentletVersionInfo> cinfo = versionableAPI
                         .getContentletVersionInfo( id.getId(), languageId, currentVariantId);
-
-                if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
+                Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath contentletVersionInfo: " + (cinfo.isEmpty() ? "Not Found" : cinfo.toString()));
+                if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(CMSUrlUtil.NOT_FOUND)) {
 
                     cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId);
 
-                    if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
+                    if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(CMSUrlUtil.NOT_FOUND)) {
+                        Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath contentletVersionInfo not found");
                         return null;
                     }
                 }
 
-                Contentlet contentlet = contentletAPI.find(live ? cinfo.get().getLiveInode()
-                        : cinfo.get().getWorkingInode(), userAPI.getSystemUser(), false);
-
-                if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                final Contentlet contentlet = this.contentletAPI.find(live ? cinfo.get().getLiveInode()
+                        : cinfo.get().getWorkingInode(), this.userAPI.getSystemUser(), false);
+                Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath contentlet: " + contentlet.toString());
+                if (BaseContentType.HTMLPAGE.getType() == contentlet.getContentType().baseType().getType()) {
                     return fromContentlet(contentlet);
                 }
-
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find URI: " + uri);
+            } catch (final Exception e) {
+                Logger.error(this, String.format(errorMsg, live ? "live" : "working",
+                        uri, languageId, site, site.getIdentifier(),
+                        ExceptionUtil.getErrorMessage(e)));
                 return null;
             }
         }

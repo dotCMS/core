@@ -11,10 +11,19 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link TagFactory} interface.
@@ -24,6 +33,7 @@ import java.util.*;
  */
 public class TagFactoryImpl implements TagFactory {
 
+    private static final Lazy<Integer> MAX_TOP_TAGS = Lazy.of(() -> Config.getIntProperty("MAX_TOP_TAGS", 1000));
     private static final String TAG_COLUMN_TAG_ID = "tag_id";
     private static final String TAG_COLUMN_TAGNAME = "tagname";
     private static final String TAG_COLUMN_HOST_ID = "host_id";
@@ -315,7 +325,7 @@ public class TagFactoryImpl implements TagFactory {
         } catch ( Exception e ) {
             Logger.warn(Tag.class, "getFilteredTags failed: " + e, e);
         }
-        return new java.util.ArrayList<>();
+        return List.of();
     }
 
     @Override
@@ -483,7 +493,7 @@ public class TagFactoryImpl implements TagFactory {
             tagInodeCache.putForTagId(tagId, tagInodes);
         }
 
-        return tagInodes;
+        return List.copyOf(tagInodes);
     }
 
     @Override
@@ -626,7 +636,7 @@ public class TagFactoryImpl implements TagFactory {
             tagCache.putForInode(inode, tags);
         }
 
-        return tags;
+        return List.copyOf(tags);
     }
 
     @Override
@@ -648,7 +658,40 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return tags;
+        return List.copyOf(tags);
+    }
+
+    @Override
+    public Set<String> getTopTagsBySiteId(final String siteId) throws DotDataException {
+
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(siteId));
+
+        final String selectTopTagsQuery =
+                "select distinct(tagname), count(tinode) from " +
+                        "( " +
+                        "   select lower(tagname) as tagname, tag_inode.inode as tinode " +
+                        "   from  " +
+                        "   tag, tag_inode  " +
+                        "   where  " +
+                        "   tag.tag_id=tag_inode.tag_id  " +
+                        "   and tag.host_id=? " +
+                        "UNION ALL " +
+                        "   select lower(tagname) as tagname, tag_inode.inode as tinode " +
+                        "   from  " +
+                        "   tag, tag_inode  " +
+                        "   where  " +
+                        "   tag.tag_id=tag_inode.tag_id  " +
+                        ") as foo  " +
+                        "group by tagname  " +
+                        "order by count(tinode) desc " +
+                        "limit " + MAX_TOP_TAGS.get();
+
+        final List<Map<String, Object>> results = new DotConnect()
+                .setSQL(selectTopTagsQuery)
+                .addParam(siteId)
+                .loadObjectResults();
+
+        return results.stream().map(row -> row.get(TAG_COLUMN_TAGNAME).toString()).collect(Collectors.toUnmodifiableSet());
     }
 
     /**
@@ -681,7 +724,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return new ArrayList<>(tagsMap.values());
+        return List.copyOf(tagsMap.values());
     }
 
     /**
@@ -701,7 +744,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return tags;
+        return List.copyOf(tags);
     }
 
     /**
@@ -721,7 +764,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return tagInodes;
+        return List.copyOf(tagInodes);
     }
 
 	/**

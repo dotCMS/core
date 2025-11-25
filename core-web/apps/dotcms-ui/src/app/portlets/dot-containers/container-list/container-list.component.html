@@ -3,9 +3,9 @@
         <dot-content-type-selector
             (selected)="changeContentTypeSelector($event)"></dot-content-type-selector>
         <input
-            #gf
-            (input)="handleQueryFilter($event.target.value)"
             (keydown.arrowdown)="focusFirstRow()"
+            #gf
+            (input)="handleQueryFilter(gf.value)"
             pInputText
             placeholder="{{ 'Type-to-filter' | dm }}"
             type="text"
@@ -13,33 +13,34 @@
         <div class="container-listing__header-options">
             <div class="container-listing__filter-controls">
                 <p-checkbox
+                    (onChange)="handleArchivedFilter($event.checked)"
                     [label]="'Show-Archived' | dm"
                     [binary]="true"
-                    (onChange)="handleArchivedFilter($event.checked)"
                     data-testId="archiveCheckbox"></p-checkbox>
             </div>
 
             <div>
                 <button
-                    class="p-button-outlined p-button"
+                    (click)="handleActionMenuOpen($event)"
                     [label]="'Actions' | dm"
                     [disabled]="!selectedContainers.length"
-                    (click)="handleActionMenuOpen($event)"
+                    class="p-button-outlined p-button"
                     type="button"
                     pButton
                     icon="pi pi-ellipsis-v"
                     data-testId="bulkActions"></button>
 
                 <p-menu
-                    #actionsMenu
                     [popup]="true"
                     [model]="vm.containerBulkActions"
+                    #actionsMenu
                     appendTo="body"></p-menu>
             </div>
         </div>
     </dot-action-header>
     <p-table
         *ngIf="vm.tableColumns && vm.actionHeaderOptions"
+        (onPage)="loadDataPaginationEvent($event)"
         [(selection)]="selectedContainers"
         [columns]="vm.tableColumns"
         [value]="vm.containers"
@@ -48,7 +49,6 @@
         [pageLinks]="vm.maxPageLinks"
         [totalRecords]="vm.totalRecords"
         [responsiveLayout]="'scroll'"
-        (onPage)="loadDataPaginationEvent($event)"
         selectionMode="multiple"
         loadingIcon="pi pi-spin pi-spinner"
         dataKey="inode"
@@ -71,7 +71,8 @@
         </ng-template>
         <ng-template let-columns="columns" let-rowData pTemplate="body">
             <tr
-                #tableRow
+                (click)="handleRowClick(rowData)"
+                (keyup.enter)="handleRowClick(rowData)"
                 [ngClass]="{ 'disabled-row': rowData.disableInteraction }"
                 [pSelectableRowDisabled]="rowData.disableInteraction"
                 [pContextMenuRowDisabled]="rowData.disableInteraction"
@@ -80,31 +81,27 @@
                 [pSelectableRow]="rowData"
                 [attr.data-testId]="rowData?.variable ? 'row-' + rowData.variable : null"
                 [attr.data-disabled]="rowData.disableInteraction"
-                (click)="handleRowClick(rowData)"
-                (keyup.enter)="handleRowClick(rowData)"
+                #tableRow
                 data-testClass="testTableRow">
                 <td (click)="$event.stopPropagation()">
                     <p-tableCheckbox
                         *ngIf="!rowData.disableInteraction"
+                        (click)="$event.stopPropagation()"
                         [value]="rowData"
-                        [attr.test-id]="rowData.friendlyName"
-                        (click)="$event.stopPropagation()"></p-tableCheckbox>
+                        [attr.test-id]="rowData.friendlyName"></p-tableCheckbox>
                 </td>
                 <td [ngStyle]="{ 'text-align': vm.tableColumns[0].textAlign }">
                     {{ rowData.name }}
-                    <ng-container *ngIf="rowData.path"
-                        >-
-                        <span class="container-listing__path">{{
-                            rowData.path
-                        }}</span></ng-container
-                    >
+                    <ng-container *ngIf="rowData.path">
+                        -
+                        <span class="container-listing__path">{{ rowData.path }}</span>
+                    </ng-container>
                 </td>
                 <td [ngStyle]="{ 'text-align': vm.tableColumns[1].textAlign }">
                     <dot-state-icon
                         [labels]="vm.stateLabels"
                         [state]="getContainerState(rowData)"
-                        size="14px">
-                    </dot-state-icon>
+                        size="14px"></dot-state-icon>
                 </td>
                 <td [ngStyle]="{ 'text-align': vm.tableColumns[2].textAlign }">
                     {{ rowData.friendlyName }}
@@ -114,12 +111,11 @@
                 </td>
                 <td style="width: 5%">
                     <dot-action-menu-button
-                        class="listing-datatable__action-button"
                         *ngIf="!rowData.disableInteraction"
                         [attr.data-testid]="rowData.identifier"
                         [actions]="setContainerActions(rowData)"
-                        [item]="rowData">
-                    </dot-action-menu-button>
+                        [item]="rowData"
+                        class="listing-datatable__action-button"></dot-action-menu-button>
                 </td>
             </tr>
         </ng-template>
@@ -132,6 +128,6 @@
 
     <dot-add-to-bundle
         *ngIf="vm.addToBundleIdentifier"
-        [assetIdentifier]="vm.addToBundleIdentifier"
-        (cancel)="resetBundleIdentifier()"></dot-add-to-bundle>
+        (cancel)="resetBundleIdentifier()"
+        [assetIdentifier]="vm.addToBundleIdentifier"></dot-add-to-bundle>
 </dot-portlet-base>

@@ -9,16 +9,19 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotBulkInformationModule } from '@components/_common/dot-bulk-information/dot-bulk-information.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotSiteBrowserService } from '@dotcms/data-access';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotBinaryOptionSelectorComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
-import { DotBinaryOptionSelectorComponent } from '@portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
 
 import { DotTemplateListComponent } from './dot-template-list.component';
 
@@ -34,8 +37,8 @@ import { DotTemplateListComponent } from './dot-template-list.component';
         MenuModule,
         ButtonModule,
         DotActionButtonModule,
-        DotActionMenuButtonModule,
-        DotAddToBundleModule,
+        DotActionMenuButtonComponent,
+        DotAddToBundleComponent,
         DynamicDialogModule,
         DotBulkInformationModule,
         DotBinaryOptionSelectorComponent,

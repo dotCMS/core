@@ -1,6 +1,7 @@
-import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSError } from '../models';
 import { DotCMSContentTypeLayoutRow, DotCMSContentType } from 'dotcms-models';
+
+import { DotCMSError } from '../models';
+import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 
 /**
  * Get the information of DotCMS contentTypes
@@ -26,6 +27,7 @@ export class DotApiContentType {
         }
 
         const data = await response.json();
+
         return data.entity;
     }
 

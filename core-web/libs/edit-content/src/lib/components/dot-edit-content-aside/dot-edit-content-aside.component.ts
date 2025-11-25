@@ -1,22 +1,12 @@
-import { Observable, of } from 'rxjs';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { AsyncPipe, NgIf, NgSwitch, NgSwitchCase, SlicePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { TabViewModule } from 'primeng/tabview';
 
-import { ChipModule } from 'primeng/chip';
+import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotWorkflowService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
-import {
-    DotApiLinkComponent,
-    DotCopyButtonComponent,
-    DotLinkComponent,
-    DotMessagePipe,
-    DotRelativeDatePipe
-} from '@dotcms/ui';
-
-import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
+import { DotContentAsideInformationComponent } from './components/dot-content-aside-information/dot-content-aside-information.component';
+import { DotContentAsideWorkflowComponent } from './components/dot-content-aside-workflow/dot-content-aside-workflow.component';
 
 @Component({
     selector: 'dot-edit-content-aside',
@@ -25,35 +15,35 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
     styleUrls: ['./dot-edit-content-aside.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgIf,
-        NgSwitch,
-        NgSwitchCase,
-        SlicePipe,
-        DotApiLinkComponent,
-        DotCopyButtonComponent,
-        DotRelativeDatePipe,
-        ChipModule,
         DotMessagePipe,
-        ContentletStatusPipe,
-        RouterLink,
-        AsyncPipe,
-        DotLinkComponent
-    ],
-    providers: [DotWorkflowService]
+        DotContentAsideInformationComponent,
+        DotContentAsideWorkflowComponent,
+        TabViewModule
+    ]
 })
-export class DotEditContentAsideComponent implements OnInit {
-    @Input() contentLet!: DotCMSContentlet;
-    @Input() contentType!: string;
+export class DotEditContentAsideComponent {
+    /**
+     * A variable with the contentlet information
+     */
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
-    private readonly workFlowService = inject(DotWorkflowService);
+    /**
+     * A variable with the content type
+     */
+    $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 
-    workflow$!: Observable<DotCMSWorkflowStatus>;
+    /**
+     * A variable to control the loading state
+     */
+    $loading = input.required<boolean>({ alias: 'loading' });
 
-    ngOnInit() {
-        if (this.contentLet?.inode) {
-            this.workflow$ = this.workFlowService.getWorkflowStatus(this.contentLet.inode);
-        } else {
-            this.workflow$ = of({ scheme: null, step: null, task: null });
-        }
-    }
+    /**
+     * A variable to control the collapsed state
+     */
+    $collapsed = input.required<boolean>({ alias: 'collapsed' });
+
+    /**
+     * A variable to control the toggle state
+     */
+    $toggle = output<boolean>({ alias: 'toggle' });
 }

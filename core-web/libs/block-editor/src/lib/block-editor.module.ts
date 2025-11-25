@@ -5,18 +5,31 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 // DotCMS JS
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { PaginatorModule } from 'primeng/paginator';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentSearchService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPropertiesService,
+    DotUploadFileService,
+    DotAiService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotAssetSearchComponent,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotSpinnerModule
+} from '@dotcms/ui';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
-    AIContentActionsComponent,
-    AIContentPromptComponent,
-    AIImagePromptComponent,
     BubbleFormComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
@@ -29,7 +42,7 @@ import {
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
-import { DotAiService, DotUploadFileService, EditorDirective } from './shared';
+import { EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
 
@@ -49,7 +62,11 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         UploadPlaceholderComponent,
         DotMessagePipe,
         ConfirmDialogModule,
-        AIImagePromptComponent
+        DotAssetSearchComponent,
+        DialogModule,
+        InputTextareaModule,
+        PaginatorModule,
+        DotSpinnerModule
     ],
     declarations: [
         EditorDirective,
@@ -63,9 +80,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         SuggestionPageComponent,
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
-        FloatingButtonComponent,
-        AIContentPromptComponent,
-        AIContentActionsComponent
+        FloatingButtonComponent
     ],
     providers: [
         DotUploadFileService,
@@ -73,6 +88,10 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         StringUtils,
         DotAiService,
         ConfirmationService,
+        DotPropertiesService,
+        DotContentSearchService,
+        DotLanguagesService,
+        DotWorkflowActionsFireService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,
@@ -88,8 +107,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent,
-        AIContentPromptComponent,
-        AIContentActionsComponent
+        DotSpinnerModule
     ]
 })
 export class BlockEditorModule {}

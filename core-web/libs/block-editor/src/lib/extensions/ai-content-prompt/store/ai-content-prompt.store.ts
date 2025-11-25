@@ -1,62 +1,135 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { switchMap, withLatestFrom } from 'rxjs/operators';
 
+import { DotAiService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { DotAiService } from '../../../shared';
+export interface AiGenerateContent {
+    prompt: string;
+    content: string;
+    error?: string;
+}
 
 export interface AiContentPromptState {
     prompt: string;
-    content: string;
-    acceptContent: boolean;
-    deleteContent: boolean;
+    generatedContent: AiGenerateContent[];
+    selectedContent: string;
+    activeIndex: number;
     status: ComponentStatus;
-    error: string;
+    showDialog: boolean;
+    submitLabel: string;
 }
+
+const initialState: AiContentPromptState = {
+    prompt: '',
+    generatedContent: [],
+    selectedContent: '',
+    activeIndex: null,
+    status: ComponentStatus.INIT,
+    showDialog: false,
+    submitLabel: 'block-editor.extension.ai-image.generate'
+};
 
 @Injectable({
     providedIn: 'root'
 })
 export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     //Selectors
-    readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
-    readonly content$ = this.select((state) => state.content);
-    readonly deleteContent$ = this.select((state) => state.deleteContent);
+    readonly activeIndex$ = this.select((state) => state.activeIndex);
+    readonly generatedContent$ = this.select((state) => state.generatedContent);
     readonly status$ = this.select((state) => state.status);
+    readonly showDialog$ = this.select((state) => state.showDialog);
+    readonly selectedContent$ = this.select((state) => state.selectedContent);
     readonly vm$ = this.select((state) => state);
+
+    readonly activeContent$ = this.select(
+        this.activeIndex$,
+        this.generatedContent$,
+        (activeIndex, generatedContent) => {
+            return generatedContent[activeIndex];
+        }
+    );
+
+    readonly submitLabel$ = this.select(
+        this.status$,
+        this.generatedContent$,
+        (status, generatedContent) => {
+            if (status === ComponentStatus.LOADING) {
+                return 'block-editor.extension.ai-image.generating';
+            }
+
+            return generatedContent.length
+                ? 'block-editor.extension.ai-image.regenerate'
+                : 'block-editor.extension.ai-image.generate';
+        }
+    );
+
     //Updaters
     readonly setStatus = this.updater((state, status: ComponentStatus) => ({
         ...state,
         status
     }));
-    readonly setAcceptContent = this.updater((state, acceptContent: boolean) => ({
+
+    readonly setSelectedContent = this.updater((state, selectedContent: string) => ({
         ...state,
-        acceptContent
+        showDialog: false,
+        selectedContent
     }));
-    readonly setDeleteContent = this.updater((state, deleteContent: boolean) => ({
+
+    readonly showDialog = this.updater(() => {
+        return {
+            ...initialState,
+            generatedContent: [],
+            showDialog: true
+        };
+    });
+
+    readonly hideDialog = this.updater((state) => ({
         ...state,
-        deleteContent
+        showDialog: false
     }));
+
+    readonly updateActiveIndex = this.updater((state, activeIndex: number) => ({
+        ...state,
+        activeIndex
+    }));
+
     // Effects
     readonly generateContent = this.effect((prompt$: Observable<string>) => {
         return prompt$.pipe(
-            switchMap((prompt) => {
+            withLatestFrom(this.state$),
+            switchMap(([prompt, { generatedContent, activeIndex }]) => {
                 this.patchState({ status: ComponentStatus.LOADING, prompt });
 
                 return this.dotAiService.generateContent(prompt).pipe(
                     tapResponse(
-                        (content) => {
-                            this.patchState({ status: ComponentStatus.LOADED, content, error: '' });
+                        (response) => {
+                            const newContent = { prompt, content: response };
+                            generatedContent[activeIndex]?.error
+                                ? (generatedContent[activeIndex] = newContent)
+                                : generatedContent.push(newContent);
+
+                            this.patchState({
+                                status: ComponentStatus.IDLE,
+                                generatedContent: [...generatedContent], // like this to cover the scenario when replacing an error.
+                                activeIndex: generatedContent.length - 1
+                            });
                         },
                         (error: string) => {
+                            const errorContent = { prompt, content: null, error };
+
+                            generatedContent[activeIndex]?.error
+                                ? (generatedContent[activeIndex] = errorContent)
+                                : generatedContent.push(errorContent);
+
                             this.patchState({
-                                status: ComponentStatus.LOADED,
-                                content: '',
-                                error: error
+                                status: ComponentStatus.IDLE,
+                                generatedContent,
+                                activeIndex: generatedContent.length - 1
                             });
                         }
                     )
@@ -64,33 +137,13 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
             })
         );
     });
-    /**
-     * When this effect is triggered, it uses the latest prompt value from the store's state
-     * to generate content using the `generateContent` effect.
-     *
-     * @param trigger$ - An observable that triggers the effect when it emits a value (e.g., `this.reGenerateContent()`)
-     * @returns An observable representing the triggering of the effect.
-     * @memberof AiContentPromptStore
-     */
-    readonly reGenerateContent = this.effect((trigger$: Observable<void>) => {
-        return trigger$.pipe(
-            withLatestFrom(this.state$),
-            tap(([_, { prompt }]) => this.generateContent(of(prompt)))
-        );
-    });
+
     readonly cleanError = this.updater((state) => ({
         ...state,
         error: ''
     }));
 
     constructor(private dotAiService: DotAiService) {
-        super({
-            prompt: '',
-            content: '',
-            acceptContent: false,
-            deleteContent: false,
-            status: ComponentStatus.INIT,
-            error: ''
-        });
+        super({ ...initialState });
     }
 }

@@ -52,15 +52,7 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
      */
     goToCreatePage(variableName: string): void {
         this.ref.close();
-
-        // Get the feature flag from the store and change the routing
-        const url =
-            this.config.data.isContentEditor2Enabled &&
-            !this.shouldRedirectToOldContentEditor(variableName)
-                ? `content/new/${variableName}`
-                : `/pages/new/${variableName}`;
-
-        this.dotRouterService.goToURL(url);
+        this.dotRouterService.goToURL(`/pages/new/${variableName}`);
     }
 
     ngOnInit(): void {
@@ -88,20 +80,5 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
-    }
-
-    /**
-     * Check if the content type is in the feature flag list
-     *
-     * @private
-     * @param {string} contentType
-     * @return {*}  {boolean}
-     * @memberof DotCustomEventHandlerService
-     */
-    private shouldRedirectToOldContentEditor(contentType: string): boolean {
-        return (
-            !this.config.data.availableContentTypes.includes('*') &&
-            this.config.data.availableContentTypes.indexOf(contentType) === -1
-        );
     }
 }

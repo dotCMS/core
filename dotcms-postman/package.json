@@ -1,0 +1,15 @@
+{
+    "name": "dotcms-postman",
+    "version": "1.0.0",
+    "description": "newman test runner",
+    "main": "index.js",
+    "license": "MIT",
+    "dependencies": {
+        "newman": "^5.3.2",
+        "xml2js": "^0.6.2",
+        "yargs": "^17.7.2"
+    },
+    "scripts": {
+        "start": "node index.js"
+    }
+}

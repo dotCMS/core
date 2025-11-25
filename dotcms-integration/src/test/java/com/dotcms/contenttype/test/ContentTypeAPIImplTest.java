@@ -1,10 +1,63 @@
 package com.dotcms.contenttype.test;
 
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.CopyContentTypeBean;
+import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
-import com.dotcms.contenttype.model.type.*;
-import com.dotcms.datagen.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
+import com.dotcms.contenttype.model.field.ImmutableDateField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.OnePerContentType;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.contenttype.model.type.EnterpriseType;
+import com.dotcms.contenttype.model.type.Expireable;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.FormContentType;
+import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
+import com.dotcms.contenttype.model.type.ImmutableFormContentType;
+import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
+import com.dotcms.contenttype.model.type.ImmutablePageContentType;
+import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType;
+import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
+import com.dotcms.contenttype.model.type.KeyValueContentType;
+import com.dotcms.contenttype.model.type.PageContentType;
+import com.dotcms.contenttype.model.type.PersonaContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.contenttype.model.type.WidgetContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -13,6 +66,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -22,13 +76,19 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
+import junit.framework.TestCase;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
@@ -36,10 +96,21 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
 import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
@@ -47,8 +118,17 @@ import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
+/**
+ * This Integration Test verifies that the {@link ContentTypeAPI} is working as expected.
+ *
+ * @author Will Ezell
+ * @since Nov 14th, 2016
+ */
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
@@ -86,7 +166,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			fieldList.add(plot);
 			fieldList.add(boxOffice);
 
-			contentTypeAPI.save(movieOriginal, fieldList);
+			movieOriginal = contentTypeAPI.save(movieOriginal, fieldList);
 
 			final List<Field> fieldsRecovery = APILocator.getContentTypeFieldAPI().byContentTypeId(movieOriginal.id());
 
@@ -423,7 +503,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		final List<Field> fields = dotAssetContentType.fields();
 
-		assertEquals(dotAssetContentType.baseType(), BaseContentType.DOTASSET);
+		TestCase.assertEquals(dotAssetContentType.baseType(), BaseContentType.DOTASSET);
 		assertEquals(dotAssetContentType.variable().toLowerCase(), variable.toLowerCase());
 		//Check that the defaultType attribute in the new ContentType is set to true
 		assertTrue(!fields.isEmpty());
@@ -970,7 +1050,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 							.owner(user.getUserId())
 							.build());
 
-			Assert.assertNotEquals(varname, type.variable());
+			assertNotEquals(varname, type.variable());
 		} finally {
 			if(type!=null) {
 				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
@@ -1610,7 +1690,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
                 fieldFound = field;
             }
         }
-        Assert.assertNotNull( fieldFound );
+        assertNotNull( fieldFound );
         Assert.assertEquals( FIRST_NAME, fieldFound.name() );
 
         Field fieldToSaveDifferentID = FieldBuilder.builder( TextField.class )
@@ -1634,7 +1714,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
                 fieldFound = field;
             }
         }
-        Assert.assertNotNull( fieldFound );
+        assertNotNull( fieldFound );
         Assert.assertEquals( SECOND_NAME, fieldFound.name() );
 
 		//Deleting content type.
@@ -1713,7 +1793,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				.save(languageVariableTypeWithAnotherHost);
 		savedLanguagaVariableType = contentTypeApi.find(savedLanguagaVariableType.variable());
 		assertEquals(savedLanguagaVariableType.host(), Host.SYSTEM_HOST);
-		assertEquals(fields, savedLanguagaVariableType.fields());
+		TestCase.assertEquals(fields, savedLanguagaVariableType.fields());
 	}
 
 	private void createContentTypeWithPublishExpireFields(int base) throws Exception{
@@ -2040,9 +2120,9 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
      folderType = contentTypeApi.save(folderType);
 
-     assertEquals(systemHostType.getParentPermissionable(), APILocator.systemHost());
-     assertEquals(hostType.getParentPermissionable(), site);
-     assertEquals(folderType.getParentPermissionable(), folder);
+     TestCase.assertEquals(systemHostType.getParentPermissionable(), APILocator.systemHost());
+     TestCase.assertEquals(hostType.getParentPermissionable(), site);
+     TestCase.assertEquals(folderType.getParentPermissionable(), folder);
    }
 
 
@@ -2183,7 +2263,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 							.owner(user.getUserId())
 							.build());
 
-			Assert.assertNotEquals(reservedVar, type.variable());
+			assertNotEquals(reservedVar, type.variable());
 		} finally {
 			if(type!=null) {
 				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
@@ -2536,5 +2616,291 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	}
 
+	/**
+	 * <ul>
+	 *     <li><b>Method to test: </b>{@link ContentTypeAPI#deleteSync(ContentType)} (ContentType)}</li>
+	 *     <li><b>Given Scenario: </b>Creates a test Content Type and deletes it.</li>
+	 *     <li><b>Expected Result: </b>This method will delete the specified Content Type BUT it
+	 *     will be done in the same transaction. So, requesting it to the API immediately will throw
+	 *     a {@link NotFoundInDbException}.</li>
+	 * </ul>
+	 */
+	@Test(expected = NotFoundInDbException.class)
+	public void deleteContentTypeSync() throws DotDataException, DotSecurityException {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		final String testTypeName = "My Test Content Type-" + System.currentTimeMillis();
+
+		// ╔════════════════════════╗
+		// ║  Generating Test data  ║
+		// ╚════════════════════════╝
+		final ContentType testType = createContentType(testTypeName);
+		contentTypeAPI.deleteSync(testType);
+
+		// ╔══════════════╗
+		// ║  Assertions  ║
+		// ╚══════════════╝
+		// This call must throw the expected Exception
+		contentTypeAPI.find(testType.variable());
+	}
+
+	/**
+	 * <ul>
+	 *     <li><b>Method to test:
+	 *     </b>{@link ContentTypeAPI#copyFromAndDependencies(CopyContentTypeBean)}</li>
+	 *     <li><b>Given Scenario: </b>Creates a test Content Type and a test Workflow Schemes. Then,
+	 *     assigns it to the test Content Type. Finally, copies the source Content Type and its
+	 *     dependencies.</li>
+	 *     <li><b>Expected Result: </b>The copied Content Type must point to the same Workflow
+	 *     Scheme as it was copied with dependencies.</li>
+	 * </ul>
+	 */
+	@Test
+	public void testCopyFromAndDependencies() throws DotDataException, DotSecurityException {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+		final long millis = System.currentTimeMillis();
+		ContentType sourceContentType = null;
+		ContentType copiedContentType = null;
+		WorkflowScheme workflowScheme = null;
+		try {
+			// ╔════════════════════════╗
+			// ║  Generating Test data  ║
+			// ╚════════════════════════╝
+			final List<Field> fields = new ArrayList<>();
+			fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+			fields.add(new FieldDataGen().name("Author").velocityVarName("author").next());
+			fields.add(new FieldDataGen().type(WysiwygField.class).name("Description").velocityVarName("description").next());
+			sourceContentType = new ContentTypeDataGen()
+					.host(APILocator.systemHost()).description("This is a description of my test Content Type")
+					.fields(fields)
+					.nextPersisted();
+			sourceContentType = contentTypeAPI.save(sourceContentType);
+			workflowScheme = new WorkflowDataGen().name("Test Workflow_" + millis).nextPersisted();
+			final Set<String> schemesIds = new HashSet<>();
+			schemesIds.add(workflowScheme.getId());
+			workflowAPI.saveSchemeIdsForContentType(sourceContentType, schemesIds);
+			final String newVariableName = sourceContentType.variable() + millis;
+			copiedContentType =
+					contentTypeAPI.copyFromAndDependencies(new CopyContentTypeBean.Builder().sourceContentType(sourceContentType).name(newVariableName).newVariable(newVariableName).build());
+
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			assertEquals("The copied Content Type MUST have a different Velocity Variable Name", newVariableName, copiedContentType.variable());
+			final Map<String, Field> sourceTypeFieldMap = sourceContentType.fieldMap();
+			final Map<String, Field> copiedTypeFieldMap = copiedContentType.fieldMap();
+			assertEquals("Both Content Types MUST have the same number of fields", sourceTypeFieldMap.size(), copiedTypeFieldMap.size());
+			for (final String fieldName : sourceTypeFieldMap.keySet()) {
+				assertTrue(String.format("The copied Content Type must have a field with name '%s'", fieldName), copiedTypeFieldMap.containsKey(fieldName));
+			}
+			final List<WorkflowScheme> schemesForSourceContentType = workflowAPI.findSchemesForContentType(sourceContentType);
+			final List<WorkflowScheme> schemesForCopiedContentType = workflowAPI.findSchemesForContentType(copiedContentType);
+			assertEquals("", schemesForSourceContentType.size(), schemesForCopiedContentType.size());
+			if (!schemesForSourceContentType.containsAll(schemesForCopiedContentType)) {
+				fail("The Workflow Schemes from both Content Types MUST be the same");
+			}
+		} finally {
+			// ╔═══════════╗
+			// ║  Cleanup  ║
+			// ╚═══════════╝
+			if (null != sourceContentType) {
+				contentTypeAPI.delete(sourceContentType);
+			}
+			if (null != copiedContentType) {
+				contentTypeAPI.delete(copiedContentType);
+			}
+			if (null != workflowScheme) {
+                try {
+					workflowAPI.archive(workflowScheme, APILocator.systemUser());
+                    workflowAPI.deleteScheme(workflowScheme, APILocator.systemUser());
+                } catch (final AlreadyExistException e) {
+                    // Failed to delete the scheme. Just move on
+                }
+            }
+		}
+	}
+
+	/**
+	 * <ul>
+	 *     <li><b>Method to test:
+	 *     </b>{@link ContentTypeAPI#copyFromAndDependencies(CopyContentTypeBean, Host)}</li>
+	 *     <li><b>Given Scenario: </b>Creates a test Content Type and a test Workflow Schemes. Then,
+	 *     assigns it to the test Content Type. Create a new test Site as well. Finally, copies the
+	 *     source Content Type and its dependencies to the new Site.</li>
+	 *     <li><b>Expected Result: </b>The copied Content Type must point to the same Workflow
+	 *     Scheme as it was copied with dependencies, and also point to the new Site.</li>
+	 * </ul>
+	 */
+	@Test
+	public void testCopyFromAndDependenciesToAnotherSite() throws DotDataException, DotSecurityException {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+		final long millis = System.currentTimeMillis();
+		final String siteTwoName = "sitetwo" + millis +".com";
+		ContentType sourceContentType = null;
+		ContentType copiedContentType = null;
+		WorkflowScheme workflowScheme = null;
+		try {
+			// ╔════════════════════════╗
+			// ║  Generating Test data  ║
+			// ╚════════════════════════╝
+			final List<Field> fields = new ArrayList<>();
+			fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+			fields.add(new FieldDataGen().name("Author").velocityVarName("author").next());
+			fields.add(new FieldDataGen().type(WysiwygField.class).name("Description").velocityVarName("description").next());
+			sourceContentType = new ContentTypeDataGen()
+					.host(APILocator.systemHost()).description("This is a description of my test Content Type")
+					.fields(fields)
+					.nextPersisted();
+			sourceContentType = contentTypeAPI.save(sourceContentType);
+			final Host siteTwo = new SiteDataGen().name(siteTwoName).nextPersisted();
+			workflowScheme = new WorkflowDataGen().name("Test Workflow_" + millis).nextPersisted();
+			final Set<String> schemesIds = new HashSet<>();
+			schemesIds.add(workflowScheme.getId());
+			workflowAPI.saveSchemeIdsForContentType(sourceContentType, schemesIds);
+			final String newVariableName = sourceContentType.variable() + millis;
+			copiedContentType =
+					contentTypeAPI.copyFromAndDependencies(new CopyContentTypeBean.Builder().sourceContentType(sourceContentType).name(newVariableName).newVariable(newVariableName).build(), siteTwo);
+
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			assertNotEquals("Both Content Types MUST belong to different Sites", sourceContentType.siteName(), copiedContentType.siteName());
+			assertEquals("The copied Content Type MUST have a different Velocity Variable Name", newVariableName, copiedContentType.variable());
+			final Map<String, Field> sourceTypeFieldMap = sourceContentType.fieldMap();
+			final Map<String, Field> copiedTypeFieldMap = copiedContentType.fieldMap();
+			assertEquals("Both Content Types MUST have the same number of fields", sourceTypeFieldMap.size(), copiedTypeFieldMap.size());
+			for (final String fieldName : sourceTypeFieldMap.keySet()) {
+				assertTrue(String.format("The copied Content Type must have a field with name '%s'", fieldName), copiedTypeFieldMap.containsKey(fieldName));
+			}
+			final List<WorkflowScheme> schemesForSourceContentType = workflowAPI.findSchemesForContentType(sourceContentType);
+			final List<WorkflowScheme> schemesForCopiedContentType = workflowAPI.findSchemesForContentType(copiedContentType);
+			assertEquals("", schemesForSourceContentType.size(), schemesForCopiedContentType.size());
+			if (!schemesForSourceContentType.containsAll(schemesForCopiedContentType)) {
+				fail("The Workflow Schemes from both Content Types MUST be the same");
+			}
+		} finally {
+			// ╔═══════════╗
+			// ║  Cleanup  ║
+			// ╚═══════════╝
+			if (null != sourceContentType) {
+				contentTypeAPI.delete(sourceContentType);
+			}
+			if (null != copiedContentType) {
+				contentTypeAPI.delete(copiedContentType);
+			}
+			if (null != workflowScheme) {
+				try {
+					workflowAPI.archive(workflowScheme, APILocator.systemUser());
+					workflowAPI.deleteScheme(workflowScheme, APILocator.systemUser());
+				} catch (final AlreadyExistException e) {
+					// Failed to delete the scheme. Just move on
+				}
+			}
+		}
+	}
+
+	/**
+	 * <ul>
+	 *     <li><b>Method to test:
+	 *     </b>{@link ContentTypeAPI#copyFromAndDependencies(CopyContentTypeBean, Host, boolean)}</li>
+	 *     <li><b>Given Scenario: </b>Creates a test Content Type and a test Workflow Schemes. Then,
+	 *     assigns it to the test Content Type. Create a new test Site as well. Finally, copies the
+	 *     source Content Type and its dependencies to the new Site WITHOUT copying Relationship
+	 *     Fields.</li>
+	 *     <li><b>Expected Result: </b>The copied Content Type must point to the same Workflow
+	 *     Scheme as it was copied with dependencies, and also point to the new Site. Moreover, NO
+	 *     Relationship Fields must be present.</li>
+	 * </ul>
+	 */
+	@Test
+	public void testCopyFromAndDependenciesToAnotherSiteWithNoRelationshipFields() throws DotDataException, DotSecurityException {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+		final long millis = System.currentTimeMillis();
+		final String siteTwoName = "sitetwo" + millis +".com";
+		ContentType sourceContentType = null;
+		ContentType copiedContentType = null;
+		WorkflowScheme workflowScheme = null;
+		try {
+			// ╔════════════════════════╗
+			// ║  Generating Test data  ║
+			// ╚════════════════════════╝
+			final List<Field> fields = new ArrayList<>();
+			fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+			fields.add(new FieldDataGen().type(RelationshipField.class)
+					.name("First Related Content").velocityVarName("firstRelatedContent").relationType("webPageContent").values("0").next());
+			fields.add(new FieldDataGen().name("Author").velocityVarName("author").next());
+			fields.add(new FieldDataGen().type(WysiwygField.class).name("Description").velocityVarName("description").next());
+			fields.add(new FieldDataGen().type(RelationshipField.class)
+					.name("Second Related Content").velocityVarName("secondRelatedContent").relationType("webPageContent").values("0").next());
+			sourceContentType = new ContentTypeDataGen()
+					.host(APILocator.systemHost()).description("This is a description of my test Content Type")
+					.fields(fields)
+					.nextPersisted();
+			sourceContentType = contentTypeAPI.save(sourceContentType);
+			final Host siteTwo = new SiteDataGen().name(siteTwoName).nextPersisted();
+			workflowScheme = new WorkflowDataGen().name("Test Workflow_" + millis).nextPersisted();
+			final Set<String> schemesIds = new HashSet<>();
+			schemesIds.add(workflowScheme.getId());
+			workflowAPI.saveSchemeIdsForContentType(sourceContentType, schemesIds);
+			final String newVariableName = sourceContentType.variable() + millis;
+			// Pass down the flag to skip copying Relationship fields
+			copiedContentType =
+					contentTypeAPI.copyFromAndDependencies(
+							new CopyContentTypeBean.Builder().sourceContentType(sourceContentType).name(newVariableName).newVariable(newVariableName).build(),
+							siteTwo,
+							false);
+
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			assertEquals("Source Content Types MUST belong to System Host", "systemHost", sourceContentType.siteName());
+			assertEquals("Copied Content Types MUST belong to the second test Site", siteTwoName, copiedContentType.siteName());
+			assertEquals("The copied Content Type MUST have a different Velocity Variable Name",
+					newVariableName, copiedContentType.variable());
+			final Map<String, Field> copiedTypeFieldMap = copiedContentType.fieldMap();
+			assertEquals("The copied Content Type must have ONLY 3 fields, as Relationship Fields were not copied",
+					3,  copiedTypeFieldMap.size());
+			copiedTypeFieldMap.forEach((fieldVarName, field)
+					-> assertNotEquals("The copied Content Type must NOT have any Relationship Field",
+                    RelationshipField.class, field.getClass()));
+			final List<WorkflowScheme> schemesForSourceContentType = workflowAPI.findSchemesForContentType(sourceContentType);
+			final List<WorkflowScheme> schemesForCopiedContentType = workflowAPI.findSchemesForContentType(copiedContentType);
+			if (!schemesForSourceContentType.containsAll(schemesForCopiedContentType)) {
+				fail("The Workflow Schemes from both Content Types MUST be the same");
+			}
+		} finally {
+			// ╔═══════════╗
+			// ║  Cleanup  ║
+			// ╚═══════════╝
+			if (null != sourceContentType) {
+				contentTypeAPI.delete(sourceContentType);
+			}
+			if (null != copiedContentType) {
+				contentTypeAPI.delete(copiedContentType);
+			}
+			if (null != workflowScheme) {
+				try {
+					workflowAPI.archive(workflowScheme, APILocator.systemUser());
+					workflowAPI.deleteScheme(workflowScheme, APILocator.systemUser());
+				} catch (final AlreadyExistException e) {
+					// Failed to delete the scheme. Just move on
+				}
+			}
+		}
+	}
 
 }

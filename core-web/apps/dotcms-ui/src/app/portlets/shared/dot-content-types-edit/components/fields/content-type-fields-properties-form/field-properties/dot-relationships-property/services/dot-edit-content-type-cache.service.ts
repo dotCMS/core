@@ -1,5 +1,3 @@
-import * as _ from 'lodash';
-
 import { Injectable } from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -31,6 +29,6 @@ export class DotEditContentTypeCacheService {
      * @memberof DotEditContentTypeCacheService
      */
     get(): DotCMSContentType {
-        return _.cloneDeep(this.currentContentType);
+        return structuredClone(this.currentContentType);
     }
 }

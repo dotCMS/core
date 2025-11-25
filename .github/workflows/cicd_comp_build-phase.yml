@@ -1,0 +1,115 @@
+# Build Phase Workflow
+#
+# This reusable workflow is responsible for performing the core build process,
+# including artifact generation, validation, and optional PR checks.
+#
+# Key features:
+# - Configurable core build execution
+# - Optional PR checks
+# - Supports validation profile
+# - Configurable version setting
+# - Optional Docker artifact generation
+# - Checks for unauthorized modifications to maven.config and working directory
+
+name: Build Phase
+
+on:
+  workflow_call:
+    inputs:
+      core-build:
+        description: "Run core build"
+        type: boolean
+        default: true
+      run-pr-checks:
+        description: "Run PR checks"
+        type: boolean
+        default: false
+      ref:
+        description: "Branch or tag ref"
+        required: false
+        default: ''
+        type: string
+      validate:
+        description: "Run validation"
+        type: boolean
+        default: false
+      version:
+        description: 'The version of the build'
+        required: false
+        type: string
+        default: '1.0.0-SNAPSHOT'
+      generate-docker:
+        description: 'Generate docker artifact'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  # Initial JDK Build
+  # This job performs a basic build and install with Maven without running tests.
+  # It provides a local Maven repo for subsequent steps.
+  build-jdk11:
+    name: "Initial Artifact Build"
+    runs-on: ubuntu-20.04
+    if: inputs.core-build == true
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      # Checkout code based on whether a specific ref is provided
+      - name: Checkout code
+        uses: actions/checkout@v4
+        if: inputs.ref == ''
+        with:
+          fetch-depth: 0
+      - name: Checkout code with ref ${{ inputs.ref }}
+        if: inputs.ref != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      # Check if .mvn/maven.config is modified in PR (only for PR checks)
+      - name: Check if .mvn/maven.config is in the PR commit
+        if: inputs.run-pr-checks
+        run: |
+          if git diff --name-only origin/main...HEAD | grep -q '^\.mvn/maven.config$'; then
+            echo "Error: .mvn/maven.config should not be modified in PR commits. This should only be set on release branches."
+            exit 1
+          else
+            echo ".mvn/maven.config is not modified in this PR."
+          fi
+
+      # Set up validation profile if required
+      - name: Set up validate profile
+        id: setup-validate-profile
+        run: |
+          if [ "${{ inputs.validate }}" == "true" ]; then
+            echo "VALIDATE_PROFILE=-Pvalidate" >> $GITHUB_ENV
+          else
+            echo "VALIDATE_PROFILE=" >> $GITHUB_ENV
+          fi
+
+      # Run the Maven build job
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "Initial Artifact Build"
+          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true -Dgithub.event.name=${{ github.event_name }}"
+          generate-artifacts: true
+          require-main: ${{ inputs.version == '1.0.0-SNAPSHOT' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cleanup-runner: true
+          version: ${{ inputs.version }}
+          generate-docker: ${{ inputs.generate-docker }}
+
+      # Check for unauthorized changes to the working directory (only for PR checks)
+      - name: Check for changes to source during build
+        if: inputs.run-pr-checks
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "Error: There are uncommitted changes in the working directory. These may have been modified by the build process. Go back and run a full build before committing changes, or add these files to .gitignore if not required to be stored in the source to ensure the build is clean."
+            git status --porcelain
+            exit 1
+          else
+            echo "No uncommitted changes found."
+          fi

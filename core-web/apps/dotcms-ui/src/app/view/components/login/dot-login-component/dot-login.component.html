@@ -1,18 +1,17 @@
-<div class="login__container p-fluid" *ngIf="loginInfo$ | async as loginInfo">
+<div *ngIf="loginInfo$ | async as loginInfo" class="login__container p-fluid">
     <form [formGroup]="loginForm">
         <div class="login__header">
             <div class="login__logo">
                 <img src="{{ loginInfo.entity.logo }}" alt="DotCMS - Hybrid CMS" />
             </div>
             <p-dropdown
-                class="p-dropdown-sm"
-                #languageDropdown
+                (onChange)="onLanguageChange($event.value)"
                 [options]="languages"
                 [style]="{ width: '185px' }"
-                (onChange)="onLanguageChange($event.value)"
+                class="p-dropdown-sm"
+                #languageDropdown
                 data-testId="language"
-                formControlName="language">
-            </p-dropdown>
+                formControlName="language"></p-dropdown>
         </div>
 
         <h3 class="login__title" data-testId="header">
@@ -20,14 +19,14 @@
         </h3>
 
         <p
-            class="login__message"
             [ngClass]="{ 'p-invalid': isError, success: !isError }"
             [innerHTML]="message"
+            class="login__message"
             data-testId="message"></p>
         <div class="field form__group--validation">
-            <label dotFieldRequired data-testId="emailLabel" for="inputtext">{{
-                loginInfo.i18nMessagesMap['emailAddressLabel']
-            }}</label>
+            <label dotFieldRequired data-testId="emailLabel" for="inputtext">
+                {{ loginInfo.i18nMessagesMap['emailAddressLabel'] }}
+            </label>
 
             <input
                 id="inputtext"
@@ -45,13 +44,12 @@
                         loginInfo.i18nMessagesMap['emailAddressLabel']
                     )
                 "
-                [field]="loginForm.get('login')">
-            </dot-field-validation-message>
+                [field]="loginForm.get('login')"></dot-field-validation-message>
         </div>
         <div class="field form__group--validation">
-            <label dotFieldRequired data-testId="passwordLabel" for="password">{{
-                loginInfo.i18nMessagesMap['password']
-            }}</label>
+            <label dotFieldRequired data-testId="passwordLabel" for="password">
+                {{ loginInfo.i18nMessagesMap['password'] }}
+            </label>
 
             <input
                 id="password"
@@ -68,8 +66,7 @@
                         loginInfo.i18nMessagesMap['password']
                     )
                 "
-                [field]="loginForm.get('password')">
-            </dot-field-validation-message>
+                [field]="loginForm.get('password')"></dot-field-validation-message>
         </div>
         <div class="login__password-settings field">
             <p-checkbox
@@ -78,41 +75,40 @@
                 data-testId="rememberMe"
                 binary="true"></p-checkbox>
             <a
-                class="password-settings__forgot-password"
                 *ngIf="!isLoginInProgress"
                 [routerLink]="['/public/forgotPassword']"
-                data-testId="actionLink"
-                >{{ loginInfo.i18nMessagesMap['get-new-password'] }}</a
-            >
+                class="password-settings__forgot-password"
+                data-testId="actionLink">
+                {{ loginInfo.i18nMessagesMap['get-new-password'] }}
+            </a>
         </div>
         <div class="field">
             <dot-loading-indicator></dot-loading-indicator>
             <button
-                class="login__button"
                 *ngIf="loginForm.enabled"
+                (click)="logInUser()"
                 [disabled]="!loginForm.valid"
                 [label]="loginInfo.i18nMessagesMap['sign-in']"
-                (click)="logInUser()"
+                class="login__button"
                 pButton
                 data-testId="submitButton"></button>
         </div>
         <div class="login__footer">
-            <span data-testId="server"
-                >{{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}</span
-            >
+            <span data-testId="server">
+                {{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}
+            </span>
             |
-            <span data-testId="version"
-                >{{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }} -
-                {{ loginInfo.entity.buildDateString }}</span
-            >
+            <span data-testId="version">
+                {{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }} -
+                {{ loginInfo.entity.buildDateString }}
+            </span>
             <span
                 *ngIf="loginInfo.entity.levelName.indexOf('COMMUNITY') !== -1"
                 [innerHTML]="
                     ' - ' +
                     loginInfo.i18nMessagesMap['angular.login.component.community.licence.message']
                 "
-                data-testId="license">
-            </span>
+                data-testId="license"></span>
         </div>
     </form>
 </div>

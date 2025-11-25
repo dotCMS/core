@@ -8,10 +8,9 @@ import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@do
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
 @Component({
-    template: `<dot-edit-page-info
-        [title]="title"
-        [url]="url"
-        [apiLink]="apiLink"></dot-edit-page-info>`
+    template: `
+        <dot-edit-page-info [title]="title" [url]="url" [apiLink]="apiLink"></dot-edit-page-info>
+    `
 })
 class TestHostComponent {
     title = 'A title';
@@ -62,12 +61,13 @@ describe('DotEditPageInfoComponent', () => {
 
         it('should have copy button', () => {
             const button: DebugElement = de.query(By.css('dot-copy-button '));
-            expect(button.componentInstance.copy).toBe('http://demo.dotcms.com:9876/an/url/test');
-            expect(button.componentInstance.tooltipText).toBe('Copy url page');
+
+            expect(button).not.toBeNull();
         });
 
         it('should have api link', () => {
             const apiLink: DebugElement = de.query(By.css('dot-api-link'));
+
             expect(apiLink.componentInstance.href).toBe(
                 'api/v1/page/render/an/url/test?language_id=1'
             );

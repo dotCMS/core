@@ -1,0 +1,175 @@
+# action.yml
+name: 'Notification for Frontend'
+on:
+  workflow_call:
+    secrets:
+      CI_MACHINE_USER:
+        description: 'CI machine user'
+        required: true
+      CI_MACHINE_TOKEN:
+        description: 'CI machine token'
+        required: true
+      SLACK_BOT_TOKEN:
+        description: 'Slack bot token'
+        required: true
+jobs:
+  resolve-data:
+    runs-on: ubuntu-20.04
+    outputs:
+      issue_number: ${{ steps.evaluate-actions.outputs.issue_number }}
+    steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+
+      - name: Check if Technology body changed
+        id: body-technology-check
+        if: github.event.action == 'edited'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const words = ['frontend', 'front-end'];
+            const issue = context.payload.issue;
+            const changes = context.payload.changes;
+            
+            function extractTechnologyField(body) {
+              const technologyLabel = 'Technology:';
+              const lines = body.split('\\n');
+            
+              for (const line of lines) {
+                if (line.toLowerCase().startsWith(technologyLabel.toLowerCase())) {
+                  return line.replace(technologyLabel, '').trim();
+                }
+              }
+            
+              return null;
+            }
+            
+            const actions = [];
+            if (changes && changes.body && issue.body) {
+              const oldBody = changes.body.from;
+              const newBody = issue.body;
+              console.log(`Old Body: [${oldBody}]`);
+              console.log(`New Body: [${newBody}]`);
+            
+              const oldTechnology = extractTechnologyField(oldBody);
+              const newTechnology = extractTechnologyField(newBody);
+            
+              console.log(`Old Technology: [${oldTechnology}]`);
+              console.log(`New Technology: [${newTechnology}]`);
+            
+              if (oldTechnology !== newTechnology
+                  && words.some(word => word.toLowerCase() === newTechnology.toLowerCase())) {
+                actions.push({
+                  action: 'FRONTEND_TECHNOLOGY_NOTIFY',
+                  issue_number: issue.number
+                });
+                console.log(`Technology field changed from [${oldTechnology}] to [${newTechnology}]`);
+              } else {
+                console.log('Technology field did not change');
+              }
+            } else {
+              console.log('No changes detected in the Technology field');
+            }
+            
+            core.setOutput('actions', JSON.stringify(actions));
+
+      - name: Check if Technology label changed
+        id: label-technology-check
+        if: github.event.action == 'labeled'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const label = context.payload.label;
+            const technologyLabels = ['frontend', 'front-end'];
+            
+            const actions = [];
+            if (label && issue.labels.some(l => l.name === label.name) && technologyLabels.includes(label.name.toLowerCase())) {
+              actions.push({
+                action: 'FRONTEND_TECHNOLOGY_NOTIFY',
+                issue_number: issue.number
+              });
+              console.log(`Technology label [${label.name}] added to issue [${issue.number}]`);
+            } else {
+              console.log('Technology label did not changed');
+            }
+            
+            core.setOutput('actions', JSON.stringify(actions));
+
+      - name: Resolve detected actions
+        id: resolve-actions
+        run: |
+          if [[ '${{ github.event.action == 'edited' }}' == 'true' ]]; then
+            actions=${{ toJSON(steps.body-technology-check.outputs.actions) }}
+          elif [[ '${{ github.event.action == 'labeled' }}' == 'true' ]]; then
+            actions=${{ toJSON(steps.label-technology-check.outputs.actions) }}
+          else
+            actions='[]'
+          fi
+          
+          [[ "${actions}" == 'null' ]] && actions='[]'
+
+          echo "actions: ${actions}"
+          echo "actions=${actions}" >> $GITHUB_OUTPUT
+
+      - name: Evaluate actions
+        id: evaluate-actions
+        if: steps.resolve-actions.outputs.actions != '[]'
+        shell: bash
+        run: |
+          actions_json="${{ toJSON(steps.resolve-actions.outputs.actions) }}"
+          action_found=$(jq -r '.[] | select(.action == "FRONTEND_TECHNOLOGY_NOTIFY")' <<< ${actions_json})
+          echo "action_found=[${action_found}]"
+          [[ -z "${action_found}" || ${action_found} == 'null' ]] && echo 'Action not found'
+          
+          issue_number=$(jq -r '.issue_number' <<< ${action_found})
+          echo "issue_number=[${issue_number}]"
+          [[ -z "${issue_number}" || "${issue_number}" == 'null' ]] && echo 'Issue number not found'
+          
+          echo "issue_number=${issue_number}" >> $GITHUB_OUTPUT
+
+  member-resolver:
+    name: Resolve members
+    needs: resolve-data
+    if: success() && needs.resolve-data.outputs.issue_number
+    uses: ./.github/workflows/issue_comp_github-member-resolver.yml
+    with:
+      team: 'ui/ux'
+
+  slack-channel-resolver:
+    name: Resolve Slack Channel
+    needs: member-resolver
+    if: success() && needs.member-resolver.outputs.members
+    uses: ./.github/workflows/utility_slack-channel-resolver.yml
+    with:
+      github_users: ${{ needs.member-resolver.outputs.members }}
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  frontend-notify:
+    name: Notify team member ${{ matrix.member }}
+    needs: [resolve-data, slack-channel-resolver]
+    runs-on: ubuntu-20.04
+    if: success() && needs.resolve-data.outputs.issue_number && needs.slack-channel-resolver.outputs.channel_ids
+    strategy:
+      fail-fast: false
+      matrix:
+        member: ${{ fromJSON(needs.slack-channel-resolver.outputs.channel_ids) }}
+    env:
+      ISSUE_URL: https://github.com/${{ github.repository }}/issues/${{ needs.resolve-data.outputs.issue_number }}
+    steps:
+      - name: Notify member
+        shell: bash
+        run: |
+          channel=${{ matrix.member }}
+          message="The following github issue has been marked as a Front-end issue: ${{ env.ISSUE_URL }}"
+          
+          curl -X POST \
+            -H "Content-type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+            -d "{ \"channel\":\"${channel}\",\"text\":\"${message}\"}" \
+            -s \
+            https://slack.com/api/chat.postMessage

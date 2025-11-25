@@ -89,14 +89,6 @@ export interface ConditionActionEvent extends RuleActionEvent {
     styleUrls: ['./styles/rule-engine.scss', './styles/angular-material.layouts.scss'],
     template: `
         <cw-rule-engine
-            [environmentStores]="environments"
-            [rules]="rules"
-            [ruleActionTypes]="_ruleService._ruleActionTypes"
-            [conditionTypes]="_ruleService._conditionTypes"
-            [loading]="state.loading"
-            [showRules]="state.showRules"
-            [pageId]="pageId"
-            [isContentletHost]="isContentletHost"
             (createRule)="onCreateRule($event)"
             (deleteRule)="onDeleteRule($event)"
             (updateName)="onUpdateRuleName($event)"
@@ -113,7 +105,15 @@ export interface ConditionActionEvent extends RuleActionEvent {
             (updateConditionType)="onUpdateConditionType($event)"
             (updateConditionParameter)="onUpdateConditionParameter($event)"
             (updateConditionOperator)="onUpdateConditionOperator($event)"
-            (deleteCondition)="onDeleteCondition($event)"></cw-rule-engine>
+            (deleteCondition)="onDeleteCondition($event)"
+            [environmentStores]="environments"
+            [rules]="rules"
+            [ruleActionTypes]="_ruleService._ruleActionTypes"
+            [conditionTypes]="_ruleService._conditionTypes"
+            [loading]="state.loading"
+            [showRules]="state.showRules"
+            [pageId]="pageId"
+            [isContentletHost]="isContentletHost"></cw-rule-engine>
     `
 })
 export class RuleEngineContainer implements OnDestroy {

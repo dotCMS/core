@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 
@@ -25,6 +26,26 @@ public class RuntimeUtils {
     public static final String AMD64_ARCH = "amd64";
     public static final String ARM64_ARCH = "aarch64";
     public static final String X86_64_ARCH = "x86_64";
+
+
+
+    private static final Lazy<Boolean> ENABLE_LOGGING = Lazy.of(() -> {
+        return Try.of(()->Boolean.parseBoolean(System.getenv("DOT_RUNTIME_ENABLE_LOGGING"))).getOrElse(false);
+    });
+
+
+    private static void logInfo(String message) {
+        if (ENABLE_LOGGING.get()) {
+            Logger.info(RuntimeUtils.class, message);
+        }
+    }
+    private static void logError(String message, Exception e) {
+        if (ENABLE_LOGGING.get()) {
+            Logger.error(RuntimeUtils.class, message, e);
+        }
+    }
+
+
 
     /**
      * Evaluates if instance is running inside Docker.
@@ -93,7 +114,7 @@ public class RuntimeUtils {
         if (process == null) {
             final String errorMsg = String.format("Cannot run process for provided command [ %s ]: %s", String.join(
                     " ", commands), terminalOutput.output());
-            Logger.warn(RuntimeUtils.class, errorMsg);
+            logInfo(errorMsg);
             terminalOutput.output(UtilMethods.isSet(terminalOutput.output()) ? terminalOutput.output() : errorMsg);
             return terminalOutput;
         }
@@ -117,7 +138,7 @@ public class RuntimeUtils {
             }
             return terminalOutput;
         } catch (final Exception e) {
-            Logger.error(RuntimeUtils.class, String.format("Error running commands [ %s ]: %s", String.join(" ",
+            logError(String.format("Error running commands [ %s ]: %s", String.join(" ",
                     commands), e.getMessage()), e);
             return terminalOutput;
         } finally {
@@ -132,7 +153,7 @@ public class RuntimeUtils {
      * @return process builder
      */
     private static ProcessBuilder buildProcess(String[] commands) {
-        Logger.info(RuntimeUtils.class, String.format("Executing commands %s", String.join(" ", commands)));
+        logInfo( String.format("Executing commands %s", String.join(" ", commands)));
         return new ProcessBuilder(commands).redirectErrorStream(true);
     }
 

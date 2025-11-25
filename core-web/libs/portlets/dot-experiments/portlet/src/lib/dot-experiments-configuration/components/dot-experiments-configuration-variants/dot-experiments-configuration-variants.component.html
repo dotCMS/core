@@ -8,14 +8,13 @@
                         [size]="16"
                         data-testId="variant-title-step-done"
                         name="check_circle"></dot-icon>
-                    <span class="p-label-input-required" data-testId="variants-card-header">{{
-                        'experiments.configure.variants.name' | dm
-                    }}</span>
+                    <span class="p-label-input-required" data-testId="variants-card-header">
+                        {{ 'experiments.configure.variants.name' | dm }}
+                    </span>
                 </h2>
                 <dot-experiments-configuration-items-count
                     [count]="vm.trafficProportion.variants?.length"
-                    [maxLength]="maxVariantsAllowed">
-                </dot-experiments-configuration-items-count>
+                    [maxLength]="maxVariantsAllowed"></dot-experiments-configuration-items-count>
             </div>
         </ng-template>
 
@@ -34,7 +33,7 @@
                                 variant.name === defaultVariantName || vm.disabledTooltipLabel;
                                 else editVariantNameTpl
                             ">
-                            <span data-testId="variant-name-original"> {{ variant.name }} </span>
+                            <span data-testId="variant-name-original">{{ variant.name }}</span>
                         </ng-container>
 
                         <dot-copy-button
@@ -53,11 +52,11 @@
                         data-testId="tooltip-on-disabled"
                         tooltipPosition="bottom">
                         <button
-                            class="p-button-sm p-button-link"
-                            [disabled]="!vm.isExperimentADraft || vm.disabledTooltipLabel"
                             (click)="changeTrafficProportion()"
+                            [disabled]="!vm.isExperimentADraft || vm.disabledTooltipLabel"
+                            class="p-button-sm p-button-link"
                             data-testId="variant-weight"
-                            label="{{ variant.weight | number : '2.2-2' }}% {{
+                            label="{{ variant.weight | number: '2.2-2' }}% {{
                                 'experiments.configure.variants.weight' | dm
                             }}"
                             pButton></button>
@@ -71,8 +70,8 @@
                             else editableButtonTpl
                         ">
                         <button
-                            class="p-button-sm p-button-outlined no-padding"
                             (click)="goToEditPageVariant(variant, dotPageMode.PREVIEW)"
+                            class="p-button-sm p-button-outlined no-padding"
                             data-testId="variant-preview-button"
                             label="{{ 'experiments.configure.variants.view' | dm }}"
                             pButton
@@ -87,13 +86,13 @@
                         data-testId="tooltip-on-disabled"
                         tooltipPosition="bottom">
                         <button
-                            class="p-button-sm p-button-text p-button-danger"
+                            (click)="deleteVariant({ $event, variant }, vm.experimentId)"
                             [disabled]="
                                 variant.name === defaultVariantName ||
                                 !vm.isExperimentADraft ||
                                 vm.disabledTooltipLabel
                             "
-                            (click)="deleteVariant({$event, variant}, vm.experimentId)"
+                            class="p-button-sm p-button-text p-button-danger"
                             data-testId="variant-delete-button"
                             label="{{ 'experiments.configure.variants.delete' | dm }}"
                             pButton
@@ -104,8 +103,8 @@
 
             <ng-template #editableButtonTpl>
                 <button
-                    class="p-button-sm p-button-outlined no-padding p-button-warning"
                     (click)="goToEditPageVariant(variant, dotPageMode.EDIT)"
+                    class="p-button-sm p-button-outlined no-padding p-button-warning"
                     data-testId="variant-edit-button"
                     label="{{ 'experiments.action.edit' | dm }}"
                     pButton
@@ -114,33 +113,33 @@
 
             <ng-template #editVariantNameTpl>
                 <dot-experiments-inplace-edit-text
+                    (textChanged)="editVariantName($event, variant, vm.experimentId)"
                     [isLoading]="vm.status && vm.status.status === statusList.SAVING"
                     [maxCharacterLength]="maxInputTitleLength"
                     [required]="true"
                     [showErrorMsg]="false"
-                    [text]="variant.name"
-                    (textChanged)="editVariantName($event, variant, vm.experimentId)" />
+                    [text]="variant.name" />
             </ng-template>
         </ng-container>
 
         <ng-template pTemplate="footer">
             <div
-                class="inline-block"
                 [pTooltip]="vm.disabledTooltipLabel | dm"
                 [tooltipDisabled]="
                     !vm.disabledTooltipLabel ||
                     vm.trafficProportion.variants?.length >= maxVariantsAllowed
                 "
+                class="inline-block"
                 data-testId="tooltip-on-disabled"
                 tooltipPosition="bottom">
                 <button
-                    class="p-button-sm p-button-outlined"
+                    (click)="addVariant()"
                     [disabled]="
                         vm.trafficProportion.variants?.length >= maxVariantsAllowed ||
                         !vm.isExperimentADraft ||
                         vm.disabledTooltipLabel
                     "
-                    (click)="addVariant()"
+                    class="p-button-sm p-button-outlined"
                     data-testId="variant-add-button"
                     label="{{ 'experiments.configure.variants.add' | dm }}"
                     pButton

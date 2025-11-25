@@ -1,0 +1,81 @@
+@use "variables" as *;
+
+:host {
+    max-width: 40rem;
+    background: $black;
+}
+
+.wrapper {
+    display: block;
+    max-width: 32rem;
+    margin: 1rem auto 3rem;
+    text-align: left;
+    padding: 0 2.5rem;
+}
+
+.options {
+    display: flex;
+    justify-content: center;
+    gap: $spacing-4;
+}
+
+p {
+    line-height: 1.5;
+    color: $color-palette-gray-800;
+}
+
+.item {
+    align-items: center;
+    background-color: $color-palette-gray-200;
+    border: solid 2px $color-palette-gray-200;
+    border-radius: $border-radius-xs;
+    color: $color-palette-gray-500;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    padding: $spacing-5;
+    width: 145px;
+    height: 145px;
+    gap: $spacing-2;
+    transition:
+        border-color $basic-speed ease,
+        color $basic-speed ease;
+
+    &:hover {
+        color: $color-palette-gray-700;
+    }
+
+    span {
+        font-size: $font-size-md;
+        font-weight: normal;
+    }
+
+    .material-icons {
+        font-size: 4rem;
+    }
+}
+
+input[type="radio"] {
+    appearance: none;
+    position: absolute;
+
+    &:checked + .item {
+        border-color: $color-palette-primary;
+        color: $color-palette-primary;
+        background-color: $color-palette-primary-op-10;
+    }
+}
+
+.message {
+    text-align: center;
+    line-height: 1.5;
+    color: $color-palette-gray-800;
+}
+
+.dialog__container__actions {
+    padding: 1rem 2.5rem;
+    width: 100%;
+    background: $color-palette-gray-200;
+    border-top: 1px solid $color-palette-gray-300;
+    text-align: right;
+}

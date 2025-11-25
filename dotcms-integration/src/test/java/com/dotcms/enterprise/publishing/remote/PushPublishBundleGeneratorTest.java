@@ -1,7 +1,5 @@
 package com.dotcms.enterprise.publishing.remote;
 
-import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.field.Field;
@@ -24,8 +22,8 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
@@ -55,6 +53,10 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,9 +65,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.Assert;
+
+import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 
 /**
  * This class is for testing the bundle that is gonna generate the system when using PP.
@@ -339,7 +340,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         //Relate contents
         final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(newField,systemUser);
         parentContentlet = APILocator.getContentletAPI().checkin(parentContentlet,
-                CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)), systemUser,
+                Map.of(relationship, CollectionsUtils.list(childContentlet)), systemUser,
                 false);
 
         //Create bundle with DefaultFilter
@@ -544,7 +545,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         //Relate contents
         final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(newField,systemUser);
         parentContentlet = APILocator.getContentletAPI().checkin(parentContentlet,
-                CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)), systemUser,
+                Map.of(relationship, CollectionsUtils.list(childContentlet)), systemUser,
                 false);
 
         //Create bundle with DefaultFilter

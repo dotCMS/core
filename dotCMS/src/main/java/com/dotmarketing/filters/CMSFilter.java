@@ -10,13 +10,11 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.*;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.logging.LogFactory;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -90,8 +88,11 @@ public class CMSFilter implements Filter {
         String uri = urlUtil.getURIFromRequest(request);
         String queryString = urlUtil.getURLQueryStringFromRequest(request);
 
+        Logger.debug(this.getClass(), "------CMSFilter----- Starting for Uri: " + uri);
+        Logger.debug(this.getClass(), "CMSFilter site = " + site.getIdentifier());
+        Logger.debug(this.getClass(), "CMSFilter Lang = " + languageId);
+        Logger.debug(this.getClass(), "CMSFilter queryString = " + queryString);
 
-        Logger.debug(this.getClass(), "CMS Filter URI = " + uri);
 
         /*
          * If someone is trying to go right to an asset without going through the cms, give them a
@@ -106,8 +107,11 @@ public class CMSFilter implements Filter {
         final Tuple2<IAm,IAmSubType> iAm  =
                 this.urlUtil.resolveResourceType(IAm.NOTHING_IN_THE_CMS, uri, site, languageId);
 
+        Logger.debug(this.getClass(), "CMSFilter iAm = " + iAm);
+
         // if I am a folder without a slash
         if (iAm._1() == IAm.FOLDER && !uri.endsWith("/")) {
+            Logger.debug(this.getClass(), "CMSFilter iAm Folder without slash");
             response.setHeader("Location", UtilMethods.isSet(queryString) ? uri + "/?" + queryString : uri + "/");
             Try.run(()->response.setStatus(301));
             return;
@@ -115,32 +119,41 @@ public class CMSFilter implements Filter {
 
         // if I am a Page with a trailing slash
         if (iAm._1() == IAm.PAGE && iAm._2() == IAmSubType.PAGE_INDEX && uri.endsWith("/")) {
+            Logger.debug(this.getClass(), "CMSFilter iAm Index_Page");
             uri = uri + CMS_INDEX_PAGE;
         }
         
 
         if (iAm._1() == IAm.PAGE) {
+            Logger.debug(this.getClass(), "CMSFilter iAm Page");
             countPageVisit(request);
             countSiteVisit(request, response);
+            final String uriWithoutQueryString = this.urlUtil.getUriWithoutQueryString(uri);
+            Logger.debug(this.getClass(), "CMSFilter uriWithoutQueryString = " + uriWithoutQueryString);
             request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE,
-                    this.urlUtil.getUriWithoutQueryString(uri));
-            queryString = (null == queryString)?
-                    this.urlUtil.getQueryStringFromUri (uri):queryString;
+                    uriWithoutQueryString);
+            final String queryStringFromUri = this.urlUtil.getQueryStringFromUri(uri);
+            Logger.debug(this.getClass(), "CMSFilter queryStringFromUri = " + queryStringFromUri);
+            queryString = (null == queryString) ? queryStringFromUri : queryString;
         }
 
         if (iAm._1() == IAm.FILE) {
+            Logger.debug(this.getClass(), "CMSFilter iAm File");
             Identifier ident;
             try {
                 // Serving the file through the /dotAsset servlet
                 StringWriter forward = new StringWriter();
                 forward.append("/dotAsset/");
-
+                Logger.debug(this.getClass(), "CMSFilter URI = " + uri);
+                Logger.debug(this.getClass(), "CMSFilter site = " + site.getIdentifier());
+                Logger.debug(this.getClass(), "CMSFilter Lang = " + languageId);
                 ident = APILocator.getIdentifierAPI().find(site, uri);
+                Logger.debug(this.getClass(), "CMSFilter Id " + ident == null? "Not Found" : ident.toString());
                 request.setAttribute(Constants.CMS_FILTER_IDENTITY, ident);
 
                 // If language is in session, set as query string
                 forward.append('?').append(WebKeys.HTMLPAGE_LANGUAGE + "=").append(String.valueOf(languageId));
-
+                Logger.debug(this.getClass(), "CMSFilter forward = " + forward.toString());
                 request.getRequestDispatcher(forward.toString()).forward(request, response);
 
             } catch (Exception e) {
@@ -151,7 +164,7 @@ public class CMSFilter implements Filter {
         }
 
         if (iAm._1() == IAm.PAGE) {
-
+            Logger.debug(this.getClass(), "CMSFilter iAm Page");
             final StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
 
             if (UtilMethods.isSet(queryString)) {
@@ -162,17 +175,21 @@ public class CMSFilter implements Filter {
                 forward.append('?');
                 forward.append(queryString);
             }
+            Logger.debug(this.getClass(), "CMSFilter forward = " + forward.toString());
             request.getRequestDispatcher(forward.toString()).forward(request, response);
             return;
         }
 
         // nothing to do here
         if (uri.startsWith("/contentAsset/") && response.isCommitted()) {
+            Logger.debug(this.getClass(), "CMSFilter uri statrs with /contentAsset/ and response is committed");
             return;
         }
         
         // allow vanities to forward to a dA asset
         if(request instanceof VanityUrlRequestWrapper && !response.isCommitted() && (uri.startsWith("/dA/") || uri.startsWith("/contentAsset/")) ) {
+            Logger.debug(this.getClass(), "CMSFilter uri statrs with /dA/ or /contentAsset/ and response is not committed");
+            Logger.debug(this.getClass(), "CMSFilter URI = " + uri);
             request.getRequestDispatcher(uri).forward(request, response);
             return;
         }

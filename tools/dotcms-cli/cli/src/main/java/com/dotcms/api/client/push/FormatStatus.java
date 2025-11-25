@@ -7,8 +7,8 @@ import com.dotcms.model.push.PushAnalysisResult;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 /**

@@ -4,7 +4,7 @@
     display: grid;
     grid-template-areas:
         "topBar topBar"
-        "header header"
+        "header sidebar"
         "body sidebar";
     grid-template-columns: 1fr 21.875rem;
     grid-template-rows: auto auto 1fr;
@@ -13,14 +13,30 @@
     width: 100%;
 }
 
+.edit-content-layout__sidebar-btn {
+    rect {
+        stroke: $color-palette-primary;
+    }
+
+    path {
+        fill: $color-palette-primary;
+    }
+    transition: all 300ms ease-in-out;
+    &.showSidebar {
+        width: 0;
+        min-width: 0;
+        height: 0;
+        padding: 0;
+        visibility: hidden;
+    }
+}
+
 .topBar {
     grid-area: topBar;
-    background: $color-palette-primary-200;
-    color: $color-palette-primary-900;
-    padding: $spacing-2 $spacing-4;
 
-    a {
-        color: $color-palette-primary-900;
+    .pi {
+        font-size: $font-size-lmd;
+        margin-right: $spacing-1;
     }
 }
 

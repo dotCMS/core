@@ -13,6 +13,7 @@ import {
     DotPageRenderState,
     DotPageToolUrlParams,
     DotTemplate,
+    FEATURE_FLAG_NOT_FOUND,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
@@ -112,7 +113,13 @@ export class DotEditPageNavComponent implements OnChanges {
             }
         ];
 
-        if (this.route.snapshot.data?.featuredFlags[FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]) {
+        const loadFrontendExperiments =
+            this.route.snapshot.data?.featuredFlags[FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS];
+        // By default, or if flag is 'NOT_FOUND', ExperimentsNavItem is added to navItems.
+        if (
+            loadFrontendExperiments === true ||
+            loadFrontendExperiments === FEATURE_FLAG_NOT_FOUND
+        ) {
             navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
         }
 

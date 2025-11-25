@@ -122,12 +122,12 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
                 }
             }
          */ // creates a contentlet map without content type but dotAsset baseType with temporal file
-        final Map<String, Object> map =  CollectionsUtils.map("baseType", "dotAsset", "asset", dotTempFile.id);
+        final Map<String, Object> map =  Map.of("baseType", "dotAsset", "asset", dotTempFile.id);
 
         final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
 
         final Optional<ContentType> contentTypeOpt = baseTypeToContentTypeStrategy.get().apply(BaseContentType.DOTASSET,
-                CollectionsUtils.map("user", APILocator.systemUser(), "host", defaultHost,
+                Map.of("user", APILocator.systemUser(), "host", defaultHost,
                         "contentletMap", map, "accessingList", Arrays.asList(APILocator.systemUser().getUserId(),
                                 APILocator.getTempFileAPI().getRequestFingerprint(request), sessionId)));
 

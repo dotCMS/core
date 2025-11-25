@@ -9,9 +9,8 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotAvatarDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
 
@@ -23,7 +22,9 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 @Component({
-    template: ` <dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>`
+    template: `
+        <dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>
+    `
 })
 class TestHostComponent {
     persona = mockDotPersona;
@@ -54,7 +55,7 @@ describe('DotPersonaSelectedItemComponent', () => {
                 AvatarModule,
                 BadgeModule,
                 TooltipModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ]
         }).compileComponents();
@@ -79,7 +80,7 @@ describe('DotPersonaSelectedItemComponent', () => {
 
     it('should render persona name and label', () => {
         const name = de.query(By.css('.dot-persona-selector__name')).nativeElement;
-        expect(name.innerText).toBe('Global Investor');
+        expect(name.innerText.trim()).toBe('Global Investor');
     });
 
     describe('tooltip properties', () => {
@@ -88,7 +89,7 @@ describe('DotPersonaSelectedItemComponent', () => {
         it('should set properties to null when enable', () => {
             container = de.query(By.css('.dot-persona-selector__container')).nativeElement;
             expect(container.getAttribute('ng-reflect-tooltip-position')).toEqual(null);
-            expect(container.getAttribute('ng-reflect-text')).toEqual(null);
+            expect(container.getAttribute('ng-reflect-content')).toEqual(null);
         });
 
         it('should set properties correctly when disable', () => {
@@ -96,7 +97,7 @@ describe('DotPersonaSelectedItemComponent', () => {
             fixture.detectChanges();
             container = de.query(By.css('.dot-persona-selector__container')).nativeElement;
             expect(container.getAttribute('ng-reflect-tooltip-position')).toEqual('bottom');
-            expect(container.getAttribute('ng-reflect-text')).toEqual('Add content...');
+            expect(container.getAttribute('ng-reflect-content')).toEqual('Add content...');
         });
     });
 });

@@ -1,4 +1,5 @@
 import { Validators, ValidatorFn } from '@angular/forms';
+
 import { CustomValidators } from '../validation/CustomValidators';
 
 export class CwValidationResults {
@@ -8,6 +9,7 @@ export class CwValidationResults {
         this.valid = valid;
     }
 }
+
 interface TypeConstraint {
     id: string;
     args: { [key: string]: any };
@@ -63,6 +65,7 @@ export class DataTypeModel {
                 }
             });
         }
+
         return this._vFns;
     }
 
@@ -88,6 +91,7 @@ export class CwInputDefinition {
             console.error(msg, json);
             type = 'text';
         }
+
         let dataType = null;
         if (json.dataType) {
             dataType = new DataTypeModel(
@@ -97,6 +101,7 @@ export class CwInputDefinition {
                 json.dataType.defaultValue
             );
         }
+
         return new type(json, typeId, name, json.placeholder, dataType);
     }
 
@@ -113,6 +118,7 @@ export class CwInputDefinition {
         if (this._vFns == null) {
             this._vFns = this.dataType.validators().concat(this._validators);
         }
+
         return this._vFns;
     }
 
@@ -127,6 +133,7 @@ export class CwInputDefinition {
                 };
             }
         }
+
         return this._validator;
     }
 
@@ -156,6 +163,7 @@ export class CwDropdownInputModel extends CwInputDefinition {
         const ary = [];
         ary.push(CustomValidators.minSelections(json.minSelections || 0));
         ary.push(CustomValidators.maxSelections(json.maxSelections || 1));
+
         return ary;
     }
 

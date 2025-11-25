@@ -1,8 +1,9 @@
 <!-- TODO: Investigate how to control a repeated option value -->
-<p-radioButton
-    *ngFor="let option of options; let i = index"
-    [inputId]="field.variable + i"
-    [name]="field.variable"
-    [value]="option.value"
-    [label]="option.label"
-    [formControlName]="field.variable" />
+@for (option of options; track option; let i = $index) {
+    <p-radioButton
+        [inputId]="field.variable + i"
+        [name]="field.variable"
+        [value]="option.value"
+        [label]="option.label"
+        [formControlName]="field.variable" />
+}

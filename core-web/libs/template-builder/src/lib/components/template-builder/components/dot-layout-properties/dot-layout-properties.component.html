@@ -2,32 +2,25 @@
     #op
     appendTo="body"
     styleClass="dot-layout-properties__overlayPanel"
-    data-testId="template-layout-properties-panel"
->
-    <div class="field" [formGroup]="group">
+    data-testId="template-layout-properties-panel">
+    <div [formGroup]="group" class="field">
         <dot-layout-properties-item
-            class="property-item__header"
             [label]="'editpage.layout.properties.header' | dm"
-            formControlName="header"
-        >
-        </dot-layout-properties-item>
+            class="property-item__header"
+            formControlName="header"></dot-layout-properties-item>
 
         <dot-layout-properties-item
-            class="property-item__footer"
             [label]="'editpage.layout.properties.footer' | dm"
-            formControlName="footer"
-        >
-        </dot-layout-properties-item>
+            class="property-item__footer"
+            formControlName="footer"></dot-layout-properties-item>
         <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
     </div>
 </p-overlayPanel>
 <button
-    class="p-button-text p-button-vertical"
     (click)="op.toggle($event)"
+    class="p-button-text p-button-vertical"
     pButton
     type="button"
+    icon="pi pi-objects-column"
     label="{{ 'Layout' | dm }}"
-    data-testId="btn-select-layout"
->
-    <span class="p-button-icon material-icons">view_quilt</span>
-</button>
+    data-testId="btn-select-layout"></button>

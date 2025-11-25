@@ -1,0 +1,23 @@
+<div class="wysiwyg__editor">
+    @if ($displayedEditor() === editorTypes.TinyMCE) {
+        <dot-wysiwyg-tinymce [field]="$field()" />
+    } @else {
+        <dot-wysiwyg-monaco [field]="$field()" [language]="$selectedLanguageDropdown()" />
+    }
+</div>
+<div class="wysiwyg__controls">
+    <p-dropdown
+        [options]="editorOptions"
+        [(ngModel)]="$selectedEditorDropdown"
+        [ngModelOptions]="{ standalone: true }"
+        (onChange)="onEditorChange($event.value)"
+        data-testId="editor-selector" />
+
+    @if ($selectedEditorDropdown() === editorTypes.Monaco) {
+        <p-dropdown
+            [options]="monacoLanguagesOptions"
+            [(ngModel)]="$selectedLanguageDropdown"
+            [ngModelOptions]="{ standalone: true }"
+            data-testId="language-selector" />
+    }
+</div>

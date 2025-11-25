@@ -1,15 +1,13 @@
 <dot-dialog
-    #dialog
+    (hide)="shutdown.emit($event)"
     [(visible)]="show"
     [contentStyle]="{ padding: '0' }"
     [cssClass]="
         paginatorService.totalRecords > paginatorService.paginationPerPage ? 'paginator' : ''
     "
-    (hide)="shutdown.emit($event)"
     [header]="'modes.Add-Form' | dm"
->
+    #dialog>
     <p-table
-        #datatable
         (onLazyLoad)="loadData($event)"
         [lazy]="true"
         [style]="{ height: contentMinHeight }"
@@ -18,7 +16,7 @@
         [rows]="paginatorService.paginationPerPage"
         [totalRecords]="paginatorService.totalRecords"
         [value]="items"
-    >
+        #datatable>
         <ng-template pTemplate="header">
             <tr>
                 <th>{{ 'contenttypes.form.name' | dm }}</th>
@@ -30,12 +28,11 @@
                     <div class="dot-form-selector-list-row">
                         {{ item.name }}
                         <button
+                            (click)="pick.emit(item)"
+                            [label]="'Select' | dm"
                             pButton
                             flat
-                            class="form-selector__button"
-                            [label]="'Select' | dm"
-                            (click)="pick.emit(item)"
-                        ></button>
+                            class="form-selector__button"></button>
                     </div>
                 </td>
             </tr>

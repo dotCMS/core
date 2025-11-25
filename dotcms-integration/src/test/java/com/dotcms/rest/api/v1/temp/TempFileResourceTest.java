@@ -471,7 +471,7 @@ public class TempFileResourceTest {
         final DotTempFile dotTempFile1 = saveTempFile_usingTempResource(fileName1, request);
 
         final RemoteUrlForm form = new RemoteUrlForm(
-                "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif",
+                "https://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif",
                 fileName2, null);
 
         final Response jsonResponse = resource

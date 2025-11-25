@@ -1,30 +1,26 @@
-<form class="p-fluid" [formGroup]="form">
+<form [formGroup]="form" class="p-fluid">
     <div class="field">
         <label dotFieldRequired for="content-type-form-host">{{ 'modes.persona.host' | dm }}</label>
         <dot-site-selector-field
-            id="content-type-form-host"
             [system]="true"
+            id="content-type-form-host"
             width="100%"
-            formControlName="hostFolder"
-        ></dot-site-selector-field>
+            formControlName="hostFolder"></dot-site-selector-field>
     </div>
 
     <div class="field">
         <label dotFieldRequired for="persona-name">{{ 'modes.persona.name' | dm }}</label>
         <input
-            id="persona-name"
             (keyup)="setKeyTag()"
+            id="persona-name"
             dotAutofocus
             type="text"
             formControlName="name"
             name="name"
-            pInputText
-        />
+            pInputText />
         <dot-field-validation-message
             [message]="'modes.persona.name.error.required' | dm"
-            [field]="form.get('name')"
-        >
-        </dot-field-validation-message>
+            [field]="form.get('name')"></dot-field-validation-message>
     </div>
 
     <div class="field">
@@ -35,34 +31,30 @@
     <div class="field">
         <label for="persona-image">{{ 'modes.persona.upload.file' | dm }}</label>
         <p-fileUpload
-            id="persona-image"
             *ngIf="!tempUploadedFile"
-            [chooseLabel]="'dot.common.choose' | dm"
             (onUpload)="onFileUpload($event)"
             (onBeforeUpload)="isValid.emit(false)"
+            [chooseLabel]="'dot.common.choose' | dm"
+            id="persona-image"
             url="/api/v1/temp"
             accept="image/*,.webp"
             auto="true"
-            mode="basic"
-        >
-        </p-fileUpload>
-        <div class="form__file-detail" *ngIf="tempUploadedFile">
+            mode="basic"></p-fileUpload>
+        <div *ngIf="tempUploadedFile" class="form__file-detail">
             <img [src]="tempUploadedFile.thumbnailUrl" />
             <span>{{ tempUploadedFile.fileName }}</span>
             <button
-                class="p-button-outlined p-button-sm"
-                [label]="'dot.common.remove' | dm"
                 (click)="removeImage()"
-                pButton
-            ></button>
+                [label]="'dot.common.remove' | dm"
+                class="p-button-outlined p-button-sm"
+                pButton></button>
         </div>
     </div>
     <div class="field">
         <label for="persona-other-tags">{{ 'modes.persona.other.tags' | dm }}</label>
         <dot-autocomplete-tags
-            id="persona-other-tags"
             [placeholder]="'modes.persona.select.tags.placeholder' | dm"
-            formControlName="tags"
-        ></dot-autocomplete-tags>
+            id="persona-other-tags"
+            formControlName="tags"></dot-autocomplete-tags>
     </div>
 </form>

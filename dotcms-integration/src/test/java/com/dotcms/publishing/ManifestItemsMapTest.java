@@ -4,7 +4,8 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import io.vavr.collection.Stream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,19 +20,21 @@ import java.util.stream.Collectors;
 public class ManifestItemsMapTest {
     private Map<String, List<String>> includes = new HashMap<>();
     private Map<String, List<String>> excludes = new HashMap<>();
+    private Map<String, List<String>> evaluateResons = new HashMap<>();
     private Set<String> alreadyCheck;
 
 
-    private static String getIncludeLine(final ManifestItem asset, final String reason) {
-        return getLine("INCLUDED", asset, reason, "");
+    private static String getIncludeLine(final ManifestItem asset, final String evaluateReason) {
+        return getLine("INCLUDED", asset, evaluateReason, "");
     }
 
-    private static String getExcludeLine(final ManifestItem asset, final String reason) {
-        return getLine("EXCLUDED", asset, "", reason);
+    private static String getExcludeLine(final ManifestItem asset,
+            final String evaluateReason, final String excludeReason) {
+        return getLine("EXCLUDED", asset, evaluateReason, excludeReason);
     }
     
     private static String getLine(final String includeExclude, final ManifestItem asset, 
-            final String reasonInclude, final String reasonExclude) {
+            final String reasonEvaluate, final String reasonExclude) {
         final ManifestInfo manifestInfo = asset.getManifestInfo();
 
         return list(
@@ -43,7 +46,7 @@ public class ManifestItemsMapTest {
                 manifestInfo.site(),
                 manifestInfo.folder(),
                 reasonExclude,
-                reasonInclude
+                reasonEvaluate
         ).stream().collect(Collectors.joining(","));
     }
 
@@ -61,13 +64,13 @@ public class ManifestItemsMapTest {
         }
     }
 
-    public void add(final ManifestItem assetManifestItem, final List<String> reasons) {
-        for (final String reason : reasons) {
-            add(assetManifestItem, reason);
+    public void add(final ManifestItem assetManifestItem, final List<String> evaluateReasons) {
+        for (final String evaluateReason : evaluateReasons) {
+            add(assetManifestItem, evaluateReason);
         }
     }
 
-    public void add(final ManifestItem assetManifestItem, final String reason) {
+    public void add(final ManifestItem assetManifestItem, final String evaluateReason) {
         final String key = assetManifestItem.getManifestInfo().id();
 
         if (excludes.containsKey(key)) {
@@ -81,11 +84,22 @@ public class ManifestItemsMapTest {
             includes.put(key, lines);
         }
 
-        lines.add(getIncludeLine(assetManifestItem, reason));
+        lines.add(getIncludeLine(assetManifestItem, evaluateReason));
+
+        final List<String> evaluateReasons = evaluateResons
+                .computeIfAbsent(key, k -> new ArrayList<>());
+        if (UtilMethods.isSet(evaluateReason) && !evaluateReasons.contains(evaluateReason)) {
+            evaluateReasons.add(evaluateReason);
+        }
 
     }
 
-    public void addExclude(final ManifestItem assetManifestItem, final String reason) {
+    public void addExclude(final ManifestItem assetManifestItem, final String excludeReason) {
+        addExclude(assetManifestItem, "", excludeReason);
+    }
+
+    public void addExclude(final ManifestItem assetManifestItem,
+            final String evaluateReason, final String excludeReason) {
         final String key = assetManifestItem.getManifestInfo().id();
 
         if (includes.containsKey(key)) {
@@ -99,7 +113,19 @@ public class ManifestItemsMapTest {
             excludes.put(key, lines);
         }
 
-        lines.add(getExcludeLine(assetManifestItem, reason));
+        final List<String> evaluateReasons = evaluateResons
+                .computeIfAbsent(key, k -> new ArrayList<>());
+        if (UtilMethods.isSet(evaluateReason) && !evaluateReasons.contains(evaluateReason)) {
+            evaluateReasons.add(evaluateReason);
+        }
+
+        if (!UtilMethods.isSet(evaluateReason)) {
+            lines.add(getExcludeLine(assetManifestItem, "", excludeReason));
+        } else {
+            for (final String reason : evaluateReasons) {
+                lines.add(getExcludeLine(assetManifestItem, reason, excludeReason));
+            }
+        }
     }
 
     public int size() {
@@ -143,12 +169,26 @@ public class ManifestItemsMapTest {
     }
 
     public void addExcludes(final Map<String, List<ManifestItem>> excludes) {
+        addExcludes(excludes, null);
+    }
+
+    public void addExcludes(
+            final Map<String, List<ManifestItem>> excludes,
+            final ManifestItem dependencyFrom) {
         for (Entry<String, List<ManifestItem>> excludeEntry : excludes.entrySet()) {
 
             final List<ManifestItem> entryDependencies = excludeEntry.getValue();
 
             for (ManifestItem assetExclude : entryDependencies) {
-                addExclude(assetExclude, excludeEntry.getKey());
+                if (dependencyFrom != null) {
+                    final String dependencyReeason = String.format(
+                            "Dependency from: ID: %s Title: %s",
+                            dependencyFrom.getManifestInfo().id(),
+                            dependencyFrom.getManifestInfo().title());
+                    addExclude(assetExclude, dependencyReeason, excludeEntry.getKey());
+                } else {
+                    addExclude(assetExclude, excludeEntry.getKey());
+                }
             }
         }
     }

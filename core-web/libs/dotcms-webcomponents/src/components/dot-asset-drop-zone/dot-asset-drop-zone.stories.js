@@ -5,10 +5,10 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
-        text: 'Drop files here',
+        text: 'Drop files here'
     }
 };
 

@@ -1,0 +1,107 @@
+# PR Checks Workflow
+#
+# This workflow is triggered on pull requests to the main branch and orchestrates
+# the entire PR check process. It uses reusable workflows to modularize different
+# stages of the CI process.
+#
+# Key features:
+# - Triggered on PR open and synchronize events
+# - Uses concurrency to manage multiple runs
+# - Modular structure using reusable workflows
+# - Conditional execution based on initialization results
+# - Comprehensive PR checks including build, tests, and SonarQube analysis
+# - Final status notification
+#
+# Security Note:
+#  As PR checks are run on code that
+#  is not yet merged into the main branch, we should not add anything that requires secrets
+#  post-workflow-reporting is triggered to run after this workflow unlike the other workflow and can handle any notifications like slack
+#  that require secrets. That workflow cannot be modified by PRs until they are merged.
+
+
+name: '-1 PR Check'
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    types:
+      - opened
+      - synchronize
+
+# Concurrency group to manage multiple runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  # Cancel any in-progress runs for the same branch/PR to prevent delays from changes during build
+  cancel-in-progress: true
+
+jobs:
+  # Initialize the PR check process
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      validation-level: 'full'
+
+  # Build job - only runs if no artifacts were found during initialization
+  build:
+    name: PR Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.build == 'true' && needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: true
+    permissions:
+      contents: read
+      packages: write
+
+  # Test job - runs various tests based on initialization outputs
+  test:
+    name: PR Test
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
+      integration: ${{ needs.initialize.outputs.backend == 'true' }}
+      postman: ${{ needs.initialize.outputs.backend == 'true' }}
+      frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
+      cli: ${{ needs.initialize.outputs.cli == 'true' }}
+      e2e: ${{ needs.initialize.outputs.build == 'true' }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+
+  # SonarQube analysis job
+  sonar:
+    name: PR SonarQube
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true'
+    uses: ./.github/workflows/cicd_comp_sonarqube-phase.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  # Finalize job - aggregates results from previous jobs
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ sonar,test ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      needsData: ${{ toJson(needs) }}
+
+  # PR Notifier job - sends notifications about the PR status
+  # Note this functionality should be in cicd_post-workflow-reporting.yml
+  pr-notifier:
+    name: PR Notifier
+    needs: [ finalize ]
+    if: always()
+    uses: ./.github/workflows/cicd_comp_pr-notifier.yml
+    with:
+      pr_status: ${{ needs.finalize.outputs.aggregate_status }}
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

@@ -29,7 +29,7 @@ public class BundlerUtilTest {
      */
     @Test
     public void test_jsonToObject_when_typeReference() throws IOException {
-        final Map<String, Integer> myInitialMap = CollectionsUtils.map("firstItem", 1, "secondItem", 2);
+        final Map<String, Integer> myInitialMap = Map.of("firstItem", 1, "secondItem", 2);
 
         //The collection is serialized to a JSON file
         final File tempFile = File.createTempFile("testJsonToObject", ".json");

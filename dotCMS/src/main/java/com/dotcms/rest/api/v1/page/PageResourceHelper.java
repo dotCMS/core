@@ -9,10 +9,13 @@ import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.beans.Host;
@@ -30,10 +33,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -47,19 +48,18 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Table;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -67,7 +67,6 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -77,6 +76,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -91,9 +92,6 @@ public class PageResourceHelper implements Serializable {
 
     private static final long serialVersionUID = 296763857542258211L;
 
-    private static final Lazy<Boolean> DELETE_ORPHANED_CONTENTS_FROM_CONTAINER =
-            Lazy.of(() -> Config.getBooleanProperty("DELETE_ORPHANED_CONTENTS_FROM_CONTAINER", true));
-
     private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
     private final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
     private final TemplateAPI templateAPI = APILocator.getTemplateAPI();
@@ -103,6 +101,7 @@ public class PageResourceHelper implements Serializable {
     private final UserAPI userAPI = APILocator.getUserAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final transient LanguageAPI languageAPI = APILocator.getLanguageAPI();
+    private final transient VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI();
 
     /**
      * Private constructor
@@ -174,7 +173,7 @@ public class PageResourceHelper implements Serializable {
                     CollectionsUtils.computeSubValueIfAbsent(
                             multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
                             CollectionsUtils::add,
-                            (String key, MultiTree multitree) -> CollectionsUtils.list(multitree));
+                            (String key, MultiTree multitree) -> list(multitree));
 
                     HibernateUtil.addCommitListener(new FlushCacheRunnable() {
 
@@ -379,11 +378,21 @@ public class PageResourceHelper implements Serializable {
             }
 
             template.setDrawed(true);
-            updateMultiTrees(page, pageForm);
 
             template.setModDate(new Date());
             // permissions have been updated above
-            return this.templateAPI.saveTemplate(template, site, APILocator.systemUser(), false);
+            final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+            final TemplateLayout oldTemplateLayout = DotTemplateTool.getTemplateLayout(oldTemplate.getDrawedBody());
+
+            final TemplateSaveParameters templateSaveParameters = new TemplateSaveParameters.Builder()
+                    .setNewTemplate(template)
+                    .setOldTemplateLayout(oldTemplateLayout)
+                    .setPageIds(list(page.getIdentifier()))
+                    .setNewLayout(pageForm.getLayout())
+                    .setSite(site)
+                    .build();
+
+            return this.templateAPI.saveAndUpdateLayout(templateSaveParameters, APILocator.systemUser(), false);
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when saving Template '%s' [ %s ]: %s",
                     template.getTitle(), template.getIdentifier(), ExceptionUtil.getErrorMessage(e));
@@ -391,127 +400,8 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
-    /**
-     * Updates the Multi-Tree data for a given HTML Page when its Template has changed.
-     *
-     * <p>When the page's Layout changes in terms of adding, removing or relocating Containers,
-     * this method will update the internal ID of the Containers on the page and will remove any
-     * orphaned data -- unless the {@code DELETE_ORPHANED_CONTENTS_FROM_CONTAINER} is set
-     * to{@code false}. Keeping such IDs in order is crucial for the layout to work correctly.</p>
-     *
-     * <p>On the other hand, if the {@code DELETE_ORPHANED_CONTENTS_FROM_CONTAINER} property is set
-     * to {@code false}, existing Contentlets associated to removed Container will be added to it if
-     * you put it back.</p>
-     *
-     * @param page     The {@link IHTMLPage} whose Multi-Tree data will be updated.
-     * @param pageForm The {@link PageForm} object containing the new Template's layout
-     *                 information.
-     *
-     * @throws DotDataException     An error occurred when updating the information in the
-     *                              database.
-     * @throws DotSecurityException A user permission error has occurred.
-     */
-    @WrapInTransaction
-    protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
-
-        final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
-        final Table<String, String, Set<PersonalizedContentlet>> pageContents = multiTreeAPI
-                .getPageMultiTrees(page, currentVariantId, false);
-
-        final String pageIdentifier = page.getIdentifier();
-        this.multiTreeAPI.deleteMultiTree(pageIdentifier, currentVariantId);
-
-        final List<MultiTree> multiTrees = new ArrayList<>();
-        final boolean deleteOrphanedContents = DELETE_ORPHANED_CONTENTS_FROM_CONTAINER.get();
-        for (final String containerId : pageContents.rowKeySet()) {
-            int treeOrder = 0;
-
-            for (final String uniqueId : pageContents.row(containerId).keySet()) {
-                final Map<String, Set<PersonalizedContentlet>> row = pageContents.row(containerId);
-                final Set<PersonalizedContentlet> contents         = row.get(uniqueId);
-
-                if (!contents.isEmpty()) {
-                    final String newContainerLayoutID = getNewContainerLayoutID(pageForm, containerId, uniqueId);
-                    // Adding multi-tre records is skipped if (1) deleting orphaned records is enabled
-                    // and (2) the container instance ID equals -1
-                    if (!deleteOrphanedContents || (!ContainerUUID.UUID_DEFAULT_VALUE.equals(newContainerLayoutID))) {
-                        for (final PersonalizedContentlet identifierPersonalization : contents) {
-                            final MultiTree multiTree = MultiTree.personalized(
-                                    new MultiTree().setContainer(containerId)
-                                            .setContentlet(identifierPersonalization.getContentletId())
-                                            .setInstanceId(newContainerLayoutID)
-                                            .setTreeOrder(treeOrder++)
-                                            .setHtmlPage(pageIdentifier)
-                                            .setVariantId(currentVariantId),
-                                    identifierPersonalization.getPersonalization());
-
-                            multiTrees.add(multiTree);
-                        }
-                    }
-                }
-            }
-        }
-
-        multiTreeAPI.saveMultiTrees(pageIdentifier, currentVariantId, multiTrees);
-    }
-
-    /**
-     * Returns the existing instance ID of the specified Container in the HTML Page Layout, or a new
-     * instance ID in case it was changed because one or more Containers before or after it were
-     * added, moved or removed.
-     *
-     * <p>The object {@link ContainerUUIDChanged} in the {@link PageForm} parameter indicates
-     * whether a Container's position was changed, or removed altogether. If that's the case, an
-     * instance ID of -1 will be returned. Containers whose instance ID start with
-     * {@link ParseContainer#PARSE_CONTAINER_UUID_PREFIX} will always keep its ID.</p>
-     *
-     * <p>Additionally, if the Container instance ID cannot be found in the internal Map that holds
-     * the updated position of Containers, it means such a Container doesn't exist anymore, so a -1
-     * will be returned.</p>
-     *
-     * @param pageForm    The {@link PageForm} object containing the Template's new layout
-     *                    information.
-     * @param containerId The ID of the Container being processed.
-     * @param uniqueId    The currently assigned instance ID of the Container
-     *
-     * @return The new instance ID of the Container, or -1 in case it was deleted from the Template.
-     *
-     * @throws DotDataException     An error occurred when persisting the changes.
-     * @throws DotSecurityException A user permission error has occurred.
-     */
-    private String getNewContainerLayoutID(final PageForm pageForm, final String containerId,
-                                           final String uniqueId)
-            throws DotDataException, DotSecurityException {
-        String containerPath = null;
-        final Container foundContainer = APILocator.getContainerAPI()
-                .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
-        if (foundContainer instanceof FileAssetContainer) {
-            // If we have a FileAssetContainer, we may need to search by path instead
-            containerPath = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) foundContainer);
-        }
-
-        if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
-            String newContainerInstanceID = pageForm.getNewlyContainerUUID(containerId);
-            if (newContainerInstanceID == null && containerPath != null) {
-                // Searching also by Container path -- i.e., Container as File -- if not found
-                newContainerInstanceID = pageForm.getNewlyContainerUUID(containerPath);
-            }
-            return newContainerInstanceID != null ? newContainerInstanceID
-                    : ContainerUUID.UUID_DEFAULT_VALUE;
-        } if (ParseContainer.isParserContainerUUID(uniqueId)) {
-            return uniqueId;
-        } else {
-            ContainerUUIDChanged change = pageForm.getChangeInContainerInstanceIDs(containerId, uniqueId);
-            if (change == null && containerPath != null) {
-                // Searching also by Container path -- i.e., Container as File -- if not found
-                change = pageForm.getChangeInContainerInstanceIDs(containerPath, uniqueId);
-            }
-            return change != null ? change.getNewInfo().getUUID() : ContainerUUID.UUID_DEFAULT_VALUE;
-        }
-    }
-
     public Template saveTemplate(final User user, final PageForm pageForm)
-            throws BadRequestException, DotDataException, DotSecurityException, IOException {
+            throws BadRequestException, DotDataException, DotSecurityException {
         return this.saveTemplate(null, user, pageForm);
     }
 
@@ -519,6 +409,7 @@ public class PageResourceHelper implements Serializable {
             throws DotDataException, DotSecurityException {
 
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+
         final Template saveTemplate;
         final boolean useByAnotherPage = this.templateAPI.getPages(page.getTemplateId()).stream()
                 .anyMatch(pageVersion -> !page.getIdentifier().equals(pageVersion.getIdentifier()) ||
@@ -533,7 +424,6 @@ public class PageResourceHelper implements Serializable {
 
         saveTemplate.setInode(null);
         saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());
-        saveTemplate.setDrawedBody(form.getLayout());
         saveTemplate.setDrawed(true);
         
         return saveTemplate;
@@ -584,8 +474,7 @@ public class PageResourceHelper implements Serializable {
         }
 
         Logger.debug(this, ()-> "Deleting current contentlet multi tree: " + copyContentletForm);
-        final MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
-                null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        final MultiTree currentMultitree = getMultiTree(htmlPage, container, contentId, instanceId, personalization, variant);
 
         if (null == currentMultitree) {
 
@@ -608,6 +497,19 @@ public class PageResourceHelper implements Serializable {
 
 
         return copiedContentlet;
+    }
+
+    private static MultiTree getMultiTree(String htmlPage, String container, String contentId, String instanceId, String personalization, String variant) throws DotDataException {
+        MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
+                null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant ? VariantAPI.DEFAULT_VARIANT.name(): variant);
+
+        if (null == currentMultitree &&
+                (ContainerUUID.UUID_START_VALUE.equals(instanceId) ||
+                        (ParseContainer.PARSE_CONTAINER_UUID_PREFIX + ContainerUUID.UUID_START_VALUE).equals(instanceId))) {
+            currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, ContainerUUID.UUID_LEGACY_VALUE,
+                    null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant ? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        }
+        return currentMultitree;
     }
 
     /**
@@ -678,6 +580,33 @@ public class PageResourceHelper implements Serializable {
         allLanguages.forEach(language -> languagesForPage.add(new ExistingLanguagesForPageView(language,
                 existingPageLanguages.contains(language.getId()))));
         return languagesForPage.build();
+    }
+
+    /**
+     * Verifies whether the incoming URI matches a Vanity URL or not.
+     *
+     * @param request    The current instance of the {@link HttpServletRequest}.
+     * @param uri        The incoming URI.
+     * @param languageId The language ID in which the URI is being requested.
+     *
+     * @return The Optional {@link CachedVanityUrl} object if the URI matches a Vanity URL.
+     */
+    public Optional<CachedVanityUrl> resolveVanityUrlIfPresent(final HttpServletRequest request,
+                                                               final String uri,
+                                                               final String languageId) {
+        final Host site = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final Language language = UtilMethods.isSet(languageId) ?
+                this.languageAPI.getLanguage(languageId) : this.languageAPI.getDefaultLanguage();
+        final String correctedUri = !uri.startsWith(StringPool.SLASH) ? StringPool.SLASH + uri :
+                uri;
+        final Optional<CachedVanityUrl> vanityUrlOpt =
+                this.vanityUrlAPI.resolveVanityUrl(correctedUri, site, language);
+        if (vanityUrlOpt.isPresent()) {
+            DotPreconditions.checkArgument(!this.vanityUrlAPI.isSelfReferenced(vanityUrlOpt.get()
+                    , correctedUri));
+            return vanityUrlOpt;
+        }
+        return Optional.empty();
     }
 
 }

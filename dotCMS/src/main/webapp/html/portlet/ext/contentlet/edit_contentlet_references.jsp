@@ -20,6 +20,7 @@
 		</td>
 	</tr>
 	<tr class="header">
+		<th><%= LanguageUtil.get(pageContext, "Host") %></th>
 		<th><%= LanguageUtil.get(pageContext, "Page") %></th>
 		<th><%= LanguageUtil.get(pageContext, "Container") %></th>
 		<th><%= LanguageUtil.get(pageContext, "Page-Owner") %></th>
@@ -43,7 +44,8 @@
 		Cmod++;
 %>
 	<tr <%= str_style2 %> >
-		<td>			
+		<td><%= host.getName() %></td>
+		<td>
 			<a href="/dotAdmin/#/edit-page/content?url=<%=htmlpageRef.getURI()%>" class="beta" target="_top">
 				<%= UtilMethods.escapeHTMLSpecialChars(htmlpageRef.getTitle()) %>
 			</a>

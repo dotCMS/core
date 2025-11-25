@@ -1,4 +1,7 @@
 
+# DEPRECATION
+These scripts are deprecated and no longer maintained. Please refer to the [dotCMS CLI](../dotcms-cli/README.md)
+
 # dot-cli
 
 This is a Bash Command Line Interface (CLI) to interact with dotCMS to simplify the interaction with Our Rest endpoints.  
@@ -94,7 +97,7 @@ But you can pass much more.
 
 Further info is available in our API-Postman Test
 
-dotCMS/src/curl-test/Site Resource.postman_collection.json 
+./src/main/resources/osgi-bundle/Site Resource.postman_collection.json 
 
 
 **Content-Type**:

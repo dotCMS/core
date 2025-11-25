@@ -1,0 +1,131 @@
+# Trunk Checks Workflow
+#
+# This workflow is triggered on pushes to the main branch or manually via workflow_dispatch.
+# It orchestrates a comprehensive set of checks, builds, tests, and deployments for the trunk (main) branch.
+#
+# Key features:
+# - Triggered on push to main or manual dispatch
+# - Configurable options for reusing previous builds and running all tests
+# - Comprehensive checks including build, tests, SonarQube analysis, and CLI artifact building
+# - Deployment to the trunk environment
+# - Final reporting of the workflow status
+
+name: '-3 Trunk Workflow'
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      reuse-previous-build:
+        description: 'Indicates if the workflow should reuse the previous build'
+        type: boolean
+        default: true
+      build-on-missing-artifacts:
+        type: boolean
+        description: 'Indicates if the workflow should build on missing artifacts'
+        default: false
+      run-all-tests:
+        description: 'Run all tests'
+        type: boolean
+        default: false
+      publish-npm-sdk-libs:
+        description: 'Publish NPM SDKs'
+        type: boolean
+        default: false        
+
+jobs:
+  # Initialize the trunk check process
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      reuse-previous-build: ${{ inputs.reuse-previous-build || github.event_name != 'workflow_dispatch' }}
+      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || github.event_name != 'workflow_dispatch' }}
+      validation-level: 'custom'
+      custom-modules: 'sdk_libs'      
+
+  # Build job - only runs if no artifacts were found during initialization
+  build:
+    name: Trunk Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    permissions:
+      contents: read
+      packages: write
+
+  # Test job - runs various tests
+  test:
+    name: Trunk Test
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      run-all-tests: ${{ inputs.run-all-tests || false }}
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+    permissions:
+      contents: read
+      packages: write
+
+  # SonarQube analysis job
+  sonar:
+    name: Trunk SonarQube
+    needs: [ initialize,test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_sonarqube-phase.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  # CLI Build job - builds CLI artifacts
+  build-cli:
+    name: CLI Build
+    needs: [ initialize,test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
+    with:
+      buildNativeImage: true
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      branch: ${{ github.ref }}
+
+  # Deployment job - deploys to the trunk environment
+  deployment:
+    needs: [ initialize,build-cli,sonar,test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_deployment-phase.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      publish-npm-sdk-libs: ${{ needs.initialize.outputs.sdk_libs != 'false' && github.event_name != 'workflow_dispatch' }}
+      environment: trunk
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  # Finalize job - aggregates results from previous jobs
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, build-cli, test, sonar, deployment]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      needsData: ${{ toJson(needs) }}
+
+  # Report job - generates and sends the final workflow report
+  report:
+    name: Report
+    if: always()
+    needs: [ finalize ]
+    uses: ./.github/workflows/cicd_post-workflow-reporting.yml
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

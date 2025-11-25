@@ -1,33 +1,32 @@
 <dot-portlet-base>
-    <dot-listing-data-table
-        #listing
-        *ngIf="showTable"
-        [actionHeaderOptions]="actionHeaderOptions"
-        [actions]="rowActions"
-        [columns]="contentTypeColumns"
-        [paginatorExtraParams]="paginatorExtraParams"
-        (rowWasClicked)="editContentType($event)"
-        sortField="modDate"
-        sortOrder="DESC"
-        url="v1/contenttype"
-    >
-        <dot-base-type-selector
-            *ngIf="!filterBy"
-            (selected)="changeBaseTypeSelector($event)"
-        ></dot-base-type-selector>
-    </dot-listing-data-table>
+    @if (showTable) {
+        <dot-listing-data-table
+            (rowWasClicked)="editContentType($event)"
+            [actionHeaderOptions]="actionHeaderOptions"
+            [actions]="rowActions"
+            [columns]="contentTypeColumns"
+            [paginatorExtraParams]="paginatorExtraParams"
+            #listing
+            sortField="modDate"
+            sortOrder="DESC"
+            url="v1/contenttype">
+            @if (!filterBy) {
+                <dot-base-type-selector (selected)="changeBaseTypeSelector($event)" />
+            }
+        </dot-listing-data-table>
+    }
 
-    <dot-add-to-bundle
-        *ngIf="addToBundleIdentifier"
-        [assetIdentifier]="addToBundleIdentifier"
-        (cancel)="addToBundleIdentifier = null"
-    ></dot-add-to-bundle>
+    @if (addToBundleIdentifier) {
+        <dot-add-to-bundle
+            (cancel)="addToBundleIdentifier = null"
+            [assetIdentifier]="addToBundleIdentifier" />
+    }
 
-    <dot-add-to-menu
-        *ngIf="addToMenuContentType"
-        [contentType]="addToMenuContentType"
-        (cancel)="addToMenuContentType = null"
-    ></dot-add-to-menu>
+    @if (addToMenuContentType) {
+        <dot-add-to-menu
+            (cancel)="addToMenuContentType = null"
+            [contentType]="addToMenuContentType" />
+    }
 
     <ng-template #dotDynamicDialog></ng-template>
 </dot-portlet-base>

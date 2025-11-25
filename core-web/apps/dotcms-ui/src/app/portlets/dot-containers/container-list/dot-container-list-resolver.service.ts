@@ -6,7 +6,7 @@ import { Resolve } from '@angular/router';
 import { map, take } from 'rxjs/operators';
 
 import { DotLicenseService, PushPublishService } from '@dotcms/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
+import { DotEnvironment } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotContainerListResolver implements Resolve<[boolean, boolean]> {

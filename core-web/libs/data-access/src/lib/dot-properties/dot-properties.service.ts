@@ -5,6 +5,8 @@ import { Injectable } from '@angular/core';
 
 import { map, pluck, take } from 'rxjs/operators';
 
+import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
+
 @Injectable({
     providedIn: 'root'
 })
@@ -55,30 +57,33 @@ export class DotPropertiesService {
 
     /**
      * Get the value of specific feature flag
-     *
-     * @param {string} key
+     * @param {FeaturedFlags} key
      * @return {*}  {Observable<boolean>}
      * @memberof DotPropertiesService
      */
-    getFeatureFlag(key: string): Observable<boolean> {
-        return this.getKey(key).pipe(map((value) => value === 'true'));
+    getFeatureFlag(key: FeaturedFlags): Observable<boolean> {
+        return this.getKey(key).pipe(
+            map((value) => (value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true'))
+        );
     }
 
     /**
-     * Get the values of specific feature flags
+     * Retrieves feature flags for given keys.
      *
-     * @param {string[]} keys
-     * @return {*}  {Observable<Record<string, boolean>>}
-     * @memberof DotPropertiesService
+     * @param {string[]} keys - An array of keys to retrieve feature flags for.
+     * @returns {Observable<Record<string, boolean | string>>} - An Observable that emits a record containing key-value pairs of feature flags.
      */
-    getFeatureFlags(keys: string[]): Observable<Record<string, boolean>> {
+    getFeatureFlags(keys: FeaturedFlags[]): Observable<Record<string, boolean | string>> {
         return this.getKeys(keys).pipe(
             map((flags) => {
-                return Object.keys(flags).reduce((acc, key) => {
-                    acc[key] = flags[key] === 'true';
+                return Object.entries(flags).reduce(
+                    (acc, [key, value]) => {
+                        acc[key] = value === 'true' ? true : value === 'false' ? false : value;
 
-                    return acc;
-                }, {} as Record<string, boolean>);
+                        return acc;
+                    },
+                    {} as Record<string, boolean | string>
+                );
             })
         );
     }

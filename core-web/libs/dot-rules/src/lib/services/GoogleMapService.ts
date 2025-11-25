@@ -1,6 +1,12 @@
 // tslint:disable:typedef
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+
+import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
+
+import { DotSiteService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 
 window['mapsApi$'] = new BehaviorSubject({ ready: false });
 
@@ -11,41 +17,53 @@ window['mapsApiReady'] = () => {
 
 @Injectable()
 export class GoogleMapService {
-    apiKey: string = null;
-
-    apiReady: Boolean = false;
-    loadingApi: Boolean = false;
     mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
-
-    constructor() {
+    private destroy$ = new Subject<boolean>();
+    constructor(
+        private siteService: SiteService,
+        private dotSiteService: DotSiteService
+    ) {
+        this.loadApi(this.siteService.currentSite.identifier).subscribe();
         this.mapsApi$ = window['mapsApi$'];
-        this.mapsApi$.subscribe((gMapApi) => {
-            if (gMapApi != null) {
-                this.apiReady = true;
-            }
-        });
+        this.mapsApi$.subscribe();
+
+        this.siteService.switchSite$
+            .pipe(
+                takeUntil(this.destroy$),
+                switchMap(({ identifier }) => this.loadApi(identifier))
+            )
+            .subscribe();
     }
 
-    loadApi(): void {
-        if (!this.loadingApi) {
-            this.loadingApi = true;
-            let url: string;
-            if (this.apiKey) {
-                url = `https://maps.googleapis.com/maps/api/js?key=${this.apiKey}&callback=mapsApiReady`;
-            } else {
-                url = `https://maps.googleapis.com/maps/api/js?callback=mapsApiReady`;
-            }
-            this.addScript(url);
-        }
+    //this method gets the Google key from the current site and loads the Google Maps API
+    loadApi(siteId): Observable<boolean> {
+        return this.siteService.getSiteById(siteId).pipe(
+            take(1),
+            switchMap((site) => {
+                const url = `https://maps.googleapis.com/maps/api/js?key=${
+                    site.googleMap || ''
+                }&callback=mapsApiReady`;
+
+                return this.addScript(url);
+            })
+        );
     }
 
-    addScript(url, callback?): void {
-        const script = document.createElement('script');
-        if (callback) {
-            script.onload = callback;
-        }
+    private addScript(url: string): Observable<boolean> {
+        const id = 'google-maps-api';
+        const scriptLoad$ = new Subject<boolean>();
+        let script = document.getElementById(id) as HTMLScriptElement;
+
+        document.getElementById(id)?.remove();
+
+        script = document.createElement('script');
+        script.id = id;
         script.type = 'text/javascript';
         script.src = url;
         document.body.appendChild(script);
+
+        script.onload = () => scriptLoad$.next(true);
+
+        return scriptLoad$.asObservable();
     }
 }

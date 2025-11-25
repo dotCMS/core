@@ -9,7 +9,6 @@ import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterAPI;
-import com.dotmarketing.image.filter.ImageFilterApiImpl;
 import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
@@ -17,8 +16,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
-
-
 
 /**
  * 
@@ -34,8 +31,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
     
     private final int allowedRequests = Config.getIntProperty("IMAGE_GENERATION_SIMULTANEOUS_REQUESTS", 10);
     
-    private final Semaphore semaphore  = new Semaphore(allowedRequests); 
-    
+    private final Semaphore semaphore  = new Semaphore(allowedRequests);
 
     /*
      * (non-Javadoc)
@@ -47,6 +43,12 @@ public class ImageFilterExporter implements BinaryContentExporter {
     public BinaryContentExporterData exportContent(File file, final Map<String, String[]> parameters)
                     throws BinaryContentExporterException {
 
+        final String fileExtension = UtilMethods.getFileExtension(file.getName());
+        if (UtilMethods.isVectorImage(fileExtension)) {
+            Logger.info(this.getClass(), "Skipping vector image transformation for " + fileExtension);
+            return new BinaryContentExporterData(file);
+        }
+
         Class<? extends ImageFilter> errorClass = ImageFilter.class;
         try {
 
@@ -55,7 +57,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
             parameters.put("filters", filters.keySet().toArray(new String[0]));
             
             // run pdf filter first (if a pdf)
-            if(!filters.isEmpty() && "pdf".equals(UtilMethods.getFileExtension(file.getName())) && !filters.containsKey("pdf")) {
+            if(!filters.isEmpty() && "pdf".equals(fileExtension) && !filters.containsKey("pdf")) {
                 file = runFilter(new PDFImageFilter(), file, parameters);
             }
             
@@ -127,9 +129,6 @@ public class ImageFilterExporter implements BinaryContentExporter {
         }
         return Optional.of(fileToReturn);
     }
-    
-    
-    
 
     public String getName() {
         return "Image Filter Exporter";

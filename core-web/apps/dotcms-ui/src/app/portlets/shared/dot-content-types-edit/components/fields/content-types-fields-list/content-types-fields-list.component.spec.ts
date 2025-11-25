@@ -36,6 +36,16 @@ const itemsData = [
         clazz: 'tab'
     },
     {
+        label: 'Relationships Legacy',
+        id: 'relationships_tab',
+        clazz: 'relationships_tab'
+    },
+    {
+        label: 'Permission',
+        id: 'permissions_tab',
+        clazz: 'permissions_tab'
+    },
+    {
         label: 'Line Divider',
         clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
     }
@@ -74,9 +84,11 @@ describe('ContentTypesFieldsListComponent', () => {
             items = de.queryAll(By.css('li span'));
         });
 
-        it('should filter our tab field', () => {
+        it('should filter black listed fields', () => {
+            const backListFields = ['relationships_tab', 'permissions_tab', 'tab_divider'];
+
             items.forEach((el: DebugElement) => {
-                expect(el.nativeElement.textContent).not.toBe('Tab Divider');
+                expect(backListFields).not.toContain(el.nativeElement.textContent);
             });
         });
 

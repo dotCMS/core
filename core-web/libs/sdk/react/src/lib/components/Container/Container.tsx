@@ -1,132 +1,107 @@
 import { useContext } from 'react';
 
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
-
 import { PageContext } from '../../contexts/PageContext';
+import { useCheckHaveContent } from '../../hooks/useCheckHaveContent';
+import { DotCMSPageContext } from '../../models';
 import { getContainersData } from '../../utils/utils';
-import { PageProviderContext } from '../PageProvider/PageProvider';
 
-const FAKE_CONTENLET = {
-    identifier: 'TEMP_EMPTY_CONTENTLET',
-    title: 'TEMP_EMPTY_CONTENTLET',
-    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
-    inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
-    widgetTitle: 'TEMP_EMPTY_CONTENTLET'
-};
-
-function EmptyContainer() {
-    return (
-        <div
-            data-testid="empty-container"
-            style={{
-                width: '100%',
-                backgroundColor: '#ECF0FD',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                color: '#030E32',
-                height: '10rem'
-            }}>
-            This container is empty.
-        </div>
-    );
-}
-
-function NoContent({ contentType }: { readonly contentType: string }) {
+/**
+ * Component to render when there is no component for the content type.
+ *
+ * @param {{ readonly contentType: string }} { contentType }
+ * @return {*}
+ */
+function NoComponent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
 }
 
-export interface ContainerProps {
-    readonly containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0];
+/**
+ * Component to render when there is no content in the container.
+ *
+ * @return {*}
+ */
+function EmptyContent() {
+    return null;
 }
 
+/**
+ * Props for the Container component.
+ *
+ * @export
+ * @interface ContainerProps
+ */
+export interface ContainerProps {
+    readonly containerRef: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0]['containers'][0];
+}
+
+/**
+ * Renders a Container with its content using information provided by dotCMS Page API.
+ *
+ * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
+ * @export
+ * @param {ContainerProps} { containerRef }
+ * @return {JSX.Element} Rendered container with content
+ */
 export function Container({ containerRef }: ContainerProps) {
+    const { isInsideEditor } = useContext(PageContext) as DotCMSPageContext;
+
     const { identifier, uuid } = containerRef;
 
-    // Get the containers from the global context
-    const { containers, page, viewAs, components, isInsideEditor } =
-        useContext<PageProviderContext | null>(PageContext) as PageProviderContext;
+    const { haveContent, contentletDivRef } = useCheckHaveContent();
 
-    const { acceptTypes, contentlets, maxContentlets, pageContainers, path } = getContainersData(
+    // Get the containers from the global context
+    const {
+        pageAsset: { containers },
+        components
+    } = useContext<DotCMSPageContext | null>(PageContext) as DotCMSPageContext;
+
+    const { acceptTypes, contentlets, maxContentlets, variantId, path } = getContainersData(
         containers,
         containerRef
     );
 
-    const updatedContentlets =
-        contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
-
-    const contentletsId = updatedContentlets.map((contentlet) => contentlet.identifier);
-
     const container = {
         acceptTypes,
-        contentletsId,
         identifier: path ?? identifier,
         maxContentlets,
+        variantId,
         uuid
     };
 
-    const containerPayload = {
-        container,
-        language_id: viewAs.language.id,
-        pageContainers,
-        pageId: page.identifier,
-        personaTag: viewAs.persona?.keyTag
-    };
+    const containerStyles = contentlets.length
+        ? undefined
+        : {
+              width: '100%',
+              backgroundColor: '#ECF0FD',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: '#030E32',
+              height: '10rem'
+          };
 
-    function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
-        let target = e.target as HTMLElement;
+    const ContainerChildren = contentlets.map((contentlet) => {
+        const ContentTypeComponent = components[contentlet.contentType];
+        const DefaultComponent = components['CustomNoComponent'] || NoComponent;
 
-        if (target.dataset.dot !== 'contentlet') {
-            target = target.closest('[data-dot="contentlet"]') as HTMLElement;
-        }
-
-        if (!target) {
-            return;
-        }
-
-        const { x, y, width, height } = target.getBoundingClientRect();
-
-        const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
-
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-            payload: {
-                x,
-                y,
-                width,
-                height,
-                payload: contentletPayload
-            }
-        });
-    }
-
-    const renderContentlets = updatedContentlets.map((contentlet) => {
-        const ContentTypeComponent = components[contentlet.contentType] || NoContent;
-
-        const Component =
-            contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
-                ? EmptyContainer
-                : ContentTypeComponent;
-
-        const contentletPayload = {
-            container,
-            contentlet: {
-                identifier: contentlet.identifier,
-                title: contentlet.widgetTitle || contentlet.title,
-                inode: contentlet.inode
-            },
-            language_id: viewAs.language.id,
-            pageContainers,
-            pageId: page.identifier,
-            personaTag: viewAs.persona?.keyTag
-        };
+        const Component = isInsideEditor
+            ? ContentTypeComponent || DefaultComponent
+            : ContentTypeComponent || EmptyContent;
 
         return isInsideEditor ? (
             <div
-                onPointerEnter={onPointerEnterHandler}
-                data-dot="contentlet"
-                data-content={JSON.stringify(contentletPayload)}
-                key={contentlet.identifier}>
+                data-testid="dot-contentlet"
+                data-dot-object="contentlet"
+                data-dot-identifier={contentlet.identifier}
+                data-dot-basetype={contentlet.baseType}
+                data-dot-title={contentlet.widgetTitle || contentlet.title}
+                data-dot-inode={contentlet.inode}
+                data-dot-type={contentlet.contentType}
+                data-dot-container={JSON.stringify(container)}
+                data-dot-on-number-of-pages={contentlet.onNumberOfPages}
+                key={contentlet.identifier}
+                ref={contentletDivRef}
+                style={{ minHeight: haveContent ? undefined : '4rem' }}>
                 <Component {...contentlet} />
             </div>
         ) : (
@@ -135,11 +110,18 @@ export function Container({ containerRef }: ContainerProps) {
     });
 
     return isInsideEditor ? (
-        <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
-            {renderContentlets}
+        <div
+            data-testid="dot-container"
+            data-dot-object="container"
+            data-dot-accept-types={acceptTypes}
+            data-dot-identifier={path ?? identifier}
+            data-max-contentlets={maxContentlets}
+            data-dot-uuid={uuid}
+            style={containerStyles}>
+            {ContainerChildren.length ? ContainerChildren : 'This container is empty.'}
         </div>
     ) : (
         // eslint-disable-next-line react/jsx-no-useless-fragment
-        <>{renderContentlets}</>
+        <>{ContainerChildren}</>
     );
 }

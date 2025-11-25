@@ -27,6 +27,7 @@ public class CategoryFieldDataFetcher implements DataFetcher<List<Map<String, Ob
             final Contentlet contentlet = environment.getSource();
             final String var = environment.getField().getName();
 
+            Logger.debug(this, ()-> "Fetching categories for contentlet: " + contentlet.getIdentifier());
             final CategoryToMapTransformer transformer = new CategoryToMapTransformer(contentlet, user);
             return transformer.asMap().get(var) == null ? EMPTY_LIST : (List<Map<String, Object>>) ((Map) transformer.asMap().get(var)).get("categories");
         } catch (Exception e) {

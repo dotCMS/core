@@ -6,17 +6,17 @@ This folder contains the frontend infrastructure for the DotCMS admin system, in
 
 | Name                                                                                               | Type | Location                     | Build with | Description                                                 |
 | -------------------------------------------------------------------------------------------------- | ---- | ---------------------------- | ---------- | ----------------------------------------------------------- |
-| [dotcms-ui](https://github.com/dotCMS/core-web/tree/master/apps/dotcms-ui)                         | app  | `apps/dotcms-ui`             | Angular    | Main UI application                                         |
-| [dotcdn](https://github.com/dotCMS/core-web/tree/master/apps/dotcdn)                               | app  | `apps/dotcdn`                | Angular    | App for the dotCDN plugin                                   |
-| [dotcms-block-editor](https://github.com/dotCMS/core-web/tree/master/apps/dotcms-block-editor)     | app  | `apps/dotcms-block-editor`   | Angular    | App to build de block-editor as a Web Component             |
-| [dotcms](https://github.com/dotCMS/core-web/tree/master/libs/dotcms)                               | lib  | `libs/dotcms`                | Typescript | JavaScript SDK for DotCMS API's                             |
-| [dot-layout-grid](https://github.com/dotCMS/core-web/tree/master/libs/dot-layout-grid)             | lib  | `libs/dot-layout-grid`       | Angular    | Components for layout editor                                |
-| [block-editor](https://github.com/dotCMS/core-web/tree/master/libs/block-editor)                   | lib  | `libs/block-editor`          | TitTap     | Block editor components                                     |
-| [dot-rules](https://github.com/dotCMS/core-web/tree/master/libs/dot-rules)                         | lib  | `libs/dot-rules`             | Angular    | Components and services for rules                           |
-| [dotcms-field-elements](https://github.com/dotCMS/core-web/tree/master/libs/dotcms-field-elements) | lib  | `libs/dotcms-field-elements` | Stenciljs  | Web components for form builder (deprecated)                |
-| [dotcms-js](https://github.com/dotCMS/core-web/tree/master/libs/dotcms-js)                         | lib  | `libs/dotcms-js`             | Angular    | Angular @injectables for DotCMS API                         |
-| [dotcms-models](https://github.com/dotCMS/core-web/tree/master/libs/dotcms-models)                 | lib  | `libs/dotcms-models`         | Typescript | DotCMS interfaces and types                                 |
-| [dotcms-scss](https://github.com/dotCMS/core-web/tree/master/libs/dotcms-scss)                     | lib  | `libs/dotcms-scss`           | SCSS       | SCSS shared files for theme Angular PrimeNG and Dijit Theme |
+| [dotcms-ui](https://github.com/dotCMS/core-web/tree/main/apps/dotcms-ui)                         | app  | `apps/dotcms-ui`             | Angular    | Main UI application                                         |
+| [dotcdn](https://github.com/dotCMS/core-web/tree/main/apps/dotcdn)                               | app  | `apps/dotcdn`                | Angular    | App for the dotCDN plugin                                   |
+| [dotcms-block-editor](https://github.com/dotCMS/core-web/tree/main/apps/dotcms-block-editor)     | app  | `apps/dotcms-block-editor`   | Angular    | App to build de block-editor as a Web Component             |
+| [dotcms](https://github.com/dotCMS/core-web/tree/main/libs/dotcms)                               | lib  | `libs/dotcms`                | Typescript | JavaScript SDK for DotCMS API's                             |
+| [dot-layout-grid](https://github.com/dotCMS/core-web/tree/main/libs/dot-layout-grid)             | lib  | `libs/dot-layout-grid`       | Angular    | Components for layout editor                                |
+| [block-editor](https://github.com/dotCMS/core-web/tree/main/libs/block-editor)                   | lib  | `libs/block-editor`          | TitTap     | Block editor components                                     |
+| [dot-rules](https://github.com/dotCMS/core-web/tree/main/libs/dot-rules)                         | lib  | `libs/dot-rules`             | Angular    | Components and services for rules                           |
+| [dotcms-field-elements](https://github.com/dotCMS/core-web/tree/main/libs/dotcms-field-elements) | lib  | `libs/dotcms-field-elements` | Stenciljs  | Web components for form builder (deprecated)                |
+| [dotcms-js](https://github.com/dotCMS/core-web/tree/main/libs/dotcms-js)                         | lib  | `libs/dotcms-js`             | Angular    | Angular @injectables for DotCMS API                         |
+| [dotcms-models](https://github.com/dotCMS/core-web/tree/main/libs/dotcms-models)                 | lib  | `libs/dotcms-models`         | Typescript | DotCMS interfaces and types                                 |
+| [dotcms-scss](https://github.com/dotCMS/core-web/tree/main/libs/dotcms-scss)                     | lib  | `libs/dotcms-scss`           | SCSS       | SCSS shared files for theme Angular PrimeNG and Dijit Theme |
 
 ## dotCMS core-web Monorepo
 
@@ -28,7 +28,7 @@ Run `yarn install` to install all project dependencies.
 
 ### Development Server
 
-To start the development server, run `nx serve dotcms-ui`. Visit [http://localhost:4200/](http://localhost:4200/). The app will automatically reload if you make any changes to the source files. We have set up a proxy to the backend server (on port 8080), allowing you to run both the backend server (by building the master branch or using Docker) and the frontend server simultaneously.
+To start the development server, run `nx serve dotcms-ui`. Visit [http://localhost:4200/](http://localhost:4200/). The app will automatically reload if you make any changes to the source files. We have set up a proxy to the backend server (on port 8080), allowing you to run both the backend server (by building the main branch or using Docker) and the frontend server simultaneously.
 
 ### Building the Project
 
@@ -46,4 +46,3 @@ Use `nx affected:test` to execute the unit tests affected by recent changes.
 ### Understanding Your Workspace
 
 Run `nx dep-graph` to see a diagram of your projects' dependencies. This will help you better understand the structure and relationships in your monorepo.
-

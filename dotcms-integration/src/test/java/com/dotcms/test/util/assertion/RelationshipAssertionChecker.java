@@ -1,17 +1,15 @@
 package com.dotcms.test.util.assertion;
 
+import com.dotcms.enterprise.publishing.remote.bundler.FileBundlerTestUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotcms.enterprise.publishing.remote.bundler.FileBundlerTestUtil;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Relationship}
@@ -19,7 +17,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 public class RelationshipAssertionChecker implements AssertionChecker<Relationship> {
     @Override
     public Map<String, Object> getFileArguments(final Relationship relationship, File file) {
-        return map(
+        return Map.of(
                 "inode", relationship.getInode(),
                 "parent_inode", relationship.getParentStructure().id(),
                 "child_inode", relationship.getChildStructure().id(),

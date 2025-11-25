@@ -1,36 +1,30 @@
 <dot-content-type-layout
-    [contentType]="data"
+    *ngIf="isEditMode()"
     (openEditDialog)="startFormDialog()"
     (changeContentTypeName)="editContentTypeName($event)"
-    *ngIf="isEditMode()"
->
+    [contentType]="data">
     <dot-content-type-fields-drop-zone
-        #fieldsDropZone
         *ngIf="data.id"
-        [layout]="layout"
-        [loading]="loadingFields"
-        [contentType]="data"
         (saveFields)="saveFields($event)"
         (removeFields)="removeFields($event)"
         (editField)="editField($event)"
-    >
-    </dot-content-type-fields-drop-zone>
+        [layout]="layout"
+        [loading]="loadingFields"
+        [contentType]="data"
+        #fieldsDropZone></dot-content-type-fields-drop-zone>
 </dot-content-type-layout>
 
 <dot-dialog
     (hide)="onDialogHide()"
+    [(visible)]="show"
     [actions]="dialogActions"
     [closeable]="dialogCloseable"
-    [header]="templateInfo.header"
-    [(visible)]="show"
->
+    [header]="templateInfo.header">
     <dot-content-types-form
         *ngIf="show"
-        #form
-        [layout]="layout"
-        [data]="data"
         (valid)="setDialogOkButtonState($event)"
         (send)="handleFormSubmit($event)"
-    >
-    </dot-content-types-form>
+        [layout]="layout"
+        [data]="data"
+        #form></dot-content-types-form>
 </dot-dialog>

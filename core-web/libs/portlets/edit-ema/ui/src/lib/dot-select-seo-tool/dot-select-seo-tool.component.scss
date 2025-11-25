@@ -1,0 +1,29 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.dot-select-seo-tool__item {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    gap: $spacing-1;
+    margin: $spacing-4 $spacing-5 0;
+}
+
+.dot-select-seo-tool__icon {
+    font-size: $font-size-lmd;
+    color: $color-palette-primary-500;
+}
+
+.dot-select-seo-tool__title {
+    margin: 0;
+}
+
+.dot-select-seo-tool__details {
+    font-size: $font-size-lmd;
+    color: $color-palette-gray-700;
+}

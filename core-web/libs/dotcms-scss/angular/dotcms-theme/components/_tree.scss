@@ -6,167 +6,166 @@
     color: $black;
     padding: $spacing-2;
     border-radius: $border-radius-xs;
-}
 
-.p-tree .p-tree-container .p-treenode {
-    padding: 0.25rem;
-}
+    .p-tree-container {
+        .p-treenode {
+            padding: 0;
+            margin: 0;
+            outline: 0;
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content {
-    border-radius: $border-radius-xs;
-    transition: none;
-    padding: 0.571rem;
-}
+            .p-treenode-content {
+                border-radius: $border-radius-xs;
+                transition: none;
+                padding: $spacing-0 $spacing-1;
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content .p-tree-toggler {
-    margin-right: $spacing-1;
-    width: $spacing-5;
-    height: $spacing-5;
-    color: $black;
-    border: 0 none;
-    background: transparent;
-    border-radius: 50%;
-    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
-}
+                .p-tree-toggler {
+                    margin-right: $spacing-1;
+                    width: $spacing-5;
+                    height: $spacing-5;
+                    color: $black;
+                    border: 0 none;
+                    background: transparent;
+                    border-radius: 50%;
+                    transition:
+                        background-color 0.2s,
+                        color 0.2s,
+                        box-shadow 0.2s;
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content .p-tree-toggler:enabled:hover {
-    color: $text-color-hover;
-    border-color: transparent;
-    background: $bg-hover;
-}
+                    &:enabled:hover {
+                        color: $text-color-hover;
+                        border-color: transparent;
+                        background: $bg-hover;
+                    }
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content .p-tree-toggler:focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: none;
-}
+                    &:focus {
+                        outline: 0 none;
+                        outline-offset: 0;
+                        box-shadow: none;
+                    }
+                }
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content .p-treenode-icon {
-    margin-right: $spacing-1;
-    color: $black;
-}
+                .p-treenode-icon {
+                    margin-right: $spacing-1;
+                    color: $black;
+                }
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content .p-checkbox {
-    margin-right: $spacing-1;
-}
+                .p-checkbox {
+                    margin-right: $spacing-1;
 
-.p-tree
-    .p-tree-container
-    .p-treenode
-    .p-treenode-content
-    .p-checkbox
-    .p-indeterminate
-    .p-checkbox-icon {
-    color: $black;
-}
+                    .p-indeterminate {
+                        .p-checkbox-icon {
+                            color: $black;
+                        }
+                    }
+                }
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content:focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: none;
-}
+                &:focus {
+                    outline: 0 none;
+                    outline-offset: 0;
+                    box-shadow: none;
+                }
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content.p-highlight {
-    background: $bg-highlight;
-    color: $text-color-highlight;
-}
+                &.p-highlight {
+                    background: $bg-highlight;
+                    color: $text-color-highlight;
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content.p-highlight .p-tree-toggler,
-.p-tree .p-tree-container .p-treenode .p-treenode-content.p-highlight .p-treenode-icon {
-    color: $text-color-highlight;
-}
+                    .p-tree-toggler,
+                    .p-treenode-icon {
+                        color: $text-color-highlight;
+                    }
+                }
 
-.p-tree
-    .p-tree-container
-    .p-treenode
-    .p-treenode-content.p-treenode-selectable:not(.p-highlight):hover {
-    background: $bg-hover;
-    color: $text-color-hover;
-}
+                &.p-treenode-selectable:not(.p-highlight):hover {
+                    background: $bg-hover;
+                    color: $text-color-hover;
+                }
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content.p-treenode-dragover {
-    background: rgba(0, 0, 0, 0.04);
-    color: $black;
-}
+                &.p-treenode-dragover {
+                    background: rgba(0, 0, 0, 0.04);
+                    color: $black;
+                }
+            }
+        }
 
-.p-tree .p-tree-filter-container {
-    margin-bottom: $spacing-1;
-}
+        .p-tree-filter-container {
+            margin-bottom: $spacing-1;
 
-.p-tree .p-tree-filter-container .p-tree-filter {
-    width: 100%;
-    padding-right: $spacing-6;
-}
+            .p-tree-filter {
+                width: 100%;
+                padding-right: $spacing-6;
+            }
 
-.p-tree .p-tree-filter-container .p-tree-filter-icon {
-    right: $spacing-2;
-    color: $black;
-}
+            .p-tree-filter-icon {
+                right: $spacing-2;
+                color: $black;
+            }
+        }
 
-.p-tree .p-treenode-children {
-    padding: 0 0 0 $spacing-3;
-}
+        .p-treenode-children {
+            padding: 0 0 0 $spacing-3;
+        }
 
-.p-tree .p-tree-loading-icon {
-    font-size: $font-size-xxxl;
-}
+        .p-tree-loading-icon {
+            font-size: $icon-xl;
+        }
 
-.p-tree .p-treenode-droppoint.p-treenode-droppoint-active {
-    background-color: rgba(50, 65, 145, 0.12);
-}
+        .p-treenode-droppoint.p-treenode-droppoint-active {
+            background-color: rgba(50, 65, 145, 0.12);
+        }
+    }
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content {
-    border-radius: $border-radius-xs;
-    border: 1px solid $input-border-color;
-    background-color: $white;
-    color: $black;
-    padding: 0.571rem;
-    transition: none;
-}
+    &.p-tree-horizontal {
+        .p-treenode {
+            .p-treenode-content {
+                border-radius: $border-radius-xs;
+                border: 1px solid $input-border-color;
+                background-color: $white;
+                color: $black;
+                padding: 0.571rem;
+                transition: none;
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content.p-highlight {
-    background-color: $bg-highlight;
-    color: $text-color-highlight;
-}
+                &.p-highlight {
+                    background-color: $bg-highlight;
+                    color: $text-color-highlight;
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content.p-highlight .p-treenode-icon {
-    color: $text-color-highlight;
-}
+                    .p-treenode-icon {
+                        color: $text-color-highlight;
+                    }
+                }
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content .p-tree-toggler {
-    margin-right: $spacing-1;
-}
+                .p-tree-toggler {
+                    margin-right: $spacing-1;
+                }
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content .p-treenode-icon {
-    color: $black;
-    margin-right: $spacing-1;
-}
+                .p-treenode-icon {
+                    color: $black;
+                    margin-right: $spacing-1;
+                }
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content .p-checkbox {
-    margin-right: $spacing-1;
-}
+                .p-checkbox {
+                    margin-right: $spacing-1;
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content .p-checkbox .p-checkbox-icon {
-    color: $color-palette-primary;
-}
+                    .p-checkbox-icon {
+                        color: $color-palette-primary;
+                    }
+                }
 
-.p-tree.p-tree-horizontal
-    .p-treenode
-    .p-treenode-content
-    .p-treenode-label:not(.p-highlight):hover {
-    background-color: inherit;
-    color: inherit;
-}
+                .p-treenode-label:not(.p-highlight):hover {
+                    background-color: inherit;
+                    color: inherit;
+                }
 
-.p-tree.p-tree-horizontal
-    .p-treenode
-    .p-treenode-content.p-treenode-selectable:not(.p-highlight):hover {
-    background: $bg-hover;
-    color: $text-color-hover;
-}
+                &.p-treenode-selectable:not(.p-highlight):hover {
+                    background: $bg-hover;
+                    color: $text-color-hover;
+                }
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content:focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: none;
+                &:focus {
+                    outline: 0 none;
+                    outline-offset: 0;
+                    box-shadow: none;
+                }
+            }
+        }
+    }
 }

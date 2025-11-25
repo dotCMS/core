@@ -1,11 +1,12 @@
-<div class="bubble-menu" id="bubble-menu" (mousedown)="preventDeSelection($event)">
-    <ng-container *ngIf="selected">
-        <button class="btn-dropdown" (click)="toggleChangeTo.emit()">{{ selected }}</button>
+<div (mousedown)="preventDeSelection($event)" class="bubble-menu" id="bubble-menu">
+    @if (selected) {
+        <button (click)="toggleChangeTo.emit()" class="btn-dropdown">{{ selected }}</button>
         <div class="divider"></div>
-    </ng-container>
-    <ng-container *ngFor="let item of items; let i = index">
-        <dot-bubble-menu-button (click)="command.emit(item)" [active]="item.active" [item]="item">
-        </dot-bubble-menu-button>
-        <div *ngIf="item.divider" class="divider"></div>
-    </ng-container>
+    }
+    @for (item of items; track $index) {
+        <dot-bubble-menu-button (click)="command.emit(item)" [active]="item.active" [item]="item" />
+        @if (item.divider) {
+            <div class="divider"></div>
+        }
+    }
 </div>

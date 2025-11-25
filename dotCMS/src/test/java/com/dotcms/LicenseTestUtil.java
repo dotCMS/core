@@ -15,9 +15,9 @@ import com.dotcms.enterprise.LicenseUtil;
  * should only be used inside the test suite. 
  */
 public class LicenseTestUtil extends UnitTestBase {
-	
+
 	public static void getLicense() throws Exception{
-		
+
 		if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			String license;
 			HttpServletRequest req=Mockito.mock(HttpServletRequest.class);
@@ -28,26 +28,19 @@ public class LicenseTestUtil extends UnitTestBase {
 			final StringBuilder reqcode=new StringBuilder();
 
 			Mockito.doAnswer(new Answer() {
-			    public Object answer(org.mockito.invocation.InvocationOnMock invocation) throws Throwable {
-			        reqcode.append(invocation.getArguments()[1].toString());
-			        return null;
-			    }
+				public Object answer(org.mockito.invocation.InvocationOnMock invocation) throws Throwable {
+					reqcode.append(invocation.getArguments()[1].toString());
+					return null;
+				}
 			}).when(req).setAttribute(Mockito.eq("requestCode"),Mockito.any(String.class));
 
 			LicenseUtil.processForm(req);
-			
-			HttpClient client=new HttpClient();
-			PostMethod post=new PostMethod("https://my.dotcms.com/app/licenseRequest3");
-			post.setRequestBody(new NameValuePair[] { new NameValuePair("code", reqcode.toString()) });
-			client.executeMethod(post);
-			
-			if(post.getStatusCode()==200){
-				license = post.getResponseBodyAsString();
-				HttpServletRequest req2=Mockito.mock(HttpServletRequest.class);
-				Mockito.when(req2.getParameter("iwantTo")).thenReturn("paste_license");
-				Mockito.when(req2.getParameter("license_text")).thenReturn(license);
-				LicenseUtil.processForm(req2);
-			}
-		} 
+
+			license = "sZ+kjQ1zFpw/J4lMkyzGfn4sgaCZ//jGqObjzeg/pn3a8YCzYKlVpaqyLA7WT858vNTMBTu6RGOGf+RIjVwezWt1FOn7svkTC1JeGu+rrryECD19spxq1iaWinXSJAwV9g14s3GKwXPmI8Tvnr+RXFDP0O/xS9Y5A9pdRsY6KCEAAAAIRGV2IFRlc3QAAAAIAAABWbfTJtkAAAAIAAAAAAAAAAAAAAAEAAAB9AAAACQ0OTQ4Zjc3Mi1mZWJjLTQ1ZWYtYTMzMi01NDU4NDc2ZmVkMGMAAAAEcHJvZAAAAAQAAAABAAAABAAAAAAAAAAEAAABLAAAACQzNTVlZTIzNy1kM2M3LTQzMjQtODlkOC1iNTBhNTIzNjg2NWM=";
+			HttpServletRequest req2=Mockito.mock(HttpServletRequest.class);
+			Mockito.when(req2.getParameter("iwantTo")).thenReturn("paste_license");
+			Mockito.when(req2.getParameter("license_text")).thenReturn(license);
+			LicenseUtil.processForm(req2);
+		}
 	}
 }

@@ -164,7 +164,46 @@ describe('DotBinaryFieldEditorComponent', () => {
             expect(component.monacoOptions()).toEqual(expectedMonacoOptions);
             expect(component.mimeType).toBe('text/javascript');
         }));
+        it('should force html language on vtl files', fakeAsync(() => {
+            const expectedMonacoOptions = {
+                ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
+                language: 'html'
+            };
 
+            spectator.detectChanges();
+
+            component.form.setValue({
+                name: 'banner.vtl',
+                content: 'test'
+            });
+
+            spectator.detectComponentChanges();
+
+            tick(355);
+
+            expect(component.monacoOptions()).toEqual(expectedMonacoOptions);
+            expect(component.mimeType).toBe('text/x-velocity');
+        }));
+        it('should fallback with plain text if language is not found', fakeAsync(() => {
+            const expectedMonacoOptions = {
+                ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
+                language: 'text'
+            };
+
+            spectator.detectChanges();
+
+            component.form.setValue({
+                name: 'script.rb',
+                content: 'test'
+            });
+
+            spectator.detectComponentChanges();
+
+            tick(355);
+
+            expect(component.monacoOptions()).toEqual(expectedMonacoOptions);
+            expect(component.mimeType).toBe('plain/text');
+        }));
         it('should emit cancel event when cancel button is clicked', () => {
             const spy = jest.spyOn(component.cancel, 'emit');
             const cancelBtn = spectator.query(byTestId('cancel-button'));

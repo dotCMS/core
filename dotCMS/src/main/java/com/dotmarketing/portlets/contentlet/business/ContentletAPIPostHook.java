@@ -24,7 +24,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -174,21 +173,69 @@ public interface ContentletAPIPostHook {
 	 * @param currentContentlet
 	 * @param returnValue - value returned by primary API Method
 	 */
-	public default void copyContentlet(Contentlet currentContentlet, Host host, User user, boolean respectFrontendRoles,Contentlet returnValue){}
+	default void copyContentlet(Contentlet currentContentlet, Host host, User user, boolean respectFrontendRoles,Contentlet returnValue){}
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 */
+	default void copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+								final Host site, final User user,
+								final boolean respectFrontendRoles, final Contentlet returnValue) {
+	}
 
 	/**
 	 * Makes a copy of a contentlet. 
 	 * @param currentContentlet
 	 * @param returnValue - value returned by primary API Method
 	 */
-	public default void copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean respectFrontendRoles,Contentlet returnValue){}
+	default void copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean respectFrontendRoles,Contentlet returnValue){}
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 */
+	default void copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+								final Folder folder, final User user,
+								final boolean respectFrontendRoles, final Contentlet returnValue) {
+	}
 
 	/**
 	 * Makes a copy of a contentlet with choice to append copy to the filename. 
 	 * @param currentContentlet
 	 * @param returnValue - value returned by primary API Method
 	 */
-	public default void copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles,Contentlet returnValue){}
+	default void copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles,Contentlet returnValue){}
+
+	default void copyContentlet(final Contentlet currentContentlet, final ContentType contentType,
+								final Folder folder, final User user,
+								final boolean appendCopyToFileName,
+								final boolean respectFrontendRoles, final Contentlet returnValue) {
+	}
 
 	/**
 	 * Makes a copy of a content.
@@ -200,9 +247,71 @@ public interface ContentletAPIPostHook {
 	 * @param respectFrontendRoles
 	 * @param returnValue - value returned by primary API Method
 	 */
-	public default void copyContentlet(final Contentlet contentletToCopy,
-						final Host host, final Folder folder, final User user, final String copySuffix,
+	default void copyContentlet(final Contentlet contentletToCopy,
+						final Host site, final Folder folder, final User user, final String copySuffix,
 						final boolean respectFrontendRoles, Contentlet returnValue) {}
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder. When
+	 * copying a File Asset, the value of the {@code opySuffix} parameter will be appended to the
+	 * file name.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param copySuffix           The suffix that will be appended to the file name, if
+	 *                             applicable.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 */
+	default void copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+								final Host site, final Folder folder, final User user,
+								final String copySuffix, final boolean respectFrontendRoles,
+								Contentlet returnValue) {
+	}
+
+	/**
+	 * Searches for content using the given Lucene query.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param contentsPerPage      The maximum number of items to return per page.
+	 * @param page                 The page number to retrieve.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	default void searchPaginatedByPage(String luceneQuery, int contentsPerPage,
+			int page, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+	}
+
+	/**
+	 * Searches for content using the given Lucene query.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param limit                The maximum number of items to return per page.
+	 * @param offset               The offset to start retrieving items from.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	default void searchPaginated(String luceneQuery, int limit,
+			int offset, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+	}
+
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
 	 * have a field to sort by.  limit should be 0 if no limit and the offset should be -1 is you are not paginating.

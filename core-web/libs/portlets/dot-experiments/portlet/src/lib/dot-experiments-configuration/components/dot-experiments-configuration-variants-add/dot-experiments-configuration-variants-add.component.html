@@ -1,24 +1,24 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+    <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
             dotTitle="{{ 'experiments.configure.variants.add' | dm }}"></dot-sidebar-header>
 
         <div class="experiment-variant-add__form-wrapper">
             <form
+                [formGroup]="form"
                 class="experiment-create__form p-fluid"
                 id="new-variant-form"
-                [formGroup]="form"
                 data-testId="new-variant-form"
                 novalidate>
                 <div class="field">
-                    <label class="p-label-input-required" for="name">{{
-                        'experiments.configure.variant.add.form.name.label' | dm
-                    }}</label>
+                    <label class="p-label-input-required" for="name">
+                        {{ 'experiments.configure.variant.add.form.name.label' | dm }}
+                    </label>
                     <input
-                        id="name"
                         [maxlength]="this.maxNameLength + 1"
                         [tabindex]="1"
+                        id="name"
                         data-testId="add-experiment-description-input"
                         dotAutofocus
                         dotTrimInput
@@ -39,9 +39,9 @@
 
     <ng-template #actionHeaderBtnTpl>
         <button
+            (click)="saveVariant(vm.experimentId)"
             [disabled]="!form.valid"
             [loading]="vm.status.status === stepStatus.SAVING"
-            (click)="saveVariant(vm.experimentId)"
             data-testId="add-variant-button"
             form="new-variant-form"
             label="{{ 'experiments.action.add' | dm }}"

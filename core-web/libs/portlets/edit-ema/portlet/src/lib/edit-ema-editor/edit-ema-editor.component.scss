@@ -3,12 +3,12 @@
 :host {
     display: grid;
     grid-template-rows: min-content 1fr;
-    grid-template-columns: 1fr 15.5rem;
     height: 100%;
-}
 
-:host:has(.editor-banner) {
-    grid-template-rows: min-content min-content 1fr;
+    // Only set two columns if the palette is present
+    &:has(dot-edit-ema-palette) {
+        grid-template-columns: 1fr 15.5rem;
+    }
 }
 
 dot-device-selector-seo {
@@ -24,38 +24,12 @@ dot-edit-ema-toolbar {
     grid-column: 1 / -1;
 }
 
-.editor-banner {
-    background-color: $color-palette-primary-200;
-    color: $black;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    justify-content: center;
-    align-items: center;
-    gap: $spacing-0;
-    height: $spacing-5;
-    grid-column: 1 / -1;
-    font-size: $font-size-sm;
-    border: 1px solid $color-palette-primary-300;
-    border-left: 0;
-    border-right: 0;
-    padding: 0 $spacing-3;
-}
-
-.editor-banner--message {
-    grid-column: 2 / 3;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: $spacing-0;
-}
-
 dot-ema-device-display {
     grid-column: 1 / 2;
 }
 
-i {
-    font-size: $font-size-lg;
-    color: $color-alert-yellow;
+dot-results-seo-tool {
+    grid-column: 1 / -1;
 }
 
 .editor-content {
@@ -67,9 +41,6 @@ i {
     gap: $spacing-1;
     overflow: auto;
 }
-.editor-content--device {
-    grid-column: 1 / -1;
-}
 
 .iframe-wrapper {
     position: relative;
@@ -77,6 +48,8 @@ i {
     flex-grow: 1;
     margin: 0 auto;
     border: solid 1px $color-palette-gray-300;
+    height: 100%;
+    width: 100%;
 
     iframe {
         border: none;
@@ -93,8 +66,4 @@ a,
 a:focus,
 a:active {
     text-decoration: none;
-}
-
-.editor-content--expanded {
-    grid-column: span 2;
 }

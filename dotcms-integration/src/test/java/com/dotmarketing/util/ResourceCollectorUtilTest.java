@@ -14,7 +14,7 @@ public class ResourceCollectorUtilTest {
     @Test
     public void test_getPackages_fragment() {
 
-        final File fragmentJarFile = new File("./src/curl-test/resources/osgi-bundle/com.dotcms.actionlet.fragment-0.2.jar");
+        final File fragmentJarFile = new File("./src/main/resources/osgi-bundle/com.dotcms.actionlet.fragment-0.2.jar");
         if (fragmentJarFile.exists()) {
 
             final Collection<String> exportPackages = ResourceCollectorUtil.getPackages(fragmentJarFile);
@@ -31,7 +31,7 @@ public class ResourceCollectorUtilTest {
     @Test
     public void test_getPackages_bundle() {
 
-        final File fragmentJarFile = new File("./src/curl-test/resources/osgi-bundle/com.dotcms.actionlet-0.2.jar");
+        final File fragmentJarFile = new File("./src/main/resources/osgi-bundle/com.dotcms.actionlet-0.2.jar");
         if (fragmentJarFile.exists()) {
 
             final Collection<String> importPackages = ResourceCollectorUtil.getPackages(fragmentJarFile);

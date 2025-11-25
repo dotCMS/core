@@ -11,14 +11,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     getExperimentMock,
     MockDotMessageService,
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 
@@ -60,6 +59,7 @@ export class MockDotPropertiesService {
     getKey(): Observable<true> {
         return observableOf(true);
     }
+
     getFeatureFlag(): Observable<boolean> {
         return observableOf(true);
     }
@@ -67,7 +67,9 @@ export class MockDotPropertiesService {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav> `
+    template: `
+        <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>
+    `
 })
 class TestHostComponent {
     @Input()
@@ -102,7 +104,7 @@ describe('DotEditPageNavComponent', () => {
                 RouterTestingModule,
                 TooltipModule,
                 DotIconModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             declarations: [DotEditPageNavComponent, TestHostComponent],
@@ -243,7 +245,7 @@ describe('DotEditPageNavComponent', () => {
                 expect(menuListItems[1].nativeElement.classList).toContain(
                     'edit-page-nav__item--disabled'
                 );
-                expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-text')).toBe(
+                expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-content')).toBe(
                     'Can’t edit advanced template'
                 );
             });
@@ -285,9 +287,9 @@ describe('DotEditPageNavComponent', () => {
                 const labels = ['Layout', 'Rules', 'Experiments'];
                 menuListItems.forEach((item, index) => {
                     const label = item.query(By.css('.edit-page-nav__item-text'));
-                    expect(label.nativeElement.textContent).toBe(labels[index]);
+                    expect(label.nativeElement.textContent.trim()).toBe(labels[index]);
 
-                    expect(item.nativeElement.getAttribute('ng-reflect-text')).toBe(
+                    expect(item.nativeElement.getAttribute('ng-reflect-content')).toBe(
                         'Enterprise only'
                     );
                 });
@@ -383,7 +385,7 @@ describe('DotEditPageNavComponent', () => {
             const label = menuListItems[4].query(By.css('[data-testId="menuListItemText"]'))
                 .nativeElement.innerHTML;
             expect(MATERIAL_ICON_NAME).toEqual(iconClass);
-            expect('Experiments').toEqual(label);
+            expect('Experiments').toEqual(label.trim());
         });
     });
     describe('experiments feature flag false', () => {

@@ -337,6 +337,33 @@ public class ResourceLink {
             return ResourceLink.isDownloadPermissionBasedRestricted(contentlet, user);
         }
 
+
+        /**
+         * Generates the url for a file asset based on specific structure FileLink, which is the host with its prefix + the path with the id + language id
+         * This method is aiming to be used when exporting, so the binary field could have a valid url when imported.
+         *
+         * @param request
+         * @param user
+         * @param contentlet
+         * @param field
+         *
+         * @return the url (File Link) for the file asset
+         */
+        public String getFileLink(final HttpServletRequest request, final User user, final Contentlet contentlet, final String field) throws DotDataException, DotSecurityException {
+
+            ResourceLink link = this.build(request, user, contentlet, field);
+            Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
+            if(null == host){
+                host = getHost(contentlet.getHost(), user);
+            }
+
+            final StringBuilder hostUrlBuilder = new StringBuilder(request.isSecure()? HTTPS_PREFIX:HTTP_PREFIX);
+
+            hostUrlBuilder.append(host.getHostname());
+            hostUrlBuilder.append(link.getConfiguredImageURL());
+            return hostUrlBuilder.toString();
+        }
+
     }
 
     /**

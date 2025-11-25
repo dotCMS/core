@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 body,
 div,
 dl,
@@ -49,14 +51,14 @@ acronym {
     border: 0;
 }
 h1 {
-    font-size: 1.5em;
+    font-size: $font-size-lg;
     font-weight: normal;
     line-height: 1em;
     margin-top: 1em;
     margin-bottom: 0;
 }
 h2 {
-    font-size: 1.1667em;
+    font-size: $font-size-lmd;
     font-weight: bold;
     line-height: 1.286em;
     margin-top: 1.929em;
@@ -66,20 +68,20 @@ h3,
 h4,
 h5,
 h6 {
-    font-size: 1em;
+    font-size: $font-size-md;
     font-weight: bold;
     line-height: 1.5em;
     margin-top: 1.5em;
     margin-bottom: 0;
 }
 p {
-    font-size: 1em;
+    font-size: $font-size-md;
     margin-top: 1.5em;
     margin-bottom: 1.5em;
     line-height: 1.5em;
 }
 blockquote {
-    font-size: 0.916em;
+    font-size: $font-size-sm;
     margin-top: 3.272em;
     margin-bottom: 3.272em;
     line-height: 1.636em;
@@ -89,7 +91,7 @@ blockquote {
 }
 ol li,
 ul li {
-    font-size: 1em;
+    font-size: $font-size-md;
     line-height: 1.5em;
     margin: 0;
 }

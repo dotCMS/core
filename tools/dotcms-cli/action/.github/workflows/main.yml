@@ -35,15 +35,15 @@ jobs:
           echo "$GITHUB_ENV"
 
       - name: Get changes
-        id: changed-files
         run: |
-          echo "changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | xargs)" >> $GITHUB_OUTPUT
+          git diff --name-only ${{ github.event.before }} ${{ github.event.after }} > changed_files.txt
 
       - name: List changed files
         run: |
-          for file in ${{ steps.changed-files.outputs.changed_files }}; do
-              echo "$file was changed"
-          done    
+          while IFS= read -r line
+          do
+            echo "\"$line\" was changed"
+          done < changed_files.txt
 
       - name: Github Event Context properties
         run: |
@@ -90,7 +90,7 @@ jobs:
         run: |
           chmod +x ./.github/workflows/scripts/run-push.sh
           source ./.github/workflows/scripts/run-push.sh
-          install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}" "${{env.DOT_API_URL}}"
+          install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}"
           run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}" "${{ env.DOT_CLI_OPTS }}"
           echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
           print_log

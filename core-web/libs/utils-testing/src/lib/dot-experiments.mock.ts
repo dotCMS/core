@@ -44,6 +44,24 @@ export const getExperimentMock = (index: number): DotExperiment => {
     return { ...ExperimentMocks[index] };
 };
 
+export const getRunningExperimentMock = (): DotExperiment | undefined => {
+    return ExperimentMocks.find((experiment) => experiment.status === DotExperimentStatus.RUNNING);
+};
+
+export const getDraftExperimentMock = (): DotExperiment | undefined => {
+    return ExperimentMocks.find(
+        (experiment) =>
+            experiment.status === DotExperimentStatus.DRAFT &&
+            experiment.trafficProportion.variants.length > 1
+    );
+};
+
+export const getScheduleExperimentMock = (): DotExperiment | undefined => {
+    return ExperimentMocks.find(
+        (experiment) => experiment.status === DotExperimentStatus.SCHEDULED
+    );
+};
+
 export const getExperimentAllMocks = (): Array<DotExperiment> => {
     return [{ ...getExperimentMock(0) }, { ...getExperimentMock(1) }, { ...getExperimentMock(2) }];
 };
@@ -123,6 +141,27 @@ const ExperimentMocks: Array<DotExperiment> = [
         name: 'Praesent at molestie mauris',
         trafficAllocation: 100,
         scheduling: { startDate: null, endDate: null },
+        trafficProportion: {
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [
+                { id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 50, promoted: false },
+                { id: '222', name: 'Variant A', weight: 50, promoted: false }
+            ]
+        },
+        creationDate: new Date('2022-08-21 14:50:03'),
+        modDate: new Date('2022-08-21 18:50:03').getTime(),
+        goals: { ...GoalsMock }
+    },
+    {
+        id: '4444-4444-4444-4444',
+        pageId: '456',
+        status: DotExperimentStatus.SCHEDULED,
+        archived: false,
+        readyToStart: false,
+        description: 'Praesent at molestie mauris, quis vulputate augue.',
+        name: 'Praesent at molestie mauris',
+        trafficAllocation: 100,
+        scheduling: { startDate: 1, endDate: 2 },
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
             variants: [
@@ -737,7 +776,8 @@ export const DotExperimentsServiceMock = {
     archive: () => of({}),
     getById: () => of({}),
     removeVariant: () => of({}),
-    addVariant: () => of({})
+    addVariant: () => of({}),
+    getByStatus: () => of({})
 };
 
 export class ActivatedRouteMock {

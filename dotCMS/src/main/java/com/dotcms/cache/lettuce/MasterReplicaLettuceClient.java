@@ -5,7 +5,6 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.Converter;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.EnvironmentVariablesService;
@@ -59,6 +58,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.liferay.util.StringPool.BLANK;
 import static io.lettuce.core.ScriptOutputType.STATUS;
 
 /**
@@ -92,6 +92,15 @@ import static io.lettuce.core.ScriptOutputType.STATUS;
  */
 public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
+    public static final String REDIS_SESSION_ENABLED_PROP = "TOMCAT_REDIS_SESSION_ENABLED";
+    public static final String HOST_PROP = "TOMCAT_REDIS_SESSION_HOST";
+    public static final String PORT_PROP = "TOMCAT_REDIS_SESSION_PORT";
+    public static final String USERNAME_PROP = "TOMCAT_REDIS_SESSION_USERNAME";
+    public static final String PASSWORD_PROP = "TOMCAT_REDIS_SESSION_PASSWORD";
+    public static final String SSL_ENABLED_PROP = "TOMCAT_REDIS_SESSION_SSL_ENABLED";
+    public static final String DATABASE_PROP = "TOMCAT_REDIS_SESSION_DATABASE";
+    public static final String TIMEOUT_PROP = "TOMCAT_REDIS_SESSION_TIMEOUT";
+
     private static final String OK_RESPONSE = "OK";
     private static final String ERROR_RESPONSE = "ERROR";
 
@@ -107,7 +116,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         this(CompressionCodec.valueCompressor(new DotObjectCodec(),
                 CompressionCodec.CompressionType.GZIP),
-                APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId()));
+                ClusterFactory.getClusterId());
     }
 
     public MasterReplicaLettuceClient(final RedisCodec<String, V> codec, final String clusterId) {
@@ -136,7 +145,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
      *     <li>If the {@code REDIS_LETTUCECLIENT_URLS} property -- which allows to set one or more Redis servers -- is
      *     set, dotCMS will create the Lettuce Clients based on such a configuration.</li>
      *     <li>If the Lettuce Client configuration is not set, but the Tomcat Redis Session Manager plugin is activated
-     *     -- via the {@code TOMCAT_REDIS_SESSION_ENABLED} property -- dotCMS will create the it based on the existing
+     *     -- via the {@link #REDIS_SESSION_ENABLED_PROP} property -- dotCMS will create the it based on the existing
      *     configuration set in the plugin, as a fallback.</li>
      * </ul>
      * For more information, please refer to the list of available configuration parameters in the
@@ -154,17 +163,22 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                     .map(RedisURI::create)
                     .collect(Collectors.toList());
         }
-            final String redisSessionEnabled = envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_ENABLED", "false");
+        final String redisSessionEnabled = envVarService.getenv().getOrDefault(REDIS_SESSION_ENABLED_PROP, "false");
         if (Boolean.parseBoolean(redisSessionEnabled)) {
-            final RedisURI redisURI = RedisURI.builder()
-                    .withHost(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_HOST", "localhost"))
-                    .withPort(Integer.parseInt(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_PORT", "6379")))
-                    .withPassword(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_PASSWORD", "").toCharArray())
-                    .withSsl(Boolean.parseBoolean(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_SSL_ENABLED", "false")))
-                    .withDatabase(Config.getIntProperty("TOMCAT_REDIS_SESSION_DATABASE", 0))
-                    .withTimeout(Duration.ofMillis(Integer.parseInt(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_TIMEOUT", "2000"))))
-                    .build();
-            return List.of(redisURI);
+            final RedisURI.Builder builder = RedisURI.builder()
+                    .withHost(envVarService.getenv().getOrDefault(HOST_PROP, "localhost"))
+                    .withPort(Integer.parseInt(envVarService.getenv().getOrDefault(PORT_PROP, "6379")));
+            if (envVarService.getenv().get(USERNAME_PROP) != null) {
+                builder.withAuthentication(
+                        envVarService.getenv().getOrDefault(USERNAME_PROP, BLANK),
+                        envVarService.getenv().getOrDefault(PASSWORD_PROP, BLANK).toCharArray());
+            } else {
+                builder.withPassword(envVarService.getenv().getOrDefault(PASSWORD_PROP, BLANK).toCharArray());
+            }
+            builder.withSsl(Boolean.parseBoolean(envVarService.getenv().getOrDefault(SSL_ENABLED_PROP, "false")))
+                    .withDatabase(Config.getIntProperty(DATABASE_PROP, 0))
+                    .withTimeout(Duration.ofMillis(Integer.parseInt(envVarService.getenv().getOrDefault(TIMEOUT_PROP, "2000"))));
+            return List.of(builder.build());
         }
         return List.of(RedisURI.create("redis://localhost"));
     }
@@ -195,7 +209,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
      */
     protected K unwrapKey(final String key) {
 
-        return  this.stringToKeyConverter.convert(key.replace(keyPrefix(), StringPool.BLANK));
+        return  this.stringToKeyConverter.convert(key.replace(keyPrefix(), BLANK));
     }
     /**
      * Returns a StatefulRedisConnection

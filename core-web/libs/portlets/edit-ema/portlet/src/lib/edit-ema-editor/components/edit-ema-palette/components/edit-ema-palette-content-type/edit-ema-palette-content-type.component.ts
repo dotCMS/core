@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { JsonPipe, NgFor, NgIf } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -24,8 +24,6 @@ import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
     selector: 'dot-edit-ema-palette-content-type',
     standalone: true,
     imports: [
-        NgFor,
-        NgIf,
         ReactiveFormsModule,
         DotIconModule,
         JsonPipe,
@@ -42,8 +40,6 @@ export class EditEmaPaletteContentTypeComponent implements OnInit, OnDestroy {
     @Input() filter = '';
     @Input() paletteStatus: EditEmaPaletteStoreStatus;
 
-    @Output() dragStart = new EventEmitter();
-    @Output() dragEnd = new EventEmitter();
     @Output() showContentlets = new EventEmitter<string>();
     @Output() search = new EventEmitter<string>();
 

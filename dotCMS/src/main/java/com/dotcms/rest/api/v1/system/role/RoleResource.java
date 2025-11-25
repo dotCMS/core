@@ -1,12 +1,9 @@
 package com.dotcms.rest.api.v1.system.role;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.directwebremoting.WebContext;
-import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionView;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -16,7 +13,6 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -29,7 +25,6 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -46,16 +41,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -68,11 +53,19 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This end-point provides access to information associated to dotCMS roles that
@@ -153,7 +146,7 @@ public class RoleResource implements Serializable {
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 
-		return Response.ok(new ResponseEntityView(map("checkRoles", hasUserRole))).build();
+		return Response.ok(new ResponseEntityView(Map.of("checkRoles", hasUserRole))).build();
 	}
 
 	/**
@@ -182,7 +175,7 @@ public class RoleResource implements Serializable {
 
 			Logger.debug(this, ()-> "Deleting the layouts : " + layoutIds + " to the role: " + roleId);
 
-			return Response.ok(new ResponseEntityView(map("deletedLayouts",
+			return Response.ok(new ResponseEntityView(Map.of("deletedLayouts",
 					this.roleHelper.deleteRoleLayouts(role, layoutIds, layoutAPI,
 							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
 		} else {
@@ -287,7 +280,7 @@ public class RoleResource implements Serializable {
 
 			Logger.debug(this, ()-> "Saving the layouts : " + layoutIds + " to the role: " + roleId);
 
-			return Response.ok(new ResponseEntityView(map("savedLayouts",
+			return Response.ok(new ResponseEntityView(Map.of("savedLayouts",
 					this.roleHelper.saveRoleLayouts(role, layoutIds, layoutAPI,
 							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
 		}

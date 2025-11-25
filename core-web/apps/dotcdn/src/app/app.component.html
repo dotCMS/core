@@ -1,28 +1,26 @@
 <p-tabView>
-    <p-tabPanel header="Overview" *ngIf="vm$ | async as VM">
+    <p-tabPanel *ngIf="vm$ | async as VM" header="Overview">
         <div class="dot-cdn__tab-content">
             <div class="dot-cdn__tab-content-meta">
                 <p-dropdown
-                    [options]="periodValues"
                     (onChange)="changePeriod($event)"
-                    optionLabel="label"
-                    optionValue="value"
                     [(ngModel)]="selectedPeriod.value"
-                ></p-dropdown>
-                <div class="dot-cdn__tab-domain" *ngIf="VM.cdnDomain">
+                    [options]="periodValues"
+                    optionLabel="label"
+                    optionValue="value"></p-dropdown>
+                <div *ngIf="VM.cdnDomain" class="dot-cdn__tab-domain">
                     <small>Root CDN Domain</small>
                     <p>{{ VM.cdnDomain }}</p>
                 </div>
             </div>
             <div class="dot-cdn__stats">
-                <div class="dot-cdn__col" *ngFor="let stats of VM.statsData">
+                <div *ngFor="let stats of VM.statsData" class="dot-cdn__col">
                     <span class="dot-cdn__stats-label">{{ stats.label }}</span>
                     <p-skeleton
+                        *ngIf="VM.isChartLoading; else valuesBlock"
                         styleClass="skeleton"
                         width="10rem"
-                        height="1.5rem"
-                        *ngIf="VM.isChartLoading; else valuesBlock"
-                    ></p-skeleton>
+                        height="1.5rem"></p-skeleton>
                     <ng-template #valuesBlock>
                         <h3 class="dot-cdn__stats-value">{{ stats.value }}</h3>
                     </ng-template>
@@ -32,45 +30,41 @@
 
             <div class="dot-cdn__chart">
                 <dot-spinner
+                    *ngIf="VM.isChartLoading; else chartBlock"
                     [size]="'4rem'"
                     [borderSize]="'3px'"
-                    *ngIf="VM.isChartLoading; else chartBlock"
-                    [ngStyle]="{ height: chartHeight }"
-                ></dot-spinner>
+                    [ngStyle]="{ height: chartHeight }"></dot-spinner>
                 <ng-template #chartBlock>
                     <h3 class="dot-cdn__tab-content-label">Bandwidth Served</h3>
                     <p-chart
-                        #chart
-                        type="line"
                         [data]="VM.chartBandwidthData"
-                        width="100%"
                         [height]="chartHeight"
                         [options]="options['bandwidthUsedChart']"
-                    ></p-chart>
+                        #chart
+                        type="line"
+                        width="100%"></p-chart>
                 </ng-template>
             </div>
             <div class="dot-cdn__chart">
                 <dot-spinner
+                    *ngIf="VM.isChartLoading; else chartBlockRequests"
                     [size]="'4rem'"
                     [borderSize]="'3px'"
-                    *ngIf="VM.isChartLoading; else chartBlockRequests"
-                    [ngStyle]="{ height: chartHeight }"
-                ></dot-spinner>
+                    [ngStyle]="{ height: chartHeight }"></dot-spinner>
                 <ng-template #chartBlockRequests>
                     <h3 class="dot-cdn__tab-content-label">Requests Served</h3>
                     <p-chart
-                        #chart
-                        type="line"
                         [data]="VM.chartRequestsData"
-                        width="100%"
                         [height]="chartHeight"
                         [options]="options['requestsServedChart']"
-                    ></p-chart>
+                        #chart
+                        type="line"
+                        width="100%"></p-chart>
                 </ng-template>
             </div>
         </div>
     </p-tabPanel>
-    <p-tabPanel header="Flush Cache" *ngIf="vmPurgeLoaders$ | async as VMPurgeLoaders">
+    <p-tabPanel *ngIf="vmPurgeLoaders$ | async as VMPurgeLoaders" header="Flush Cache">
         <div class="dot-cdn__tab-content--contained">
             <form [formGroup]="purgeZoneForm">
                 <div class="dot-cdn__tab-content__row">
@@ -84,14 +78,12 @@
                         [rows]="5"
                         pInputTextarea
                         formControlName="purgeUrlsTextArea"
-                        placeholder="https://cdn.dotcms.com&#10;https://cdn.dotcms.com/images/*"
-                    ></textarea>
+                        placeholder="https://cdn.dotcms.com&#10;https://cdn.dotcms.com/images/*"></textarea>
                     <button
-                        pButton
+                        (click)="purgeUrls()"
                         [label]="VMPurgeLoaders.isPurgeUrlsLoading ? 'loading...' : 'Purge URL'"
                         [disabled]="purgeZoneForm.get('purgeUrlsTextArea').value.length === 0"
-                        (click)="purgeUrls()"
-                    ></button>
+                        pButton></button>
                 </div>
             </form>
             <div class="dot-cdn__tab-content__row">
@@ -103,11 +95,10 @@
                     to your origin sites, so use with caution.
                 </p>
                 <button
-                    pButton
-                    [label]="VMPurgeLoaders.isPurgeZoneLoading ? 'loading...' : 'Purge All'"
-                    class="p-button-danger p-button-outlined"
                     (click)="purgePullZone()"
-                ></button>
+                    [label]="VMPurgeLoaders.isPurgeZoneLoading ? 'loading...' : 'Purge All'"
+                    pButton
+                    class="p-button-danger p-button-outlined"></button>
             </div>
         </div>
     </p-tabPanel>

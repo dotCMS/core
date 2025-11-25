@@ -4,7 +4,10 @@
  * @export
  */
 export class DotEventsSocketURL {
-    constructor(private url: string, private useSSL: boolean) {}
+    constructor(
+        private url: string,
+        private useSSL: boolean
+    ) {}
 
     /**
      * Return the web socket url to connect with the Event end point

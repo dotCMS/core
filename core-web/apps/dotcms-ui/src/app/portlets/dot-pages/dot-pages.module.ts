@@ -5,21 +5,21 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     DotESContentService,
+    DotFavoritePageService,
     DotLanguagesService,
-    DotWorkflowActionsFireService,
-    DotWorkflowsActionsService,
     DotPageRenderService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
-    DotSessionStorageService,
     DotRouterService,
+    DotSessionStorageService,
     DotTempFileUploadService,
-    DotFavoritePageService,
-    DotWorkflowEventHandlerService
+    DotWorkflowActionsFireService,
+    DotWorkflowEventHandlerService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
+import { DotAddToBundleComponent } from '@dotcms/ui';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { DotPagesFavoritePanelModule } from './dot-pages-favorite-panel/dot-pages-favorite-panel.module';
@@ -31,7 +31,7 @@ import { DotPagesComponent } from './dot-pages.component';
     declarations: [DotPagesComponent],
     imports: [
         CommonModule,
-        DotAddToBundleModule,
+        DotAddToBundleComponent,
         DotPagesCreatePageDialogComponent,
         DotPagesFavoritePanelModule,
         DotPagesListingPanelModule,

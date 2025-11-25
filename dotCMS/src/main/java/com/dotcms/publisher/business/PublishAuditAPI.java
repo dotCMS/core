@@ -120,6 +120,18 @@ public abstract class PublishAuditAPI {
 	public abstract List<PublishAuditStatus> getAllPublishAuditStatus(int limit, int offset, int limitAssets) throws DotPublisherException;
 
 	/**
+	 * Get {@link PublishAuditStatus} paginated and filtered
+	 * @param limit limit of rows for retrieved page
+	 * @param offset offset of rows for retrieved page
+	 * @param limitAssets max limit of assets to retrieve for each {@link PublishAuditStatus}
+	 * @param filter filter to apply to the query or null if no filter
+	 * @return List of {@link PublishAuditStatus}
+	 * @throws DotPublisherException if any error occurs
+	 */
+	public abstract List<PublishAuditStatus> getPublishAuditStatus(
+			int limit, int offset, int limitAssets, String filter) throws DotPublisherException;
+
+	/**
 	 * count all publish status
 	 * @param offset
 	 * @param limit
@@ -127,6 +139,15 @@ public abstract class PublishAuditAPI {
 	 * @throws DotPublisherException
 	 */
 	public abstract Integer countAllPublishAuditStatus() throws DotPublisherException;
+
+	/**
+	 * Count filtered {@link PublishAuditStatus}
+	 * @param filter filter to apply to the query or null if no filter
+	 * @return number of rows that match the filter
+	 * @throws DotPublisherException if any error occurs
+	 */
+	public abstract Integer countPublishAuditStatus(
+			String filter) throws DotPublisherException;
 
 	/**
 	 * Gets all audit status not yet ended

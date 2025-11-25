@@ -151,6 +151,6 @@ public class Task221018CreateVariantFieldInMultiTreeTest {
             }
         }
 
-        Assert.assertTrue( variantIdFound, "Should exists de variant_id field in multi_tree");
+        Assert.assertTrue( variantIdFound, ()->"Should exists de variant_id field in multi_tree");
     }
 }

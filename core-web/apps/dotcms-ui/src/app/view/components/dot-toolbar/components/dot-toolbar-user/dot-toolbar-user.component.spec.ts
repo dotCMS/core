@@ -17,7 +17,6 @@ import { MenuModule } from 'primeng/menu';
 import { PasswordModule } from 'primeng/password';
 
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
@@ -27,9 +26,9 @@ import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotEventsService,
-    DotRouterService,
+    DotFormatDateService,
     DotIframeService,
-    DotFormatDateService
+    DotRouterService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -42,9 +41,8 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDialogModule, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
@@ -100,7 +98,7 @@ describe('DotToolbarUserComponent', () => {
                 SearchableDropDownModule,
                 RouterTestingModule,
                 ButtonModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
@@ -140,9 +138,11 @@ describe('DotToolbarUserComponent', () => {
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
+        const logoutItem = de.query(By.css('#dot-toolbar-user-link-logout'));
+        const logoutLink = logoutItem.query(By.css('a'));
+
         expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
-        expect(logoutLink.parent.classes['toolbar-user__logout']).toBe(true);
+        expect(logoutItem.classes['toolbar-user__logout']).toBe(true);
     });
     it('should have correct target in logout link', () => {
         fixture.detectChanges();
@@ -151,7 +151,7 @@ describe('DotToolbarUserComponent', () => {
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
+        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout a'));
         expect(logoutLink.attributes.target).toBe('_self');
     });
 
@@ -170,12 +170,8 @@ describe('DotToolbarUserComponent', () => {
         avatarComponent.click();
         fixture.detectChanges();
 
-        const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as'));
-        logoutAsLink.triggerEventHandler('click', {
-            preventDefault: () => {
-                //
-            }
-        });
+        const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as a')).nativeElement;
+        logoutAsLink.click();
 
         await fixture.whenStable();
         expect(loginService.logoutAs).toHaveBeenCalledTimes(1);
@@ -199,5 +195,41 @@ describe('DotToolbarUserComponent', () => {
 
         const loginAsLink = de.query(By.css('[data-testId="login-as"]'));
         expect(loginAsLink).toBe(null);
+    });
+
+    it('should show mask', () => {
+        fixture.detectChanges();
+        const avatarComponent = de.query(By.css('[data-testid="avatar"]')).nativeElement;
+        avatarComponent.click();
+
+        fixture.detectChanges();
+        const mask = de.query(By.css('[data-testId="dot-mask"]'));
+        expect(mask).toBeTruthy();
+    });
+
+    it('should hide mask', () => {
+        fixture.detectChanges();
+        const avatarComponent = de.query(By.css('[data-testid="avatar"]')).nativeElement;
+        avatarComponent.click();
+
+        fixture.detectChanges();
+        const mask = de.query(By.css('[data-testid="dot-mask"]'));
+        mask.nativeElement.click();
+
+        fixture.detectChanges();
+        expect(de.query(By.css('[data-testid="dot-mask"]'))).toBeFalsy();
+    });
+
+    it('should hide mask when menu hide', () => {
+        fixture.detectChanges();
+        const avatarComponent = de.query(By.css('[data-testid="avatar"]')).nativeElement;
+        avatarComponent.click();
+
+        const menu = de.query(By.css('p-menu'));
+        menu.triggerEventHandler('onHide', {});
+
+        fixture.detectChanges();
+
+        expect(de.query(By.css('[data-testId="dot-mask"]'))).toBeNull();
     });
 });
