@@ -584,25 +584,75 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
       final FieldAPI fieldApi = APILocator.getContentTypeFieldAPI();
       try {
-          // delete variables
-          for(final FieldVariable fieldVariable : fieldApi.loadVariables(field)) {
-              fieldApi.delete(fieldVariable);
-          }
+          final List<FieldVariable> existingVariables = fieldApi.loadVariables(field);
+          
+          // Delete variables that either:
+          // 1. Don't have a complete match (key, id, value) in incoming list, OR
+          // 2. Their key doesn't exist at all in incoming list
+          existingVariables.stream()
+              .filter(existingVar -> {
+                  // Check if key exists in incoming list
+                  boolean keyExistsInIncoming = fieldVariables.stream()
+                      .anyMatch(incomingVar -> hasSameKey(existingVar, incomingVar));
+                  
+                  if (!keyExistsInIncoming) {
+                      // Key doesn't exist in incoming list - delete it
+                      return true;
+                  }
+                  
+                  // Key exists - check if there's a complete match
+                  boolean hasCompleteMatch = fieldVariables.stream()
+                      .anyMatch(incomingVar -> matchesFieldVariable(existingVar, incomingVar));
+                  
+                  // Delete if no complete match found
+                  return !hasCompleteMatch;
+              })
+              .forEach(varToDelete -> {
+                  try {
+                      fieldApi.delete(varToDelete);
+                  } catch (final DotDataException | UniqueFieldValueDuplicatedException e) {
+                      throw new DotStateException(e);
+                  }
+              });
 
-          // add provided variables
-          for(final FieldVariable fieldVariable : fieldVariables) {
-              fieldApi.save(
-                      ImmutableFieldVariable
+          // Save only variables that don't already exist (by key, id, and value)
+          fieldVariables.stream()
+              .filter(incomingVar -> existingVariables.stream()
+                  .noneMatch(existingVar -> matchesFieldVariable(existingVar, incomingVar))
+              )
+              .forEach(fieldVariable -> {
+                  try {
+                      fieldApi.save(
+                          ImmutableFieldVariable
                               .builder()
                               .from(fieldVariable)
                               .fieldId(field.id())
                               .id(null)
                               .build(),
-                      APILocator.systemUser());
-          }
-      } catch (final DotDataException | UniqueFieldValueDuplicatedException | DotSecurityException e) {
+                          APILocator.systemUser());
+                  } catch (final DotDataException | DotSecurityException e) {
+                      throw new DotStateException(e);
+                  }
+              });
+      } catch (final DotDataException e) {
           throw new DotStateException(e);
       }
+  }
+
+  /**
+   * Checks if two field variables have the same key.
+   */
+  private boolean hasSameKey(final FieldVariable var1, final FieldVariable var2) {
+      return var1.key() != null && var1.key().equals(var2.key());
+  }
+
+  /**
+   * Checks if two field variables match by comparing their key, id, and value.
+   */
+  private boolean matchesFieldVariable(final FieldVariable var1, final FieldVariable var2) {
+      return var1.key() != null && var1.key().equals(var2.key()) &&
+             var1.id() != null && var1.id().equals(var2.id()) &&
+             var1.value() != null && var1.value().equals(var2.value());
   }
 
   private boolean doesTypeWithVariableExist(String variable) throws DotDataException {
