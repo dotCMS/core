@@ -146,21 +146,27 @@ export function listenBlockEditorInlineEvent() {
 
         return {
             destroyListenBlockEditorInlineEvent: () => {
-                window.removeEventListener('load', () => listenBlockEditorClick());
+                // No need to remove listener if page was already loaded
             }
         };
     }
 
-    window.addEventListener('load', () => listenBlockEditorClick());
+    // If the page is not fully loaded, listen for the DOMContentLoaded event
+    const handleDOMContentLoaded = () => {
+        listenBlockEditorClick();
+    };
+
+    document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
 
     return {
         destroyListenBlockEditorInlineEvent: () => {
-            window.removeEventListener('load', () => listenBlockEditorClick());
+            document.removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
         }
     };
 }
 
 const listenBlockEditorClick = (): void => {
+    console.log('listenBlockEditorClick');
     const editBlockEditorNodes: NodeListOf<HTMLElement> = document.querySelectorAll(
         '[data-block-editor-content]'
     );
