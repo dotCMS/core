@@ -3,9 +3,13 @@ import { sendAnalyticsEvent } from '../../shared/http/dot-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsRequestBody,
+    DotCMSContentClickEvent,
     DotCMSContentClickPayload,
+    DotCMSContentImpressionEvent,
     DotCMSContentImpressionPayload,
+    DotCMSConversionEvent,
     DotCMSConversionPayload,
+    DotCMSCustomEvent,
     EnrichedAnalyticsPayload,
     EnrichedTrackPayload,
     JsonObject
@@ -116,7 +120,11 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
 
             const { event, properties, context, local_time } = payload;
 
-            let analyticsEvent;
+            let analyticsEvent:
+                | DotCMSContentImpressionEvent
+                | DotCMSContentClickEvent
+                | DotCMSConversionEvent
+                | DotCMSCustomEvent;
 
             // Handle predefined and custom events using switch for extensibility
             switch (event) {
@@ -138,7 +146,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                             position,
                             page
                         }
-                    };
+                    } satisfies DotCMSContentImpressionEvent;
                     break;
                 }
 
@@ -161,7 +169,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                             element,
                             page
                         }
-                    };
+                    } satisfies DotCMSContentClickEvent;
                     break;
                 }
 
@@ -183,7 +191,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                             page,
                             ...(custom && { custom })
                         }
-                    };
+                    } satisfies DotCMSConversionEvent;
                     break;
                 }
 
@@ -195,7 +203,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                         data: {
                             custom: properties as JsonObject
                         }
-                    };
+                    } satisfies DotCMSCustomEvent;
                     break;
                 }
             }
