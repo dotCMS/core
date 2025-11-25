@@ -10,6 +10,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 
+import { BlockEditorModule } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -72,13 +73,14 @@ const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
 
 @Component({
     selector: 'dot-block-editor',
-    template: '',
-    standalone: false
+    template: ''
 })
 export class MockDotBlockEditorComponent {
     @Input() languageId = 1;
     @Input() field: DotCMSContentTypeField;
     @Input() value: { [key: string]: string } | string = '';
+    @Input() contentletIdentifier: string;
+    @Input() showVideoThumbnail: boolean;
 
     editor = {
         getJSON: () => {
@@ -129,8 +131,9 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotBlockEditorSidebarComponent, MockDotBlockEditorComponent],
             imports: [
+                DotBlockEditorSidebarComponent,
+                MockDotBlockEditorComponent,
                 HttpClientTestingModule,
                 BrowserAnimationsModule,
                 SidebarModule,
@@ -152,7 +155,12 @@ describe('DotBlockEditorSidebarComponent', () => {
                 DotAlertConfirmService,
                 ConfirmationService
             ]
-        }).compileComponents();
+        })
+            .overrideComponent(DotBlockEditorSidebarComponent, {
+                remove: { imports: [BlockEditorModule] },
+                add: { imports: [MockDotBlockEditorComponent] }
+            })
+            .compileComponents();
         dotEventsService = TestBed.inject(DotEventsService);
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);

@@ -1,49 +1,66 @@
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
-    EventEmitter,
-    HostBinding,
     HostListener,
-    Input,
-    Output,
     ViewChild,
-    inject
+    inject,
+    input,
+    output
 } from '@angular/core';
 
-import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotIconComponent } from '@dotcms/ui';
 
-import { LABEL_IMPORTANT_ICON } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
+import {
+    LABEL_IMPORTANT_ICON,
+    DotRandomIconPipe
+} from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
+import { DotNavIconComponent } from '../dot-nav-icon/dot-nav-icon.component';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
 @Component({
     selector: 'dot-nav-item',
     templateUrl: './dot-nav-item.component.html',
     styleUrls: ['./dot-nav-item.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotIconComponent,
+        DotSubNavComponent,
+        DotNavIconComponent,
+        DotRandomIconPipe
+    ],
+    host: {
+        'dot-nav-item__collapsed': '$collapsed()'
+    }
 })
 export class DotNavItemComponent {
     private hostElRef = inject(ElementRef);
 
     @ViewChild('subnav', { static: true }) subnav: DotSubNavComponent;
 
-    @Input() data: DotMenu;
+    readonly #globalStore = inject(GlobalStore);
 
-    @Output()
-    menuClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenu; toggleOnly?: boolean }> =
-        new EventEmitter();
+    $data = input.required<MenuGroup>({ alias: 'data' });
 
-    @Output()
-    itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
+    menuClick = output<{
+        originalEvent: MouseEvent;
+        data: MenuGroup;
+        toggleOnly?: boolean;
+    }>();
 
-    @HostBinding('class.dot-nav-item__collapsed')
-    @Input()
-    collapsed: boolean;
+    itemClick = output<{ originalEvent: MouseEvent; data: DotMenuItem }>();
+
+    $collapsed = input.required<boolean>({ alias: 'collapsed' });
 
     customStyles = {};
     mainHeaderHeight = 60;
 
     private windowHeight = window.innerHeight;
     labelImportantIcon = LABEL_IMPORTANT_ICON;
+
+    isGroupActive = this.#globalStore.isGroupActive;
 
     @HostListener('mouseleave', ['$event'])
     menuUnhovered() {
@@ -54,10 +71,10 @@ export class DotNavItemComponent {
      * Handle click on menu section title
      *
      * @param MouseEvent $event
-     * @param DotMenu data
+     * @param MenuGroup data
      * @memberof DotNavItemComponent
      */
-    clickHandler($event: MouseEvent, data: DotMenu): void {
+    clickHandler($event: MouseEvent, data: MenuGroup): void {
         this.menuClick.emit({
             originalEvent: $event,
             data: data
@@ -69,10 +86,10 @@ export class DotNavItemComponent {
      * Only toggles the menu open/close state without navigation
      *
      * @param MouseEvent $event
-     * @param DotMenu data
+     * @param MenuGroup data
      * @memberof DotNavItemComponent
      */
-    toggleHandler($event: MouseEvent, data: DotMenu): void {
+    toggleHandler($event: MouseEvent, data: MenuGroup): void {
         $event.stopPropagation();
         this.menuClick.emit({
             originalEvent: $event,
@@ -87,7 +104,7 @@ export class DotNavItemComponent {
      * @memberof DotNavItemComponent
      */
     setSubMenuPosition(): void {
-        if (this.collapsed) {
+        if (this.$collapsed()) {
             const [rects] = this.subnav.ul.nativeElement.getClientRects();
 
             if (window.innerHeight !== this.windowHeight) {
@@ -119,7 +136,7 @@ export class DotNavItemComponent {
      * @memberof DotNavItemComponent
      */
     resetSubMenuPosition(): void {
-        if (this.collapsed) {
+        if (this.$collapsed()) {
             this.customStyles = {
                 overflow: 'hidden'
             };

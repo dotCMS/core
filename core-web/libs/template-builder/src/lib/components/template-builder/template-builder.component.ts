@@ -9,6 +9,7 @@ import {
 import { DDElementHost } from 'gridstack/dist/dd-element';
 import { Observable, Subject, combineLatest } from 'rxjs';
 
+import { AsyncPipe, NgClass, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -28,7 +29,9 @@ import {
     inject
 } from '@angular/core';
 
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DividerModule } from 'primeng/divider';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { ToolbarModule } from 'primeng/toolbar';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
 
@@ -42,11 +45,16 @@ import {
     DotContainerMap,
     DotTemplate
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
+import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
+import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
+import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
+import { TemplateBuilderSidebarComponent } from './components/template-builder-sidebar/template-builder-sidebar.component';
 import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
 import {
     BOX_WIDTH,
@@ -76,7 +84,21 @@ import {
     styleUrls: ['./template-builder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore],
-    standalone: false
+    imports: [
+        AsyncPipe,
+        NgClass,
+        NgStyle,
+        DotMessagePipe,
+        DynamicDialogModule,
+        ToolbarModule,
+        DividerModule,
+        AddWidgetComponent,
+        TemplateBuilderActionsComponent,
+        TemplateBuilderSectionComponent,
+        TemplateBuilderSidebarComponent,
+        TemplateBuilderRowComponent,
+        TemplateBuilderBoxComponent
+    ]
 })
 export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     private store = inject(DotTemplateBuilderStore);
@@ -355,13 +377,21 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     /**
      * @description This method is used to identify items by id
      *
-     * @param {number} _
+     * @param {number} index
      * @param {GridStackWidget} w
      * @return {*}
      * @memberof TemplateBuilderComponent
      */
-    identify(_: number, w: GridStackWidget): string {
-        return w.id as string;
+    identify(index: number, w: GridStackWidget): string {
+        // Ensure we always return a unique string
+        // Combine ID with index to prevent Angular 20 NG0955 errors about duplicate keys
+        // This handles cases where the same ID might appear in different rows
+        const id = w?.id;
+        if (id != null && id !== '') {
+            return `${String(id)}-${index}`;
+        }
+        // Fallback to index if ID is not available
+        return `item-${index}`;
     }
 
     /**
@@ -378,7 +408,11 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     ): void {
         // The gridstack model is polutted with the subgrid data
         // So we need to delete the node from the GridStack Model
-        this.grid.engine.nodes.find((node) => node.id === rowID).subGrid?.removeWidget(element);
+        if (this.grid?.engine) {
+            this.grid.engine.nodes
+                .find((node) => node.id === rowID)
+                ?.subGrid?.removeWidget(element);
+        }
 
         this.store.removeColumn({ ...column, parentId: rowID as string });
     }

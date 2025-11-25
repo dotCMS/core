@@ -1,3 +1,7 @@
+import { of } from 'rxjs';
+
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -6,15 +10,18 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMenu } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotSystemConfigService } from '@dotcms/data-access';
+import { MenuGroup } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { DotNavItemComponent } from './dot-nav-item.component';
 
-import { LABEL_IMPORTANT_ICON } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
-import { DotRandomIconPipeModule } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe.module';
-import { dotMenuMock } from '../../services/dot-navigation.service.spec';
-import { DotNavIconModule } from '../dot-nav-icon/dot-nav-icon.module';
+import {
+    LABEL_IMPORTANT_ICON,
+    DotRandomIconPipe
+} from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
+import { DotNavIconComponent } from '../dot-nav-icon/dot-nav-icon.component';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
 @Component({
@@ -25,9 +32,37 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     standalone: false
 })
 class TestHostComponent {
-    menu: DotMenu = {
-        ...dotMenuMock(),
-        active: true
+    menu: MenuGroup = {
+        id: '123',
+        label: 'Name',
+        icon: 'icon',
+        isOpen: false,
+        menuItems: [
+            {
+                active: true,
+                ajax: true,
+                angular: true,
+                id: '123',
+                label: 'Label 1',
+                url: 'url/one',
+                menuLink: 'url/one',
+                parentMenuId: '123',
+                parentMenuLabel: 'Name',
+                parentMenuIcon: 'icon'
+            },
+            {
+                active: false,
+                ajax: true,
+                angular: true,
+                id: '456',
+                label: 'Label 2',
+                url: 'url/two',
+                menuLink: 'url/two',
+                parentMenuId: '123',
+                parentMenuLabel: 'Name',
+                parentMenuIcon: 'icon'
+            }
+        ]
     };
     collapsed = false;
 }
@@ -70,14 +105,28 @@ describe('DotNavItemComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
+            declarations: [TestHostComponent],
             imports: [
-                DotNavIconModule,
-                DotIconModule,
+                DotNavItemComponent,
+                DotSubNavComponent,
+                DotNavIconComponent,
+                DotIconComponent,
                 RouterTestingModule,
                 BrowserAnimationsModule,
                 TooltipModule,
-                DotRandomIconPipeModule
+                DotRandomIconPipe
+            ],
+            providers: [
+                {
+                    provide: DotSystemConfigService,
+                    useValue: {
+                        getSystemConfig: () => of({})
+                    }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                DotRandomIconPipe
             ]
         }).compileComponents();
     }));
@@ -88,6 +137,23 @@ describe('DotNavItemComponent', () => {
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-nav-item'));
         component = de.componentInstance;
+
+        // Load menu data into GlobalStore to activate the group
+        const globalStore = TestBed.inject(GlobalStore);
+        globalStore.loadMenu([
+            {
+                active: false,
+                id: '123',
+                isOpen: false,
+                menuItems: componentHost.menu.menuItems,
+                name: 'Name',
+                tabDescription: 'Description',
+                tabIcon: 'icon',
+                tabName: 'Name',
+                url: 'url'
+            }
+        ]);
+
         fixtureHost.detectChanges();
         navItem = de.query(By.css('[data-testid="nav-item"]'));
         subNav = de.query(By.css('dot-sub-nav'));
@@ -112,7 +178,7 @@ describe('DotNavItemComponent', () => {
     });
 
     it('should avoid label_important icon', () => {
-        componentHost.menu.tabIcon = LABEL_IMPORTANT_ICON;
+        componentHost.menu.icon = LABEL_IMPORTANT_ICON;
         fixtureHost.detectChanges();
         const icon: DebugElement = de.query(By.css('dot-nav-icon'));
 
@@ -253,7 +319,8 @@ describe('DotNavItemComponent', () => {
         });
 
         it('should reset menu position when mouseleave', () => {
-            component.collapsed = true;
+            componentHost.collapsed = true;
+            fixtureHost.detectChanges();
             de.nativeElement.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
             fixtureHost.detectChanges();
             expect(subNav.styles.cssText).toEqual('height: 0px; overflow: hidden;');

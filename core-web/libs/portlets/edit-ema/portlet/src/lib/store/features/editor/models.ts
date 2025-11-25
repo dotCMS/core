@@ -1,13 +1,11 @@
 import {
-    DotCMSContentlet,
     DotDeviceListItem,
     DotExperiment,
     DotLanguage,
-    DotPersona,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import { DotCMSPageAssetContainers, DotCMSViewAsPersona } from '@dotcms/types';
+import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import {
     Container,
@@ -79,37 +77,13 @@ export interface EditorProps {
     };
     palette?: {
         languageId: number;
-        containers: DotCMSPageAssetContainers;
-        variantId: string;
         paletteClass: PALETTE_CLASSES;
+        pagePath: string;
+        variantId?: string;
     };
     showDialogs: boolean;
     progressBar: boolean;
     showBlockEditorSidebar: boolean;
-}
-
-export interface ToolbarProps {
-    urlContentMap?: DotCMSContentlet;
-    bookmarksUrl: string;
-    copyUrl: string;
-    apiUrl: string;
-    isDefaultVariant: boolean;
-    showInfoDisplay: boolean;
-    currentLanguage: DotLanguage;
-    runningExperiment?: DotExperiment;
-    workflowActionsInode?: string;
-    personaSelector: {
-        pageId: string;
-        value: DotPersona;
-    };
-    unlockButton?: {
-        inode: string;
-        loading: boolean;
-    };
-    deviceSelector: {
-        apiLink: string;
-        hideSocialMedia: boolean;
-    };
 }
 
 /**
@@ -122,7 +96,6 @@ export interface ToolbarProps {
 export interface UVEToolbarProps {
     editor: {
         bookmarksUrl: string;
-        copyUrl: string;
         apiUrl: string;
     };
     preview?: {

@@ -18,17 +18,13 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { ChipModule } from 'primeng/chip';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { map } from 'rxjs/operators';
 
-import {
-    DotContentletLockerService,
-    DotDevicesService,
-    DotMessageService,
-    DotPersonalizeService
-} from '@dotcms/data-access';
+import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -45,31 +41,32 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { convertLocalTimeToUTC } from '../../../utils';
+import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
     imports: [
         NgClass,
+        FormsModule,
+        ReactiveFormsModule,
         ButtonModule,
+        CalendarModule,
+        ChipModule,
+        ClipboardModule,
+        ClipboardModule,
+        OverlayPanelModule,
         ToolbarModule,
+        SplitButtonModule,
+        DotMessagePipe,
+        DotEditorModeSelectorComponent,
         DotEmaBookmarksComponent,
         DotEmaInfoDisplayComponent,
         DotEmaRunningExperimentComponent,
-        ClipboardModule,
-        CalendarModule,
-        SplitButtonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        EditEmaPersonaSelectorComponent,
-        EditEmaLanguageSelectorComponent,
-        ClipboardModule,
+        DotToggleLockButtonComponent,
         DotUveDeviceSelectorComponent,
-        DotMessagePipe,
         DotUveWorkflowActionsComponent,
-        ChipModule,
-        DotEditorModeSelectorComponent,
-        DotToggleLockButtonComponent
+        EditEmaLanguageSelectorComponent,
+        EditEmaPersonaSelectorComponent
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -89,10 +86,10 @@ export class DotUveToolbarComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
-    readonly #dotContentletLockerService = inject(DotContentletLockerService);
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
+    readonly $isEditMode = this.#store.$isEditMode;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $isLiveMode = this.#store.$isLiveMode;
     readonly $apiURL = this.#store.$apiURL;
@@ -101,6 +98,7 @@ export class DotUveToolbarComponent {
     readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.socialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
+    readonly $isPaletteOpen = this.#store.paletteOpen;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -112,10 +110,27 @@ export class DotUveToolbarComponent {
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
         const publishDate = this.$pageParams().publishDate;
-
-        const previewDate = publishDate ? new Date(publishDate) : new Date();
+        const previewDate = publishDate ? convertUTCToLocalTime(new Date(publishDate)) : new Date();
 
         return previewDate;
+    });
+
+    readonly $pageURLS: Signal<{ label: string; value: string }[]> = computed(() => {
+        const params = this.$pageParams();
+        const siteId = this.#store.pageAPIResponse()?.site?.identifier;
+        const host = params.clientHost || window.location.origin;
+        const path = params.url?.replace(/\/index(\.html)?$/, '') || '/';
+
+        return [
+            {
+                label: 'uve.toolbar.page.live.url',
+                value: new URL(path, host).toString()
+            },
+            {
+                label: 'uve.toolbar.page.current.view.url',
+                value: createFullURL(params, siteId)
+            }
+        ];
     });
 
     readonly $pageInode = computed(() => {
@@ -125,8 +140,8 @@ export class DotUveToolbarComponent {
     readonly $actions = this.#store.workflowLoading;
     readonly $workflowLoding = this.#store.workflowLoading;
 
-    defaultDevices = DEFAULT_DEVICES;
-    $MIN_DATE = signal(this.#getMinDate());
+    protected defaultDevices = DEFAULT_DEVICES;
+    protected $MIN_DATE = signal(this.#getMinDate());
 
     /**
      * Fetch the page on a given date
@@ -142,6 +157,10 @@ export class DotUveToolbarComponent {
             mode: UVE_MODE.LIVE,
             publishDate: publishDateUTC
         });
+    }
+
+    protected togglePalette(): void {
+        this.#store.setPaletteOpen(!this.$isPaletteOpen());
     }
 
     /**

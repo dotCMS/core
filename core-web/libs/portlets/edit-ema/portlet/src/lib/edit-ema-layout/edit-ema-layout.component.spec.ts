@@ -1,7 +1,7 @@
 import { expect, describe } from '@jest/globals';
 import { SpyObject } from '@ngneat/spectator';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
-import { MockModule, MockProvider } from 'ng-mocks';
+import { MockComponent, MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -10,6 +10,7 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     DotAnalyticsTrackerService,
@@ -24,7 +25,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { TemplateBuilderComponent, TemplateBuilderModule } from '@dotcms/template-builder';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { WINDOW } from '@dotcms/utils';
 import {
     DotExperimentsServiceMock,
@@ -87,11 +88,12 @@ describe('EditEmaLayoutComponent', () => {
 
     const createComponent = createComponentFactory({
         component: EditEmaLayoutComponent,
-        imports: [HttpClientTestingModule, MockModule(TemplateBuilderModule)],
+        imports: [HttpClientTestingModule, MockComponent(TemplateBuilderComponent)],
         providers: [
             UVEStore,
             DotMessageService,
             DotActionUrlService,
+            mockProvider(DialogService),
             mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(ActivatedRoute),

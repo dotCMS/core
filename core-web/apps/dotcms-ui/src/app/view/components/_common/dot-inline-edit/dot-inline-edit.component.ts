@@ -1,11 +1,13 @@
+import { CommonModule } from '@angular/common';
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
 
-import { Inplace } from 'primeng/inplace';
+import { SharedModule } from 'primeng/api';
+import { Inplace, InplaceModule } from 'primeng/inplace';
 
 @Component({
     selector: 'dot-inline-edit',
     templateUrl: './dot-inline-edit.component.html',
-    standalone: false
+    imports: [CommonModule, InplaceModule, SharedModule]
 })
 export class DotInlineEditComponent {
     @Input()

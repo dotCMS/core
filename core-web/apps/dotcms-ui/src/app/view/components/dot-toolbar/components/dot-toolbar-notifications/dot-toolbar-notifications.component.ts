@@ -9,7 +9,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { ButtonModule } from 'primeng/button';
+
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotNotificationItemComponent } from './components/dot-notification-item/dot-notification-item.component';
 
 import { NotificationsService } from '../../../../../api/services/notifications-service';
 import { INotification } from '../../../../../shared/models/notifications/notification.model';
@@ -20,7 +25,12 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
     styleUrls: ['./dot-toolbar-notifications.component.scss'],
     templateUrl: 'dot-toolbar-notifications.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    imports: [
+        ButtonModule,
+        DotMessagePipe,
+        DotToolbarBtnOverlayComponent,
+        DotNotificationItemComponent
+    ]
 })
 export class DotToolbarNotificationsComponent implements OnInit {
     readonly #notificationService = inject(NotificationsService);

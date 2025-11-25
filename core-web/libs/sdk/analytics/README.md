@@ -115,6 +115,7 @@ track(eventName: string, properties?: Record<string, unknown>): void
 | `debug` | `boolean` | ❌ | `false` | Enable verbose logging |
 | `autoPageView` | `boolean` | ❌ | React: `true` / Standalone: `false` | Auto track page views on route changes |
 | `queueConfig` | `QueueConfig` | ❌ | See below | Event batching configuration |
+| `impressions` | `ImpressionConfig\|boolean` | ❌ | `false` | Content impression tracking (disabled by default) |
 
 ### Queue Configuration
 
@@ -165,6 +166,64 @@ const analytics = initializeContentAnalytics({
         eventBatchSize: 10, // Auto-send when 10 events queued
         flushInterval: 3000 // Or send every 3 seconds
     }
+});
+```
+
+### Impression Tracking Configuration
+
+The `impressions` option controls automatic tracking of content visibility:
+
+-   **`false` or `undefined` (default)**: Impression tracking disabled
+-   **`true`**: Enable tracking with default settings
+-   **`ImpressionConfig` object**: Enable tracking with custom settings
+
+| Option                | Type     | Default | Description                                      |
+| --------------------- | -------- | ------- | ------------------------------------------------ |
+| `visibilityThreshold` | `number` | `0.5`   | Min percentage visible (0.0 to 1.0)              |
+| `dwellMs`             | `number` | `750`   | Min time visible in milliseconds                 |
+| `maxNodes`            | `number` | `1000`  | Max elements to track (performance limit)        |
+
+**How it works:**
+
+-   ✅ Tracks contentlets marked with `dotcms-analytics-contentlet` class and `data-dot-analytics-*` attributes
+-   ✅ Uses Intersection Observer API for high performance and battery efficiency
+-   ✅ Only fires when element is ≥50% visible for ≥750ms (configurable)
+-   ✅ Only tracks during active tab (respects page visibility)
+-   ✅ One impression per contentlet per session (no duplicates)
+-   ✅ Respects user consent settings
+-   ✅ Automatically disabled in dotCMS editor mode
+
+**Example: Enable with defaults**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    impressions: true // 50% visible, 750ms dwell, 1000 max nodes
+});
+```
+
+**Example: Custom thresholds**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    impressions: {
+        visibilityThreshold: 0.7, // Require 70% visible
+        dwellMs: 1000, // Must be visible for 1 second
+        maxNodes: 500 // Track max 500 elements
+    }
+});
+```
+
+**Example: Disable tracking**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    impressions: false // Explicitly disabled (also default if omitted)
 });
 ```
 

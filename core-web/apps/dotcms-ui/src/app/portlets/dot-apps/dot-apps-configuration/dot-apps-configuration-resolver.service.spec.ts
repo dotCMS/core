@@ -2,8 +2,13 @@
 
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
+
+import { DotSystemConfigService } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 
@@ -32,7 +37,14 @@ describe('DotAppsConfigurationListResolver', () => {
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: activatedRouteSnapshotMock
-                }
+                },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ]
         });
         dotAppsServices = TestBed.inject(DotAppsService);

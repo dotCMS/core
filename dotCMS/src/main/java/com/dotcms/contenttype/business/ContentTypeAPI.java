@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -195,6 +196,17 @@ public interface ContentTypeAPI {
    */
   List<String> findUrlMappedPattern(final String pageIdentifier) throws DotDataException;
 
+  /**
+   * Returns a list of Content Types whose URL map pattern matches the given URL string using regex comparison.
+   * This method converts URL map patterns (e.g., "/news/{urlTitle}") to regex patterns and tests them against the provided URL.
+   *
+   * @param urlMap The URL string to match against content type URL map patterns.
+   *
+   * @return The list of {@link ContentType} objects whose URL map patterns match the given URL.
+   *
+   * @throws DotDataException An error occurred when interacting with the data source.
+   */
+  List<ContentType> findByUrlMapPattern(final String urlMap) throws DotDataException;
 
   /**
    * Counts the amount of Content Types in the DB filtered by the given condition.
@@ -539,12 +551,47 @@ public interface ContentTypeAPI {
           throws DotDataException;
 
   /**
+   * Searches for Content Types matching multiple base types in a single efficient database query.
+   * This method uses a UNION query to combine results from multiple base types, sort them,
+   * and paginate efficiently at the database level.
+   * <p>
+   * This is significantly more performant and scalable than querying each type separately
+   * and combining results in memory, especially with large numbers of content types.
+   *
+   * @param condition          Filter condition that Content Types must meet. It's internally
+   *                           sanitized by the API.
+   * @param types              Collection of Base Content Types to search for (must not be empty).
+   * @param orderBy            The order-by clause, which is internally sanitized by the API.
+   * @param limit              Maximum number of items to return in the result set, for pagination.
+   *                           Use -1 for no limit (up to 10000).
+   * @param offset             The page offset in the result set, for pagination purposes.
+   * @param siteId             The ID of the Site that Content Types live in. Can be null or empty for all sites.
+   * @param requestedContentTypes Optional list of specific content type variables to ensure are included.
+   *
+   * @return The list of {@link ContentType} objects matching the criteria, sorted and paginated.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
+   */
+  List<ContentType> searchMultipleTypes(final String condition, final java.util.Collection<BaseContentType> types,
+                                        final String orderBy, final int limit, final int offset,
+                                        final String siteId, final List<String> requestedContentTypes)
+          throws DotDataException;
+
+  /**
    * Return the number of entries for each content types
    *
    * @return return a Map where the keys are the content types' variable name and the values are the number of entries
    * @throws DotDataException
    */
-  Map<String, Long> getEntriesByContentTypes() throws DotDataException;
+  Map<String, Long> getEntriesByContentTypes() throws DotStateException;
+
+  /**
+   * Return the number of entries for each content types in a specific site
+   *
+   * @return return a Map where the keys are the content types' variable name and the values are the number of entries
+   * @throws DotDataException
+   */
+  Map<String, Long> getEntriesByContentTypes(final String siteId) throws DotStateException;
   
   /**
    * Save or update a Content Type. If the Content Type already exist

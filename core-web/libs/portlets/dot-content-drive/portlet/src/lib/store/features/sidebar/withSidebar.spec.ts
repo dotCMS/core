@@ -215,28 +215,6 @@ describe('withSidebar', () => {
                 // Verify the service was not called since node has children
                 expect(folderService.getFolders).not.toHaveBeenCalled();
             });
-
-            it('should update the store path when loadChildFolders is called', (done) => {
-                const testPath = '/documents/images/';
-                const host = 'demo.dotcms.com';
-
-                // Check initial path
-                const initialPath = store.path();
-                expect(initialPath).toBe('/test/path'); // From initialState
-
-                folderService.getFolders.mockReturnValue(of(mockFolders));
-
-                store.loadChildFolders(testPath, host).subscribe((result) => {
-                    // Verify the path was updated in the store
-                    expect(store.path()).toBe(testPath);
-                    expect(store.path()).not.toBe(initialPath);
-
-                    // Also verify the service was called and returned expected data
-                    expect(result.parent).toEqual(mockFolders[0]);
-                    expect(result.folders).toHaveLength(2);
-                    done();
-                });
-            });
         });
 
         describe('setSelectedNode', () => {

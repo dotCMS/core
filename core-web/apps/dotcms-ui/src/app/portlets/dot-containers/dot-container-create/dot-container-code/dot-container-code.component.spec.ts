@@ -37,7 +37,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { createFakeEvent, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotAddVariableModule } from './dot-add-variable/dot-add-variable.module';
+import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
 import { DotContentEditorComponent } from './dot-container-code.component';
 
 const mockContentTypes: DotCMSContentType[] = [
@@ -96,7 +96,7 @@ const mockContentTypes: DotCMSContentType[] = [
     template: `
         <dot-container-code [contentTypes]="contentTypes" [fg]="form"></dot-container-code>
     `,
-    standalone: false
+    imports: [DotContentEditorComponent]
 })
 class HostTestComponent {
     private fb = inject_1(FormBuilder);
@@ -120,8 +120,7 @@ class HostTestComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
@@ -185,16 +184,15 @@ describe('DotContentEditorComponent', () => {
         Element.prototype.scrollIntoView = jest.fn();
 
         await TestBed.configureTestingModule({
-            declarations: [
+            declarations: [],
+            imports: [
                 HostTestComponent,
                 DotContentEditorComponent,
-                DotTextareaContentMockComponent
-            ],
-            imports: [
+                DotTextareaContentMockComponent,
                 ReactiveFormsModule,
                 FormsModule,
                 DynamicDialogModule,
-                DotAddVariableModule,
+                DotAddVariableComponent,
                 TabViewModule,
                 MenuModule,
                 ButtonModule,
@@ -286,7 +284,10 @@ describe('DotContentEditorComponent', () => {
                 expect(code).not.toBeNull();
                 expect(code.attributes.formControlName).toBe('code');
                 expect(code.attributes.language).toBe('html');
-                expect(code.attributes['ng-reflect-show']).toBe('code');
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the show property directly on the component instance
+                const codeComponent = code.componentInstance;
+                expect(codeComponent?.show).toEqual(['code']);
                 expect(contentTypes.length).toEqual(2);
                 expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(
                     1
@@ -339,7 +340,10 @@ describe('DotContentEditorComponent', () => {
                 expect(code).not.toBeNull();
                 expect(code.attributes.formControlName).toBe('code');
                 expect(code.attributes.language).toBe('html');
-                expect(code.attributes['ng-reflect-show']).toBe('code');
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the show property directly on the component instance
+                const codeComponent = code.componentInstance;
+                expect(codeComponent?.show).toEqual(['code']);
                 expect(selectedContentType.nativeElement.textContent.trim().toLowerCase()).toBe(
                     mockContentTypes[1].name.toLowerCase()
                 );
@@ -404,12 +408,11 @@ describe('DotContentEditorComponent', () => {
             };
             comp.monacoEditors[mockContentTypes[0].id] = mockEditor as any;
 
-            const dialogService = TestBed.inject(DialogService);
-            jest.spyOn(dialogService, 'open');
+            jest.spyOn(comp['dialogService'], 'open');
 
             comp.handleAddVariable(mockContentType);
 
-            expect(dialogService.open).toHaveBeenCalledWith(
+            expect(comp['dialogService'].open).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({
                     width: '25rem',

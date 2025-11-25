@@ -16,11 +16,7 @@ import com.dotcms.telemetry.collectors.container.TotalFileContainersInWorkingPag
 import com.dotcms.telemetry.collectors.container.TotalStandardContainersInLivePageDatabaseMetricType;
 import com.dotcms.telemetry.collectors.container.TotalStandardContainersInLiveTemplatesDatabaseMetricType;
 import com.dotcms.telemetry.collectors.container.TotalStandardContainersInWorkingPageDatabaseMetricType;
-import com.dotcms.telemetry.collectors.content.LastContentEditedDatabaseMetricType;
-import com.dotcms.telemetry.collectors.content.LiveNotDefaultLanguageContentsDatabaseMetricType;
-import com.dotcms.telemetry.collectors.content.RecentlyEditedContentDatabaseMetricType;
-import com.dotcms.telemetry.collectors.content.TotalContentsDatabaseMetricType;
-import com.dotcms.telemetry.collectors.content.WorkingNotDefaultLanguageContentsDatabaseMetricType;
+import com.dotcms.telemetry.collectors.content.*;
 import com.dotcms.telemetry.collectors.contenttype.CountOfBinaryFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfBlockEditorFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfCategoryFieldsMetricType;
@@ -63,7 +59,6 @@ import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllDraftExperim
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllEndedExperimentsMetricType;
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllRunningExperimentsMetricType;
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllScheduledExperimentsMetricType;
-import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricType;
 import com.dotcms.telemetry.collectors.language.HasChangeDefaultLanguagesDatabaseMetricType;
 import com.dotcms.telemetry.collectors.language.OldStyleLanguagesVarialeMetricType;
 import com.dotcms.telemetry.collectors.language.TotalLanguagesDatabaseMetricType;
@@ -249,7 +244,6 @@ public final class MetricStatsCollector {
         metricStatsCollectors.add(new TotalSitesWithAutoIndexContentConfigMetricType());
 
         // adding experiments metrics
-        metricStatsCollectors.add(new ExperimentFeatureFlagMetricType());
         metricStatsCollectors.add(new CountVariantsInAllScheduledExperimentsMetricType());
         metricStatsCollectors.add(new CountVariantsInAllRunningExperimentsMetricType());
         metricStatsCollectors.add(new CountVariantsInAllEndedExperimentsMetricType());
@@ -265,6 +259,8 @@ public final class MetricStatsCollector {
         metricStatsCollectors.add(new CountExperimentsWithExitRateGoalMetricType());
         metricStatsCollectors.add(new CountExperimentsWithBounceRateGoalMetricType());
         metricStatsCollectors.add(new CountExperimentsEditedInThePast30DaysMetricType());
+
+        metricStatsCollectors.add(new ImportContentletsJobTriggeredMetricType());
     }
 
     public static MetricsSnapshot getStatsAndCleanUp() {

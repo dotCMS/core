@@ -4,7 +4,12 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotCopyButtonComponent,
+    DotIconComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRelationshipTreeComponent } from './dot-relationship-tree.component';
@@ -45,8 +50,14 @@ describe('DotRelationshipTreeComponent', () => {
 
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotRelationshipTreeComponent],
-                imports: [DotIconModule, DotSafeHtmlPipe, DotMessagePipe, DotCopyButtonComponent],
+                declarations: [TestHostComponent],
+                imports: [
+                    DotRelationshipTreeComponent,
+                    DotIconComponent,
+                    DotSafeHtmlPipe,
+                    DotMessagePipe,
+                    DotCopyButtonComponent
+                ],
                 providers: [
                     {
                         provide: DotMessageService,
@@ -90,8 +101,14 @@ describe('DotRelationshipTreeComponent', () => {
 
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotRelationshipTreeComponent],
-                imports: [DotIconModule, DotSafeHtmlPipe, DotMessagePipe, DotCopyButtonComponent],
+                declarations: [TestHostComponent],
+                imports: [
+                    DotRelationshipTreeComponent,
+                    DotIconComponent,
+                    DotSafeHtmlPipe,
+                    DotMessagePipe,
+                    DotCopyButtonComponent
+                ],
                 providers: [
                     {
                         provide: DotMessageService,

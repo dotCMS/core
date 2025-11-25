@@ -1,9 +1,16 @@
 import { Observable, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators,
+    ReactiveFormsModule
+} from '@angular/forms';
 
-import { DialogService } from 'primeng/dynamicdialog';
+import { ButtonModule } from 'primeng/button';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 
 import { takeUntil, tap } from 'rxjs/operators';
@@ -11,16 +18,33 @@ import { takeUntil, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotApiLinkComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotTemplateBuilderComponent } from './dot-template-builder/dot-template-builder.component';
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
 import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.store';
+
+import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
+import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
     styleUrls: ['./dot-template-create-edit.component.scss'],
-    providers: [DotTemplateStore],
-    standalone: false
+    providers: [DotTemplateStore, DotTemplatesService, DialogService],
+    imports: [
+        ButtonModule,
+        CommonModule,
+        DotApiLinkComponent,
+        DotPortletBaseComponent,
+        DotPortletToolbarComponent,
+        DynamicDialogModule,
+        DotMessagePipe,
+        DotTemplateBuilderComponent,
+        ReactiveFormsModule
+    ]
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);
@@ -29,6 +53,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private dotSiteService = inject(SiteService);
 
     readonly #store = inject(DotTemplateStore);
+    readonly #globalStore = inject(GlobalStore);
 
     vm$: Observable<VM>;
 
@@ -49,7 +74,18 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 }
 
                 if (!template.identifier) {
+                    this.#globalStore.addNewBreadcrumb({
+                        label: this.dotMessageService.get('templates.create.title'),
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/create`
+                    });
                     this.createTemplate();
+                } else if (template.title) {
+                    this.#globalStore.addNewBreadcrumb({
+                        label: template.title,
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/edit/${template.identifier}`
+                    });
                 }
             })
         );

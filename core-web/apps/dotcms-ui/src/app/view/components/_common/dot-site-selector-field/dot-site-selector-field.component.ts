@@ -4,6 +4,8 @@ import { Component, forwardRef, Input, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { Site, SiteService } from '@dotcms/dotcms-js';
+
+import { DotSiteSelectorComponent } from '../dot-site-selector/dot-site-selector.component';
 /**
  * Form control to select DotCMS instance host identifier.
  *
@@ -22,7 +24,7 @@ import { Site, SiteService } from '@dotcms/dotcms-js';
             useExisting: forwardRef(() => DotSiteSelectorFieldComponent)
         }
     ],
-    standalone: false
+    imports: [DotSiteSelectorComponent]
 })
 export class DotSiteSelectorFieldComponent implements ControlValueAccessor {
     private siteService = inject(SiteService);

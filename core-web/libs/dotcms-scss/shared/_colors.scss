@@ -82,6 +82,7 @@ $color-palette-gray-900: var(--gray-900);
 
 // Surface
 $color-palette-surface-500: var(--surface-500);
+$color-palette-surface-800: var(--surface-800);
 $color-palette-surface-900: var(--surface-900);
 
 $color-palette-gray-shade: $color-palette-gray-300;
@@ -198,6 +199,17 @@ $color-accessible-text-blue: $color-palette-blue-shade;
 $color-accessible-text-blue-bg: $color-palette-blue-op-08;
 $color-alert-blue: $color-palette-blue;
 $color-alert-blue-light: $color-palette-blue-tint;
+
+// Blue Gray sass variables
+$color-palette-bluegray-300: #9fa9b7;
+$color-palette-bluegray-400: #818ea1;
+$color-palette-bluegray-800: #37404c;
+
+// Surface colors
+$color-palette-surface-light: #f9fafb;
+
+// Border colors
+$color-palette-border-light: #e5e7eb;
 
 // LEGACY COLORS
 $brand-background: var(--color-palette-primary-800);
@@ -470,5 +482,6 @@ $foreground-active: #848484;
     --gray-900: #3d404d;
 
     --surface-500: #9e9e9e;
+    --surface-800: #424242;
     --surface-900: #212121;
 }

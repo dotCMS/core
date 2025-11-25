@@ -11,8 +11,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
     selector: 'dot-toggle-lock-button',
     templateUrl: './dot-toggle-lock-button.component.html',
     styleUrls: ['./dot-toggle-lock-button.component.scss'],
-    imports: [ButtonModule, TooltipModule, DotMessagePipe],
-    standalone: true
+    imports: [ButtonModule, TooltipModule, DotMessagePipe]
 })
 export class DotToggleLockButtonComponent {
     readonly #store = inject(UVEStore);

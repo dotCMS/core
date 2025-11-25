@@ -47,22 +47,19 @@ class MockDotNavigationService {
 
 @Component({
     selector: 'dot-toolbar-user',
-    template: '',
-    standalone: false
+    template: ''
 })
 class MockToolbarUsersComponent {}
 
 @Component({
     selector: 'dot-toolbar-notifications',
-    template: '',
-    standalone: false
+    template: ''
 })
 class MockToolbarNotificationsComponent {}
 
 @Component({
     selector: 'dot-toolbar-announcements',
-    template: '',
-    standalone: false
+    template: ''
 })
 class MockToolbarAnnouncementsComponent {}
 
@@ -83,12 +80,14 @@ describe('DotToolbarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotToolbarComponent,
-        imports: [ToolbarModule, DotShowHideFeatureDirective],
-        detectChanges: false,
-        declarations: [
+        imports: [
+            DotToolbarComponent,
+            ToolbarModule,
+            DotShowHideFeatureDirective,
             MockComponent(DotCrumbtrailComponent),
             MockComponent(DotSiteSelectorComponent)
         ],
+        detectChanges: false,
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),

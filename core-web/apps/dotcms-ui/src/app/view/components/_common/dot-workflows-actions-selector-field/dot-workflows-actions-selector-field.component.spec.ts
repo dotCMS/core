@@ -1,8 +1,8 @@
 import { BehaviorSubject } from 'rxjs';
 
-import { Component, DebugElement, OnInit, inject } from '@angular/core';
+import { Component, DebugElement, OnInit, inject, forwardRef } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { SelectItemGroup } from 'primeng/api';
@@ -76,7 +76,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotWorkflowsActionsSelectorFieldComponent, FakeFormComponent],
+            declarations: [FakeFormComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -87,7 +87,21 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                     useClass: DotWorkflowsActionsSelectorFieldServiceMock
                 }
             ],
-            imports: [DropdownModule, DotMessagePipe]
+            imports: [DotWorkflowsActionsSelectorFieldComponent, DropdownModule, DotMessagePipe]
+        }).overrideComponent(DotWorkflowsActionsSelectorFieldComponent, {
+            set: {
+                providers: [
+                    {
+                        multi: true,
+                        provide: NG_VALUE_ACCESSOR,
+                        useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
+                    },
+                    {
+                        provide: DotWorkflowsActionsSelectorFieldService,
+                        useClass: DotWorkflowsActionsSelectorFieldServiceMock
+                    }
+                ]
+            }
         });
     }));
 
@@ -115,9 +129,8 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
             }
         ];
 
-        dotWorkflowsActionsSelectorFieldService = deHost.injector.get(
-            DotWorkflowsActionsSelectorFieldService
-        );
+        dotWorkflowsActionsSelectorFieldService =
+            de.componentInstance['dotWorkflowsActionsSelectorFieldService'];
 
         jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'get');
         jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'load');

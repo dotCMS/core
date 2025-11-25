@@ -1,7 +1,8 @@
 @let field = $field();
 @let showLabel = $showLabel();
+@let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="hasError">
+<dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
         <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}

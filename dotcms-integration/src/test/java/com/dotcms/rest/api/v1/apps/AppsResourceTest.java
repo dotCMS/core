@@ -184,6 +184,16 @@ public class AppsResourceTest extends IntegrationTestBase {
             throws IOException {
 
         final Host host = new SiteDataGen().nextPersisted();
+
+        // Ensure the host cache is properly warmed with the newly created host
+        // This prevents race conditions where the cache might not have the host yet
+        try {
+            CacheLocator.getHostCache().clearCache();
+            APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), com.dotmarketing.portlets.contentlet.business.HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
+        } catch (Exception e) {
+            Logger.error(AppsResourceTest.class, "Failed to warm host cache", e);
+        }
+
         final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
                 .stringParam("p1", false,  true)
                 .stringParam("p2", false,  true)
@@ -422,6 +432,16 @@ public class AppsResourceTest extends IntegrationTestBase {
                 .withExtraParameters(true);
 
         final Host host = new SiteDataGen().nextPersisted();
+
+        // Ensure the host cache is properly warmed with the newly created host
+        // This prevents race conditions where the cache might not have the host yet
+        try {
+            CacheLocator.getHostCache().clearCache();
+            APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), com.dotmarketing.portlets.contentlet.business.HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
+        } catch (Exception e) {
+            Logger.error(AppsResourceTest.class, "Failed to warm host cache", e);
+        }
+
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         when(request.getRequestURI()).thenReturn("/baseURL");
@@ -1298,6 +1318,16 @@ public class AppsResourceTest extends IntegrationTestBase {
         for(final char chr :alphabet) {
            hosts.add(new SiteDataGen().name( String.format("%s-%d",chr, timeMark )).nextPersisted());
         }
+
+        // Ensure the host cache is properly warmed with all newly created hosts
+        // This prevents race conditions where the cache might not have all hosts yet
+        try {
+            CacheLocator.getHostCache().clearCache();
+            APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), com.dotmarketing.portlets.contentlet.business.HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
+        } catch (Exception e) {
+            Logger.error(AppsResourceTest.class, "Failed to warm host cache", e);
+        }
+
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         when(request.getRequestURI()).thenReturn("/baseURL");

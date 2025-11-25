@@ -4,7 +4,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotEditPageService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotWhatChanged } from '@dotcms/dotcms-models';
-import { DotDiffPipe } from '@dotcms/ui';
+import { DotDiffPipe, DotMessagePipe } from '@dotcms/ui';
 
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotDOMHtmlUtilService } from '../../services/html/dot-dom-html-util.service';
@@ -16,7 +16,7 @@ export const SHOW_DIFF_STYLES =
     selector: 'dot-whats-changed',
     templateUrl: './dot-whats-changed.component.html',
     styleUrls: ['./dot-whats-changed.component.scss'],
-    standalone: false
+    imports: [IframeComponent, DotMessagePipe]
 })
 export class DotWhatsChangedComponent implements OnInit, OnChanges {
     private dotEditPageService = inject(DotEditPageService);

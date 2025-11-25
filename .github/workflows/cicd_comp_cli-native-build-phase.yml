@@ -64,7 +64,7 @@ jobs:
         id: set-os
         run: |
           if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
-            RUNNERS='[{ "os": "ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}", "label": "Linux", "platform": "linux-x86_64" }, { "os": "macos-13", "label": "macOS-Intel", "platform": "osx-x86_64" }, { "os": "macos-14", "label": "macOS-Silicon", "platform": "osx-aarch_64" }]'
+            RUNNERS='[{ "os": "ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}", "label": "Linux", "platform": "linux-x86_64" }, { "os": "macos-${{ vars.MACOS_INTEL_RUNNER_VERSION || '15-intel' }}", "label": "macOS-Intel", "platform": "osx-x86_64" }, { "os": "macos-${{ vars.MACOS_SILICON_RUNNER_VERSION || '14' }}", "label": "macOS-Silicon", "platform": "osx-aarch_64" }]'
           else
             RUNNERS='[{ "os": "ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}", "label": "Linux", "platform": "linux-x86_64" }]'
           fi

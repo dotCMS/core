@@ -110,9 +110,7 @@ describe('withEditor', () => {
                     expect(store.$uveToolbar()).toEqual({
                         editor: {
                             apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&mode=EDIT_MODE',
-                            bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                            copyUrl:
-                                'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
+                            bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1'
                         },
                         preview: null,
                         currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
@@ -302,7 +300,7 @@ describe('withEditor', () => {
                     palette: {
                         variantId: DEFAULT_VARIANT_ID,
                         languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
-                        containers: MOCK_RESPONSE_HEADLESS.containers,
+                        pagePath: MOCK_RESPONSE_HEADLESS.page.pageURI,
                         paletteClass: PALETTE_CLASSES.OPEN
                     },
                     seoResults: null

@@ -6,6 +6,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+
 import { DotIconModule } from '@dotcms/ui';
 
 import { BridgeFieldComponent } from './components/bridge-field/bridge-field.components';
