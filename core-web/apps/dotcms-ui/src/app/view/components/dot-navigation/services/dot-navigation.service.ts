@@ -201,7 +201,7 @@ export class DotNavigationService {
                         setActiveItems({
                             url: event.url,
                             collapsed: this._collapsed$.getValue(),
-                            menuId: this.router.getCurrentNavigation().extras.state?.menuId,
+                            menuId: this.router.currentNavigation()?.extras?.state?.menuId,
                             previousUrl: this.dotRouterService.previousUrl
                         })
                     );

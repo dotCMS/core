@@ -8576,13 +8576,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         builder.addRequiredRelationship(relationship, contentsInRelationship);
                     }
                     //grouping by id to avoid duplicate contents due to different languages
-                    List<Contentlet> contentsInRelationshipSameLanguage = new ArrayList<>(contentsInRelationship.stream()
-                            .collect(Collectors.toMap(
-                                    Contentlet::getIdentifier,
-                                    Function.identity(),
-                                    (existing, replacement) -> existing
-                            ))
-                            .values());
+                    List<Contentlet> contentsInRelationshipSameLanguage = groupContentletsByLanguage(contentsInRelationship);
 
                     // If there's a 1-N relationship and the child content is
                     // trying to relate to one more parent...
@@ -8640,8 +8634,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final DotContentletValidationException.Builder builder, final Relationship relationship,
             final List<Contentlet> contentsInRelationship) {
 
+        List<Contentlet> contentsInRelationshipSameLanguage = groupContentletsByLanguage(contentsInRelationship);
         //Trying to relate more than one piece of content
-        if (contentsInRelationship.size() > 1) {
+        if (contentsInRelationshipSameLanguage.size() > 1) {
             Logger.error(this, String.format("Error in Contentlet [%s]: Relationship [%s] has been defined as One to One", 
                     contentlet.getIdentifier(), relationship.getRelationTypeValue()));
             builder.addBadCardinalityRelationship(relationship, contentsInRelationship);
@@ -8668,6 +8663,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return false;
         }
         return true;
+    }
+
+    private List<Contentlet> groupContentletsByLanguage(List<Contentlet> contentsInRelationship) {
+
+    return new ArrayList<>(contentsInRelationship.stream()
+            .collect(Collectors.toMap(
+                    Contentlet::getIdentifier,
+                    Function.identity(),
+                    (existing, replacement) -> existing
+            ))
+            .values());
     }
 
     @Override

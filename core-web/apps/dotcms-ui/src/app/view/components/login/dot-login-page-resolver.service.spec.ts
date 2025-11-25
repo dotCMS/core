@@ -28,7 +28,7 @@ describe('DotLoginPageResolver', () => {
     let dotLoginPageResolver: DotLoginPageResolver;
 
     beforeEach(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotLoginPageResolver,
                 {
@@ -38,8 +38,8 @@ describe('DotLoginPageResolver', () => {
             ],
             imports: []
         });
-        dotLoginPageResolver = testbed.get(DotLoginPageResolver);
-        dotLoginPageStateService = testbed.get(DotLoginPageStateService);
+        dotLoginPageResolver = TestBed.inject(DotLoginPageResolver);
+        dotLoginPageStateService = TestBed.inject(DotLoginPageStateService);
     });
 
     it('should set the dotLoginPageStateService with the correct values ', () => {

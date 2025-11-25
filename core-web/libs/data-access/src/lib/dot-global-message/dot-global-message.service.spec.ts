@@ -31,8 +31,8 @@ xdescribe('DotGlobalMessageService', () => {
             ]
         });
 
-        dotGlobalMessageService = TestBed.get(DotGlobalMessageService);
-        dotEventsService = TestBed.get(DotEventsService);
+        dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
+        dotEventsService = TestBed.inject(DotEventsService);
 
         listenerDotGlobalMessage = dotEventsService.listen('dot-global-message');
     });

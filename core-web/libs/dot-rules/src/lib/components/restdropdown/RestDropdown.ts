@@ -69,10 +69,16 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
         this.maxSelections = 1;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unsafe-function-type
     onChange: Function = () => {};
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unsafe-function-type
     onTouched: Function = () => {};
 
-    ngAfterViewInit(): void {}
+    // Required by AfterViewInit interface but not used in this component
+    // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method
+    ngAfterViewInit(): void {
+        // No implementation needed
+    }
 
     writeValue(value: any): void {
         if (value && value.indexOf(',') > -1) {

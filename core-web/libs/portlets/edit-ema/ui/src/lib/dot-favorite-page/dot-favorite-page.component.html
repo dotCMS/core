@@ -1,89 +1,89 @@
-<dot-form-dialog
-    *ngIf="vm$ | async as vm"
-    (cancel)="onCancel()"
-    (save)="onSave()"
-    [saveButtonDisabled]="(isFormValid$ | async) === false"
-    [saveButtonLoading]="vm.loading"
-    data-testId="dialogForm">
-    <form *ngIf="form" [formGroup]="form" class="p-fluid" data-testId="form">
-        <div class="fields-col">
-            <dot-pages-favorite-page-empty-skeleton
-                *ngIf="
-                    vm.showFavoriteEmptySkeleton;
-                    else FavoritePageThumbnail
-                "></dot-pages-favorite-page-empty-skeleton>
-
-            <ng-template #FavoritePageThumbnail>
-                <div class="dot-favorite-dialog__thumbnailField" data-testId="thumbnailField">
-                    <ng-template [ngIf]="vm.renderThumbnail" [ngIfElse]="existingFavoritePage">
-                        <dot-html-to-image
-                            *ngIf="vm.renderThumbnail"
-                            [value]="vm.pageRenderedHtml"
-                            [width]="vm.imgWidth"
-                            [height]="vm.imgHeight"></dot-html-to-image>
-                    </ng-template>
-
-                    <ng-template #existingFavoritePage>
+@if (vm$ | async; as vm) {
+    <dot-form-dialog
+        (cancel)="onCancel()"
+        (save)="onSave()"
+        [saveButtonDisabled]="(isFormValid$ | async) === false"
+        [saveButtonLoading]="vm.loading"
+        data-testId="dialogForm">
+        @if (form) {
+            <form [formGroup]="form" class="p-fluid" data-testId="form">
+                <div class="fields-col">
+                    @if (vm.showFavoriteEmptySkeleton) {
+                        <dot-pages-favorite-page-empty-skeleton></dot-pages-favorite-page-empty-skeleton>
+                    } @else {
                         <div
-                            class="dot-favorite-dialog__image-container"
-                            data-testId="favoriteCardImageContainer">
-                            <img
-                                [alt]="vm.formState.title"
-                                [src]="vm.formState.thumbnail + '?' + timeStamp" />
+                            class="dot-favorite-dialog__thumbnailField"
+                            data-testId="thumbnailField">
+                            @if (vm.renderThumbnail) {
+                                @if (vm.renderThumbnail) {
+                                    <dot-html-to-image
+                                        [value]="vm.pageRenderedHtml"
+                                        [width]="vm.imgWidth"
+                                        [height]="vm.imgHeight"></dot-html-to-image>
+                                }
+                            } @else {
+                                <div
+                                    class="dot-favorite-dialog__image-container"
+                                    data-testId="favoriteCardImageContainer">
+                                    <img
+                                        [alt]="vm.formState.title"
+                                        [src]="vm.formState.thumbnail + '?' + timeStamp" />
+                                </div>
+                                @if (vm.pageRenderedHtml !== '') {
+                                    <button
+                                        (click)="renderThumbnail()"
+                                        [label]="'favoritePage.dialog.reload.image.button' | dm"
+                                        class="p-button-outlined favorite-dialog__image-reload"
+                                        data-testid="dotFavoriteDialogReloadThumbnailButton"
+                                        pButton></button>
+                                }
+                            }
                         </div>
-                        <button
-                            *ngIf="vm.pageRenderedHtml !== ''"
-                            (click)="renderThumbnail()"
-                            [label]="'favoritePage.dialog.reload.image.button' | dm"
-                            class="p-button-outlined favorite-dialog__image-reload"
-                            data-testid="dotFavoriteDialogReloadThumbnailButton"
-                            pButton></button>
-                    </ng-template>
+                    }
                 </div>
-            </ng-template>
-        </div>
-        <div class="fields-col">
-            <div class="field" data-testId="titleField">
-                <label dotFieldRequired for="title">{{ 'title' | dm }}</label>
-                <input
-                    id="title"
-                    pInputText
-                    formControlName="title"
-                    autofocus
-                    data-testId="favoritePageTitleField" />
-                <dot-field-validation-message
-                    [field]="form.get('title')"></dot-field-validation-message>
-            </div>
-            <div class="field" data-testId="urlField">
-                <label dotFieldRequired for="url">{{ 'url' | dm }}</label>
-                <input
-                    id="url"
-                    pInputText
-                    formControlName="url"
-                    data-testId="favoritePageUrlField" />
-                <dot-field-validation-message
-                    [field]="form.get('url')"></dot-field-validation-message>
-            </div>
-            <div class="field" data-testId="orderField">
-                <label dotFieldRequired for="order">{{ 'order' | dm }}</label>
-                <input
-                    id="order"
-                    pInputText
-                    formControlName="order"
-                    data-testId="favoritePageOrderField" />
-                <dot-field-validation-message
-                    [field]="form.get('order')"></dot-field-validation-message>
-            </div>
-        </div>
-    </form>
-
-    <button
-        (click)="onDelete(vm.formState?.inode)"
-        [disabled]="!vm.formState?.inode"
-        [label]="'favoritePage.dialog.delete.button' | dm"
-        class="p-button-danger p-button-outlined dot-favorite-dialog-footer__delete-button"
-        icon="pi pi-trash"
-        footerActions
-        data-testid="dotFavoriteDialogDeleteButton"
-        pButton></button>
-</dot-form-dialog>
+                <div class="fields-col">
+                    <div class="field" data-testId="titleField">
+                        <label dotFieldRequired for="title">{{ 'title' | dm }}</label>
+                        <input
+                            id="title"
+                            pInputText
+                            formControlName="title"
+                            autofocus
+                            data-testId="favoritePageTitleField" />
+                        <dot-field-validation-message
+                            [field]="form.get('title')"></dot-field-validation-message>
+                    </div>
+                    <div class="field" data-testId="urlField">
+                        <label dotFieldRequired for="url">{{ 'url' | dm }}</label>
+                        <input
+                            id="url"
+                            pInputText
+                            formControlName="url"
+                            data-testId="favoritePageUrlField" />
+                        <dot-field-validation-message
+                            [field]="form.get('url')"></dot-field-validation-message>
+                    </div>
+                    <div class="field" data-testId="orderField">
+                        <label dotFieldRequired for="order">{{ 'order' | dm }}</label>
+                        <input
+                            id="order"
+                            pInputText
+                            formControlName="order"
+                            data-testId="favoritePageOrderField" />
+                        <dot-field-validation-message
+                            [field]="form.get('order')"></dot-field-validation-message>
+                    </div>
+                </div>
+            </form>
+        }
+        <button
+            (click)="onDelete(vm.formState?.inode)"
+            [disabled]="!vm.formState?.inode"
+            [label]="'favoritePage.dialog.delete.button' | dm"
+            class="p-button-danger p-button-outlined dot-favorite-dialog-footer__delete-button"
+            icon="pi pi-trash"
+            footerActions
+            data-testid="dotFavoriteDialogDeleteButton"
+            pButton></button>
+    </dot-form-dialog>
+}
