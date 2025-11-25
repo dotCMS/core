@@ -1,0 +1,34 @@
+<div [formGroup]="group" class="field">
+    <label [for]="property.name" dotFieldRequired>
+        {{ 'contenttypes.field.properties.newRenderMode.label' | dm }}
+    </label>
+    <div class="flex flex-wrap gap-3">
+        <div class="flex align-items-center">
+            <p-radioButton
+                name="newRenderMode"
+                value="iframe"
+                [formControlName]="property.name"
+                inputId="iframe" />
+            <label
+                for="iframe"
+                class="ml-2"
+                [pTooltip]="'contenttypes.field.properties.newRenderMode.component.tooltip' | dm">
+                {{ 'contenttypes.field.properties.newRenderMode.component.label' | dm }}
+            </label>
+        </div>
+
+        <div class="flex align-items-center">
+            <p-radioButton
+                name="newRenderMode"
+                value="components"
+                [formControlName]="property.name"
+                inputId="components" />
+            <label
+                for="components"
+                class="ml-2"
+                [pTooltip]="'contenttypes.field.properties.newRenderMode.iframe.tooltip' | dm">
+                {{ 'contenttypes.field.properties.newRenderMode.iframe.label' | dm }}
+            </label>
+        </div>
+    </div>
+</div>

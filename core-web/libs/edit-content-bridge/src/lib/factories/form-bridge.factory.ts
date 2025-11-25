@@ -36,7 +36,7 @@ type BridgeConfig = AngularConfig | DojoConfig;
  */
 export function createFormBridge(config: BridgeConfig): FormBridge {
     if (config.type === 'angular') {
-        return new AngularFormBridge(config.form, config.zone);
+        return AngularFormBridge.getInstance(config.form, config.zone);
     }
 
     return new DojoFormBridge();

@@ -69,6 +69,10 @@ class TestFieldPropertiesService {
         return propertyName === 'property1' || propertyName === 'property2';
     }
 
+    getValue(field: DotCMSContentTypeField, propertyName: string): any {
+        return field[propertyName];
+    }
+
     getDefaultValue(propertyName: string): any {
         return propertyName === 'property1' ? '' : true;
     }
@@ -182,17 +186,17 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             expect(comp.form.get('property3')).toBeNull();
         });
 
-        it('should init field proeprties', () => {
+        it('should init field properties', () => {
             expect(comp.fieldProperties[0]).toBe('property1');
             expect(comp.fieldProperties[1]).toBe('property2');
         });
 
         it('should emit false to valid when saveFieldProperties is called', () => {
-            jest.spyOn(comp.valid, 'next');
+            jest.spyOn(comp.valid, 'emit');
             comp.saveFieldProperties();
 
-            expect(comp.valid.next).toHaveBeenCalledWith(false);
-            expect(comp.valid.next).toHaveBeenCalledTimes(1);
+            expect(comp.valid.emit).toHaveBeenCalledWith(false);
+            expect(comp.valid.emit).toHaveBeenCalledTimes(1);
         });
     });
 

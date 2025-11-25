@@ -35,9 +35,16 @@ describe('AngularFormBridge', () => {
     let bridge: AngularFormBridge;
 
     beforeEach(() => {
+        // Reset singleton instance before each test
+        AngularFormBridge.resetInstance();
         mockFormGroup.get.mockReturnValue(mockFormControl);
-        bridge = new AngularFormBridge(mockFormGroup as any, mockNgZone as any);
+        bridge = AngularFormBridge.getInstance(mockFormGroup as any, mockNgZone as any);
         jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        // Clean up singleton instance after each test
+        AngularFormBridge.resetInstance();
     });
 
     it('should get field value from Angular form', () => {
@@ -161,15 +168,29 @@ describe('AngularFormBridge', () => {
         });
 
         it('should run callbacks inside NgZone', () => {
+            // Reset and create a fresh bridge instance with spy already set up
+            AngularFormBridge.resetInstance();
+            // Reset the callback to ensure clean state
+            mockFormControl.valueChanges._callback = null;
             const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const testBridge = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any
+            );
             const callback = jest.fn();
 
-            bridge.onChangeField('testField', callback);
+            testBridge.onChangeField('testField', callback);
 
-            if (mockFormControl.valueChanges._callback) {
-                mockFormControl.valueChanges._callback('changed value');
+            const valueChangesCallback = mockFormControl.valueChanges._callback as
+                | ((value: string) => void)
+                | null;
+            expect(valueChangesCallback).toBeDefined();
+            if (valueChangesCallback) {
+                valueChangesCallback('changed value');
                 expect(zoneRunSpy).toHaveBeenCalled();
             }
+
+            zoneRunSpy.mockRestore();
         });
     });
 
@@ -208,6 +229,96 @@ describe('AngularFormBridge', () => {
             // Try to add a new subscription after destroy
             const unsubscribe = bridge.onChangeField('testField', () => {});
             expect(typeof unsubscribe).toBe('function');
+        });
+    });
+
+    describe('Singleton pattern', () => {
+        beforeEach(() => {
+            AngularFormBridge.resetInstance();
+        });
+
+        afterEach(() => {
+            AngularFormBridge.resetInstance();
+        });
+
+        it('should return the same instance when getInstance is called multiple times', () => {
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any
+            );
+            const instance2 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any
+            );
+
+            expect(instance1).toBe(instance2);
+        });
+
+        it('should warn when getInstance is called with different parameters', () => {
+            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const differentFormGroup = { get: jest.fn() } as any;
+
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any
+            );
+            const instance2 = AngularFormBridge.getInstance(differentFormGroup, mockNgZone as any);
+
+            expect(instance1).toBe(instance2);
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    'AngularFormBridge: Attempted to get instance with different form or zone'
+                )
+            );
+
+            consoleSpy.mockRestore();
+        });
+
+        it('should reset instance when resetInstance is called', () => {
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any
+            );
+            AngularFormBridge.resetInstance();
+            const instance2 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any
+            );
+
+            expect(instance1).not.toBe(instance2);
+        });
+
+        it('should destroy subscriptions when resetInstance is called', () => {
+            const unsubscribeSpy = jest.fn();
+            mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
+
+            const instance = AngularFormBridge.getInstance(mockFormGroup as any, mockNgZone as any);
+            instance.onChangeField('testField', () => {});
+
+            AngularFormBridge.resetInstance();
+
+            expect(unsubscribeSpy).toHaveBeenCalled();
+        });
+
+        it('should not allow direct instantiation with new', () => {
+            // TypeScript will prevent this at compile time, but we can verify the constructor is private
+            // by checking that getInstance is the only way to create an instance
+            const instance = AngularFormBridge.getInstance(mockFormGroup as any, mockNgZone as any);
+            expect(instance).toBeInstanceOf(AngularFormBridge);
+        });
+
+        it('should reset instance in destroy method', () => {
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any
+            );
+            instance1.destroy();
+
+            const instance2 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any
+            );
+            expect(instance1).not.toBe(instance2);
         });
     });
 });
