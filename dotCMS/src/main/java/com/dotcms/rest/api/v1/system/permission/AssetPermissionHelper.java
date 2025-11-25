@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -11,18 +10,13 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.quartz.job.CascadePermissionsJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -452,69 +446,24 @@ public class AssetPermissionHelper {
 
     /**
      * Converts permission bits to permission level names.
-     * Avoids duplicate aliases (e.g., USE=READ, EDIT=WRITE).
+     * Delegates to {@link PermissionConversionUtils#convertBitsToPermissionNames(int)}.
      *
      * @param permissionBits Bit-packed permission value
      * @return List of permission level strings
      */
     private List<String> convertBitsToPermissionNames(final int permissionBits) {
-        final List<String> permissions = new ArrayList<>();
-
-        if ((permissionBits & PermissionAPI.PERMISSION_READ) > 0) {
-            permissions.add("READ");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_WRITE) > 0) {
-            permissions.add("WRITE");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_PUBLISH) > 0) {
-            permissions.add("PUBLISH");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_EDIT_PERMISSIONS) > 0) {
-            permissions.add("EDIT_PERMISSIONS");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_CAN_ADD_CHILDREN) > 0) {
-            permissions.add("CAN_ADD_CHILDREN");
-        }
-
-        return permissions;
+        return PermissionConversionUtils.convertBitsToPermissionNames(permissionBits);
     }
 
     /**
-     * Maps internal permission type class names to modern API type constants.
-     */
-    private static final Map<String, String> PERMISSION_TYPE_MAPPINGS = Map.ofEntries(
-        Map.entry(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE.toUpperCase(), "INDIVIDUAL"),
-        Map.entry(IHTMLPage.class.getCanonicalName().toUpperCase(), "PAGE"),
-        Map.entry(Container.class.getCanonicalName().toUpperCase(), "CONTAINER"),
-        Map.entry(Folder.class.getCanonicalName().toUpperCase(), "FOLDER"),
-        Map.entry(Link.class.getCanonicalName().toUpperCase(), "LINK"),
-        Map.entry(Template.class.getCanonicalName().toUpperCase(), "TEMPLATE"),
-        Map.entry(TemplateLayout.class.getCanonicalName().toUpperCase(), "TEMPLATE_LAYOUT"),
-        Map.entry(Structure.class.getCanonicalName().toUpperCase(), "CONTENT_TYPE"),
-        Map.entry(Contentlet.class.getCanonicalName().toUpperCase(), "CONTENT"),
-        Map.entry(Category.class.getCanonicalName().toUpperCase(), "CATEGORY"),
-        Map.entry(Rule.class.getCanonicalName().toUpperCase(), "RULE"),
-        Map.entry(Host.class.getCanonicalName().toUpperCase(), "HOST")
-    );
-
-    /**
      * Gets the modern API type name for a permission type.
+     * Delegates to {@link PermissionConversionUtils#getModernPermissionType(String)}.
      *
      * @param permissionType Internal permission type (class name or scope)
      * @return Modern API type constant
      */
     private String getModernPermissionType(final String permissionType) {
-        if (!UtilMethods.isSet(permissionType)) {
-            return StringPool.BLANK;
-        }
-
-        final String mappedType = PERMISSION_TYPE_MAPPINGS.get(permissionType.toUpperCase());
-        if (mappedType != null) {
-            return mappedType;
-        }
-
-        Logger.debug(this, () -> String.format("Unknown permission type: %s", permissionType));
-        return permissionType.toUpperCase();
+        return PermissionConversionUtils.getModernPermissionType(permissionType);
     }
 
     /**
@@ -534,5 +483,274 @@ public class AssetPermissionHelper {
 
         // Return uppercase for asset type enum
         return modernType;
+    }
+
+    // ========================================================================
+    // UPDATE ASSET PERMISSIONS METHODS
+    // ========================================================================
+
+    /**
+     * Updates permissions for an asset based on the provided form.
+     * Automatically breaks inheritance if the asset is currently inheriting.
+     *
+     * @param assetId  Asset identifier (inode or identifier)
+     * @param form     Permission update form with role permissions
+     * @param cascade  If true, triggers async cascade job (query parameter)
+     * @param user     Requesting user (must be admin)
+     * @return Response map containing message, permissionCount, inheritanceBroken, and asset
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    public Map<String, Object> updateAssetPermissions(final String assetId,
+                                                       final UpdateAssetPermissionsForm form,
+                                                       final boolean cascade,
+                                                       final User user)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format(
+            "updateAssetPermissions - assetId: %s, cascade: %s, user: %s",
+            assetId, cascade, user.getUserId()));
+
+        // 1. Validate request
+        validateUpdateRequest(assetId, form);
+
+        // 2. Resolve asset
+        final Permissionable asset = resolveAsset(assetId);
+        if (asset == null) {
+            throw new NotFoundInDbException("asset does not exist");
+        }
+
+        // 3. Check user has EDIT_PERMISSIONS on asset
+        final boolean canEditPermissions = permissionAPI.doesUserHavePermission(
+            asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false);
+        if (!canEditPermissions) {
+            throw new DotSecurityException(String.format(
+                "User does not have EDIT_PERMISSIONS permission on asset: %s", assetId));
+        }
+
+        // 4. Check if asset is currently inheriting (for response flag)
+        final boolean wasInheriting = permissionAPI.isInheritingPermissions(asset);
+
+        // 5. Break inheritance if currently inheriting
+        if (wasInheriting) {
+            Logger.debug(this, () -> String.format(
+                "Breaking permission inheritance for asset: %s", assetId));
+            final Permissionable parent = permissionAPI.findParentPermissionable(asset);
+            if (parent != null) {
+                permissionAPI.permissionIndividually(parent, asset, user);
+            }
+        }
+
+        // 6. Build Permission objects from form
+        final List<Permission> permissionsToSave = buildPermissionsFromForm(form, asset);
+
+        // 7. Save permissions
+        if (!permissionsToSave.isEmpty()) {
+            permissionAPI.save(permissionsToSave, asset, user, false);
+        }
+
+        // 8. Handle cascade if requested and asset is a parent permissionable
+        if (cascade && asset.isParentPermissionable()) {
+            Logger.info(this, () -> String.format(
+                "Triggering cascade permissions job for asset: %s", assetId));
+            // Trigger cascade for each role in the form
+            for (final RolePermissionForm roleForm : form.getPermissions()) {
+                try {
+                    final Role role = roleAPI.loadRoleById(roleForm.getRoleId());
+                    if (role != null) {
+                        CascadePermissionsJob.triggerJobImmediately(asset, role);
+                    }
+                } catch (Exception e) {
+                    Logger.warn(this, String.format(
+                        "Failed to trigger cascade for role %s: %s",
+                        roleForm.getRoleId(), e.getMessage()));
+                }
+            }
+        }
+
+        // 9. Build and return response
+        Logger.info(this, () -> String.format(
+            "Successfully updated permissions for asset: %s", assetId));
+
+        return buildUpdateResponse(asset, user, wasInheriting, permissionsToSave.size());
+    }
+
+    /**
+     * Validates the update request form and asset ID.
+     *
+     * @param assetId Asset identifier
+     * @param form    Permission update form
+     * @throws IllegalArgumentException If validation fails
+     * @throws DotDataException         If role lookup fails
+     */
+    private void validateUpdateRequest(final String assetId,
+                                       final UpdateAssetPermissionsForm form)
+            throws DotDataException {
+
+        if (!UtilMethods.isSet(assetId)) {
+            throw new IllegalArgumentException("Asset ID is required");
+        }
+
+        if (form == null || form.getPermissions() == null || form.getPermissions().isEmpty()) {
+            throw new IllegalArgumentException("permissions list is required");
+        }
+
+        for (final RolePermissionForm roleForm : form.getPermissions()) {
+            // Validate role ID is provided
+            if (!UtilMethods.isSet(roleForm.getRoleId())) {
+                throw new IllegalArgumentException("roleId is required for each permission entry");
+            }
+
+            // Validate role exists
+            final Role role = roleAPI.loadRoleById(roleForm.getRoleId());
+            if (role == null) {
+                throw new IllegalArgumentException(String.format(
+                    "Invalid role id: %s", roleForm.getRoleId()));
+            }
+
+            // Validate individual permission names
+            if (roleForm.getIndividual() != null) {
+                for (final String perm : roleForm.getIndividual()) {
+                    if (!PermissionConversionUtils.isValidPermissionLevel(perm)) {
+                        throw new IllegalArgumentException(String.format(
+                            "Invalid permission level: %s", perm));
+                    }
+                }
+            }
+
+            // Validate inheritable permission names and scopes
+            if (roleForm.getInheritable() != null) {
+                for (final Map.Entry<String, List<String>> entry : roleForm.getInheritable().entrySet()) {
+                    final String scope = entry.getKey();
+                    if (!PermissionConversionUtils.isValidScope(scope)) {
+                        throw new IllegalArgumentException(String.format(
+                            "Invalid permission scope: %s", scope));
+                    }
+
+                    if (entry.getValue() != null) {
+                        for (final String perm : entry.getValue()) {
+                            if (!PermissionConversionUtils.isValidPermissionLevel(perm)) {
+                                throw new IllegalArgumentException(String.format(
+                                    "Invalid permission level '%s' in scope '%s'", perm, scope));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds Permission objects from the update form.
+     *
+     * @param form  Permission update form
+     * @param asset Target asset
+     * @return List of Permission objects to save
+     */
+    private List<Permission> buildPermissionsFromForm(final UpdateAssetPermissionsForm form,
+                                                       final Permissionable asset) {
+
+        final List<Permission> permissions = new ArrayList<>();
+        final String assetPermissionId = asset.getPermissionId();
+
+        for (final RolePermissionForm roleForm : form.getPermissions()) {
+            final String roleId = roleForm.getRoleId();
+
+            // Build individual permissions
+            if (roleForm.getIndividual() != null && !roleForm.getIndividual().isEmpty()) {
+                final int permissionBits = convertPermissionNamesToBits(roleForm.getIndividual());
+                permissions.add(new Permission(
+                    PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                    assetPermissionId,
+                    roleId,
+                    permissionBits,
+                    true
+                ));
+            }
+
+            // Build inheritable permissions (only for parent permissionables)
+            if (asset.isParentPermissionable() && roleForm.getInheritable() != null) {
+                for (final Map.Entry<String, List<String>> entry : roleForm.getInheritable().entrySet()) {
+                    final String scopeName = entry.getKey();
+                    final List<String> scopePermissions = entry.getValue();
+
+                    if (scopePermissions == null || scopePermissions.isEmpty()) {
+                        continue;
+                    }
+
+                    final String permissionType = convertScopeToPermissionType(scopeName);
+                    final int permissionBits = convertPermissionNamesToBits(scopePermissions);
+
+                    permissions.add(new Permission(
+                        permissionType,
+                        assetPermissionId,
+                        roleId,
+                        permissionBits,
+                        true
+                    ));
+                }
+            }
+        }
+
+        return permissions;
+    }
+
+    /**
+     * Converts permission level names to a bitwise permission value.
+     * Delegates to {@link PermissionConversionUtils#convertPermissionNamesToBits(List)}.
+     *
+     * @param permissionNames List of permission level names (READ, WRITE, etc.)
+     * @return Combined bit value
+     */
+    private int convertPermissionNamesToBits(final List<String> permissionNames) {
+        return PermissionConversionUtils.convertPermissionNamesToBits(permissionNames);
+    }
+
+    /**
+     * Converts an API scope name to internal permission type.
+     * Delegates to {@link PermissionConversionUtils#convertScopeToPermissionType(String)}.
+     *
+     * @param scopeName API scope name (FOLDER, CONTENT, etc.)
+     * @return Internal permission type (class canonical name)
+     * @throws IllegalArgumentException If scope is unknown
+     */
+    private String convertScopeToPermissionType(final String scopeName) {
+        return PermissionConversionUtils.convertScopeToPermissionType(scopeName);
+    }
+
+    /**
+     * Builds the response map for the update operation.
+     *
+     * @param asset             Updated asset
+     * @param user              Requesting user
+     * @param inheritanceBroken Whether inheritance was broken during this operation
+     * @param permissionCount   Number of permissions saved
+     * @return Response map with message, permissionCount, inheritanceBroken, and asset
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    private Map<String, Object> buildUpdateResponse(final Permissionable asset,
+                                                     final User user,
+                                                     final boolean inheritanceBroken,
+                                                     final int permissionCount)
+            throws DotDataException, DotSecurityException {
+
+        final Map<String, Object> response = new HashMap<>();
+        response.put("message", "Permissions saved successfully");
+        response.put("permissionCount", permissionCount);
+        response.put("inheritanceBroken", inheritanceBroken);
+
+        // Build asset object
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final Map<String, Object> assetData = getAssetMetadata(asset, user, systemUser);
+
+        // Get updated permissions for the asset
+        final List<Permission> permissions = permissionAPI.getPermissions(asset, true);
+        final List<Map<String, Object>> rolePermissions = buildRolePermissions(permissions, asset, user);
+        assetData.put("permissions", rolePermissions);
+
+        response.put("asset", assetData);
+
+        return response;
     }
 }
