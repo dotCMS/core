@@ -193,7 +193,6 @@ export class CollectionBuilder<T = unknown> extends BaseApiClient {
      * @param {string} query A Lucene query string.
      * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
-     * @deprecated Use the query method instead.
      */
     query(query: string): this;
 
