@@ -1,3 +1,33 @@
+-- =====================================================================
+-- dotCMS Analytics: ClickHouse schema initialization
+--
+-- This script creates the analytics database, core fact tables, and
+-- materialized views used by dotCMS/Jitsu ingestion and reporting.
+--
+-- Objects documented below:
+-- - Database: clickhouse_test_db
+-- - Table: events
+--   Purpose: Raw analytics event stream (pageviews, content events,
+--            conversions, etc.). Grain: one row per event.
+-- - Table: content_events_counter
+--   Purpose: Daily rollup of events per user/content/page for faster
+--            querying. Grain: per day, per user, per identifier/title/type.
+--   Populated by: content_events_counter_mv.
+-- - Table: conversion_time
+--   Purpose: Tracks the last seen timestamps per user to incrementally
+--            process conversions in subsequent batches.
+--   Populated by: conversion_time_mv.
+-- - Table: content_presents_in_conversion
+--   Purpose: Aggregates which content/page impressions/click/view occurred before a
+--            conversion within the same user session/window. Used to
+--            attribute conversions to content exposure.
+--   Populated by: content_presents_in_conversion_mv.
+-- - Materialized Views:
+--   * content_events_counter_mv: maintains daily counts in content_events_counter.
+--   * content_presents_in_conversion_mv: incremental windowed joins to maintain
+--     content_presents_in_conversion; runs every minute.
+--   * conversion_time_mv: maintains last processed timestamps in conversion_time.
+-- =====================================================================
 CREATE DATABASE IF NOT EXISTS clickhouse_test_db;
 CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
 (
@@ -160,3 +190,133 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
 
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_utc_time (utc_time) TYPE minmax GRANULARITY 1;
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_cluster_id (cluster_id) TYPE minmax GRANULARITY 1;
+
+
+----
+
+CREATE TABLE clickhouse_test_db.content_events_counter
+(
+    day Date,
+
+    cluster_id LowCardinality(String),
+    customer_id LowCardinality(String),
+
+    event_type LowCardinality(String),
+    context_user_id String CODEC(ZSTD(3)),
+
+    identifier String CODEC(ZSTD(3)),
+    title String,
+
+    daily_total UInt64
+)
+    ENGINE = SummingMergeTree(daily_total)
+        ORDER BY (customer_id, cluster_id, context_user_id, day, identifier, title, event_type);
+
+
+CREATE MATERIALIZED VIEW content_events_counter_mv TO clickhouse_test_db.content_events_counter AS
+SELECT customer_id,
+       cluster_id,
+       event_type,
+       context_user_id,
+       toStartOfDay(utc_time) as day,
+       (CASE WHEN event_type = 'pageview' THEN url ELSE content_identifier END) as identifier,
+       (CASE WHEN event_type = 'pageview' THEN page_title ELSE content_title END) as title,
+       count(*) as daily_total
+FROM clickhouse_test_db.events
+GROUP BY customer_id, cluster_id, context_user_id, day, identifier, title, event_type;
+
+---
+
+CREATE TABLE clickhouse_test_db.conversion_time
+(
+    cluster_id LowCardinality(String),
+    customer_id LowCardinality(String),
+
+    context_user_id String CODEC(ZSTD(3)),
+
+    conversion_last_time AggregateFunction( max, DateTime64(3, 'UTC')),
+    timestamp_last_time  AggregateFunction( max, DateTime64(3, 'UTC'))
+)
+    ENGINE = AggregatingMergeTree
+        PARTITION BY (customer_id)
+        ORDER BY (customer_id, cluster_id, context_user_id);
+
+---
+
+CREATE TABLE clickhouse_test_db.content_presents_in_conversion
+(
+    day Date,
+    last_timestamp DateTime64(3, 'UTC'),
+    last_conversion_time DateTime64(3, 'UTC'),
+
+    cluster_id LowCardinality(String),
+    customer_id LowCardinality(String),
+
+    event_type LowCardinality(String),
+    context_user_id String CODEC(ZSTD(3)),
+
+    identifier String CODEC(ZSTD(3)),
+    title String,
+
+    conversion_name String,
+    conversion_count UInt32
+)
+    ENGINE = SummingMergeTree
+        PARTITION BY (customer_id)
+        ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name, identifier, title);
+
+
+
+CREATE MATERIALIZED VIEW content_presents_in_conversion_mv
+    REFRESH EVERY 15 MINUTE APPEND TO clickhouse_test_db.content_presents_in_conversion AS
+WITH conversion AS (
+    SELECT context_user_id,
+           utc_time AS conversion_time,
+           _timestamp,
+           maxMerge(conversion_time.timestamp_last_time) as last_timestamp_previous_batch,
+           maxMerge(conversion_time.conversion_last_time) as conversion_last_time,
+           e.conversion_name,
+           lag(_timestamp, 1) OVER (
+               PARTITION BY context_user_id
+               ORDER BY _timestamp
+               ) AS previous_timestamp_current_batch,
+           (CASE WHEN previous_timestamp_current_batch > last_timestamp_previous_batch THEN previous_timestamp_current_batch ELSE last_timestamp_previous_batch END) as previous_conversion_timestamp
+    FROM clickhouse_test_db.events as e
+             LEFT JOIN clickhouse_test_db.conversion_time on e.customer_id = conversion_time.customer_id AND e.cluster_id = conversion_time.cluster_id AND
+                                                             e.context_user_id = conversion_time.context_user_id
+    WHERE event_type = 'conversion'
+    group by context_user_id,utc_time, _timestamp, conversion_name
+    HAVING (_timestamp >  last_timestamp_previous_batch AND _timestamp <= now())
+)
+SELECT
+    toStartOfDay(conversion.conversion_time) as day,
+    customer_id,
+    cluster_id,
+    (CASE WHEN event_type = 'pageview' THEN url ELSE content_identifier END) as identifier,
+    (CASE WHEN event_type = 'pageview' THEN page_title ELSE content_title END) as title,
+    event_type,
+    context_user_id,
+    conversion.conversion_name as conversion_name,
+    count(*) AS conversion_count,
+    max(conversion._timestamp) as last_timestamp,
+    max(conversion.conversion_time) as last_conversion_time
+FROM clickhouse_test_db.events e
+         INNER JOIN conversion ON e.context_user_id = conversion.context_user_id AND
+                                  e.utc_time < conversion.conversion_time AND
+                                  e.utc_time > conversion.conversion_last_time AND
+                                  event_type <> 'conversion'
+GROUP BY customer_id, cluster_id, identifier, title, event_type, context_user_id, conversion.conversion_name, day;
+
+
+---
+
+
+CREATE MATERIALIZED VIEW conversion_time_mv TO clickhouse_test_db.conversion_time AS
+SELECT customer_id,
+       cluster_id,
+       context_user_id,
+       maxState(last_timestamp) as timestamp_last_time,
+       maxState(last_conversion_time) as conversion_last_time
+FROM clickhouse_test_db.content_presents_in_conversion
+GROUP BY customer_id, cluster_id, context_user_id;
+
