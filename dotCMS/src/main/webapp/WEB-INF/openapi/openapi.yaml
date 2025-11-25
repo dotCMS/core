@@ -10676,6 +10676,37 @@ paths:
       summary: Get permissions by permission type
       tags:
       - Permissions
+  /v1/permissions/role/{roleId}:
+    get:
+      description: "Retrieves all hosts and folders where a role has permissions defined,\
+        \ organized by asset with full permission matrices. Admin users can view any\
+        \ role. Non-admin users can only view permissions for roles they belong to."
+      operationId: getRolePermissions
+      parameters:
+      - description: Role identifier
+        in: path
+        name: roleId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRolePermissionsView"
+          description: Role permissions retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid role id
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user does not have access to view this role's permissions
+      summary: Get role permissions
+      tags:
+      - Permissions
   /v1/permissions/{assetId}:
     get:
       description: "Retrieves permissions for a specific asset by its identifier (inode\
@@ -24608,6 +24639,31 @@ components:
           items:
             type: string
     ResponseEntityRoleOperationView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRolePermissionsView:
       type: object
       properties:
         entity:

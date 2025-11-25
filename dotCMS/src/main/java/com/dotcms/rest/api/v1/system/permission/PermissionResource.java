@@ -6,9 +6,14 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.beans.Permission;
+import com.dotcms.rest.api.v1.user.UserPermissionHelper;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -62,23 +67,31 @@ public class PermissionResource {
     private final WebResource      webResource;
     private final PermissionHelper permissionHelper;
     private final AssetPermissionHelper assetPermissionHelper;
+    private final UserPermissionHelper userPermissionHelper;
     private final UserAPI          userAPI;
+    private final RoleAPI          roleAPI;
 
     public PermissionResource() {
 
         this(new WebResource(), PermissionHelper.getInstance(),
-             new AssetPermissionHelper(), APILocator.getUserAPI());
+             new AssetPermissionHelper(), new UserPermissionHelper(),
+             APILocator.getUserAPI(), APILocator.getRoleAPI());
     }
+
     @VisibleForTesting
     public PermissionResource(final WebResource      webResource,
                               final PermissionHelper permissionHelper,
                               final AssetPermissionHelper assetPermissionHelper,
-                              final UserAPI          userAPI) {
+                              final UserPermissionHelper userPermissionHelper,
+                              final UserAPI          userAPI,
+                              final RoleAPI          roleAPI) {
 
         this.webResource      = webResource;
         this.permissionHelper = permissionHelper;
         this.assetPermissionHelper = assetPermissionHelper;
+        this.userPermissionHelper = userPermissionHelper;
         this.userAPI          = userAPI;
+        this.roleAPI          = roleAPI;
     }
 
     /**
@@ -576,5 +589,101 @@ public class PermissionResource {
             "Successfully reset permissions for asset: %s", assetId));
 
         return new ResponseEntityResetPermissionsView(result);
+    }
+
+    /**
+     * Retrieves all hosts and folders where a role has permissions defined,
+     * organized by asset with full permission matrices.
+     *
+     * @param request HTTP servlet request
+     * @param response HTTP servlet response
+     * @param roleId Role identifier
+     * @return ResponseEntityRolePermissionsView containing role info and permission assets
+     * @throws DotDataException If there's an error accessing permission data
+     * @throws DotSecurityException If security validation fails
+     */
+    @Operation(
+        summary = "Get role permissions",
+        description = "Retrieves all hosts and folders where a role has permissions defined, " +
+                     "organized by asset with full permission matrices. " +
+                     "Admin users can view any role. Non-admin users can only view " +
+                     "permissions for roles they belong to."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Role permissions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityRolePermissionsView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid role id",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user does not have access to view this role's permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/role/{roleId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityRolePermissionsView getRolePermissions(
+            final @Context HttpServletRequest request,
+            final @Context HttpServletResponse response,
+            @Parameter(description = "Role identifier", required = true)
+            final @PathParam("roleId") String roleId)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format("getRolePermissions called - roleId: %s", roleId));
+
+        // Initialize request context with authentication
+        final User requestingUser = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        // Validate roleId
+        if (!UtilMethods.isSet(roleId)) {
+            Logger.warn(this, "Role ID is required but was not provided");
+            throw new BadRequestException("Role ID is required");
+        }
+
+        // Load the role
+        final Role role = roleAPI.loadRoleById(roleId);
+        if (role == null) {
+            Logger.warn(this, String.format("Invalid role id: %s", roleId));
+            throw new BadRequestException("Invalid role id: " + roleId);
+        }
+
+        // Authorization check - admin OR user has this role
+        if (!requestingUser.isAdmin()) {
+            final boolean userHasRole = roleAPI.doesUserHaveRole(requestingUser, role);
+            if (!userHasRole) {
+                Logger.warn(this, String.format(
+                    "User %s attempted to view permissions for role %s without having that role",
+                    requestingUser.getUserId(), roleId));
+                throw new ForbiddenException(
+                    "User does not have access to view permissions for role: " + roleId);
+            }
+        }
+
+        // Build permission response (reuse existing helper)
+        final List<Map<String, Object>> assets = userPermissionHelper
+                .buildUserPermissionResponse(role, requestingUser);
+
+        // Build response with roleId and roleName
+        final Map<String, Object> responseData = Map.of(
+            "roleId", role.getId(),
+            "roleName", role.getName(),
+            "assets", assets
+        );
+
+        Logger.info(this, () -> String.format(
+            "Successfully retrieved permissions for role %s (requested by %s)",
+            roleId, requestingUser.getUserId()));
+
+        return new ResponseEntityRolePermissionsView(responseData);
     }
 }
