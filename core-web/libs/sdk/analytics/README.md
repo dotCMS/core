@@ -261,16 +261,18 @@ For each click, the SDK captures:
     -   `viewport_offset_pct` - Position relative to viewport (0-100%)
     -   `dom_index` - Element position in DOM
 
-**Attributes Object:**
+**Attributes Array:**
 
-The `attributes` object captures additional semantic data:
+> **Note**: The `attributes` field is formatted as an array of `'key:value'` strings (e.g., `['data-category:primary-cta', 'aria-label:Sign up']`) for efficient serialization and backend parsing.
+
+The `attributes` array captures additional semantic data in `'key:value'` string format:
 
 ✅ **Included** (semantic/analytics value):
 
--   `data-*` - Custom data attributes (e.g., `data-category="primary-cta"`)
--   `aria-*` - Accessibility attributes (e.g., `aria-label`)
+-   `data-*` - Custom data attributes (e.g., `'data-category:primary-cta'`)
+-   `aria-*` - Accessibility attributes (e.g., `'aria-label:Sign up now'`)
 -   `title` - Element title
--   `target` - Link target
+-   `target` - Link target (e.g., `'target:_blank'`)
 -   Any other standard HTML attributes
 
 ❌ **Excluded** (to avoid duplication):
@@ -332,12 +334,12 @@ Use `data-*` attributes to enrich click tracking with custom metadata:
         "id": "cta-signup",
         "class": "btn btn-primary text-white",
         "href": "/signup",
-        "attributes": {
-            "data-category": "primary-cta",
-            "data-campaign": "summer-sale",
-            "aria-label": "Sign up for free trial",
-            "target": "_blank"
-        }
+        "attributes": [
+            "data-category:primary-cta",
+            "data-campaign:summer-sale",
+            "aria-label:Sign up for free trial",
+            "target:_blank"
+        ]
     },
     "position": {
         "viewport_offset_pct": 45.2,

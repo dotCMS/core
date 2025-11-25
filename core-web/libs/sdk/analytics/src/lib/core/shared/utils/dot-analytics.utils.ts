@@ -607,10 +607,6 @@ export const enrichPagePayload = (
     };
 };
 
-// ============================================================================
-// Plugin Utilities
-// ============================================================================
-
 /**
  * Creates a throttled version of a callback function
  * Ensures the callback is executed at most once every `limitMs` milliseconds
