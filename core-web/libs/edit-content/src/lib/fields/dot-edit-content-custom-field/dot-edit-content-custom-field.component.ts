@@ -7,8 +7,6 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotIconModule } from '@dotcms/ui';
-
 import { BridgeFieldComponent } from './components/bridge-field/bridge-field.components';
 import { DotWCCompoment } from './components/wc-field/wc-field.compoment';
 
@@ -25,7 +23,6 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
 @Component({
     selector: 'dot-edit-content-custom-field',
     imports: [
-        DotIconModule,
         ButtonModule,
         InputTextModule,
         DialogModule,

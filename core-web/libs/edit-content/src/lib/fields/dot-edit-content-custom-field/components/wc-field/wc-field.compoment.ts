@@ -23,7 +23,6 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
-import { DotIconModule } from '@dotcms/ui';
 
 
 @Component({
@@ -43,7 +42,7 @@ import { DotIconModule } from '@dotcms/ui';
             multi: true
         }
     ],
-    imports: [DotIconModule, ButtonModule, InputTextModule, DialogModule, ReactiveFormsModule]
+    imports: [ButtonModule, InputTextModule, DialogModule, ReactiveFormsModule]
 })
 export class DotWCCompoment implements AfterViewInit, OnInit {
     /**
