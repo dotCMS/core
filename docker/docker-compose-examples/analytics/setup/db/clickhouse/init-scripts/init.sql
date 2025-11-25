@@ -225,6 +225,8 @@ CREATE TABLE clickhouse_test_db.content_events_counter
     cluster_id LowCardinality(String),
     customer_id LowCardinality(String),
 
+    context_site_id String,
+
     event_type LowCardinality(String),
     context_user_id String CODEC(ZSTD(3)),
 
@@ -258,12 +260,13 @@ SELECT customer_id,
        cluster_id,
        event_type,
        context_user_id,
+       context_site_id,
        toStartOfDay(utc_time) as day,
        (CASE WHEN event_type = 'pageview' THEN url ELSE content_identifier END) as identifier,
        (CASE WHEN event_type = 'pageview' THEN page_title ELSE content_title END) as title,
        count(*) as daily_total
 FROM clickhouse_test_db.events
-GROUP BY customer_id, cluster_id, context_user_id, day, identifier, title, event_type;
+GROUP BY customer_id, cluster_id, context_user_id, day, identifier, title, event_type, context_site_id;
 
 -- =====================================================================
 -- Stores the latest known conversion timestamp per user, but in aggregate function format.
@@ -284,6 +287,7 @@ CREATE TABLE clickhouse_test_db.conversion_time
     cluster_id LowCardinality(String),
     customer_id LowCardinality(String),
 
+    context_site_id String,
     context_user_id String CODEC(ZSTD(3)),
 
     conversion_last_time AggregateFunction( max, DateTime64(3, 'UTC')),
@@ -305,6 +309,8 @@ CREATE TABLE clickhouse_test_db.content_presents_in_conversion
 
     cluster_id LowCardinality(String),
     customer_id LowCardinality(String),
+
+    context_site_id String,
 
     event_type LowCardinality(String),
     context_user_id String CODEC(ZSTD(3)),
@@ -375,7 +381,7 @@ WITH conversion AS (
            (CASE WHEN previous_timestamp_current_batch > last_timestamp_previous_batch THEN previous_timestamp_current_batch ELSE last_timestamp_previous_batch END) as previous_conversion_timestamp
     FROM clickhouse_test_db.events as e
              LEFT JOIN clickhouse_test_db.conversion_time on e.customer_id = conversion_time.customer_id AND e.cluster_id = conversion_time.cluster_id AND
-                                                             e.context_user_id = conversion_time.context_user_id
+                                                             e.context_user_id = conversion_time.context_user_id AND e.context_site_id = conversion_time.context_site_id
     WHERE event_type = 'conversion'
     group by context_user_id,utc_time, _timestamp, conversion_name
     HAVING (_timestamp >  last_timestamp_previous_batch AND _timestamp <= now())
@@ -415,8 +421,9 @@ CREATE MATERIALIZED VIEW conversion_time_mv TO clickhouse_test_db.conversion_tim
 SELECT customer_id,
        cluster_id,
        context_user_id,
+       context_site_id,
        maxState(last_timestamp) as timestamp_last_time,
        maxState(last_conversion_time) as conversion_last_time
 FROM clickhouse_test_db.content_presents_in_conversion
-GROUP BY customer_id, cluster_id, context_user_id;
+GROUP BY customer_id, cluster_id, context_user_id, context_site_id;
 
