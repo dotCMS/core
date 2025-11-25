@@ -226,7 +226,7 @@ describe('DotCMSClickTracker', () => {
 
             const elementHandlers = (tracker as any).elementHandlers as WeakMap<
                 HTMLElement,
-                Function
+                (event: MouseEvent) => void
             >;
             expect(elementHandlers.has(mockElement)).toBe(true);
             expect(elementHandlers.get(mockElement)).toBeInstanceOf(Function);
