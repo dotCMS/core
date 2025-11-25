@@ -7,6 +7,7 @@ import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enri
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { dotAnalyticsImpressionPlugin } from './plugin/impression/dot-analytics.impression.plugin';
 import { dotAnalytics } from './plugin/main/dot-analytics.plugin';
+import { DotCMSPredefinedEventType } from './shared/constants/dot-analytics.constants';
 import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
 import {
     cleanupActivityTracking,
@@ -101,6 +102,26 @@ export const initializeContentAnalytics = (
                 return;
             }
             analyticsInstance.track(eventName, payload);
+        },
+
+        /**
+         * Track a conversion event.
+         * @param name - Name of the conversion (e.g., 'purchase', 'download', 'signup')
+         * @param options - Optional custom data
+         */
+        conversion: (name: string, options: JsonObject = {}) => {
+            if (!analyticsInstance) {
+                console.warn('DotCMS Analytics [Core]: Analytics instance not initialized');
+                return;
+            }
+
+            const payload: { name: string; custom?: JsonObject } = { name };
+
+            if (Object.keys(options).length > 0) {
+                payload.custom = options;
+            }
+
+            analyticsInstance.track(DotCMSPredefinedEventType.CONVERSION, payload);
         }
     };
 };

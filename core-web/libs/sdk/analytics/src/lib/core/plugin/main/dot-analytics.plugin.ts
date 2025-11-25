@@ -5,6 +5,7 @@ import {
     DotCMSAnalyticsRequestBody,
     DotCMSContentClickPayload,
     DotCMSContentImpressionPayload,
+    DotCMSConversionPayload,
     EnrichedAnalyticsPayload,
     EnrichedTrackPayload,
     JsonObject
@@ -159,6 +160,28 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                             position,
                             element,
                             page
+                        }
+                    };
+                    break;
+                }
+
+                case DotCMSPredefinedEventType.CONVERSION: {
+                    // Extract conversion data from properties (sent by user)
+                    const conversionPayload = properties as DotCMSConversionPayload;
+                    const { name, custom } = conversionPayload;
+                    const { page } = payload; // Added by enricher
+
+                    if (!name || !page) {
+                        throw new Error('DotCMS Analytics: Missing required conversion data');
+                    }
+
+                    analyticsEvent = {
+                        event_type: DotCMSPredefinedEventType.CONVERSION,
+                        local_time,
+                        data: {
+                            conversion: { name },
+                            page,
+                            ...(custom && { custom })
                         }
                     };
                     break;

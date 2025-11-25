@@ -79,6 +79,64 @@ pageView(customData?: Record<string, unknown>): void
 -   **React**: In development (API may change)
 -   Custom data is optional and gets attached to the pageview event under the `custom` property alongside all automatically captured data.
 
+### Conversion Tracking
+
+The `conversion()` method tracks user conversions (purchases, downloads, sign-ups, etc.) from your application.
+
+**Method signature:**
+
+```typescript
+conversion(name: string): void
+conversion(name: string, options?: Record<string, unknown>): void
+```
+
+**Usage examples:**
+
+```typescript
+// Basic conversion tracking
+analytics.conversion('download');
+
+// Conversion with custom metadata
+analytics.conversion('purchase', {
+    value: 99.99,
+    currency: 'USD',
+    category: 'ecommerce',
+    productId: 'SKU-12345'
+});
+
+// Conversion with element context
+analytics.conversion('signup', {
+    element: {
+        type: 'button',
+        text: 'Subscribe Now',
+        id: 'newsletter-btn'
+    },
+    source: 'homepage'
+});
+```
+
+**Event payload structure:**
+
+```json
+{
+    "event_type": "conversion",
+    "local_time": "2025-10-01T16:08:33-04:00",
+    "data": {
+        "conversion": { "name": "download" },
+        "page": { "url": "...", "title": "..." },
+        "element": { "type": "button", "id": "...", "text": "..." },
+        "custom": { "value": 99.99, "currency": "USD" }
+    }
+}
+```
+
+**Important:**
+
+-   `name` is required and identifies the conversion type
+-   `element` is optional and contains DOM element information
+-   All other properties go into `custom` object
+-   Page data (url, title) is automatically added by the SDK
+
 ### Custom Events
 
 The `track()` method allows you to track any custom user action with a unique event name and optional properties.
@@ -91,7 +149,7 @@ track(eventName: string, properties?: Record<string, unknown>): void
 
 **Important:**
 
--   `eventName` cannot be `"pageview"` (reserved for page view tracking)
+-   `eventName` cannot be `"pageview"` or `"conversion"` (reserved for specific tracking methods)
 -   `eventName` should be a descriptive string like `"button-click"`, `"form-submit"`, `"video-play"`, etc.
 -   `properties` is optional and can contain any custom data relevant to the event
 

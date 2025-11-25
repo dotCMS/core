@@ -14,6 +14,7 @@ This skill provides step-by-step instructions for installing and configuring the
 The `@dotcms/analytics` SDK is dotCMS's official JavaScript library for tracking content-aware events and analytics. It provides:
 
 - Automatic page view tracking
+- Conversion tracking (purchases, downloads, sign-ups, etc.)
 - Custom event tracking
 - Session management (30-minute timeout)
 - Anonymous user identity tracking
@@ -377,6 +378,70 @@ function ProductPage({ product }) {
 }
 ```
 
+### Conversion Tracking (E-commerce Purchase)
+
+```javascript
+"use client";
+
+import { useContentAnalytics } from "@dotcms/analytics/react";
+import { analyticsConfig } from "@/config/analytics.config";
+
+function CheckoutButton({ product, quantity }) {
+  const { conversion } = useContentAnalytics(analyticsConfig);
+
+  const handlePurchase = async () => {
+    // Track conversion with purchase details
+    conversion("purchase", {
+      value: product.price * quantity,
+      currency: "USD",
+      productId: product.sku,
+      productName: product.title,
+      quantity: quantity,
+      category: product.category,
+    });
+
+    // Process checkout...
+  };
+
+  return <button onClick={handlePurchase}>Complete Purchase</button>;
+}
+```
+
+### Conversion Tracking (Lead Generation)
+
+```javascript
+"use client";
+
+import { useContentAnalytics } from "@dotcms/analytics/react";
+import { analyticsConfig } from "@/config/analytics.config";
+
+function DownloadWhitepaper() {
+  const { conversion } = useContentAnalytics(analyticsConfig);
+
+  const handleDownload = (e) => {
+    // Track conversion with element context
+    conversion("download", {
+      element: {
+        type: e.target.tagName.toLowerCase(),
+        text: e.target.textContent,
+        id: e.target.id,
+      },
+      fileType: "pdf",
+      fileName: "whitepaper-2024.pdf",
+      category: "lead-magnet",
+    });
+
+    // Trigger download...
+  };
+
+  return (
+    <button id="download-btn" onClick={handleDownload}>
+      Download Whitepaper
+    </button>
+  );
+}
+```
+
 ## Configuration Options
 
 ### Analytics Config Object
@@ -727,11 +792,12 @@ interface QueueConfig {
 interface ContentAnalyticsHook {
   pageView: (customData?: Record<string, unknown>) => void;
   track: (eventName: string, properties?: Record<string, unknown>) => void;
+  conversion: (name: string, options?: Record<string, unknown>) => void;
 }
 
 // ✅ CORRECT: Always pass config - import from centralized config file
 import { analyticsConfig } from "@/config/analytics.config";
-const { pageView, track } = useContentAnalytics(analyticsConfig);
+const { pageView, track, conversion } = useContentAnalytics(analyticsConfig);
 ```
 
 **CRITICAL**: The hook **ALWAYS requires config as a parameter**. There is no provider pattern for the hook - `<DotContentAnalytics />` is only for auto pageview tracking and does NOT provide context to child components.
@@ -763,7 +829,7 @@ Track a custom event with optional properties.
 
 **Parameters**:
 
-- `eventName` (required): String identifier for the event (cannot be "pageview")
+- `eventName` (required): String identifier for the event (cannot be "pageview" or "conversion")
 - `properties` (optional): Object with event-specific data
 
 **Example**:
@@ -772,6 +838,41 @@ Track a custom event with optional properties.
 track("button-click", {
   label: "Subscribe",
   location: "sidebar",
+});
+```
+
+#### `conversion(name, options?)`
+
+Track a conversion event (purchase, download, sign-up, etc.) with optional metadata.
+
+**Parameters**:
+
+- `name` (required): String identifier for the conversion (e.g., "purchase", "download", "signup")
+- `options` (optional): Object with conversion metadata
+  - `element` (optional): DOM element information
+  - Additional properties go into `custom` object
+
+**Examples**:
+
+```javascript
+// Basic conversion
+conversion("download");
+
+// Conversion with custom metadata
+conversion("purchase", {
+  value: 99.99,
+  currency: "USD",
+  productId: "SKU-12345",
+});
+
+// Conversion with element context
+conversion("signup", {
+  element: {
+    type: "button",
+    text: "Subscribe Now",
+    id: "newsletter-btn",
+  },
+  source: "homepage",
 });
 ```
 
