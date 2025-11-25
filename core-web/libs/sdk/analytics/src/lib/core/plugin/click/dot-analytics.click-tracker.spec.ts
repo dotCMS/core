@@ -259,7 +259,7 @@ describe('DotCMSClickTracker', () => {
                 mockEvent,
                 mockElement,
                 expect.any(Function),
-                false
+                expect.any(Object) // logger
             );
         });
 
@@ -267,10 +267,19 @@ describe('DotCMSClickTracker', () => {
             const mockElement = createMockContentletElement('test-123');
             (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
 
-            // Mock handleContentletClick to call the callback
+            // Mock handleContentletClick to call the callback with valid payload structure
+            const mockPayload = {
+                content: {
+                    identifier: 'test-123',
+                    inode: 'inode-123',
+                    title: 'Test',
+                    content_type: 'Blog'
+                },
+                element: { attributes: [] }
+            };
             (clickUtils.handleContentletClick as jest.Mock).mockImplementation(
                 (event, element, callback) => {
-                    callback('content.click', { test: 'payload' });
+                    callback('content.click', mockPayload);
                 }
             );
 
@@ -287,16 +296,25 @@ describe('DotCMSClickTracker', () => {
             )?.[1];
             clickHandler(new MouseEvent('click'));
 
-            expect(mockCallback).toHaveBeenCalledWith('content.click', { test: 'payload' });
+            expect(mockCallback).toHaveBeenCalledWith('content.click', mockPayload);
         });
 
         it('should apply throttling to prevent duplicate clicks', () => {
             const mockElement = createMockContentletElement('test-123');
             (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
 
+            const mockPayload = {
+                content: {
+                    identifier: 'test-123',
+                    inode: 'inode-123',
+                    title: 'Test',
+                    content_type: 'Blog'
+                },
+                element: { attributes: [] }
+            };
             (clickUtils.handleContentletClick as jest.Mock).mockImplementation(
                 (event, element, callback) => {
-                    callback('content.click', { identifier: 'test-123' });
+                    callback('content.click', mockPayload);
                 }
             );
 
@@ -328,9 +346,18 @@ describe('DotCMSClickTracker', () => {
             const mockElement = createMockContentletElement('test-123');
             (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
 
+            const mockPayload = {
+                content: {
+                    identifier: 'test-123',
+                    inode: 'inode-123',
+                    title: 'Test',
+                    content_type: 'Blog'
+                },
+                element: { attributes: [] }
+            };
             (clickUtils.handleContentletClick as jest.Mock).mockImplementation(
                 (event, element, callback) => {
-                    callback('content.click', { test: 'payload' });
+                    callback('content.click', mockPayload);
                 }
             );
 
@@ -520,10 +547,19 @@ describe('DotCMSClickTracker', () => {
             const mockElement = createMockContentletElement('test-123');
             (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
 
-            // Mock handleContentletClick to invoke callback
+            // Mock handleContentletClick to invoke callback with valid payload structure
+            const mockPayload = {
+                content: {
+                    identifier: 'test-123',
+                    inode: 'inode-123',
+                    title: 'Test',
+                    content_type: 'Blog'
+                },
+                element: { attributes: [] }
+            };
             (clickUtils.handleContentletClick as jest.Mock).mockImplementation(
                 (event, element, callback) => {
-                    callback('content.click', { identifier: 'test-123' });
+                    callback('content.click', mockPayload);
                 }
             );
 
@@ -544,9 +580,7 @@ describe('DotCMSClickTracker', () => {
             clickHandler(new MouseEvent('click'));
 
             // Verify callback was called
-            expect(mockCallback).toHaveBeenCalledWith('content.click', {
-                identifier: 'test-123'
-            });
+            expect(mockCallback).toHaveBeenCalledWith('content.click', mockPayload);
 
             // Cleanup
             subscription.unsubscribe();

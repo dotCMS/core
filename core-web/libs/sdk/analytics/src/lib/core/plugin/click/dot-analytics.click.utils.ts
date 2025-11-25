@@ -56,7 +56,8 @@ export const handleContentletClick = (
 
     // Extract attributes from the clickable element
     // Filter out: analytics attributes, and already-captured properties (class, id, href)
-    const attributes: Record<string, string> = {};
+    // Format as 'key:value' strings (e.g., ['data-category:val', 'data-campaign:val2'])
+    const attributes: string[] = [];
     for (const attr of clickableElement.attributes) {
         if (
             !attr.name.startsWith('data-dot-analytics') &&
@@ -64,7 +65,7 @@ export const handleContentletClick = (
             attr.name !== 'id' &&
             attr.name !== 'href'
         ) {
-            attributes[attr.name] = attr.value;
+            attributes.push(`${attr.name}:${attr.value}`);
         }
     }
 

@@ -125,6 +125,9 @@ describe('Click Utils', () => {
                 const contentlet = createContentletWithButton('test-123');
                 document.body.appendChild(contentlet);
 
+                // Set DOM index as would be done by attachClickListener
+                contentlet.dataset.dotAnalyticsDomIndex = '0';
+
                 const button = contentlet.querySelector('button') as HTMLElement;
                 const event = new MouseEvent('click', { bubbles: true });
                 Object.defineProperty(event, 'target', { value: button });
@@ -148,7 +151,7 @@ describe('Click Utils', () => {
                         id: 'test-btn',
                         class: 'btn btn-primary',
                         href: '',
-                        attributes: expect.any(Object)
+                        attributes: expect.any(Array)
                     }
                 });
 
@@ -242,17 +245,30 @@ describe('Click Utils', () => {
                 expect(payload.element.type).toBe('a');
                 expect(payload.element.href).toBe('/signup'); // Relative path as written in HTML
 
+                // Verify attributes is an array in 'key:value' format
+                expect(Array.isArray(payload.element.attributes)).toBe(true);
+
                 // Verify attributes include useful data
-                expect(payload.element.attributes).toHaveProperty('data-category', 'primary-cta');
-                expect(payload.element.attributes).toHaveProperty('data-testid', 'signup-button');
-                expect(payload.element.attributes).toHaveProperty('aria-label', 'Sign up now');
-                expect(payload.element.attributes).toHaveProperty('target', '_blank');
+                expect(payload.element.attributes).toContain('data-category:primary-cta');
+                expect(payload.element.attributes).toContain('data-testid:signup-button');
+                expect(payload.element.attributes).toContain('aria-label:Sign up now');
+                expect(payload.element.attributes).toContain('target:_blank');
 
                 // Verify excluded attributes (already captured as top-level or internal)
-                expect(payload.element.attributes).not.toHaveProperty('class'); // Already top-level
-                expect(payload.element.attributes).not.toHaveProperty('id'); // Already top-level
-                expect(payload.element.attributes).not.toHaveProperty('href'); // Already top-level
-                expect(payload.element.attributes).not.toHaveProperty('data-dot-analytics-test'); // Internal
+                expect(payload.element.attributes.some((attr) => attr.startsWith('class:'))).toBe(
+                    false
+                ); // Already top-level
+                expect(payload.element.attributes.some((attr) => attr.startsWith('id:'))).toBe(
+                    false
+                ); // Already top-level
+                expect(payload.element.attributes.some((attr) => attr.startsWith('href:'))).toBe(
+                    false
+                ); // Already top-level
+                expect(
+                    payload.element.attributes.some((attr) =>
+                        attr.startsWith('data-dot-analytics-test:')
+                    )
+                ).toBe(false); // Internal
 
                 document.body.removeChild(contentlet);
             });
@@ -290,6 +306,11 @@ describe('Click Utils', () => {
                 document.body.appendChild(contentlet1);
                 document.body.appendChild(contentlet2);
                 document.body.appendChild(contentlet3);
+
+                // Set DOM index as would be done by attachClickListener
+                contentlet1.dataset.dotAnalyticsDomIndex = '0';
+                contentlet2.dataset.dotAnalyticsDomIndex = '1';
+                contentlet3.dataset.dotAnalyticsDomIndex = '2';
 
                 // Click on button in second contentlet
                 const button = contentlet2.querySelector('button') as HTMLElement;

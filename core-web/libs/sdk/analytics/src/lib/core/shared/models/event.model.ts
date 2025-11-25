@@ -112,8 +112,8 @@ export type DotCMSContentClickPayload = DotCMSContentImpressionPayload & {
         class: string;
         /** Link destination as written in HTML (relative path, only for <a> elements, empty string for buttons) */
         href: string;
-        /** Additional element attributes (data-*, aria-*, target, etc.) */
-        attributes: Record<string, string>;
+        /** Additional element attributes in key:value format (e.g., ['data-category:val', 'data-campaign:val2']) */
+        attributes: string[];
     };
 };
 
