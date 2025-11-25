@@ -1,5 +1,4 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { MockProvider } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
