@@ -21,6 +21,8 @@ import { isEqual } from '@dotcms/utils';
 
 import { FieldPropertyService } from '../service';
 
+const NEW_RENDER_MODE_VARIABLE_KEY = 'newRenderMode';
+
 @Component({
     selector: 'dot-content-type-fields-properties-form',
     styleUrls: ['./content-type-fields-properties-form.component.scss'],
@@ -84,14 +86,16 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     transformFormValue(value) {
         if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
             const existingVariables = this.formFieldData.fieldVariables || [];
-            const otherVariables = existingVariables.filter((v) => v.key !== 'newRenderMode');
+            const otherVariables = existingVariables.filter(
+                (v) => v.key !== NEW_RENDER_MODE_VARIABLE_KEY
+            );
             return {
                 ...value,
                 fieldVariables: [
                     ...otherVariables,
                     {
                         clazz: DotCMSClazzes.FIELD_VARIABLE,
-                        key: 'newRenderMode',
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
                         value: value.newRenderMode
                     }
                 ]
