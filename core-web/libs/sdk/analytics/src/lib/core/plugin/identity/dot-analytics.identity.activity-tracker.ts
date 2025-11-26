@@ -1,7 +1,7 @@
 import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '@dotcms/uve/internal';
 
-import { ACTIVITY_EVENTS, DEFAULT_SESSION_TIMEOUT_MINUTES } from './constants';
-import { DotCMSAnalyticsConfig } from './models';
+import { ACTIVITY_EVENTS, DEFAULT_SESSION_TIMEOUT_MINUTES } from '../../shared/constants';
+import { DotCMSAnalyticsConfig } from '../../shared/models';
 
 // Extend window interface for cleanup function
 declare global {
@@ -39,7 +39,7 @@ class DotCMSActivityTracker {
             () => {
                 // User became inactive - handle session timeout
                 if (this.config?.debug) {
-                    console.warn('DotCMS Analytics: User became inactive after timeout');
+                    console.warn('DotCMS Analytics [Activity]: User became inactive after timeout');
                 }
 
                 // Timer has fired, set to null to indicate no active timer
@@ -47,22 +47,6 @@ class DotCMSActivityTracker {
             },
             DEFAULT_SESSION_TIMEOUT_MINUTES * 60 * 1000
         );
-    }
-
-    /**
-     * Checks if user has been inactive
-     */
-    public isUserInactive(): boolean {
-        const timeoutMs = DEFAULT_SESSION_TIMEOUT_MINUTES * 60 * 1000;
-
-        return Date.now() - this.lastActivityTime > timeoutMs;
-    }
-
-    /**
-     * Gets last activity time
-     */
-    public getLastActivity(): number {
-        return this.lastActivityTime;
     }
 
     /**
@@ -106,7 +90,9 @@ class DotCMSActivityTracker {
             if (document.visibilityState === 'visible') {
                 this.updateSessionActivity();
                 if (config.debug) {
-                    console.warn('DotCMS Analytics: User returned to tab, session reactivated');
+                    console.warn(
+                        'DotCMS Analytics [Activity]: User returned to tab, session reactivated'
+                    );
                 }
             }
         };
@@ -120,7 +106,7 @@ class DotCMSActivityTracker {
         this.updateActivityTime();
 
         if (config.debug) {
-            console.warn('DotCMS Analytics: Activity tracking initialized');
+            console.warn('DotCMS Analytics [Activity]: Activity tracking initialized');
         }
     }
 
@@ -138,16 +124,6 @@ class DotCMSActivityTracker {
 
         this.config = null;
     }
-
-    /**
-     * Gets session information for debugging
-     */
-    public getSessionInfo() {
-        return {
-            lastActivity: this.getLastActivity(),
-            isActive: !this.isUserInactive()
-        };
-    }
 }
 
 // Create singleton instance
@@ -158,13 +134,6 @@ const activityTracker = new DotCMSActivityTracker();
  */
 export const updateSessionActivity = (): void => {
     activityTracker.updateSessionActivity();
-};
-
-/**
- * Gets session information for debugging
- */
-export const getSessionInfo = () => {
-    return activityTracker.getSessionInfo();
 };
 
 /**
@@ -188,18 +157,4 @@ export const cleanupActivityTracking = (): void => {
         // Dispatch cleanup event to notify any subscribers
         window.dispatchEvent(new CustomEvent('dotcms:analytics:cleanup'));
     }
-};
-
-/**
- * Checks if user has been inactive
- */
-export const isUserInactive = (): boolean => {
-    return activityTracker.isUserInactive();
-};
-
-/**
- * Gets last activity time
- */
-export const getLastActivity = (): number => {
-    return activityTracker.getLastActivity();
 };
