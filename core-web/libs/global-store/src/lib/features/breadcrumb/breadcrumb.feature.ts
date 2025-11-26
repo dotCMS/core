@@ -187,7 +187,7 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                         const pathMatches = item.menuLink === urlPath;
                         const parentMatches = shortMenuId
                             ? item.parentMenuId.startsWith(shortMenuId)
-                            : false;
+                            : true;
                         return pathMatches && parentMatches;
                     });
 
