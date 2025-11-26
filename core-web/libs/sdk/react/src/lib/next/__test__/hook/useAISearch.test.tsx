@@ -91,7 +91,7 @@ describe('useAISearch', () => {
 
             expect(result.current.status).toEqual({ state: DotCMSEntityState.IDLE });
             expect(result.current.response).toBeNull();
-            expect(result.current.results).toBeUndefined();
+            expect(result.current.results).toEqual([]);
         });
     });
 
@@ -295,7 +295,7 @@ describe('useAISearch', () => {
             });
 
             expect(result.current.response).toBeNull();
-            expect(result.current.results).toBeUndefined();
+            expect(result.current.results).toEqual([]);
             expect(result.current.status).toEqual({ state: DotCMSEntityState.IDLE });
         });
 
@@ -387,6 +387,83 @@ describe('useAISearch', () => {
             rerender();
 
             expect(result.current.reset).toBe(firstReset);
+        });
+
+        test('search callback should remain stable when params change', () => {
+            const initialParams = {
+                query: {
+                    limit: 10,
+                    offset: 0
+                }
+            };
+
+            const newParams = {
+                query: {
+                    limit: 20,
+                    offset: 10
+                }
+            };
+
+            const { result, rerender } = renderHook(
+                ({ params }) =>
+                    useAISearch<TestContentlet>({
+                        client: mockClient,
+                        indexName: mockIndexName,
+                        params
+                    }),
+                { initialProps: { params: initialParams } }
+            );
+
+            const firstSearch = result.current.search;
+
+            // Change params - this creates a new object reference
+            rerender({ params: newParams });
+
+            // Search callback should remain stable to prevent infinite loops in useEffect
+            expect(result.current.search).toBe(firstSearch);
+        });
+
+        test('search should use latest params even though callback identity is stable', async () => {
+            mockSearch.mockResolvedValue(mockResponse);
+
+            const initialParams = {
+                query: {
+                    limit: 10,
+                    offset: 0
+                }
+            };
+
+            const newParams = {
+                query: {
+                    limit: 20,
+                    offset: 10
+                },
+                config: {
+                    threshold: 0.8
+                }
+            };
+
+            const { result, rerender, waitForNextUpdate } = renderHook(
+                ({ params }) =>
+                    useAISearch<TestContentlet>({
+                        client: mockClient,
+                        indexName: mockIndexName,
+                        params
+                    }),
+                { initialProps: { params: initialParams } }
+            );
+
+            // Change params
+            rerender({ params: newParams });
+
+            // Call search with the new params
+            await act(async () => {
+                result.current.search('test query');
+                await waitForNextUpdate();
+            });
+
+            // Should be called with the latest params, not the initial ones
+            expect(mockSearch).toHaveBeenCalledWith('test query', mockIndexName, newParams);
         });
     });
 
