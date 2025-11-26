@@ -28,6 +28,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -471,12 +472,21 @@ public class AssetPermissionHelper {
      * Gets the asset type string for the response.
      * Maps Permissionable types to API type constants (uppercase enum).
      *
+     * <p>Note: Host extends Contentlet but doesn't override getPermissionType(),
+     * so we must check instanceof Host explicitly to return "HOST" instead of "CONTENT".
+     *
      * @param asset The permissionable asset
      * @return Asset type enum constant (e.g., "FOLDER", "HOST", "CONTENT")
      */
     private String getAssetType(final Permissionable asset) {
         if (asset == null) {
             return StringPool.BLANK;
+        }
+
+        // Special case: Host extends Contentlet but should return "HOST"
+        // Host.getPermissionType() returns Contentlet.class which maps to "CONTENT"
+        if (asset instanceof Host) {
+            return "HOST";
         }
 
         final String permissionType = asset.getPermissionType();
@@ -642,7 +652,14 @@ public class AssetPermissionHelper {
     }
 
     /**
-     * Builds Permission objects from the update form.
+     * Builds Permission objects from the asset permission update form.
+     *
+     * <p>Follows the RoleAjax pattern with hybrid semantics:
+     * <ul>
+     *   <li>Scope/individual present with values → set those permissions</li>
+     *   <li>Scope/individual present with empty array → save bits=0 → triggers delete</li>
+     *   <li>Scope/individual absent (null) → not in save list → preserved (untouched)</li>
+     * </ul>
      *
      * @param form  Permission update form
      * @param asset Target asset
@@ -658,8 +675,11 @@ public class AssetPermissionHelper {
             final String roleId = roleForm.getRoleId();
 
             // Build individual permissions
-            if (roleForm.getIndividual() != null && !roleForm.getIndividual().isEmpty()) {
-                final int permissionBits = convertPermissionNamesToBits(roleForm.getIndividual());
+            // null = omit (preserve), empty = remove, values = set
+            if (roleForm.getIndividual() != null) {
+                final int permissionBits = roleForm.getIndividual().isEmpty()
+                    ? 0  // Empty array = remove (bits=0 triggers delete)
+                    : convertPermissionNamesToBits(roleForm.getIndividual());
                 permissions.add(new Permission(
                     PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                     assetPermissionId,
@@ -670,17 +690,23 @@ public class AssetPermissionHelper {
             }
 
             // Build inheritable permissions (only for parent permissionables)
+            // null map = omit all (preserve), present map with scopes = process each
             if (asset.isParentPermissionable() && roleForm.getInheritable() != null) {
                 for (final Map.Entry<String, List<String>> entry : roleForm.getInheritable().entrySet()) {
                     final String scopeName = entry.getKey();
                     final List<String> scopePermissions = entry.getValue();
 
-                    if (scopePermissions == null || scopePermissions.isEmpty()) {
+                    // null value for a scope key = skip (preserve)
+                    // empty array = remove (bits=0)
+                    // values = set
+                    if (scopePermissions == null) {
                         continue;
                     }
 
                     final String permissionType = convertScopeToPermissionType(scopeName);
-                    final int permissionBits = convertPermissionNamesToBits(scopePermissions);
+                    final int permissionBits = scopePermissions.isEmpty()
+                        ? 0  // Empty array = remove (bits=0 triggers delete)
+                        : convertPermissionNamesToBits(scopePermissions);
 
                     permissions.add(new Permission(
                         permissionType,
@@ -824,5 +850,349 @@ public class AssetPermissionHelper {
         response.put("previousPermissionCount", previousPermissionCount);
 
         return response;
+    }
+
+    // ========================================================================
+    // UPDATE ROLE PERMISSIONS METHODS
+    // ========================================================================
+
+    /**
+     * Updates permissions for a specific role on an asset.
+     * Automatically breaks inheritance if the asset is currently inheriting.
+     *
+     * <p>Request semantics:
+     * <ul>
+     *   <li>PUT replaces all permissions for this role on the asset</li>
+     *   <li>Omitting a scope preserves existing permissions for that scope (hybrid model)</li>
+     *   <li>Empty array [] removes permissions for that scope</li>
+     *   <li>Implicit inheritance break if asset currently inherits</li>
+     * </ul>
+     *
+     * @param roleId   Role identifier
+     * @param assetId  Asset identifier (Host ID, Host Name, or Folder ID)
+     * @param form     Permission update form with scope-to-permissions map
+     * @param cascade  If true, triggers async cascade job (query parameter)
+     * @param user     Requesting user (must be admin)
+     * @return Response map containing roleId, roleName, and asset with updated permissions
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    public Map<String, Object> updateRolePermissions(final String roleId,
+                                                      final String assetId,
+                                                      final UpdateRolePermissionsForm form,
+                                                      final boolean cascade,
+                                                      final User user)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format(
+            "updateRolePermissions - roleId: %s, assetId: %s, cascade: %s, user: %s",
+            roleId, assetId, cascade, user.getUserId()));
+
+        // 1. Validate inputs
+        validateRolePermissionRequest(roleId, assetId, form);
+
+        // 2. Load and validate role
+        final Role role = roleAPI.loadRoleById(roleId);
+        if (role == null) {
+            throw new NotFoundInDbException(String.format("Role not found: %s", roleId));
+        }
+
+        // 3. Resolve asset (Host ID, Host Name, or Folder ID)
+        final Permissionable asset = resolveHostOrFolder(assetId);
+        if (asset == null) {
+            throw new NotFoundInDbException(String.format("Asset not found: %s", assetId));
+        }
+
+        // 4. Check user has EDIT_PERMISSIONS on asset
+        final boolean canEditPermissions = permissionAPI.doesUserHavePermission(
+            asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false);
+        if (!canEditPermissions) {
+            throw new DotSecurityException(String.format(
+                "User does not have EDIT_PERMISSIONS permission on asset: %s", assetId));
+        }
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        // 5. Break inheritance if currently inheriting (for this role only)
+        if (permissionAPI.isInheritingPermissions(asset)) {
+            Logger.debug(this, () -> String.format(
+                "Breaking permission inheritance for asset: %s, role: %s", assetId, roleId));
+            final Permissionable parent = permissionAPI.findParentPermissionable(asset);
+            if (parent != null) {
+                permissionAPI.permissionIndividuallyByRole(parent, asset, systemUser, role);
+            }
+        }
+
+        // 6. Build permissions from form (hybrid semantics: omit=preserve, empty=remove)
+        // Following RoleAjax pattern - no reading existing, just build from form
+        final List<Permission> permissionsToSave = buildRolePermissionsFromForm(form, asset, role);
+
+        // 7. Save just THIS role's permissions using the modern save() method
+        // save() upserts each permission by (inode, roleId, type) key, preserving:
+        // - Other roles' permissions (different roleId)
+        // - This role's scopes not in the form (different type)
+        if (!permissionsToSave.isEmpty()) {
+            permissionAPI.save(permissionsToSave, asset, systemUser, false);
+        }
+
+        // 8. Handle cascade if requested and asset is a parent permissionable
+        if (cascade && asset.isParentPermissionable()) {
+            Logger.info(this, () -> String.format(
+                "Triggering cascade permissions job for asset: %s, role: %s", assetId, roleId));
+            CascadePermissionsJob.triggerJobImmediately(asset, role);
+        }
+
+        // 9. Build and return response
+        Logger.info(this, () -> String.format(
+            "Successfully updated permissions for role: %s on asset: %s", roleId, assetId));
+
+        return buildRolePermissionUpdateResponse(asset, role, user);
+    }
+
+    /**
+     * Resolves an asset by Host ID, Host Name, or Folder ID.
+     * Tries Host first (by ID then by name), then Folder.
+     *
+     * @param assetId Asset identifier (Host ID, Host Name, or Folder ID)
+     * @return Permissionable asset (Host or Folder) or null if not found
+     * @throws DotDataException If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    private Permissionable resolveHostOrFolder(final String assetId)
+            throws DotDataException, DotSecurityException {
+
+        if (!UtilMethods.isSet(assetId)) {
+            return null;
+        }
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final boolean respectFrontendRoles = false;
+
+        Logger.debug(this, () -> String.format("Resolving host or folder by ID: %s", assetId));
+
+        // Try Host by ID first
+        try {
+            final Host host = hostAPI.find(assetId, systemUser, respectFrontendRoles);
+            if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+                Logger.debug(this, () -> String.format("Resolved as Host by ID: %s", assetId));
+                return host;
+            }
+        } catch (Exception e) {
+            Logger.debug(this, () -> String.format("Not a host by ID: %s", assetId));
+        }
+
+        // Try Host by name
+        try {
+            final Host host = hostAPI.findByName(assetId, systemUser, respectFrontendRoles);
+            if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+                Logger.debug(this, () -> String.format("Resolved as Host by name: %s", assetId));
+                return host;
+            }
+        } catch (Exception e) {
+            Logger.debug(this, () -> String.format("Not a host by name: %s", assetId));
+        }
+
+        // Try Folder
+        try {
+            final Folder folder = folderAPI.find(assetId, systemUser, respectFrontendRoles);
+            if (UtilMethods.isSet(() -> folder.getIdentifier())) {
+                Logger.debug(this, () -> String.format("Resolved as Folder: %s", assetId));
+                return folder;
+            }
+        } catch (Exception e) {
+            Logger.debug(this, () -> String.format("Not a folder: %s", assetId));
+        }
+
+        Logger.warn(this, String.format("Unable to resolve host or folder: %s", assetId));
+        return null;
+    }
+
+    /**
+     * Validates the role permission update request.
+     *
+     * @param roleId  Role identifier
+     * @param assetId Asset identifier
+     * @param form    Permission update form
+     * @throws IllegalArgumentException If validation fails
+     */
+    private void validateRolePermissionRequest(final String roleId,
+                                                final String assetId,
+                                                final UpdateRolePermissionsForm form) {
+
+        if (!UtilMethods.isSet(roleId)) {
+            throw new IllegalArgumentException("Role ID is required");
+        }
+
+        if (!UtilMethods.isSet(assetId)) {
+            throw new IllegalArgumentException("Asset ID is required");
+        }
+
+        if (form == null || form.getPermissions() == null || form.getPermissions().isEmpty()) {
+            throw new IllegalArgumentException("permissions cannot be empty");
+        }
+
+        // Validate scopes and permission levels
+        for (final Map.Entry<String, List<String>> entry : form.getPermissions().entrySet()) {
+            final String scope = entry.getKey();
+            if (!PermissionConversionUtils.isValidScope(scope)) {
+                throw new IllegalArgumentException(String.format(
+                    "Invalid permission scope: %s", scope));
+            }
+
+            final List<String> levels = entry.getValue();
+            if (levels != null) {
+                for (final String level : levels) {
+                    if (!PermissionConversionUtils.isValidPermissionLevel(level)) {
+                        throw new IllegalArgumentException(String.format(
+                            "Invalid permission level '%s' in scope '%s'", level, scope));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds Permission objects from the role permission update form.
+     *
+     * <p>Follows the RoleAjax pattern - does NOT read existing permissions.
+     * Hybrid semantics work implicitly via assignPermissions() behavior:
+     * <ul>
+     *   <li>Scopes in form with values → set those permissions</li>
+     *   <li>Scopes in form with empty array → save bits=0 → triggers delete</li>
+     *   <li>Scopes NOT in form → not in save list → preserved (untouched)</li>
+     * </ul>
+     *
+     * @param form  Permission update form
+     * @param asset Target asset
+     * @param role  Target role
+     * @return List of Permission objects to save
+     */
+    private List<Permission> buildRolePermissionsFromForm(final UpdateRolePermissionsForm form,
+                                                           final Permissionable asset,
+                                                           final Role role) {
+
+        final List<Permission> permissions = new ArrayList<>();
+        final String assetPermissionId = asset.getPermissionId();
+        final String roleId = role.getId();
+
+        // Process ONLY what's in the form - no reading existing!
+        // Scopes not in the form are preserved implicitly (assignPermissions doesn't delete them)
+        for (final Map.Entry<String, List<String>> entry : form.getPermissions().entrySet()) {
+            final String scopeName = entry.getKey();
+            final List<String> scopePermissions = entry.getValue();
+            final String permissionType = PermissionConversionUtils.convertScopeToPermissionType(scopeName);
+
+            // Empty array = remove (bits=0 triggers delete in persistPermission)
+            // Non-empty = set those permissions
+            final int permissionBits = (scopePermissions == null || scopePermissions.isEmpty())
+                ? 0
+                : PermissionConversionUtils.convertPermissionNamesToBits(scopePermissions);
+
+            permissions.add(new Permission(
+                permissionType,
+                assetPermissionId,
+                roleId,
+                permissionBits,
+                true  // isBitPermission
+            ));
+        }
+
+        return permissions;
+    }
+
+    /**
+     * Builds the response map for the role permission update operation.
+     *
+     * @param asset Updated asset
+     * @param role  Updated role
+     * @param user  Requesting user
+     * @return Response map with roleId, roleName, and asset data
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    private Map<String, Object> buildRolePermissionUpdateResponse(final Permissionable asset,
+                                                                    final Role role,
+                                                                    final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Map<String, Object> response = new HashMap<>();
+        response.put("roleId", role.getId());
+        response.put("roleName", role.getName());
+
+        // Build asset object with permissions for this role only
+        final Map<String, Object> assetData = buildAssetWithRolePermissions(asset, role, user);
+        response.put("asset", assetData);
+
+        return response;
+    }
+
+    /**
+     * Builds asset data map with permissions filtered to a specific role.
+     *
+     * @param asset Target asset
+     * @param role  Target role
+     * @param user  Requesting user
+     * @return Asset data map with id, type, name, path, hostId, and permissions
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    private Map<String, Object> buildAssetWithRolePermissions(final Permissionable asset,
+                                                               final Role role,
+                                                               final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Map<String, Object> assetData = new HashMap<>();
+
+        // Basic asset info
+        assetData.put("id", asset.getPermissionId());
+        assetData.put("type", getAssetType(asset));
+
+        // Add name and path based on asset type
+        if (asset instanceof Host) {
+            final Host host = (Host) asset;
+            assetData.put("name", host.getHostname());
+            assetData.put("path", "/" + host.getHostname());
+            assetData.put("hostId", host.getIdentifier());
+        } else if (asset instanceof Folder) {
+            final Folder folder = (Folder) asset;
+            assetData.put("name", folder.getName());
+            assetData.put("path", APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath());
+            assetData.put("hostId", folder.getHostId());
+        }
+
+        // Permission metadata
+        assetData.put("canEditPermissions", permissionAPI.doesUserHavePermission(
+            asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false));
+        assetData.put("inheritsPermissions", permissionAPI.isInheritingPermissions(asset));
+
+        // Get permissions for this role and build permission map
+        // We need BOTH individual permissions (INDIVIDUAL scope) AND inheritable permissions
+        // (CONTENT, FOLDER, etc.) stored on this asset. The getPermissions() method only returns
+        // individual permissions for this asset, so we also need getInheritablePermissions().
+        final List<Permission> individualPermissions = permissionAPI.getPermissions(asset, true);
+        final List<Permission> inheritablePermissions = asset.isParentPermissionable()
+            ? permissionAPI.getInheritablePermissions(asset, true)
+            : Collections.emptyList();
+
+        // Combine both lists and filter to this role only
+        final List<Permission> allPermissions = new ArrayList<>(individualPermissions);
+        allPermissions.addAll(inheritablePermissions);
+        final List<Permission> rolePermissions = allPermissions.stream()
+            .filter(p -> p.getRoleId().equals(role.getId()))
+            .collect(Collectors.toList());
+
+        final Map<String, List<String>> permissionMap = new LinkedHashMap<>();
+        for (final Permission permission : rolePermissions) {
+            final String modernType = PermissionConversionUtils.getModernPermissionType(permission.getType());
+            final List<String> permissionNames = PermissionConversionUtils.convertBitsToPermissionNames(
+                permission.getPermission());
+            if (!permissionNames.isEmpty()) {
+                permissionMap.put(modernType, permissionNames);
+            }
+        }
+
+        assetData.put("permissions", permissionMap);
+
+        return assetData;
     }
 }

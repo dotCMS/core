@@ -10707,6 +10707,70 @@ paths:
       summary: Get role permissions
       tags:
       - Permissions
+  /v1/permissions/role/{roleId}/asset/{assetId}:
+    put:
+      description: Updates permissions for a specific role on a host or folder. Automatically
+        breaks permission inheritance if the asset currently inherits. Only admin
+        users can access this endpoint. Omitting a scope preserves existing permissions;
+        empty array removes permissions.
+      operationId: updateRolePermissions
+      parameters:
+      - description: Role identifier
+        in: path
+        name: roleId
+        required: true
+        schema:
+          type: string
+      - description: "Asset identifier (Host ID, Host Name, or Folder ID)"
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      - description: "If true, cascades permissions to all child assets"
+        in: query
+        name: cascade
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRolePermissionsForm"
+        description: Permission data by scope
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUpdateRolePermissionsView"
+          description: Permissions updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid permission level or scope
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user lacks EDIT_PERMISSIONS on asset or is not
+            admin
+        "404":
+          content:
+            application/json: {}
+          description: Role or asset not found
+        "500":
+          content:
+            application/json: {}
+          description: Failed to update permissions
+      summary: Update role permissions on asset
+      tags:
+      - Permissions
   /v1/permissions/{assetId}:
     get:
       description: "Retrieves permissions for a specific asset by its identifier (inode\
@@ -24932,6 +24996,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityUpdateRolePermissionsView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityUserPermissionsView:
       type: object
       properties:
@@ -27229,6 +27318,15 @@ components:
       required:
       - assetPath
       - data
+    UpdateRolePermissionsForm:
+      type: object
+      properties:
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
     UpdateTagForm:
       type: object
       properties:
