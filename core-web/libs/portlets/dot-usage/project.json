@@ -1,0 +1,20 @@
+{
+    "name": "portlets-dot-usage",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portlets/dot-usage/src",
+    "prefix": "lib",
+    "projectType": "library",
+    "tags": ["skip:test"],
+    "targets": {
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/portlets/dot-usage/jest.config.ts"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint"
+        }
+    }
+}
