@@ -1,16 +1,20 @@
-import { PageData } from 'analytics';
+import { AnalyticsPlugin, PageData } from 'analytics';
 
 import {
+    ANALYTICS_CONTENTLET_CLASS,
     ANALYTICS_JS_DEFAULT_PROPERTIES,
     ANALYTICS_MINIFIED_SCRIPT_NAME,
+    DEFAULT_IMPRESSION_MUTATION_OBSERVER_DEBOUNCE_MS,
     DEFAULT_SESSION_TIMEOUT_MINUTES,
     DotCMSPredefinedEventType,
     EXPECTED_UTM_KEYS,
     SESSION_STORAGE_KEY,
     USER_ID_KEY
-} from './constants';
+} from '../constants';
+import { DotLogger, LogLevel } from '../dot-analytics.logger';
 import {
     AnalyticsBasePayloadWithContext,
+    ContentletData,
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsEventContext,
     DotCMSBrowserData,
@@ -20,17 +24,14 @@ import {
     EnrichedAnalyticsPayload,
     JsonObject,
     JsonValue
-} from './models';
+} from '../models';
 
-// Export activity tracking functions from separate module
+// Export activity tracking functions from identity plugin
 export {
     cleanupActivityTracking,
-    getLastActivity,
-    getSessionInfo,
     initializeActivityTracking,
-    isUserInactive,
     updateSessionActivity
-} from './dot-content-analytics.activity-tracker';
+} from '../../plugin/identity/dot-analytics.identity.activity-tracker';
 
 /**
  * Type guard to check if an event is a predefined event type.
@@ -116,7 +117,7 @@ const safeLocalStorage = {
         try {
             localStorage.setItem(key, value);
         } catch {
-            console.warn(`DotCMS Analytics: Could not save ${key} to localStorage`);
+            console.warn(`DotCMS Analytics [Core]: Could not save ${key} to localStorage`);
         }
     }
 };
@@ -136,7 +137,7 @@ export const safeSessionStorage = {
         try {
             sessionStorage.setItem(key, value);
         } catch {
-            console.warn(`DotCMS Analytics: Could not save ${key} to sessionStorage`);
+            console.warn(`DotCMS Analytics [Core]: Could not save ${key} to sessionStorage`);
         }
     }
 };
@@ -247,13 +248,6 @@ export const getAnalyticsContext = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
     const sessionId = getSessionId();
     const userId = getUserId();
     const device = getDeviceDataForContext();
-
-    if (config.debug) {
-        console.warn('DotCMS Analytics Identity Context:', {
-            sessionId,
-            userId
-        });
-    }
 
     return {
         site_auth: config.siteAuth,
@@ -611,4 +605,178 @@ export const enrichPagePayload = (
             local_time
         }
     };
+};
+
+/**
+ * Creates a throttled version of a callback function
+ * Ensures the callback is executed at most once every `limitMs` milliseconds
+ * @param callback - The function to throttle
+ * @param limitMs - The time limit in milliseconds
+ * @returns A throttled function
+ */
+export function createThrottle<T extends (...args: unknown[]) => void>(
+    callback: T,
+    limitMs: number
+): (...args: Parameters<T>) => void {
+    let lastRun = 0;
+
+    return (...args: Parameters<T>) => {
+        const now = Date.now();
+        if (now - lastRun >= limitMs) {
+            callback(...args);
+            lastRun = now;
+        }
+    };
+}
+
+/**
+ * Extracts the contentlet identifier from a DOM element
+ * @param element - The HTML element containing data attributes
+ * @returns The contentlet identifier or null if not found
+ */
+export function extractContentletIdentifier(element: HTMLElement): string | null {
+    return element.dataset.dotAnalyticsIdentifier || null;
+}
+
+/**
+ * Extracts all contentlet data from a DOM element's data attributes
+ * @param element - The HTML element containing data attributes
+ * @returns Complete contentlet data object
+ */
+export function extractContentletData(element: HTMLElement): ContentletData {
+    return {
+        identifier: element.dataset.dotAnalyticsIdentifier || '',
+        inode: element.dataset.dotAnalyticsInode || '',
+        contentType: element.dataset.dotAnalyticsContenttype || '',
+        title: element.dataset.dotAnalyticsTitle || '',
+        baseType: element.dataset.dotAnalyticsBasetype || ''
+    };
+}
+
+/**
+ * Initial scan delay for DOM readiness
+ * Allows React/Next.js to finish rendering before scanning for contentlets
+ */
+export const INITIAL_SCAN_DELAY_MS = 100;
+
+/**
+ * Checks if code is running in a browser environment
+ * @returns true if window and document are available
+ */
+export const isBrowser = (): boolean => {
+    return typeof window !== 'undefined' && typeof document !== 'undefined';
+};
+
+/**
+ * Finds all contentlet elements in the DOM
+ * @returns Array of contentlet HTMLElements
+ */
+export const findContentlets = (): HTMLElement[] => {
+    return Array.from(document.querySelectorAll<HTMLElement>(`.${ANALYTICS_CONTENTLET_CLASS}`));
+};
+
+/**
+ * Creates a MutationObserver that watches for contentlet changes in the DOM
+ * @param callback - Function to call when mutations are detected
+ * @param debounceMs - Debounce time in milliseconds (default: 250ms)
+ * @returns Configured and active MutationObserver
+ */
+export const createContentletObserver = (
+    callback: () => void,
+    debounceMs: number = DEFAULT_IMPRESSION_MUTATION_OBSERVER_DEBOUNCE_MS
+): MutationObserver => {
+    const throttledCallback = createThrottle(callback, debounceMs);
+
+    const observer = new MutationObserver((mutations) => {
+        // This reduces observer callback executions by ~90% on dynamic sites
+        const hasRelevantChanges = mutations.some((mutation) => {
+            // Skip if no nodes were added or removed
+            if (mutation.addedNodes.length === 0 && mutation.removedNodes.length === 0) {
+                return false;
+            }
+
+            // Check if any added/removed nodes are or contain contentlets
+            const nodes = [
+                ...Array.from(mutation.addedNodes),
+                ...Array.from(mutation.removedNodes)
+            ];
+
+            return nodes.some((node) => {
+                // Only check element nodes
+                if (node.nodeType !== Node.ELEMENT_NODE) {
+                    return false;
+                }
+
+                const element = node as HTMLElement;
+
+                // Check if node itself is a contentlet
+                if (element.classList?.contains(ANALYTICS_CONTENTLET_CLASS)) {
+                    return true;
+                }
+
+                // Check if node contains contentlets
+                return element.querySelector?.(`.${ANALYTICS_CONTENTLET_CLASS}`) !== null;
+            });
+        });
+
+        // Only invoke callback if relevant changes detected
+        if (hasRelevantChanges) {
+            throttledCallback();
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false
+    });
+
+    return observer;
+};
+
+/**
+ * Sets up cleanup handlers for page unload events
+ * Registers cleanup function to both 'beforeunload' and 'pagehide' for maximum compatibility
+ * @param cleanup - Function to call on page unload
+ */
+export const setupPluginCleanup = (cleanup: () => void): void => {
+    if (!isBrowser()) return;
+
+    window.addEventListener('beforeunload', cleanup);
+    window.addEventListener('pagehide', cleanup);
+};
+
+/**
+ * Creates a logger with plugin-specific prefix and configurable log level
+ * @param pluginName - Name of the plugin (e.g., 'Click', 'Impression')
+ * @param config - Analytics configuration with debug flag and optional logLevel
+ * @returns DotLogger instance with configured log level
+ */
+export const createPluginLogger = (
+    pluginName: string,
+    config: { debug: boolean; logLevel?: LogLevel }
+): DotLogger => {
+    // Use explicit logLevel if provided, otherwise fall back to debug flag
+    const level = config.logLevel ?? (config.debug ? 'debug' : 'warn');
+    return new DotLogger('Analytics', pluginName, level);
+};
+
+/**
+ * Gets enhanced tracking plugins based on configuration
+ * Returns content impression and click tracking plugins if enabled
+ * @param config - Analytics configuration
+ * @param impressionPlugin - Impression tracking plugin factory
+ * @param clickPlugin - Click tracking plugin factory
+ * @returns Array of enabled tracking plugins
+ */
+export const getEnhancedTrackingPlugins = (
+    config: DotCMSAnalyticsConfig,
+    impressionPlugin: (config: DotCMSAnalyticsConfig) => AnalyticsPlugin,
+    clickPlugin: (config: DotCMSAnalyticsConfig) => AnalyticsPlugin
+): AnalyticsPlugin[] => {
+    return [
+        config.impressions && impressionPlugin(config),
+        config.clicks && clickPlugin(config)
+    ].filter(Boolean) as AnalyticsPlugin[];
 };

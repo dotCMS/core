@@ -13,7 +13,7 @@ import {
     DotCMSCustomEventType,
     DotCMSEventType,
     DotCMSPredefinedEventType
-} from '../constants/dot-content-analytics.constants';
+} from '../constants/dot-analytics.constants';
 
 /**
  * JSON value type for analytics custom data.
@@ -96,11 +96,42 @@ export type DotCMSContentImpressionPayload = {
 };
 
 /**
+ * Partial content click data sent by producer plugins.
+ * Extends impression payload with element metadata.
+ */
+export type DotCMSContentClickPayload = DotCMSContentImpressionPayload & {
+    /** Clicked element information */
+    element: {
+        /** Text content of the element */
+        text: string;
+        /** Type of element (anchor, button, etc.) */
+        type: string;
+        /** Element ID (required by backend, empty string if not present) */
+        id: string;
+        /** Element classes (required by backend, empty string if not present) */
+        class: string;
+        /** Link destination as written in HTML (relative path, only for <a> elements, empty string for buttons) */
+        href: string;
+        /** Additional element attributes in key:value format (e.g., ['data-category:val', 'data-campaign:val2']) */
+        attributes: string[];
+    };
+};
+
+/**
  * Complete data structure for content impression events after enrichment.
  * Includes minimal page data (title and url) added by the enricher plugin.
  */
 export type DotCMSContentImpressionEventData = DotCMSContentImpressionPayload & {
     /** Minimal page data where the impression occurred (added by enricher) */
+    page: DotCMSContentImpressionPageData;
+};
+
+/**
+ * Complete data structure for content click events after enrichment.
+ * Includes minimal page data (title and url) added by the enricher plugin.
+ */
+export type DotCMSContentClickEventData = DotCMSContentClickPayload & {
+    /** Minimal page data where the click occurred (added by enricher) */
     page: DotCMSContentImpressionPageData;
 };
 
@@ -121,6 +152,14 @@ export type DotCMSContentImpressionEvent = DotCMSEventBase<
 >;
 
 /**
+ * Content click event structure.
+ */
+export type DotCMSContentClickEvent = DotCMSEventBase<
+    typeof DotCMSPredefinedEventType.CONTENT_CLICK,
+    DotCMSContentClickEventData
+>;
+
+/**
  * Custom event structure.
  */
 export type DotCMSCustomEvent = DotCMSEventBase<DotCMSCustomEventType, DotCMSCustomEventData>;
@@ -129,4 +168,8 @@ export type DotCMSCustomEvent = DotCMSEventBase<DotCMSCustomEventType, DotCMSCus
  * Union type for all possible analytics events.
  * Used primarily for type documentation and validation.
  */
-export type DotCMSEvent = DotCMSPageViewEvent | DotCMSContentImpressionEvent | DotCMSCustomEvent;
+export type DotCMSEvent =
+    | DotCMSPageViewEvent
+    | DotCMSContentImpressionEvent
+    | DotCMSContentClickEvent
+    | DotCMSCustomEvent;
