@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-import { ANALYTICS_ENDPOINT } from './constants';
 import { sendAnalyticsEvent } from './dot-analytics.http';
+
+import { ANALYTICS_ENDPOINT } from '../constants/dot-analytics.constants';
 import {
     DotCMSAnalyticsConfig,
     DotCMSCustomEventRequestBody,
     DotCMSPageViewRequestBody
-} from './models';
+} from '../models';
 
 // Type alias for backward compatibility with tests
 type DotCMSTrackRequestBody = DotCMSCustomEventRequestBody;
@@ -25,6 +26,10 @@ const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {
     // do nothing
 });
 
+const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation(() => {
+    // do nothing
+});
+
 describe('DotAnalytics HTTP Utils', () => {
     let mockConfig: DotCMSAnalyticsConfig;
     let mockPayload: DotCMSPageViewRequestBody | DotCMSTrackRequestBody;
@@ -35,6 +40,7 @@ describe('DotAnalytics HTTP Utils', () => {
         mockFetch.mockClear();
         mockConsoleError.mockClear();
         mockConsoleWarn.mockClear();
+        mockConsoleInfo.mockClear();
 
         // Setup test data
         mockConfig = {
@@ -156,8 +162,9 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 await sendAnalyticsEvent(mockPayload, debugConfig); // defaults to keepalive=false
 
-                expect(mockConsoleWarn).toHaveBeenCalledWith(
-                    `DotCMS Analytics: Sending ${mockPayload.events.length} event(s)`,
+                expect(mockConsoleInfo).toHaveBeenCalledWith(
+                    `[DotCMS Analytics | HTTP] [INFO]`,
+                    `Sending ${mockPayload.events.length} event(s)`,
                     { payload: mockPayload }
                 );
             });
@@ -173,8 +180,9 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 await sendAnalyticsEvent(mockPayload, debugConfig, true);
 
-                expect(mockConsoleWarn).toHaveBeenCalledWith(
-                    `DotCMS Analytics: Sending ${mockPayload.events.length} event(s) (keepalive)`,
+                expect(mockConsoleInfo).toHaveBeenCalledWith(
+                    `[DotCMS Analytics | HTTP] [INFO]`,
+                    `Sending ${mockPayload.events.length} event(s) (keepalive)`,
                     { payload: mockPayload }
                 );
             });
@@ -210,7 +218,8 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
-                    `DotCMS Analytics: ${errorMessage} (HTTP 400: Bad Request)`
+                    `[DotCMS Analytics | HTTP] [WARN]`,
+                    `${errorMessage} (HTTP 400: Bad Request)`
                 );
             });
 
@@ -228,7 +237,8 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
-                    'DotCMS Analytics: HTTP 500: Internal Server Error - No error message in response'
+                    '[DotCMS Analytics | HTTP] [WARN]',
+                    'HTTP 500: Internal Server Error - No error message in response'
                 );
             });
 
@@ -246,7 +256,8 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
-                    'DotCMS Analytics: HTTP 400: Bad Request - Failed to parse error response:',
+                    '[DotCMS Analytics | HTTP] [WARN]',
+                    'HTTP 400: Bad Request - Failed to parse error response:',
                     expect.any(Error)
                 );
             });
@@ -261,7 +272,8 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 expect(mockConsoleError).toHaveBeenCalledTimes(1);
                 expect(mockConsoleError).toHaveBeenCalledWith(
-                    'DotCMS Analytics: Error sending event:',
+                    '[DotCMS Analytics | HTTP] [ERROR]',
+                    'Error sending event:',
                     networkError
                 );
             });

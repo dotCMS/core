@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { hasUTMChanged } from './dot-analytics.identity.utils';
 
-import { SESSION_UTM_KEY } from '../../shared/constants';
+import { SESSION_UTM_KEY } from '../../shared/constants/dot-analytics.constants';
 import { extractUTMParameters, safeSessionStorage } from '../../shared/utils/dot-analytics.utils';
 
 // Mock the safeSessionStorage dependency but keep other exports
-jest.mock('../../shared/dot-analytics.utils', () => {
-    const actual = jest.requireActual('../../shared/dot-analytics.utils') as Record<
+jest.mock('../../shared/utils/dot-analytics.utils', () => {
+    const actual = jest.requireActual('../../shared/utils/dot-analytics.utils') as Record<
         string,
         unknown
     >;

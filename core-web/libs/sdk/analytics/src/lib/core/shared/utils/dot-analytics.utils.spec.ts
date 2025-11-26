@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import { ANALYTICS_MINIFIED_SCRIPT_NAME } from './constants';
 import {
     defaultRedirectFn,
     enrichPagePayloadOptimized,
@@ -19,6 +18,8 @@ import {
     validateAnalyticsConfig
 } from './dot-analytics.utils';
 import { DotCMSAnalyticsConfig } from './models';
+
+import { ANALYTICS_MINIFIED_SCRIPT_NAME } from '../constants/dot-analytics.constants';
 
 describe('Analytics Utils', () => {
     let mockLocation: Location;

@@ -6,7 +6,7 @@ import { DotCMSPredefinedEventType } from '../../shared/constants/dot-analytics.
 import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/utils/dot-analytics.utils';
 
 // Mock the utility functions
-jest.mock('../../shared/dot-content-analytics.utils', () => ({
+jest.mock('../../shared/utils/dot-analytics.utils', () => ({
     enrichPagePayloadOptimized: jest.fn(),
     getLocalTime: jest.fn()
 }));

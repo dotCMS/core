@@ -48,6 +48,12 @@ export const dotAnalyticsImpressionPlugin = (config: DotCMSAnalyticsConfig) => {
          * @param instance - Analytics.js instance with track method
          */
         initialize: ({ instance }: { instance: AnalyticsInstance }) => {
+            // Only initialize if impressions are enabled
+            if (!config.impressions) {
+                logger.info('Impression tracking disabled (config.impressions not set)');
+                return Promise.resolve();
+            }
+
             // Create and initialize tracker
             impressionTracker = new DotCMSImpressionTracker(config);
             impressionTracker.initialize();
@@ -67,6 +73,7 @@ export const dotAnalyticsImpressionPlugin = (config: DotCMSAnalyticsConfig) => {
          * Called after Analytics.js completes plugin loading
          */
         loaded: () => {
+            // Only setup cleanup if tracker was initialized
             if (isBrowser() && impressionTracker) {
                 const cleanup = () => {
                     // Unsubscribe before cleanup

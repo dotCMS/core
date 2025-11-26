@@ -84,7 +84,7 @@ describe('DotCMS Activity Tracker', () => {
             initializeActivityTracking(mockConfig);
 
             expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'DotCMS Analytics: Activity tracking initialized'
+                'DotCMS Analytics [Activity]: Activity tracking initialized'
             );
 
             consoleWarnSpy.mockRestore();
@@ -120,7 +120,7 @@ describe('DotCMS Activity Tracker', () => {
             document.dispatchEvent(new Event('visibilitychange'));
 
             expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'DotCMS Analytics: User returned to tab, session reactivated'
+                'DotCMS Analytics [Activity]: User returned to tab, session reactivated'
             );
 
             consoleWarnSpy.mockRestore();

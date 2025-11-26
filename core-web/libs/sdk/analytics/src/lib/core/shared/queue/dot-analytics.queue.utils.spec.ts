@@ -6,7 +6,7 @@ import { sendAnalyticsEvent } from '../http/dot-analytics.http';
 import { DotCMSAnalyticsConfig, DotCMSAnalyticsEventContext, DotCMSEvent } from '../models';
 
 // Mock the HTTP utility
-jest.mock('../dot-analytics.http', () => ({
+jest.mock('../http/dot-analytics.http', () => ({
     sendAnalyticsEvent: jest.fn()
 }));
 
@@ -37,6 +37,9 @@ const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {
 const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {
     // do nothing
 });
+const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation(() => {
+    // do nothing
+});
 
 describe('createAnalyticsQueue', () => {
     let mockConfig: DotCMSAnalyticsConfig;
@@ -56,6 +59,7 @@ describe('createAnalyticsQueue', () => {
         mockQueueResume.mockClear();
         mockConsoleLog.mockClear();
         mockConsoleWarn.mockClear();
+        mockConsoleInfo.mockClear();
 
         // Reset mock implementations
         mockQueueSize.mockReturnValue(0);
@@ -239,7 +243,8 @@ describe('createAnalyticsQueue', () => {
             queue.enqueue(mockEvent, mockContext);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
-                expect.stringContaining('DotCMS Analytics Queue: Event added'),
+                '[DotCMS Analytics | Queue] [DEBUG]',
+                expect.stringContaining('Event added'),
                 expect.objectContaining({
                     eventType: 'pageview',
                     event: mockEvent
@@ -267,6 +272,7 @@ describe('createAnalyticsQueue', () => {
             queue.enqueue(mockEvent, mockContext);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Queue] [DEBUG]',
                 expect.stringContaining(`Queue size: 5/${DEFAULT_QUEUE_CONFIG.eventBatchSize}`),
                 expect.any(Object)
             );
@@ -352,6 +358,7 @@ describe('createAnalyticsQueue', () => {
             sendBatchCallback([mockEvent, mockEvent], []);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Queue] [DEBUG]',
                 expect.stringContaining('Sending batch of 2 event(s)'),
                 expect.objectContaining({
                     keepalive: false,
@@ -461,7 +468,8 @@ describe('createAnalyticsQueue', () => {
             )?.[1] as EventListener;
             pagehideListener(new Event('pagehide'));
 
-            expect(mockConsoleWarn).toHaveBeenCalledWith(
+            expect(mockConsoleInfo).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Queue] [INFO]',
                 expect.stringContaining('Flushing 5 events')
             );
         });
@@ -561,6 +569,7 @@ describe('createAnalyticsQueue', () => {
             sendBatchCallback([mockEvent], []);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Queue] [DEBUG]',
                 expect.any(String),
                 expect.objectContaining({
                     keepalive: false
@@ -590,11 +599,11 @@ describe('createAnalyticsQueue', () => {
 
             // Find the sendBatch call (second console.log call)
             const sendBatchCall = mockConsoleLog.mock.calls.find((call) =>
-                call[0].includes('Sending batch')
+                call[1]?.includes('Sending batch')
             );
 
             expect(sendBatchCall).toBeDefined();
-            expect(sendBatchCall?.[1]).toEqual(
+            expect(sendBatchCall?.[2]).toEqual(
                 expect.objectContaining({
                     keepalive: true
                 })
