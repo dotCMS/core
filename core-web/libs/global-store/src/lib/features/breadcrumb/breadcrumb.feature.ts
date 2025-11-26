@@ -183,12 +183,25 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     const [urlPath, queryString] = url.split('?');
                     const shortMenuId = new URLSearchParams(queryString || '').get('mId');
 
+                    const hasQueryParams = queryString && queryString.length > 0;
+
                     const item = menu.find((item) => {
                         const pathMatches = item.menuLink === urlPath;
-                        const parentMatches = shortMenuId
-                            ? item.parentMenuId.startsWith(shortMenuId)
-                            : true;
-                        return pathMatches && parentMatches;
+
+                        if (shortMenuId) {
+                            // If we have shortMenuId, check both path and parent match
+                            const parentMatches = item.parentMenuId.startsWith(shortMenuId);
+                            return pathMatches && parentMatches;
+                        } else {
+                            // If we don't have shortMenuId
+                            if (!hasQueryParams) {
+                                // If we have no query params and no shortMenuId, return if path matches
+                                return pathMatches;
+                            } else {
+                                // If we have query params but no shortMenuId, return nothing
+                                return false;
+                            }
+                        }
                     });
 
                     if (item) {
