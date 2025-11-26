@@ -10,19 +10,9 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -209,54 +199,26 @@ public class UserPermissionHelper {
     }
 
     /**
-     * Maps permission type class names to API type constants.
+     * Gets the modern API type name for a permission type.
+     * Delegates to {@link com.dotcms.rest.api.v1.system.permission.PermissionConversionUtils}.
+     *
+     * @param permissionType Internal permission type (class name or scope)
+     * @return Modern API type constant
      */
-    private static final Map<String, String> PERMISSION_TYPE_MAPPINGS = Map.ofEntries(
-        Map.entry(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE.toUpperCase(), "INDIVIDUAL"),
-        Map.entry(IHTMLPage.class.getCanonicalName().toUpperCase(), "PAGE"),
-        Map.entry(Container.class.getCanonicalName().toUpperCase(), "CONTAINER"),
-        Map.entry(Folder.class.getCanonicalName().toUpperCase(), "FOLDER"),
-        Map.entry(Link.class.getCanonicalName().toUpperCase(), "LINK"),
-        Map.entry(Template.class.getCanonicalName().toUpperCase(), "TEMPLATE"),
-        Map.entry(TemplateLayout.class.getCanonicalName().toUpperCase(), "TEMPLATE_LAYOUT"),
-        Map.entry(Structure.class.getCanonicalName().toUpperCase(), "STRUCTURE"),
-        Map.entry(Contentlet.class.getCanonicalName().toUpperCase(), "CONTENT"),
-        Map.entry(Category.class.getCanonicalName().toUpperCase(), "CATEGORY"),
-        Map.entry(Rule.class.getCanonicalName().toUpperCase(), "RULE"),
-        Map.entry(Host.class.getCanonicalName().toUpperCase(), "HOST")
-    );
-
     private String getModernPermissionType(final String permissionType) {
-        final String mappedType = PERMISSION_TYPE_MAPPINGS.get(permissionType.toUpperCase());
-        if (mappedType != null) {
-            return mappedType;
-        }
-        Logger.debug(this, "Unknown permission type: " + permissionType);
-        return permissionType.toUpperCase();
+        return com.dotcms.rest.api.v1.system.permission.PermissionConversionUtils
+            .getModernPermissionType(permissionType);
     }
 
     /**
-     * Avoids duplicate aliases like USE/read or EDIT/WRITE
+     * Converts permission bits to permission level names.
+     * Delegates to {@link com.dotcms.rest.api.v1.system.permission.PermissionConversionUtils}.
+     *
+     * @param permissionBits Bit-packed permission value
+     * @return List of permission level strings
      */
     private List<String> convertBitsToPermissionNames(final int permissionBits) {
-        final List<String> permissions = new ArrayList<>();
-
-        if ((permissionBits & PermissionAPI.PERMISSION_READ) > 0) {
-            permissions.add("READ");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_WRITE) > 0) {
-            permissions.add("WRITE");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_PUBLISH) > 0) {
-            permissions.add("PUBLISH");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_EDIT_PERMISSIONS) > 0) {
-            permissions.add("EDIT_PERMISSIONS");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_CAN_ADD_CHILDREN) > 0) {
-            permissions.add("CAN_ADD_CHILDREN");
-        }
-
-        return permissions;
+        return com.dotcms.rest.api.v1.system.permission.PermissionConversionUtils
+            .convertBitsToPermissionNames(permissionBits);
     }
 }
