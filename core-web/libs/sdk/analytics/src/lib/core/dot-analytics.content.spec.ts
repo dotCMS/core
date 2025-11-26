@@ -18,7 +18,10 @@ jest.mock('./plugin/impression/dot-analytics.impression.plugin');
 
 // Partially mock utils - keep validateAnalyticsConfig but mock cleanupActivityTracking
 jest.mock('./shared/utils/dot-analytics.utils', () => {
-    const actual = jest.requireActual('./shared/utils/dot-analytics.utils') as Record<string, unknown>;
+    const actual = jest.requireActual('./shared/utils/dot-analytics.utils') as Record<
+        string,
+        unknown
+    >;
     return {
         ...actual,
         cleanupActivityTracking: jest.fn()
