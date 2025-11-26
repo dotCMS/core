@@ -83,9 +83,12 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     transformFormValue(value) {
         if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
+            const existingVariables = this.formFieldData.fieldVariables || [];
+            const otherVariables = existingVariables.filter((v) => v.key !== 'newRenderMode');
             return {
                 ...value,
                 fieldVariables: [
+                    ...otherVariables,
                     {
                         clazz: DotCMSClazzes.FIELD_VARIABLE,
                         key: 'newRenderMode',
