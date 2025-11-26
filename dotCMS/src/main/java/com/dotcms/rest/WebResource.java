@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.enterprise.LicenseUtil;
@@ -28,15 +30,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import java.util.Base64;
-import org.glassfish.jersey.server.ContainerRequest;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -47,8 +40,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static com.liferay.util.StringPool.BLANK;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.Response;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.glassfish.jersey.server.ContainerRequest;
 
 /**
  * The Web Resource is a helper for all authentication and get the current user logged in
@@ -328,16 +327,12 @@ public  class WebResource {
      */
     public InitDataObject init(final InitBuilder builder) throws SecurityException {
 
-        if (!builder.authCheckOptions.contains(AuthCheckOptions.SKIP_CHECK_FORCE_SSL)) {
-            checkForceSSL(builder.request);
-        }
+        checkForceSSL(builder.request);
 
         final InitDataObject initData = new InitDataObject();
         Map<String,String> paramsMap = builder.paramsMap();
 
-        final User user = getCurrentUser(
-                builder.request, builder.response, paramsMap, builder.anonAccess,
-                builder.authCheckOptions.toArray(new AuthCheckOptions[0]));
+        final User user = getCurrentUser(builder.request, builder.response, paramsMap, builder.anonAccess);
 
         checkAdminPermissions(builder, user);
         checkAnonymousPermissions(builder, user);
@@ -357,9 +352,6 @@ public  class WebResource {
      */
     @VisibleForTesting
     void checkAnonymousPermissions(final InitBuilder builder, @NotNull User user) {
-        if (builder.authCheckOptions.contains(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS)) {
-            return;
-        }
         // if we are not an anonymous user
         if (user != null && !user.isAnonymousUser()) {
             return;
@@ -384,9 +376,46 @@ public  class WebResource {
     void checkAdminPermissions(final InitBuilder builder, User user) {
         if (builder.requiredRolesSet.contains(Role.CMS_ADMINISTRATOR_ROLE) && !user.isAdmin()) {
             throw new SecurityException(
-                    String.format("User " + user.getFullName() + ":" + user.getEmailAddress()
-                            + " is not a %s", Role.CMS_ADMINISTRATOR_ROLE),
+                    String.format(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS
+                                    + " permission exceeded - system set to %s but %s was required",
+                            AnonymousAccess.systemSetting().name(), builder.anonAccess.name()),
                     Response.Status.UNAUTHORIZED);
+        }
+    }
+        
+        if(!builder.requiredRolesSet.isEmpty())
+
+    {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+
+        boolean hasARequiredRole = builder.requiredRolesSet.stream()
+                .anyMatch(roleKey -> Try.of(() -> roleAPI
+                                .doesUserHaveRole(user, roleAPI.loadRoleByKey(roleKey)))
+                        .getOrElse(false));
+
+        if (!hasARequiredRole) {
+            throw new SecurityException(
+                    String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
+                            + " lacks one of the required role %s", builder.requiredRolesSet.toString()),
+                    Response.Status.UNAUTHORIZED);
+        }
+
+        if (builder.requiredRolesSet.contains(Role.DOTCMS_BACK_END_USER) &&
+                builder.request != null &&
+                builder.request.getRequestURL() != null) {
+            String host = builder.request.getHeader("host");
+            String portalUrl = APILocator.getCompanyAPI().getDefaultCompany().getPortalURL();
+            String scheme = builder.request.getScheme();
+
+            if (!StringUtils.containsIgnoreCase(scheme + "://" + host, portalUrl)) {
+                SecurityLogger.logInfo(getClass(),
+                        builder.request.getRequestURL().toString() + " must use the portalUrl "
+                                + portalUrl.toLowerCase());
+                throw new SecurityException("Not Found", Response.Status.NOT_FOUND);
+            }
+
+        }
+            
         }
     }
 
@@ -440,27 +469,24 @@ public  class WebResource {
      * @param response {@link HttpServletResponse}
      * @param paramsMap {@link Map}
      * @param access {@link AnonymousAccess}
-     * @param authCheckOptions {@link AuthCheckOptions}
      *
      * @return the login user or the login as user if exist any
      */
     public User getCurrentUser(final HttpServletRequest  request,
                                final HttpServletResponse response,
-                               final Map<String, String> paramsMap,
-                               final AnonymousAccess access,
-                               final AuthCheckOptions... authCheckOptions) throws SecurityException {
+            final Map<String, String> paramsMap, final AnonymousAccess access) {
 
         User user = PortalUtil.getUser(request);
 
         if(user==null) {
-            user = authenticate(request, response, paramsMap, access, authCheckOptions);
+            user = authenticate(request, response, paramsMap, access);
         }
         return user;
     }
 
     /**
      * @deprecated
-     * @see #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)
+     * @see #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess) 
      *
      * Return the current login user.<br>
      * if exist a user login by login as then return this user not the principal user
@@ -481,7 +507,7 @@ public  class WebResource {
 
     /**
      * @deprecated
-     * @see #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)
+     * @see #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess)
      * Returns an authenticated {@link User}. There are five ways to get the User's credentials.
      * They are executed in the specified order. When found, the remaining ways won't be executed.
      * <br>1) Using username and password contained in <code>params</code>.
@@ -507,12 +533,9 @@ public  class WebResource {
      * <br>5) If no user found, tries to get the Frontend logged in user.
      */
     public User authenticate(HttpServletRequest request, final HttpServletResponse response,
-                             final Map<String, String> params, final AnonymousAccess access,
-                             final AuthCheckOptions... authCheckOptions) throws SecurityException {
+            final Map<String, String> params, final AnonymousAccess access) throws SecurityException {
 
-        if (Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_FORCE_SSL::equals)) {
-            ServletPreconditions.checkSslIsEnabledIfRequired(request);
-        }
+        ServletPreconditions.checkSslIsEnabledIfRequired(request);
 
         User user = null;
 
@@ -553,9 +576,8 @@ public  class WebResource {
           user = this.getAnonymousUser();
         }
 
+        if (UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
 
-        if(Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS::equals)
-                && UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } 
 
@@ -603,7 +625,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = new String(Base64.getDecoder().decode(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
+            String[] values = Base64.decodeAsString(authentication).split(":");
             if(values.length < 2) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
@@ -622,7 +644,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = new String(Base64.getDecoder().decode(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
+            String[] values = Base64.decodeAsString(authentication).split(":");
             if(values.length < 2) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
@@ -664,11 +686,13 @@ public  class WebResource {
 
                 throw e;
             } catch (Exception e) {  // doLogin throwing Exception
+
                 Logger.warn(WebResource.class, "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
                 SecurityLogger.logDebug(WebResource.class, "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
                 throw new SecurityException("Authentication credentials are required", e, Response.Status.UNAUTHORIZED);
             }
         } else if(StringUtils.isNotEmpty(username) || StringUtils.isNotEmpty(password)) { // providing login or password
+
             Logger.warn(WebResource.class, "Request IP: " + ip + ". Can't authenticate user.");
             SecurityLogger.logDebug(WebResource.class, "Request IP: " + ip + ". Can't authenticate user.");
             throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
@@ -777,14 +801,6 @@ public  class WebResource {
         }
     }
 
-    /**
-     * This enum includes the different options to check for the user authentication
-     */
-   public enum AuthCheckOptions {
-        SKIP_CHECK_FORCE_SSL,
-        SKIP_CHECK_ANONYMOUS_PERMISSIONS,
-   }
-
    public static class InitBuilder {
 
         private final WebResource webResource;
@@ -798,8 +814,6 @@ public  class WebResource {
         private final Set<String> requiredRolesSet = new HashSet<>();
         private AnonymousAccess anonAccess=AnonymousAccess.NONE;
         private boolean requireLicense = false;
-        private final Set<AuthCheckOptions> authCheckOptions = new HashSet<>();
-
         public InitBuilder() {
           this(new WebResource());
 
@@ -907,11 +921,6 @@ public  class WebResource {
             return this;
         }
 
-        public InitBuilder authCheckOptions(final AuthCheckOptions... options){
-            this.authCheckOptions.addAll(Arrays.asList(options));
-            return this;
-        }
-
         public InitDataObject init() {
 
             response = (response == null ? new EmptyHttpResponse() : response);
@@ -928,9 +937,7 @@ public  class WebResource {
                         "A request is always required and it hasn't been set.");
             }
 
-
-            if (!authCheckOptions.contains(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS)
-                    && anonAccess != AnonymousAccess.NONE) {
+            if (anonAccess != AnonymousAccess.NONE) {
 
                 if(UtilMethods.isSet(requiredPortlet) || UtilMethods.isSet(requiredRolesSet)){
                     Logger.debug(InitBuilder.class,

@@ -351,56 +351,76 @@
       <th><%= LanguageUtil.get(pageContext, "basic-information") %></th>
    </tr>
    <tr>
-      <td>
-         <div class="flex">
-            <div class="form-horizontal">
+       <td style="display: flex">
+           <div class="form-horizontal">
                <dl>
-                  <dt><%= LanguageUtil.get(pageContext, "portal-url") %></dt>
-                  <dd><input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl" size="25" type="text" value="<%= company.getPortalURL() %>" style="width: 250px"></dd>
+                   <dt><%= LanguageUtil.get(pageContext, "portal-url") %>
+                   </dt>
+                   <dd>
+                       <%if (company.isPortalUrlSet()) {%>
+                       <%= company.getPortalURL() %>
+                       <%} else {%> %>
+                       <input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl" size="25"
+                              type="text" value="<%= company.getPortalURL() %>" style="width: 250px">
+                       <%} %>
+
+
+                   </dd>
+
                </dl>
                <dl>
-                  <dt><%= LanguageUtil.get(pageContext, "email-address") %></dt>
-                  <dd>
-                     <div class="inline-form">
-                        <input dojoType="dijit.form.TextBox" id="companyEmailAddress" name="companyEmailAddress" placeholder="dotCMS Website <website@dotcms.com>" size="20" type="text" value="<%= company.getEmailAddress() %>" style="width: 250px">
-                        <button id="companyEmailButton" dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onclick="validateEmail()" >
-                           <%= LanguageUtil.get(pageContext, "email-address-validate") %>
-                        </button>
-                     </div>
-                  </dd>
+                   <dt><%= LanguageUtil.get(pageContext, "email-address") %>
+                   </dt>
+                   <dd>
+                       <div class="inline-form">
+                           <input dojoType="dijit.form.TextBox" id="companyEmailAddress" name="companyEmailAddress"
+                                  placeholder="dotCMS Website <website@dotcms.com>" size="20" type="text"
+                                  value="<%= company.getEmailAddress() %>" style="width: 250px">
+                           <button id="companyEmailButton" dojoType="dijit.form.Button" type="button"
+                                   iconClass="saveIcon" onclick="validateEmail()">
+                               <%= LanguageUtil.get(pageContext, "email-address-validate") %>
+                           </button>
+                       </div>
+                   </dd>
                </dl>
                <dl>
-                  <dt><%= LanguageUtil.get(pageContext, "cluster-id") %></dt>
-                  <dd>
-                     <span><%= ConfigurationHelper.getClusterId() %></span>
-                  </dd>
+                   <dt><%= LanguageUtil.get(pageContext, "cluster-id") %>
+                   </dt>
+                   <dd>
+                       <span><%= ConfigurationHelper.getClusterId() %></span>
+                   </dd>
                </dl>
                <dl style="display: none;">
-                  <dt><%= LanguageUtil.get(pageContext, "background.color") %></dt>
-                  <dd style="position:relative;">
-                     <div id="bgColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
-                     <div class="inline-form">
-                        <input id="bgColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getSize() %>" style="width: 250px">
-                        <button id="bgButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
-                           <%= LanguageUtil.get(pageContext, "color.picker") %>
-                           <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
-                              dijit.byId("bgColorPicker").show();
-                           </script>
-                        </button>
-                     </div>
-                  </dd>
+                   <dt><%= LanguageUtil.get(pageContext, "background.color") %>
+                   </dt>
+                   <dd style="position:relative;">
+                       <div id="bgColorBlock"
+                            style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
+                       <div class="inline-form">
+                           <input id="bgColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text"
+                                  value="<%= company.getSize() %>" style="width: 250px">
+                           <button id="bgButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
+                               <%= LanguageUtil.get(pageContext, "color.picker") %>
+                               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
+                                   dijit.byId("bgColorPicker").show();
+                               </script>
+                           </button>
+                       </div>
+                   </dd>
                </dl>
                <dl>
-                  <dt><%= LanguageUtil.get(pageContext, "primary.color") %></dt>
-                  <dd style="position:relative;">
-                     <div id="pColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
-                     <div class="inline-form">
-                        <input id="pColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getType() %>" style="width: 250px">
-                        <button id="pButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
-                           <%= LanguageUtil.get(pageContext, "color.picker") %>
-                           <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
-                              dijit.byId("pColorPicker").show();
-                           </script>
+                   <dt><%= LanguageUtil.get(pageContext, "primary.color") %>
+                   </dt>
+                   <dd style="position:relative;">
+                       <div id="pColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
+                       <div class="inline-form">
+                           <input id="pColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text"
+                                  value="<%= company.getType() %>" style="width: 250px">
+                           <button id="pButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
+                               <%= LanguageUtil.get(pageContext, "color.picker") %>
+                               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
+                                   dijit.byId("pColorPicker").show();
+                               </script>
                         </button>
                      </div>
                   </dd>
