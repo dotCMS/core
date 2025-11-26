@@ -4,7 +4,8 @@ import { ValidationErrors } from '@angular/forms';
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
-    DotDynamicFieldComponent
+    DotDynamicFieldComponent,
+    DotRenderModes
 } from '@dotcms/dotcms-models';
 
 import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
@@ -82,10 +83,10 @@ export class FieldPropertyService {
      */
     getValue(field: DotCMSContentTypeField, propertyName: string): unknown {
         if (propertyName === 'newRenderMode') {
-            const fieldVariable = field.fieldVariables.find(
+            const fieldVariable = field?.fieldVariables?.find(
                 (variable) => variable.key === 'newRenderMode'
             );
-            return fieldVariable?.value;
+            return fieldVariable?.value || DotRenderModes.IFRAME;
         }
         return field[propertyName];
     }

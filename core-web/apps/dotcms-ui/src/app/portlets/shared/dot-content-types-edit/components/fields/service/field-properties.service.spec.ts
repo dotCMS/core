@@ -3,6 +3,8 @@ import { Observable, of as observableOf } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 
+import { DotCMSContentTypeField, DotRenderModes } from '@dotcms/dotcms-models';
+
 import { FieldPropertyService } from './field-properties.service';
 import { FieldService } from './field.service';
 import { validateDateDefaultValue } from './validators';
@@ -128,5 +130,231 @@ describe('FieldPropertyService', () => {
             properties: ['property1', 'property2', 'property3']
         }).toEqual(fieldPropertiesService.getFieldType('fieldClass'));
         expect(fieldPropertiesService.getFieldType('fieldClass2')).toBeUndefined();
+    });
+
+    describe('getValue', () => {
+        it('should return the value from fieldVariable when propertyName is newRenderMode and fieldVariable exists', () => {
+            const field: DotCMSContentTypeField = {
+                id: '123',
+                name: 'Test Field',
+                variable: 'testField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+                dataType: 'text',
+                fieldType: 'CustomField',
+                fieldTypeLabel: 'Custom Field',
+                fieldVariables: [
+                    {
+                        id: 'var1',
+                        key: 'newRenderMode',
+                        value: DotRenderModes.COMPONENTS,
+                        fieldId: '123',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
+                    }
+                ],
+                contentTypeId: 'contentTypeId',
+                fixed: false,
+                iDate: 1234567890,
+                indexed: false,
+                listed: false,
+                modDate: 1234567890,
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 1,
+                unique: false
+            };
+
+            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
+            expect(result).toEqual(DotRenderModes.COMPONENTS);
+        });
+
+        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and fieldVariable does not exist', () => {
+            const field: DotCMSContentTypeField = {
+                id: '123',
+                name: 'Test Field',
+                variable: 'testField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+                dataType: 'text',
+                fieldType: 'CustomField',
+                fieldTypeLabel: 'Custom Field',
+                fieldVariables: [
+                    {
+                        id: 'var1',
+                        key: 'otherVariable',
+                        value: 'someValue',
+                        fieldId: '123',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
+                    }
+                ],
+                contentTypeId: 'contentTypeId',
+                fixed: false,
+                iDate: 1234567890,
+                indexed: false,
+                listed: false,
+                modDate: 1234567890,
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 1,
+                unique: false
+            };
+
+            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
+            expect(result).toEqual(DotRenderModes.IFRAME);
+        });
+
+        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and fieldVariables is empty', () => {
+            const field: DotCMSContentTypeField = {
+                id: '123',
+                name: 'Test Field',
+                variable: 'testField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+                dataType: 'text',
+                fieldType: 'CustomField',
+                fieldTypeLabel: 'Custom Field',
+                fieldVariables: [],
+                contentTypeId: 'contentTypeId',
+                fixed: false,
+                iDate: 1234567890,
+                indexed: false,
+                listed: false,
+                modDate: 1234567890,
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 1,
+                unique: false
+            };
+
+            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
+            expect(result).toEqual(DotRenderModes.IFRAME);
+        });
+
+        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and fieldVariables is undefined', () => {
+            const field: DotCMSContentTypeField = {
+                id: '123',
+                name: 'Test Field',
+                variable: 'testField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+                dataType: 'text',
+                fieldType: 'CustomField',
+                fieldTypeLabel: 'Custom Field',
+                fieldVariables: undefined as unknown as [],
+                contentTypeId: 'contentTypeId',
+                fixed: false,
+                iDate: 1234567890,
+                indexed: false,
+                listed: false,
+                modDate: 1234567890,
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 1,
+                unique: false
+            };
+
+            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
+            expect(result).toEqual(DotRenderModes.IFRAME);
+        });
+
+        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and field is null', () => {
+            const result = fieldPropertiesService.getValue(
+                null as unknown as DotCMSContentTypeField,
+                'newRenderMode'
+            );
+            expect(result).toEqual(DotRenderModes.IFRAME);
+        });
+
+        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and fieldVariable value is empty string', () => {
+            const field: DotCMSContentTypeField = {
+                id: '123',
+                name: 'Test Field',
+                variable: 'testField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+                dataType: 'text',
+                fieldType: 'CustomField',
+                fieldTypeLabel: 'Custom Field',
+                fieldVariables: [
+                    {
+                        id: 'var1',
+                        key: 'newRenderMode',
+                        value: '',
+                        fieldId: '123',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
+                    }
+                ],
+                contentTypeId: 'contentTypeId',
+                fixed: false,
+                iDate: 1234567890,
+                indexed: false,
+                listed: false,
+                modDate: 1234567890,
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 1,
+                unique: false
+            };
+
+            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
+            expect(result).toEqual(DotRenderModes.IFRAME);
+        });
+
+        it('should return field property value when propertyName is not newRenderMode', () => {
+            const field: DotCMSContentTypeField = {
+                id: '123',
+                name: 'Test Field',
+                variable: 'testField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                dataType: 'text',
+                fieldType: 'Text',
+                fieldTypeLabel: 'Text Field',
+                fieldVariables: [],
+                contentTypeId: 'contentTypeId',
+                fixed: false,
+                iDate: 1234567890,
+                indexed: false,
+                listed: false,
+                modDate: 1234567890,
+                readOnly: false,
+                required: true,
+                searchable: false,
+                sortOrder: 1,
+                unique: false,
+                hint: 'Test hint'
+            };
+
+            expect(fieldPropertiesService.getValue(field, 'name')).toEqual('Test Field');
+            expect(fieldPropertiesService.getValue(field, 'hint')).toEqual('Test hint');
+            expect(fieldPropertiesService.getValue(field, 'required')).toEqual(true);
+            expect(fieldPropertiesService.getValue(field, 'id')).toEqual('123');
+        });
+
+        it('should return undefined when propertyName is not newRenderMode and property does not exist on field', () => {
+            const field: DotCMSContentTypeField = {
+                id: '123',
+                name: 'Test Field',
+                variable: 'testField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                dataType: 'text',
+                fieldType: 'Text',
+                fieldTypeLabel: 'Text Field',
+                fieldVariables: [],
+                contentTypeId: 'contentTypeId',
+                fixed: false,
+                iDate: 1234567890,
+                indexed: false,
+                listed: false,
+                modDate: 1234567890,
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 1,
+                unique: false
+            };
+
+            const result = fieldPropertiesService.getValue(field, 'nonExistentProperty');
+            expect(result).toBeUndefined();
+        });
     });
 });
