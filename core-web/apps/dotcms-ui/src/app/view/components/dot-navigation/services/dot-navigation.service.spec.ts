@@ -104,6 +104,7 @@ export const dotMenuMock = () => {
         active: false,
         id: '123',
         isOpen: false,
+        label: 'Name',
         menuItems: [
             {
                 active: false,
