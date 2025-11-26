@@ -1,9 +1,8 @@
 package com.dotcms.contenttype.business;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RelationshipFieldBuilder;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
@@ -15,10 +14,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Create, delete, Update and Move Field making sure that the {@link ContentType} keep with a right layout after the operation
@@ -78,33 +82,86 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
     }
 
     /**
-     * Move fields into the content types making sure that the {@link ContentType} keep with a right layout after the operation.
-     * This method receive a {@link ContentType}'s new {@link FieldLayout} and update all the fields's sort order to match
-     * this new layout (the new sort order values are calcalutes automatically).
+     * Moves fields around inside a Content Type, making sure it ends up with a correct layout after
+     * the operation. This method receives a {@link ContentType} with a new {@link FieldLayout}, and
+     * updates all the fields' sort order to match it (the new sort order values are calculated
+     * automatically).
+     * <p>
+     * If before the operation the {@link ContentType} already has a wrong layout, it is fixed
+     * before the move operation. For instance, if you have a legacy {@link ContentType} without
+     * rows and columns, then these are added first.
      *
-     * If before the operation the {@link ContentType} already has a wrong layout then it is fix before the operation.
-     * For example if you have a legacy {@link ContentType} without rows and columns the these are add.
+     * @param contentType    The {@link ContentType} that the {@link FieldLayout} belongs to.
+     * @param newFieldLayout The {@link FieldLayout} that must be updated.
+     * @param user           The {@link User} performing these changes.
      *
-     * @param contentType field's {@link ContentType}
-     * @param newFieldLayout
-     * @param user who is making the change
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @return The updated {@link FieldLayout}.
+     *
+     * @throws DotSecurityException The specified User doesn't have the required permissions to
+     *                              perform this action.
+     * @throws DotDataException     An error occurred when interacting with the database.
      */
     @WrapInTransaction
     @Override
     public FieldLayout moveFields(final ContentType contentType, final FieldLayout newFieldLayout, final User user)
             throws DotSecurityException, DotDataException {
         newFieldLayout.validate();
-
         final FieldLayout fieldLayout = new FieldLayout(contentType);
-        this.deleteUnecessaryLayoutFields(fieldLayout, user);
+        this.deleteUnnecessaryLayoutFields(fieldLayout, user);
         final List<Field> fields = addSkipForRelationshipCreation(newFieldLayout.getFields());
-        fieldAPI.saveFields(fields, user);
+        final List<Field> persistedFields = saveFields(contentType.id(), fields, user);
+        this.processFieldVariables(newFieldLayout, persistedFields);
+        // Re-load the updated fields from the database
+        final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(user).find(contentType.id());
+        return new FieldLayout(contentTypeFromDB);
+    }
 
-        final ContentType contentTypeFfromDB = APILocator.getContentTypeAPI(user).find(contentType.id());
-        return new FieldLayout(contentTypeFfromDB);
+    /**
+     * Save the fields that belong to a specific Content Type, and returns such fields after they've
+     * been properly saved and hydrated.
+     *
+     * @param contentTypeId The ID of the Content type that the fields belong to.
+     * @param fields        The list of {@link Field} objects being saved.
+     * @param user          The {@link User} performing this action.
+     *
+     * @return The list of saved fields, including their respective IDs and any other data generated
+     * by dotCMS under the covers.
+     *
+     * @throws DotSecurityException The specified User does not have the required permissions to
+     *                              execute this action.
+     * @throws DotDataException     An error occurred when interacting with the database.
+     */
+    private List<Field> saveFields(final String contentTypeId, final List<Field> fields, final User user) throws DotSecurityException, DotDataException {
+        fieldAPI.saveFields(fields, user);
+        final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(user).find(contentTypeId);
+        return contentTypeFromDB.fields();
+    }
+
+    /**
+     * Processes the Fields that include Field Variables and associate them to either new or
+     * existing fields in their respective Content Type. Comparing them to the list of saved fields
+     * allows this method to associate potential Field Variables to them, and store them as
+     * expected based on their position in the field layout.
+     *
+     * @param newFieldLayout The {@link FieldLayout} object that specifies how fields are displayed
+     *                       in a Content Type.
+     * @param savedFields    The list of {@link Field} objects that have been saved to the
+     *                       database.
+     */
+    private void processFieldVariables(final FieldLayout newFieldLayout, final List<Field> savedFields) {
+        final List<Field> updatedFields = newFieldLayout.getFields();
+        final Map<Integer, List<FieldVariable>> fieldVariablesMap = new HashMap<>();
+        for (int i = 0; i < updatedFields.size(); i++) {
+            final List<FieldVariable> fieldVariables = updatedFields.get(i).fieldVariables();
+            if (UtilMethods.isSet(fieldVariables)) {
+                fieldVariablesMap.put(i, fieldVariables);
+            }
+        }
+        fieldVariablesMap.forEach((key, fieldVariables) -> {
+            if (!fieldVariables.isEmpty()) {
+                fieldAPI.save(fieldVariables, savedFields.get(key));
+            }
+        });
     }
 
     /**
@@ -195,17 +252,22 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
      */
     private void internalFixLayout(final FieldLayout fieldLayout, final User user)
             throws DotSecurityException, DotDataException {
-        deleteUnecessaryLayoutFields(fieldLayout, user);
+        deleteUnnecessaryLayoutFields(fieldLayout, user);
         final List<Field> fields = addSkipForRelationshipCreation(fieldLayout.getLayoutFieldsToCreateOrUpdate());
         fieldAPI.saveFields(fields, user);
     }
 
     /**
-     * Finds any Relationship field in the list of {@link Field} objects and checks of the id is set, if is not set
-     * means that is a new Field so the Relationship needs to be created, if is set changes its setting to skip the creation
-     * of the Relationship, which is not necessary at all when fixing/adjusting the field layout. Such an operation is
-     * executed when fields are moved or deleted from a Content Type, where creating/re-creating a relationship is NOT
-     * necessary at all.
+     * Finds any {@link RelationshipField} objects in the list of {@link Field} objects and performs
+     * the following check on each of them:
+     * <ol>
+     *     <li>If the ID <b>is NOT set</b>, it means that it's a new Field, and the Relationship
+     *     needs to be created.</li>
+     *     <li>If the ID <b>IS set</b>, we change its setting to skip the creation of the
+     *     Relationship, which is not necessary at all when fixing/adjusting the field layout.</li>
+     * </ol>
+     * Such an operation is executed when fields are moved or deleted from a Content Type, where
+     * creating/re-creating a relationship is NOT necessary at all.
      *
      * @param layoutFields The list of Fields that will be updated.
      *
@@ -232,7 +294,7 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
      * @throws DotDataException     An error occurred when interacting with the data source.
      * @throws DotSecurityException The specified user doesn't have the required permissions to perform this action.
      */
-    private void deleteUnecessaryLayoutFields(final FieldLayout fieldLayout, final User user)
+    private void deleteUnnecessaryLayoutFields(final FieldLayout fieldLayout, final User user)
             throws DotDataException, DotSecurityException {
 
         fieldAPI.deleteFields(
